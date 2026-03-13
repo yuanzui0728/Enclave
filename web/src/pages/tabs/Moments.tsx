@@ -1,0 +1,79 @@
+import React, { useEffect, useCallback } from 'react';
+import { useMomentsStore } from '../../store/momentsStore';
+import { MomentCard } from '../../components/moments/MomentCard';
+import { Colors } from '../../theme/colors';
+
+export function Moments() {
+  const { moments, loading, fetchMoments } = useMomentsStore();
+  const sorted = [...moments].sort((a, b) => b.postedAt.getTime() - a.postedAt.getTime());
+
+  useEffect(() => {
+    fetchMoments();
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    await fetchMoments();
+  }, [fetchMoments]);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: Colors.bgMain }}>
+      {/* Header */}
+      <div style={{ backgroundColor: Colors.bgWhite, flexShrink: 0 }}>
+        <div style={{
+          height: 160, backgroundColor: '#0D1117',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          position: 'relative',
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundColor: 'rgba(124,111,247,0.15)',
+          }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontStyle: 'italic', position: 'relative' }}>
+            隐界的朋友圈，比你的还热闹
+          </span>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            position: 'absolute', right: 16, top: -32,
+            width: 64, height: 64, borderRadius: 8,
+            backgroundColor: Colors.bgCard,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `3px solid ${Colors.primary}`, fontSize: 36,
+          }}>
+            🙂
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '20px 16px 12px',
+          }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: Colors.textPrimary }}>朋友圈</span>
+            <button
+              onClick={handleRefresh}
+              disabled={loading}
+              style={{ padding: 4, background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.5 : 1 }}
+            >
+              <span style={{ fontSize: 22 }}>📷</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Feed */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading && sorted.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: Colors.textSecondary, fontSize: 13 }}>
+            加载中…
+          </div>
+        ) : sorted.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 80 }}>
+            <span style={{ fontSize: 48, marginBottom: 16 }}>🌐</span>
+            <span style={{ fontSize: 15, color: Colors.textSecondary }}>朋友圈还没有动态</span>
+            <span style={{ fontSize: 13, color: Colors.textLight, marginTop: 6 }}>下拉刷新，或等待朋友们发布</span>
+          </div>
+        ) : (
+          sorted.map((m) => <MomentCard key={m.id} moment={m} />)
+        )}
+      </div>
+    </div>
+  );
+}
