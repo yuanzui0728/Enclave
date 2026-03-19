@@ -16,6 +16,11 @@ interface FeedPost {
   comments?: { authorName: string; authorAvatar: string; text: string }[];
 }
 
+interface ShakeResult {
+  character: { id: string; name: string; avatar: string; relationship: string; expertDomains: string[] };
+  greeting: string;
+}
+
 export function Discover() {
   const { userId, username } = useAuthStore();
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -25,6 +30,32 @@ export function Discover() {
   const [posting, setPosting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  // Shake state
+  const [shaking, setShaking] = useState(false);
+  const [shakeResult, setShakeResult] = useState<ShakeResult | null>(null);
+  const [shakeAdded, setShakeAdded] = useState(false);
+
+  const handleShake = async () => {
+    if (!userId || shaking) return;
+    setShaking(true);
+    setShakeResult(null);
+    setShakeAdded(false);
+    try {
+      const res = await api.shake(userId);
+      setShakeResult(res);
+    } catch {
+      // ignore
+    } finally {
+      setShaking(false);
+    }
+  };
+
+  const handleAddFromShake = async () => {
+    if (!userId || !shakeResult) return;
+    await api.sendFriendRequest(userId, shakeResult.character.id, shakeResult.greeting);
+    setShakeAdded(true);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -80,6 +111,85 @@ export function Discover() {
           <span style={{ fontSize: 22, color: Colors.primary }}>＋</span>
         </button>
       </div>
+
+      {/* Shake entry */}
+      <div
+        onClick={handleShake}
+        style={{
+          display: 'flex', alignItems: 'center',
+          backgroundColor: 'rgba(255,255,255,0.7)',
+          padding: '12px 16px',
+          borderBottom: `0.5px solid ${Colors.border}`, cursor: 'pointer', flexShrink: 0,
+        }}
+      >
+        <div style={{
+          width: 48, height: 48, borderRadius: 24,
+          background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
+          boxShadow: '0 2px 10px rgba(139,92,246,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, marginRight: 12, flexShrink: 0,
+          animation: shaking ? 'shake 0.5s ease-in-out' : 'none',
+        }}>
+          📳
+        </div>
+        <span style={{ fontSize: 15, color: Colors.textPrimary, fontWeight: 500 }}>
+          {shaking ? '摇一摇中…' : '摇一摇'}
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: 18, color: Colors.textLight }}>›</span>
+      </div>
+
+      {/* Shake result modal */}
+      {shakeResult && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200,
+        }}
+          onClick={() => setShakeResult(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '80%', maxWidth: 320,
+              backgroundColor: Colors.bgCard,
+              borderRadius: 20, padding: 28,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+            }}
+          >
+            <div style={{ fontSize: 56 }}>{shakeResult.character.avatar}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: Colors.textPrimary }}>{shakeResult.character.name}</div>
+            <div style={{ fontSize: 13, color: Colors.textSecondary }}>{shakeResult.character.relationship}</div>
+            <div style={{
+              fontSize: 14, color: Colors.textPrimary, textAlign: 'center', lineHeight: '20px',
+              backgroundColor: Colors.bgInput, borderRadius: 12, padding: '10px 14px',
+            }}>
+              "{shakeResult.greeting}"
+            </div>
+            {shakeAdded ? (
+              <div style={{ fontSize: 14, color: Colors.primary, fontWeight: 500 }}>已发送好友申请 ✓</div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+                <button
+                  onClick={() => setShakeResult(null)}
+                  style={{
+                    flex: 1, padding: '11px', borderRadius: 10,
+                    border: `1px solid ${Colors.border}`, background: 'none',
+                    color: Colors.textSecondary, fontSize: 14, cursor: 'pointer',
+                  }}
+                >跳过</button>
+                <button
+                  onClick={handleAddFromShake}
+                  style={{
+                    flex: 1, padding: '11px', borderRadius: 10,
+                    background: 'linear-gradient(135deg, #F97316 0%, #FBBF24 100%)',
+                    border: 'none', color: '#fff', fontSize: 14,
+                    fontWeight: 600, cursor: 'pointer',
+                  }}
+                >加好友</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Compose modal */}
       {composing && (

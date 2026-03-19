@@ -115,6 +115,18 @@ export const api = {
   getGroupMembers: (id: string) => request<unknown[]>(`/groups/${id}/members`),
   getGroupMessages: (id: string) => request<unknown[]>(`/groups/${id}/messages`),
 
+  // Shake (摇一摇)
+  shake: (userId: string) =>
+    request<{ character: { id: string; name: string; avatar: string; relationship: string; expertDomains: string[] }; greeting: string } | null>('/social/shake', {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    }),
+  sendFriendRequest: (userId: string, characterId: string, greeting: string) =>
+    request<unknown>('/social/friend-requests/send', {
+      method: 'POST',
+      body: JSON.stringify({ userId, characterId, greeting }),
+    }),
+
   // User profile update
   updateUser: (userId: string, data: { username?: string; avatar?: string; signature?: string }) =>
     request<unknown>(`/auth/users/${userId}`, { method: 'PATCH', body: JSON.stringify(data) }),

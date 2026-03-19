@@ -112,6 +112,54 @@ export class SocialService {
     return this.friendRequestRepo.save(req);
   }
 
+  async shake(userId: string): Promise<{ character: CharacterEntity; greeting: string } | null> {
+    const all = await this.characterRepo.find();
+    const existingFriendships = await this.friendshipRepo.find({ where: { userId } });
+    const existingIds = new Set(existingFriendships.map((f) => f.characterId));
+    const available = all.filter((c) => !existingIds.has(c.id));
+    if (available.length === 0) return null;
+
+    const char = available[Math.floor(Math.random() * available.length)];
+
+    let greeting = `嗨，我是${char.name}，我们在隐界相遇了！`;
+    try {
+      const result = await this.ai.generateReply({
+        profile: char.profile,
+        conversationHistory: [],
+        userMessage: `你通过"摇一摇"功能和一个陌生人相遇了，发一句简短的自我介绍，不超过25字，要有你的个性。`,
+      });
+      greeting = result.text;
+    } catch {
+      // use default
+    }
+
+    return { character: char, greeting };
+  }
+
+  async sendFriendRequest(userId: string, characterId: string, greeting: string): Promise<FriendRequestEntity> {
+    const char = await this.characterRepo.findOneBy({ id: characterId });
+    if (!char) throw new Error('Character not found');
+
+    const existing = await this.friendRequestRepo.findOneBy({ userId, characterId, status: 'pending' });
+    if (existing) return existing;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(23, 59, 59, 999);
+
+    const req = this.friendRequestRepo.create({
+      userId,
+      characterId,
+      characterName: char.name,
+      characterAvatar: char.avatar,
+      triggerScene: 'shake',
+      greeting,
+      status: 'pending',
+      expiresAt: tomorrow,
+    });
+    return this.friendRequestRepo.save(req);
+  }
+
   async updateIntimacy(userId: string, characterId: string, delta: number): Promise<void> {
     let friendship = await this.friendshipRepo.findOneBy({ userId, characterId });
     if (!friendship) return;

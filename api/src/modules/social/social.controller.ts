@@ -25,6 +25,16 @@ export class SocialController {
     return this.socialService.getFriends(userId);
   }
 
+  @Post('shake')
+  shake(@Body() body: { userId: string }) {
+    return this.socialService.shake(body.userId);
+  }
+
+  @Post('friend-requests/send')
+  sendFriendRequest(@Body() body: { userId: string; characterId: string; greeting: string }) {
+    return this.socialService.sendFriendRequest(body.userId, body.characterId, body.greeting);
+  }
+
   @Post('trigger-scene')
   triggerScene(@Body() body: { userId: string; scene: string }) {
     return this.socialService.triggerSceneFriendRequest(body.userId, body.scene);
