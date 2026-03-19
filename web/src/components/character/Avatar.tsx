@@ -21,6 +21,8 @@ export function Avatar({ emoji, size = 44, showOnline = false, isOnline = false,
         position: 'relative',
         cursor: onPress ? 'pointer' : 'default',
         flexShrink: 0,
+        border: '1.5px solid rgba(249,115,22,0.20)',
+        boxShadow: '0 0 8px rgba(249,115,22,0.10)',
       }}
     >
       <span style={{ fontSize: size * 0.6 }}>{emoji}</span>

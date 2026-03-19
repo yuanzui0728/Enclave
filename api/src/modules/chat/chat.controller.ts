@@ -62,8 +62,15 @@ export class GroupController {
     return this.groupService.addMember(id, body);
   }
 
-  @Get(':id/messages')
-  getGroupMessages(@Param('id') id: string, @Query('limit') limit?: string) {
-    return this.groupService.getMessages(id, limit ? parseInt(limit) : 100);
+  @Post(':id/messages')
+  async sendGroupMessage(
+    @Param('id') id: string,
+    @Body() body: { senderId: string; senderType: 'user' | 'character'; senderName: string; senderAvatar?: string; text: string },
+  ) {
+    const message = await this.groupService.sendMessage(id, body.senderId, body.senderType, body.senderName, body.text, body.senderAvatar);
+    if (body.senderType === 'user') {
+      this.groupService.triggerAiReplies(id, body.text, body.senderName);
+    }
+    return message;
   }
 }

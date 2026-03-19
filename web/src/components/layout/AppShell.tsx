@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
       flexDirection: 'column',
       overflow: 'hidden',
       position: 'relative',
-      backgroundColor: '#0D1117',
+      backgroundColor: 'transparent',
     }}>
       {children}
     </div>

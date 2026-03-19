@@ -66,4 +66,7 @@ export class CharacterEntity {
   // AI relationship network
   @Column('simple-json', { nullable: true })
   aiRelationships?: { characterId: string; relationshipType: string; strength: number }[];
+
+  @Column({ nullable: true })
+  currentStatus?: string;
 }

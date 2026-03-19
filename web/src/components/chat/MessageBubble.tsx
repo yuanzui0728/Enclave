@@ -14,7 +14,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 16px' }}>
         <span style={{
           fontSize: 11, color: Colors.textLight,
-          backgroundColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(0,0,0,0.05)',
           padding: '3px 10px', borderRadius: 10,
         }}>
           {message.text}
@@ -37,6 +37,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           backgroundColor: Colors.bgCard,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, fontSize: 22,
+          border: '1px solid rgba(0,0,0,0.06)',
         }}>
           {message.senderAvatar}
         </div>
@@ -55,10 +56,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           borderBottomRightRadius: isUser ? 4 : 18,
           borderBottomLeftRadius: isUser ? 18 : 4,
           padding: '9px 14px',
-          backgroundColor: isUser ? Colors.bubbleUser : Colors.bubbleAI,
-          border: isUser ? 'none' : `0.5px solid ${Colors.border}`,
+          ...(isUser ? {
+            background: 'linear-gradient(135deg, #F97316 0%, #FBBF24 100%)',
+            boxShadow: '0 2px 12px rgba(249,115,22,0.30)',
+          } : {
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '0.5px solid rgba(0,0,0,0.08)',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
+          }),
         }}>
-          <span style={{ fontSize: 15, lineHeight: '22px', color: Colors.textPrimary, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+          <span style={{ fontSize: 15, lineHeight: '22px', color: isUser ? Colors.textWhite : Colors.textPrimary, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {message.text}
           </span>
         </div>

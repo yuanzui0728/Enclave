@@ -10,6 +10,7 @@ import {
 } from './ai.types';
 import { PromptBuilderService } from './prompt-builder.service';
 import { SystemConfigService } from '../config/config.service';
+import { WorldService } from '../world/world.service';
 
 @Injectable()
 export class AiOrchestratorService {
@@ -20,6 +21,7 @@ export class AiOrchestratorService {
     private readonly config: ConfigService,
     private readonly promptBuilder: PromptBuilderService,
     private readonly configService: SystemConfigService,
+    private readonly worldService: WorldService,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -30,13 +32,35 @@ export class AiOrchestratorService {
   async generateReply(options: GenerateReplyOptions): Promise<GenerateReplyResult> {
     const { profile, conversationHistory, userMessage, isGroupChat, otherParticipants } = options;
 
-    const systemPrompt = profile.systemPrompt
+    let systemPrompt = profile.systemPrompt
       ?? this.promptBuilder.buildChatSystemPrompt(profile, isGroupChat);
 
-    // Build messages array: system + history (last 20) + new user message
+    // Inject WorldContext (current time/season/holiday)
+    try {
+      const worldCtx = await this.worldService.getLatest();
+      const ctxStr = this.worldService.buildContextString(worldCtx);
+      if (ctxStr) {
+        systemPrompt = systemPrompt.replace(
+          /当前时间：[^\n]*/,
+          ctxStr,
+        );
+        // If no existing time line, append
+        if (!systemPrompt.includes(ctxStr)) {
+          systemPrompt += `\n\n【当前世界状态】${ctxStr}`;
+        }
+      }
+    } catch {
+      // ignore world context errors
+    }
+
+    // Calculate history window size based on forgettingCurve
+    const forgettingCurve = profile.memory?.forgettingCurve ?? 70;
+    const historyWindow = Math.round(8 + (forgettingCurve / 100) * 22); // 8-30 条
+
+    // Build messages array: system + history (dynamic window) + new user message
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-20).map((m) => ({
+      ...conversationHistory.slice(-historyWindow).map((m) => ({
         role: m.role as 'user' | 'assistant',
         content: m.characterId
           ? `[${m.characterId}]: ${m.content}`
@@ -127,7 +151,7 @@ ${chatHistory}
       return response.choices[0]?.message?.content?.trim() ?? '';
     } catch (err) {
       this.logger.error('compressMemory error', err);
-      return profile.memorySummary;
+      return profile.memory?.recentSummary ?? profile.memorySummary;
     }
   }
 

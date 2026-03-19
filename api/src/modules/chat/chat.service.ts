@@ -113,8 +113,14 @@ export class ChatService {
       const intent = await this.ai.classifyIntent(text, profile.name, profile.expertDomains);
 
       if (intent.needsGroupChat && intent.requiredDomains.length > 0) {
+        // 只在用户好友圈（已有会话的角色）内查找
+        const userConversations = await this.convRepo.find({ where: { userId } });
+        const userFriendIds = new Set(
+          userConversations.flatMap((c) => c.participants).filter((id) => id !== charId),
+        );
+
         const invitedChars = (await this.characters.findByDomains(intent.requiredDomains))
-          .filter((c) => c.id !== charId)
+          .filter((c) => c.id !== charId && userFriendIds.has(c.id))
           .slice(0, 2);
 
         if (invitedChars.length > 0) {
@@ -177,7 +183,16 @@ export class ChatService {
       const char = await this.characters.findById(primaryCharId);
       if (char) {
         const newMemory = await this.ai.compressMemory(history, char.profile);
-        char.profile.memorySummary = newMemory;
+        // 只更新 recentSummary，不覆盖 coreMemory
+        if (!char.profile.memory) {
+          char.profile.memory = {
+            coreMemory: char.profile.memorySummary ?? '',
+            recentSummary: newMemory,
+            forgettingCurve: 70,
+          };
+        } else {
+          char.profile.memory.recentSummary = newMemory;
+        }
         await this.characters.upsert(char);
       }
     }

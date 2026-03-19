@@ -15,12 +15,13 @@ export function Contacts() {
   }, []);
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: Colors.bgMain }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: Colors.navBg, padding: '12px 16px',
-        borderBottom: `0.5px solid ${Colors.navBorder}`, flexShrink: 0,
+        backgroundColor: 'rgba(255,251,245,0.88)',
+        padding: '12px 16px',
+        borderBottom: '0.5px solid rgba(249,115,22,0.15)', flexShrink: 0,
       }}>
         <span style={{ fontSize: 17, fontWeight: 600, color: Colors.textPrimary }}>通讯录</span>
         <button
@@ -36,19 +37,46 @@ export function Contacts() {
         onClick={() => navigate('/friend-requests')}
         style={{
           display: 'flex', alignItems: 'center',
-          backgroundColor: Colors.bgWhite, padding: '12px 16px',
+          backgroundColor: 'rgba(255,255,255,0.7)',
+          padding: '12px 16px',
           borderBottom: `0.5px solid ${Colors.border}`, cursor: 'pointer',
         }}
       >
         <div style={{
           width: 48, height: 48, borderRadius: 24,
-          backgroundColor: Colors.primary, display: 'flex',
+          background: 'linear-gradient(135deg, #F97316 0%, #FB923C 100%)',
+          boxShadow: '0 2px 10px rgba(249,115,22,0.35)',
+          display: 'flex',
           alignItems: 'center', justifyContent: 'center',
           fontSize: 22, marginRight: 12, flexShrink: 0,
         }}>
           👋
         </div>
         <span style={{ fontSize: 15, color: Colors.textPrimary, fontWeight: 500 }}>新的朋友</span>
+        <span style={{ marginLeft: 'auto', fontSize: 18, color: Colors.textLight }}>›</span>
+      </div>
+
+      {/* Create group entry */}
+      <div
+        onClick={() => navigate('/group/new')}
+        style={{
+          display: 'flex', alignItems: 'center',
+          backgroundColor: 'rgba(255,255,255,0.7)',
+          padding: '12px 16px',
+          borderBottom: `0.5px solid ${Colors.border}`, cursor: 'pointer',
+        }}
+      >
+        <div style={{
+          width: 48, height: 48, borderRadius: 24,
+          background: 'linear-gradient(135deg, #34D399 0%, #059669 100%)',
+          boxShadow: '0 2px 10px rgba(52,211,153,0.3)',
+          display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, marginRight: 12, flexShrink: 0,
+        }}>
+          👥
+        </div>
+        <span style={{ fontSize: 15, color: Colors.textPrimary, fontWeight: 500 }}>发起群聊</span>
         <span style={{ marginLeft: 'auto', fontSize: 18, color: Colors.textLight }}>›</span>
       </div>
 
@@ -67,7 +95,9 @@ export function Contacts() {
               onClick={() => navigate('/character/new')}
               style={{
                 marginTop: 16, padding: '10px 24px',
-                backgroundColor: Colors.primary, borderRadius: 8,
+                background: 'linear-gradient(135deg, #F97316 0%, #FBBF24 100%)',
+                boxShadow: '0 2px 12px rgba(249,115,22,0.35)',
+                borderRadius: 10,
                 color: '#fff', fontSize: 15, cursor: 'pointer',
                 border: 'none',
               }}
@@ -82,7 +112,7 @@ export function Contacts() {
               onClick={() => navigate(`/character/${char.id}`)}
               style={{
                 display: 'flex', alignItems: 'center',
-                backgroundColor: Colors.bgWhite, padding: '12px 16px', cursor: 'pointer',
+                backgroundColor: 'transparent', padding: '12px 16px', cursor: 'pointer',
               }}
             >
               <Avatar emoji={char.avatar} size={48} showOnline isOnline={char.isOnline} />
@@ -95,11 +125,17 @@ export function Contacts() {
                     {char.relationship}
                   </span>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                  {char.expertDomains?.slice(0, 3).map((d) => (
-                    <ExpertBadge key={d} domain={d} />
-                  ))}
-                </div>
+                {char.currentStatus ? (
+                  <div style={{ fontSize: 12, color: Colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {char.currentStatus}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {char.expertDomains?.slice(0, 3).map((d) => (
+                      <ExpertBadge key={d} domain={d} />
+                    ))}
+                  </div>
+                )}
               </div>
               <span style={{ fontSize: 18, color: Colors.textLight }}>›</span>
             </div>

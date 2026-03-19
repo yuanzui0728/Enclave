@@ -32,6 +32,9 @@ export class FeedPostEntity {
   @Column({ default: 0 })
   commentCount: number;
 
+  @Column({ default: false })
+  aiReacted: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 }

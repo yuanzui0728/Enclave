@@ -13,8 +13,41 @@ export interface PersonalityProfile {
     responseLength: 'short' | 'medium' | 'long';
     emojiUsage: 'none' | 'occasional' | 'frequent';
   };
-  memorySummary: string;        // 压缩的长期记忆
+  memorySummary: string;        // 压缩的长期记忆（旧字段，向后兼容）
   systemPrompt?: string;        // 自定义 system prompt（可选覆盖）
+
+  // 深度人格模块
+  identity?: {
+    occupation: string;    // 职业/身份
+    background: string;    // 背景故事
+    motivation: string;    // 核心动机/价值观
+    worldview: string;     // 世界观
+  };
+  behavioralPatterns?: {
+    workStyle: string;     // 工作/思考方式
+    socialStyle: string;   // 社交风格
+    taboos: string[];      // 语言/行为禁忌
+    quirks: string[];      // 个人癖好
+  };
+  cognitiveBoundaries?: {
+    expertiseDescription: string;  // 专长详细描述
+    knowledgeLimits: string;       // 知识边界说明
+    refusalStyle: string;          // 超出边界时的拒绝风格
+  };
+
+  // 推理机制开关
+  reasoningConfig?: {
+    enableCoT: boolean;        // 思维链（默认 true）
+    enableReflection: boolean; // 自我反思（默认 true）
+    enableRouting: boolean;    // 跨角色路由（默认 true）
+  };
+
+  // 分层记忆
+  memory?: {
+    coreMemory: string;      // 永久核心记忆（手动设置，不会遗忘）
+    recentSummary: string;   // 近期摘要（每10条自动更新）
+    forgettingCurve: number; // 0-100，越低越容易遗忘细节（默认 70）
+  };
 }
 
 export interface ChatMessage {

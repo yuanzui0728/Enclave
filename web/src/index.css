@@ -10,14 +10,36 @@ html, body, #root {
 }
 
 body {
-  background-color: #0D1117;
-  color: #F0F6FC;
+  background: linear-gradient(160deg, #FFFBF5 0%, #FFF8EE 40%, #FFFAF0 70%, #FFF5E4 100%);
+  background-attachment: fixed;
+  color: #1A1A2E;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 45% at 15% 15%, rgba(249,115,22,0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 35% at 85% 80%, rgba(251,191,36,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 60% 40%, rgba(253,186,116,0.05) 0%, transparent 50%);
+}
+
+::placeholder { color: #9CA3AF; }
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+::-webkit-scrollbar { width: 0; }
 
 button {
   border: none;

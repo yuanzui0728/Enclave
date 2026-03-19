@@ -5,7 +5,8 @@ import { api } from '../services/api';
 interface MomentsStore {
   moments: Moment[];
   loading: boolean;
-  fetchMoments: () => Promise<void>;
+  fetchMoments: (authorId?: string) => Promise<void>;
+  postMoment: (userId: string, authorName: string, authorAvatar: string, text: string) => Promise<void>;
   setMoments: (moments: Moment[]) => void;
   toggleLike: (momentId: string) => void;
   addComment: (momentId: string, text: string) => void;
@@ -26,14 +27,18 @@ export const useMomentsStore = create<MomentsStore>((set) => ({
   moments: [],
   loading: false,
 
-  fetchMoments: async () => {
+  fetchMoments: async (authorId?: string) => {
     set({ loading: true });
     try {
-      const data = await api.getMoments();
+      const data = await api.getMoments(authorId);
       set({ moments: (data as Record<string, unknown>[]).map(normalizeMoment) });
     } finally {
       set({ loading: false });
     }
+  },
+
+  postMoment: async (userId, authorName, authorAvatar, text) => {
+    await api.postUserMoment(userId, authorName, authorAvatar, text);
   },
 
   setMoments: (moments) => set({ moments }),

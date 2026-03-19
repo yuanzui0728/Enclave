@@ -115,13 +115,14 @@ export function ChatRoom() {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      height: '100dvh', backgroundColor: Colors.bgChat, overflow: 'hidden',
+      height: '100dvh', backgroundColor: 'transparent', overflow: 'hidden',
     }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center',
-        backgroundColor: Colors.navBg, padding: '8px',
-        borderBottom: `0.5px solid ${Colors.navBorder}`, flexShrink: 0,
+        backgroundColor: 'rgba(255,251,245,0.92)',
+        padding: '8px',
+        borderBottom: '0.5px solid rgba(249,115,22,0.15)', flexShrink: 0,
       }}>
         <button
           onClick={() => navigate('/tabs/chat')}
@@ -177,8 +178,9 @@ export function ChatRoom() {
       {/* Input bar */}
       <div style={{
         display: 'flex', alignItems: 'flex-end',
-        backgroundColor: Colors.navBg, padding: '8px',
-        borderTop: `0.5px solid ${Colors.navBorder}`, gap: 6, flexShrink: 0,
+        backgroundColor: 'rgba(255,251,245,0.92)',
+        padding: '8px',
+        borderTop: '0.5px solid rgba(249,115,22,0.15)', gap: 6, flexShrink: 0,
       }}>
         <button style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer' }}>
           <span style={{ fontSize: 22 }}>🎤</span>
@@ -186,8 +188,11 @@ export function ChatRoom() {
         <input
           ref={inputRef}
           style={{
-            flex: 1, backgroundColor: Colors.bgWhite, borderRadius: 6,
-            padding: '8px', fontSize: 15, color: Colors.textPrimary,
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.04)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            borderRadius: 20,
+            padding: '8px 14px', fontSize: 15, color: Colors.textPrimary,
             minHeight: 36,
           }}
           value={inputText}
@@ -202,7 +207,9 @@ export function ChatRoom() {
           <button
             onClick={handleSend}
             style={{
-              backgroundColor: Colors.primary, borderRadius: 6,
+              background: 'linear-gradient(135deg, #F97316 0%, #FBBF24 100%)',
+              boxShadow: '0 2px 10px rgba(249,115,22,0.35)',
+              borderRadius: 20,
               padding: '8px 14px', fontSize: 13, fontWeight: 600,
               color: '#fff', cursor: 'pointer', border: 'none', flexShrink: 0,
             }}
@@ -211,8 +218,10 @@ export function ChatRoom() {
           </button>
         ) : (
           <button style={{
-            width: 36, height: 36, borderRadius: 6,
-            backgroundColor: Colors.bgInput, border: 'none', cursor: 'pointer',
+            width: 36, height: 36, borderRadius: 20,
+            backgroundColor: 'rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
           }}>
             <span style={{ fontSize: 22, color: Colors.textPrimary }}>＋</span>

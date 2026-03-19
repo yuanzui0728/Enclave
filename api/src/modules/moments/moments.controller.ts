@@ -6,8 +6,14 @@ export class MomentsController {
   constructor(private readonly momentsService: MomentsService) {}
 
   @Get()
-  getFeed() {
+  getFeed(@Query('authorId') authorId?: string) {
+    if (authorId) return this.momentsService.getFeedByAuthor(authorId);
     return this.momentsService.getFeed();
+  }
+
+  @Post('user-post')
+  createUserMoment(@Body() body: { userId: string; authorName: string; authorAvatar: string; text: string }) {
+    return this.momentsService.createUserMoment(body.userId, body.authorName, body.authorAvatar, body.text);
   }
 
   @Get(':id')

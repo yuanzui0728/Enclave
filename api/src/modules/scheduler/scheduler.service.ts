@@ -6,8 +6,11 @@ import { CharacterEntity } from '../characters/character.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
+import { UserEntity } from '../auth/user.entity';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { SocialService } from '../social/social.service';
+import { FeedService } from '../feed/feed.service';
 
 @Injectable()
 export class SchedulerService {
@@ -22,8 +25,12 @@ export class SchedulerService {
     private momentPostRepo: Repository<MomentPostEntity>,
     @InjectRepository(FeedPostEntity)
     private feedPostRepo: Repository<FeedPostEntity>,
+    @InjectRepository(UserEntity)
+    private userRepo: Repository<UserEntity>,
     private readonly worldService: WorldService,
     private readonly ai: AiOrchestratorService,
+    private readonly socialService: SocialService,
+    private readonly feedService: FeedService,
   ) {}
 
   // Every 30 minutes: update WorldContext snapshot
@@ -100,6 +107,71 @@ export class SchedulerService {
       }
     } catch (err) {
       this.logger.error('Failed to check moment schedule', err);
+    }
+  }
+
+  // Every day at random times (10:00, 14:00, 19:00): trigger scene-based friend requests
+  @Cron('0 10,14,19 * * *')
+  async triggerSceneFriendRequests() {
+    try {
+      // Only trigger with 40% probability each run
+      if (Math.random() > 0.4) return;
+
+      const users = await this.userRepo.find();
+      if (users.length === 0) return;
+
+      const scenes = ['coffee_shop', 'gym', 'library', 'bookstore', 'park', 'restaurant', 'cafe'];
+      const scene = scenes[Math.floor(Math.random() * scenes.length)];
+
+      // Pick 1-2 random users to receive friend requests
+      const targetUsers = users.sort(() => Math.random() - 0.5).slice(0, Math.min(2, users.length));
+      for (const user of targetUsers) {
+        const req = await this.socialService.triggerSceneFriendRequest(user.id, scene);
+        if (req) {
+          this.logger.debug(`Triggered scene friend request for user ${user.id} from scene ${scene}`);
+        }
+      }
+    } catch (err) {
+      this.logger.error('Failed to trigger scene friend requests', err);
+    }
+  }
+
+  // Every 5 minutes: trigger AI reactions for pending feed posts
+  @Cron('*/5 * * * *')
+  async processPendingFeedReactions() {
+    try {
+      const pending = await this.feedService.getPendingAiReaction(30);
+      for (const post of pending) {
+        await this.feedService.triggerAiReactionForPost(post);
+        this.logger.debug(`Triggered AI reaction for feed post ${post.id}`);
+      }
+    } catch (err) {
+      this.logger.error('Failed to process pending feed reactions', err);
+    }
+  }
+
+  // Every 2 hours: generate AI dynamic status for online characters
+  @Cron('0 */2 * * *')
+  async updateCharacterStatus() {
+    try {
+      const chars = await this.characterRepo.find({ where: { isOnline: true } });
+      for (const char of chars) {
+        try {
+          const status = await this.ai.generateMoment({
+            profile: char.profile,
+            currentTime: new Date(),
+          });
+          if (status) {
+            const trimmed = status.slice(0, 15);
+            await this.characterRepo.update(char.id, { currentStatus: trimmed });
+            this.logger.debug(`Updated status for ${char.name}: ${trimmed}`);
+          }
+        } catch {
+          // ignore per-character errors
+        }
+      }
+    } catch (err) {
+      this.logger.error('Failed to update character status', err);
     }
   }
 

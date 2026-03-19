@@ -22,8 +22,9 @@ function formatTime(date: Date): string {
 export function ChatListItem({ conversation, onPress }: ChatListItemProps) {
   const getById = useCharacterStore((s) => s.getById);
   const isGroup = conversation.type === 'group';
-  const avatarEmoji = isGroup ? '👥' : getById(conversation.participants[0])?.avatar ?? '🤖';
-  const lastText = conversation.lastMessage?.text ?? '';
+  const char = isGroup ? null : getById(conversation.participants[0]);
+  const avatarEmoji = isGroup ? '👥' : char?.avatar ?? '🤖';
+  const lastText = conversation.lastMessage?.text ?? char?.currentStatus ?? '';
   const preview = lastText.length > 28 ? lastText.slice(0, 28) + '…' : lastText;
 
   return (
@@ -33,7 +34,7 @@ export function ChatListItem({ conversation, onPress }: ChatListItemProps) {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.bgWhite,
+        backgroundColor: 'rgba(255,255,255,0.6)',
         padding: '12px 16px',
         cursor: 'pointer',
       }}

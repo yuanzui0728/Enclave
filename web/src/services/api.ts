@@ -55,7 +55,12 @@ export const api = {
       body: JSON.stringify({ userId, characterId }),
     }),
 
-  getMoments: () => request<unknown[]>('/moments'),
+  getMoments: (authorId?: string) => request<unknown[]>(authorId ? `/moments?authorId=${authorId}` : '/moments'),
+  postUserMoment: (userId: string, authorName: string, authorAvatar: string, text: string) =>
+    request<unknown>('/moments/user-post', {
+      method: 'POST',
+      body: JSON.stringify({ userId, authorName, authorAvatar, text }),
+    }),
   addMomentComment: (postId: string, authorId: string, authorName: string, authorAvatar: string, text: string) =>
     request<unknown>(`/moments/${postId}/comment`, {
       method: 'POST',
@@ -99,6 +104,20 @@ export const api = {
       body: JSON.stringify({ userId }),
     }),
   getFriends: (userId: string) => request<unknown[]>(`/social/friends?userId=${userId}`),
+
+  // Groups
+  createGroup: (name: string, creatorId: string, memberIds: string[]) =>
+    request<{ id: string; name: string }>('/groups', {
+      method: 'POST',
+      body: JSON.stringify({ name, creatorId, creatorType: 'user', memberIds }),
+    }),
+  getGroup: (id: string) => request<unknown>(`/groups/${id}`),
+  getGroupMembers: (id: string) => request<unknown[]>(`/groups/${id}/members`),
+  getGroupMessages: (id: string) => request<unknown[]>(`/groups/${id}/messages`),
+
+  // User profile update
+  updateUser: (userId: string, data: { username?: string; avatar?: string; signature?: string }) =>
+    request<unknown>(`/auth/users/${userId}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
   startImport: (personName: string, fileContent: string) =>
     request<{ jobId: string }>('/import/start', {

@@ -60,6 +60,19 @@ export default function CharacterEdit() {
         form.setFieldsValue({
           ...char,
           basePrompt: char.profile?.basePrompt,
+          profile: {
+            ...char.profile,
+            reasoningConfig: char.profile?.reasoningConfig ?? {
+              enableCoT: true,
+              enableReflection: true,
+              enableRouting: true,
+            },
+            memory: char.profile?.memory ?? {
+              coreMemory: char.profile?.memorySummary ?? '',
+              recentSummary: '',
+              forgettingCurve: 70,
+            },
+          },
         });
       })
       .catch(() => message.error('加载失败'))

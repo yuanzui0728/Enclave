@@ -43,12 +43,7 @@ export class FeedService {
 
   async createPost(authorId: string, authorName: string, authorAvatar: string, text: string, authorType = 'user'): Promise<FeedPostEntity> {
     const post = this.postRepo.create({ authorId, authorName, authorAvatar, authorType, text });
-    const saved = await this.postRepo.save(post);
-    // Schedule AI reactions
-    if (authorType === 'user') {
-      this.scheduleAiReactions(saved);
-    }
-    return saved;
+    return this.postRepo.save(post);
   }
 
   async addComment(postId: string, authorId: string, authorName: string, authorAvatar: string, text: string, authorType = 'user'): Promise<FeedCommentEntity> {
@@ -81,25 +76,31 @@ export class FeedService {
     }
   }
 
-  private async scheduleAiReactions(post: FeedPostEntity) {
+  async getPendingAiReaction(sinceMinutes = 30): Promise<FeedPostEntity[]> {
+    const since = new Date(Date.now() - sinceMinutes * 60 * 1000);
+    return this.postRepo.find({
+      where: { aiReacted: false, authorType: 'user' },
+      order: { createdAt: 'ASC' },
+    }).then(posts => posts.filter(p => p.createdAt >= since));
+  }
+
+  async triggerAiReactionForPost(post: FeedPostEntity): Promise<void> {
     const chars = await this.characters.findAll();
-    chars.forEach((char, i) => {
-      if (Math.random() > 0.3) return;
-      const delay = (i + 1) * 20000 + Math.random() * 30000;
-      setTimeout(async () => {
-        const profile = await this.characters.getProfile(char.id);
-        if (!profile) return;
-        try {
-          const reply = await this.ai.generateReply({
-            profile,
-            conversationHistory: [],
-            userMessage: `你在视频号看到一条内容："${post.text}"，用一句话自然地评论，不超过25字。`,
-          });
-          await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
-        } catch {
-          // ignore
-        }
-      }, delay);
-    });
+    const selected = chars.filter(() => Math.random() < 0.3).slice(0, 2);
+    for (const char of selected) {
+      const profile = await this.characters.getProfile(char.id);
+      if (!profile) continue;
+      try {
+        const reply = await this.ai.generateReply({
+          profile,
+          conversationHistory: [],
+          userMessage: `你在视频号看到一条内容："${post.text}"，用一句话自然地评论，不超过25字。`,
+        });
+        await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
+      } catch {
+        // ignore
+      }
+    }
+    await this.postRepo.update(post.id, { aiReacted: true });
   }
 }

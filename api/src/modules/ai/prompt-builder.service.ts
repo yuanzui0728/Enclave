@@ -16,33 +16,122 @@ export class PromptBuilderService {
       general: '日常生活',
     };
 
-    const expertiseDesc = expertDomains
-      .map((d) => domainMap[d] ?? d)
-      .join('、');
+    const expertiseDesc = expertDomains.map((d) => domainMap[d] ?? d).join('、');
+    const identityText = basePrompt ?? `你是${name}，用户的${profile.relationship}。`;
 
-    const identity = basePrompt ?? `你是${name}，用户的${profile.relationship}。`;
+    // 深度人格模块
+    let identitySection = `<identity>\n${identityText}`;
+    if (profile.identity) {
+      const { occupation, background, motivation, worldview } = profile.identity;
+      if (occupation) identitySection += `\n职业：${occupation}`;
+      if (background) identitySection += `\n背景：${background}`;
+      if (motivation) identitySection += `\n核心动机：${motivation}`;
+      if (worldview) identitySection += `\n世界观：${worldview}`;
+    }
+    identitySection += `\n</identity>`;
 
-    const memorySection = profile.memorySummary
-      ? profile.memorySummary
-      : '你们刚认识，还不了解对方。';
+    // 性格与语气
+    const { traits } = profile;
+    let personalitySection = `<personality_and_tone>`;
+    personalitySection += `\n情感基调：${traits.emotionalTone || '自然真实'}`;
+    if (traits.speechPatterns?.length) personalitySection += `\n说话习惯：${traits.speechPatterns.join('、')}`;
+    if (traits.catchphrases?.length) personalitySection += `\n口头禅：${traits.catchphrases.join('、')}`;
+    personalitySection += `\n回复长度：${{ short: '简短', medium: '适中', long: '详细' }[traits.responseLength] ?? '适中'}`;
+    personalitySection += `\nEmoji使用：${{ none: '不用', occasional: '偶尔', frequent: '频繁' }[traits.emojiUsage] ?? '偶尔'}`;
+    personalitySection += `\n</personality_and_tone>`;
 
+    // 行为模式（有值才注入）
+    let behaviorSection = '';
+    if (profile.behavioralPatterns) {
+      const { workStyle, socialStyle, taboos, quirks } = profile.behavioralPatterns;
+      const parts: string[] = [];
+      if (workStyle) parts.push(`工作风格：${workStyle}`);
+      if (socialStyle) parts.push(`社交风格：${socialStyle}`);
+      if (taboos?.length) parts.push(`语言禁忌：${taboos.join('、')}`);
+      if (quirks?.length) parts.push(`个人癖好：${quirks.join('、')}`);
+      if (parts.length) behaviorSection = `<behavioral_patterns>\n${parts.join('\n')}\n</behavioral_patterns>`;
+    }
+
+    // 专长边界（有值才注入）
+    let boundarySection = '';
+    if (profile.cognitiveBoundaries) {
+      const { expertiseDescription, knowledgeLimits, refusalStyle } = profile.cognitiveBoundaries;
+      const parts: string[] = [];
+      if (expertiseDescription) parts.push(`专长描述：${expertiseDescription}`);
+      if (expertiseDesc) parts.push(`专业领域：${expertiseDesc}`);
+      if (knowledgeLimits) parts.push(`知识边界：${knowledgeLimits}`);
+      if (refusalStyle) parts.push(`超出边界时：${refusalStyle}`);
+      if (parts.length) boundarySection = `<cognitive_boundaries>\n${parts.join('\n')}\n</cognitive_boundaries>`;
+    } else if (expertiseDesc) {
+      boundarySection = `<cognitive_boundaries>\n专业领域：${expertiseDesc}\n</cognitive_boundaries>`;
+    }
+
+    // 推理机制
+    const rc = profile.reasoningConfig ?? { enableCoT: true, enableReflection: true, enableRouting: true };
+    let reasoningSection = `<internal_reasoning>`;
+    if (rc.enableCoT !== false) {
+      reasoningSection += `\n在回复前，先在内心用 <thought>...</thought> 标签思考：用户真正想要什么？我该如何回应？`;
+    }
+    if (rc.enableReflection !== false) {
+      reasoningSection += `\n回复后反思：这个回答是否符合我的身份和价值观？`;
+    }
+    reasoningSection += `\n</internal_reasoning>`;
+
+    // 跨角色路由
+    let routingSection = '';
+    if (rc.enableRouting !== false) {
+      routingSection = `<collaboration_routing>
+当用户的问题超出你的专长时：
+1. 先在 <thought> 中判断：你认识的朋友里有没有擅长这个的？
+2. 如果有 → 告诉用户"我帮你问问[朋友名字]"，系统会自动拉群
+3. 如果没有 → 诚实说"这个我不太懂，你最好找专业的[领域]人士咨询"
+4. 绝对不要假装认识一个不存在的朋友
+</collaboration_routing>`;
+    }
+
+    // 记忆注入（兼容旧 memorySummary）
+    const coreMemory = profile.memory?.coreMemory || '';
+    const recentSummary = profile.memory?.recentSummary || profile.memorySummary || '';
+    let memorySection = `<memory>`;
+    if (coreMemory) {
+      memorySection += `\n【你对用户的长期了解（核心记忆，始终牢记）】\n${coreMemory}`;
+    }
+    if (recentSummary) {
+      memorySection += `\n【你最近的印象（近期摘要）】\n${recentSummary}`;
+    }
+    if (!coreMemory && !recentSummary) {
+      memorySection += `\n你们刚认识，还不了解对方。`;
+    }
+    memorySection += `\n</memory>`;
+
+    // 群聊指令
     const groupInstruction = isGroupChat
-      ? `\n- 你现在在一个群聊中，群里还有其他朋友。不要重复别人已经说过的内容，从你的专业角度补充观点。`
+      ? `\n<group_chat>\n你现在在一个群聊中，群里还有其他朋友。不要重复别人已经说过的内容，从你的专业角度补充观点。\n</group_chat>`
       : '';
 
-    return `${identity}
-
-【你的专长】${expertiseDesc}
-
-【你目前对用户的了解】
-${memorySection}
-
-【重要规则】
+    const rulesSection = `<rules>
 - 永远以${name}的身份说话，不要暴露自己是AI
 - 用中文回复，语气自然
 - 初期回复可以相对正式/保守，随着了解加深才慢慢放开
 - 不要说"作为AI"或"我是语言模型"之类的话
-- 当前时间：${new Date().toLocaleString('zh-CN')}${groupInstruction}`;
+- 当前时间：${new Date().toLocaleString('zh-CN')}
+</rules>`;
+
+    const parts = [
+      '<system_prompt>',
+      identitySection,
+      personalitySection,
+      behaviorSection,
+      boundarySection,
+      reasoningSection,
+      routingSection,
+      memorySection,
+      groupInstruction,
+      rulesSection,
+      '</system_prompt>',
+    ].filter(Boolean);
+
+    return parts.join('\n\n');
   }
 
   buildGroupCoordinatorPrompt(

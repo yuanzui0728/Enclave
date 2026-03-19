@@ -57,4 +57,9 @@ export class AuthService {
     await this.userRepo.update(userId, { onboardingCompleted: true });
     return { success: true };
   }
+
+  async updateUser(userId: string, data: { username?: string; avatar?: string; signature?: string }) {
+    await this.userRepo.update(userId, data);
+    return { success: true };
+  }
 }

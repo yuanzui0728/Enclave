@@ -15,6 +15,12 @@ export class UserEntity {
   onboardingCompleted: boolean;
 
   @Column({ nullable: true })
+  avatar?: string;
+
+  @Column({ nullable: true })
+  signature?: string;
+
+  @Column({ nullable: true })
   locationLat?: number;
 
   @Column({ nullable: true })

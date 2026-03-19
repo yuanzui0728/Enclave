@@ -12,6 +12,8 @@ import { Contacts } from './pages/tabs/Contacts';
 import { Profile } from './pages/tabs/Profile';
 import { Discover } from './pages/tabs/Discover';
 import { ChatRoom } from './pages/ChatRoom';
+import { GroupChat } from './pages/GroupChat';
+import { CreateGroup } from './pages/CreateGroup';
 import { CharacterDetail } from './pages/CharacterDetail';
 import { CreateCharacter } from './pages/CreateCharacter';
 import { FriendRequests } from './pages/FriendRequests';
@@ -56,6 +58,8 @@ export default function App() {
               <Route path="/tabs/profile" element={<Profile />} />
             </Route>
             <Route path="/chat/:id" element={<ChatRoom />} />
+            <Route path="/group/:id" element={<GroupChat />} />
+            <Route path="/group/new" element={<CreateGroup />} />
             <Route path="/character/new" element={<CreateCharacter />} />
             <Route path="/character/:id" element={<CharacterDetail />} />
             <Route path="/friend-requests" element={<FriendRequests />} />

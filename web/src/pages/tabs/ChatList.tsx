@@ -20,12 +20,13 @@ export function ChatList() {
   );
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: Colors.bgMain }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: Colors.navBg, padding: '12px 16px',
-        borderBottom: `0.5px solid ${Colors.navBorder}`, flexShrink: 0,
+        backgroundColor: 'rgba(255,251,245,0.88)',
+        padding: '12px 16px',
+        borderBottom: '0.5px solid rgba(249,115,22,0.15)', flexShrink: 0,
       }}>
         <span style={{ fontSize: 17, fontWeight: 600, color: Colors.textPrimary }}>隐界</span>
         <button onClick={() => navigate('/characters')} style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -34,10 +35,12 @@ export function ChatList() {
       </div>
 
       {/* Search */}
-      <div style={{ backgroundColor: Colors.navBg, padding: '0 16px 8px', flexShrink: 0 }}>
+      <div style={{ backgroundColor: 'rgba(255,251,245,0.88)', padding: '0 16px 8px', flexShrink: 0 }}>
         <div style={{
           display: 'flex', alignItems: 'center',
-          backgroundColor: Colors.bgInput, borderRadius: 8, padding: '6px 8px',
+          backgroundColor: 'rgba(0,0,0,0.04)',
+          border: '1px solid rgba(0,0,0,0.06)',
+          borderRadius: 10, padding: '6px 8px',
         }}>
           <span style={{ fontSize: 14, marginRight: 6 }}>🔍</span>
           <input

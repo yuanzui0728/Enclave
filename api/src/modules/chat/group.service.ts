@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { CharactersService } from '../characters/characters.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -30,6 +32,8 @@ export class GroupService {
     private memberRepo: Repository<GroupMemberEntity>,
     @InjectRepository(GroupMessageEntity)
     private messageRepo: Repository<GroupMessageEntity>,
+    private readonly ai: AiOrchestratorService,
+    private readonly characters: CharactersService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<GroupEntity> {
@@ -138,5 +142,42 @@ export class GroupService {
 
     await this.messageRepo.save(message);
     return message;
+  }
+
+  async triggerAiReplies(groupId: string, userMessage: string, senderName: string): Promise<void> {
+    const members = await this.memberRepo.find({ where: { groupId, memberType: 'character' } });
+    const recentMessages = await this.messageRepo.find({
+      where: { groupId },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+    const history = recentMessages.reverse().map(m => ({ role: 'user' as const, content: `[${m.senderName}]: ${m.text}` }));
+
+    for (const member of members) {
+      const char = await this.characters.findById(member.memberId);
+      if (!char) continue;
+
+      const replyChance = char.activityFrequency === 'high' ? 0.7
+        : char.activityFrequency === 'low' ? 0.2 : 0.4;
+      if (Math.random() > replyChance) continue;
+
+      const profile = await this.characters.getProfile(member.memberId);
+      if (!profile) continue;
+
+      const delay = 5000 + Math.random() * 25000;
+      setTimeout(async () => {
+        try {
+          const reply = await this.ai.generateReply({
+            profile,
+            conversationHistory: history,
+            userMessage: `${senderName}说：${userMessage}`,
+            isGroupChat: true,
+          });
+          await this.sendMessage(groupId, char.id, 'character', char.name, reply.text, char.avatar);
+        } catch (err) {
+          this.logger.error(`AI reply failed for ${char.name} in group ${groupId}`, err);
+        }
+      }, delay);
+    }
   }
 }

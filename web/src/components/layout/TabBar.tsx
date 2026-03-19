@@ -21,10 +21,18 @@ export function TabBar() {
     <div style={{
       display: 'flex',
       flexDirection: 'row',
-      backgroundColor: Colors.navBg,
-      borderTop: `0.5px solid ${Colors.navBorder}`,
+      backgroundColor: 'rgba(255,251,245,0.92)',
+      borderTop: '0.5px solid rgba(249,115,22,0.15)',
       flexShrink: 0,
+      position: 'relative',
     }}>
+      {/* Top highlight line */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: '10%', right: '10%', height: 1,
+        background: 'linear-gradient(90deg, transparent, rgba(249,115,22,0.35), transparent)',
+        pointerEvents: 'none',
+      }} />
       {TABS.map((tab) => {
         const active = location.pathname === tab.path;
         const showBadge = tab.path === '/tabs/chat' && totalUnread > 0;
@@ -47,8 +55,31 @@ export function TabBar() {
               cursor: 'pointer',
             }}
           >
+            {/* Active top indicator */}
+            {active && (
+              <div style={{
+                position: 'absolute', top: 0, left: '50%',
+                transform: 'translateX(-50%)',
+                width: 20, height: 2, borderRadius: 1,
+                background: '#F97316',
+              }} />
+            )}
+            {/* Active bottom glow */}
+            {active && (
+              <div style={{
+                position: 'absolute', bottom: 0, left: '50%',
+                transform: 'translateX(-50%)',
+                width: 40, height: 24,
+                background: 'radial-gradient(ellipse 100% 100% at 50% 100%, rgba(249,115,22,0.45) 0%, transparent 70%)',
+                pointerEvents: 'none',
+              }} />
+            )}
             <div style={{ position: 'relative' }}>
-              <span style={{ fontSize: 22 }}>{tab.icon}</span>
+              <span style={{
+                fontSize: 22,
+                filter: active ? 'drop-shadow(0 0 6px rgba(249,115,22,0.6))' : 'none',
+                transition: 'filter 0.2s ease',
+              }}>{tab.icon}</span>
               {showBadge && (
                 <span style={{
                   position: 'absolute',
@@ -66,6 +97,7 @@ export function TabBar() {
                   justifyContent: 'center',
                   paddingLeft: 3,
                   paddingRight: 3,
+                  boxShadow: '0 0 6px rgba(248,113,113,0.5)',
                 }}>
                   {totalUnread > 99 ? '99+' : totalUnread}
                 </span>
@@ -73,8 +105,10 @@ export function TabBar() {
             </div>
             <span style={{
               fontSize: 10,
-              color: active ? Colors.primary : Colors.textLight,
+              color: active ? '#F97316' : Colors.textLight,
               fontWeight: active ? 600 : 400,
+              textShadow: active ? '0 0 8px rgba(249,115,22,0.4)' : 'none',
+              transition: 'color 0.2s ease, text-shadow 0.2s ease',
             }}>
               {tab.label}
             </span>

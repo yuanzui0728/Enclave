@@ -25,7 +25,13 @@ export function MomentCard({ moment }: MomentCardProps) {
   const comments = moment.interactions.filter((i) => i.type === 'comment');
 
   return (
-    <div style={{ backgroundColor: Colors.bgWhite, marginBottom: 8, padding: '12px 16px' }}>
+    <div style={{
+      backgroundColor: 'rgba(255,255,255,0.85)',
+      border: '0.5px solid rgba(0,0,0,0.06)',
+      borderRadius: 12,
+      margin: '0 12px 10px',
+      padding: '12px 14px',
+    }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8 }}>
         <div style={{
@@ -33,6 +39,7 @@ export function MomentCard({ moment }: MomentCardProps) {
           backgroundColor: Colors.bgInput,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginRight: 8, flexShrink: 0, fontSize: 24,
+          border: '1px solid rgba(249,115,22,0.18)',
         }}>
           {moment.authorAvatar}
         </div>
@@ -98,8 +105,9 @@ export function MomentCard({ moment }: MomentCardProps) {
       {/* Interactions */}
       {(likes.length > 0 || comments.length > 0 || isLiked) && (
         <div style={{
-          backgroundColor: 'rgba(255,255,255,0.04)',
-          borderRadius: 4, padding: 8, marginTop: 4,
+          backgroundColor: 'rgba(249,115,22,0.05)',
+          border: '0.5px solid rgba(249,115,22,0.12)',
+          borderRadius: 8, padding: 8, marginTop: 4,
         }}>
           {likes.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>

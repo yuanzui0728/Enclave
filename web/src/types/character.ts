@@ -21,4 +21,5 @@ export interface Character {
   personality: string; // short description
   isOnline: boolean;
   isTemplate: boolean;
+  currentStatus?: string;
 }

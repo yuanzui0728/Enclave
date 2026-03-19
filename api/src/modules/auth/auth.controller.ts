@@ -15,7 +15,6 @@ export class AuthController {
     return this.authService.login(body.username, body.password);
   }
 
-  // Onboarding: create user with just a name, no password
   @Post('init')
   initUser(@Body() body: { username: string }) {
     return this.authService.initUser(body.username);
@@ -24,5 +23,13 @@ export class AuthController {
   @Patch('users/:id/onboarding-complete')
   completeOnboarding(@Param('id') id: string) {
     return this.authService.completeOnboarding(id);
+  }
+
+  @Patch('users/:id')
+  updateUser(
+    @Param('id') id: string,
+    @Body() body: { username?: string; avatar?: string; signature?: string },
+  ) {
+    return this.authService.updateUser(id, body);
   }
 }

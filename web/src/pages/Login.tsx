@@ -33,22 +33,30 @@ export function Login() {
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      backgroundColor: Colors.bgMain, height: '100%',
+      backgroundColor: 'transparent', height: '100%',
       padding: '0 24px',
     }}>
-      <div style={{ fontSize: 56, fontWeight: 700, color: Colors.primaryLight, letterSpacing: 8, marginBottom: 8 }}>
+      <div style={{
+        fontSize: 56, fontWeight: 700, letterSpacing: 8, marginBottom: 8,
+        background: 'linear-gradient(135deg, #F97316 0%, #FBBF24 50%, #FB923C 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}>
         隐界
       </div>
-      <div style={{ fontSize: 13, color: 'rgba(167,139,250,0.6)', letterSpacing: 2, marginBottom: 48 }}>
+      <div style={{ fontSize: 13, color: 'rgba(249,115,22,0.7)', letterSpacing: 2, marginBottom: 48 }}>
         推开隐界，他们都在
       </div>
 
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <input
           style={{
-            backgroundColor: Colors.bgInput, borderRadius: 10,
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(249,115,22,0.20)',
+            borderRadius: 12,
             padding: '14px 12px', fontSize: 15, color: Colors.textPrimary,
-            border: `1px solid ${Colors.border}`, width: '100%',
+            width: '100%',
           }}
           placeholder="用户名"
           value={username}
@@ -58,9 +66,11 @@ export function Login() {
         />
         <input
           style={{
-            backgroundColor: Colors.bgInput, borderRadius: 10,
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(249,115,22,0.20)',
+            borderRadius: 12,
             padding: '14px 12px', fontSize: 15, color: Colors.textPrimary,
-            border: `1px solid ${Colors.border}`, width: '100%',
+            width: '100%',
           }}
           placeholder="密码"
           type="password"
@@ -75,9 +85,12 @@ export function Login() {
           onClick={() => handleAuth(false)}
           disabled={loading}
           style={{
-            backgroundColor: Colors.primary, borderRadius: 10,
+            background: 'linear-gradient(135deg, #F97316 0%, #FB923C 50%, #FBBF24 100%)',
+            boxShadow: '0 4px 20px rgba(249,115,22,0.40)',
+            borderRadius: 12,
             padding: '14px', fontSize: 15, fontWeight: 600,
             color: '#fff', marginTop: 4, cursor: loading ? 'not-allowed' : 'pointer',
+            border: 'none',
             opacity: loading ? 0.7 : 1,
           }}
         >
@@ -87,8 +100,11 @@ export function Login() {
           onClick={() => handleAuth(true)}
           disabled={loading}
           style={{
-            borderRadius: 10, padding: '14px', fontSize: 15,
-            color: Colors.textSecondary, border: `1px solid ${Colors.border}`,
+            backgroundColor: 'rgba(255,255,255,0.8)',
+            border: '1px solid rgba(249,115,22,0.18)',
+            borderRadius: 12,
+            padding: '14px', fontSize: 15,
+            color: Colors.textSecondary,
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
