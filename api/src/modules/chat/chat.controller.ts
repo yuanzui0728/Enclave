@@ -23,6 +23,11 @@ export class ChatController {
   getMessages(@Param('id') id: string) {
     return this.chatService.getMessages(id);
   }
+
+  @Post(':id/read')
+  markRead(@Param('id') id: string) {
+    return this.chatService.markConversationRead(id);
+  }
 }
 
 @Controller('groups')

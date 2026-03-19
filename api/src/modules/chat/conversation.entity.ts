@@ -17,6 +17,9 @@ export class ConversationEntity {
   @Column('simple-json')
   participants: string[];
 
+  @Column({ nullable: true })
+  lastReadAt?: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

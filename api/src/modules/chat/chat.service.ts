@@ -48,18 +48,39 @@ export class ChatService {
     return entity ? this._entityToConversation(entity) : undefined;
   }
 
-  async getConversationsByUser(userId: string): Promise<(Conversation & { lastMessage?: Message })[]> {
+  async getConversationsByUser(userId: string): Promise<(Conversation & { lastMessage?: Message; unreadCount: number })[]> {
     const convs = await this.convRepo.find({ where: { userId }, order: { updatedAt: 'DESC' } });
-    const result: (Conversation & { lastMessage?: Message })[] = [];
+    const result: (Conversation & { lastMessage?: Message; unreadCount: number })[] = [];
     for (const conv of convs) {
       const lastMsgEntity = await this.msgRepo.findOne({
         where: { conversationId: conv.id },
         order: { createdAt: 'DESC' },
       });
       const lastMessage = lastMsgEntity ? this._entityToMessage(lastMsgEntity) : undefined;
-      result.push({ ...this._entityToConversation(conv), lastMessage });
+
+      // Count unread: AI messages after lastReadAt
+      let unreadCount = 0;
+      if (conv.lastReadAt) {
+        unreadCount = await this.msgRepo.count({
+          where: {
+            conversationId: conv.id,
+            senderType: 'character',
+            createdAt: require('typeorm').MoreThan(conv.lastReadAt),
+          },
+        });
+      } else {
+        unreadCount = await this.msgRepo.count({
+          where: { conversationId: conv.id, senderType: 'character' },
+        });
+      }
+
+      result.push({ ...this._entityToConversation(conv), lastMessage, unreadCount });
     }
     return result;
+  }
+
+  async markConversationRead(convId: string): Promise<void> {
+    await this.convRepo.update({ id: convId }, { lastReadAt: new Date() });
   }
 
   async getMessages(conversationId: string): Promise<Message[]> {

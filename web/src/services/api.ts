@@ -49,6 +49,8 @@ export const api = {
 
   getConversations: (userId: string) => request<unknown[]>(`/conversations?userId=${userId}`),
   getMessages: (conversationId: string) => request<unknown[]>(`/conversations/${conversationId}/messages`),
+  markConversationRead: (conversationId: string) =>
+    request<void>(`/conversations/${conversationId}/read`, { method: 'POST' }),
   getOrCreateConversation: (userId: string, characterId: string) =>
     request<{ id: string }>('/conversations', {
       method: 'POST',

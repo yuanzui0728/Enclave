@@ -9,7 +9,7 @@ interface ChatStore {
   fetchConversations: (userId: string) => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   addMessage: (conversationId: string, message: Message) => void;
-  markAsRead: (conversationId: string) => void;
+  markAsRead: (conversationId: string) => Promise<void>;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -87,11 +87,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     });
   },
 
-  markAsRead: (conversationId) => {
+  markAsRead: async (conversationId) => {
     set((state) => ({
       conversations: state.conversations.map((c) =>
         c.id === conversationId ? { ...c, unreadCount: 0 } : c
       ),
     }));
+    try {
+      await api.markConversationRead(conversationId);
+    } catch {
+      // ignore
+    }
   },
 }));
