@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Moment } from '../types/moment';
 import { api } from '../services/api';
+import { useAuthStore } from './authStore';
 
 interface MomentsStore {
   moments: Moment[];
@@ -8,8 +9,8 @@ interface MomentsStore {
   fetchMoments: (authorId?: string) => Promise<void>;
   postMoment: (userId: string, authorName: string, authorAvatar: string, text: string) => Promise<void>;
   setMoments: (moments: Moment[]) => void;
-  toggleLike: (momentId: string) => void;
-  addComment: (momentId: string, text: string) => void;
+  toggleLike: (momentId: string) => Promise<void>;
+  addComment: (momentId: string, text: string) => Promise<void>;
 }
 
 function normalizeMoment(raw: Record<string, unknown>): Moment {
@@ -23,7 +24,7 @@ function normalizeMoment(raw: Record<string, unknown>): Moment {
   } as Moment;
 }
 
-export const useMomentsStore = create<MomentsStore>((set) => ({
+export const useMomentsStore = create<MomentsStore>((set, get) => ({
   moments: [],
   loading: false,
 
@@ -43,7 +44,10 @@ export const useMomentsStore = create<MomentsStore>((set) => ({
 
   setMoments: (moments) => set({ moments }),
 
-  toggleLike: (momentId) => {
+  toggleLike: async (momentId) => {
+    const { userId, username } = useAuthStore.getState();
+    if (!userId || !username) return;
+    // Optimistic update
     set((state) => ({
       moments: state.moments.map((m) => {
         if (m.id !== momentId) return m;
@@ -53,17 +57,28 @@ export const useMomentsStore = create<MomentsStore>((set) => ({
         return { ...m, userInteraction: { type: 'like', createdAt: new Date() } };
       }),
     }));
+    try {
+      await api.toggleMomentLike(momentId, userId, username, '🙂');
+    } catch {
+      // revert on error
+      await get().fetchMoments();
+    }
   },
 
-  addComment: (momentId, text) => {
+  addComment: async (momentId, text) => {
+    const { userId, username } = useAuthStore.getState();
+    if (!userId || !username) return;
+    // Optimistic update
     set((state) => ({
       moments: state.moments.map((m) => {
         if (m.id !== momentId) return m;
-        return {
-          ...m,
-          userInteraction: { type: 'comment', commentText: text, createdAt: new Date() },
-        };
+        return { ...m, userInteraction: { type: 'comment', commentText: text, createdAt: new Date() } };
       }),
     }));
+    try {
+      await api.addMomentComment(momentId, userId, username, '🙂', text);
+    } catch {
+      await get().fetchMoments();
+    }
   },
 }));

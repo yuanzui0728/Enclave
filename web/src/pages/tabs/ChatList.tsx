@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useChatStore } from '../../store/chatStore';
 import { useAuthStore } from '../../store/authStore';
@@ -10,6 +10,7 @@ export function ChatList() {
   const conversations = useChatStore((s) => s.conversations);
   const fetchConversations = useChatStore((s) => s.fetchConversations);
   const userId = useAuthStore((s) => s.userId);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (userId) fetchConversations(userId);
@@ -18,6 +19,10 @@ export function ChatList() {
   const sorted = [...conversations].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
+
+  const filtered = search.trim()
+    ? sorted.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
+    : sorted;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -44,26 +49,28 @@ export function ChatList() {
         }}>
           <span style={{ fontSize: 14, marginRight: 6 }}>🔍</span>
           <input
-            style={{ flex: 1, fontSize: 13, color: Colors.textPrimary, background: 'none' }}
+            style={{ flex: 1, fontSize: 13, color: Colors.textPrimary, background: 'none', border: 'none', outline: 'none' }}
             placeholder="搜索"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {sorted.map((conv, i) => (
+        {filtered.map((conv, i) => (
           <React.Fragment key={conv.id}>
             <ChatListItem
               conversation={conv}
               onPress={() => navigate(`/chat/${conv.id}`)}
             />
-            {i < sorted.length - 1 && (
+            {i < filtered.length - 1 && (
               <div style={{ height: 0.5, backgroundColor: Colors.border, marginLeft: 76 }} />
             )}
           </React.Fragment>
         ))}
-        {sorted.length === 0 && (
+        {filtered.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 80 }}>
             <span style={{ fontSize: 48, marginBottom: 16 }}>💬</span>
             <span style={{ fontSize: 15, color: Colors.textSecondary }}>还没有会话</span>
