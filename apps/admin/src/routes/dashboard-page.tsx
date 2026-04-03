@@ -2,10 +2,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import {
+  createBackup,
+  exportDiagnostics,
   getAiModel,
   getAvailableModels,
+  getSystemLogs,
   getSystemStatus,
   listCharacters,
+  restoreBackup,
   testProviderConnection,
 } from "@yinjie/contracts";
 import { providerConfigSchema, type ProviderConfig } from "@yinjie/config";
@@ -34,6 +38,11 @@ export function DashboardPage() {
     queryFn: () => getAvailableModels(baseUrl),
   });
 
+  const logsQuery = useQuery({
+    queryKey: ["admin-system-logs", baseUrl],
+    queryFn: () => getSystemLogs(baseUrl),
+  });
+
   const form = useForm<ProviderConfig>({
     resolver: zodResolver(providerConfigSchema),
     defaultValues: {
@@ -54,6 +63,18 @@ export function DashboardPage() {
         },
         baseUrl,
       ),
+  });
+
+  const exportDiagnosticsMutation = useMutation({
+    mutationFn: () => exportDiagnostics(baseUrl),
+  });
+
+  const createBackupMutation = useMutation({
+    mutationFn: () => createBackup(baseUrl),
+  });
+
+  const restoreBackupMutation = useMutation({
+    mutationFn: () => restoreBackup(baseUrl),
   });
 
   const previewCharacters = charactersQuery.data?.slice(0, 5) ?? [];
@@ -136,54 +157,117 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="bg-[color:var(--surface-console)]">
-        <SectionHeading>Provider Probe</SectionHeading>
-        <form
-          className="mt-4 space-y-4"
-          onSubmit={form.handleSubmit((values) => providerMutation.mutate(values))}
-        >
-          <label className="block text-sm text-[color:var(--text-secondary)]">
-            Endpoint
-            <input
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-              {...form.register("endpoint")}
-            />
-          </label>
-          <label className="block text-sm text-[color:var(--text-secondary)]">
-            Model
-            <input
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-              {...form.register("model")}
-            />
-          </label>
-          <label className="block text-sm text-[color:var(--text-secondary)]">
-            API Key
-            <input
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-              type="password"
-              {...form.register("apiKey")}
-            />
-          </label>
-          <button
-            className="w-full rounded-2xl bg-[linear-gradient(135deg,#f97316,#fbbf24)] px-4 py-3 text-sm font-semibold text-slate-950"
-            type="submit"
+      <div className="space-y-6">
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Provider Probe</SectionHeading>
+          <form
+            className="mt-4 space-y-4"
+            onSubmit={form.handleSubmit((values) => providerMutation.mutate(values))}
           >
-            Probe Provider
-          </button>
-        </form>
+            <label className="block text-sm text-[color:var(--text-secondary)]">
+              Endpoint
+              <input
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
+                {...form.register("endpoint")}
+              />
+            </label>
+            <label className="block text-sm text-[color:var(--text-secondary)]">
+              Model
+              <input
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
+                {...form.register("model")}
+              />
+            </label>
+            <label className="block text-sm text-[color:var(--text-secondary)]">
+              API Key
+              <input
+                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
+                type="password"
+                {...form.register("apiKey")}
+              />
+            </label>
+            <button
+              className="w-full rounded-2xl bg-[linear-gradient(135deg,#f97316,#fbbf24)] px-4 py-3 text-sm font-semibold text-slate-950"
+              type="submit"
+            >
+              Probe Provider
+            </button>
+          </form>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
-          {providerMutation.isPending && "Probing provider endpoint..."}
-          {providerMutation.isSuccess && providerMutation.data.message}
-          {providerMutation.isError &&
-            (providerMutation.error instanceof Error
-              ? providerMutation.error.message
-              : "Provider probe failed")}
-          {!providerMutation.isPending && !providerMutation.isSuccess && !providerMutation.isError
-            ? "The inference gateway will normalize cloud and local compatible providers behind one runtime queue."
-            : null}
-        </div>
-      </Card>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+            {providerMutation.isPending && "Probing provider endpoint..."}
+            {providerMutation.isSuccess && providerMutation.data.message}
+            {providerMutation.isError &&
+              (providerMutation.error instanceof Error
+                ? providerMutation.error.message
+                : "Provider probe failed")}
+            {!providerMutation.isPending && !providerMutation.isSuccess && !providerMutation.isError
+              ? "The inference gateway will normalize cloud and local compatible providers behind one runtime queue."
+              : null}
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Operations</SectionHeading>
+          <div className="mt-4 grid gap-3">
+            <button
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
+              type="button"
+              onClick={() => exportDiagnosticsMutation.mutate()}
+            >
+              Export diagnostics bundle
+            </button>
+            <button
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
+              type="button"
+              onClick={() => createBackupMutation.mutate()}
+            >
+              Create local backup
+            </button>
+            <button
+              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
+              type="button"
+              onClick={() => restoreBackupMutation.mutate()}
+            >
+              Restore backup
+            </button>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+            {exportDiagnosticsMutation.isSuccess && <div>{exportDiagnosticsMutation.data.message}</div>}
+            {createBackupMutation.isSuccess && <div>{createBackupMutation.data.message}</div>}
+            {restoreBackupMutation.isSuccess && <div>{restoreBackupMutation.data.message}</div>}
+            {exportDiagnosticsMutation.isError && exportDiagnosticsMutation.error instanceof Error && (
+              <div>{exportDiagnosticsMutation.error.message}</div>
+            )}
+            {createBackupMutation.isError && createBackupMutation.error instanceof Error && (
+              <div>{createBackupMutation.error.message}</div>
+            )}
+            {restoreBackupMutation.isError && restoreBackupMutation.error instanceof Error && (
+              <div>{restoreBackupMutation.error.message}</div>
+            )}
+            {!exportDiagnosticsMutation.isSuccess &&
+            !createBackupMutation.isSuccess &&
+            !restoreBackupMutation.isSuccess &&
+            !exportDiagnosticsMutation.isError &&
+            !createBackupMutation.isError &&
+            !restoreBackupMutation.isError
+              ? "System operations are now wired through the typed contract layer and ready for the real runtime implementation."
+              : null}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Log Index</div>
+            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+              {logsQuery.data?.map((logPath) => (
+                <div key={logPath}>{logPath}</div>
+              ))}
+              {!logsQuery.data && logsQuery.error instanceof Error && <div>{logsQuery.error.message}</div>}
+              {!logsQuery.data && !logsQuery.error ? <div>Waiting for local runtime logs.</div> : null}
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

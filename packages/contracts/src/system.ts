@@ -45,3 +45,10 @@ export interface ProviderTestResult {
   message: string;
   normalizedEndpoint?: string;
 }
+
+export interface OperationResult {
+  success: boolean;
+  message: string;
+}
+
+export type LogIndexResponse = string[];

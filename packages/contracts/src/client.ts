@@ -1,7 +1,13 @@
 import type { AuthSession, InitUserRequest, LoginRequest, SuccessResponse, RegisterRequest, UpdateUserRequest } from "./auth";
 import type { Character, CharacterDraft } from "./characters";
 import type { AiModelResponse, AvailableModelsResponse, UpdateAiModelRequest } from "./config";
-import type { ProviderTestRequest, ProviderTestResult, SystemStatus } from "./system";
+import type {
+  LogIndexResponse,
+  OperationResult,
+  ProviderTestRequest,
+  ProviderTestResult,
+  SystemStatus,
+} from "./system";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://127.0.0.1:39091";
@@ -56,6 +62,40 @@ export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: s
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getSystemLogs(baseUrl?: string) {
+  return request<LogIndexResponse>("/system/logs", undefined, baseUrl);
+}
+
+export function exportDiagnostics(baseUrl?: string) {
+  return request<OperationResult>(
+    "/system/diag/export",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function createBackup(baseUrl?: string) {
+  return request<OperationResult>(
+    "/system/backup/create",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function restoreBackup(baseUrl?: string) {
+  return request<OperationResult>(
+    "/system/backup/restore",
+    {
+      method: "POST",
     },
     baseUrl,
   );
