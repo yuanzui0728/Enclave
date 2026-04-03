@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{Path, State},
     routing::{get, post},
     Json, Router,
 };
@@ -7,11 +7,12 @@ use serde::Serialize;
 
 use crate::{
     app_state::AppState,
+    error::{ApiError, ApiResult},
     models::{
         ProviderTestRequest, ProviderTestResult, RealtimeRoomStatusRecord, RealtimeStatusRecord,
         SchedulerStatusRecord,
     },
-    realtime,
+    realtime, scheduler,
     seed::{scheduler_jobs, LEGACY_MIGRATED_MODULES, SCHEDULER_COLD_START_ENABLED},
 };
 
@@ -74,6 +75,7 @@ pub fn router() -> Router<AppState> {
         .route("/status", get(system_status))
         .route("/realtime", get(realtime_status))
         .route("/scheduler", get(scheduler_status))
+        .route("/scheduler/run/:id", post(run_scheduler_job))
         .route("/provider/test", post(provider_test))
         .route("/logs", get(log_index))
         .route("/diag/export", post(export_diag))
@@ -83,6 +85,7 @@ pub fn router() -> Router<AppState> {
 
 async fn system_status(State(state): State<AppState>) -> Json<SystemStatus> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
+    let scheduler = build_scheduler_status(&state);
 
     Json(SystemStatus {
         core_api: ServiceHealth {
@@ -124,15 +127,17 @@ async fn system_status(State(state): State<AppState>) -> Json<SystemStatus> {
             characters_count: runtime.characters.len(),
         },
         scheduler: SchedulerStatusRecord {
-            healthy: true,
-            mode: "scaffolded".into(),
-            cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
+            healthy: scheduler.healthy,
+            mode: scheduler.mode,
+            cold_start_enabled: scheduler.cold_start_enabled,
             world_snapshots: runtime.world_contexts.len(),
             last_world_snapshot_at: runtime
                 .world_contexts
                 .last()
                 .map(|context| context.timestamp.clone()),
-            jobs: scheduler_jobs(),
+            jobs: scheduler.jobs,
+            started_at: scheduler.started_at,
+            recent_runs: scheduler.recent_runs,
         },
         app_mode: std::env::var("YINJIE_APP_MODE").unwrap_or_else(|_| "development".into()),
     })
@@ -189,19 +194,21 @@ async fn provider_test(Json(payload): Json<ProviderTestRequest>) -> Json<Provide
 }
 
 async fn scheduler_status(State(state): State<AppState>) -> Json<SchedulerStatusRecord> {
-    let runtime = state.runtime.read().expect("runtime lock poisoned");
+    Json(build_scheduler_status(&state))
+}
 
-    Json(SchedulerStatusRecord {
-        healthy: true,
-        mode: "scaffolded".into(),
-        cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
-        world_snapshots: runtime.world_contexts.len(),
-        last_world_snapshot_at: runtime
-            .world_contexts
-            .last()
-            .map(|context| context.timestamp.clone()),
-        jobs: scheduler_jobs(),
-    })
+async fn run_scheduler_job(
+    Path(id): Path<String>,
+    State(state): State<AppState>,
+) -> ApiResult<Json<OperationResult>> {
+    let message = scheduler::run_job_now(state, &id)
+        .await
+        .map_err(ApiError::bad_request)?;
+
+    Ok(Json(OperationResult {
+        success: true,
+        message,
+    }))
 }
 
 async fn log_index() -> Json<Vec<String>> {
@@ -232,4 +239,38 @@ async fn restore_backup() -> Json<OperationResult> {
     success: true,
     message: "Restore workflow scaffolded. User-facing recovery guardrails will be added before release.".into(),
   })
+}
+
+fn build_scheduler_status(state: &AppState) -> SchedulerStatusRecord {
+    let runtime = state.runtime.read().expect("runtime lock poisoned");
+    let scheduler_state = state.scheduler.read().expect("scheduler lock poisoned");
+    let mut jobs = scheduler_jobs();
+
+    for job in &mut jobs {
+        if let Some(execution) = scheduler_state.jobs.get(&job.id) {
+            job.run_count = execution.run_count;
+            job.running = execution.running;
+            job.last_run_at = execution.last_run_at.clone();
+            job.last_duration_ms = execution.last_duration_ms;
+            job.last_result = execution.last_result.clone();
+        }
+    }
+
+    SchedulerStatusRecord {
+        healthy: true,
+        mode: if scheduler_state.mode.is_empty() {
+            "scaffolded".into()
+        } else {
+            scheduler_state.mode.clone()
+        },
+        cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
+        world_snapshots: runtime.world_contexts.len(),
+        last_world_snapshot_at: runtime
+            .world_contexts
+            .last()
+            .map(|context| context.timestamp.clone()),
+        jobs,
+        started_at: scheduler_state.started_at.clone(),
+        recent_runs: scheduler_state.recent_runs.clone(),
+    }
 }

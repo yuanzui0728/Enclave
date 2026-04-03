@@ -32,6 +32,11 @@ export interface SchedulerJobStatus {
   description: string;
   enabled: boolean;
   nextRunHint: string;
+  runCount: number;
+  running: boolean;
+  lastRunAt?: string;
+  lastDurationMs?: number;
+  lastResult?: string;
 }
 
 export interface SchedulerStatus {
@@ -41,6 +46,8 @@ export interface SchedulerStatus {
   worldSnapshots: number;
   lastWorldSnapshotAt?: string;
   jobs: SchedulerJobStatus[];
+  startedAt?: string;
+  recentRuns: string[];
 }
 
 export interface RealtimeRoomStatus {

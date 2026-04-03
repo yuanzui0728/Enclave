@@ -399,6 +399,11 @@ pub struct SchedulerJobRecord {
     pub description: String,
     pub enabled: bool,
     pub next_run_hint: String,
+    pub run_count: usize,
+    pub running: bool,
+    pub last_run_at: Option<String>,
+    pub last_duration_ms: Option<u64>,
+    pub last_result: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -410,6 +415,8 @@ pub struct SchedulerStatusRecord {
     pub world_snapshots: usize,
     pub last_world_snapshot_at: Option<String>,
     pub jobs: Vec<SchedulerJobRecord>,
+    pub started_at: Option<String>,
+    pub recent_runs: Vec<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

@@ -358,6 +358,13 @@ fn find_character<'a>(characters: &'a [CharacterRecord], id: &str) -> &'a Charac
 }
 
 pub fn seeded_world_context() -> WorldContextRecord {
+    build_world_context_snapshot(vec![
+        "world-context-bootstrap".into(),
+        "scheduler-parity-planning".into(),
+    ])
+}
+
+pub fn build_world_context_snapshot(recent_events: Vec<String>) -> WorldContextRecord {
     let now = chrono_like_now();
     let hour = now.0;
     let minute = now.1;
@@ -399,10 +406,7 @@ pub fn seeded_world_context() -> WorldContextRecord {
         location: None,
         season: Some(season.into()),
         holiday: holiday.map(str::to_string),
-        recent_events: Some(vec![
-            "world-context-bootstrap".into(),
-            "scheduler-parity-planning".into(),
-        ]),
+        recent_events: Some(recent_events),
         timestamp,
     }
 }
@@ -482,6 +486,11 @@ fn build_scheduler_job(
         description: description.into(),
         enabled: true,
         next_run_hint: next_run_hint.into(),
+        run_count: 0,
+        running: false,
+        last_run_at: None,
+        last_duration_ms: None,
+        last_result: None,
     }
 }
 

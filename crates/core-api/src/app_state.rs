@@ -20,6 +20,7 @@ pub struct AppState {
     pub database_path: PathBuf,
     pub runtime: Arc<RwLock<RuntimeState>>,
     pub realtime: Arc<RwLock<RealtimeState>>,
+    pub scheduler: Arc<RwLock<SchedulerState>>,
 }
 
 pub struct RuntimeState {
@@ -51,6 +52,23 @@ pub struct RealtimeState {
     pub last_message_at: Option<String>,
 }
 
+#[derive(Default)]
+pub struct SchedulerJobRuntimeState {
+    pub run_count: usize,
+    pub running: bool,
+    pub last_run_at: Option<String>,
+    pub last_duration_ms: Option<u64>,
+    pub last_result: Option<String>,
+}
+
+#[derive(Default)]
+pub struct SchedulerState {
+    pub mode: String,
+    pub started_at: Option<String>,
+    pub recent_runs: Vec<String>,
+    pub jobs: HashMap<String, SchedulerJobRuntimeState>,
+}
+
 impl AppState {
     pub fn new(port: u16, database_path: PathBuf) -> Self {
         Self {
@@ -58,6 +76,10 @@ impl AppState {
             database_path,
             runtime: Arc::new(RwLock::new(RuntimeState::seeded())),
             realtime: Arc::new(RwLock::new(RealtimeState::default())),
+            scheduler: Arc::new(RwLock::new(SchedulerState {
+                mode: "scaffolded".into(),
+                ..SchedulerState::default()
+            })),
         }
     }
 }

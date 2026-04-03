@@ -3,6 +3,7 @@ mod error;
 mod models;
 mod realtime;
 mod routes;
+mod scheduler;
 mod seed;
 
 use std::{net::SocketAddr, path::PathBuf};
@@ -31,6 +32,7 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(port, database_path);
     let (socket_layer, io) = SocketIo::new_layer();
     realtime::install(io, state.clone());
+    scheduler::install(state.clone());
 
     let router = Router::new()
         .route("/health", get(health))

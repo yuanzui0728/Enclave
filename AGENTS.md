@@ -52,6 +52,7 @@
 - `GET /system/realtime`
 - `POST /system/provider/test`
 - `GET /system/scheduler`
+- `POST /system/scheduler/run/:id`
 - `GET /system/logs`
 - `POST /system/diag/export`
 - `POST /system/backup/create`
@@ -131,6 +132,17 @@
 - `typing_start`
 - `typing_stop`
 - `conversation_updated`
+
+当前 scheduler 已有真实执行切片：
+
+- world context 更新
+- friend request 过期
+- AI 在线状态刷新
+- character activity 刷新
+- moments 调度
+- scene friend request 触发
+- feed 待处理互动
+- memory proactive messages
 
 ## 业务兼容要求（迁移期间保持）
 

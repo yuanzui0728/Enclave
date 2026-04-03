@@ -102,6 +102,16 @@ export function getSchedulerStatus(baseUrl?: string) {
   return request<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
 }
 
+export function runSchedulerJob(id: string, baseUrl?: string) {
+  return request<OperationResult>(
+    `/system/scheduler/run/${encodeURIComponent(id)}`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function getRealtimeStatus(baseUrl?: string) {
   return request<RealtimeStatus>("/system/realtime", undefined, baseUrl);
 }

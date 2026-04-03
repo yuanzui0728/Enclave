@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import {
   CHAT_EVENTS,
@@ -17,6 +17,7 @@ import {
   getSystemStatus,
   listCharacters,
   restoreBackup,
+  runSchedulerJob,
   testProviderConnection,
 } from "@yinjie/contracts";
 import { providerConfigSchema, type ProviderConfig } from "@yinjie/config";
@@ -24,6 +25,7 @@ import { Card, SectionHeading, StatusPill } from "@yinjie/ui";
 
 export function DashboardPage() {
   const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const queryClient = useQueryClient();
 
   const statusQuery = useQuery({
     queryKey: ["admin-system-status", baseUrl],
@@ -109,9 +111,23 @@ export function DashboardPage() {
     mutationFn: () => restoreBackup(baseUrl),
   });
 
+  const schedulerRunMutation = useMutation({
+    mutationFn: (jobId: string) => runSchedulerJob(jobId, baseUrl),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-world-context", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-scheduler-status", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-moments", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-feed", baseUrl] }),
+      ]);
+    },
+  });
+
   const previewCharacters = charactersQuery.data?.slice(0, 5) ?? [];
   const previewMoments = momentsQuery.data?.slice(0, 3) ?? [];
   const previewFeedPosts = feedQuery.data?.posts.slice(0, 3) ?? [];
+  const runningSchedulerJobId = schedulerRunMutation.isPending ? schedulerRunMutation.variables : null;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
@@ -131,9 +147,7 @@ export function DashboardPage() {
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Inference Queue</div>
-              <div className="mt-2 text-2xl font-semibold">
-                {statusQuery.data?.inferenceGateway.queueDepth ?? 0}
-              </div>
+              <div className="mt-2 text-2xl font-semibold">{statusQuery.data?.inferenceGateway.queueDepth ?? 0}</div>
               <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
                 max concurrency: {statusQuery.data?.inferenceGateway.maxConcurrency ?? 0}
               </div>
@@ -162,7 +176,7 @@ export function DashboardPage() {
               <div className="mt-2 text-2xl font-semibold">{worldContextQuery.data?.localTime ?? "pending"}</div>
               <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
                 {worldContextQuery.data?.season
-                  ? `season=${worldContextQuery.data.season} · holiday=${worldContextQuery.data.holiday ?? "none"}`
+                  ? `season=${worldContextQuery.data.season} / holiday=${worldContextQuery.data.holiday ?? "none"}`
                   : "Latest world snapshot is not available yet."}
               </div>
             </div>
@@ -170,8 +184,8 @@ export function DashboardPage() {
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
             This control plane is now aligned with the shared contract layer. The migrated compatibility surface covers
-            config, auth, characters, social, chat, moments, feed, and world context, while scheduler parity is being
-            surfaced here first as an operational view before full runtime execution lands in Rust.
+            config, auth, characters, social, chat, moments, feed, and world context. Scheduler parity now has a live
+            Rust execution slice with runtime stats and manual triggers wired into this dashboard.
           </div>
         </Card>
 
@@ -217,7 +231,7 @@ export function DashboardPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-white">{moment.authorName}</div>
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {moment.likeCount} likes 路 {moment.commentCount} comments
+                        {moment.likeCount} likes / {moment.commentCount} comments
                       </div>
                     </div>
                     <div className="mt-2 line-clamp-3">{moment.text}</div>
@@ -251,7 +265,7 @@ export function DashboardPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="font-semibold text-white">{post.authorName}</div>
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {post.likeCount} likes 路 {post.commentCount} comments
+                        {post.likeCount} likes / {post.commentCount} comments
                       </div>
                     </div>
                     <div className="mt-2 line-clamp-3">{post.text}</div>
@@ -273,24 +287,85 @@ export function DashboardPage() {
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Scheduler Surface</SectionHeading>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Mode</div>
+              <div className="mt-2 text-lg font-semibold text-white">{schedulerQuery.data?.mode ?? "pending"}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">World Snapshots</div>
+              <div className="mt-2 text-lg font-semibold text-white">
+                {schedulerQuery.data?.worldSnapshots ?? statusQuery.data?.scheduler.worldSnapshots ?? 0}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Recent Runs</div>
+              <div className="mt-2 text-lg font-semibold text-white">{schedulerQuery.data?.recentRuns.length ?? 0}</div>
+            </div>
+          </div>
+
           <div className="mt-4 grid gap-3">
             {schedulerQuery.data?.jobs.map((job) => (
               <div
                 key={job.id}
                 className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-white">{job.name}</div>
-                  <StatusPill tone={job.enabled ? "healthy" : "warning"}>
-                    {job.enabled ? "enabled" : "disabled"}
-                  </StatusPill>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-white">{job.name}</div>
+                    <div className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {job.id}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <StatusPill tone={job.running ? "warning" : job.enabled ? "healthy" : "warning"}>
+                      {job.running ? "running" : job.enabled ? "enabled" : "disabled"}
+                    </StatusPill>
+                    <button
+                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      type="button"
+                      disabled={!job.enabled || job.running || schedulerRunMutation.isPending}
+                      onClick={() => schedulerRunMutation.mutate(job.id)}
+                    >
+                      {runningSchedulerJobId === job.id ? "Running..." : "Run now"}
+                    </button>
+                  </div>
                 </div>
+
                 <div className="mt-2">{job.description}</div>
                 <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                  {job.cadence} · {job.nextRunHint}
+                  {job.cadence} / {job.nextRunHint}
+                </div>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                    runs: {job.runCount}
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                    duration: {job.lastDurationMs ? `${job.lastDurationMs} ms` : "not yet run"}
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                    last run: {job.lastRunAt ?? "not yet run"}
+                  </div>
+                </div>
+                <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-3 py-2 text-sm text-[color:var(--text-secondary)]">
+                  {job.lastResult ?? "No execution result recorded yet."}
                 </div>
               </div>
             ))}
+
+            {schedulerRunMutation.isSuccess && (
+              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                {schedulerRunMutation.data.message}
+              </div>
+            )}
+            {schedulerRunMutation.isError && (
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                {schedulerRunMutation.error instanceof Error
+                  ? schedulerRunMutation.error.message
+                  : "Scheduler run failed."}
+              </div>
+            )}
             {!schedulerQuery.data && schedulerQuery.error instanceof Error && (
               <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
                 {schedulerQuery.error.message}
@@ -301,6 +376,18 @@ export function DashboardPage() {
                 Waiting for scheduler parity data.
               </div>
             )}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent scheduler runs</div>
+            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+              {schedulerQuery.data?.recentRuns.map((event) => (
+                <div key={event}>{event}</div>
+              ))}
+              {schedulerQuery.data && schedulerQuery.data.recentRuns.length === 0 && (
+                <div>No scheduler jobs have been executed yet.</div>
+              )}
+            </div>
           </div>
         </Card>
 
