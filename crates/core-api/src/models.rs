@@ -599,3 +599,204 @@ pub struct SendGroupMessagePayload {
     pub sender_avatar: Option<String>,
     pub text: String,
 }
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentPostRecord {
+    pub id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub location: Option<String>,
+    pub posted_at: String,
+    pub like_count: usize,
+    pub comment_count: usize,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentCommentRecord {
+    pub id: String,
+    pub post_id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentLikeRecord {
+    pub id: String,
+    pub post_id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentInteractionRecord {
+    pub character_id: String,
+    pub character_name: String,
+    pub r#type: String,
+    pub comment_text: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentRecord {
+    pub id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub location: Option<String>,
+    pub posted_at: String,
+    pub like_count: usize,
+    pub comment_count: usize,
+    pub likes: Vec<MomentLikeRecord>,
+    pub comments: Vec<MomentCommentRecord>,
+    pub interactions: Vec<MomentInteractionRecord>,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateUserMomentPayload {
+    pub user_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub text: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateMomentCommentPayload {
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub text: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToggleMomentLikePayload {
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+}
+
+#[derive(Clone, Serialize)]
+pub struct ToggleMomentLikeResult {
+    pub liked: bool,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MomentsQuery {
+    pub author_id: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedPostRecord {
+    pub id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub media_url: Option<String>,
+    pub media_type: String,
+    pub like_count: usize,
+    pub comment_count: usize,
+    pub ai_reacted: bool,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedCommentRecord {
+    pub id: String,
+    pub post_id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedInteractionRecord {
+    pub id: String,
+    pub user_id: String,
+    pub post_id: String,
+    pub r#type: String,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedPostWithCommentsRecord {
+    pub id: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub author_type: String,
+    pub text: String,
+    pub media_url: Option<String>,
+    pub media_type: String,
+    pub like_count: usize,
+    pub comment_count: usize,
+    pub ai_reacted: bool,
+    pub created_at: String,
+    pub comments: Vec<FeedCommentRecord>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedListResponse {
+    pub posts: Vec<FeedPostRecord>,
+    pub total: usize,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateFeedPostPayload {
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub text: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateFeedCommentPayload {
+    pub author_id: String,
+    pub author_name: String,
+    pub author_avatar: String,
+    pub text: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LikeFeedPostPayload {
+    pub user_id: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeedQuery {
+    pub page: Option<usize>,
+    pub limit: Option<usize>,
+}

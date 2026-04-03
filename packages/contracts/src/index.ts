@@ -4,6 +4,8 @@ export * from "./chat";
 export * from "./characters";
 export * from "./client";
 export * from "./config";
+export * from "./feed";
+export * from "./moments";
 export * from "./social";
 export * from "./system";
 export * from "./world";

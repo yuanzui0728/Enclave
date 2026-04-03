@@ -89,6 +89,18 @@
 - `POST /api/characters`
 - `PATCH /api/characters/:id`
 - `DELETE /api/characters/:id`
+- `GET /api/moments`
+- `POST /api/moments/user-post`
+- `GET /api/moments/:id`
+- `POST /api/moments/generate/:characterId`
+- `POST /api/moments/generate-all`
+- `POST /api/moments/:id/comment`
+- `POST /api/moments/:id/like`
+- `GET /api/feed`
+- `GET /api/feed/:id`
+- `POST /api/feed`
+- `POST /api/feed/:id/comment`
+- `POST /api/feed/:id/like`
 
 ## 共享契约状态（packages/contracts）
 
@@ -98,6 +110,8 @@
 - `world`
 - `social`
 - `chat`
+- `moments`
+- `feed`
 - `auth`
 - `config`
 - `characters`

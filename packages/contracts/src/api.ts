@@ -12,6 +12,6 @@ export const LEGACY_HTTP_SURFACE = [
   "/api/world/*",
 ] as const;
 
-export const LEGACY_MIGRATED_MODULES = ["config", "auth", "characters", "world", "social", "chat"] as const;
+export const LEGACY_MIGRATED_MODULES = ["config", "auth", "characters", "world", "social", "chat", "moments", "feed"] as const;
 
 export type LegacyMigratedModule = (typeof LEGACY_MIGRATED_MODULES)[number];

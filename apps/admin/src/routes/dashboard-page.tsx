@@ -8,7 +8,9 @@ import {
   exportDiagnostics,
   getAiModel,
   getAvailableModels,
+  getFeed,
   getLatestWorldContext,
+  getMoments,
   getSchedulerStatus,
   getSystemLogs,
   getSystemStatus,
@@ -57,6 +59,16 @@ export function DashboardPage() {
     queryFn: () => getSchedulerStatus(baseUrl),
   });
 
+  const momentsQuery = useQuery({
+    queryKey: ["admin-moments", baseUrl],
+    queryFn: () => getMoments(undefined, baseUrl),
+  });
+
+  const feedQuery = useQuery({
+    queryKey: ["admin-feed", baseUrl],
+    queryFn: () => getFeed(1, 6, baseUrl),
+  });
+
   const form = useForm<ProviderConfig>({
     resolver: zodResolver(providerConfigSchema),
     defaultValues: {
@@ -92,6 +104,8 @@ export function DashboardPage() {
   });
 
   const previewCharacters = charactersQuery.data?.slice(0, 5) ?? [];
+  const previewMoments = momentsQuery.data?.slice(0, 3) ?? [];
+  const previewFeedPosts = feedQuery.data?.posts.slice(0, 3) ?? [];
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
@@ -149,9 +163,9 @@ export function DashboardPage() {
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
-            This control plane is now aligned with the shared contract layer. The migrated compatibility surface
-            covers config, auth, characters, and world context, while scheduler parity is being surfaced here first as
-            an operational view before full runtime execution lands in Rust.
+            This control plane is now aligned with the shared contract layer. The migrated compatibility surface covers
+            config, auth, characters, social, chat, moments, feed, and world context, while scheduler parity is being
+            surfaced here first as an operational view before full runtime execution lands in Rust.
           </div>
         </Card>
 
@@ -180,6 +194,76 @@ export function DashboardPage() {
             )}
           </div>
         </Card>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>Moments Surface</SectionHeading>
+            <div className="mt-4 text-sm text-[color:var(--text-secondary)]">
+              total posts: {momentsQuery.data?.length ?? 0}
+            </div>
+            <div className="mt-4 space-y-3">
+              {previewMoments.length > 0 ? (
+                previewMoments.map((moment) => (
+                  <div
+                    key={moment.id}
+                    className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-semibold text-white">{moment.authorName}</div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        {moment.likeCount} likes 路 {moment.commentCount} comments
+                      </div>
+                    </div>
+                    <div className="mt-2 line-clamp-3">{moment.text}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {moment.id}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                  {momentsQuery.error instanceof Error
+                    ? momentsQuery.error.message
+                    : "Moments compatibility routes are online once the new Core API process is running."}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>Feed Surface</SectionHeading>
+            <div className="mt-4 text-sm text-[color:var(--text-secondary)]">
+              total posts: {feedQuery.data?.total ?? 0}
+            </div>
+            <div className="mt-4 space-y-3">
+              {previewFeedPosts.length > 0 ? (
+                previewFeedPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-semibold text-white">{post.authorName}</div>
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        {post.likeCount} likes 路 {post.commentCount} comments
+                      </div>
+                    </div>
+                    <div className="mt-2 line-clamp-3">{post.text}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {post.id}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                  {feedQuery.error instanceof Error
+                    ? feedQuery.error.message
+                    : "Feed compatibility routes are online once the new Core API process is running."}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Scheduler Surface</SectionHeading>

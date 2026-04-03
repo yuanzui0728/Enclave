@@ -6,11 +6,12 @@ use std::{
 
 use crate::{
     models::{
-        AppConfigStore, CharacterRecord, ConversationRecord, FriendRequestRecord, FriendshipRecord,
-        GroupMemberRecord, GroupMessageRecord, GroupRecord, MessageRecord, UserRecord,
-        WorldContextRecord,
+        AppConfigStore, CharacterRecord, ConversationRecord, FeedCommentRecord,
+        FeedInteractionRecord, FeedPostRecord, FriendRequestRecord, FriendshipRecord,
+        GroupMemberRecord, GroupMessageRecord, GroupRecord, MessageRecord, MomentCommentRecord,
+        MomentLikeRecord, MomentPostRecord, UserRecord, WorldContextRecord,
     },
-    seed::{seeded_characters, seeded_world_context},
+    seed::{seeded_characters, seeded_feed_stream, seeded_moments, seeded_world_context},
 };
 
 #[derive(Clone)]
@@ -28,6 +29,12 @@ pub struct RuntimeState {
     pub groups: HashMap<String, GroupRecord>,
     pub group_members: HashMap<String, Vec<GroupMemberRecord>>,
     pub group_messages: HashMap<String, Vec<GroupMessageRecord>>,
+    pub moment_posts: HashMap<String, MomentPostRecord>,
+    pub moment_comments: HashMap<String, Vec<MomentCommentRecord>>,
+    pub moment_likes: HashMap<String, Vec<MomentLikeRecord>>,
+    pub feed_posts: HashMap<String, FeedPostRecord>,
+    pub feed_comments: HashMap<String, Vec<FeedCommentRecord>>,
+    pub feed_interactions: HashMap<String, Vec<FeedInteractionRecord>>,
     pub friend_requests: HashMap<String, FriendRequestRecord>,
     pub friendships: HashMap<String, FriendshipRecord>,
     pub world_contexts: Vec<WorldContextRecord>,
@@ -46,7 +53,11 @@ impl AppState {
 
 impl RuntimeState {
     fn seeded() -> Self {
-        let characters = seeded_characters()
+        let seeded_characters = seeded_characters();
+        let (moment_posts, moment_comments, moment_likes) = seeded_moments(&seeded_characters);
+        let (feed_posts, feed_comments, feed_interactions) = seeded_feed_stream(&seeded_characters);
+
+        let characters = seeded_characters
             .into_iter()
             .map(|character| (character.id.clone(), character))
             .collect();
@@ -59,6 +70,12 @@ impl RuntimeState {
             groups: HashMap::new(),
             group_members: HashMap::new(),
             group_messages: HashMap::new(),
+            moment_posts,
+            moment_comments,
+            moment_likes,
+            feed_posts,
+            feed_comments,
+            feed_interactions,
             friend_requests: HashMap::new(),
             friendships: HashMap::new(),
             world_contexts: vec![seeded_world_context()],

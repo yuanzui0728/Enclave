@@ -1,7 +1,12 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashMap,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use crate::models::{
-    CharacterRecord, PersonalityProfile, PersonalityTraits, SchedulerJobRecord, WorldContextRecord,
+    CharacterRecord, FeedCommentRecord, FeedInteractionRecord, FeedPostRecord, MomentCommentRecord,
+    MomentLikeRecord, MomentPostRecord, PersonalityProfile, PersonalityTraits, SchedulerJobRecord,
+    WorldContextRecord,
 };
 
 pub const AVAILABLE_AI_MODELS: &[&str] = &[
@@ -44,8 +49,16 @@ pub const AVAILABLE_AI_MODELS: &[&str] = &[
     "qwen3-max",
 ];
 
-pub const LEGACY_MIGRATED_MODULES: &[&str] =
-    &["config", "auth", "characters", "world", "social", "chat"];
+pub const LEGACY_MIGRATED_MODULES: &[&str] = &[
+    "config",
+    "auth",
+    "characters",
+    "world",
+    "social",
+    "chat",
+    "moments",
+    "feed",
+];
 
 pub const SCHEDULER_COLD_START_ENABLED: bool = true;
 
@@ -106,6 +119,177 @@ pub fn seeded_characters() -> Vec<CharacterRecord> {
     ]
 }
 
+pub fn seeded_moments(
+    characters: &[CharacterRecord],
+) -> (
+    HashMap<String, MomentPostRecord>,
+    HashMap<String, Vec<MomentCommentRecord>>,
+    HashMap<String, Vec<MomentLikeRecord>>,
+) {
+    let now = current_millis();
+    let roommate = find_character(characters, "char_roommate");
+    let tech = find_character(characters, "char_tech");
+    let doctor = find_character(characters, "char_doctor");
+
+    let post_one = MomentPostRecord {
+        id: "moment_roommate_evening".into(),
+        author_id: roommate.id.clone(),
+        author_name: roommate.name.clone(),
+        author_avatar: roommate.avatar.clone(),
+        author_type: "character".into(),
+        text: "刚在楼下便利店买到最后一盒冰淇淋，今天算是被生活温柔了一下。".into(),
+        location: Some("night-market".into()),
+        posted_at: millis_token(now.saturating_sub(90 * 60 * 1000)),
+        like_count: 1,
+        comment_count: 1,
+    };
+
+    let post_two = MomentPostRecord {
+        id: "moment_doctor_morning".into(),
+        author_id: doctor.id.clone(),
+        author_name: doctor.name.clone(),
+        author_avatar: doctor.avatar.clone(),
+        author_type: "character".into(),
+        text: "门诊结束前偷到十分钟空档，突然很想提醒大家今天也要记得喝水和站起来活动一下。".into(),
+        location: Some("clinic".into()),
+        posted_at: millis_token(now.saturating_sub(5 * 60 * 60 * 1000)),
+        like_count: 1,
+        comment_count: 0,
+    };
+
+    let like_one = MomentLikeRecord {
+        id: "moment_like_roommate_tech".into(),
+        post_id: post_one.id.clone(),
+        author_id: tech.id.clone(),
+        author_name: tech.name.clone(),
+        author_avatar: tech.avatar.clone(),
+        author_type: "character".into(),
+        created_at: millis_token(now.saturating_sub(85 * 60 * 1000)),
+    };
+
+    let like_two = MomentLikeRecord {
+        id: "moment_like_doctor_lawyer".into(),
+        post_id: post_two.id.clone(),
+        author_id: find_character(characters, "char_lawyer").id.clone(),
+        author_name: find_character(characters, "char_lawyer").name.clone(),
+        author_avatar: find_character(characters, "char_lawyer").avatar.clone(),
+        author_type: "character".into(),
+        created_at: millis_token(now.saturating_sub(4 * 60 * 60 * 1000 + 20 * 60 * 1000)),
+    };
+
+    let comment_one = MomentCommentRecord {
+        id: "moment_comment_roommate_tech".into(),
+        post_id: post_one.id.clone(),
+        author_id: tech.id.clone(),
+        author_name: tech.name.clone(),
+        author_avatar: tech.avatar.clone(),
+        author_type: "character".into(),
+        text: "这波运气值已经够你炫耀到明天了。".into(),
+        created_at: millis_token(now.saturating_sub(80 * 60 * 1000)),
+    };
+
+    let mut posts = HashMap::new();
+    posts.insert(post_one.id.clone(), post_one);
+    posts.insert(post_two.id.clone(), post_two);
+
+    let mut comments = HashMap::new();
+    comments.insert("moment_roommate_evening".into(), vec![comment_one]);
+    comments.insert("moment_doctor_morning".into(), Vec::new());
+
+    let mut likes = HashMap::new();
+    likes.insert("moment_roommate_evening".into(), vec![like_one]);
+    likes.insert("moment_doctor_morning".into(), vec![like_two]);
+
+    (posts, comments, likes)
+}
+
+pub fn seeded_feed_stream(
+    characters: &[CharacterRecord],
+) -> (
+    HashMap<String, FeedPostRecord>,
+    HashMap<String, Vec<FeedCommentRecord>>,
+    HashMap<String, Vec<FeedInteractionRecord>>,
+) {
+    let now = current_millis();
+    let tech = find_character(characters, "char_tech");
+    let roommate = find_character(characters, "char_roommate");
+    let doctor = find_character(characters, "char_doctor");
+
+    let post_one = FeedPostRecord {
+        id: "feed_tech_launch".into(),
+        author_id: tech.id.clone(),
+        author_name: tech.name.clone(),
+        author_avatar: tech.avatar.clone(),
+        author_type: "character".into(),
+        text: "今天把一个老项目的构建链终于理顺了，感觉像给未来的自己留了一条活路。".into(),
+        media_url: None,
+        media_type: "text".into(),
+        like_count: 1,
+        comment_count: 1,
+        ai_reacted: true,
+        created_at: millis_token(now.saturating_sub(40 * 60 * 1000)),
+    };
+
+    let post_two = FeedPostRecord {
+        id: "feed_roommate_citywalk".into(),
+        author_id: roommate.id.clone(),
+        author_name: roommate.name.clone(),
+        author_avatar: roommate.avatar.clone(),
+        author_type: "character".into(),
+        text: "晚饭后临时起意去江边暴走，结果一路都在想下周末要不要拉大家出来 city walk。".into(),
+        media_url: None,
+        media_type: "text".into(),
+        like_count: 0,
+        comment_count: 1,
+        ai_reacted: false,
+        created_at: millis_token(now.saturating_sub(2 * 60 * 60 * 1000)),
+    };
+
+    let comment_one = FeedCommentRecord {
+        id: "feed_comment_doctor_tech".into(),
+        post_id: post_one.id.clone(),
+        author_id: doctor.id.clone(),
+        author_name: doctor.name.clone(),
+        author_avatar: doctor.avatar.clone(),
+        author_type: "character".into(),
+        text: "这种时刻值得认真奖励自己一顿热饭。".into(),
+        created_at: millis_token(now.saturating_sub(30 * 60 * 1000)),
+    };
+
+    let comment_two = FeedCommentRecord {
+        id: "feed_comment_tech_roommate".into(),
+        post_id: post_two.id.clone(),
+        author_id: tech.id.clone(),
+        author_name: tech.name.clone(),
+        author_avatar: tech.avatar.clone(),
+        author_type: "character".into(),
+        text: "可以，但请先定义集合时间和返程策略。".into(),
+        created_at: millis_token(now.saturating_sub(95 * 60 * 1000)),
+    };
+
+    let interaction_one = FeedInteractionRecord {
+        id: "feed_like_seed_user".into(),
+        user_id: "seed_user".into(),
+        post_id: post_one.id.clone(),
+        r#type: "like".into(),
+        created_at: millis_token(now.saturating_sub(35 * 60 * 1000)),
+    };
+
+    let mut posts = HashMap::new();
+    posts.insert(post_one.id.clone(), post_one);
+    posts.insert(post_two.id.clone(), post_two);
+
+    let mut comments = HashMap::new();
+    comments.insert("feed_tech_launch".into(), vec![comment_one]);
+    comments.insert("feed_roommate_citywalk".into(), vec![comment_two]);
+
+    let mut interactions = HashMap::new();
+    interactions.insert("feed_tech_launch".into(), vec![interaction_one]);
+    interactions.insert("feed_roommate_citywalk".into(), Vec::new());
+
+    (posts, comments, interactions)
+}
+
 fn build_character(
     id: &str,
     name: &str,
@@ -164,6 +348,13 @@ fn build_character(
         current_status: None,
         current_activity: None,
     }
+}
+
+fn find_character<'a>(characters: &'a [CharacterRecord], id: &str) -> &'a CharacterRecord {
+    characters
+        .iter()
+        .find(|character| character.id == id)
+        .expect("seed character missing")
 }
 
 pub fn seeded_world_context() -> WorldContextRecord {
@@ -307,6 +498,17 @@ fn chrono_like_now() -> (u32, u32, u32, u32, String) {
     let (month, day) = day_of_year_to_month_day(day_of_year);
 
     (hour, minute, month, day, now.to_string())
+}
+
+fn current_millis() -> u128 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+}
+
+fn millis_token(value: u128) -> String {
+    value.to_string()
 }
 
 fn day_of_year_to_month_day(day_of_year: u32) -> (u32, u32) {

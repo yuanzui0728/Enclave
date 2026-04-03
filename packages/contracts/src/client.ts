@@ -14,6 +14,23 @@ import type {
 import type { Character, CharacterDraft } from "./characters";
 import type { AiModelResponse, AvailableModelsResponse, UpdateAiModelRequest } from "./config";
 import type {
+  CreateFeedCommentRequest,
+  FeedComment,
+  CreateFeedPostRequest,
+  FeedListResponse,
+  FeedPost,
+  FeedPostWithComments,
+  LikeFeedPostRequest,
+} from "./feed";
+import type {
+  CreateMomentCommentRequest,
+  CreateUserMomentRequest,
+  Moment,
+  MomentComment,
+  ToggleMomentLikeRequest,
+  ToggleMomentLikeResult,
+} from "./moments";
+import type {
   AcceptFriendRequestRequest,
   DeclineFriendRequestRequest,
   FriendListItem,
@@ -352,6 +369,113 @@ export function declineFriendRequest(id: string, payload: DeclineFriendRequestRe
 
 export function getFriends(userId: string, baseUrl?: string) {
   return requestLegacyApi<FriendListItem[]>(`/social/friends?userId=${encodeURIComponent(userId)}`, undefined, baseUrl);
+}
+
+export function getMoments(authorId?: string, baseUrl?: string) {
+  const path = authorId ? `/moments?authorId=${encodeURIComponent(authorId)}` : "/moments";
+  return requestLegacyApi<Moment[]>(path, undefined, baseUrl);
+}
+
+export function getMoment(id: string, baseUrl?: string) {
+  return requestLegacyApi<Moment | null>(`/moments/${id}`, undefined, baseUrl);
+}
+
+export function createUserMoment(payload: CreateUserMomentRequest, baseUrl?: string) {
+  return requestLegacyApi<Moment>(
+    "/moments/user-post",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function addMomentComment(id: string, payload: CreateMomentCommentRequest, baseUrl?: string) {
+  return requestLegacyApi<MomentComment>(
+    `/moments/${id}/comment`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function toggleMomentLike(id: string, payload: ToggleMomentLikeRequest, baseUrl?: string) {
+  return requestLegacyApi<ToggleMomentLikeResult>(
+    `/moments/${id}/like`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function generateMoment(characterId: string, baseUrl?: string) {
+  return requestLegacyApi<Moment | null>(
+    `/moments/generate/${characterId}`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function generateAllMoments(baseUrl?: string) {
+  return requestLegacyApi<Moment[]>(
+    "/moments/generate-all",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function getFeed(page = 1, limit = 20, baseUrl?: string) {
+  return requestLegacyApi<FeedListResponse>(
+    `/feed?page=${encodeURIComponent(String(page))}&limit=${encodeURIComponent(String(limit))}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getFeedPost(id: string, baseUrl?: string) {
+  return requestLegacyApi<FeedPostWithComments | null>(`/feed/${id}`, undefined, baseUrl);
+}
+
+export function createFeedPost(payload: CreateFeedPostRequest, baseUrl?: string) {
+  return requestLegacyApi<FeedPost>(
+    "/feed",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function addFeedComment(id: string, payload: CreateFeedCommentRequest, baseUrl?: string) {
+  return requestLegacyApi<FeedComment>(
+    `/feed/${id}/comment`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function likeFeedPost(id: string, payload: LikeFeedPostRequest, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/like`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
 }
 
 export function shake(payload: ShakeRequest, baseUrl?: string) {
