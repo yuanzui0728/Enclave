@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "隐界",
+  "productName": "Yinjie",
   "version": "0.1.0",
   "identifier": "com.yinjie.runtime",
   "build": {
@@ -26,8 +26,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": []
+    "targets": "msi",
+    "icon": ["icons/icon.ico", "icons/icon.png"]
   },
   "plugins": {
     "updater": {
