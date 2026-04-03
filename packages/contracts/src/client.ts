@@ -45,6 +45,7 @@ import type {
   OperationResult,
   ProviderTestRequest,
   ProviderTestResult,
+  RealtimeStatus,
   SchedulerStatus,
   SystemStatus,
 } from "./system";
@@ -99,6 +100,10 @@ export function getSystemStatus(baseUrl?: string) {
 
 export function getSchedulerStatus(baseUrl?: string) {
   return request<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
+}
+
+export function getRealtimeStatus(baseUrl?: string) {
+  return request<RealtimeStatus>("/system/realtime", undefined, baseUrl);
 }
 
 export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: string) {

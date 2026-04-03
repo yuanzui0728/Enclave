@@ -7,7 +7,8 @@ edition = "2021"
 anyhow = "1.0"
 axum = { version = "0.7", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.43", features = ["macros", "rt-multi-thread", "signal"] }
+socketioxide = "0.18"
+tokio = { version = "1.43", features = ["macros", "rt-multi-thread", "signal", "time"] }
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }

@@ -56,12 +56,12 @@ WebSocket naming compatibility remains frozen in the shared contract layer:
 
 ## Current Behavior Notes
 
-- this slice currently covers the HTTP compatibility surface and event naming parity
-- the Rust runtime does not yet execute the full real-time gateway behavior from NestJS
-- direct message generation and group AI replies are still pending full parity migration
+- this slice covers the HTTP compatibility surface
+- realtime execution parity now continues in `phase-1/realtime-slice.md`
+- direct-to-group upgrade logic and proactive delivery are still pending full parity migration
 
 ## Recommended Next Slice
 
-1. WebSocket runtime parity
-2. `moments`
-3. `feed`
+1. scheduler execution parity
+2. proactive messages
+3. import / narrative support

@@ -43,6 +43,24 @@ export interface SchedulerStatus {
   jobs: SchedulerJobStatus[];
 }
 
+export interface RealtimeRoomStatus {
+  roomId: string;
+  subscriberCount: number;
+}
+
+export interface RealtimeStatus {
+  healthy: boolean;
+  namespace: string;
+  socketPath: string;
+  connectedClients: number;
+  activeRooms: number;
+  eventNames: string[];
+  rooms: RealtimeRoomStatus[];
+  recentEvents: string[];
+  lastEventAt?: string;
+  lastMessageAt?: string;
+}
+
 export interface SystemStatus {
   coreApi: ServiceHealth;
   desktopShell: ServiceHealth;

@@ -1,6 +1,7 @@
 mod app_state;
 mod error;
 mod models;
+mod realtime;
 mod routes;
 mod seed;
 
@@ -8,6 +9,7 @@ use std::{net::SocketAddr, path::PathBuf};
 
 use anyhow::Context;
 use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
+use socketioxide::SocketIo;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
 
@@ -27,6 +29,8 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or_else(|_| PathBuf::from("./runtime-data/yinjie.sqlite"));
 
     let state = AppState::new(port, database_path);
+    let (socket_layer, io) = SocketIo::new_layer();
+    realtime::install(io, state.clone());
 
     let router = Router::new()
         .route("/health", get(health))
@@ -34,6 +38,7 @@ async fn main() -> anyhow::Result<()> {
         .nest("/api", routes::legacy::router())
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
+        .layer(socket_layer)
         .with_state(state.clone());
 
     let address = SocketAddr::from(([127, 0, 0, 1], state.port));

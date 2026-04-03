@@ -11,6 +11,7 @@ import {
   getFeed,
   getLatestWorldContext,
   getMoments,
+  getRealtimeStatus,
   getSchedulerStatus,
   getSystemLogs,
   getSystemStatus,
@@ -57,6 +58,11 @@ export function DashboardPage() {
   const schedulerQuery = useQuery({
     queryKey: ["admin-scheduler-status", baseUrl],
     queryFn: () => getSchedulerStatus(baseUrl),
+  });
+
+  const realtimeQuery = useQuery({
+    queryKey: ["admin-realtime-status", baseUrl],
+    queryFn: () => getRealtimeStatus(baseUrl),
   });
 
   const momentsQuery = useQuery({
@@ -303,6 +309,14 @@ export function DashboardPage() {
           <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
             namespace: {CHAT_NAMESPACE}
           </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              connected clients: {realtimeQuery.data?.connectedClients ?? 0}
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              active rooms: {realtimeQuery.data?.activeRooms ?? 0}
+            </div>
+          </div>
           <div className="mt-4 grid gap-3">
             {Object.values(CHAT_EVENTS).map((eventName) => (
               <div
@@ -312,6 +326,39 @@ export function DashboardPage() {
                 {eventName}
               </div>
             ))}
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+            socket path: {realtimeQuery.data?.socketPath ?? "/socket.io"}
+          </div>
+          <div className="mt-4 grid gap-3">
+            {realtimeQuery.data?.rooms.map((room) => (
+              <div
+                key={room.roomId}
+                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+              >
+                <div className="font-semibold text-white">{room.roomId}</div>
+                <div className="mt-1">subscribers: {room.subscriberCount}</div>
+              </div>
+            ))}
+            {realtimeQuery.data && realtimeQuery.data.rooms.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                No active realtime rooms yet.
+              </div>
+            )}
+            {!realtimeQuery.data && realtimeQuery.error instanceof Error && (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                {realtimeQuery.error.message}
+              </div>
+            )}
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent realtime events</div>
+            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+              {realtimeQuery.data?.recentEvents.map((event) => (
+                <div key={event}>{event}</div>
+              ))}
+              {realtimeQuery.data && realtimeQuery.data.recentEvents.length === 0 && <div>No realtime events yet.</div>}
+            </div>
           </div>
         </Card>
       </div>

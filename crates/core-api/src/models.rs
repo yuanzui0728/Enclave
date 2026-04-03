@@ -800,3 +800,60 @@ pub struct FeedQuery {
     pub page: Option<usize>,
     pub limit: Option<usize>,
 }
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JoinConversationSocketPayload {
+    pub conversation_id: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendMessageSocketPayload {
+    pub conversation_id: String,
+    pub character_id: String,
+    pub text: String,
+    pub user_id: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TypingEventPayload {
+    pub character_id: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationUpdatedEventPayload {
+    pub id: String,
+    pub r#type: String,
+    pub title: String,
+    pub participants: Vec<String>,
+}
+
+#[derive(Clone, Serialize)]
+pub struct ErrorEventPayload {
+    pub message: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RealtimeRoomStatusRecord {
+    pub room_id: String,
+    pub subscriber_count: usize,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RealtimeStatusRecord {
+    pub healthy: bool,
+    pub namespace: String,
+    pub socket_path: String,
+    pub connected_clients: usize,
+    pub active_rooms: usize,
+    pub event_names: Vec<String>,
+    pub rooms: Vec<RealtimeRoomStatusRecord>,
+    pub recent_events: Vec<String>,
+    pub last_event_at: Option<String>,
+    pub last_message_at: Option<String>,
+}

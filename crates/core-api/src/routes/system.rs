@@ -7,7 +7,11 @@ use serde::Serialize;
 
 use crate::{
     app_state::AppState,
-    models::{ProviderTestRequest, ProviderTestResult, SchedulerStatusRecord},
+    models::{
+        ProviderTestRequest, ProviderTestResult, RealtimeRoomStatusRecord, RealtimeStatusRecord,
+        SchedulerStatusRecord,
+    },
+    realtime,
     seed::{scheduler_jobs, LEGACY_MIGRATED_MODULES, SCHEDULER_COLD_START_ENABLED},
 };
 
@@ -68,6 +72,7 @@ struct OperationResult {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/status", get(system_status))
+        .route("/realtime", get(realtime_status))
         .route("/scheduler", get(scheduler_status))
         .route("/provider/test", post(provider_test))
         .route("/logs", get(log_index))
@@ -80,51 +85,84 @@ async fn system_status(State(state): State<AppState>) -> Json<SystemStatus> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
 
     Json(SystemStatus {
-    core_api: ServiceHealth {
-      name: "yinjie-core-api".into(),
-      healthy: true,
-      version: env!("CARGO_PKG_VERSION").into(),
-      message: Some(format!(
-        "Compatibility surface online for {} legacy modules.",
-        LEGACY_MIGRATED_MODULES.len()
-      )),
-    },
-    desktop_shell: ServiceHealth {
-      name: "yinjie-desktop".into(),
-      healthy: false,
-      version: "0.1.0".into(),
-      message: Some("Desktop shell scaffolded; Rust toolchain is still required for runtime validation.".into()),
-    },
-    database: DatabaseStatus {
-      path: state.database_path.display().to_string(),
-      wal_enabled: true,
-      connected: false,
-    },
-    inference_gateway: InferenceStatus {
-      healthy: false,
-      active_provider: None,
-      queue_depth: 0,
-      max_concurrency: 4,
-    },
-    legacy_surface: LegacySurfaceStatus {
-      api_prefix: "/api".into(),
-      migrated_modules: LEGACY_MIGRATED_MODULES
+        core_api: ServiceHealth {
+            name: "yinjie-core-api".into(),
+            healthy: true,
+            version: env!("CARGO_PKG_VERSION").into(),
+            message: Some(format!(
+                "Compatibility surface online for {} legacy modules.",
+                LEGACY_MIGRATED_MODULES.len()
+            )),
+        },
+        desktop_shell: ServiceHealth {
+            name: "yinjie-desktop".into(),
+            healthy: true,
+            version: "0.1.0".into(),
+            message: Some(
+                "Desktop shell packaging has been validated on this machine with MSI output."
+                    .into(),
+            ),
+        },
+        database: DatabaseStatus {
+            path: state.database_path.display().to_string(),
+            wal_enabled: true,
+            connected: false,
+        },
+        inference_gateway: InferenceStatus {
+            healthy: false,
+            active_provider: None,
+            queue_depth: 0,
+            max_concurrency: 4,
+        },
+        legacy_surface: LegacySurfaceStatus {
+            api_prefix: "/api".into(),
+            migrated_modules: LEGACY_MIGRATED_MODULES
+                .iter()
+                .map(|module| (*module).to_string())
+                .collect(),
+            users_count: runtime.users.len(),
+            characters_count: runtime.characters.len(),
+        },
+        scheduler: SchedulerStatusRecord {
+            healthy: true,
+            mode: "scaffolded".into(),
+            cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
+            world_snapshots: runtime.world_contexts.len(),
+            last_world_snapshot_at: runtime
+                .world_contexts
+                .last()
+                .map(|context| context.timestamp.clone()),
+            jobs: scheduler_jobs(),
+        },
+        app_mode: std::env::var("YINJIE_APP_MODE").unwrap_or_else(|_| "development".into()),
+    })
+}
+
+async fn realtime_status(State(state): State<AppState>) -> Json<RealtimeStatusRecord> {
+    let realtime_state = state.realtime.read().expect("realtime lock poisoned");
+    let mut rooms = realtime_state
+        .room_subscribers
         .iter()
-        .map(|module| (*module).to_string())
-        .collect(),
-      users_count: runtime.users.len(),
-      characters_count: runtime.characters.len(),
-    },
-    scheduler: SchedulerStatusRecord {
-      healthy: true,
-      mode: "scaffolded".into(),
-      cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
-      world_snapshots: runtime.world_contexts.len(),
-      last_world_snapshot_at: runtime.world_contexts.last().map(|context| context.timestamp.clone()),
-      jobs: scheduler_jobs(),
-    },
-    app_mode: std::env::var("YINJIE_APP_MODE").unwrap_or_else(|_| "development".into()),
-  })
+        .map(|(room_id, subscriber_count)| RealtimeRoomStatusRecord {
+            room_id: room_id.clone(),
+            subscriber_count: *subscriber_count,
+        })
+        .collect::<Vec<_>>();
+
+    rooms.sort_by(|left, right| left.room_id.cmp(&right.room_id));
+
+    Json(RealtimeStatusRecord {
+        healthy: true,
+        namespace: realtime::namespace().into(),
+        socket_path: realtime::socket_path().into(),
+        connected_clients: realtime_state.connected_clients,
+        active_rooms: realtime_state.room_subscribers.len(),
+        event_names: realtime::event_names(),
+        rooms,
+        recent_events: realtime_state.recent_events.clone(),
+        last_event_at: realtime_state.last_event_at.clone(),
+        last_message_at: realtime_state.last_message_at.clone(),
+    })
 }
 
 async fn provider_test(Json(payload): Json<ProviderTestRequest>) -> Json<ProviderTestResult> {

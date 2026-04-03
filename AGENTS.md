@@ -49,12 +49,18 @@
 
 - `GET /health`
 - `GET /system/status`
+- `GET /system/realtime`
 - `POST /system/provider/test`
 - `GET /system/scheduler`
 - `GET /system/logs`
 - `POST /system/diag/export`
 - `POST /system/backup/create`
 - `POST /system/backup/restore`
+
+### 实时接口
+
+- Socket.IO namespace `/chat`
+- Socket path `/socket.io`
 
 ### 已迁移的兼容接口切片
 
@@ -116,6 +122,15 @@
 - `config`
 - `characters`
 - `ws`
+
+当前 `/chat` 已有真实运行时：
+
+- `join_conversation`
+- `send_message`
+- `new_message`
+- `typing_start`
+- `typing_stop`
+- `conversation_updated`
 
 ## 业务兼容要求（迁移期间保持）
 

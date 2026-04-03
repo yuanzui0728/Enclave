@@ -19,6 +19,7 @@ pub struct AppState {
     pub port: u16,
     pub database_path: PathBuf,
     pub runtime: Arc<RwLock<RuntimeState>>,
+    pub realtime: Arc<RwLock<RealtimeState>>,
 }
 
 pub struct RuntimeState {
@@ -41,12 +42,22 @@ pub struct RuntimeState {
     pub config: AppConfigStore,
 }
 
+#[derive(Default)]
+pub struct RealtimeState {
+    pub connected_clients: usize,
+    pub room_subscribers: HashMap<String, usize>,
+    pub recent_events: Vec<String>,
+    pub last_event_at: Option<String>,
+    pub last_message_at: Option<String>,
+}
+
 impl AppState {
     pub fn new(port: u16, database_path: PathBuf) -> Self {
         Self {
             port,
             database_path,
             runtime: Arc::new(RwLock::new(RuntimeState::seeded())),
+            realtime: Arc::new(RwLock::new(RealtimeState::default())),
         }
     }
 }
