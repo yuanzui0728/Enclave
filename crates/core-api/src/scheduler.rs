@@ -9,6 +9,7 @@ use tracing::{info, warn};
 use crate::{
     app_state::{AppState, RealtimeCommand, SchedulerJobRuntimeState},
     models::{FeedCommentRecord, FriendRequestRecord, MessageRecord, MomentPostRecord},
+    runtime_paths,
     seed::{build_world_context_snapshot, SCHEDULER_COLD_START_ENABLED},
 };
 
@@ -229,6 +230,11 @@ where
         Ok(message) => info!("scheduler job {} completed: {}", job_id, message),
         Err(message) => warn!("scheduler job {} failed: {}", job_id, message),
     }
+    runtime_paths::append_core_api_log(
+        &state.database_path,
+        if result.is_ok() { "INFO" } else { "WARN" },
+        &format!("scheduler job {} => {}", job_id, last_result),
+    );
     state.request_persist(format!("scheduler-job:{job_id}"));
 
     result

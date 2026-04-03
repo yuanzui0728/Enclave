@@ -18,6 +18,7 @@
 - `apps/desktop/`：Tauri 2 桌面壳
 - `crates/core-api/`：Rust Core API
 - `crates/core-api/src/persistence.rs`：运行态 snapshot 持久化与备份恢复
+- `crates/core-api/src/runtime_paths.rs`：runtime/logs/diagnostics 路径与本地操作日志
 - `crates/inference-gateway/`：Rust 推理网关骨架
 - `packages/contracts/`：共享接口契约与 typed client
 - `packages/config/`：共享配置 schema
@@ -144,6 +145,12 @@
 - runtime 与 scheduler 状态会落盘到 `*.runtime.json`
 - 进程重启会优先从 snapshot 恢复
 - `/system/backup/create` 与 `/system/backup/restore` 已接到真实 snapshot 备份恢复
+
+当前系统运维导出已真实落地：
+
+- `/system/logs` 返回真实 runtime log 路径
+- `/system/diag/export` 会导出 diagnostics 目录，包含 status / realtime / scheduler / snapshot / logs / recent backups
+- `runtime-data/logs/core-api.log` 已有本地操作日志兜底
 
 当前 scheduler 已有真实执行切片：
 

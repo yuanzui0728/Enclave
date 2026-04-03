@@ -8,7 +8,10 @@ use serde::{Deserialize, Serialize};
 use tokio::{spawn, sync::mpsc, time::Duration};
 use tracing::{info, warn};
 
-use crate::app_state::{AppState, PersistenceCommand, RuntimeState, SchedulerState};
+use crate::{
+    app_state::{AppState, PersistenceCommand, RuntimeState, SchedulerState},
+    runtime_paths,
+};
 
 #[derive(Serialize, Deserialize)]
 struct PersistedAppState {
@@ -178,6 +181,15 @@ fn save_snapshot(state: &AppState, reason: &str) -> Result<(), String> {
         "persisted runtime snapshot to {} ({})",
         snapshot_path.display(),
         reason
+    );
+    runtime_paths::append_core_api_log(
+        &state.database_path,
+        "INFO",
+        &format!(
+            "persisted runtime snapshot to {} ({})",
+            snapshot_path.display(),
+            reason
+        ),
     );
 
     Ok(())
