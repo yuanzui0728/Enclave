@@ -14,6 +14,7 @@ out/
 apps/*/dist/
 packages/*/dist/
 apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
 crates/*/target/
 .turbo/
 
