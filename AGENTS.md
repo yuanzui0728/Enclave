@@ -50,6 +50,7 @@
 - `GET /health`
 - `GET /system/status`
 - `POST /system/provider/test`
+- `GET /system/scheduler`
 - `GET /system/logs`
 - `POST /system/diag/export`
 - `POST /system/backup/create`
@@ -65,6 +66,7 @@
 - `GET /api/config/ai-model`
 - `PUT /api/config/ai-model`
 - `GET /api/config/available-models`
+- `GET /api/world/context`
 - `GET /api/characters`
 - `GET /api/characters/:id`
 - `POST /api/characters`
@@ -76,6 +78,7 @@
 已建立 typed contracts：
 
 - `system`
+- `world`
 - `auth`
 - `config`
 - `characters`

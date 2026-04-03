@@ -25,12 +25,31 @@ export interface LegacySurfaceStatus {
   charactersCount: number;
 }
 
+export interface SchedulerJobStatus {
+  id: string;
+  name: string;
+  cadence: string;
+  description: string;
+  enabled: boolean;
+  nextRunHint: string;
+}
+
+export interface SchedulerStatus {
+  healthy: boolean;
+  mode: "scaffolded" | "parity" | "production";
+  coldStartEnabled: boolean;
+  worldSnapshots: number;
+  lastWorldSnapshotAt?: string;
+  jobs: SchedulerJobStatus[];
+}
+
 export interface SystemStatus {
   coreApi: ServiceHealth;
   desktopShell: ServiceHealth;
   database: DatabaseStatus;
   inferenceGateway: InferenceStatus;
   legacySurface: LegacySurfaceStatus;
+  scheduler: SchedulerStatus;
   appMode: "development" | "desktop" | "production";
 }
 

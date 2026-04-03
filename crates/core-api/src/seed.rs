@@ -1,4 +1,8 @@
-use crate::models::{CharacterRecord, PersonalityProfile, PersonalityTraits};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::models::{
+  CharacterRecord, PersonalityProfile, PersonalityTraits, SchedulerJobRecord, WorldContextRecord,
+};
 
 pub const AVAILABLE_AI_MODELS: &[&str] = &[
   "claude-3-5-sonnet-20241022",
@@ -40,7 +44,9 @@ pub const AVAILABLE_AI_MODELS: &[&str] = &[
   "qwen3-max",
 ];
 
-pub const LEGACY_MIGRATED_MODULES: &[&str] = &["config", "auth", "characters"];
+pub const LEGACY_MIGRATED_MODULES: &[&str] = &["config", "auth", "characters", "world"];
+
+pub const SCHEDULER_COLD_START_ENABLED: bool = true;
 
 pub fn seeded_characters() -> Vec<CharacterRecord> {
   vec![
@@ -152,4 +158,162 @@ fn build_character(
     current_status: None,
     current_activity: None,
   }
+}
+
+pub fn seeded_world_context() -> WorldContextRecord {
+  let now = chrono_like_now();
+  let hour = now.0;
+  let minute = now.1;
+  let month = now.2;
+  let day = now.3;
+  let timestamp = now.4;
+
+  let time_of_day = match hour {
+    0..=5 => "late-night",
+    6..=8 => "morning",
+    9..=11 => "late-morning",
+    12..=13 => "noon",
+    14..=17 => "afternoon",
+    18..=20 => "evening",
+    _ => "night",
+  };
+
+  let season = match month {
+    3..=5 => "spring",
+    6..=8 => "summer",
+    9..=11 => "autumn",
+    _ => "winter",
+  };
+
+  let holiday = match (month, day) {
+    (1, 1) => Some("new-year"),
+    (2, 14) => Some("valentines-day"),
+    (5, 1) => Some("labor-day"),
+    (6, 1) => Some("childrens-day"),
+    (10, 1) => Some("national-day"),
+    (12, 25) => Some("christmas"),
+    _ => None,
+  };
+
+  WorldContextRecord {
+    id: format!("world_{}", timestamp),
+    local_time: format!("{} {:02}:{:02}", time_of_day, hour, minute),
+    weather: None,
+    location: None,
+    season: Some(season.into()),
+    holiday: holiday.map(str::to_string),
+    recent_events: Some(vec![
+      "world-context-bootstrap".into(),
+      "scheduler-parity-planning".into(),
+    ]),
+    timestamp,
+  }
+}
+
+pub fn scheduler_jobs() -> Vec<SchedulerJobRecord> {
+  vec![
+    build_scheduler_job(
+      "update-world-context",
+      "Update world context",
+      "*/30 * * * *",
+      "Create a new world snapshot every 30 minutes.",
+      "in 30 minutes",
+    ),
+    build_scheduler_job(
+      "expire-friend-requests",
+      "Expire friend requests",
+      "59 23 * * *",
+      "Expire pending friend requests at the end of each day.",
+      "today 23:59",
+    ),
+    build_scheduler_job(
+      "update-ai-active-status",
+      "Update AI active status",
+      "*/10 * * * *",
+      "Refresh online status from character activity windows.",
+      "in 10 minutes",
+    ),
+    build_scheduler_job(
+      "check-moment-schedule",
+      "Check moment schedule",
+      "*/15 * * * *",
+      "Evaluate whether characters should post moments.",
+      "in 15 minutes",
+    ),
+    build_scheduler_job(
+      "trigger-scene-friend-requests",
+      "Trigger scene friend requests",
+      "0 10,14,19 * * *",
+      "Run scene-based social triggers at curated times.",
+      "today 10:00 / 14:00 / 19:00",
+    ),
+    build_scheduler_job(
+      "process-pending-feed-reactions",
+      "Process pending feed reactions",
+      "*/5 * * * *",
+      "Let AI characters react to pending feed posts.",
+      "in 5 minutes",
+    ),
+    build_scheduler_job(
+      "update-character-status",
+      "Update character activity",
+      "0 */2 * * *",
+      "Refresh time-of-day based character activity states.",
+      "within 2 hours",
+    ),
+    build_scheduler_job(
+      "trigger-memory-proactive-messages",
+      "Trigger proactive messages",
+      "0 20 * * *",
+      "Scan memory summaries and send proactive reminders.",
+      "today 20:00",
+    ),
+  ]
+}
+
+fn build_scheduler_job(
+  id: &str,
+  name: &str,
+  cadence: &str,
+  description: &str,
+  next_run_hint: &str,
+) -> SchedulerJobRecord {
+  SchedulerJobRecord {
+    id: id.into(),
+    name: name.into(),
+    cadence: cadence.into(),
+    description: description.into(),
+    enabled: true,
+    next_run_hint: next_run_hint.into(),
+  }
+}
+
+fn chrono_like_now() -> (u32, u32, u32, u32, String) {
+  let now = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap_or_default()
+    .as_secs();
+
+  let minute = ((now / 60) % 60) as u32;
+  let hour = ((now / 3600) % 24) as u32;
+  let day_of_year = ((now / 86_400) % 365) as u32 + 1;
+
+  let (month, day) = day_of_year_to_month_day(day_of_year);
+
+  (hour, minute, month, day, now.to_string())
+}
+
+fn day_of_year_to_month_day(day_of_year: u32) -> (u32, u32) {
+  let month_lengths = [31_u32, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  let mut remaining = day_of_year;
+
+  for (index, length) in month_lengths.iter().enumerate() {
+    if remaining <= *length {
+      return ((index as u32) + 1, remaining);
+    }
+
+    remaining -= *length;
+  }
+
+  (12, 31)
 }

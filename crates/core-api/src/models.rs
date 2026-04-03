@@ -371,3 +371,38 @@ pub struct CharacterPatch {
   pub current_status: Option<String>,
   pub current_activity: Option<String>,
 }
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorldContextRecord {
+  pub id: String,
+  pub local_time: String,
+  pub weather: Option<String>,
+  pub location: Option<String>,
+  pub season: Option<String>,
+  pub holiday: Option<String>,
+  pub recent_events: Option<Vec<String>>,
+  pub timestamp: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchedulerJobRecord {
+  pub id: String,
+  pub name: String,
+  pub cadence: String,
+  pub description: String,
+  pub enabled: bool,
+  pub next_run_hint: String,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchedulerStatusRecord {
+  pub healthy: bool,
+  pub mode: String,
+  pub cold_start_enabled: bool,
+  pub world_snapshots: usize,
+  pub last_world_snapshot_at: Option<String>,
+  pub jobs: Vec<SchedulerJobRecord>,
+}

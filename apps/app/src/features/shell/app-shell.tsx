@@ -47,10 +47,10 @@ export function AppShell({ children }: PropsWithChildren) {
 
           <div className="mt-auto rounded-3xl border border-white/10 bg-white/5 p-5">
             <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">Migration Slice</div>
-            <div className="mt-3 text-lg font-semibold">Config / Auth / Characters</div>
+            <div className="mt-3 text-lg font-semibold">Config / Auth / Characters / World</div>
             <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              The first compatibility slice now has shared contracts, client bindings, and a modular Rust route
-              surface ready for the next migration steps.
+              The runtime now exposes the first compatibility routes plus world context visibility, while scheduler
+              parity is being staged through a dedicated system surface.
             </p>
           </div>
         </aside>

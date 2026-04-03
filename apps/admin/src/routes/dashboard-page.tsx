@@ -6,6 +6,8 @@ import {
   exportDiagnostics,
   getAiModel,
   getAvailableModels,
+  getLatestWorldContext,
+  getSchedulerStatus,
   getSystemLogs,
   getSystemStatus,
   listCharacters,
@@ -41,6 +43,16 @@ export function DashboardPage() {
   const logsQuery = useQuery({
     queryKey: ["admin-system-logs", baseUrl],
     queryFn: () => getSystemLogs(baseUrl),
+  });
+
+  const worldContextQuery = useQuery({
+    queryKey: ["admin-world-context", baseUrl],
+    queryFn: () => getLatestWorldContext(baseUrl),
+  });
+
+  const schedulerQuery = useQuery({
+    queryKey: ["admin-scheduler-status", baseUrl],
+    queryFn: () => getSchedulerStatus(baseUrl),
   });
 
   const form = useForm<ProviderConfig>({
@@ -122,11 +134,22 @@ export function DashboardPage() {
                 migrated modules: {statusQuery.data?.legacySurface.migratedModules.join(", ") ?? "pending"}
               </div>
             </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 md:col-span-2">
+              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">World Context</div>
+              <div className="mt-2 text-2xl font-semibold">{worldContextQuery.data?.localTime ?? "pending"}</div>
+              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
+                {worldContextQuery.data?.season
+                  ? `season=${worldContextQuery.data.season} · holiday=${worldContextQuery.data.holiday ?? "none"}`
+                  : "Latest world snapshot is not available yet."}
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
-            This control plane is now aligned with the shared contract layer. The first compatibility slice already
-            covers config, auth, and characters and is ready for the next scheduler, social, and chat migrations.
+            This control plane is now aligned with the shared contract layer. The migrated compatibility surface
+            covers config, auth, characters, and world context, while scheduler parity is being surfaced here first as
+            an operational view before full runtime execution lands in Rust.
           </div>
         </Card>
 
@@ -151,6 +174,39 @@ export function DashboardPage() {
                 {charactersQuery.error instanceof Error
                   ? charactersQuery.error.message
                   : "Character CRUD compatibility routes are online once the new Core API process is running."}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Scheduler Surface</SectionHeading>
+          <div className="mt-4 grid gap-3">
+            {schedulerQuery.data?.jobs.map((job) => (
+              <div
+                key={job.id}
+                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="font-semibold text-white">{job.name}</div>
+                  <StatusPill tone={job.enabled ? "healthy" : "warning"}>
+                    {job.enabled ? "enabled" : "disabled"}
+                  </StatusPill>
+                </div>
+                <div className="mt-2">{job.description}</div>
+                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                  {job.cadence} · {job.nextRunHint}
+                </div>
+              </div>
+            ))}
+            {!schedulerQuery.data && schedulerQuery.error instanceof Error && (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                {schedulerQuery.error.message}
+              </div>
+            )}
+            {!schedulerQuery.data && !schedulerQuery.error && (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
+                Waiting for scheduler parity data.
               </div>
             )}
           </div>

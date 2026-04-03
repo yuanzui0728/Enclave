@@ -6,8 +6,10 @@ import type {
   OperationResult,
   ProviderTestRequest,
   ProviderTestResult,
+  SchedulerStatus,
   SystemStatus,
 } from "./system";
+import type { WorldContext } from "./world";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://127.0.0.1:39091";
@@ -54,6 +56,10 @@ function requestLegacyApi<T>(path: string, init?: RequestInit, baseUrl?: string)
 
 export function getSystemStatus(baseUrl?: string) {
   return request<SystemStatus>("/system/status", undefined, baseUrl);
+}
+
+export function getSchedulerStatus(baseUrl?: string) {
+  return request<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
 }
 
 export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: string) {
@@ -212,4 +218,8 @@ export function deleteCharacter(id: string, baseUrl?: string) {
     },
     baseUrl,
   );
+}
+
+export function getLatestWorldContext(baseUrl?: string) {
+  return requestLegacyApi<WorldContext>("/world/context", undefined, baseUrl);
 }

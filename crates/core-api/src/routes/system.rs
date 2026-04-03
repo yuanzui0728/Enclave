@@ -7,8 +7,8 @@ use serde::Serialize;
 
 use crate::{
   app_state::AppState,
-  models::{ProviderTestRequest, ProviderTestResult},
-  seed::LEGACY_MIGRATED_MODULES,
+  models::{ProviderTestRequest, ProviderTestResult, SchedulerStatusRecord},
+  seed::{scheduler_jobs, LEGACY_MIGRATED_MODULES, SCHEDULER_COLD_START_ENABLED},
 };
 
 #[derive(Serialize)]
@@ -54,6 +54,7 @@ struct SystemStatus {
   database: DatabaseStatus,
   inference_gateway: InferenceStatus,
   legacy_surface: LegacySurfaceStatus,
+  scheduler: SchedulerStatusRecord,
   app_mode: String,
 }
 
@@ -67,6 +68,7 @@ struct OperationResult {
 pub fn router() -> Router<AppState> {
   Router::new()
     .route("/status", get(system_status))
+    .route("/scheduler", get(scheduler_status))
     .route("/provider/test", post(provider_test))
     .route("/logs", get(log_index))
     .route("/diag/export", post(export_diag))
@@ -112,6 +114,14 @@ async fn system_status(State(state): State<AppState>) -> Json<SystemStatus> {
       users_count: runtime.users.len(),
       characters_count: runtime.characters.len(),
     },
+    scheduler: SchedulerStatusRecord {
+      healthy: true,
+      mode: "scaffolded".into(),
+      cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
+      world_snapshots: runtime.world_contexts.len(),
+      last_world_snapshot_at: runtime.world_contexts.last().map(|context| context.timestamp.clone()),
+      jobs: scheduler_jobs(),
+    },
     app_mode: std::env::var("YINJIE_APP_MODE").unwrap_or_else(|_| "development".into()),
   })
 }
@@ -136,6 +146,19 @@ async fn provider_test(Json(payload): Json<ProviderTestRequest>) -> Json<Provide
       "Endpoint must start with http:// or https://".into()
     },
     normalized_endpoint: Some(normalized),
+  })
+}
+
+async fn scheduler_status(State(state): State<AppState>) -> Json<SchedulerStatusRecord> {
+  let runtime = state.runtime.read().expect("runtime lock poisoned");
+
+  Json(SchedulerStatusRecord {
+    healthy: true,
+    mode: "scaffolded".into(),
+    cold_start_enabled: SCHEDULER_COLD_START_ENABLED,
+    world_snapshots: runtime.world_contexts.len(),
+    last_world_snapshot_at: runtime.world_contexts.last().map(|context| context.timestamp.clone()),
+    jobs: scheduler_jobs(),
   })
 }
 

@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { HardDriveDownload, LayoutPanelTop, ShieldCheck, Sparkles } from "lucide-react";
-import { getAiModel, getAvailableModels, getSystemStatus, listCharacters } from "@yinjie/contracts";
+import {
+  getAiModel,
+  getAvailableModels,
+  getLatestWorldContext,
+  getSystemStatus,
+  listCharacters,
+} from "@yinjie/contracts";
 import { Card, SectionHeading, StatusPill } from "@yinjie/ui";
 
 const runtimeHighlights = [
@@ -53,9 +59,15 @@ export function DashboardPage() {
     queryFn: () => listCharacters(baseUrl),
   });
 
+  const worldContextQuery = useQuery({
+    queryKey: ["runtime-world-context", baseUrl],
+    queryFn: () => getLatestWorldContext(baseUrl),
+  });
+
   const migratedModules = statusQuery.data?.legacySurface.migratedModules ?? [];
   const characterCount = charactersQuery.data?.length ?? statusQuery.data?.legacySurface.charactersCount ?? 0;
   const modelCount = availableModelsQuery.data?.models.length ?? 0;
+  const schedulerJobs = statusQuery.data?.scheduler.jobs.length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -108,6 +120,18 @@ export function DashboardPage() {
                 <div className="mt-2 text-lg font-semibold">{characterCount}</div>
               </div>
             </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+              <div className="text-sm text-[color:var(--text-secondary)]">World Context</div>
+              <div className="mt-2 text-lg font-semibold">
+                {worldContextQuery.data?.localTime ?? "pending snapshot"}
+              </div>
+              <div className="mt-3 text-sm text-[color:var(--text-muted)]">
+                {worldContextQuery.data?.season
+                  ? `season: ${worldContextQuery.data.season}`
+                  : "Latest world context will mirror the legacy /api/world/context route."}
+              </div>
+            </div>
           </div>
         </Card>
       </div>
@@ -140,6 +164,7 @@ export function DashboardPage() {
             <li>Migrated modules: {migratedModules.length > 0 ? migratedModules.join(", ") : "pending"}.</li>
             <li>Typed contract coverage now includes auth session flow, AI model config, and character CRUD shapes.</li>
             <li>New app and admin screens are already wired against the same shared client surface.</li>
+            <li>Scheduler visibility is online with {schedulerJobs} mirrored jobs from the legacy cadence list.</li>
           </ul>
         </Card>
       </section>
