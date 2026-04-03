@@ -478,3 +478,119 @@ pub struct ShakeResultRecord {
   pub character: ShakePreviewCharacterRecord,
   pub greeting: String,
 }
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageRecord {
+  pub id: String,
+  pub conversation_id: String,
+  pub sender_type: String,
+  pub sender_id: String,
+  pub sender_name: String,
+  pub r#type: String,
+  pub text: String,
+  pub created_at: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationRecord {
+  pub id: String,
+  pub user_id: String,
+  pub r#type: String,
+  pub title: String,
+  pub participants: Vec<String>,
+  pub messages: Vec<MessageRecord>,
+  pub created_at: String,
+  pub updated_at: String,
+  pub last_read_at: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationListItemRecord {
+  pub id: String,
+  pub user_id: String,
+  pub r#type: String,
+  pub title: String,
+  pub participants: Vec<String>,
+  pub messages: Vec<MessageRecord>,
+  pub created_at: String,
+  pub updated_at: String,
+  pub last_read_at: Option<String>,
+  pub last_message: Option<MessageRecord>,
+  pub unread_count: usize,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetOrCreateConversationPayload {
+  pub user_id: String,
+  pub character_id: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupRecord {
+  pub id: String,
+  pub name: String,
+  pub avatar: Option<String>,
+  pub creator_id: String,
+  pub creator_type: String,
+  pub created_at: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateGroupPayload {
+  pub name: String,
+  pub creator_id: String,
+  pub creator_type: String,
+  pub member_ids: Vec<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupMemberRecord {
+  pub id: String,
+  pub group_id: String,
+  pub member_id: String,
+  pub member_type: String,
+  pub member_name: Option<String>,
+  pub member_avatar: Option<String>,
+  pub role: String,
+  pub joined_at: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddGroupMemberPayload {
+  pub member_id: String,
+  pub member_type: String,
+  pub member_name: String,
+  pub member_avatar: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupMessageRecord {
+  pub id: String,
+  pub group_id: String,
+  pub sender_id: String,
+  pub sender_type: String,
+  pub sender_name: String,
+  pub sender_avatar: Option<String>,
+  pub text: String,
+  pub r#type: String,
+  pub created_at: String,
+}
+
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SendGroupMessagePayload {
+  pub sender_id: String,
+  pub sender_type: String,
+  pub sender_name: String,
+  pub sender_avatar: Option<String>,
+  pub text: String,
+}

@@ -44,7 +44,7 @@ pub const AVAILABLE_AI_MODELS: &[&str] = &[
   "qwen3-max",
 ];
 
-pub const LEGACY_MIGRATED_MODULES: &[&str] = &["config", "auth", "characters", "world", "social"];
+pub const LEGACY_MIGRATED_MODULES: &[&str] = &["config", "auth", "characters", "world", "social", "chat"];
 
 pub const SCHEDULER_COLD_START_ENABLED: bool = true;
 

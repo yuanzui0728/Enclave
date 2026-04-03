@@ -1,4 +1,16 @@
 import type { AuthSession, InitUserRequest, LoginRequest, SuccessResponse, RegisterRequest, UpdateUserRequest } from "./auth";
+import type {
+  AddGroupMemberRequest,
+  Conversation,
+  ConversationListItem,
+  CreateGroupRequest,
+  GetOrCreateConversationRequest,
+  Group,
+  GroupMember,
+  GroupMessage,
+  Message,
+  SendGroupMessageRequest,
+} from "./chat";
 import type { Character, CharacterDraft } from "./characters";
 import type { AiModelResponse, AvailableModelsResponse, UpdateAiModelRequest } from "./config";
 import type {
@@ -236,6 +248,84 @@ export function getLatestWorldContext(baseUrl?: string) {
 
 export function getFriendRequests(userId: string, baseUrl?: string) {
   return requestLegacyApi<FriendRequest[]>(`/social/friend-requests?userId=${encodeURIComponent(userId)}`, undefined, baseUrl);
+}
+
+export function getConversations(userId: string, baseUrl?: string) {
+  return requestLegacyApi<ConversationListItem[]>(
+    `/conversations?userId=${encodeURIComponent(userId)}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getOrCreateConversation(payload: GetOrCreateConversationRequest, baseUrl?: string) {
+  return requestLegacyApi<Conversation>(
+    "/conversations",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getConversationMessages(id: string, baseUrl?: string) {
+  return requestLegacyApi<Message[]>(`/conversations/${id}/messages`, undefined, baseUrl);
+}
+
+export function markConversationRead(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/conversations/${id}/read`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function createGroup(payload: CreateGroupRequest, baseUrl?: string) {
+  return requestLegacyApi<Group>(
+    "/groups",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getGroup(id: string, baseUrl?: string) {
+  return requestLegacyApi<Group>(`/groups/${id}`, undefined, baseUrl);
+}
+
+export function getGroupMembers(id: string, baseUrl?: string) {
+  return requestLegacyApi<GroupMember[]>(`/groups/${id}/members`, undefined, baseUrl);
+}
+
+export function addGroupMember(id: string, payload: AddGroupMemberRequest, baseUrl?: string) {
+  return requestLegacyApi<GroupMember>(
+    `/groups/${id}/members`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getGroupMessages(id: string, baseUrl?: string) {
+  return requestLegacyApi<GroupMessage[]>(`/groups/${id}/messages`, undefined, baseUrl);
+}
+
+export function sendGroupMessage(id: string, payload: SendGroupMessageRequest, baseUrl?: string) {
+  return requestLegacyApi<GroupMessage>(
+    `/groups/${id}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
 }
 
 export function acceptFriendRequest(id: string, payload: AcceptFriendRequestRequest, baseUrl?: string) {

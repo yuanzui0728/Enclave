@@ -74,6 +74,16 @@
 - `GET /api/social/friends`
 - `POST /api/social/shake`
 - `POST /api/social/trigger-scene`
+- `GET /api/conversations`
+- `POST /api/conversations`
+- `GET /api/conversations/:id/messages`
+- `POST /api/conversations/:id/read`
+- `POST /api/groups`
+- `GET /api/groups/:id`
+- `GET /api/groups/:id/members`
+- `POST /api/groups/:id/members`
+- `GET /api/groups/:id/messages`
+- `POST /api/groups/:id/messages`
 - `GET /api/characters`
 - `GET /api/characters/:id`
 - `POST /api/characters`
@@ -87,6 +97,7 @@
 - `system`
 - `world`
 - `social`
+- `chat`
 - `auth`
 - `config`
 - `characters`

@@ -1,5 +1,6 @@
 export * from "./api";
 export * from "./auth";
+export * from "./chat";
 export * from "./characters";
 export * from "./client";
 export * from "./config";

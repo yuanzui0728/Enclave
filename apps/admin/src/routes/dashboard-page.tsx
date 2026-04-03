@@ -2,6 +2,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import {
+  CHAT_EVENTS,
+  CHAT_NAMESPACE,
   createBackup,
   exportDiagnostics,
   getAiModel,
@@ -209,6 +211,23 @@ export function DashboardPage() {
                 Waiting for scheduler parity data.
               </div>
             )}
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Realtime Contract</SectionHeading>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+            namespace: {CHAT_NAMESPACE}
+          </div>
+          <div className="mt-4 grid gap-3">
+            {Object.values(CHAT_EVENTS).map((eventName) => (
+              <div
+                key={eventName}
+                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+              >
+                {eventName}
+              </div>
+            ))}
           </div>
         </Card>
       </div>

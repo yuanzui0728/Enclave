@@ -84,9 +84,10 @@ async fn system_status(State(state): State<AppState>) -> Json<SystemStatus> {
       name: "yinjie-core-api".into(),
       healthy: true,
       version: env!("CARGO_PKG_VERSION").into(),
-      message: Some(
-        "Phase 2 compatibility surface online for /api/config, /api/auth, and /api/characters.".into(),
-      ),
+      message: Some(format!(
+        "Compatibility surface online for {} legacy modules.",
+        LEGACY_MIGRATED_MODULES.len()
+      )),
     },
     desktop_shell: ServiceHealth {
       name: "yinjie-desktop".into(),
