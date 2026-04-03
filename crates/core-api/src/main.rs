@@ -1,5 +1,6 @@
 mod app_state;
 mod error;
+mod generation;
 mod models;
 mod persistence;
 mod realtime;

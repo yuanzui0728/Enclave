@@ -8,6 +8,7 @@ use tracing::{info, warn};
 
 use crate::{
     app_state::{AppState, RealtimeCommand, SchedulerJobRuntimeState},
+    generation,
     models::{FeedCommentRecord, FriendRequestRecord, MessageRecord, MomentPostRecord},
     runtime_paths,
     seed::{build_world_context_snapshot, SCHEDULER_COLD_START_ENABLED},
@@ -359,62 +360,71 @@ async fn update_character_status_job(state: AppState) -> Result<String, String> 
 
 async fn check_moment_schedule_job(state: AppState) -> Result<String, String> {
     let now = current_millis();
-    let timestamp = now_token();
     let day_start = start_of_day_millis(now);
     let hour = current_hour();
-    let mut created = 0_usize;
-    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-    let characters = runtime.characters.values().cloned().collect::<Vec<_>>();
-
-    for character in characters {
-        if character.moments_frequency < 1 || !character.is_online {
-            continue;
-        }
-
-        let start = character.active_hours_start.unwrap_or(8);
-        let end = character.active_hours_end.unwrap_or(22);
-        if hour < start || hour > end {
-            continue;
-        }
-
-        let today_count = runtime
-            .moment_posts
+    let candidates = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime
+            .characters
             .values()
-            .filter(|post| {
-                post.author_id == character.id && parse_timestamp(&post.posted_at) >= day_start
+            .filter(|character| {
+                if character.moments_frequency < 1 || !character.is_online {
+                    return false;
+                }
+
+                let start = character.active_hours_start.unwrap_or(8);
+                let end = character.active_hours_end.unwrap_or(22);
+                if hour < start || hour > end {
+                    return false;
+                }
+
+                let today_count = runtime
+                    .moment_posts
+                    .values()
+                    .filter(|post| {
+                        post.author_id == character.id
+                            && parse_timestamp(&post.posted_at) >= day_start
+                    })
+                    .count();
+
+                if today_count >= character.moments_frequency as usize {
+                    return false;
+                }
+
+                pseudo_percent(&format!("{}:{}:moments", character.id, now)) < 15
             })
-            .count();
+            .cloned()
+            .collect::<Vec<_>>()
+    };
+    let mut generated_posts = Vec::with_capacity(candidates.len());
 
-        if today_count >= character.moments_frequency as usize {
-            continue;
-        }
+    for character in candidates {
+        let post_id = format!("moment_auto_{}_{}", character.id, now_token());
+        let text = generation::generate_moment_text(&state, &character).await;
+        generated_posts.push(MomentPostRecord {
+            id: post_id.clone(),
+            author_id: character.id.clone(),
+            author_name: character.name.clone(),
+            author_avatar: character.avatar.clone(),
+            author_type: "character".into(),
+            text,
+            location: character
+                .trigger_scenes
+                .clone()
+                .and_then(|scenes| scenes.first().cloned()),
+            posted_at: now_token(),
+            like_count: 0,
+            comment_count: 0,
+        });
+    }
 
-        if pseudo_percent(&format!("{}:{}:moments", character.id, now)) >= 15 {
-            continue;
-        }
+    let created = generated_posts.len();
+    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
 
-        let post_id = format!("moment_auto_{}_{}", character.id, timestamp);
-        runtime.moment_posts.insert(
-            post_id.clone(),
-            MomentPostRecord {
-                id: post_id.clone(),
-                author_id: character.id.clone(),
-                author_name: character.name.clone(),
-                author_avatar: character.avatar.clone(),
-                author_type: "character".into(),
-                text: build_moment_text(&character),
-                location: character
-                    .trigger_scenes
-                    .clone()
-                    .and_then(|scenes| scenes.first().cloned()),
-                posted_at: now_token(),
-                like_count: 0,
-                comment_count: 0,
-            },
-        );
-        runtime.moment_comments.entry(post_id.clone()).or_default();
-        runtime.moment_likes.entry(post_id).or_default();
-        created += 1;
+    for post in generated_posts {
+        runtime.moment_posts.insert(post.id.clone(), post.clone());
+        runtime.moment_comments.entry(post.id.clone()).or_default();
+        runtime.moment_likes.entry(post.id).or_default();
     }
 
     Ok(format!("created {created} scheduled moments"))
@@ -503,55 +513,66 @@ async fn trigger_scene_friend_requests_job(state: AppState) -> Result<String, St
 async fn process_pending_feed_reactions_job(state: AppState) -> Result<String, String> {
     let now = current_millis();
     let since = now.saturating_sub(30 * 60 * 1000);
-    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-    let pending_ids = runtime
-        .feed_posts
-        .values()
-        .filter(|post| {
-            !post.ai_reacted
-                && post.author_type == "user"
-                && parse_timestamp(&post.created_at) >= since
-        })
-        .map(|post| post.id.clone())
-        .collect::<Vec<_>>();
-
-    let mut reacted = 0_usize;
-
-    for post_id in pending_ids {
-        let author_id = runtime
+    let pending_posts = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime
             .feed_posts
-            .get(&post_id)
-            .map(|post| post.author_id.clone())
-            .unwrap_or_default();
-        let candidates = runtime
-            .characters
             .values()
-            .filter(|character| character.id != author_id)
+            .filter(|post| {
+                !post.ai_reacted
+                    && post.author_type == "user"
+                    && parse_timestamp(&post.created_at) >= since
+            })
             .cloned()
-            .collect::<Vec<_>>();
-        let selected = candidates.into_iter().take(2).collect::<Vec<_>>();
-        let mut added = 0_usize;
+            .collect::<Vec<_>>()
+    };
+    let mut comment_plans = Vec::with_capacity(pending_posts.len());
 
-        for character in selected {
-            let comment = FeedCommentRecord {
+    {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        for post in pending_posts {
+            let selected = runtime
+                .characters
+                .values()
+                .filter(|character| character.id != post.author_id)
+                .take(2)
+                .cloned()
+                .collect::<Vec<_>>();
+            comment_plans.push((post, selected));
+        }
+    }
+
+    let mut generated = Vec::with_capacity(comment_plans.len());
+
+    for (post, characters) in comment_plans {
+        let mut comments = Vec::with_capacity(characters.len());
+        for character in characters {
+            let text = generation::generate_feed_comment_text(&state, &character, &post).await;
+            comments.push(FeedCommentRecord {
                 id: format!("feed_comment_auto_{}_{}", character.id, now_token()),
-                post_id: post_id.clone(),
+                post_id: post.id.clone(),
                 author_id: character.id.clone(),
                 author_name: character.name.clone(),
                 author_avatar: character.avatar.clone(),
                 author_type: "character".into(),
-                text: format!(
-                    "{} saw this update and wanted to keep the thread going.",
-                    character.name
-                ),
+                text,
                 created_at: now_token(),
-            };
+            });
+        }
+        generated.push((post.id, comments));
+    }
+
+    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
+    let mut reacted = 0_usize;
+
+    for (post_id, comments) in generated {
+        let added = comments.len();
+        if added > 0 {
             runtime
                 .feed_comments
                 .entry(post_id.clone())
                 .or_default()
-                .push(comment);
-            added += 1;
+                .extend(comments);
         }
 
         if let Some(post) = runtime.feed_posts.get_mut(&post_id) {
@@ -650,17 +671,6 @@ fn base_activity_for_hour(hour: i32) -> &'static str {
         12 | 13 | 20 => "eating",
         _ => "free",
     }
-}
-
-fn build_moment_text(character: &crate::models::CharacterRecord) -> String {
-    let activity = character
-        .current_activity
-        .clone()
-        .unwrap_or_else(|| "daily-life".into());
-    format!(
-        "{} just moved through a {} stretch of the day and left a quick status note.",
-        character.name, activity
-    )
 }
 
 fn current_hour() -> i32 {

@@ -9,6 +9,7 @@ use axum::{
 use crate::{
     app_state::{AppState, RuntimeState},
     error::{ApiError, ApiResult},
+    generation,
     models::{
         CreateMomentCommentPayload, CreateUserMomentPayload, MomentCommentRecord,
         MomentInteractionRecord, MomentLikeRecord, MomentPostRecord, MomentRecord, MomentsQuery,
@@ -102,12 +103,16 @@ async fn generate_for_character(
     Path(character_id): Path<String>,
     State(state): State<AppState>,
 ) -> Json<Option<MomentRecord>> {
-    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-    let Some(character) = runtime.characters.get(&character_id).cloned() else {
+    let Some(character) = ({
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime.characters.get(&character_id).cloned()
+    }) else {
         return Json(None);
     };
 
-    let post = build_generated_moment_post(&character);
+    let generated_text = generation::generate_moment_text(&state, &character).await;
+    let post = build_generated_moment_post_with_text(&character, generated_text);
+    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     runtime.moment_posts.insert(post.id.clone(), post.clone());
     runtime.moment_comments.entry(post.id.clone()).or_default();
     runtime.moment_likes.entry(post.id.clone()).or_default();
@@ -119,12 +124,21 @@ async fn generate_for_character(
 }
 
 async fn generate_all_moments(State(state): State<AppState>) -> Json<Vec<MomentRecord>> {
-    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-    let characters = runtime.characters.values().cloned().collect::<Vec<_>>();
-    let mut generated = Vec::with_capacity(characters.len());
+    let characters = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime.characters.values().cloned().collect::<Vec<_>>()
+    };
+    let mut posts = Vec::with_capacity(characters.len());
 
     for character in characters {
-        let post = build_generated_moment_post(&character);
+        let generated_text = generation::generate_moment_text(&state, &character).await;
+        posts.push(build_generated_moment_post_with_text(&character, generated_text));
+    }
+
+    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
+    let mut generated = Vec::with_capacity(posts.len());
+
+    for post in posts {
         runtime.moment_posts.insert(post.id.clone(), post.clone());
         runtime.moment_comments.entry(post.id.clone()).or_default();
         runtime.moment_likes.entry(post.id.clone()).or_default();
@@ -293,6 +307,15 @@ fn build_generated_moment_post(character: &crate::models::CharacterRecord) -> Mo
         like_count: 0,
         comment_count: 0,
     }
+}
+
+fn build_generated_moment_post_with_text(
+    character: &crate::models::CharacterRecord,
+    text: String,
+) -> MomentPostRecord {
+    let mut post = build_generated_moment_post(character);
+    post.text = text;
+    post
 }
 
 fn parse_timestamp(value: &str) -> u128 {

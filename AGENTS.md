@@ -19,6 +19,7 @@
 - `crates/core-api/`：Rust Core API
 - `crates/core-api/src/persistence.rs`：运行态 snapshot 持久化与备份恢复
 - `crates/core-api/src/runtime_paths.rs`：runtime/logs/diagnostics 路径与本地操作日志
+- `crates/core-api/src/generation.rs`：gateway 优先、占位文案回退的内容生成辅助层
 - `crates/inference-gateway/`：Rust 推理网关，已具备 provider 配置 / 探活 / 队列指标运行时
 - `packages/contracts/`：共享接口契约与 typed client
 - `packages/config/`：共享配置 schema
@@ -162,6 +163,15 @@
 - `/system/inference/preview` 可通过 active provider 发送真实 `chat/completions` 预览请求
 - `/system/status` 会返回 active provider、队列并发、成功/失败次数、最近成功时间与最近错误
 - `/api/config/ai-model` 与 provider.model 已保持联动并随 snapshot 持久化恢复
+
+当前内容生成链已开始接入 inference gateway：
+
+- `POST /api/moments/generate/:characterId`
+- `POST /api/moments/generate-all`
+- scheduler `check-moment-schedule`
+- scheduler `process-pending-feed-reactions`
+
+以上链路会在 provider 可用时走 gateway 生成，在 provider 缺失或失败时回退到当前占位文案，保证业务语义和触发条件不变
 
 当前 scheduler 已有真实执行切片：
 
