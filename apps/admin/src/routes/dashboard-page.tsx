@@ -19,12 +19,18 @@ import {
   getSystemStatus,
   listCharacters,
   restoreBackup,
+  runInferencePreview,
   runSchedulerJob,
   setProviderConfig,
   testProviderConnection,
 } from "@yinjie/contracts";
 import { providerConfigSchema, type ProviderConfig } from "@yinjie/config";
 import { Card, SectionHeading, StatusPill } from "@yinjie/ui";
+
+type InferencePreviewForm = {
+  prompt: string;
+  systemPrompt?: string;
+};
 
 export function DashboardPage() {
   const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
@@ -95,6 +101,13 @@ export function DashboardPage() {
     },
   });
 
+  const previewForm = useForm<InferencePreviewForm>({
+    defaultValues: {
+      prompt: "Say hello from the Yinjie inference gateway.",
+      systemPrompt: "You are validating the new Yinjie inference runtime.",
+    },
+  });
+
   useEffect(() => {
     if (!providerConfigQuery.data || form.formState.isDirty) {
       return;
@@ -120,6 +133,20 @@ export function DashboardPage() {
         queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-ai-model", baseUrl] }),
       ]);
+    },
+  });
+
+  const previewMutation = useMutation({
+    mutationFn: (values: InferencePreviewForm) =>
+      runInferencePreview(
+        {
+          prompt: values.prompt.trim(),
+          systemPrompt: values.systemPrompt?.trim() ? values.systemPrompt.trim() : undefined,
+        },
+        baseUrl,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] });
     },
   });
 
@@ -589,6 +616,60 @@ export function DashboardPage() {
             <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Last Error</div>
               <div className="mt-2 text-white">{statusQuery.data?.inferenceGateway.lastError ?? "none"}</div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Inference Preview</SectionHeading>
+          <form
+            className="mt-4 space-y-4"
+            onSubmit={previewForm.handleSubmit((values) => previewMutation.mutate(values))}
+          >
+            <label className="block text-sm text-[color:var(--text-secondary)]">
+              System Prompt
+              <textarea
+                className="mt-2 min-h-24 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
+                {...previewForm.register("systemPrompt")}
+              />
+            </label>
+            <label className="block text-sm text-[color:var(--text-secondary)]">
+              User Prompt
+              <textarea
+                className="mt-2 min-h-32 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
+                {...previewForm.register("prompt")}
+              />
+            </label>
+            <button
+              className="w-full rounded-2xl bg-[linear-gradient(135deg,#22c55e,#86efac)] px-4 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+              type="submit"
+              disabled={previewMutation.isPending}
+            >
+              {previewMutation.isPending ? "Running preview..." : "Run Inference Preview"}
+            </button>
+          </form>
+
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Result</div>
+              <div className="mt-2 whitespace-pre-wrap text-white">
+                {previewMutation.isSuccess
+                  ? previewMutation.data.output ?? previewMutation.data.error ?? "No preview output returned."
+                  : previewMutation.isError && previewMutation.error instanceof Error
+                    ? previewMutation.error.message
+                    : "Run a preview prompt against the active provider profile."}
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                model: {previewMutation.data?.model ?? statusQuery.data?.inferenceGateway.activeProvider ?? "pending"}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                finish: {previewMutation.data?.finishReason ?? "pending"}
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                tokens: {previewMutation.data?.usage?.totalTokens ?? 0}
+              </div>
             </div>
           </div>
         </Card>

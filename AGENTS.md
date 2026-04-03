@@ -55,6 +55,7 @@
 - `GET /system/provider`
 - `PUT /system/provider`
 - `POST /system/provider/test`
+- `POST /system/inference/preview`
 - `GET /system/scheduler`
 - `POST /system/scheduler/run/:id`
 - `GET /system/logs`
@@ -158,6 +159,7 @@
 
 - `/system/provider` 可读取与保存当前 provider 配置
 - `/system/provider/test` 会通过真实 HTTP 探活更新队列指标
+- `/system/inference/preview` 可通过 active provider 发送真实 `chat/completions` 预览请求
 - `/system/status` 会返回 active provider、队列并发、成功/失败次数、最近成功时间与最近错误
 - `/api/config/ai-model` 与 provider.model 已保持联动并随 snapshot 持久化恢复
 

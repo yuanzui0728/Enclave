@@ -16,6 +16,7 @@ use crate::{
     app_state::AppState,
     error::{ApiError, ApiResult},
     models::{
+        InferencePreviewRequest, InferencePreviewResponse, InferenceUsageRecord,
         ProviderConfigResponse, ProviderTestRequest, ProviderTestResult, RealtimeRoomStatusRecord,
         RealtimeStatusRecord, SchedulerStatusRecord, UpdateProviderConfigRequest,
     },
@@ -91,6 +92,7 @@ pub fn router() -> Router<AppState> {
         .route("/scheduler/run/:id", post(run_scheduler_job))
         .route("/provider", get(get_provider_config).put(set_provider_config))
         .route("/provider/test", post(provider_test))
+        .route("/inference/preview", post(inference_preview))
         .route("/logs", get(log_index))
         .route("/diag/export", post(export_diag))
         .route("/backup/create", post(create_backup))
@@ -200,6 +202,91 @@ async fn provider_test(
             normalized_endpoint: Some(provider.endpoint),
             status_code: None,
         }),
+    }
+}
+
+async fn inference_preview(
+    State(state): State<AppState>,
+    Json(payload): Json<InferencePreviewRequest>,
+) -> Json<InferencePreviewResponse> {
+    let prompt = payload.prompt.trim().to_string();
+    if prompt.is_empty() {
+        return Json(InferencePreviewResponse {
+            success: false,
+            output: None,
+            model: None,
+            finish_reason: None,
+            usage: None,
+            error: Some("Preview prompt is required".into()),
+        });
+    }
+
+    let mut messages = Vec::new();
+    if let Some(system_prompt) = payload
+        .system_prompt
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        messages.push(yinjie_inference_gateway::ChatMessage {
+            role: "system".into(),
+            content: system_prompt.to_string(),
+        });
+    }
+    messages.push(yinjie_inference_gateway::ChatMessage {
+        role: "user".into(),
+        content: prompt,
+    });
+
+    let request = yinjie_inference_gateway::ChatCompletionRequest {
+        messages,
+        model: payload
+            .model
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(|value| value.to_string()),
+        temperature: Some(0.3),
+        max_tokens: Some(256),
+    };
+
+    match state.inference_gateway.chat_completion(request).await {
+        Ok(result) => {
+            runtime_paths::append_core_api_log(
+                &state.database_path,
+                "INFO",
+                &format!("inference preview succeeded for model {}", result.model),
+            );
+
+            Json(InferencePreviewResponse {
+                success: true,
+                output: Some(result.content),
+                model: Some(result.model),
+                finish_reason: result.finish_reason,
+                usage: result.usage.map(|usage| InferenceUsageRecord {
+                    prompt_tokens: usage.prompt_tokens,
+                    completion_tokens: usage.completion_tokens,
+                    total_tokens: usage.total_tokens,
+                }),
+                error: None,
+            })
+        }
+        Err(message) => {
+            runtime_paths::append_core_api_log(
+                &state.database_path,
+                "WARN",
+                &format!("inference preview failed: {}", message),
+            );
+
+            Json(InferencePreviewResponse {
+                success: false,
+                output: None,
+                model: None,
+                finish_reason: None,
+                usage: None,
+                error: Some(message),
+            })
+        }
     }
 }
 

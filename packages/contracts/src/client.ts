@@ -41,6 +41,8 @@ import type {
   TriggerSceneRequest,
 } from "./social";
 import type {
+  InferencePreviewRequest,
+  InferencePreviewResponse,
   LogIndexResponse,
   OperationResult,
   ProviderConfig,
@@ -137,6 +139,17 @@ export function setProviderConfig(payload: ProviderConfig, baseUrl?: string) {
     "/system/provider",
     {
       method: "PUT",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function runInferencePreview(payload: InferencePreviewRequest, baseUrl?: string) {
+  return request<InferencePreviewResponse>(
+    "/system/inference/preview",
+    {
+      method: "POST",
       body: JSON.stringify(payload),
     },
     baseUrl,

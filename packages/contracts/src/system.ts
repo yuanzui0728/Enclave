@@ -105,6 +105,27 @@ export interface ProviderConfig {
   mode: string;
 }
 
+export interface InferencePreviewRequest {
+  prompt: string;
+  model?: string;
+  systemPrompt?: string;
+}
+
+export interface InferenceUsage {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+}
+
+export interface InferencePreviewResponse {
+  success: boolean;
+  output?: string;
+  model?: string;
+  finishReason?: string;
+  usage?: InferenceUsage;
+  error?: string;
+}
+
 export interface OperationResult {
   success: boolean;
   message: string;

@@ -147,6 +147,33 @@ pub struct ProviderConfigResponse {
     pub mode: String,
 }
 
+#[derive(Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InferencePreviewRequest {
+    pub prompt: String,
+    pub model: Option<String>,
+    pub system_prompt: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InferenceUsageRecord {
+    pub prompt_tokens: Option<u32>,
+    pub completion_tokens: Option<u32>,
+    pub total_tokens: Option<u32>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InferencePreviewResponse {
+    pub success: bool,
+    pub output: Option<String>,
+    pub model: Option<String>,
+    pub finish_reason: Option<String>,
+    pub usage: Option<InferenceUsageRecord>,
+    pub error: Option<String>,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PersonalityTraits {
