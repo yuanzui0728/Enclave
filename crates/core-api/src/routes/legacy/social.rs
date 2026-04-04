@@ -9,6 +9,7 @@ use axum::{
 use crate::{
     app_state::AppState,
     error::{ApiError, ApiResult},
+    generation::generate_social_greeting_text,
     models::{
         FriendListItemRecord, FriendRequestRecord, FriendshipRecord, SendFriendRequestPayload,
         ShakePreviewCharacterRecord, ShakeResultRecord, SuccessResponse, TriggerScenePayload,
@@ -141,24 +142,28 @@ async fn shake(
     State(state): State<AppState>,
     Json(payload): Json<UserScopedRequest>,
 ) -> Json<Option<ShakeResultRecord>> {
-    let runtime = state.runtime.read().expect("runtime lock poisoned");
-
-    let available = runtime
-        .characters
-        .values()
-        .filter(|character| {
-            !runtime.friendships.values().any(|friendship| {
-                friendship.user_id == payload.user_id && friendship.character_id == character.id
+    let character = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        let available = runtime
+            .characters
+            .values()
+            .filter(|character| {
+                !runtime.friendships.values().any(|friendship| {
+                    friendship.user_id == payload.user_id && friendship.character_id == character.id
+                })
             })
-        })
-        .collect::<Vec<_>>();
+            .cloned()
+            .collect::<Vec<_>>();
 
-    if available.is_empty() {
-        return Json(None);
-    }
+        if available.is_empty() {
+            return Json(None);
+        }
 
-    let index = pseudo_random_index(available.len());
-    let character = available[index];
+        available[pseudo_random_index(available.len())].clone()
+    };
+    let greeting = generate_social_greeting_text(&state, &character, None)
+        .await
+        .unwrap_or_else(|| fallback_shake_greeting(&character.name));
 
     Json(Some(ShakeResultRecord {
         character: ShakePreviewCharacterRecord {
@@ -168,10 +173,7 @@ async fn shake(
             relationship: character.relationship.clone(),
             expert_domains: character.expert_domains.clone(),
         },
-        greeting: format!(
-            "Hello, I'm {}. We just met in Hidden World.",
-            character.name
-        ),
+        greeting,
     }))
 }
 
@@ -221,60 +223,80 @@ async fn trigger_scene(
     State(state): State<AppState>,
     Json(payload): Json<TriggerScenePayload>,
 ) -> ApiResult<Json<Option<FriendRequestRecord>>> {
-    let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-
-    let candidates = runtime
-        .characters
-        .values()
-        .filter(|character| {
-            character
-                .trigger_scenes
-                .as_ref()
-                .is_some_and(|scenes| scenes.iter().any(|scene| scene == &payload.scene))
-        })
-        .filter(|character| {
-            !runtime.friendships.values().any(|friendship| {
-                friendship.user_id == payload.user_id && friendship.character_id == character.id
+    let character = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        let candidates = runtime
+            .characters
+            .values()
+            .filter(|character| {
+                character
+                    .trigger_scenes
+                    .as_ref()
+                    .is_some_and(|scenes| scenes.iter().any(|scene| scene == &payload.scene))
             })
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+            .filter(|character| {
+                !runtime.friendships.values().any(|friendship| {
+                    friendship.user_id == payload.user_id && friendship.character_id == character.id
+                })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
 
-    if candidates.is_empty() {
-        return Ok(Json(None));
-    }
+        if candidates.is_empty() {
+            return Ok(Json(None));
+        }
 
-    let character = candidates[pseudo_random_index(candidates.len())].clone();
+        let character = candidates[pseudo_random_index(candidates.len())].clone();
 
-    if let Some(existing) = runtime
-        .friend_requests
-        .values()
-        .find(|request| {
-            request.user_id == payload.user_id
-                && request.character_id == character.id
-                && request.status == "pending"
-        })
-        .cloned()
-    {
-        return Ok(Json(Some(existing)));
-    }
+        if let Some(existing) = runtime
+            .friend_requests
+            .values()
+            .find(|request| {
+                request.user_id == payload.user_id
+                    && request.character_id == character.id
+                    && request.status == "pending"
+            })
+            .cloned()
+        {
+            return Ok(Json(Some(existing)));
+        }
 
-    let request = build_friend_request(
-        payload.user_id,
-        character.id,
-        character.name.clone(),
-        character.avatar.clone(),
-        Some(payload.scene.clone()),
-        Some(format!(
-            "Hello, I'm {}. We crossed paths in {}.",
-            character.name, payload.scene
-        )),
-    );
+        character
+    };
+    let greeting = generate_social_greeting_text(&state, &character, Some(&payload.scene))
+        .await
+        .unwrap_or_else(|| fallback_scene_greeting(&character.name, &payload.scene));
 
-    runtime
-        .friend_requests
-        .insert(request.id.clone(), request.clone());
-    drop(runtime);
+    let request = {
+        let mut runtime = state.runtime.write().expect("runtime lock poisoned");
+
+        if let Some(existing) = runtime
+            .friend_requests
+            .values()
+            .find(|request| {
+                request.user_id == payload.user_id
+                    && request.character_id == character.id
+                    && request.status == "pending"
+            })
+            .cloned()
+        {
+            return Ok(Json(Some(existing)));
+        }
+
+        let request = build_friend_request(
+            payload.user_id,
+            character.id,
+            character.name.clone(),
+            character.avatar.clone(),
+            Some(payload.scene.clone()),
+            Some(greeting),
+        );
+
+        runtime
+            .friend_requests
+            .insert(request.id.clone(), request.clone());
+        request
+    };
     state.request_persist("social-trigger-scene");
 
     Ok(Json(Some(request)))
@@ -300,6 +322,14 @@ fn build_friend_request(
         created_at: now_token(),
         expires_at: Some(expiry_token()),
     }
+}
+
+fn fallback_shake_greeting(character_name: &str) -> String {
+    format!("Hello, I'm {}. We just met in Hidden World.", character_name)
+}
+
+fn fallback_scene_greeting(character_name: &str, scene: &str) -> String {
+    format!("Hello, I'm {}. We crossed paths in {}.", character_name, scene)
 }
 
 fn pseudo_random_index(length: usize) -> usize {

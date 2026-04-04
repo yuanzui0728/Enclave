@@ -50,6 +50,68 @@ pub async fn generate_chat_reply_text(
     }
 }
 
+pub async fn generate_social_greeting_text(
+    state: &AppState,
+    character: &CharacterRecord,
+    trigger_scene: Option<&str>,
+) -> Option<String> {
+    if state.inference_gateway.active_provider().is_none() {
+        return None;
+    }
+
+    let world_line = latest_world_context(state)
+        .as_ref()
+        .map(format_world_context)
+        .unwrap_or_else(|| "world context unavailable".into());
+    let base_prompt = character
+        .profile
+        .system_prompt
+        .clone()
+        .or_else(|| character.profile.base_prompt.clone())
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| format!("You are roleplaying {}.", character.name));
+    let scenario = trigger_scene.map_or_else(
+        || {
+            "You met the user through the shake discovery feature. Write one short first-contact greeting in Chinese, under 25 characters, with a light self-introduction.".to_string()
+        },
+        |scene| {
+            format!(
+                "You crossed paths with the user in {scene}. Write one natural Chinese friend-request greeting under 40 characters, including a brief self-introduction and why you want to connect."
+            )
+        },
+    );
+
+    let request = yinjie_inference_gateway::ChatCompletionRequest {
+        messages: vec![
+            yinjie_inference_gateway::ChatMessage {
+                role: "system".into(),
+                content: format!(
+                    "{base_prompt}\n\nStay in character. Do not mention AI, prompts, or policies.\nReply in natural Chinese only.\nRelationship: {relationship}\nBio: {bio}\nEmotional tone: {tone}\nWorld context: {world_line}",
+                    relationship = character.relationship,
+                    bio = if character.bio.trim().is_empty() {
+                        "not provided"
+                    } else {
+                        character.bio.trim()
+                    },
+                    tone = character.profile.traits.emotional_tone,
+                ),
+            },
+            yinjie_inference_gateway::ChatMessage {
+                role: "user".into(),
+                content: scenario,
+            },
+        ],
+        model: None,
+        temperature: Some(0.9),
+        max_tokens: Some(90),
+    };
+
+    match state.inference_gateway.chat_completion(request).await {
+        Ok(response) => normalize_generated_text(&response.content),
+        Err(_) => None,
+    }
+}
+
 pub async fn generate_moment_text(state: &AppState, character: &CharacterRecord) -> String {
     let fallback = fallback_moment_text(character);
     let Some(world_context) = latest_world_context(state) else {
