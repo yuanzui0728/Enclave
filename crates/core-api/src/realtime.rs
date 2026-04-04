@@ -13,6 +13,7 @@ use tracing::info;
 
 use crate::{
     app_state::{AppState, RealtimeCommand},
+    generation::generate_chat_reply_text,
     models::{
         CharacterRecord, ConversationRecord, ConversationUpdatedEventPayload, ErrorEventPayload,
         JoinConversationSocketPayload, MessageRecord, SendMessageSocketPayload, TypingEventPayload,
@@ -299,8 +300,14 @@ async fn process_conversation_turn(
     )
     .await;
 
-    let (conversation, messages) =
-        persist_conversation_turn(&state, &conversation_id, &character_id, &user_id, &text);
+    let (conversation, messages) = persist_conversation_turn_gateway(
+        &state,
+        &conversation_id,
+        &character_id,
+        &user_id,
+        &text,
+    )
+    .await;
     let typing_delay = typing_delay_ms(
         messages
             .iter()
@@ -417,6 +424,7 @@ fn ensure_conversation(
     conversation
 }
 
+#[allow(dead_code, unused_variables, unused_mut)]
 fn persist_conversation_turn(
     state: &AppState,
     conversation_id: &str,
@@ -444,7 +452,6 @@ fn persist_conversation_turn(
             conversation.title,
         )
     };
-
     let user_message = MessageRecord {
         id: format!("msg_{}_user", now_token()),
         conversation_id: conversation_id.to_string(),
@@ -468,6 +475,8 @@ fn persist_conversation_turn(
         }
     }
 
+    drop(runtime);
+
     for character in reply_characters {
         let reply = MessageRecord {
             id: format!("msg_{}_{}", now_token(), character.id),
@@ -482,15 +491,13 @@ fn persist_conversation_turn(
         generated_messages.push(reply);
     }
 
-    {
+    let conversation_snapshot = {
+        let mut runtime = state.runtime.write().expect("runtime lock poisoned");
         let messages = runtime
             .messages
             .entry(conversation_id.to_string())
             .or_default();
         messages.extend(generated_messages.iter().cloned());
-    }
-
-    let conversation_snapshot = {
         let conversation = runtime
             .conversations
             .get_mut(conversation_id)
@@ -499,7 +506,104 @@ fn persist_conversation_turn(
         conversation.title = title;
         conversation.clone()
     };
-    drop(runtime);
+    state.request_persist("realtime-conversation-turn");
+
+    (conversation_snapshot, generated_messages)
+}
+
+async fn persist_conversation_turn_gateway(
+    state: &AppState,
+    conversation_id: &str,
+    requested_character_id: &str,
+    user_id: &str,
+    text: &str,
+) -> (ConversationRecord, Vec<MessageRecord>) {
+    let (user_name, conversation, previous_messages, reply_characters) = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        let conversation = runtime
+            .conversations
+            .get(conversation_id)
+            .cloned()
+            .expect("conversation should exist before message persistence");
+        let mut reply_characters = conversation
+            .participants
+            .iter()
+            .filter_map(|participant| runtime.characters.get(participant).cloned())
+            .collect::<Vec<_>>();
+
+        if conversation.r#type == "direct" && reply_characters.is_empty() {
+            if let Some(character) = runtime.characters.get(requested_character_id).cloned() {
+                reply_characters.push(character);
+            }
+        }
+
+        (
+            runtime
+                .users
+                .get(user_id)
+                .map(|user| user.username.clone())
+                .unwrap_or_else(|| "User".into()),
+            conversation,
+            runtime
+                .messages
+                .get(conversation_id)
+                .cloned()
+                .unwrap_or_default(),
+            reply_characters,
+        )
+    };
+
+    let user_message = MessageRecord {
+        id: format!("msg_{}_user", now_token()),
+        conversation_id: conversation_id.to_string(),
+        sender_type: "user".into(),
+        sender_id: user_id.to_string(),
+        sender_name: user_name,
+        r#type: "text".into(),
+        text: text.to_string(),
+        created_at: now_token(),
+    };
+
+    let mut generated_messages = vec![user_message.clone()];
+    for character in reply_characters {
+        let mut generation_history = previous_messages.clone();
+        generation_history.extend(generated_messages.iter().cloned());
+        let reply_text = generate_chat_reply_text(
+            state,
+            &character,
+            &conversation,
+            &generation_history,
+        )
+        .await
+        .unwrap_or_else(|| build_reply_text(&character, text, conversation.r#type == "group"));
+        let reply = MessageRecord {
+            id: format!("msg_{}_{}", now_token(), character.id),
+            conversation_id: conversation_id.to_string(),
+            sender_type: "character".into(),
+            sender_id: character.id.clone(),
+            sender_name: character.name.clone(),
+            r#type: "text".into(),
+            text: reply_text,
+            created_at: now_token(),
+        };
+        generated_messages.push(reply);
+    }
+
+    let conversation_snapshot = {
+        let mut runtime = state.runtime.write().expect("runtime lock poisoned");
+        let messages = runtime
+            .messages
+            .entry(conversation_id.to_string())
+            .or_default();
+        messages.extend(generated_messages.iter().cloned());
+        let stored_conversation = runtime
+            .conversations
+            .get_mut(conversation_id)
+            .expect("conversation should exist while updating timestamp");
+        stored_conversation.updated_at = now_token();
+        stored_conversation.title = conversation.title.clone();
+        stored_conversation.clone()
+    };
     state.request_persist("realtime-conversation-turn");
 
     (conversation_snapshot, generated_messages)

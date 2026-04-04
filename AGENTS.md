@@ -248,3 +248,9 @@
 - API Key 目标迁移到系统 keychain / keyring
 - 运行配置进入本地 app data 目录
 - SQLite 文件迁移到桌面运行时数据目录
+## Current Migration Notes
+
+- Realtime `/chat` replies now have a gateway-backed execution path in `crates/core-api/src/realtime.rs`.
+- Chat reply prompt assembly lives in `crates/core-api/src/generation.rs` and uses recent message history, character memory, current activity, and optional world context.
+- The realtime execution path now snapshots runtime state before inference so gateway waits do not hold the runtime write lock.
+- Fallback placeholder replies are still preserved when the provider is unavailable or the gateway call fails.
