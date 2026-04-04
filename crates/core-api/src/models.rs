@@ -461,6 +461,40 @@ pub struct WorldContextRecord {
     pub timestamp: String,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AIBehaviorLogRecord {
+    pub id: String,
+    pub character_id: String,
+    pub behavior_type: String,
+    pub target_id: Option<String>,
+    pub trigger_reason: Option<String>,
+    pub metadata: Option<serde_json::Value>,
+    pub created_at: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NarrativeMilestoneRecord {
+    pub label: String,
+    pub completed_at: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NarrativeArcRecord {
+    pub id: String,
+    pub user_id: String,
+    pub character_id: String,
+    pub title: String,
+    pub status: String,
+    pub progress: i32,
+    #[serde(default)]
+    pub milestones: Vec<NarrativeMilestoneRecord>,
+    pub created_at: String,
+    pub completed_at: Option<String>,
+}
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SchedulerJobRecord {

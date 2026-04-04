@@ -10,6 +10,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use serde_json::json;
 use tokio::time::sleep;
 
 use crate::{
@@ -372,6 +373,17 @@ fn spawn_group_ai_replies(
                     "group {} generated async reply from {} after user message",
                     group_id, plan.character.id
                 ),
+            );
+            state.append_behavior_log(
+                plan.character.id.clone(),
+                "comment",
+                Some(group_id.clone()),
+                Some("group-async-reply".into()),
+                Some(json!({
+                    "groupId": group_id,
+                    "characterName": plan.character.name,
+                    "source": "group-reply",
+                })),
             );
             state.request_persist("chat-group-ai-reply");
         });

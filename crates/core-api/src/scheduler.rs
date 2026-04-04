@@ -4,6 +4,7 @@ use std::{
 };
 
 use tokio::{spawn, time::interval};
+use serde_json::json;
 use tracing::{info, warn};
 
 use crate::{
@@ -421,10 +422,24 @@ async fn check_moment_schedule_job(state: AppState) -> Result<String, String> {
     let created = generated_posts.len();
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
 
-    for post in generated_posts {
+    for post in &generated_posts {
         runtime.moment_posts.insert(post.id.clone(), post.clone());
         runtime.moment_comments.entry(post.id.clone()).or_default();
-        runtime.moment_likes.entry(post.id).or_default();
+        runtime.moment_likes.entry(post.id.clone()).or_default();
+    }
+    drop(runtime);
+
+    for post in &generated_posts {
+        state.append_behavior_log(
+            post.author_id.clone(),
+            "moment_post",
+            Some(post.id.clone()),
+            Some("scheduler-check-moment-schedule".into()),
+            Some(json!({
+                "characterName": post.author_name,
+                "location": post.location,
+            })),
+        );
     }
 
     Ok(format!("created {created} scheduled moments"))
@@ -512,6 +527,7 @@ async fn trigger_scene_friend_requests_job(state: AppState) -> Result<String, St
     }
 
     let mut created = 0_usize;
+    let mut created_requests = Vec::new();
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     for request in planned_requests {
         let already_pending = runtime.friend_requests.values().any(|existing| {
@@ -529,8 +545,24 @@ async fn trigger_scene_friend_requests_job(state: AppState) -> Result<String, St
 
         runtime
             .friend_requests
-            .insert(request.id.clone(), request);
+            .insert(request.id.clone(), request.clone());
+        created_requests.push(request);
         created += 1;
+    }
+    drop(runtime);
+
+    for request in &created_requests {
+        state.append_behavior_log(
+            request.character_id.clone(),
+            "friend_request",
+            Some(request.id.clone()),
+            Some("scheduler-scene-trigger".into()),
+            Some(json!({
+                "userId": request.user_id,
+                "scene": request.trigger_scene,
+                "characterName": request.character_name,
+            })),
+        );
     }
 
     Ok(format!("created {created} scene-based friend requests"))
@@ -590,10 +622,12 @@ async fn process_pending_feed_reactions_job(state: AppState) -> Result<String, S
 
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let mut reacted = 0_usize;
+    let mut generated_logs = Vec::new();
 
     for (post_id, comments) in generated {
         let added = comments.len();
         if added > 0 {
+            generated_logs.extend(comments.iter().cloned());
             runtime
                 .feed_comments
                 .entry(post_id.clone())
@@ -606,6 +640,21 @@ async fn process_pending_feed_reactions_job(state: AppState) -> Result<String, S
             post.ai_reacted = true;
         }
         reacted += 1;
+    }
+    drop(runtime);
+
+    for comment in generated_logs {
+        state.append_behavior_log(
+            comment.author_id.clone(),
+            "comment",
+            Some(comment.post_id.clone()),
+            Some("scheduler-feed-reaction".into()),
+            Some(json!({
+                "postId": comment.post_id,
+                "characterName": comment.author_name,
+                "text": comment.text,
+            })),
+        );
     }
 
     Ok(format!("processed {reacted} pending feed posts"))

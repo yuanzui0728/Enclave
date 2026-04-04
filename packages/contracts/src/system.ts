@@ -29,6 +29,8 @@ export interface LegacySurfaceStatus {
   migratedModules: string[];
   usersCount: number;
   charactersCount: number;
+  narrativeArcsCount: number;
+  behaviorLogsCount: number;
 }
 
 export interface SchedulerJobStatus {

@@ -2,9 +2,11 @@ use std::{
     collections::HashMap,
     path::PathBuf,
     sync::{Arc, RwLock},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 use tracing::warn;
@@ -12,10 +14,11 @@ use yinjie_inference_gateway::{InferenceGateway, ProviderConfig as GatewayProvid
 
 use crate::{
     models::{
-        AppConfigStore, CharacterRecord, ConversationRecord, FeedCommentRecord,
-        FeedInteractionRecord, FeedPostRecord, FriendRequestRecord, FriendshipRecord,
-        GroupMemberRecord, GroupMessageRecord, GroupRecord, MessageRecord, MomentCommentRecord,
-        MomentLikeRecord, MomentPostRecord, ProviderConfigRecord, UserRecord, WorldContextRecord,
+        AIBehaviorLogRecord, AppConfigStore, CharacterRecord, ConversationRecord,
+        FeedCommentRecord, FeedInteractionRecord, FeedPostRecord, FriendRequestRecord,
+        FriendshipRecord, GroupMemberRecord, GroupMessageRecord, GroupRecord, MessageRecord,
+        MomentCommentRecord, MomentLikeRecord, MomentPostRecord, NarrativeArcRecord,
+        ProviderConfigRecord, UserRecord, WorldContextRecord,
     },
     persistence,
     seed::{seeded_characters, seeded_feed_stream, seeded_moments, seeded_world_context},
@@ -51,6 +54,10 @@ pub struct RuntimeState {
     pub friend_requests: HashMap<String, FriendRequestRecord>,
     pub friendships: HashMap<String, FriendshipRecord>,
     pub world_contexts: Vec<WorldContextRecord>,
+    #[serde(default)]
+    pub ai_behavior_logs: Vec<AIBehaviorLogRecord>,
+    #[serde(default)]
+    pub narrative_arcs: HashMap<String, NarrativeArcRecord>,
     pub config: AppConfigStore,
 }
 
@@ -145,6 +152,93 @@ impl AppState {
             reason: reason.into(),
         });
     }
+
+    pub fn append_behavior_log(
+        &self,
+        character_id: impl Into<String>,
+        behavior_type: impl Into<String>,
+        target_id: Option<String>,
+        trigger_reason: Option<String>,
+        metadata: Option<serde_json::Value>,
+    ) {
+        {
+            let mut runtime = self.runtime.write().expect("runtime lock poisoned");
+            runtime.ai_behavior_logs.push(AIBehaviorLogRecord {
+                id: format!("behavior_{}", now_token()),
+                character_id: character_id.into(),
+                behavior_type: behavior_type.into(),
+                target_id,
+                trigger_reason,
+                metadata,
+                created_at: now_token(),
+            });
+
+            if runtime.ai_behavior_logs.len() > 500 {
+                let overflow = runtime.ai_behavior_logs.len() - 500;
+                runtime.ai_behavior_logs.drain(0..overflow);
+            }
+        }
+
+        self.request_persist("analytics-append-behavior-log");
+    }
+
+    pub fn ensure_narrative_arc(
+        &self,
+        user_id: &str,
+        character: &CharacterRecord,
+    ) -> NarrativeArcRecord {
+        let mut runtime = self.runtime.write().expect("runtime lock poisoned");
+
+        if let Some(existing) = runtime
+            .narrative_arcs
+            .values()
+            .find(|arc| arc.user_id == user_id && arc.character_id == character.id)
+            .cloned()
+        {
+            return existing;
+        }
+
+        let arc = NarrativeArcRecord {
+            id: format!("arc_{}", now_token()),
+            user_id: user_id.to_string(),
+            character_id: character.id.clone(),
+            title: format!("{} relationship arc", character.name),
+            status: "active".into(),
+            progress: 0,
+            milestones: vec![
+                crate::models::NarrativeMilestoneRecord {
+                    label: "friendship accepted".into(),
+                    completed_at: Some(now_token()),
+                },
+                crate::models::NarrativeMilestoneRecord {
+                    label: "first meaningful interaction".into(),
+                    completed_at: None,
+                },
+            ],
+            created_at: now_token(),
+            completed_at: None,
+        };
+
+        runtime
+            .narrative_arcs
+            .insert(arc.id.clone(), arc.clone());
+        drop(runtime);
+
+        self.append_behavior_log(
+            character.id.clone(),
+            "friend_request",
+            Some(arc.id.clone()),
+            Some("narrative-arc-created".into()),
+            Some(json!({
+                "userId": user_id,
+                "characterName": character.name,
+                "title": arc.title,
+            })),
+        );
+        self.request_persist("narrative-ensure-arc");
+
+        arc
+    }
 }
 
 impl RuntimeState {
@@ -175,6 +269,8 @@ impl RuntimeState {
             friend_requests: HashMap::new(),
             friendships: HashMap::new(),
             world_contexts: vec![seeded_world_context()],
+            ai_behavior_logs: Vec::new(),
+            narrative_arcs: HashMap::new(),
             config: AppConfigStore::default(),
         }
     }
@@ -229,4 +325,11 @@ fn normalize_or_default(value: &str, fallback: &str) -> String {
     } else {
         normalized.to_string()
     }
+}
+
+fn now_token() -> String {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis().to_string())
+        .unwrap_or_else(|_| "0".into())
 }

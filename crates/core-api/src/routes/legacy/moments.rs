@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use serde_json::json;
 
 use crate::{
     app_state::{AppState, RuntimeState},
@@ -119,6 +120,16 @@ async fn generate_for_character(
     let response = enrich_moment(&post, &runtime);
     drop(runtime);
     state.request_persist("moments-generate-single");
+    state.append_behavior_log(
+        character.id.clone(),
+        "moment_post",
+        Some(post.id.clone()),
+        Some("manual-moment-generation".into()),
+        Some(json!({
+            "characterName": character.name,
+            "location": post.location,
+        })),
+    );
 
     Json(Some(response))
 }
@@ -146,6 +157,21 @@ async fn generate_all_moments(State(state): State<AppState>) -> Json<Vec<MomentR
     }
     drop(runtime);
     state.request_persist("moments-generate-all");
+
+    for post in &generated {
+        if post.author_type == "character" {
+            state.append_behavior_log(
+                post.author_id.clone(),
+                "moment_post",
+                Some(post.id.clone()),
+                Some("bulk-moment-generation".into()),
+                Some(json!({
+                    "characterName": post.author_name,
+                    "location": post.location,
+                })),
+            );
+        }
+    }
 
     Json(generated)
 }

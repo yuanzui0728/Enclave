@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use serde_json::json;
 
 use crate::{
     app_state::AppState,
@@ -63,6 +64,7 @@ async fn accept_request(
         request.status = "accepted".into();
         request.character_id.clone()
     };
+    let accepted_character = runtime.characters.get(&character_id).cloned();
 
     if let Some(existing) = runtime
         .friendships
@@ -73,6 +75,9 @@ async fn accept_request(
         .cloned()
     {
         drop(runtime);
+        if let Some(character) = accepted_character.as_ref() {
+            state.ensure_narrative_arc(&payload.user_id, character);
+        }
         state.request_persist("social-accept-request");
         return Ok(Json(existing));
     }
@@ -91,6 +96,20 @@ async fn accept_request(
         .friendships
         .insert(friendship.id.clone(), friendship.clone());
     drop(runtime);
+    if let Some(character) = accepted_character.as_ref() {
+        state.ensure_narrative_arc(&friendship.user_id, character);
+        state.append_behavior_log(
+            character.id.clone(),
+            "friend_request",
+            Some(friendship.id.clone()),
+            Some("friend-request-accepted".into()),
+            Some(json!({
+                "userId": friendship.user_id,
+                "characterName": character.name,
+                "friendshipId": friendship.id,
+            })),
+        );
+    }
     state.request_persist("social-accept-request");
 
     Ok(Json(friendship))
@@ -285,7 +304,7 @@ async fn trigger_scene(
 
         let request = build_friend_request(
             payload.user_id,
-            character.id,
+            character.id.clone(),
             character.name.clone(),
             character.avatar.clone(),
             Some(payload.scene.clone()),
@@ -298,6 +317,17 @@ async fn trigger_scene(
         request
     };
     state.request_persist("social-trigger-scene");
+    state.append_behavior_log(
+        character.id.clone(),
+        "friend_request",
+        Some(request.id.clone()),
+        Some("scene-trigger".into()),
+        Some(json!({
+            "userId": request.user_id,
+            "scene": payload.scene,
+            "characterName": character.name,
+        })),
+    );
 
     Ok(Json(Some(request)))
 }

@@ -259,3 +259,5 @@
 - Realtime conversation turns now refresh character memory summaries every 10 messages through the gateway and persist both `profile.memorySummary` and `profile.memory.recentSummary`.
 - Direct `/chat` conversations can now classify cross-domain intent and upgrade themselves into temporary group consultations with coordinator copy, system join messages, and invited character replies generated through the gateway-backed runtime.
 - `POST /api/groups/:id/messages` now restores async group-member reply parity: user turns can trigger delayed character replies through the gateway-backed chat generation path, with activity-frequency gating and persisted group message history.
+- Runtime state now carries `ai_behavior_logs` and `narrative_arcs` compatibility records, and `/system/status.legacySurface` exposes their live counts for migration tracking.
+- Accepted friend requests now ensure a narrative arc, while scene-triggered requests, generated moments, scheduler feed reactions, and async group replies append AI behavior logs without changing business responses.

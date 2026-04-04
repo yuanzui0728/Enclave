@@ -63,6 +63,8 @@ struct LegacySurfaceStatus {
     migrated_modules: Vec<String>,
     users_count: usize,
     characters_count: usize,
+    narrative_arcs_count: usize,
+    behavior_logs_count: usize,
 }
 
 #[derive(Serialize)]
@@ -442,6 +444,8 @@ fn build_system_status(state: &AppState) -> SystemStatus {
                 .collect(),
             users_count: runtime.users.len(),
             characters_count: runtime.characters.len(),
+            narrative_arcs_count: runtime.narrative_arcs.len(),
+            behavior_logs_count: runtime.ai_behavior_logs.len(),
         },
         scheduler,
         app_mode: std::env::var("YINJIE_APP_MODE").unwrap_or_else(|_| "development".into()),
