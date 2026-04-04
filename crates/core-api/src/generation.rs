@@ -5,6 +5,14 @@ use crate::{
     },
 };
 
+#[allow(dead_code)]
+#[derive(Clone, Debug, Default)]
+pub struct GroupChatIntent {
+    pub needs_group_chat: bool,
+    pub reason: String,
+    pub required_domains: Vec<String>,
+}
+
 pub async fn generate_chat_reply_text(
     state: &AppState,
     character: &CharacterRecord,
@@ -48,6 +56,111 @@ pub async fn generate_chat_reply_text(
         Ok(response) => normalize_generated_text(&response.content),
         Err(_) => None,
     }
+}
+
+pub async fn classify_group_chat_intent(
+    state: &AppState,
+    character: &CharacterRecord,
+    user_message: &str,
+) -> Option<GroupChatIntent> {
+    if state.inference_gateway.active_provider().is_none() {
+        return None;
+    }
+
+    let request = yinjie_inference_gateway::ChatCompletionRequest {
+        messages: vec![
+            yinjie_inference_gateway::ChatMessage {
+                role: "system".into(),
+                content: "You classify whether a user question needs a multi-character consultation. Reply with JSON only.".into(),
+            },
+            yinjie_inference_gateway::ChatMessage {
+                role: "user".into(),
+                content: format!(
+                    "用户发给{character_name}（专长：{domains}）的消息：\n\"{message}\"\n\n判断这个问题是否超出{character_name}的专长范围，需要其他领域的朋友帮忙。\n\n以JSON格式输出：\n{{\n  \"needsGroupChat\": true/false,\n  \"reason\": \"简短说明原因\",\n  \"requiredDomains\": [\"需要的领域1\", \"需要的领域2\"]\n}}\n\n只输出JSON。",
+                    character_name = character.name,
+                    domains = if character.expert_domains.is_empty() {
+                        "general".into()
+                    } else {
+                        character.expert_domains.join("、")
+                    },
+                    message = user_message
+                ),
+            },
+        ],
+        model: None,
+        temperature: Some(0.1),
+        max_tokens: Some(140),
+    };
+
+    let response = state.inference_gateway.chat_completion(request).await.ok()?;
+    let parsed = parse_json_value(&response.content)?;
+
+    Some(GroupChatIntent {
+        needs_group_chat: parsed
+            .get("needsGroupChat")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        reason: parsed
+            .get("reason")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or_default()
+            .trim()
+            .to_string(),
+        required_domains: parsed
+            .get("requiredDomains")
+            .and_then(serde_json::Value::as_array)
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(serde_json::Value::as_str)
+                    .map(|value| value.trim().to_lowercase())
+                    .filter(|value| !value.is_empty())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default(),
+    })
+}
+
+pub async fn generate_group_coordinator_text(
+    state: &AppState,
+    trigger_character: &CharacterRecord,
+    invited_characters: &[CharacterRecord],
+    topic: &str,
+) -> Option<String> {
+    if state.inference_gateway.active_provider().is_none() || invited_characters.is_empty() {
+        return None;
+    }
+
+    let invited_names = invited_characters
+        .iter()
+        .map(|character| character.name.as_str())
+        .collect::<Vec<_>>();
+    let request = yinjie_inference_gateway::ChatCompletionRequest {
+        messages: vec![
+            yinjie_inference_gateway::ChatMessage {
+                role: "system".into(),
+                content: format!(
+                    "You are roleplaying {}. Reply in natural Chinese only and stay in character.",
+                    trigger_character.name
+                ),
+            },
+            yinjie_inference_gateway::ChatMessage {
+                role: "user".into(),
+                content: format!(
+                    "你是{}，你刚刚把{}拉进了群聊，因为用户问了一个关于“{}”的问题，超出了你一个人的专长范围。请用自然的方式说明为什么拉群，语气要像真实朋友一样，简短自然，不超过两句话。",
+                    trigger_character.name,
+                    invited_names.join("和"),
+                    topic
+                ),
+            },
+        ],
+        model: None,
+        temperature: Some(0.8),
+        max_tokens: Some(100),
+    };
+
+    let response = state.inference_gateway.chat_completion(request).await.ok()?;
+    normalize_generated_text(&response.content)
 }
 
 pub async fn generate_social_greeting_text(
@@ -451,6 +564,21 @@ fn history_window_size(character: &CharacterRecord) -> usize {
         .unwrap_or(70) as usize;
 
     8 + (forgetting_curve * 22 / 100)
+}
+
+fn parse_json_value(value: &str) -> Option<serde_json::Value> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let without_prefix = trimmed
+        .strip_prefix("```json")
+        .or_else(|| trimmed.strip_prefix("```"))
+        .unwrap_or(trimmed);
+    let normalized = without_prefix.strip_suffix("```").unwrap_or(without_prefix).trim();
+
+    serde_json::from_str(normalized).ok()
 }
 
 fn latest_world_context(state: &AppState) -> Option<WorldContextRecord> {

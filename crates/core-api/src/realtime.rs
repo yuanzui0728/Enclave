@@ -13,7 +13,10 @@ use tracing::info;
 
 use crate::{
     app_state::{AppState, RealtimeCommand},
-    generation::{generate_chat_reply_text, generate_memory_summary_text},
+    generation::{
+        classify_group_chat_intent, generate_chat_reply_text, generate_group_coordinator_text,
+        generate_memory_summary_text,
+    },
     models::{
         CharacterRecord, ConversationRecord, ConversationUpdatedEventPayload, ErrorEventPayload,
         JoinConversationSocketPayload, MessageRecord, SendMessageSocketPayload, TypingEventPayload,
@@ -518,7 +521,7 @@ async fn persist_conversation_turn_gateway(
     user_id: &str,
     text: &str,
 ) -> (ConversationRecord, Vec<MessageRecord>) {
-    let (user_name, conversation, previous_messages, reply_characters, primary_character_id) = {
+    let (user_name, mut conversation, previous_messages, reply_characters, primary_character_id) = {
         let runtime = state.runtime.read().expect("runtime lock poisoned");
         let conversation = runtime
             .conversations
@@ -576,28 +579,143 @@ async fn persist_conversation_turn_gateway(
     };
 
     let mut generated_messages = vec![user_message.clone()];
-    for character in reply_characters {
-        let mut generation_history = previous_messages.clone();
-        generation_history.extend(generated_messages.iter().cloned());
-        let reply_text = generate_chat_reply_text(
-            state,
-            &character,
-            &conversation,
-            &generation_history,
-        )
-        .await
-        .unwrap_or_else(|| build_reply_text(&character, text, conversation.r#type == "group"));
-        let reply = MessageRecord {
-            id: format!("msg_{}_{}", now_token(), character.id),
-            conversation_id: conversation_id.to_string(),
-            sender_type: "character".into(),
-            sender_id: character.id.clone(),
-            sender_name: character.name.clone(),
-            r#type: "text".into(),
-            text: reply_text,
-            created_at: now_token(),
-        };
-        generated_messages.push(reply);
+    let mut handled_group_upgrade = false;
+
+    if conversation.r#type == "direct" {
+        if let Some(primary_character_id) = primary_character_id.as_ref() {
+            let primary_character = reply_characters
+                .iter()
+                .find(|character| character.id == *primary_character_id)
+                .cloned()
+                .or_else(|| {
+                    let runtime = state.runtime.read().expect("runtime lock poisoned");
+                    runtime.characters.get(primary_character_id).cloned()
+                });
+
+            if let Some(primary_character) = primary_character {
+                let intent = classify_group_chat_intent(state, &primary_character, text)
+                    .await
+                    .unwrap_or_default();
+                if intent.needs_group_chat && !intent.required_domains.is_empty() {
+                    let invited_characters = {
+                        let runtime = state.runtime.read().expect("runtime lock poisoned");
+                        let known_character_ids = runtime
+                            .conversations
+                            .values()
+                            .filter(|item| item.user_id == user_id)
+                            .flat_map(|item| item.participants.iter().cloned())
+                            .filter(|participant| participant != &primary_character.id)
+                            .collect::<Vec<_>>();
+
+                        runtime
+                            .characters
+                            .values()
+                            .filter(|character| {
+                                character.id != primary_character.id
+                                    && known_character_ids.contains(&character.id)
+                                    && character.expert_domains.iter().any(|domain| {
+                                        intent
+                                            .required_domains
+                                            .iter()
+                                            .any(|required| required == &domain.to_lowercase())
+                                    })
+                            })
+                            .take(2)
+                            .cloned()
+                            .collect::<Vec<_>>()
+                    };
+
+                    if !invited_characters.is_empty() {
+                        handled_group_upgrade = true;
+                        conversation.r#type = "group".into();
+                        conversation.title = "临时咨询群".into();
+                        for invited in &invited_characters {
+                            if !conversation.participants.contains(&invited.id) {
+                                conversation.participants.push(invited.id.clone());
+                            }
+                        }
+
+                        let coordinator_text = generate_group_coordinator_text(
+                            state,
+                            &primary_character,
+                            &invited_characters,
+                            text,
+                        )
+                        .await
+                        .unwrap_or_else(|| {
+                            fallback_group_coordinator_text(&primary_character, &invited_characters)
+                        });
+                        generated_messages.push(MessageRecord {
+                            id: format!("msg_{}_coord", now_token()),
+                            conversation_id: conversation_id.to_string(),
+                            sender_type: "character".into(),
+                            sender_id: primary_character.id.clone(),
+                            sender_name: primary_character.name.clone(),
+                            r#type: "text".into(),
+                            text: coordinator_text,
+                            created_at: now_token(),
+                        });
+
+                        for invited in &invited_characters {
+                            generated_messages.push(build_group_invite_system_message(
+                                conversation_id,
+                                &primary_character.name,
+                                &invited.name,
+                            ));
+                        }
+
+                        for invited in invited_characters {
+                            let mut generation_history = previous_messages.clone();
+                            generation_history.extend(generated_messages.iter().cloned());
+                            let reply_text = generate_chat_reply_text(
+                                state,
+                                &invited,
+                                &conversation,
+                                &generation_history,
+                            )
+                            .await
+                            .unwrap_or_else(|| build_reply_text(&invited, text, true));
+                            generated_messages.push(MessageRecord {
+                                id: format!("msg_{}_{}", now_token(), invited.id),
+                                conversation_id: conversation_id.to_string(),
+                                sender_type: "character".into(),
+                                sender_id: invited.id.clone(),
+                                sender_name: invited.name.clone(),
+                                r#type: "text".into(),
+                                text: reply_text,
+                                created_at: now_token(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !handled_group_upgrade {
+        for character in reply_characters {
+            let mut generation_history = previous_messages.clone();
+            generation_history.extend(generated_messages.iter().cloned());
+            let reply_text = generate_chat_reply_text(
+                state,
+                &character,
+                &conversation,
+                &generation_history,
+            )
+            .await
+            .unwrap_or_else(|| build_reply_text(&character, text, conversation.r#type == "group"));
+            let reply = MessageRecord {
+                id: format!("msg_{}_{}", now_token(), character.id),
+                conversation_id: conversation_id.to_string(),
+                sender_type: "character".into(),
+                sender_id: character.id.clone(),
+                sender_name: character.name.clone(),
+                r#type: "text".into(),
+                text: reply_text,
+                created_at: now_token(),
+            };
+            generated_messages.push(reply);
+        }
     }
 
     let mut full_history = previous_messages.clone();
@@ -656,6 +774,8 @@ async fn persist_conversation_turn_gateway(
             .expect("conversation should exist while updating timestamp");
         stored_conversation.updated_at = now_token();
         stored_conversation.title = conversation.title.clone();
+        stored_conversation.r#type = conversation.r#type.clone();
+        stored_conversation.participants = conversation.participants.clone();
         stored_conversation.clone()
     };
     state.request_persist("realtime-conversation-turn");
@@ -690,6 +810,38 @@ fn build_system_message(conversation_id: &str, options: &[&str]) -> MessageRecor
         text: options[index].to_string(),
         created_at: timestamp,
     }
+}
+
+fn build_group_invite_system_message(
+    conversation_id: &str,
+    inviter_name: &str,
+    invited_name: &str,
+) -> MessageRecord {
+    MessageRecord {
+        id: format!("msg_{}_group_system", now_token()),
+        conversation_id: conversation_id.to_string(),
+        sender_type: "system".into(),
+        sender_id: "system".into(),
+        sender_name: "system".into(),
+        r#type: "system".into(),
+        text: format!("{inviter_name} 邀请 {invited_name} 加入了群聊"),
+        created_at: now_token(),
+    }
+}
+
+fn fallback_group_coordinator_text(
+    trigger_character: &CharacterRecord,
+    invited_characters: &[CharacterRecord],
+) -> String {
+    let invited_names = invited_characters
+        .iter()
+        .map(|character| character.name.as_str())
+        .collect::<Vec<_>>();
+    format!(
+        "{}觉得这个问题适合拉上{}一起看看。",
+        trigger_character.name,
+        invited_names.join("和")
+    )
 }
 
 fn build_reply_text(character: &CharacterRecord, user_text: &str, is_group: bool) -> String {
