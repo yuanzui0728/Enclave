@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     routing::{get, post},
     Json, Router,
 };
@@ -9,6 +10,7 @@ use serde_json::json;
 
 use crate::{
     app_state::AppState,
+    auth_support::require_session_user,
     error::{ApiError, ApiResult},
     generation::generate_social_greeting_text,
     models::{
@@ -31,8 +33,10 @@ pub fn router() -> Router<AppState> {
 
 async fn get_pending_requests(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(query): Query<UserScopedRequest>,
-) -> Json<Vec<FriendRequestRecord>> {
+) -> ApiResult<Json<Vec<FriendRequestRecord>>> {
+    require_session_user(&headers, &state, &query.user_id)?;
     let runtime = state.runtime.read().expect("runtime lock poisoned");
     let mut requests = runtime
         .friend_requests
@@ -42,14 +46,16 @@ async fn get_pending_requests(
         .collect::<Vec<_>>();
 
     requests.sort_by(|left, right| right.created_at.cmp(&left.created_at));
-    Json(requests)
+    Ok(Json(requests))
 }
 
 async fn accept_request(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<UserScopedRequest>,
 ) -> ApiResult<Json<FriendshipRecord>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let character_id = {
         let request = runtime
@@ -118,8 +124,10 @@ async fn accept_request(
 async fn decline_request(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<UserScopedRequest>,
-) -> Json<SuccessResponse> {
+) -> ApiResult<Json<SuccessResponse>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
 
     if let Some(request) = runtime.friend_requests.get_mut(&id) {
@@ -130,13 +138,15 @@ async fn decline_request(
     drop(runtime);
     state.request_persist("social-decline-request");
 
-    Json(SuccessResponse { success: true })
+    Ok(Json(SuccessResponse { success: true }))
 }
 
 async fn get_friends(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(query): Query<UserScopedRequest>,
-) -> Json<Vec<FriendListItemRecord>> {
+) -> ApiResult<Json<Vec<FriendListItemRecord>>> {
+    require_session_user(&headers, &state, &query.user_id)?;
     let runtime = state.runtime.read().expect("runtime lock poisoned");
 
     let items = runtime
@@ -154,13 +164,15 @@ async fn get_friends(
         })
         .collect::<Vec<_>>();
 
-    Json(items)
+    Ok(Json(items))
 }
 
 async fn shake(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<UserScopedRequest>,
-) -> Json<Option<ShakeResultRecord>> {
+) -> ApiResult<Json<Option<ShakeResultRecord>>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let character = {
         let runtime = state.runtime.read().expect("runtime lock poisoned");
         let available = runtime
@@ -175,7 +187,7 @@ async fn shake(
             .collect::<Vec<_>>();
 
         if available.is_empty() {
-            return Json(None);
+            return Ok(Json(None));
         }
 
         available[pseudo_random_index(available.len())].clone()
@@ -184,7 +196,7 @@ async fn shake(
         .await
         .unwrap_or_else(|| fallback_shake_greeting(&character.name));
 
-    Json(Some(ShakeResultRecord {
+    Ok(Json(Some(ShakeResultRecord {
         character: ShakePreviewCharacterRecord {
             id: character.id.clone(),
             name: character.name.clone(),
@@ -193,13 +205,15 @@ async fn shake(
             expert_domains: character.expert_domains.clone(),
         },
         greeting,
-    }))
+    })))
 }
 
 async fn send_friend_request(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<SendFriendRequestPayload>,
 ) -> ApiResult<Json<FriendRequestRecord>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let character = runtime
         .characters
@@ -240,8 +254,10 @@ async fn send_friend_request(
 
 async fn trigger_scene(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<TriggerScenePayload>,
 ) -> ApiResult<Json<Option<FriendRequestRecord>>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let character = {
         let runtime = state.runtime.read().expect("runtime lock poisoned");
         let candidates = runtime

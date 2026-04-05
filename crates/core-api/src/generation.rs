@@ -1,5 +1,14 @@
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
 use crate::{
     app_state::AppState,
+    evals::{
+        storage,
+        types::{
+            GenerationTraceInputRecord, GenerationTraceOutputRecord, GenerationTraceProviderRecord,
+            GenerationTraceRecord, TracePromptMessageRecord,
+        },
+    },
     models::{
         CharacterRecord, ConversationRecord, FeedPostRecord, MessageRecord, WorldContextRecord,
     },
@@ -23,6 +32,7 @@ pub async fn generate_chat_reply_text(
         return None;
     }
 
+    let started = Instant::now();
     let is_group = conversation.r#type == "group";
     let history_window = history_window_size(character);
     let history_start = conversation_history.len().saturating_sub(history_window);
@@ -42,19 +52,102 @@ pub async fn generate_chat_reply_text(
     );
 
     if !messages.iter().any(|message| message.role == "user") {
+        record_generation_trace(
+            state,
+            build_generation_trace(
+                "chat.reply",
+                "fallback",
+                Some(conversation.id.clone()),
+                Some(character.id.clone()),
+                Vec::new(),
+                None,
+                Some(history_window),
+                &messages,
+                serde_json::json!({
+                    "trigger": "conversation-history-missing-user",
+                    "isGroup": is_group,
+                    "activity": character.current_activity.clone(),
+                    "memory": character.profile.memory_summary.clone()
+                }),
+                GenerationTraceOutputRecord {
+                    raw_output: None,
+                    normalized_output: None,
+                    fallback_reason: Some("no-user-message-in-history-window".into()),
+                    error_message: None,
+                },
+                started.elapsed().as_millis() as u64,
+            ),
+        );
         return None;
     }
 
     let request = yinjie_inference_gateway::ChatCompletionRequest {
-        messages,
+        messages: messages.clone(),
         model: None,
         temperature: Some(if is_group { 0.8 } else { 0.85 }),
         max_tokens: Some(if is_group { 180 } else { 220 }),
     };
 
     match state.inference_gateway.chat_completion(request).await {
-        Ok(response) => normalize_generated_text(&response.content),
-        Err(_) => None,
+        Ok(response) => {
+            let normalized = normalize_generated_text(&response.content);
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "chat.reply",
+                    if normalized.is_some() { "success" } else { "fallback" },
+                    Some(conversation.id.clone()),
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    Some(history_window),
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "realtime-chat-reply",
+                        "isGroup": is_group,
+                        "activity": character.current_activity.clone(),
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: Some(response.content),
+                        normalized_output: normalized.clone(),
+                        fallback_reason: normalized.is_none().then(|| "normalized-output-empty".into()),
+                        error_message: None,
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            normalized
+        }
+        Err(error) => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "chat.reply",
+                    "error",
+                    Some(conversation.id.clone()),
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    Some(history_window),
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "realtime-chat-reply",
+                        "isGroup": is_group,
+                        "activity": character.current_activity.clone(),
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: None,
+                        normalized_output: None,
+                        fallback_reason: Some("gateway-error".into()),
+                        error_message: Some(error),
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            None
+        }
     }
 }
 
@@ -67,6 +160,7 @@ pub async fn classify_group_chat_intent(
         return None;
     }
 
+    let started = Instant::now();
     let request = yinjie_inference_gateway::ChatCompletionRequest {
         messages: vec![
             yinjie_inference_gateway::ChatMessage {
@@ -92,10 +186,71 @@ pub async fn classify_group_chat_intent(
         max_tokens: Some(140),
     };
 
-    let response = state.inference_gateway.chat_completion(request).await.ok()?;
-    let parsed = parse_json_value(&response.content)?;
+    let messages = request.messages.clone();
+    let response = match state.inference_gateway.chat_completion(request).await {
+        Ok(response) => response,
+        Err(error) => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "group.intent",
+                    "error",
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "group-chat-classification",
+                        "userMessage": user_message,
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: None,
+                        normalized_output: None,
+                        fallback_reason: Some("gateway-error".into()),
+                        error_message: Some(error),
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            return None;
+        }
+    };
+    let parsed = match parse_json_value(&response.content) {
+        Some(parsed) => parsed,
+        None => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "group.intent",
+                    "fallback",
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "group-chat-classification",
+                        "userMessage": user_message,
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: Some(response.content),
+                        normalized_output: None,
+                        fallback_reason: Some("invalid-json-response".into()),
+                        error_message: None,
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            return None;
+        }
+    };
 
-    Some(GroupChatIntent {
+    let intent = GroupChatIntent {
         needs_group_chat: parsed
             .get("needsGroupChat")
             .and_then(serde_json::Value::as_bool)
@@ -118,7 +273,40 @@ pub async fn classify_group_chat_intent(
                     .collect::<Vec<_>>()
             })
             .unwrap_or_default(),
-    })
+    };
+    record_generation_trace(
+        state,
+        build_generation_trace(
+            "group.intent",
+            "success",
+            None,
+            Some(character.id.clone()),
+            Vec::new(),
+            None,
+            None,
+            &messages,
+            serde_json::json!({
+                "trigger": "group-chat-classification",
+                "userMessage": user_message,
+                "memory": character.profile.memory_summary.clone()
+            }),
+            GenerationTraceOutputRecord {
+                raw_output: Some(response.content),
+                normalized_output: Some(
+                    serde_json::json!({
+                        "needsGroupChat": intent.needs_group_chat,
+                        "reason": intent.reason,
+                        "requiredDomains": intent.required_domains,
+                    })
+                    .to_string(),
+                ),
+                fallback_reason: None,
+                error_message: None,
+            },
+            started.elapsed().as_millis() as u64,
+        ),
+    );
+    Some(intent)
 }
 
 pub async fn generate_group_coordinator_text(
@@ -131,6 +319,7 @@ pub async fn generate_group_coordinator_text(
         return None;
     }
 
+    let started = Instant::now();
     let invited_names = invited_characters
         .iter()
         .map(|character| character.name.as_str())
@@ -159,8 +348,66 @@ pub async fn generate_group_coordinator_text(
         max_tokens: Some(100),
     };
 
-    let response = state.inference_gateway.chat_completion(request).await.ok()?;
-    normalize_generated_text(&response.content)
+    let messages = request.messages.clone();
+    match state.inference_gateway.chat_completion(request).await {
+        Ok(response) => {
+            let normalized = normalize_generated_text(&response.content);
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "group.coordinator",
+                    if normalized.is_some() { "success" } else { "fallback" },
+                    None,
+                    Some(trigger_character.id.clone()),
+                    invited_characters.iter().map(|character| character.id.clone()).collect(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "group-chat-upgrade",
+                        "topic": topic,
+                        "memory": trigger_character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: Some(response.content),
+                        normalized_output: normalized.clone(),
+                        fallback_reason: normalized.is_none().then(|| "normalized-output-empty".into()),
+                        error_message: None,
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            normalized
+        }
+        Err(error) => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "group.coordinator",
+                    "error",
+                    None,
+                    Some(trigger_character.id.clone()),
+                    invited_characters.iter().map(|character| character.id.clone()).collect(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "group-chat-upgrade",
+                        "topic": topic,
+                        "memory": trigger_character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: None,
+                        normalized_output: None,
+                        fallback_reason: Some("gateway-error".into()),
+                        error_message: Some(error),
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            None
+        }
+    }
 }
 
 pub async fn generate_social_greeting_text(
@@ -172,6 +419,7 @@ pub async fn generate_social_greeting_text(
         return None;
     }
 
+    let started = Instant::now();
     let world_line = latest_world_context(state)
         .as_ref()
         .map(format_world_context)
@@ -219,9 +467,69 @@ pub async fn generate_social_greeting_text(
         max_tokens: Some(90),
     };
 
+    let messages = request.messages.clone();
     match state.inference_gateway.chat_completion(request).await {
-        Ok(response) => normalize_generated_text(&response.content),
-        Err(_) => None,
+        Ok(response) => {
+            let normalized = normalize_generated_text(&response.content);
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "social.greeting",
+                    if normalized.is_some() { "success" } else { "fallback" },
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": trigger_scene.unwrap_or("shake"),
+                        "worldContext": {
+                            "line": world_line
+                        },
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: Some(response.content),
+                        normalized_output: normalized.clone(),
+                        fallback_reason: normalized.is_none().then(|| "normalized-output-empty".into()),
+                        error_message: None,
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            normalized
+        }
+        Err(error) => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "social.greeting",
+                    "error",
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    None,
+                    &messages,
+                    serde_json::json!({
+                        "trigger": trigger_scene.unwrap_or("shake"),
+                        "worldContext": {
+                            "line": world_line
+                        },
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: None,
+                        normalized_output: None,
+                        fallback_reason: Some("gateway-error".into()),
+                        error_message: Some(error),
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            None
+        }
     }
 }
 
@@ -234,6 +542,7 @@ pub async fn generate_memory_summary_text(
         return None;
     }
 
+    let started = Instant::now();
     let history_window = conversation_history
         .iter()
         .filter_map(|message| match message.sender_type.as_str() {
@@ -276,9 +585,65 @@ pub async fn generate_memory_summary_text(
         max_tokens: Some(140),
     };
 
+    let messages = request.messages.clone();
     match state.inference_gateway.chat_completion(request).await {
-        Ok(response) => normalize_generated_text(&response.content),
-        Err(_) => None,
+        Ok(response) => {
+            let normalized = normalize_generated_text(&response.content);
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "memory.summary",
+                    if normalized.is_some() { "success" } else { "fallback" },
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    Some(history_window.len()),
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "memory-refresh",
+                        "conversationHistoryLength": conversation_history.len(),
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: Some(response.content),
+                        normalized_output: normalized.clone(),
+                        fallback_reason: normalized.is_none().then(|| "normalized-output-empty".into()),
+                        error_message: None,
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            normalized
+        }
+        Err(error) => {
+            record_generation_trace(
+                state,
+                build_generation_trace(
+                    "memory.summary",
+                    "error",
+                    None,
+                    Some(character.id.clone()),
+                    Vec::new(),
+                    None,
+                    Some(history_window.len()),
+                    &messages,
+                    serde_json::json!({
+                        "trigger": "memory-refresh",
+                        "conversationHistoryLength": conversation_history.len(),
+                        "memory": character.profile.memory_summary.clone()
+                    }),
+                    GenerationTraceOutputRecord {
+                        raw_output: None,
+                        normalized_output: None,
+                        fallback_reason: Some("gateway-error".into()),
+                        error_message: Some(error),
+                    },
+                    started.elapsed().as_millis() as u64,
+                ),
+            );
+            None
+        }
     }
 }
 
@@ -615,4 +980,77 @@ fn normalize_generated_text(value: &str) -> Option<String> {
     } else {
         Some(normalized.to_string())
     }
+}
+
+fn build_generation_trace(
+    source: &str,
+    status: &str,
+    conversation_id: Option<String>,
+    character_id: Option<String>,
+    related_character_ids: Vec<String>,
+    user_id: Option<String>,
+    history_window_size: Option<usize>,
+    messages: &[yinjie_inference_gateway::ChatMessage],
+    metadata: serde_json::Value,
+    output: GenerationTraceOutputRecord,
+    latency_ms: u64,
+) -> GenerationTraceRecord {
+    GenerationTraceRecord {
+        id: format!("trace-{}-{}", source.replace('.', "-"), now_token()),
+        created_at: now_token(),
+        source: source.into(),
+        status: status.into(),
+        conversation_id,
+        character_id,
+        related_character_ids,
+        user_id,
+        job_id: None,
+        provider: None,
+        latency_ms: Some(latency_ms),
+        history_window_size,
+        input: GenerationTraceInputRecord {
+            trigger: metadata
+                .get("trigger")
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string),
+            world_context_snapshot: metadata.get("worldContext").cloned(),
+            activity_snapshot: metadata.get("activity").cloned(),
+            memory_snapshot: metadata.get("memory").cloned(),
+            prompt_messages: messages
+                .iter()
+                .map(|message| TracePromptMessageRecord {
+                    role: message.role.clone(),
+                    content: message.content.clone(),
+                })
+                .collect(),
+            request_config: Some(metadata),
+        },
+        output,
+        evaluation_summary: None,
+    }
+}
+
+fn record_generation_trace(state: &AppState, mut trace: GenerationTraceRecord) {
+    if let Some(provider) = state.inference_gateway.active_provider() {
+        trace.provider = Some(GenerationTraceProviderRecord {
+            endpoint: Some(provider.endpoint),
+            model: Some(provider.model),
+            mode: Some(provider.mode),
+        });
+    }
+
+    if let Err(error) = storage::persist_generation_trace(&state.database_path, &trace) {
+        crate::runtime_paths::append_core_api_log(
+            &state.database_path,
+            "WARN",
+            &format!("failed to persist generation trace {}: {}", trace.id, error),
+        );
+    }
+}
+
+fn now_token() -> String {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis().to_string())
+        .unwrap_or_else(|_| "0".into())
 }

@@ -1,5 +1,7 @@
+mod auth_support;
 mod app_state;
 mod error;
+mod evals;
 mod generation;
 mod models;
 mod persistence;

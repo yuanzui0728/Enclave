@@ -9,9 +9,25 @@ body,
 body {
   margin: 0;
   font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+#root {
+  isolation: isolate;
 }

@@ -53,19 +53,38 @@ import type {
   SystemStatus,
 } from "./system";
 import type { WorldContext } from "./world";
+import type {
+  EvalDatasetDetail,
+  EvalDatasetManifest,
+  EvalOverview,
+  EvalRunRecord,
+  GenerationTrace,
+  PersonaAssetRecord,
+  RunEvalDatasetRequest,
+} from "./evals";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://127.0.0.1:39091";
+let authTokenProvider: (() => string | null | undefined) | null = null;
 
 export function resolveCoreApiBaseUrl(override?: string) {
   return override || DEFAULT_CORE_API_BASE_URL;
 }
 
+export function setAuthTokenProvider(provider: (() => string | null | undefined) | null) {
+  authTokenProvider = provider;
+}
+
 async function request<T>(path: string, init?: RequestInit, baseUrl?: string): Promise<T> {
   const headers = new Headers(init?.headers);
+  const token = authTokenProvider?.();
 
   if (!headers.has("Content-Type") && init?.body) {
     headers.set("Content-Type", "application/json");
+  }
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${resolveCoreApiBaseUrl(baseUrl)}${path}`, {
@@ -158,6 +177,49 @@ export function runInferencePreview(payload: InferencePreviewRequest, baseUrl?: 
 
 export function getSystemLogs(baseUrl?: string) {
   return request<LogIndexResponse>("/system/logs", undefined, baseUrl);
+}
+
+export function getEvalOverview(baseUrl?: string) {
+  return request<EvalOverview>("/system/evals/overview", undefined, baseUrl);
+}
+
+export function listEvalDatasets(baseUrl?: string) {
+  return request<EvalDatasetManifest[]>("/system/evals/datasets", undefined, baseUrl);
+}
+
+export function getEvalDataset(id: string, baseUrl?: string) {
+  return request<EvalDatasetDetail>(`/system/evals/datasets/${encodeURIComponent(id)}`, undefined, baseUrl);
+}
+
+export function listEvalRuns(baseUrl?: string) {
+  return request<EvalRunRecord[]>("/system/evals/runs", undefined, baseUrl);
+}
+
+export function getEvalRun(id: string, baseUrl?: string) {
+  return request<EvalRunRecord>(`/system/evals/runs/${encodeURIComponent(id)}`, undefined, baseUrl);
+}
+
+export function runEvalDataset(payload: RunEvalDatasetRequest, baseUrl?: string) {
+  return request<EvalRunRecord>(
+    "/system/evals/runs",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function listGenerationTraces(baseUrl?: string) {
+  return request<GenerationTrace[]>("/system/evals/traces", undefined, baseUrl);
+}
+
+export function getGenerationTrace(id: string, baseUrl?: string) {
+  return request<GenerationTrace>(`/system/evals/traces/${encodeURIComponent(id)}`, undefined, baseUrl);
+}
+
+export function listPersonaAssets(_baseUrl?: string) {
+  return Promise.resolve<PersonaAssetRecord[]>([]);
 }
 
 export function exportDiagnostics(baseUrl?: string) {

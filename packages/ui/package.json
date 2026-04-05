@@ -13,10 +13,14 @@
     "lint": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
+    "@tanstack/react-query": "^5.66.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.66.8",
+    "@yinjie/config": "workspace:*",
+    "@yinjie/contracts": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0"

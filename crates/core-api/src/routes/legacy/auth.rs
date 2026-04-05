@@ -2,12 +2,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, State},
+    http::HeaderMap,
     routing::{patch, post},
     Json, Router,
 };
 
 use crate::{
     app_state::AppState,
+    auth_support::require_session_user,
     error::{ApiError, ApiResult},
     models::{
         AuthSession, InitUserRequest, LoginRequest, RegisterRequest, SuccessResponse,
@@ -127,7 +129,9 @@ async fn init_user(
 async fn complete_onboarding(
     Path(user_id): Path<String>,
     State(state): State<AppState>,
-) -> Json<SuccessResponse> {
+    headers: HeaderMap,
+) -> ApiResult<Json<SuccessResponse>> {
+    require_session_user(&headers, &state, &user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
 
     if let Some(user) = runtime.users.get_mut(&user_id) {
@@ -136,14 +140,16 @@ async fn complete_onboarding(
     drop(runtime);
     state.request_persist("auth-complete-onboarding");
 
-    Json(SuccessResponse { success: true })
+    Ok(Json(SuccessResponse { success: true }))
 }
 
 async fn update_user(
     Path(user_id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<UpdateUserRequest>,
 ) -> ApiResult<Json<SuccessResponse>> {
+    require_session_user(&headers, &state, &user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
 
     if let Some(username) = payload.username.as_ref() {

@@ -1,6 +1,6 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import {
   CHAT_EVENTS,
@@ -9,6 +9,7 @@ import {
   exportDiagnostics,
   getAiModel,
   getAvailableModels,
+  getEvalOverview,
   getFeed,
   getProviderConfig,
   getLatestWorldContext,
@@ -21,11 +22,22 @@ import {
   restoreBackup,
   runInferencePreview,
   runSchedulerJob,
-  setProviderConfig,
-  testProviderConnection,
 } from "@yinjie/contracts";
-import { providerConfigSchema, type ProviderConfig } from "@yinjie/config";
-import { Card, SectionHeading, StatusPill } from "@yinjie/ui";
+import {
+  AppHeader,
+  Button,
+  Card,
+  ErrorBlock,
+  InlineNotice,
+  ListItemCard,
+  LoadingBlock,
+  MetricCard,
+  PanelEmpty,
+  SectionHeading,
+  StatusPill,
+  TextAreaField,
+  useDesktopRuntime,
+} from "@yinjie/ui";
 
 type InferencePreviewForm = {
   prompt: string;
@@ -35,6 +47,11 @@ type InferencePreviewForm = {
 export function DashboardPage() {
   const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
   const queryClient = useQueryClient();
+  const [successNotice, setSuccessNotice] = useState("");
+  const { desktopAvailable, desktopStatusQuery, runtimeContextQuery, runtimeDiagnosticsQuery } = useDesktopRuntime({
+    queryKeyPrefix: "admin-desktop",
+    invalidateOnAction: [["admin-system-status"]],
+  });
 
   const statusQuery = useQuery({
     queryKey: ["admin-system-status", baseUrl],
@@ -91,48 +108,15 @@ export function DashboardPage() {
     queryFn: () => getFeed(1, 6, baseUrl),
   });
 
-  const form = useForm<ProviderConfig>({
-    resolver: zodResolver(providerConfigSchema),
-    defaultValues: {
-      endpoint: "http://127.0.0.1:11434/v1",
-      model: "deepseek-chat",
-      mode: "local-compatible",
-      apiKey: "",
-    },
+  const evalOverviewQuery = useQuery({
+    queryKey: ["admin-eval-overview", baseUrl],
+    queryFn: () => getEvalOverview(baseUrl),
   });
 
   const previewForm = useForm<InferencePreviewForm>({
     defaultValues: {
       prompt: "Say hello from the Yinjie inference gateway.",
       systemPrompt: "You are validating the new Yinjie inference runtime.",
-    },
-  });
-
-  useEffect(() => {
-    if (!providerConfigQuery.data || form.formState.isDirty) {
-      return;
-    }
-
-    form.reset(normalizeProviderForm(providerConfigQuery.data));
-  }, [form, form.formState.isDirty, providerConfigQuery.data]);
-
-  const providerProbeMutation = useMutation({
-    mutationFn: (values: ProviderConfig) =>
-      testProviderConnection(
-        buildProviderPayload(values),
-        baseUrl,
-      ),
-  });
-
-  const providerSaveMutation = useMutation({
-    mutationFn: (values: ProviderConfig) => setProviderConfig(buildProviderPayload(values), baseUrl),
-    onSuccess: async (provider) => {
-      form.reset(normalizeProviderForm(provider));
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-provider-config", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-ai-model", baseUrl] }),
-      ]);
     },
   });
 
@@ -146,21 +130,29 @@ export function DashboardPage() {
         baseUrl,
       ),
     onSuccess: async () => {
+      setSuccessNotice("Inference preview completed.");
       await queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] });
     },
   });
 
   const exportDiagnosticsMutation = useMutation({
     mutationFn: () => exportDiagnostics(baseUrl),
+    onSuccess: (result) => {
+      setSuccessNotice(result.message);
+    },
   });
 
   const createBackupMutation = useMutation({
     mutationFn: () => createBackup(baseUrl),
+    onSuccess: (result) => {
+      setSuccessNotice(result.message);
+    },
   });
 
   const restoreBackupMutation = useMutation({
     mutationFn: () => restoreBackup(baseUrl),
     onSuccess: async () => {
+      setSuccessNotice("Backup restore completed.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-provider-config", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
@@ -177,6 +169,7 @@ export function DashboardPage() {
   const schedulerRunMutation = useMutation({
     mutationFn: (jobId: string) => runSchedulerJob(jobId, baseUrl),
     onSuccess: async () => {
+      setSuccessNotice("Scheduler job finished.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-world-context", baseUrl] }),
@@ -191,81 +184,223 @@ export function DashboardPage() {
   const previewMoments = momentsQuery.data?.slice(0, 3) ?? [];
   const previewFeedPosts = feedQuery.data?.posts.slice(0, 3) ?? [];
   const runningSchedulerJobId = schedulerRunMutation.isPending ? schedulerRunMutation.variables : null;
+  const operationsBusy =
+    exportDiagnosticsMutation.isPending || createBackupMutation.isPending || restoreBackupMutation.isPending;
+  const providerConfigured = Boolean(providerConfigQuery.data?.model?.trim());
+  const desktopRuntimeReady = desktopAvailable
+    ? Boolean(desktopStatusQuery.data?.reachable && runtimeContextQuery.data?.runtimeDataDir)
+    : Boolean(statusQuery.data?.coreApi.healthy);
+  const systemHealthy = Boolean(statusQuery.data?.coreApi.healthy);
+  const primaryActionHref = !desktopRuntimeReady || !providerConfigured ? "/setup" : "/evals";
+  const primaryActionLabel = !desktopRuntimeReady || !providerConfigured ? "Open Runtime Setup" : "Validate In Evals";
+  const nextActionMessage = !desktopRuntimeReady
+    ? "本地运行时尚未完全恢复。先进入 Setup 恢复 Core API、runtime data 和 provider。"
+    : !providerConfigured
+      ? "Core API 已在线，但 provider 还未配置。下一步应完成 Setup。"
+      : systemHealthy
+        ? "系统已进入可运维状态。建议下一步进入 Evals 验证当前生成链质量。"
+        : "Core API 尚未健康，优先排查 Setup 和 Operations 区域。";
+
+  useEffect(() => {
+    if (!successNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setSuccessNotice(""), 2400);
+    return () => window.clearTimeout(timer);
+  }, [successNotice]);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
+    <div className="space-y-6">
+      <AppHeader
+        eyebrow="Control Plane"
+        title="Local Runtime Overview"
+        description="先判断系统是否健康，再决定去 Setup、Evals 还是 Character Registry。"
+        actions={
+          <Link to={primaryActionHref}>
+            <Button variant="primary" size="lg" className="rounded-2xl">
+              {primaryActionLabel}
+            </Button>
+          </Link>
+        }
+      />
+      {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        <Card className="bg-[color:var(--surface-console)]">
+          <MetricCard
+            className="border-0 bg-transparent p-0"
+            label="Core API"
+            value={statusQuery.data?.coreApi.version ?? "offline"}
+            meta={
+              <StatusPill tone={systemHealthy ? "healthy" : "warning"}>
+                {statusQuery.isLoading ? "probing" : systemHealthy ? "healthy" : "waiting"}
+              </StatusPill>
+            }
+          />
+        </Card>
+        <Card className="bg-[color:var(--surface-console)]">
+          <MetricCard
+            className="border-0 bg-transparent p-0"
+            label="Provider"
+            value={providerConfigQuery.data?.model ?? "pending"}
+            meta={<StatusPill tone={providerConfigured ? "healthy" : "warning"}>{providerConfigured ? "configured" : "missing"}</StatusPill>}
+          />
+        </Card>
+        <Card className="bg-[color:var(--surface-console)]">
+          <MetricCard
+            className="border-0 bg-transparent p-0"
+            label="Queue Depth"
+            value={statusQuery.data?.inferenceGateway.queueDepth ?? 0}
+            detail={`in flight ${statusQuery.data?.inferenceGateway.inFlightRequests ?? 0}`}
+          />
+        </Card>
+        <Card className="bg-[color:var(--surface-console)]">
+          <MetricCard
+            className="border-0 bg-transparent p-0"
+            label="Evals"
+            value={evalOverviewQuery.data?.runCount ?? 0}
+            detail={`traces ${evalOverviewQuery.data?.traceCount ?? 0}`}
+          />
+        </Card>
+      </div>
+
+      <InlineNotice tone={desktopRuntimeReady && providerConfigured && systemHealthy ? "success" : "warning"}>
+        {nextActionMessage}
+      </InlineNotice>
+
+      <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
       <div className="space-y-6">
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>Desktop Runtime</SectionHeading>
+          {desktopAvailable ? (
+            <>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <MetricCard
+                  label="Managed Core API"
+                  value={desktopStatusQuery.data?.baseUrl ?? "loading"}
+                  meta={
+                    <StatusPill tone={desktopStatusQuery.data?.reachable ? "healthy" : "warning"}>
+                      {desktopStatusQuery.data?.running ? "managed" : "not managed"}
+                    </StatusPill>
+                  }
+                />
+
+                <MetricCard
+                  label="Runtime Data"
+                  value={runtimeContextQuery.data?.runtimeDataDir ?? "loading"}
+                  detail={runtimeContextQuery.data?.databasePath ?? desktopStatusQuery.data?.databasePath ?? "loading"}
+                />
+              </div>
+
+              <InlineNotice className="mt-4" tone={desktopRuntimeReady ? "success" : "warning"}>
+                {desktopRuntimeReady
+                  ? "桌面运行时已就绪。恢复、provider 配置和手动管理入口已经统一收敛到 Setup 页面。"
+                  : desktopStatusQuery.data?.message ?? "桌面运行时尚未完成初始化，进入 Setup 页面可集中恢复。"}
+              </InlineNotice>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+                {runtimeDiagnosticsQuery.data
+                  ? formatDesktopDiagnostics(runtimeDiagnosticsQuery.data)
+                  : "正在读取桌面运行时诊断..."}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link to="/setup">
+                  <Button variant="primary" size="lg" className="rounded-2xl">
+                    Open Runtime Setup
+                  </Button>
+                </Link>
+                <Link to="/evals">
+                  <Button variant="secondary" size="lg" className="rounded-2xl">
+                    Validate In Evals
+                  </Button>
+                </Link>
+              </div>
+            </>
+          ) : (
+            <InlineNotice className="mt-4 border-dashed" tone="muted">
+              Desktop runtime commands are only available when this admin surface is opened inside the Tauri shell.
+            </InlineNotice>
+          )}
+        </Card>
+
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>System Overview</SectionHeading>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Core API</div>
-              <div className="mt-2 text-2xl font-semibold">{statusQuery.data?.coreApi.version ?? "offline"}</div>
-              <div className="mt-3">
+            <MetricCard
+              label="Core API"
+              value={statusQuery.data?.coreApi.version ?? "offline"}
+              meta={
                 <StatusPill tone={statusQuery.data?.coreApi.healthy ? "healthy" : "warning"}>
                   {statusQuery.isLoading ? "probing" : statusQuery.data?.coreApi.healthy ? "healthy" : "waiting"}
                 </StatusPill>
-              </div>
-            </div>
+              }
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Inference Queue</div>
-              <div className="mt-2 text-2xl font-semibold">{statusQuery.data?.inferenceGateway.queueDepth ?? 0}</div>
-              <div className="mt-3 grid gap-2 text-sm text-[color:var(--text-secondary)]">
-                <div>max concurrency: {statusQuery.data?.inferenceGateway.maxConcurrency ?? 0}</div>
-                <div>in flight: {statusQuery.data?.inferenceGateway.inFlightRequests ?? 0}</div>
-                <div>successful probes: {statusQuery.data?.inferenceGateway.successfulRequests ?? 0}</div>
-                <div>failed probes: {statusQuery.data?.inferenceGateway.failedRequests ?? 0}</div>
-              </div>
-            </div>
+            <MetricCard
+              label="Inference Queue"
+              value={statusQuery.data?.inferenceGateway.queueDepth ?? 0}
+              detail={`max concurrency: ${statusQuery.data?.inferenceGateway.maxConcurrency ?? 0} · in flight: ${statusQuery.data?.inferenceGateway.inFlightRequests ?? 0} · successful probes: ${statusQuery.data?.inferenceGateway.successfulRequests ?? 0} · failed probes: ${statusQuery.data?.inferenceGateway.failedRequests ?? 0}`}
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Active AI Model</div>
-              <div className="mt-2 text-2xl font-semibold">{aiModelQuery.data?.model ?? "pending"}</div>
-              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                {statusQuery.data?.inferenceGateway.activeProvider
+            <MetricCard
+              label="Active AI Model"
+              value={aiModelQuery.data?.model ?? "pending"}
+              detail={
+                statusQuery.data?.inferenceGateway.activeProvider
                   ? `gateway: ${statusQuery.data.inferenceGateway.activeProvider}`
-                  : `catalog size: ${availableModelsQuery.data?.models.length ?? 0}`}
-              </div>
-            </div>
+                  : `catalog size: ${availableModelsQuery.data?.models.length ?? 0}`
+              }
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Characters</div>
-              <div className="mt-2 text-2xl font-semibold">
-                {charactersQuery.data?.length ?? statusQuery.data?.legacySurface.charactersCount ?? 0}
-              </div>
-              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                migrated modules: {statusQuery.data?.legacySurface.migratedModules.join(", ") ?? "pending"}
-              </div>
-            </div>
+            <MetricCard
+              label="Characters"
+              value={charactersQuery.data?.length ?? statusQuery.data?.legacySurface.charactersCount ?? 0}
+              detail={`migrated modules: ${statusQuery.data?.legacySurface.migratedModules.join(", ") ?? "pending"}`}
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Narrative Arcs</div>
-              <div className="mt-2 text-2xl font-semibold">
-                {statusQuery.data?.legacySurface.narrativeArcsCount ?? 0}
-              </div>
-              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                accepted friendships now ensure runtime-compatible arc records
-              </div>
-            </div>
+            <MetricCard
+              label="Narrative Arcs"
+              value={statusQuery.data?.legacySurface.narrativeArcsCount ?? 0}
+              detail="accepted friendships now ensure runtime-compatible arc records"
+            />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Behavior Logs</div>
-              <div className="mt-2 text-2xl font-semibold">
-                {statusQuery.data?.legacySurface.behaviorLogsCount ?? 0}
-              </div>
-              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                tracks AI-generated moments, friend requests, feed reactions, and group replies
-              </div>
-            </div>
+            <MetricCard
+              label="Behavior Logs"
+              value={statusQuery.data?.legacySurface.behaviorLogsCount ?? 0}
+              detail="tracks AI-generated moments, friend requests, feed reactions, and group replies"
+            />
+
+            <MetricCard
+              className="md:col-span-2"
+              label="World Context"
+              value={worldContextQuery.data?.localTime ?? "pending"}
+              detail={
+                worldContextQuery.data?.season
+                  ? `season=${worldContextQuery.data.season} / holiday=${worldContextQuery.data.holiday ?? "none"}`
+                  : "Latest world snapshot is not available yet."
+              }
+            />
 
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4 md:col-span-2">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">World Context</div>
-              <div className="mt-2 text-2xl font-semibold">{worldContextQuery.data?.localTime ?? "pending"}</div>
-              <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                {worldContextQuery.data?.season
-                  ? `season=${worldContextQuery.data.season} / holiday=${worldContextQuery.data.holiday ?? "none"}`
-                  : "Latest world snapshot is not available yet."}
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Eval Runtime</div>
+                  <div className="mt-2 text-2xl font-semibold">
+                    {evalOverviewQuery.data?.runCount ?? 0} runs / {evalOverviewQuery.data?.traceCount ?? 0} traces
+                  </div>
+                </div>
+                <Link to="/evals">
+                  <Button variant="secondary" size="sm">
+                    Open Evals
+                  </Button>
+                </Link>
+              </div>
+              <div className="mt-3 grid gap-2 text-sm text-[color:var(--text-secondary)] md:grid-cols-3">
+                <div>datasets: {evalOverviewQuery.data?.datasetCount ?? 0}</div>
+                <div>failed runs: {evalOverviewQuery.data?.failedRunCount ?? 0}</div>
+                <div>fallback traces: {evalOverviewQuery.data?.fallbackTraceCount ?? 0}</div>
               </div>
             </div>
           </div>
@@ -283,23 +418,27 @@ export function DashboardPage() {
           <div className="mt-4 space-y-3">
             {previewCharacters.length > 0 ? (
               previewCharacters.map((character) => (
-                <div
+                <ListItemCard
                   key={character.id}
-                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-                >
-                  <div className="font-semibold text-white">{character.name}</div>
-                  <div className="mt-1">{character.relationship}</div>
-                  <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                    {character.id}
-                  </div>
-                </div>
+                  className="py-3"
+                  title={character.name}
+                  body={<div>{character.relationship}</div>}
+                  footer={
+                    <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {character.id}
+                    </div>
+                  }
+                />
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                {charactersQuery.error instanceof Error
-                  ? charactersQuery.error.message
-                  : "Character CRUD compatibility routes are online once the new Core API process is running."}
-              </div>
+              <PanelEmpty
+                className="border-white/10 bg-black/10"
+                message={
+                  charactersQuery.error instanceof Error
+                    ? charactersQuery.error.message
+                    : "Character CRUD compatibility routes are online once the new Core API process is running."
+                }
+              />
             )}
           </div>
         </Card>
@@ -313,28 +452,32 @@ export function DashboardPage() {
             <div className="mt-4 space-y-3">
               {previewMoments.length > 0 ? (
                 previewMoments.map((moment) => (
-                  <div
+                  <ListItemCard
                     key={moment.id}
-                    className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white">{moment.authorName}</div>
+                    className="py-3"
+                    title={moment.authorName}
+                    actions={
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
                         {moment.likeCount} likes / {moment.commentCount} comments
                       </div>
-                    </div>
-                    <div className="mt-2 line-clamp-3">{moment.text}</div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                      {moment.id}
-                    </div>
-                  </div>
+                    }
+                    body={<div className="line-clamp-3">{moment.text}</div>}
+                    footer={
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        {moment.id}
+                      </div>
+                    }
+                  />
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                  {momentsQuery.error instanceof Error
-                    ? momentsQuery.error.message
-                    : "Moments compatibility routes are online once the new Core API process is running."}
-                </div>
+                <PanelEmpty
+                  className="border-white/10 bg-black/10"
+                  message={
+                    momentsQuery.error instanceof Error
+                      ? momentsQuery.error.message
+                      : "Moments compatibility routes are online once the new Core API process is running."
+                  }
+                />
               )}
             </div>
           </Card>
@@ -347,28 +490,32 @@ export function DashboardPage() {
             <div className="mt-4 space-y-3">
               {previewFeedPosts.length > 0 ? (
                 previewFeedPosts.map((post) => (
-                  <div
+                  <ListItemCard
                     key={post.id}
-                    className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white">{post.authorName}</div>
+                    className="py-3"
+                    title={post.authorName}
+                    actions={
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
                         {post.likeCount} likes / {post.commentCount} comments
                       </div>
-                    </div>
-                    <div className="mt-2 line-clamp-3">{post.text}</div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                      {post.id}
-                    </div>
-                  </div>
+                    }
+                    body={<div className="line-clamp-3">{post.text}</div>}
+                    footer={
+                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                        {post.id}
+                      </div>
+                    }
+                  />
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                  {feedQuery.error instanceof Error
-                    ? feedQuery.error.message
-                    : "Feed compatibility routes are online once the new Core API process is running."}
-                </div>
+                <PanelEmpty
+                  className="border-white/10 bg-black/10"
+                  message={
+                    feedQuery.error instanceof Error
+                      ? feedQuery.error.message
+                      : "Feed compatibility routes are online once the new Core API process is running."
+                  }
+                />
               )}
             </div>
           </Card>
@@ -377,37 +524,23 @@ export function DashboardPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Scheduler Surface</SectionHeading>
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Mode</div>
-              <div className="mt-2 text-lg font-semibold text-white">{schedulerQuery.data?.mode ?? "pending"}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">World Snapshots</div>
-              <div className="mt-2 text-lg font-semibold text-white">
-                {schedulerQuery.data?.worldSnapshots ?? statusQuery.data?.scheduler.worldSnapshots ?? 0}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Recent Runs</div>
-              <div className="mt-2 text-lg font-semibold text-white">{schedulerQuery.data?.recentRuns.length ?? 0}</div>
-            </div>
+            <MetricCard label="Mode" value={schedulerQuery.data?.mode ?? "pending"} />
+            <MetricCard
+              label="World Snapshots"
+              value={schedulerQuery.data?.worldSnapshots ?? statusQuery.data?.scheduler.worldSnapshots ?? 0}
+            />
+            <MetricCard label="Recent Runs" value={schedulerQuery.data?.recentRuns.length ?? 0} />
           </div>
 
           <div className="mt-4 grid gap-3">
             {schedulerQuery.data?.jobs.map((job) => (
-              <div
+              <ListItemCard
                 key={job.id}
-                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-semibold text-white">{job.name}</div>
-                    <div className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                      {job.id}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
+                className="py-3"
+                title={job.name}
+                subtitle={job.id}
+                actions={
+                  <>
                     <StatusPill tone={job.running ? "warning" : job.enabled ? "healthy" : "warning"}>
                       {job.running ? "running" : job.enabled ? "enabled" : "disabled"}
                     </StatusPill>
@@ -419,51 +552,50 @@ export function DashboardPage() {
                     >
                       {runningSchedulerJobId === job.id ? "Running..." : "Run now"}
                     </button>
-                  </div>
-                </div>
-
-                <div className="mt-2">{job.description}</div>
-                <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                  {job.cadence} / {job.nextRunHint}
-                </div>
-                <div className="mt-3 grid gap-2 md:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
-                    runs: {job.runCount}
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
-                    duration: {job.lastDurationMs ? `${job.lastDurationMs} ms` : "not yet run"}
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
-                    last run: {job.lastRunAt ?? "not yet run"}
-                  </div>
-                </div>
-                <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-3 py-2 text-sm text-[color:var(--text-secondary)]">
-                  {job.lastResult ?? "No execution result recorded yet."}
-                </div>
-              </div>
+                  </>
+                }
+                body={
+                  <>
+                    <div>{job.description}</div>
+                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {job.cadence} / {job.nextRunHint}
+                    </div>
+                  </>
+                }
+                footer={
+                  <>
+                    <div className="grid gap-2 md:grid-cols-3">
+                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                        runs: {job.runCount}
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                        duration: {job.lastDurationMs ? `${job.lastDurationMs} ms` : "not yet run"}
+                      </div>
+                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                        last run: {job.lastRunAt ?? "not yet run"}
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-3 py-2 text-sm text-[color:var(--text-secondary)]">
+                      {job.lastResult ?? "No execution result recorded yet."}
+                    </div>
+                  </>
+                }
+              />
             ))}
-
-            {schedulerRunMutation.isSuccess && (
-              <div className="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-                {schedulerRunMutation.data.message}
-              </div>
-            )}
             {schedulerRunMutation.isError && (
-              <div className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-                {schedulerRunMutation.error instanceof Error
-                  ? schedulerRunMutation.error.message
-                  : "Scheduler run failed."}
-              </div>
+              <ErrorBlock
+                message={
+                  schedulerRunMutation.error instanceof Error
+                    ? schedulerRunMutation.error.message
+                    : "Scheduler run failed."
+                }
+              />
             )}
             {!schedulerQuery.data && schedulerQuery.error instanceof Error && (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                {schedulerQuery.error.message}
-              </div>
+              <ErrorBlock message={schedulerQuery.error.message} />
             )}
             {!schedulerQuery.data && !schedulerQuery.error && (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                Waiting for scheduler parity data.
-              </div>
+              <PanelEmpty className="border-white/10 bg-black/10" message="Waiting for scheduler parity data." />
             )}
           </div>
 
@@ -471,7 +603,7 @@ export function DashboardPage() {
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent scheduler runs</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {schedulerQuery.data?.recentRuns.map((event) => (
-                <div key={event}>{event}</div>
+                <ListItemCard key={event} className="py-3" title={event} />
               ))}
               {schedulerQuery.data && schedulerQuery.data.recentRuns.length === 0 && (
                 <div>No scheduler jobs have been executed yet.</div>
@@ -486,21 +618,12 @@ export function DashboardPage() {
             namespace: {CHAT_NAMESPACE}
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              connected clients: {realtimeQuery.data?.connectedClients ?? 0}
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              active rooms: {realtimeQuery.data?.activeRooms ?? 0}
-            </div>
+            <MetricCard label="Connected Clients" value={realtimeQuery.data?.connectedClients ?? 0} />
+            <MetricCard label="Active Rooms" value={realtimeQuery.data?.activeRooms ?? 0} />
           </div>
           <div className="mt-4 grid gap-3">
             {Object.values(CHAT_EVENTS).map((eventName) => (
-              <div
-                key={eventName}
-                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-              >
-                {eventName}
-              </div>
+              <ListItemCard key={eventName} className="py-3" title={eventName} />
             ))}
           </div>
           <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
@@ -508,30 +631,25 @@ export function DashboardPage() {
           </div>
           <div className="mt-4 grid gap-3">
             {realtimeQuery.data?.rooms.map((room) => (
-              <div
+              <ListItemCard
                 key={room.roomId}
-                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]"
-              >
-                <div className="font-semibold text-white">{room.roomId}</div>
-                <div className="mt-1">subscribers: {room.subscriberCount}</div>
-              </div>
+                className="py-3"
+                title={room.roomId}
+                body={<div>subscribers: {room.subscriberCount}</div>}
+              />
             ))}
             {realtimeQuery.data && realtimeQuery.data.rooms.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                No active realtime rooms yet.
-              </div>
+              <PanelEmpty className="border-white/10 bg-black/10" message="No active realtime rooms yet." />
             )}
             {!realtimeQuery.data && realtimeQuery.error instanceof Error && (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/10 px-4 py-6 text-sm text-[color:var(--text-secondary)]">
-                {realtimeQuery.error.message}
-              </div>
+              <ErrorBlock message={realtimeQuery.error.message} />
             )}
           </div>
           <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent realtime events</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {realtimeQuery.data?.recentEvents.map((event) => (
-                <div key={event}>{event}</div>
+                <ListItemCard key={event} className="py-3" title={event} />
               ))}
               {realtimeQuery.data && realtimeQuery.data.recentEvents.length === 0 && <div>No realtime events yet.</div>}
             </div>
@@ -542,102 +660,36 @@ export function DashboardPage() {
       <div className="space-y-6">
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Provider Runtime</SectionHeading>
-          <form
-            className="mt-4 space-y-4"
-            onSubmit={form.handleSubmit((values) => providerProbeMutation.mutate(values))}
-          >
-            <label className="block text-sm text-[color:var(--text-secondary)]">
-              Endpoint
-              <input
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                {...form.register("endpoint")}
-              />
-            </label>
-            <label className="block text-sm text-[color:var(--text-secondary)]">
-              Model
-              <input
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                {...form.register("model")}
-              />
-            </label>
-            <label className="block text-sm text-[color:var(--text-secondary)]">
-              Mode
-              <select
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                {...form.register("mode")}
-              >
-                <option value="local-compatible">Local Compatible</option>
-                <option value="cloud">Cloud</option>
-              </select>
-            </label>
-            <label className="block text-sm text-[color:var(--text-secondary)]">
-              API Key
-              <input
-                className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                type="password"
-                {...form.register("apiKey")}
-              />
-            </label>
-            <div className="grid gap-3 md:grid-cols-2">
-              <button
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
-                type="submit"
-                disabled={providerProbeMutation.isPending || providerSaveMutation.isPending}
-              >
-                {providerProbeMutation.isPending ? "Probing..." : "Probe Provider"}
-              </button>
-              <button
-                className="w-full rounded-2xl bg-[linear-gradient(135deg,#f97316,#fbbf24)] px-4 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
-                type="button"
-                disabled={providerProbeMutation.isPending || providerSaveMutation.isPending}
-                onClick={form.handleSubmit((values) => providerSaveMutation.mutate(values))}
-              >
-                {providerSaveMutation.isPending ? "Saving..." : "Save Provider"}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
-            {providerConfigQuery.isLoading && <div>Loading saved provider configuration...</div>}
-            {providerConfigQuery.isError && providerConfigQuery.error instanceof Error && (
-              <div>{providerConfigQuery.error.message}</div>
-            )}
-            {providerSaveMutation.isSuccess && <div>{formatProviderSavedMessage(providerSaveMutation.data)}</div>}
-            {providerSaveMutation.isError && providerSaveMutation.error instanceof Error && (
-              <div>{providerSaveMutation.error.message}</div>
-            )}
-            {providerProbeMutation.isSuccess && <div>{formatProbeMessage(providerProbeMutation.data)}</div>}
-            {providerProbeMutation.isError && providerProbeMutation.error instanceof Error && (
-              <div>{providerProbeMutation.error.message}</div>
-            )}
-            {!providerConfigQuery.isLoading &&
-            !providerConfigQuery.isError &&
-            !providerSaveMutation.isSuccess &&
-            !providerSaveMutation.isError &&
-            !providerProbeMutation.isSuccess &&
-            !providerProbeMutation.isError ? (
-              <div>
-                The inference gateway now persists one active provider profile and exposes probe telemetry through the
-                typed system contract.
-              </div>
-            ) : null}
-          </div>
+          <InlineNotice className="mt-4" tone={providerConfigured ? "success" : "warning"}>
+            {providerConfigQuery.isLoading
+              ? "Loading saved provider configuration..."
+              : providerConfigQuery.isError && providerConfigQuery.error instanceof Error
+                ? providerConfigQuery.error.message
+                : providerConfigured
+                  ? "当前 provider 已配置，编辑、探测和保存入口已统一收敛到 Setup 页面。"
+                  : "当前尚未配置 provider。进入 Setup 页面可完成首轮配置并测试连通性。"}
+          </InlineNotice>
 
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Active Provider</div>
-              <div className="mt-2 text-white">
-                {statusQuery.data?.inferenceGateway.activeProvider ?? "not configured yet"}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Last Success</div>
-              <div className="mt-2 text-white">{statusQuery.data?.inferenceGateway.lastSuccessAt ?? "none yet"}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Last Error</div>
-              <div className="mt-2 text-white">{statusQuery.data?.inferenceGateway.lastError ?? "none"}</div>
-            </div>
+            <MetricCard
+              label="Active Provider"
+              value={providerConfigQuery.data?.model ?? statusQuery.data?.inferenceGateway.activeProvider ?? "not configured yet"}
+            />
+            <MetricCard label="Last Success" value={statusQuery.data?.inferenceGateway.lastSuccessAt ?? "none yet"} />
+            <MetricCard label="Last Error" value={statusQuery.data?.inferenceGateway.lastError ?? "none"} />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link to="/setup">
+              <Button variant="primary" size="lg" className="rounded-2xl">
+                Open Provider Setup
+              </Button>
+            </Link>
+            <Link to="/evals">
+              <Button variant="secondary" size="lg" className="rounded-2xl">
+                Run Evals
+              </Button>
+            </Link>
           </div>
         </Card>
 
@@ -649,32 +701,22 @@ export function DashboardPage() {
           >
             <label className="block text-sm text-[color:var(--text-secondary)]">
               System Prompt
-              <textarea
-                className="mt-2 min-h-24 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                {...previewForm.register("systemPrompt")}
-              />
+              <TextAreaField className="mt-2 min-h-24" {...previewForm.register("systemPrompt")} />
             </label>
             <label className="block text-sm text-[color:var(--text-secondary)]">
               User Prompt
-              <textarea
-                className="mt-2 min-h-32 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none"
-                {...previewForm.register("prompt")}
-              />
+              <TextAreaField className="mt-2 min-h-32" {...previewForm.register("prompt")} />
             </label>
-            <button
-              className="w-full rounded-2xl bg-[linear-gradient(135deg,#22c55e,#86efac)] px-4 py-3 text-sm font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
-              type="submit"
-              disabled={previewMutation.isPending}
-            >
+            <Button className="w-full rounded-2xl bg-[linear-gradient(135deg,#22c55e,#86efac)] text-slate-950" type="submit" disabled={previewMutation.isPending}>
               {previewMutation.isPending ? "Running preview..." : "Run Inference Preview"}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-4 grid gap-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Result</div>
               <div className="mt-2 whitespace-pre-wrap text-white">
-                {previewMutation.isSuccess
+                {previewMutation.data
                   ? previewMutation.data.output ?? previewMutation.data.error ?? "No preview output returned."
                   : previewMutation.isError && previewMutation.error instanceof Error
                     ? previewMutation.error.message
@@ -682,15 +724,12 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                model: {previewMutation.data?.model ?? statusQuery.data?.inferenceGateway.activeProvider ?? "pending"}
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                finish: {previewMutation.data?.finishReason ?? "pending"}
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                tokens: {previewMutation.data?.usage?.totalTokens ?? 0}
-              </div>
+              <MetricCard
+                label="Model"
+                value={previewMutation.data?.model ?? statusQuery.data?.inferenceGateway.activeProvider ?? "pending"}
+              />
+              <MetricCard label="Finish" value={previewMutation.data?.finishReason ?? "pending"} />
+              <MetricCard label="Tokens" value={previewMutation.data?.usage?.totalTokens ?? 0} />
             </div>
           </div>
         </Card>
@@ -698,111 +737,72 @@ export function DashboardPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Operations</SectionHeading>
           <div className="mt-4 grid gap-3">
-            <button
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
-              type="button"
-              onClick={() => exportDiagnosticsMutation.mutate()}
-            >
-              Export diagnostics bundle
-            </button>
-            <button
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
-              type="button"
-              onClick={() => createBackupMutation.mutate()}
-            >
-              Create local backup
-            </button>
-            <button
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white transition hover:bg-black/30"
-              type="button"
-              onClick={() => restoreBackupMutation.mutate()}
-            >
-              Restore backup
-            </button>
+            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => exportDiagnosticsMutation.mutate()}>
+              {exportDiagnosticsMutation.isPending ? "Exporting diagnostics..." : "Export diagnostics bundle"}
+            </Button>
+            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => createBackupMutation.mutate()}>
+              {createBackupMutation.isPending ? "Creating backup..." : "Create local backup"}
+            </Button>
+            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => restoreBackupMutation.mutate()}>
+              {restoreBackupMutation.isPending ? "Restoring backup..." : "Restore backup"}
+            </Button>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
-            {exportDiagnosticsMutation.isSuccess && <div>{exportDiagnosticsMutation.data.message}</div>}
-            {createBackupMutation.isSuccess && <div>{createBackupMutation.data.message}</div>}
-            {restoreBackupMutation.isSuccess && <div>{restoreBackupMutation.data.message}</div>}
-            {exportDiagnosticsMutation.isError && exportDiagnosticsMutation.error instanceof Error && (
-              <div>{exportDiagnosticsMutation.error.message}</div>
-            )}
-            {createBackupMutation.isError && createBackupMutation.error instanceof Error && (
-              <div>{createBackupMutation.error.message}</div>
-            )}
-            {restoreBackupMutation.isError && restoreBackupMutation.error instanceof Error && (
-              <div>{restoreBackupMutation.error.message}</div>
-            )}
-            {!exportDiagnosticsMutation.isSuccess &&
-            !createBackupMutation.isSuccess &&
-            !restoreBackupMutation.isSuccess &&
+          <div className="mt-4 space-y-3">
+            {operationsBusy ? (
+              <InlineNotice tone="info">
+                Operation in progress. Other maintenance actions are temporarily locked.
+              </InlineNotice>
+            ) : null}
+            {exportDiagnosticsMutation.isError && exportDiagnosticsMutation.error instanceof Error ? (
+              <ErrorBlock message={exportDiagnosticsMutation.error.message} />
+            ) : null}
+            {createBackupMutation.isError && createBackupMutation.error instanceof Error ? (
+              <ErrorBlock message={createBackupMutation.error.message} />
+            ) : null}
+            {restoreBackupMutation.isError && restoreBackupMutation.error instanceof Error ? (
+              <ErrorBlock message={restoreBackupMutation.error.message} />
+            ) : null}
+            {!operationsBusy &&
             !exportDiagnosticsMutation.isError &&
             !createBackupMutation.isError &&
-            !restoreBackupMutation.isError
-              ? "System operations are now wired through the typed contract layer and ready for the real runtime implementation."
-              : null}
+            !restoreBackupMutation.isError ? (
+              <InlineNotice tone="muted">
+                System operations are now wired through the typed contract layer and ready for the real runtime implementation.
+              </InlineNotice>
+            ) : null}
           </div>
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Log Index</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {logsQuery.data?.map((logPath) => (
-                <div key={logPath}>{logPath}</div>
+                <ListItemCard key={logPath} className="py-3" title={logPath} />
               ))}
-              {!logsQuery.data && logsQuery.error instanceof Error && <div>{logsQuery.error.message}</div>}
-              {!logsQuery.data && !logsQuery.error ? <div>Waiting for local runtime logs.</div> : null}
+              {logsQuery.isLoading ? <LoadingBlock className="px-0 py-0 text-left text-sm bg-transparent border-0 shadow-none" label="Loading local runtime logs..." /> : null}
+              {!logsQuery.data && logsQuery.error instanceof Error ? <ErrorBlock message={logsQuery.error.message} /> : null}
+              {!logsQuery.isLoading && !logsQuery.data && !logsQuery.error ? (
+                <PanelEmpty className="border-white/10 bg-black/10" message="Waiting for local runtime logs." />
+              ) : null}
             </div>
           </div>
         </Card>
+      </div>
       </div>
     </div>
   );
 }
 
-function buildProviderPayload(values: ProviderConfig) {
-  return {
-    endpoint: values.endpoint.trim(),
-    model: values.model.trim(),
-    mode: values.mode,
-    apiKey: values.apiKey?.trim() ? values.apiKey.trim() : undefined,
-  };
-}
-
-function normalizeProviderForm(values: {
-  endpoint: string;
-  model: string;
-  mode: string;
-  apiKey?: string;
-}): ProviderConfig {
-  return {
-    endpoint: values.endpoint,
-    model: values.model,
-    mode: values.mode === "cloud" ? "cloud" : "local-compatible",
-    apiKey: values.apiKey ?? "",
-  };
-}
-
-function formatProviderSavedMessage(values: {
-  endpoint: string;
-  model: string;
-  mode: string;
+function formatDesktopDiagnostics(values: {
+  platform: string;
+  coreApiCommand: string;
+  coreApiCommandResolved: boolean;
+  linuxMissingPackages: string[];
+  summary: string;
 }) {
-  return `Saved provider ${values.model} (${values.mode}) at ${values.endpoint}.`;
-}
+  const packageStatus = values.linuxMissingPackages.length
+    ? `missing=${values.linuxMissingPackages.join(", ")}`
+    : "linux deps ok";
 
-function formatProbeMessage(values: {
-  message: string;
-  normalizedEndpoint?: string;
-  statusCode?: number;
-}) {
-  if (values.normalizedEndpoint && typeof values.statusCode === "number") {
-    return `${values.message} normalized=${values.normalizedEndpoint} status=${values.statusCode}`;
-  }
-
-  if (values.normalizedEndpoint) {
-    return `${values.message} normalized=${values.normalizedEndpoint}`;
-  }
-
-  return values.message;
+  return `${values.platform} · ${values.summary} · ${values.coreApiCommandResolved ? "command ok" : "command missing"} · ${packageStatus}`;
 }

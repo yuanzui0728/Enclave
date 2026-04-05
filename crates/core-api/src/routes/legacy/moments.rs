@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     routing::{get, post},
     Json, Router,
 };
@@ -9,6 +10,7 @@ use serde_json::json;
 
 use crate::{
     app_state::{AppState, RuntimeState},
+    auth_support::require_session_user,
     error::{ApiError, ApiResult},
     generation,
     models::{
@@ -61,8 +63,10 @@ async fn get_feed(
 
 async fn create_user_moment(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateUserMomentPayload>,
-) -> Json<MomentRecord> {
+) -> ApiResult<Json<MomentRecord>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let post = MomentPostRecord {
         id: format!("moment_{}", now_token()),
@@ -84,7 +88,7 @@ async fn create_user_moment(
     drop(runtime);
     state.request_persist("moments-create-user-post");
 
-    Json(response)
+    Ok(Json(response))
 }
 
 async fn get_post(
@@ -179,8 +183,10 @@ async fn generate_all_moments(State(state): State<AppState>) -> Json<Vec<MomentR
 async fn add_comment(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateMomentCommentPayload>,
 ) -> ApiResult<Json<MomentCommentRecord>> {
+    require_session_user(&headers, &state, &payload.author_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     if !runtime.moment_posts.contains_key(&id) {
         return Err(ApiError::not_found(format!("Moment {} not found", id)));
@@ -215,8 +221,10 @@ async fn add_comment(
 async fn toggle_like(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<ToggleMomentLikePayload>,
 ) -> ApiResult<Json<ToggleMomentLikeResult>> {
+    require_session_user(&headers, &state, &payload.author_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     if !runtime.moment_posts.contains_key(&id) {
         return Err(ApiError::not_found(format!("Moment {} not found", id)));

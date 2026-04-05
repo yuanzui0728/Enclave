@@ -1,16 +1,73 @@
 :root {
-  --bg-canvas: #0f1720;
+  color-scheme: dark;
+
+  --bg-canvas: #09111b;
+  --bg-canvas-elevated: #0d1623;
   --bg-accent: radial-gradient(circle at top, rgba(249, 115, 22, 0.18), transparent 36%);
-  --surface-primary: rgba(17, 24, 39, 0.72);
-  --surface-secondary: rgba(255, 255, 255, 0.04);
+  --bg-grid:
+    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+
+  --surface-primary: rgba(13, 22, 35, 0.82);
+  --surface-secondary: rgba(255, 255, 255, 0.05);
+  --surface-tertiary: rgba(255, 255, 255, 0.08);
+  --surface-overlay: rgba(7, 12, 20, 0.92);
   --surface-console: #101827;
+  --surface-input: rgba(3, 7, 18, 0.44);
+
   --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-brand: rgba(249, 115, 22, 0.32);
+  --border-danger: rgba(248, 113, 113, 0.25);
+  --border-success: rgba(74, 222, 128, 0.26);
+
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
   --brand-primary: #f97316;
   --brand-secondary: #fbbf24;
-  --shadow-card: 0 16px 48px rgba(15, 23, 32, 0.35);
+  --brand-soft: rgba(249, 115, 22, 0.14);
+  --brand-gradient: linear-gradient(135deg, rgba(249, 115, 22, 0.96), rgba(251, 191, 36, 0.92));
+
+  --state-success-bg: rgba(16, 185, 129, 0.12);
+  --state-success-text: #bbf7d0;
+  --state-warning-bg: rgba(245, 158, 11, 0.13);
+  --state-warning-text: #fde68a;
+  --state-danger-bg: rgba(239, 68, 68, 0.16);
+  --state-danger-text: #fecaca;
+  --state-info-bg: rgba(59, 130, 246, 0.14);
+  --state-info-text: #bfdbfe;
+
+  --shadow-card: 0 20px 48px rgba(2, 8, 23, 0.38);
+  --shadow-overlay: 0 32px 90px rgba(2, 8, 23, 0.52);
+  --shadow-focus: 0 0 0 3px rgba(249, 115, 22, 0.18);
+
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-pill: 999px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --motion-fast: 160ms;
+  --motion-base: 220ms;
+  --motion-slow: 320ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  background:
+    var(--bg-accent),
+    linear-gradient(180deg, #101726 0%, #090d15 100%);
 }
 
 body {
@@ -18,4 +75,15 @@ body {
     var(--bg-accent),
     linear-gradient(180deg, #101726 0%, #090d15 100%);
   color: var(--text-primary);
+  accent-color: var(--brand-primary);
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.28);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }

@@ -2,6 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     http::StatusCode,
     routing::{get, post},
     Json, Router,
@@ -9,6 +10,7 @@ use axum::{
 
 use crate::{
     app_state::{AppState, RuntimeState},
+    auth_support::require_session_user,
     error::{ApiError, ApiResult},
     models::{
         CreateFeedCommentPayload, CreateFeedPostPayload, FeedCommentRecord, FeedListResponse,
@@ -65,8 +67,10 @@ async fn get_post(
 
 async fn create_post(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateFeedPostPayload>,
-) -> Json<FeedPostRecord> {
+) -> ApiResult<Json<FeedPostRecord>> {
+    require_session_user(&headers, &state, &payload.author_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let post = FeedPostRecord {
         id: format!("feed_{}", now_token()),
@@ -92,14 +96,16 @@ async fn create_post(
     drop(runtime);
     state.request_persist("feed-create-post");
 
-    Json(post)
+    Ok(Json(post))
 }
 
 async fn add_comment(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateFeedCommentPayload>,
 ) -> ApiResult<Json<FeedCommentRecord>> {
+    require_session_user(&headers, &state, &payload.author_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     if !runtime.feed_posts.contains_key(&id) {
         return Err(ApiError::not_found(format!("Feed post {} not found", id)));
@@ -134,8 +140,10 @@ async fn add_comment(
 async fn like_post(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<LikeFeedPostPayload>,
 ) -> ApiResult<StatusCode> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     if !runtime.feed_posts.contains_key(&id) {
         return Err(ApiError::not_found(format!("Feed post {} not found", id)));

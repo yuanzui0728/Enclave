@@ -14,6 +14,7 @@ use serde_json::json;
 
 use crate::{
     app_state::AppState,
+    evals,
     error::{ApiError, ApiResult},
     models::{
         InferencePreviewRequest, InferencePreviewResponse, InferenceUsageRecord,
@@ -89,6 +90,7 @@ struct OperationResult {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/status", get(system_status))
+        .nest("/evals", evals::routes::router())
         .route("/realtime", get(realtime_status))
         .route("/scheduler", get(scheduler_status))
         .route("/scheduler/run/:id", post(run_scheduler_job))

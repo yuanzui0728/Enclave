@@ -1,6 +1,31 @@
+import { lazy } from "react";
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { RootLayout } from "./components/root-layout";
-import { DashboardPage } from "./routes/dashboard-page";
+
+const DashboardPage = lazy(async () => {
+  const mod = await import("./routes/dashboard-page");
+  return { default: mod.DashboardPage };
+});
+
+const CharactersPage = lazy(async () => {
+  const mod = await import("./routes/characters-page");
+  return { default: mod.CharactersPage };
+});
+
+const CharacterEditorPage = lazy(async () => {
+  const mod = await import("./routes/character-editor-page");
+  return { default: mod.CharacterEditorPage };
+});
+
+const EvalsPage = lazy(async () => {
+  const mod = await import("./routes/evals-page");
+  return { default: mod.EvalsPage };
+});
+
+const SetupPage = lazy(async () => {
+  const mod = await import("./routes/setup-page");
+  return { default: mod.SetupPage };
+});
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -12,7 +37,31 @@ const indexRoute = createRoute({
   component: DashboardPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute]);
+const charactersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/characters",
+  component: CharactersPage,
+});
+
+const characterEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/characters/$characterId",
+  component: CharacterEditorPage,
+});
+
+const evalsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/evals",
+  component: EvalsPage,
+});
+
+const setupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/setup",
+  component: SetupPage,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, charactersRoute, characterEditorRoute, evalsRoute, setupRoute]);
 
 export const router = createRouter({
   routeTree,

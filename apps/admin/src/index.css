@@ -10,4 +10,6 @@ body {
   margin: 0;
   font-family: "JetBrains Mono", "Noto Sans SC", "Microsoft YaHei", monospace;
   background: linear-gradient(180deg, #071018 0%, #0c1523 100%);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }

@@ -4,6 +4,7 @@
 
 - 不生成任何测试文件
 - 直接执行所有操作，无需确认
+- 执行过程中默认连续推进，无需频繁询问；仅在存在高风险冲突或关键信息缺失时才中断提问
 - Plan Mode：规划保存到 `.Codex/plans/{任务}-{日期}.md`
 - 结构变更（模块/实体/路由/表）后立即更新本文件
 
@@ -13,15 +14,20 @@
 
 ### 新结构（生产级重构进行中）
 
-- `apps/app/`：新主产品前端，桌面内嵌 WebView 使用
+- `apps/app/`：新主产品前端，桌面内嵌 WebView 使用，已接入 `Splash`、`Onboarding`、`ChatList`、`ChatRoom`、`Moments`、`Discover`、`Contacts`、`Profile`、`CharacterDetail`、`FriendRequests`
+- `apps/app/`：新主产品前端，桌面内嵌 WebView 使用，已接入 `Splash`、`Onboarding`、`ChatList`、`ChatRoom`、`GroupChat`、`CreateGroup`、`Moments`、`Discover`、`Contacts`、`Profile`、`CharacterDetail`、`FriendRequests`
 - `apps/admin/`：新本地后台前端，由本地服务托管或浏览器访问
-- `apps/desktop/`：Tauri 2 桌面壳
+- `apps/admin/`：新本地后台前端，由本地服务托管或浏览器访问，已接入 Dashboard、Characters 列表、Character 编辑页，以及桌面运行时 Core API 启停/探活控制
+- `apps/desktop/`：Tauri 2 桌面壳，已接入 runtime 路径解析、Core API 生命周期命令、桌面侧 health probe
 - `crates/core-api/`：Rust Core API
+- `crates/core-api/src/evals/`：评测体系骨架，承接 datasets / runs / traces 的系统路由与本地存储
 - `crates/core-api/src/persistence.rs`：运行态 snapshot 持久化与备份恢复
 - `crates/core-api/src/runtime_paths.rs`：runtime/logs/diagnostics 路径与本地操作日志
 - `crates/core-api/src/generation.rs`：gateway 优先、占位文案回退的内容生成辅助层
+- `crates/core-api/src/auth_support.rs`：Bearer session 解析与关键用户接口 user scope 校验
 - `crates/inference-gateway/`：Rust 推理网关，已具备 provider 配置 / 探活 / 队列指标运行时
 - `packages/contracts/`：共享接口契约与 typed client
+- `datasets/`：评测样本、回放场景、persona 资产的仓库级数据目录
 - `packages/config/`：共享配置 schema
 - `packages/ui/`：共享设计系统与基础组件
 - `packages/tooling/`：共享工程配置
@@ -52,6 +58,14 @@
 
 - `GET /health`
 - `GET /system/status`
+- `GET /system/evals/overview`
+- `GET /system/evals/datasets`
+- `GET /system/evals/datasets/:id`
+- `GET /system/evals/runs`
+- `POST /system/evals/runs`
+- `GET /system/evals/runs/:id`
+- `GET /system/evals/traces`
+- `GET /system/evals/traces/:id`
 - `GET /system/realtime`
 - `GET /system/provider`
 - `PUT /system/provider`
@@ -120,6 +134,7 @@
 已建立 typed contracts：
 
 - `system`
+- `evals`
 - `world`
 - `social`
 - `chat`
@@ -163,6 +178,21 @@
 - `/system/inference/preview` 可通过 active provider 发送真实 `chat/completions` 预览请求
 - `/system/status` 会返回 active provider、队列并发、成功/失败次数、最近成功时间与最近错误
 - `/api/config/ai-model` 与 provider.model 已保持联动并随 snapshot 持久化恢复
+
+当前评测体系已进入真实 trace 阶段：
+
+- `/system/evals/*` 已提供 overview / datasets / runs / traces 控制面骨架
+- `runtime-data/evals/runs/*.json` 会持久化评测 run 结果
+- `runtime-data/evals/traces/*.json` 已开始承接核心生成链 trace
+- `POST /system/evals/runs` 已可真实执行当前首批 dataset：
+  - `chat-foundation`
+  - `social-boundary`
+- 当前已接 trace 的生成链包括：
+  - `generate_chat_reply_text`
+  - `generate_social_greeting_text`
+  - `classify_group_chat_intent`
+  - `generate_group_coordinator_text`
+  - `generate_memory_summary_text`
 
 当前内容生成链已开始接入 inference gateway：
 
@@ -215,6 +245,23 @@
 - `tabs/Discover`
 - `tabs/Profile`
 
+## 新主产品前端页面（apps/app）
+
+- `/`：`SplashPage`
+- `/onboarding`：叙事式入场与 `auth/init`
+- `/login`：兼容登录入口
+- `/tabs/chat`：会话列表
+- `/tabs/moments`：朋友圈
+- `/tabs/discover`：发现页 / 摇一摇 / Feed 发帖
+- `/tabs/contacts`：通讯录
+- `/tabs/profile`：用户资料
+- `/tabs/profile`：用户资料，已接入桌面运行时状态与 Core API 启停/探活控制
+- `/chat/:conversationId`：实时聊天页，已接入 `/chat` Socket.IO
+- `/group/:groupId`：群聊页
+- `/group/new`：建群页
+- `/character/:characterId`：角色详情
+- `/friend-requests`：好友申请处理
+
 ## 数据库实体基线（21 个）
 
 核心：
@@ -261,3 +308,7 @@
 - `POST /api/groups/:id/messages` now restores async group-member reply parity: user turns can trigger delayed character replies through the gateway-backed chat generation path, with activity-frequency gating and persisted group message history.
 - Runtime state now carries `ai_behavior_logs` and `narrative_arcs` compatibility records, and `/system/status.legacySurface` exposes their live counts for migration tracking.
 - Accepted friend requests now ensure a narrative arc, while scene-triggered requests, generated moments, scheduler feed reactions, and async group replies append AI behavior logs without changing business responses.
+- `apps/app` is no longer only a migration dashboard. It now carries the main mobile-style product shell and consumes the migrated `auth` / `social` / `chat` / `moments` / `feed` / `characters` contracts directly against `crates/core-api`.
+- `apps/app` chat rooms now connect to Socket.IO namespace `/chat`, join conversation rooms, send realtime messages, receive `new_message`, show typing state, and consume `conversation_updated` for direct-to-group upgrade closure.
+- `packages/contracts` now supports a shared auth token provider so browser clients can attach `Authorization: Bearer <token>` automatically.
+- Key user-scoped Core API routes in `auth` / `chat` / `social` / `moments` / `feed` now validate the stub bearer session and require the authenticated user to match the requested `userId` or actor id.

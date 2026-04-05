@@ -6,6 +6,7 @@ use std::{
 
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     http::StatusCode,
     routing::{get, post},
     Json, Router,
@@ -15,6 +16,7 @@ use tokio::time::sleep;
 
 use crate::{
     app_state::AppState,
+    auth_support::require_session_user,
     error::{ApiError, ApiResult},
     generation::generate_chat_reply_text,
     models::{
@@ -54,8 +56,10 @@ fn groups_router() -> Router<AppState> {
 
 async fn get_conversations(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(query): Query<UserScopedRequest>,
-) -> Json<Vec<ConversationListItemRecord>> {
+) -> ApiResult<Json<Vec<ConversationListItemRecord>>> {
+    require_session_user(&headers, &state, &query.user_id)?;
     let runtime = state.runtime.read().expect("runtime lock poisoned");
     let mut items = runtime
         .conversations
@@ -100,18 +104,20 @@ async fn get_conversations(
     items.sort_by(|left, right| {
         parse_timestamp(&right.updated_at).cmp(&parse_timestamp(&left.updated_at))
     });
-    Json(items)
+    Ok(Json(items))
 }
 
 async fn get_or_create_conversation(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<GetOrCreateConversationPayload>,
-) -> Json<ConversationRecord> {
+) -> ApiResult<Json<ConversationRecord>> {
+    require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let conversation_id = format!("{}_{}", payload.user_id, payload.character_id);
 
     if let Some(existing) = runtime.conversations.get(&conversation_id) {
-        return Json(existing.clone());
+        return Ok(Json(existing.clone()));
     }
 
     let title = runtime
@@ -139,21 +145,40 @@ async fn get_or_create_conversation(
     drop(runtime);
     state.request_persist("chat-create-conversation");
 
-    Json(conversation)
+    Ok(Json(conversation))
 }
 
 async fn get_conversation_messages(
     Path(id): Path<String>,
     State(state): State<AppState>,
-) -> Json<Vec<MessageRecord>> {
+    headers: HeaderMap,
+) -> ApiResult<Json<Vec<MessageRecord>>> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
-    Json(runtime.messages.get(&id).cloned().unwrap_or_default())
+    let conversation = runtime
+        .conversations
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| ApiError::not_found(format!("Conversation {} not found", id)))?;
+    let messages = runtime.messages.get(&id).cloned().unwrap_or_default();
+    drop(runtime);
+    require_session_user(&headers, &state, &conversation.user_id)?;
+    Ok(Json(messages))
 }
 
 async fn mark_conversation_read(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
 ) -> ApiResult<StatusCode> {
+    let expected_user_id = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime
+            .conversations
+            .get(&id)
+            .map(|conversation| conversation.user_id.clone())
+            .ok_or_else(|| ApiError::not_found(format!("Conversation {} not found", id)))?
+    };
+    require_session_user(&headers, &state, &expected_user_id)?;
     {
         let mut runtime = state.runtime.write().expect("runtime lock poisoned");
         let conversation = runtime
@@ -171,8 +196,12 @@ async fn mark_conversation_read(
 
 async fn create_group(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateGroupPayload>,
-) -> Json<GroupRecord> {
+) -> ApiResult<Json<GroupRecord>> {
+    if payload.creator_type == "user" {
+        require_session_user(&headers, &state, &payload.creator_id)?;
+    }
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
     let group_id = format!("group_{}", now_token());
     let group = GroupRecord {
@@ -216,12 +245,13 @@ async fn create_group(
     drop(runtime);
     state.request_persist("chat-create-group");
 
-    Json(group)
+    Ok(Json(group))
 }
 
 async fn get_group(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
 ) -> ApiResult<Json<GroupRecord>> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
     let group = runtime
@@ -229,6 +259,10 @@ async fn get_group(
         .get(&id)
         .cloned()
         .ok_or_else(|| ApiError::not_found(format!("Group {} not found", id)))?;
+    drop(runtime);
+    if group.creator_type == "user" {
+        require_session_user(&headers, &state, &group.creator_id)?;
+    }
 
     Ok(Json(group))
 }
@@ -236,16 +270,39 @@ async fn get_group(
 async fn get_group_members(
     Path(id): Path<String>,
     State(state): State<AppState>,
-) -> Json<Vec<GroupMemberRecord>> {
+    headers: HeaderMap,
+) -> ApiResult<Json<Vec<GroupMemberRecord>>> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
-    Json(runtime.group_members.get(&id).cloned().unwrap_or_default())
+    let group = runtime
+        .groups
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| ApiError::not_found(format!("Group {} not found", id)))?;
+    let members = runtime.group_members.get(&id).cloned().unwrap_or_default();
+    drop(runtime);
+    if group.creator_type == "user" {
+        require_session_user(&headers, &state, &group.creator_id)?;
+    }
+    Ok(Json(members))
 }
 
 async fn add_group_member(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<AddGroupMemberPayload>,
-) -> Json<GroupMemberRecord> {
+) -> ApiResult<Json<GroupMemberRecord>> {
+    let group = {
+        let runtime = state.runtime.read().expect("runtime lock poisoned");
+        runtime
+            .groups
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| ApiError::not_found(format!("Group {} not found", id)))?
+    };
+    if group.creator_type == "user" {
+        require_session_user(&headers, &state, &group.creator_id)?;
+    }
     let member = {
         let mut runtime = state.runtime.write().expect("runtime lock poisoned");
         let members = runtime.group_members.entry(id.clone()).or_default();
@@ -254,7 +311,7 @@ async fn add_group_member(
             .iter()
             .find(|member| member.member_id == payload.member_id)
         {
-            return Json(existing.clone());
+            return Ok(Json(existing.clone()));
         }
 
         let member = GroupMemberRecord {
@@ -273,29 +330,43 @@ async fn add_group_member(
     };
 
     state.request_persist("chat-add-group-member");
-    Json(member)
+    Ok(Json(member))
 }
 
 async fn get_group_messages(
     Path(id): Path<String>,
     State(state): State<AppState>,
-) -> Json<Vec<GroupMessageRecord>> {
+    headers: HeaderMap,
+) -> ApiResult<Json<Vec<GroupMessageRecord>>> {
     let runtime = state.runtime.read().expect("runtime lock poisoned");
+    let group = runtime
+        .groups
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| ApiError::not_found(format!("Group {} not found", id)))?;
     let mut messages = runtime.group_messages.get(&id).cloned().unwrap_or_default();
     messages.sort_by(|left, right| {
         parse_timestamp(&right.created_at).cmp(&parse_timestamp(&left.created_at))
     });
-    Json(messages)
+    drop(runtime);
+    if group.creator_type == "user" {
+        require_session_user(&headers, &state, &group.creator_id)?;
+    }
+    Ok(Json(messages))
 }
 
 async fn send_group_message(
     Path(id): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<SendGroupMessagePayload>,
-) -> Json<GroupMessageRecord> {
+) -> ApiResult<Json<GroupMessageRecord>> {
     let should_trigger_ai_replies = payload.sender_type == "user";
     let trigger_sender_name = payload.sender_name.clone();
     let trigger_text = payload.text.clone();
+    if payload.sender_type == "user" {
+        require_session_user(&headers, &state, &payload.sender_id)?;
+    }
     let message = {
         let mut runtime = state.runtime.write().expect("runtime lock poisoned");
         let messages = runtime.group_messages.entry(id.clone()).or_default();
@@ -317,12 +388,10 @@ async fn send_group_message(
     };
 
     state.request_persist("chat-send-group-message");
-
     if should_trigger_ai_replies {
         spawn_group_ai_replies(state.clone(), id, trigger_sender_name, trigger_text);
     }
-
-    Json(message)
+    Ok(Json(message))
 }
 
 fn spawn_group_ai_replies(

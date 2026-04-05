@@ -4,6 +4,7 @@ export * from "./chat";
 export * from "./characters";
 export * from "./client";
 export * from "./config";
+export * from "./evals";
 export * from "./feed";
 export * from "./moments";
 export * from "./social";

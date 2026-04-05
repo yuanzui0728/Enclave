@@ -24,6 +24,18 @@ pub fn diagnostics_dir(database_path: &Path) -> PathBuf {
     runtime_root(database_path).join("diagnostics")
 }
 
+pub fn evals_dir(database_path: &Path) -> PathBuf {
+    runtime_root(database_path).join("evals")
+}
+
+pub fn eval_runs_dir(database_path: &Path) -> PathBuf {
+    evals_dir(database_path).join("runs")
+}
+
+pub fn eval_traces_dir(database_path: &Path) -> PathBuf {
+    evals_dir(database_path).join("traces")
+}
+
 pub fn append_core_api_log(database_path: &Path, level: &str, message: &str) {
     let log_path = core_api_log_path(database_path);
 
