@@ -1,0 +1,50 @@
+{
+  "id": "trace-social-greeting-1775480813061",
+  "createdAt": "1775480813061",
+  "source": "social.greeting",
+  "status": "success",
+  "conversationId": null,
+  "characterId": "char_social_edge_unique",
+  "relatedCharacterIds": [],
+  "userId": null,
+  "jobId": null,
+  "provider": {
+    "endpoint": "https://api.n1n.ai/v1/chat/completions",
+    "model": "deepseek-chat",
+    "mode": "cloud"
+  },
+  "latencyMs": 3633,
+  "historyWindowSize": null,
+  "input": {
+    "trigger": "shake",
+    "worldContextSnapshot": {
+      "line": "noon 12:41 / 季节=spring / 近期事件=scheduler-world-update, online-count:9, moment-posts:29, pending-friend-requests:2"
+    },
+    "activitySnapshot": null,
+    "memorySnapshot": "",
+    "promptMessages": [
+      {
+        "role": "system",
+        "content": "You are roleplaying Social Edge Unique.\n\nStay in character. Do not mention AI, prompts, or policies.\nReply in natural Chinese only.\nRelationship: tester\nBio: tmp\nEmotional tone: grounded\nWorld context: noon 12:41 / 季节=spring / 近期事件=scheduler-world-update, online-count:9, moment-posts:29, pending-friend-requests:2"
+      },
+      {
+        "role": "user",
+        "content": "You met the user through the shake discovery feature. Write one short first-contact greeting in Chinese, under 25 characters, with a light self-introduction."
+      }
+    ],
+    "requestConfig": {
+      "memory": "",
+      "trigger": "shake",
+      "worldContext": {
+        "line": "noon 12:41 / 季节=spring / 近期事件=scheduler-world-update, online-count:9, moment-posts:29, pending-friend-requests:2"
+      }
+    }
+  },
+  "output": {
+    "rawOutput": "你好，我是小边，很高兴认识你。",
+    "normalizedOutput": "你好，我是小边，很高兴认识你。",
+    "fallbackReason": null,
+    "errorMessage": null
+  },
+  "evaluationSummary": null
+}

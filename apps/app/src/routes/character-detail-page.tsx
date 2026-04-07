@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircleMore, OctagonAlert, ShieldBan } from "lucide-react";
 import { blockCharacter, createModerationReport, getCharacter, getOrCreateConversation } from "@yinjie/contracts";
@@ -13,6 +13,7 @@ import { useSessionStore } from "../store/session-store";
 export function CharacterDetailPage() {
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const userId = useSessionStore((state) => state.userId);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
@@ -60,6 +61,9 @@ export function CharacterDetailPage() {
         reason,
       });
     },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["moderation-reports", baseUrl, userId] });
+    },
   });
   const blockMutation = useMutation({
     mutationFn: async () => {
@@ -74,8 +78,20 @@ export function CharacterDetailPage() {
         reason: reason ?? undefined,
       });
     },
-    onSuccess: () => {
-      navigate({ to: "/tabs/contacts" });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-chat-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-discover-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends-quick-start", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-group-friends", baseUrl, userId] }),
+      ]);
+      await navigate({ to: "/tabs/contacts" });
     },
   });
 
