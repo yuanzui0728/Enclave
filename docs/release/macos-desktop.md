@@ -172,10 +172,11 @@ $GITHUB_WORKSPACE/.ci-secrets/AuthKey.p8
 - 上传 `.app.tar.gz` / `.dmg` / `.sig`
 - 单架构或双架构矩阵构建
 - 额外上传 `yinjie-desktop-diagnostics-<version>-<target>` 诊断归档
+- 额外上传 `yinjie-desktop-release-manifest-<version>` 汇总清单
+- 额外上传 `yinjie-desktop-release-notes-<version>` 发布说明模板
 
 当前还未额外做的增强项：
 
-- 发布说明自动生成
 - 公证结果额外校验输出
 - Release checklist 自动化脚本
 - 双架构 release 聚合页
@@ -192,6 +193,12 @@ docs/release/macos-desktop-checklist.md
 docs/release/macos-user-install-guide.md
 ```
 
+面向发布执行人的 handoff 请看：
+
+```text
+docs/release/macos-release-handoff.md
+```
+
 真实 mac 验收时，优先关注这些运行时信号：
 
 - `commandSource`
@@ -206,7 +213,6 @@ CI 失败时，优先回看：
 - `yinjie-desktop-diagnostics-<version>-<target>` artifact
 - `yinjie-desktop-release-manifest-<version>` artifact
 - `yinjie-desktop-release-notes-<version>` artifact
-- `yinjie-desktop-release-manifest-<version>` artifact
 
 正式 tag 规则：
 

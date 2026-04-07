@@ -247,6 +247,23 @@ async fn block_character(
     runtime
         .friendships
         .retain(|_, friendship| !(friendship.user_id == payload.user_id && friendship.character_id == payload.character_id));
+    let direct_conversation_ids = runtime
+        .conversations
+        .values()
+        .filter(|conversation| {
+            conversation.user_id == payload.user_id
+                && conversation.r#type == "direct"
+                && conversation
+                    .participants
+                    .iter()
+                    .any(|participant| participant == &payload.character_id)
+        })
+        .map(|conversation| conversation.id.clone())
+        .collect::<Vec<_>>();
+    for conversation_id in direct_conversation_ids {
+        runtime.conversations.remove(&conversation_id);
+        runtime.messages.remove(&conversation_id);
+    }
 
     let record = BlockedCharacterRecord {
         id: format!("block_{}", now_token()),
@@ -281,9 +298,13 @@ async fn unblock_character(
 ) -> ApiResult<Json<SuccessResponse>> {
     require_session_user(&headers, &state, &payload.user_id)?;
     let mut runtime = state.runtime.write().expect("runtime lock poisoned");
-    runtime
+    let existing_block_id = runtime
         .blocked_characters
-        .retain(|_, item| !(item.user_id == payload.user_id && item.character_id == payload.character_id));
+        .values()
+        .find(|item| item.user_id == payload.user_id && item.character_id == payload.character_id)
+        .map(|item| item.id.clone())
+        .ok_or_else(|| ApiError::not_found("Blocked character not found"))?;
+    runtime.blocked_characters.remove(&existing_block_id);
     drop(runtime);
     state.request_persist("social-unblock-character");
 
@@ -369,7 +390,7 @@ async fn send_friend_request(
         character.id,
         character.name,
         character.avatar,
-        Some("shake".into()),
+        None,
         Some(greeting.into()),
     );
 

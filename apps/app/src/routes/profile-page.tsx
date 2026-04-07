@@ -103,7 +103,18 @@ export function ProfilePage() {
       await unblockCharacter({ userId, characterId });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["blocked-characters", baseUrl, userId, token] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["blocked-characters", baseUrl, userId, token] }),
+        queryClient.invalidateQueries({ queryKey: ["app-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-chat-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-discover-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-moments-blocked-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-characters", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends-quick-start", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-group-friends", baseUrl, userId] }),
+      ]);
     },
   });
   const deleteAccountMutation = useMutation({

@@ -8,6 +8,8 @@
     "dev:admin": "pnpm --filter @yinjie/admin dev",
     "dev:desktop": "pnpm --filter @yinjie/desktop dev",
     "desktop:build:windows:x64": "pnpm --filter @yinjie/desktop build:windows:x64",
+    "desktop:build:mac:aarch64": "pnpm --filter @yinjie/desktop build:mac:aarch64",
+    "desktop:build:mac:x86_64": "pnpm --filter @yinjie/desktop build:mac:x86_64",
     "android:configure": "pnpm --filter @yinjie/android-shell android:configure",
     "android:init": "pnpm --filter @yinjie/android-shell android:init",
     "android:sync": "pnpm --filter @yinjie/android-shell android:sync",

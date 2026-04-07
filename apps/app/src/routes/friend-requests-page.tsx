@@ -30,6 +30,8 @@ export function FriendRequestsPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl, userId] }),
         queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends-quick-start", baseUrl, userId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-group-friends", baseUrl, userId] }),
       ]);
     },
   });

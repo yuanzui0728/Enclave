@@ -206,6 +206,9 @@ export function ChatRoomPage() {
         details: `conversation:${conversationId}`,
       });
     },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["moderation-reports", baseUrl, userId] });
+    },
   });
 
   const renderedMessages = useMemo(() => {
