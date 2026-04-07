@@ -7,6 +7,7 @@ import { ChatMessage } from '../ai/ai.types';
 import { Conversation, Message } from './chat.types';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
+import { NarrativeService } from '../narrative/narrative.service';
 
 @Injectable()
 export class ChatService {
@@ -17,6 +18,7 @@ export class ChatService {
   constructor(
     private readonly ai: AiOrchestratorService,
     private readonly characters: CharactersService,
+    private readonly narrativeService: NarrativeService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -94,6 +96,27 @@ export class ChatService {
   async getCharacterActivity(charId: string): Promise<string | undefined> {
     const char = await this.characters.findById(charId);
     return char?.currentActivity;
+  }
+
+  async saveProactiveMessage(
+    conversationId: string,
+    characterId: string,
+    characterName: string,
+    text: string,
+  ): Promise<Message> {
+    const messageEntity = this.msgRepo.create({
+      id: `msg_${Date.now()}_proactive`,
+      conversationId,
+      senderType: 'character',
+      senderId: characterId,
+      senderName: characterName,
+      type: 'proactive',
+      text,
+    });
+
+    await this.msgRepo.save(messageEntity);
+    await this.convRepo.update({ id: conversationId }, { updatedAt: new Date() });
+    return this._entityToMessage(messageEntity);
   }
 
   async sendMessage(convId: string, userId: string, text: string): Promise<Message[]> {
@@ -179,6 +202,7 @@ export class ChatService {
             results.push(this._entityToMessage(aiEntity));
           }
 
+          await this.syncNarrativeArc(entity, userId);
           this.conversationHistory.set(convId, history);
           return results;
         }
@@ -229,7 +253,34 @@ export class ChatService {
       }
     }
 
+    await this.syncNarrativeArc(entity, userId);
     return results;
+  }
+
+  private async syncNarrativeArc(
+    conversation: ConversationEntity,
+    userId: string,
+  ): Promise<void> {
+    const primaryCharacterId = conversation.participants[0];
+    if (!primaryCharacterId) {
+      return;
+    }
+
+    const messageCount = await this.msgRepo.count({
+      where: { conversationId: conversation.id },
+    });
+
+    if (messageCount < 4) {
+      return;
+    }
+
+    const primaryCharacter = await this.characters.findById(primaryCharacterId);
+    await this.narrativeService.recordConversationTurn({
+      userId,
+      characterId: primaryCharacterId,
+      characterName: primaryCharacter?.name,
+      messageCount,
+    });
   }
 
   private _entityToConversation(e: ConversationEntity): Conversation {
@@ -249,10 +300,10 @@ export class ChatService {
     return {
       id: e.id,
       conversationId: e.conversationId,
-      senderType: e.senderType as 'user' | 'character',
+      senderType: e.senderType as 'user' | 'character' | 'system',
       senderId: e.senderId,
       senderName: e.senderName,
-      type: e.type as 'text' | 'system',
+      type: e.type as 'text' | 'system' | 'proactive',
       text: e.text,
       createdAt: e.createdAt,
     };

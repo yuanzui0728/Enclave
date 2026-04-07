@@ -6,6 +6,7 @@ import { FriendRequestEntity } from './friend-request.entity';
 import { AIRelationshipEntity } from './ai-relationship.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { NarrativeService } from '../narrative/narrative.service';
 
 @Injectable()
 export class SocialService {
@@ -21,6 +22,7 @@ export class SocialService {
     @InjectRepository(CharacterEntity)
     private characterRepo: Repository<CharacterEntity>,
     private readonly ai: AiOrchestratorService,
+    private readonly narrativeService: NarrativeService,
   ) {}
 
   async getPendingRequests(userId: string): Promise<FriendRequestEntity[]> {
@@ -39,14 +41,19 @@ export class SocialService {
 
     // Create friendship
     const existing = await this.friendshipRepo.findOneBy({ userId, characterId: req.characterId });
-    if (existing) return existing;
+    if (existing) {
+      await this.narrativeService.ensureArc(userId, req.characterId, req.characterName);
+      return existing;
+    }
 
     const friendship = this.friendshipRepo.create({
       userId,
       characterId: req.characterId,
       intimacyLevel: 10,
     });
-    return this.friendshipRepo.save(friendship);
+    const saved = await this.friendshipRepo.save(friendship);
+    await this.narrativeService.ensureArc(userId, req.characterId, req.characterName);
+    return saved;
   }
 
   async declineRequest(requestId: string, userId: string): Promise<void> {

@@ -1,6 +1,6 @@
 export type MessageSenderType = "user" | "character" | "system";
 export type ConversationType = "direct" | "group";
-export type MessageType = "text" | "system";
+export type MessageType = "text" | "system" | "proactive";
 export type GroupMemberType = "user" | "character";
 
 export interface Message {

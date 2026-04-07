@@ -12,10 +12,19 @@ import { SocialModule } from '../social/social.module';
 import { FeedModule } from '../feed/feed.module';
 import { ChatModule } from '../chat/chat.module';
 import { ConversationEntity } from '../chat/conversation.entity';
+import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MomentPostEntity, FeedPostEntity, FriendRequestEntity, CharacterEntity, UserEntity, ConversationEntity]),
+    TypeOrmModule.forFeature([
+      MomentPostEntity,
+      FeedPostEntity,
+      FriendRequestEntity,
+      CharacterEntity,
+      UserEntity,
+      ConversationEntity,
+      AIRelationshipEntity,
+    ]),
     WorldModule,
     AiModule,
     SocialModule,

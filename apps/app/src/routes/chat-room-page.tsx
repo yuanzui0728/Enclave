@@ -35,6 +35,7 @@ export function ChatRoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingCharacterId, setTypingCharacterId] = useState<string | null>(null);
   const [socketError, setSocketError] = useState<string | null>(null);
+  const [upgradeNotice, setUpgradeNotice] = useState<string | null>(null);
   const [conversationType, setConversationType] = useState<"direct" | "group">("direct");
   const [conversationTitle, setConversationTitle] = useState("对话");
   const [participants, setParticipants] = useState<string[]>([]);
@@ -54,6 +55,7 @@ export function ChatRoomPage() {
     setMessages([]);
     setTypingCharacterId(null);
     setSocketError(null);
+    setUpgradeNotice(null);
     setConversationType("direct");
     setConversationTitle("对话");
     setParticipants([]);
@@ -125,9 +127,17 @@ export function ChatRoomPage() {
       }
 
       setSocketError(null);
+      setUpgradeNotice((current) => {
+        if (payload.type !== "group" || current) {
+          return current;
+        }
+
+        return `${payload.title} 已升级为多人会话，新成员已加入当前聊天。`;
+      });
       setConversationType(payload.type);
       setConversationTitle(payload.title);
       setParticipants(payload.participants);
+      void queryClient.invalidateQueries({ queryKey: ["app-conversation-messages", baseUrl, conversationId] });
       void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] });
     });
     const offError = onChatError((message) => {
@@ -256,6 +266,7 @@ export function ChatRoomPage() {
 
         {messagesQuery.isError && messagesQuery.error instanceof Error ? <ErrorBlock message={messagesQuery.error.message} /> : null}
         {socketError ? <ErrorBlock message={socketError} /> : null}
+        {upgradeNotice ? <InlineNotice tone="success">{upgradeNotice}</InlineNotice> : null}
         {reportMutation.isError && reportMutation.error instanceof Error ? <ErrorBlock message={reportMutation.error.message} /> : null}
         {reportMutation.isSuccess ? <InlineNotice tone="success">举报已提交，后续可以在资料页查看安全记录。</InlineNotice> : null}
 

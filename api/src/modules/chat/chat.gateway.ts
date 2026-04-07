@@ -159,16 +159,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async sendProactiveMessage(convId: string, characterId: string, characterName: string, text: string) {
-    const message = {
-      id: `msg_${Date.now()}_proactive`,
-      conversationId: convId,
-      senderType: 'character',
-      senderId: characterId,
-      senderName: characterName,
-      type: 'text',
+    const message = await this.chatService.saveProactiveMessage(
+      convId,
+      characterId,
+      characterName,
       text,
-      createdAt: new Date(),
-    };
+    );
     this.server.to(convId).emit('new_message', message);
+    return message;
   }
 }

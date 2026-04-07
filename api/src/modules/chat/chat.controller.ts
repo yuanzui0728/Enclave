@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Body } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { GroupService } from './group.service';
 
@@ -52,6 +52,14 @@ export class GroupController {
   @Get(':id/members')
   getMembers(@Param('id') id: string) {
     return this.groupService.getMembers(id);
+  }
+
+  @Get(':id/messages')
+  getMessages(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.groupService.getMessages(id, Number(limit) || 100);
   }
 
   @Post(':id/members')

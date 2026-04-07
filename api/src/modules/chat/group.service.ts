@@ -101,11 +101,13 @@ export class GroupService {
   }
 
   async getMessages(groupId: string, limit = 100): Promise<GroupMessageEntity[]> {
-    return this.messageRepo.find({
+    const messages = await this.messageRepo.find({
       where: { groupId },
       order: { createdAt: 'DESC' },
       take: limit,
     });
+
+    return messages.reverse();
   }
 
   async sendMessage(

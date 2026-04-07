@@ -11,9 +11,14 @@ export class WorldService {
   ) {}
 
   async snapshot(): Promise<WorldContextEntity> {
+    const snapshot = await this.createSnapshot();
+    return this.repo.save(this.repo.create(snapshot));
+  }
+
+  async createSnapshot(): Promise<Partial<WorldContextEntity>> {
     const now = new Date();
     const hour = now.getHours();
-
+    const month = now.getMonth() + 1;
     const timeOfDay =
       hour < 6 ? '深夜' :
       hour < 9 ? '早上' :
@@ -21,19 +26,17 @@ export class WorldService {
       hour < 14 ? '中午' :
       hour < 18 ? '下午' :
       hour < 21 ? '傍晚' : '晚上';
-
-    const month = now.getMonth() + 1;
     const season =
       month >= 3 && month <= 5 ? '春天' :
       month >= 6 && month <= 8 ? '夏天' :
       month >= 9 && month <= 11 ? '秋天' : '冬天';
 
-    const ctx = this.repo.create({
-      localTime: `${timeOfDay}${now.getHours()}点${now.getMinutes()}分`,
+    return {
+      localTime: `${timeOfDay}${now.getHours()}点${String(now.getMinutes()).padStart(2, '0')}分`,
       season,
+      weather: this.getSimulatedWeather(now, season, hour),
       holiday: this.getHoliday(now),
-    });
-    return this.repo.save(ctx);
+    };
   }
 
   async getLatest(): Promise<WorldContextEntity | null> {
@@ -47,7 +50,7 @@ export class WorldService {
     if (ctx.weather) parts.push(`天气：${ctx.weather}`);
     if (ctx.location) parts.push(`位置：${ctx.location}`);
     if (ctx.holiday) parts.push(`节日：${ctx.holiday}`);
-    return parts.join('，');
+    return parts.join('；');
   }
 
   private getHoliday(date: Date): string | undefined {
@@ -60,5 +63,18 @@ export class WorldService {
     if (m === 10 && d === 1) return '国庆节';
     if (m === 12 && d === 25) return '圣诞节';
     return undefined;
+  }
+
+  private getSimulatedWeather(date: Date, season: string, hour: number): string {
+    const period = hour < 6 ? 0 : hour < 12 ? 1 : hour < 18 ? 2 : 3;
+    const seed = date.getMonth() * 31 + date.getDate() + period;
+    const optionsBySeason: Record<string, string[]> = {
+      春天: ['多云微暖', '小雨微凉', '阴天但空气清新'],
+      夏天: ['晴朗偏热', '闷热多云', '阵雨将至'],
+      秋天: ['秋高气爽', '晴空微凉', '多云和风'],
+      冬天: ['阴冷干燥', '晴冷微风', '多云偏寒'],
+    };
+    const seasonOptions = optionsBySeason[season] ?? ['多云'];
+    return seasonOptions[seed % seasonOptions.length] ?? '多云';
   }
 }

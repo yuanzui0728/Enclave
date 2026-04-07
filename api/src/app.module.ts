@@ -13,6 +13,7 @@ import { SocialModule } from './modules/social/social.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { WorldModule } from './modules/world/world.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
+import { NarrativeModule } from './modules/narrative/narrative.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
@@ -65,6 +66,7 @@ import { UserFeedInteractionEntity } from './modules/analytics/user-feed-interac
     FeedModule,
     WorldModule,
     SchedulerModule,
+    NarrativeModule,
   ],
 })
 export class AppModule {}

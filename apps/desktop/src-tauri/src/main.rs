@@ -10,6 +10,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use serde::Serialize;
 use tauri::{Manager, State};
 
@@ -84,6 +87,9 @@ struct CoreApiCommandResolution {
     bundled_exists: bool,
     resolved: bool,
 }
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 fn main() {
     tauri::Builder::default()
@@ -509,11 +515,15 @@ fn spawn_managed_core_api(
     let resolution = resolve_core_api_command(app);
     let command = resolution.command;
 
-    let child = Command::new(&command)
+    let mut process = Command::new(&command);
+    process
         .env("YINJIE_CORE_API_PORT", paths.port.to_string())
         .env("YINJIE_DATABASE_PATH", &paths.database_path)
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+    apply_windows_background_spawn(&mut process);
+
+    let child = process
         .spawn()
         .map_err(|error| {
             let message = format!(
@@ -534,6 +544,11 @@ fn spawn_managed_core_api(
     clear_core_api_error(state);
 
     Ok(pid)
+}
+
+fn apply_windows_background_spawn(command: &mut Command) {
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
 }
 
 fn resolve_core_api_command(app: &tauri::AppHandle) -> CoreApiCommandResolution {

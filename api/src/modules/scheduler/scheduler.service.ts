@@ -13,6 +13,7 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { ChatGateway } from '../chat/chat.gateway';
+import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 
 @Injectable()
 export class SchedulerService {
@@ -31,6 +32,8 @@ export class SchedulerService {
     private userRepo: Repository<UserEntity>,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
+    @InjectRepository(AIRelationshipEntity)
+    private aiRelationshipRepo: Repository<AIRelationshipEntity>,
     private readonly worldService: WorldService,
     private readonly ai: AiOrchestratorService,
     private readonly socialService: SocialService,
@@ -74,11 +77,14 @@ export class SchedulerService {
         const start = char.activeHoursStart ?? 8;
         const end = char.activeHoursEnd ?? 23;
         const shouldBeOnline = hour >= start && hour <= end;
-        if (char.isOnline !== shouldBeOnline) {
-          char.isOnline = shouldBeOnline;
+        const wasOnline = char.isOnline;
+        char.isOnline = shouldBeOnline;
+        if (wasOnline !== shouldBeOnline) {
           await this.characterRepo.save(char);
         }
       }
+
+      await this.maybeStrengthenAiRelationships(chars.filter((char) => char.isOnline));
     } catch (err) {
       this.logger.error('Failed to update AI active status', err);
     }
@@ -222,6 +228,50 @@ export class SchedulerService {
       }
     } catch (err) {
       this.logger.error('Failed to trigger proactive messages', err);
+    }
+  }
+
+  private async maybeStrengthenAiRelationships(chars: CharacterEntity[]) {
+    if (chars.length < 2) {
+      return;
+    }
+
+    for (let index = 0; index < chars.length; index += 1) {
+      for (let inner = index + 1; inner < chars.length; inner += 1) {
+        if (Math.random() > 0.08) {
+          continue;
+        }
+
+        const left = chars[index];
+        const right = chars[inner];
+        if (!left || !right) {
+          continue;
+        }
+
+        const [characterIdA, characterIdB] = [left.id, right.id].sort();
+        const existing = await this.aiRelationshipRepo.findOne({
+          where: [
+            { characterIdA, characterIdB },
+            { characterIdA: characterIdB, characterIdB: characterIdA },
+          ],
+        });
+
+        if (existing) {
+          existing.strength = Math.min(100, existing.strength + 4);
+          await this.aiRelationshipRepo.save(existing);
+          continue;
+        }
+
+        await this.aiRelationshipRepo.save(
+          this.aiRelationshipRepo.create({
+            characterIdA,
+            characterIdB,
+            relationshipType: 'acquaintance',
+            strength: 18,
+            backstory: 'They often overlap online and slowly become familiar.',
+          }),
+        );
+      }
     }
   }
 

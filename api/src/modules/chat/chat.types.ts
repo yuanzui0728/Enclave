@@ -1,10 +1,10 @@
 export interface Message {
   id: string;
   conversationId: string;
-  senderType: 'user' | 'character';
+  senderType: 'user' | 'character' | 'system';
   senderId: string;
   senderName: string;
-  type: 'text' | 'system';
+  type: 'text' | 'system' | 'proactive';
   text: string;
   createdAt: Date;
 }
