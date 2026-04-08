@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default desktop capability for the Yinjie runtime shell.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:default"]
 }
