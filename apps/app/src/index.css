@@ -20,7 +20,17 @@ body {
   font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  background: #070c14;
+  background: #f5f6f7;
+}
+
+html.yj-desktop-window,
+body.yj-desktop-window {
+  background: transparent;
+  overflow: hidden;
+}
+
+body.yj-desktop-window #root {
+  background: transparent;
 }
 
 a {
