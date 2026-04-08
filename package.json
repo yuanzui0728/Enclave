@@ -26,6 +26,7 @@
     "android:bundle": "pnpm --filter @yinjie/android-shell android:bundle",
     "android:doctor": "pnpm --filter @yinjie/android-shell android:doctor",
     "android:run": "node ./scripts/android-run.mjs",
+    "android:run:local": "bash ./scripts/android-run-local.sh",
     "ios:configure": "pnpm --filter @yinjie/ios-shell configure",
     "ios:doctor": "pnpm --filter @yinjie/ios-shell doctor",
     "ios:sync": "pnpm --filter @yinjie/ios-shell sync",

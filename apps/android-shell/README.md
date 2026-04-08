@@ -5,6 +5,7 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 ## Commands
 
 - `pnpm android:run`
+- `pnpm android:run:local`
 - `pnpm android:configure`
 - `pnpm android:init`
 - `pnpm android:sync`
@@ -16,6 +17,7 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 ## Notes
 
 - `pnpm android:run` is the default local development entrypoint for Android.
+- `pnpm android:run:local` also starts the Nest API locally on `127.0.0.1:39092` and rewrites `android-shell.config.local.json` to `10.0.2.2:39092`.
 - It will auto-detect `ANDROID_SDK_ROOT`, reuse a connected device or start the first available emulator, and install-launch the debug app.
 - If the current Java runtime is lower than 21, it downloads a local JDK 21 into `.cache/tools/jdk-21` and uses it only for this repository.
 

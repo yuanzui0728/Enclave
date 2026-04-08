@@ -80,6 +80,14 @@ pnpm android:run
 - 连接现有模拟器，或自动启动第一个可用 AVD
 - 构建 Web 包、同步 Capacitor、安装 Debug 包并拉起 App
 
+如果你要本地联调后端和安卓壳，直接执行：
+
+```bash
+pnpm android:run:local
+```
+
+这个命令会先在 `127.0.0.1:39092` 启动隐界 API，再把安卓模拟器配置成访问 `10.0.2.2:39092`。
+
 ## 文档
 
 - [部署指南](DEPLOY.md)

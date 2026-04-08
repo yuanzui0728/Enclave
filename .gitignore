@@ -51,6 +51,7 @@ Thumbs.db
 .claude/
 .Codex/
 .cache/tools/
+.cache/android-api/
 
 # Expo / React Native (mobile - 不上传)
 mobile/

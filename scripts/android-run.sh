@@ -142,6 +142,7 @@ warn_if_backend_unreachable() {
 
   local host_probe_url="$api_base_url"
   host_probe_url="${host_probe_url/10.0.2.2/127.0.0.1}"
+  host_probe_url="${host_probe_url%/}/health"
 
   if ! curl -fsS --max-time 5 "$host_probe_url" >/dev/null 2>&1; then
     log "Backend check failed for $host_probe_url. The Android app can still launch, but network requests may fail."
