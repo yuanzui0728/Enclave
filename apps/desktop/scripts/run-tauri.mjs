@@ -1,6 +1,6 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { delimiter, join } from "node:path";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -21,10 +21,16 @@ const hostTargetTriple = resolveHostTargetTriple();
 const explicitTarget = readTargetArg(forwardedArgs);
 const effectiveTarget = normalizeRequestedTarget(explicitTarget, hostTargetTriple);
 const tauriArgs = replaceTargetArg(forwardedArgs, effectiveTarget);
+const needsWindowsVcVars = process.platform === "win32" && !hasCommand("cl", ["/?"]);
+const windowsVcVarsPath = needsWindowsVcVars ? resolveWindowsVcVarsPath() : null;
 
 if (explicitTarget) {
   env.CARGO_BUILD_TARGET = explicitTarget;
   env.YINJIE_DESKTOP_TARGET_TRIPLE = explicitTarget;
+}
+
+if (windowsVcVarsPath) {
+  Object.assign(env, loadWindowsVcVarsEnv(windowsVcVarsPath));
 }
 
 mkdirSync(env.CARGO_TARGET_DIR, { recursive: true });
@@ -120,12 +126,12 @@ function ensureWindowsDesktopDependencies() {
     return;
   }
 
-  if (!hasCommand("cl", ["/?"])) {
+  if (!hasCommand("cl", ["/?"]) && !windowsVcVarsPath) {
     console.error(
       [
         "Windows desktop build requires MSVC Build Tools.",
         "Install Visual Studio Build Tools with the Desktop development with C++ workload and Windows SDK,",
-        "then rerun this command from a Developer PowerShell or terminal with MSVC on PATH.",
+        "or make sure vcvars64.bat is available so this script can load MSVC automatically.",
       ].join(" "),
     );
     process.exit(1);
@@ -175,12 +181,7 @@ ensureWindowsDesktopDependencies();
 const maxAttempts = mode === "build" ? 6 : 1;
 
 for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-  const result = spawnSync("pnpm", ["exec", "tauri", mode, ...tauriArgs], {
-    stdio: "pipe",
-    shell: true,
-    env,
-    encoding: "utf8",
-  });
+  const result = spawnTauriCommand();
 
   if (result.stdout) {
     process.stdout.write(result.stdout);
@@ -216,6 +217,16 @@ for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
 }
 
 process.exit(1);
+
+function spawnTauriCommand() {
+  return spawnSync("pnpm", ["exec", "tauri", mode, ...tauriArgs], {
+    stdio: "pipe",
+    shell: true,
+    env,
+    encoding: "utf8",
+    cwd: desktopDir,
+  });
+}
 
 function readTargetArg(args) {
   for (let index = 0; index < args.length; index += 1) {
@@ -263,6 +274,85 @@ function normalizeRequestedTarget(target, hostTarget) {
   }
 
   return target;
+}
+
+function resolveWindowsVcVarsPath() {
+  const vswherePath = join(
+    process.env["ProgramFiles(x86)"] ?? "C:\\Program Files (x86)",
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+  );
+
+  if (existsSync(vswherePath)) {
+    const result = spawnSync(
+      vswherePath,
+      [
+        "-latest",
+        "-products",
+        "*",
+        "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "-find",
+        "VC\\Auxiliary\\Build\\vcvars64.bat",
+      ],
+      {
+        stdio: "pipe",
+        shell: false,
+        env,
+        encoding: "utf8",
+      },
+    );
+
+    const resolved = result.stdout?.split(/\r?\n/u).find((line) => line.trim());
+    if (resolved) {
+      return resolved.trim();
+    }
+  }
+
+  const fallbacks = [
+    "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Auxiliary\\Build\\vcvars64.bat",
+    "C:\\Program Files\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+  ];
+
+  return fallbacks.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+function loadWindowsVcVarsEnv(vcvarsPath) {
+  const scriptPath = join(tmpdir(), `yinjie-vcvars-${process.pid}.cmd`);
+  writeFileSync(scriptPath, `@echo off\r\ncall "${vcvarsPath}" >nul\r\nset\r\n`, "utf8");
+
+  const result = spawnSync("cmd.exe", ["/d", "/c", scriptPath], {
+    stdio: "pipe",
+    shell: false,
+    env,
+    encoding: "utf8",
+  });
+
+  try {
+    unlinkSync(scriptPath);
+  } catch {
+  }
+
+  if ((result.status ?? 1) !== 0) {
+    console.error("Failed to load vcvars64.bat for the Windows desktop build.");
+    process.exit(result.status ?? 1);
+  }
+
+  const nextEnv = {};
+  for (const line of result.stdout.split(/\r?\n/u)) {
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex < 1) {
+      continue;
+    }
+
+    const key = line.slice(0, separatorIndex);
+    const value = line.slice(separatorIndex + 1);
+    nextEnv[key] = value;
+  }
+
+  return nextEnv;
 }
 
 function resolveHostTargetTriple() {

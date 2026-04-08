@@ -40,6 +40,7 @@
     "legacy:stop": ".\\stop.bat"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "prettier": "^3.4.2",
     "turbo": "^2.4.2",
     "typescript": "^5.9.3"
