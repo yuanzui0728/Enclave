@@ -1,6 +1,9 @@
 import {
+  DEFAULT_CLOUD_API_BASE_URL,
   DEFAULT_CORE_API_BASE_URL,
+  resolveCloudApiBaseUrl,
   resolveCoreApiBaseUrl,
+  setCloudApiBaseUrlProvider,
   setCoreApiBaseUrlProvider,
 } from "@yinjie/contracts";
 import { resolveAppRuntimeContext } from "../runtime/platform";
@@ -47,6 +50,10 @@ export function resolveAppSocketBaseUrl() {
 
 export function configureContractsRuntime() {
   setCoreApiBaseUrlProvider(() => resolveAppCoreApiBaseUrl());
+  setCloudApiBaseUrlProvider(() => {
+    const runtimeConfig = getAppRuntimeConfig();
+    return runtimeConfig.cloudApiBaseUrl ?? DEFAULT_CLOUD_API_BASE_URL;
+  });
 }
 
 export function resolveConfiguredCoreApiBaseUrl() {
@@ -56,6 +63,15 @@ export function resolveConfiguredCoreApiBaseUrl() {
 export function hasRemoteServiceConfiguration() {
   const runtimeConfig = getAppRuntimeConfig();
   return Boolean(runtimeConfig.apiBaseUrl || fallbackBrowserBaseUrl());
+}
+
+export function resolveAppCloudApiBaseUrl() {
+  const runtimeConfig = getAppRuntimeConfig();
+  if (runtimeConfig.cloudApiBaseUrl) {
+    return runtimeConfig.cloudApiBaseUrl;
+  }
+
+  return resolveCloudApiBaseUrl();
 }
 
 export function requiresRemoteServiceConfiguration() {

@@ -34,11 +34,13 @@ export interface BlockedCharacter {
 }
 
 export interface SendFriendRequestRequest {
+  userId?: string;
   characterId: string;
   greeting: string;
 }
 
 export interface TriggerSceneRequest {
+  userId?: string;
   scene: string;
 }
 
@@ -56,10 +58,12 @@ export interface ShakeResult {
 }
 
 export interface BlockCharacterRequest {
+  userId?: string;
   characterId: string;
   reason?: string;
 }
 
 export interface UnblockCharacterRequest {
+  userId?: string;
   characterId: string;
 }
