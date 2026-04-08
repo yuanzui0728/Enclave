@@ -455,11 +455,11 @@ export function CharacterEditorPage() {
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>Preview</SectionHeading>
             <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-xl">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-xl">
                 {draft.avatar || draft.name?.slice(0, 1) || "?"}
               </div>
               <div>
-                <div className="text-lg font-semibold text-white">{draft.name || "Unnamed Character"}</div>
+                <div className="text-lg font-semibold text-[color:var(--text-primary)]">{draft.name || "Unnamed Character"}</div>
                 <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{draft.relationship || "Relationship pending"}</div>
               </div>
             </div>

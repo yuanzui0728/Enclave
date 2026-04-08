@@ -346,7 +346,7 @@ export function DashboardPage() {
                   : desktopStatusQuery.data?.message ?? "桌面运行时尚未完成初始化，进入 Setup 页面可集中恢复。"}
               </InlineNotice>
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+              <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
                 {runtimeDiagnosticsQuery.data
                   ? formatDesktopDiagnostics(runtimeDiagnosticsQuery.data)
                   : "正在读取桌面运行时诊断..."}
@@ -430,7 +430,7 @@ export function DashboardPage() {
               }
             />
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 md:col-span-2">
+            <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 md:col-span-2">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Eval Runtime</div>
@@ -452,7 +452,7 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
+          <div className="mt-6 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
             This control plane is now aligned with the shared contract layer. The migrated compatibility surface covers
             config, characters, social, chat, moments, feed, and world context. Scheduler parity now has a live
             Rust execution slice with runtime stats and manual triggers wired into this dashboard. Narrative arcs and AI
@@ -479,7 +479,7 @@ export function DashboardPage() {
               ))
             ) : (
               <PanelEmpty
-                className="border-white/10 bg-black/10"
+                className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
                 message={
                   charactersQuery.error instanceof Error
                     ? charactersQuery.error.message
@@ -518,7 +518,7 @@ export function DashboardPage() {
                 ))
               ) : (
                 <PanelEmpty
-                  className="border-white/10 bg-black/10"
+                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
                   message={
                     momentsQuery.error instanceof Error
                       ? momentsQuery.error.message
@@ -556,7 +556,7 @@ export function DashboardPage() {
                 ))
               ) : (
                 <PanelEmpty
-                  className="border-white/10 bg-black/10"
+                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
                   message={
                     feedQuery.error instanceof Error
                       ? feedQuery.error.message
@@ -592,7 +592,7 @@ export function DashboardPage() {
                       {job.running ? "running" : job.enabled ? "enabled" : "disabled"}
                     </StatusPill>
                     <button
-                      className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                       type="button"
                       disabled={!job.enabled || job.running || schedulerRunMutation.isPending}
                       onClick={() => schedulerRunMutation.mutate(job.id)}
@@ -612,17 +612,17 @@ export function DashboardPage() {
                 footer={
                   <>
                     <div className="grid gap-2 md:grid-cols-3">
-                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
                         runs: {job.runCount}
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
                         duration: {job.lastDurationMs ? `${job.lastDurationMs} ms` : "not yet run"}
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
                         last run: {job.lastRunAt ?? "not yet run"}
                       </div>
                     </div>
-                    <div className="mt-3 rounded-2xl border border-white/10 bg-black/10 px-3 py-2 text-sm text-[color:var(--text-secondary)]">
+                    <div className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]">
                       {job.lastResult ?? "No execution result recorded yet."}
                     </div>
                   </>
@@ -642,11 +642,11 @@ export function DashboardPage() {
               <ErrorBlock message={schedulerQuery.error.message} />
             )}
             {!schedulerQuery.data && !schedulerQuery.error && (
-              <PanelEmpty className="border-white/10 bg-black/10" message="Waiting for scheduler parity data." />
+              <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="Waiting for scheduler parity data." />
             )}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent scheduler runs</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {schedulerQuery.data?.recentRuns.map((event) => (
@@ -661,7 +661,7 @@ export function DashboardPage() {
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>Realtime Contract</SectionHeading>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
             namespace: {CHAT_NAMESPACE}
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -673,7 +673,7 @@ export function DashboardPage() {
               <ListItemCard key={eventName} className="py-3" title={eventName} />
             ))}
           </div>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-[color:var(--text-secondary)]">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
             socket path: {realtimeQuery.data?.socketPath ?? "/socket.io"}
           </div>
           <div className="mt-4 grid gap-3">
@@ -686,13 +686,13 @@ export function DashboardPage() {
               />
             ))}
             {realtimeQuery.data && realtimeQuery.data.rooms.length === 0 && (
-              <PanelEmpty className="border-white/10 bg-black/10" message="No active realtime rooms yet." />
+              <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="No active realtime rooms yet." />
             )}
             {!realtimeQuery.data && realtimeQuery.error instanceof Error && (
               <ErrorBlock message={realtimeQuery.error.message} />
             )}
           </div>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recent realtime events</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {realtimeQuery.data?.recentEvents.map((event) => (
@@ -760,9 +760,9 @@ export function DashboardPage() {
           </form>
 
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+            <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Result</div>
-              <div className="mt-2 whitespace-pre-wrap text-white">
+              <div className="mt-2 whitespace-pre-wrap text-[color:var(--text-primary)]">
                 {previewMutation.data
                   ? previewMutation.data.output ?? previewMutation.data.error ?? "No preview output returned."
                   : previewMutation.isError && previewMutation.error instanceof Error
@@ -820,7 +820,7 @@ export function DashboardPage() {
             ) : null}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Log Index</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {logsQuery.data?.map((logPath) => (
@@ -829,7 +829,7 @@ export function DashboardPage() {
               {logsQuery.isLoading ? <LoadingBlock className="px-0 py-0 text-left text-sm bg-transparent border-0 shadow-none" label="Loading local runtime logs..." /> : null}
               {!logsQuery.data && logsQuery.error instanceof Error ? <ErrorBlock message={logsQuery.error.message} /> : null}
               {!logsQuery.isLoading && !logsQuery.data && !logsQuery.error ? (
-                <PanelEmpty className="border-white/10 bg-black/10" message="Waiting for local runtime logs." />
+                <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="Waiting for local runtime logs." />
               ) : null}
             </div>
           </div>

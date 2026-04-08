@@ -1094,7 +1094,7 @@ export function EvalsPage() {
               setPresetName(event.target.value);
               applyPreset(event.target.value);
             }}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">apply preset</option>
             {savedPresets.map((preset) => (
@@ -1140,10 +1140,10 @@ export function EvalsPage() {
           {savedPresets.map((preset) => (
             <div
               key={preset.name}
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-left text-sm text-[color:var(--text-secondary)]"
+              className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left text-sm text-[color:var(--text-secondary)]"
             >
               <div className="flex items-center justify-between gap-3">
-                <div className="font-semibold text-white">
+                <div className="font-semibold text-[color:var(--text-primary)]">
                   {preset.name}
                   {preset.pinned ? " · pinned" : ""}
                 </div>
@@ -1232,7 +1232,7 @@ export function EvalsPage() {
             <UiSelectField
               value={pairwisePromptVariant}
               onChange={(event) => setPairwisePromptVariant(event.target.value)}
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white"
+              className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-primary)]"
             >
               {promptVariants.map((variant) => (
                 <option key={variant.id} value={variant.id}>
@@ -1245,7 +1245,7 @@ export function EvalsPage() {
             <UiSelectField
               value={pairwiseMemoryPolicyVariant}
               onChange={(event) => setPairwiseMemoryPolicyVariant(event.target.value)}
-              className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white"
+              className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-primary)]"
             >
               <option value="default">default memory</option>
               {memoryStrategies.map((strategy) => (
@@ -1356,7 +1356,7 @@ export function EvalsPage() {
             <UiSelectField
               value={selectedDatasetId ?? ""}
               onChange={(event) => setSelectedDatasetId(event.target.value || null)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">all datasets</option>
               {datasetList.map((dataset) => (
@@ -1369,18 +1369,18 @@ export function EvalsPage() {
               value={historyProviderFilter}
               onChange={(event) => setHistoryProviderFilter(event.target.value)}
               placeholder="provider model"
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white placeholder:text-[color:var(--text-muted)]"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
             />
             <TextField
               value={historyJudgeFilter}
               onChange={(event) => setHistoryJudgeFilter(event.target.value)}
               placeholder="judge model"
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white placeholder:text-[color:var(--text-muted)]"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
             />
             <UiSelectField
               value={historyPromptVariantFilter}
               onChange={(event) => setHistoryPromptVariantFilter(event.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">all prompt variants</option>
               {promptVariants.map((variant) => (
@@ -1392,7 +1392,7 @@ export function EvalsPage() {
             <UiSelectField
               value={historyMemoryPolicyFilter}
               onChange={(event) => setHistoryMemoryPolicyFilter(event.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">all memory policies</option>
               {memoryStrategies.map((strategy) => (
@@ -1474,8 +1474,8 @@ export function EvalsPage() {
               <ListItemCard
                 key={report.id}
                 onClick={() => setSelectedReportId(report.id)}
-                className={`w-full cursor-pointer text-left transition hover:border-white/20 ${
-                  selectedReport?.id === report.id ? "border-white/30" : "border-white/10"
+                className={`w-full cursor-pointer text-left transition hover:border-[color:var(--border-faint)] ${
+                  selectedReport?.id === report.id ? "border-[color:var(--border-subtle)]" : "border-[color:var(--border-faint)]"
                 }`}
                 title={report.presetTitle}
                 subtitle={`${report.createdAt} · ${report.presetId}`}
@@ -1534,12 +1534,12 @@ export function EvalsPage() {
                   </div>
                 ) : null}
                 {report.topCaseDeltas.length > 0 ? (
-                  <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+                  <div className="mt-3 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                     <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Top Case Deltas</div>
                     <div className="mt-2 space-y-2">
                       {report.topCaseDeltas.slice(0, 3).map((item) => (
                         <div key={`${report.id}-${item.caseId}`} className="flex items-center justify-between gap-3">
-                          <div className="text-white">{item.caseId}</div>
+                          <div className="text-[color:var(--text-primary)]">{item.caseId}</div>
                           <div className="text-[color:var(--text-secondary)]">
                             {item.outcome} · {item.scoreDelta >= 0 ? "+" : ""}{item.scoreDelta.toFixed(2)}
                           </div>
@@ -1567,9 +1567,9 @@ export function EvalsPage() {
             </div>
             <div>
               {selectedReport ? (
-                <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+                <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="font-semibold text-white">{selectedReport.presetTitle}</div>
+                    <div className="font-semibold text-[color:var(--text-primary)]">{selectedReport.presetTitle}</div>
                     <StatusPill tone={selectedReport.summary.wins > selectedReport.summary.losses ? "healthy" : "muted"}>
                       {selectedReport.mode}
                     </StatusPill>
@@ -1690,11 +1690,11 @@ export function EvalsPage() {
                     <MetricCard label="Ties" value={selectedReport.summary.ties} />
                   </div>
                   {selectedReport.notes.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-black/10 p-3">
+                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Notes</div>
                       <div className="mt-2 space-y-2">
                         {selectedReport.notes.map((note) => (
-                          <div key={`${selectedReport.id}-${note}`} className="text-white">
+                          <div key={`${selectedReport.id}-${note}`} className="text-[color:var(--text-primary)]">
                             {note}
                           </div>
                         ))}
@@ -1702,12 +1702,12 @@ export function EvalsPage() {
                     </div>
                   ) : null}
                   {selectedReport.topCaseDeltas.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-black/10 p-3">
+                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Top Case Deltas</div>
                       <div className="mt-2 space-y-2">
                         {selectedReport.topCaseDeltas.map((item) => (
                           <div key={`${selectedReport.id}-detail-${item.caseId}`} className="flex items-center justify-between gap-3">
-                            <div className="text-white">{item.caseId}</div>
+                            <div className="text-[color:var(--text-primary)]">{item.caseId}</div>
                             <div className="text-[color:var(--text-secondary)]">
                               {item.outcome} · {item.scoreDelta >= 0 ? "+" : ""}{item.scoreDelta.toFixed(2)}
                             </div>
@@ -1717,7 +1717,7 @@ export function EvalsPage() {
                     </div>
                   ) : null}
                   {selectedReport.failureTagDeltas.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-black/10 p-3">
+                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                       <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Failure Tag Deltas</div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {selectedReport.failureTagDeltas.map((item) => (
@@ -1841,17 +1841,17 @@ export function EvalsPage() {
                   <div
                     key={caseResult.caseId}
                     onClick={() => focusCase(caseResult.caseId, caseResult.traceIds)}
-                    className={`cursor-pointer rounded-2xl border bg-black/20 px-4 py-4 text-left text-sm text-[color:var(--text-secondary)] ${
-                      focusedCaseId === caseResult.caseId ? "border-white/30" : "border-white/10"
+                    className={`cursor-pointer rounded-2xl border bg-[color:var(--surface-card)] px-4 py-4 text-left text-sm text-[color:var(--text-secondary)] ${
+                      focusedCaseId === caseResult.caseId ? "border-[color:var(--border-subtle)]" : "border-[color:var(--border-faint)]"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white">{caseResult.caseId}</div>
+                      <div className="font-semibold text-[color:var(--text-primary)]">{caseResult.caseId}</div>
                       <StatusPill tone={caseResult.status === "failed" ? "warning" : caseResult.status === "scaffolded" ? "warning" : "healthy"}>
                         {caseResult.status}
                       </StatusPill>
                     </div>
-                    <div className="mt-3 whitespace-pre-wrap break-words leading-6 text-white">
+                    <div className="mt-3 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                       {caseResult.output || "empty"}
                     </div>
                     {caseResult.scores.length > 0 ? (
@@ -1867,7 +1867,7 @@ export function EvalsPage() {
                       </div>
                     ) : null}
                     {caseResult.judgeRationale ? (
-                      <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                      <div className="mt-3 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3 text-sm leading-6 text-[color:var(--text-secondary)]">
                         {caseResult.judgeRationale}
                       </div>
                     ) : null}
@@ -1907,7 +1907,7 @@ export function EvalsPage() {
                                 focusCase(caseResult.caseId, caseResult.traceIds);
                                 setSelectedTraceId(traceId);
                               }}
-                              className="rounded-full border border-white/10 px-3 py-1 text-xs text-white transition hover:border-white/20"
+                              className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-xs text-[color:var(--text-primary)] transition hover:border-[color:var(--border-faint)]"
                             >
                               {traceId}
                             </button>
@@ -1916,11 +1916,11 @@ export function EvalsPage() {
                       </div>
                     ) : null}
                     {selectedDatasetCaseMap.get(caseResult.caseId) ? (
-                      <div className="mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Case Expectations</div>
                         <div className="mt-3">
                           <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Input</div>
-                          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-white">
+                          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-xs leading-6 text-[color:var(--text-primary)]">
                             {JSON.stringify(selectedDatasetCaseMap.get(caseResult.caseId)?.input ?? {}, null, 2)}
                           </pre>
                         </div>
@@ -1964,11 +1964,11 @@ export function EvalsPage() {
             >
               {compareFiltersExpanded ? "hide compare filters" : "show compare filters"}
             </Button>
-            <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-[color:var(--text-secondary)]">
+            <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-sm text-[color:var(--text-secondary)]">
               {activeCompareFilterCount} filters active
             </div>
             {compareDatasetId ? (
-              <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-[color:var(--text-secondary)]">
+              <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-sm text-[color:var(--text-secondary)]">
                 dataset: {compareDatasetId}
               </div>
             ) : null}
@@ -1987,7 +1987,7 @@ export function EvalsPage() {
             <UiSelectField
               value={baselineRunId}
               onChange={(event) => setBaselineRunId(event.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">select baseline run</option>
               {comparableRuns.map((run) => (
@@ -1999,7 +1999,7 @@ export function EvalsPage() {
             <UiSelectField
               value={candidateRunId}
               onChange={(event) => setCandidateRunId(event.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">select candidate run</option>
               {comparableRuns.map((run) => (
@@ -2011,7 +2011,7 @@ export function EvalsPage() {
             <UiSelectField
               value={compareCaseFilter}
               onChange={(event) => setCompareCaseFilter(event.target.value as "all" | "different" | "failed")}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="all">all cases</option>
               <option value="different">different only</option>
@@ -2020,7 +2020,7 @@ export function EvalsPage() {
             <UiSelectField
               value={compareOutcomeFilter}
               onChange={(event) => setCompareOutcomeFilter(event.target.value as "all" | "win" | "lose" | "tie")}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="all">all outcomes</option>
               <option value="win">wins</option>
@@ -2030,7 +2030,7 @@ export function EvalsPage() {
             <UiSelectField
               value={compareFailureTagFilter}
               onChange={(event) => setCompareFailureTagFilter(event.target.value)}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
             >
               <option value="">all failure tags</option>
               {availableCompareFailureTags.map((tagKey) => (
@@ -2056,9 +2056,9 @@ export function EvalsPage() {
               />
               <div className="grid gap-3 xl:grid-cols-2">
                 {displayedComparisons.map((comparison) => (
-                  <div key={comparison.caseId} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+                  <div key={comparison.caseId} className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="font-semibold text-white">{comparison.caseId}</div>
+                      <div className="font-semibold text-[color:var(--text-primary)]">{comparison.caseId}</div>
                       <StatusPill tone={comparison.outcome === "lose" ? "warning" : comparison.outcome === "win" ? "healthy" : "muted"}>
                         {comparison.outcome}
                       </StatusPill>
@@ -2071,9 +2071,9 @@ export function EvalsPage() {
                       <div>score delta: {comparison.scoreDelta >= 0 ? "+" : ""}{comparison.scoreDelta.toFixed(2)}</div>
                     </div>
                     <div className="mt-4 grid gap-3 xl:grid-cols-2">
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Baseline Output</div>
-                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-white">
+                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                           {comparison.baselineOutput || "empty"}
                         </div>
                         {comparison.baselineRuleViolations.length > 0 ? (
@@ -2084,12 +2084,12 @@ export function EvalsPage() {
                           </div>
                         ) : null}
                         {comparison.baselineScores.length > 0 ? (
-                          <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+                          <div className="mt-3 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                             <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Baseline Scores</div>
                             <div className="mt-2 space-y-2">
                               {comparison.baselineScores.map((score) => (
                                 <div key={`baseline-score-${comparison.caseId}-${score.key}`} className="flex items-center justify-between gap-3">
-                                  <div className="text-white">{score.label}</div>
+                                  <div className="text-[color:var(--text-primary)]">{score.label}</div>
                                   <div className="text-[color:var(--text-secondary)]">{score.value.toFixed(2)}</div>
                                 </div>
                               ))}
@@ -2124,9 +2124,9 @@ export function EvalsPage() {
                           </div>
                         ) : null}
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Candidate Output</div>
-                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-white">
+                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                           {comparison.candidateOutput || "empty"}
                         </div>
                         {comparison.candidateRuleViolations.length > 0 ? (
@@ -2137,12 +2137,12 @@ export function EvalsPage() {
                           </div>
                         ) : null}
                         {comparison.candidateScores.length > 0 ? (
-                          <div className="mt-3 rounded-xl border border-white/10 bg-black/10 p-3">
+                          <div className="mt-3 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
                             <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Candidate Scores</div>
                             <div className="mt-2 space-y-2">
                               {comparison.candidateScores.map((score) => (
                                 <div key={`candidate-score-${comparison.caseId}-${score.key}`} className="flex items-center justify-between gap-3">
-                                  <div className="text-white">{score.label}</div>
+                                  <div className="text-[color:var(--text-primary)]">{score.label}</div>
                                   <div className="text-[color:var(--text-secondary)]">{score.value.toFixed(2)}</div>
                                 </div>
                               ))}
@@ -2198,7 +2198,7 @@ export function EvalsPage() {
           >
             {traceFiltersExpanded ? "hide trace filters" : "show trace filters"}
           </Button>
-          <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-[color:var(--text-secondary)]">
+          <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-sm text-[color:var(--text-secondary)]">
             {activeTraceFilterCount} filters active
           </div>
         </div>
@@ -2210,7 +2210,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceScopeFilter}
             onChange={(event) => setTraceScopeFilter(event.target.value as "all" | "run" | "compare")}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="all">all traces</option>
             <option value="run">current run traces</option>
@@ -2219,7 +2219,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceCaseFilter}
             onChange={(event) => setTraceCaseFilter(event.target.value)}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">all cases</option>
             {availableTraceCaseIds.map((caseId) => (
@@ -2231,7 +2231,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceFailureTagFilter}
             onChange={(event) => setTraceFailureTagFilter(event.target.value)}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">all failure tags</option>
             {availableTraceFailureTags.map((tagKey) => (
@@ -2243,7 +2243,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceSource}
             onChange={(event) => setTraceSource(event.target.value)}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">all sources</option>
             <option value="chat.reply">chat.reply</option>
@@ -2255,7 +2255,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceStatus}
             onChange={(event) => setTraceStatus(event.target.value)}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">all status</option>
             <option value="success">success</option>
@@ -2265,7 +2265,7 @@ export function EvalsPage() {
           <UiSelectField
             value={traceCharacterId}
             onChange={(event) => setTraceCharacterId(event.target.value)}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">all characters</option>
             {availableCharacterIds.map((characterId) => (
@@ -2287,10 +2287,10 @@ export function EvalsPage() {
         </div>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--text-secondary)]">
-          <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2">
+          <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2">
             scope total: {scopedTraces.length}
           </div>
-          <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2">
+          <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2">
             showing: {displayedTraces.length}
           </div>
           {focusedTraceIds.length > 0 ? (
@@ -2300,7 +2300,7 @@ export function EvalsPage() {
           ) : null}
         </div>
         {traceDetailQuery.data ? (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
             <div className="flex flex-wrap items-center gap-3">
               <StatusPill
                 tone={
@@ -2330,12 +2330,12 @@ export function EvalsPage() {
                   type="button"
                   key={trace.id}
                   onClick={() => setSelectedTraceId(trace.id)}
-                  className={`w-full rounded-2xl border bg-black/20 px-4 py-4 text-left text-sm text-[color:var(--text-secondary)] transition hover:border-white/20 ${
-                    selectedTraceId === trace.id || focusedTraceIds.includes(trace.id) ? "border-white/30" : "border-white/10"
+                  className={`w-full rounded-2xl border bg-[color:var(--surface-card)] px-4 py-4 text-left text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-faint)] ${
+                    selectedTraceId === trace.id || focusedTraceIds.includes(trace.id) ? "border-[color:var(--border-subtle)]" : "border-[color:var(--border-faint)]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="font-semibold text-white">{trace.source}</div>
+                    <div className="font-semibold text-[color:var(--text-primary)]">{trace.source}</div>
                     <StatusPill tone={trace.status === "error" ? "warning" : trace.status === "fallback" ? "warning" : "healthy"}>
                       {trace.status}
                     </StatusPill>
@@ -2356,9 +2356,9 @@ export function EvalsPage() {
           </div>
           <div>
             {traceDetailQuery.data ? (
-              <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <div className="space-y-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="font-semibold text-white">{traceDetailQuery.data.source}</div>
+                  <div className="font-semibold text-[color:var(--text-primary)]">{traceDetailQuery.data.source}</div>
                   <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
                     {traceDetailQuery.data.status}
                   </StatusPill>
@@ -2369,7 +2369,7 @@ export function EvalsPage() {
                   <div>provider: {traceDetailQuery.data.provider?.model ?? "n/a"}</div>
                   <div>latency: {traceDetailQuery.data.latencyMs ?? 0} ms</div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                   <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Filter Match</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <TagBadge>
@@ -2421,16 +2421,16 @@ export function EvalsPage() {
                   <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Prompt Messages</div>
                   <div className="mt-2 space-y-2">
                     {traceDetailQuery.data.input.promptMessages.map((message, index) => (
-                      <div key={`${message.role}-${index}`} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div key={`${message.role}-${index}`} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{message.role}</div>
-                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-white">{message.content}</div>
+                        <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">{message.content}</div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Output</div>
-                  <div className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-white/10 bg-black/20 p-3 text-white">
+                  <div className="mt-2 whitespace-pre-wrap break-words rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3 text-[color:var(--text-secondary)]">
                     {traceDetailQuery.data.output.normalizedOutput ??
                       traceDetailQuery.data.output.rawOutput ??
                       traceDetailQuery.data.output.errorMessage ??
@@ -2444,7 +2444,7 @@ export function EvalsPage() {
           </div>
           <div>
             {traceDetailQuery.data ? (
-              <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <div className="space-y-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
                 <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Trace Context</div>
                 <div className="grid gap-3">
                   <SnapshotPanel title="Request Config" value={traceDetailQuery.data.input.requestConfig} />
@@ -2456,18 +2456,18 @@ export function EvalsPage() {
                   <>
                     <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Evaluation Summary</div>
                     <div className="grid gap-3">
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Scores</div>
                         <div className="mt-2 space-y-2">
                           {traceDetailQuery.data.evaluationSummary.scores.map((score) => (
                             <div key={score.key} className="flex items-center justify-between gap-3">
-                              <div className="text-white">{score.label}</div>
+                              <div className="text-[color:var(--text-primary)]">{score.label}</div>
                               <div className="text-[color:var(--text-secondary)]">{score.value}</div>
                             </div>
                           ))}
                         </div>
                       </div>
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                         <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">Failure Tags</div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {traceDetailQuery.data.evaluationSummary.failureTags.length > 0 ? (

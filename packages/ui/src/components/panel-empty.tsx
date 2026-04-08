@@ -9,7 +9,7 @@ export function PanelEmpty({ className, message, ...props }: PanelEmptyProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03))] px-4 py-6 text-sm text-[color:var(--text-secondary)]",
+        "rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-6 text-sm text-[color:var(--text-secondary)]",
         className,
       )}
       {...props}

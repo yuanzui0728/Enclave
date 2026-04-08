@@ -23,14 +23,14 @@ export function ListItemCard({
   return (
     <div
       className={cn(
-        "rounded-[22px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.035))] px-4 py-4 text-sm text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.05))] hover:shadow-[var(--shadow-lift)]",
+        "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-lift)]",
         className,
       )}
       {...props}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-white">{title}</div>
+          <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
           {subtitle ? (
             <div className="mt-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{subtitle}</div>
           ) : null}

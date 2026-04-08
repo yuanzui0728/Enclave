@@ -60,24 +60,24 @@ export function DesktopRuntimeGuard() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(6,9,16,0.96),rgba(9,12,20,0.98))] px-6">
-      <div className="w-full max-w-xl rounded-[32px] border border-white/10 bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
+      <div className="w-full max-w-xl rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
         <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">Desktop Boot</div>
-        <div className="mt-4 text-3xl font-semibold text-white">Local Control Plane Is Waiting For Core API</div>
+        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">Local Control Plane Is Waiting For Core API</div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)]">
           The desktop shell is checking whether the local Rust runtime is reachable. If it is not ready yet, the shell will try to launch it automatically before this admin surface continues.
         </p>
 
         <div className="mt-5 grid gap-3">
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             状态：{startMutation.isPending ? "正在启动 Core API..." : status?.message ?? "等待桌面状态..."}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             地址：{status?.baseUrl ?? runtimeContextQuery.data?.coreApiBaseUrl ?? "loading"}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             目录：{runtimeContextQuery.data?.runtimeDataDir ?? "loading"}
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             诊断：{runtimeDiagnosticsQuery.data ? formatDesktopDiagnostics(runtimeDiagnosticsQuery.data) : "正在读取桌面诊断..."}
           </div>
         </div>
@@ -95,13 +95,13 @@ export function DesktopRuntimeGuard() {
             type="button"
             onClick={() => probeMutation.mutate()}
             disabled={busy}
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white disabled:opacity-60"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] disabled:opacity-60"
           >
             {probeMutation.isPending ? "探活中..." : "探活"}
           </button>
           <Link
             to="/setup"
-            className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-white"
+            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             打开 Setup
           </Link>

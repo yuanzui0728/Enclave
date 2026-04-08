@@ -63,7 +63,7 @@ export function SetupPage() {
       description="The admin console now manages a single-user world instance. Verify the remote API, then configure the provider used by this world."
       heroAside={<SetupStepList steps={setupSteps} />}
       left={
-        <section className="space-y-4 rounded-[30px] border border-white/10 bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
+        <section className="space-y-4 rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
           <div className="grid gap-4 md:grid-cols-2">
             <SetupStatusCard
               title="Remote API"
@@ -117,7 +117,7 @@ export function SetupPage() {
       }
       right={
         <ProviderSetupForm
-          className="rounded-[30px] border border-white/10 bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]"
+          className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]"
           title="Provider Setup"
           description="Save the instance-level provider used by this world when the owner has not configured a personal API Key."
           statusLabel={providerReady ? "configured" : "pending"}

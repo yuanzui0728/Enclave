@@ -7,9 +7,9 @@ const statusPill = cva(
   {
     variants: {
       tone: {
-        healthy: "border-emerald-300/30 bg-emerald-500/10 text-emerald-200",
-        warning: "border-amber-300/30 bg-amber-500/10 text-amber-100",
-        muted: "border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] text-[color:var(--text-secondary)]",
+        healthy: "border-emerald-300/40 bg-emerald-500/10 text-emerald-700",
+        warning: "border-amber-300/40 bg-amber-500/10 text-amber-700",
+        muted: "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]",
       },
     },
     defaultVariants: {

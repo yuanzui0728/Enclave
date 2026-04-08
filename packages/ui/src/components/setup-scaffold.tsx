@@ -23,9 +23,9 @@ export function SetupScaffold({
 }: SetupScaffoldProps) {
   return (
     <div className={className ?? "space-y-5 px-4 py-5"}>
-      <section className="rounded-[32px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,rgba(249,115,22,0.18),rgba(255,255,255,0.05)_46%,rgba(0,0,0,0.1)_100%)] p-6 shadow-[var(--shadow-section)]">
+      <section className="rounded-[32px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,rgba(249,115,22,0.08),#ffffff_60%)] p-6 shadow-[var(--shadow-section)]">
         <div className="text-[11px] uppercase tracking-[0.34em] text-[color:var(--brand-secondary)]">{badge}</div>
-        <h1 className="mt-4 text-3xl font-semibold text-white">{title}</h1>
+        <h1 className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">{title}</h1>
         <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{description}</p>
         {heroAside ? <div className="mt-5">{heroAside}</div> : null}
       </section>

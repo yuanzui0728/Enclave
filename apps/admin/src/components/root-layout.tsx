@@ -3,8 +3,8 @@ import { Link, Outlet } from "@tanstack/react-router";
 import { DesktopRuntimeGuard } from "./desktop-runtime-guard";
 import { getAdminSecret, setAdminSecret } from "../lib/admin-api";
 
-const NAV_LINK = "rounded-full border border-[color:var(--border-subtle)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-white";
-const NAV_LINK_ACTIVE = "rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface-tertiary)] px-4 py-2 text-white";
+const NAV_LINK = "rounded-full border border-[color:var(--border-subtle)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]";
+const NAV_LINK_ACTIVE = "rounded-full border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-2 text-[color:var(--brand-primary)] font-medium";
 
 export function RootLayout() {
   const [secret, setSecret] = useState(getAdminSecret);
@@ -43,11 +43,11 @@ export function RootLayout() {
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   placeholder="输入 ADMIN_SECRET"
-                  className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-tertiary)] px-3 py-1.5 text-sm text-white placeholder-[color:var(--text-muted)] outline-none focus:border-[color:var(--border-strong)]"
+                  className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-1.5 text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none focus:border-[color:var(--border-brand)]"
                   onKeyDown={(e) => e.key === "Enter" && saveSecret()}
                 />
                 <button
-                  className="rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white hover:bg-white/20"
+                  className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-sm text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)]"
                   onClick={saveSecret}
                 >
                   保存
@@ -55,8 +55,8 @@ export function RootLayout() {
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">
-                <span>Admin Secret: {secret ? "••••••••" : <span className="text-yellow-400">未配置</span>}</span>
-                <button className="text-xs underline hover:text-white" onClick={() => setEditingSecret(true)}>
+                <span>Admin Secret: {secret ? "••••••••" : <span className="text-amber-600">未配置</span>}</span>
+                <button className="text-xs underline hover:text-[color:var(--text-primary)]" onClick={() => setEditingSecret(true)}>
                   修改
                 </button>
               </div>

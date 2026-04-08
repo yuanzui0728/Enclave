@@ -8,8 +8,8 @@ body,
 
 body {
   margin: 0;
-  font-family: "JetBrains Mono", "Noto Sans SC", "Microsoft YaHei", monospace;
-  background: linear-gradient(180deg, #071018 0%, #0c1523 100%);
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg-canvas);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }

@@ -5,7 +5,7 @@ import { cn } from "../cn";
 const inlineNoticeVariants = cva("rounded-[var(--radius-md)] border px-4 py-3 text-sm leading-6 shadow-[var(--shadow-soft)]", {
   variants: {
     tone: {
-      muted: "border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.035))] text-[color:var(--text-secondary)]",
+      muted: "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]",
       info: "border-[rgba(96,165,250,0.22)] bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
       success:
         "border-[color:var(--border-success)] bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",

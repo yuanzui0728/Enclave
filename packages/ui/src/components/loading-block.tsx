@@ -9,7 +9,7 @@ export function LoadingBlock({ className, label = "加载中...", ...props }: Lo
   return (
     <div
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03))] px-5 py-8 text-center text-sm text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+        "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-5 py-8 text-center text-sm text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
         className,
       )}
       {...props}

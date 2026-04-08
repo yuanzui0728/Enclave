@@ -76,7 +76,7 @@ export function CharactersPage() {
                 <div className="flex items-center gap-3">
                   <CharacterAvatar name={character.name} src={character.avatar} />
                   <div className="min-w-0">
-                    <div className="truncate text-lg font-semibold text-white">{character.name}</div>
+                    <div className="truncate text-lg font-semibold text-[color:var(--text-primary)]">{character.name}</div>
                     <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
                   </div>
                 </div>
@@ -89,7 +89,7 @@ export function CharactersPage() {
               {(character.expertDomains.length ? character.expertDomains : ["general"]).map((domain) => (
                 <span
                   key={domain}
-                  className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1 text-xs text-[color:var(--text-secondary)]"
                 >
                   {domain}
                 </span>
@@ -131,7 +131,7 @@ function CharacterAvatar({ name, src }: { name: string; src?: string | null }) {
   }
 
   return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl text-white">
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-xl text-[color:var(--text-primary)]">
       {name.slice(0, 1)}
     </div>
   );

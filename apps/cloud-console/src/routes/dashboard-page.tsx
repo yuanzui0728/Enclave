@@ -30,7 +30,7 @@ export function DashboardPage() {
         ].map((item) => (
           <div key={item.label} className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
             <div className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">{item.label}</div>
-            <div className="mt-4 text-4xl font-semibold text-white">{item.value}</div>
+            <div className="mt-4 text-4xl font-semibold text-[color:var(--text-primary)]">{item.value}</div>
           </div>
         ))}
       </section>
@@ -39,7 +39,7 @@ export function DashboardPage() {
         <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-white">最新申请</div>
+              <div className="text-sm font-semibold text-[color:var(--text-primary)]">最新申请</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">用户在客户端提交云世界创建需求后会出现在这里。</div>
             </div>
             <Link to="/requests" className="text-sm text-[color:var(--brand)]">
@@ -52,10 +52,10 @@ export function DashboardPage() {
                 key={item.id}
                 to="/requests/$requestId"
                 params={{ requestId: item.id }}
-                className="block rounded-2xl border border-[color:var(--border-faint)] bg-black/10 px-4 py-3 transition hover:border-[color:var(--border-strong)]"
+                className="block rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 transition hover:border-[color:var(--border-strong)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-white">{item.worldName}</div>
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">{item.worldName}</div>
                   <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{item.status}</div>
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-secondary)]">{item.phone}</div>
@@ -68,7 +68,7 @@ export function DashboardPage() {
         <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm font-semibold text-white">最新世界</div>
+              <div className="text-sm font-semibold text-[color:var(--text-primary)]">最新世界</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里维护手机号、世界状态和最终交付地址。</div>
             </div>
             <Link to="/worlds" className="text-sm text-[color:var(--brand)]">
@@ -81,10 +81,10 @@ export function DashboardPage() {
                 key={item.id}
                 to="/worlds/$worldId"
                 params={{ worldId: item.id }}
-                className="block rounded-2xl border border-[color:var(--border-faint)] bg-black/10 px-4 py-3 transition hover:border-[color:var(--border-strong)]"
+                className="block rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 transition hover:border-[color:var(--border-strong)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-white">{item.name}</div>
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">{item.name}</div>
                   <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{item.status}</div>
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-secondary)]">{item.phone}</div>

@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Link, Outlet } from "@tanstack/react-router";
 import { getCloudAdminSecret, setCloudAdminSecret } from "../lib/cloud-admin-api";
 
-const NAV_LINK = "rounded-full border border-[color:var(--border-subtle)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-white";
-const NAV_LINK_ACTIVE = "rounded-full border border-[color:var(--border-strong)] bg-[color:var(--surface-tertiary)] px-4 py-2 text-white";
+const NAV_LINK = "rounded-full border border-[color:var(--border-subtle)] px-4 py-2 text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]";
+const NAV_LINK_ACTIVE = "rounded-full border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-2 text-[color:var(--brand-primary)] font-medium";
 
 export function RootLayout() {
   const [secret, setSecret] = useState(getCloudAdminSecret);
@@ -43,17 +43,17 @@ export function RootLayout() {
                   value={draft}
                   onChange={(event) => setDraft(event.target.value)}
                   placeholder="输入 CLOUD_ADMIN_SECRET"
-                  className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-tertiary)] px-3 py-2 text-sm text-white placeholder-[color:var(--text-muted)] outline-none focus:border-[color:var(--border-strong)]"
+                  className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none focus:border-[color:var(--border-brand)]"
                   onKeyDown={(event) => event.key === "Enter" && saveSecret()}
                 />
-                <button className="rounded-lg bg-white/10 px-3 py-2 text-sm text-white hover:bg-white/20" onClick={saveSecret}>
+                <button className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-3 py-2 text-sm text-[color:var(--text-primary)] hover:border-[color:var(--border-strong)]" onClick={saveSecret}>
                   保存
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">
                 <span>平台密钥：{secret ? "••••••••" : "未配置"}</span>
-                <button className="text-xs underline hover:text-white" onClick={() => setEditingSecret(true)}>
+                <button className="text-xs underline hover:text-[color:var(--text-primary)]" onClick={() => setEditingSecret(true)}>
                   修改
                 </button>
               </div>
