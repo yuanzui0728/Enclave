@@ -22,6 +22,11 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
     private static final String PUSH_TOKEN_KEY = "push_token";
     private static final String CHANNEL_ID = "yinjie_messages";
     private static final String CHANNEL_NAME = "隐界消息";
+    private static final String EXTRA_TARGET_KIND = "yinjie_target_kind";
+    private static final String EXTRA_TARGET_ROUTE = "yinjie_target_route";
+    private static final String EXTRA_CONVERSATION_ID = "yinjie_conversation_id";
+    private static final String EXTRA_GROUP_ID = "yinjie_group_id";
+    private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
 
     @Override
     public void onNewToken(String token) {
@@ -60,6 +65,7 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
 
         Intent launchIntent = new Intent(this, MainActivity.class);
         launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        applyLaunchTargetExtras(launchIntent, remoteMessage);
         PendingIntent contentIntent = PendingIntent.getActivity(
             this,
             1001,
@@ -76,6 +82,44 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
             .setContentIntent(contentIntent);
 
         NotificationManagerCompat.from(this).notify((int) System.currentTimeMillis(), builder.build());
+    }
+
+    private void applyLaunchTargetExtras(Intent intent, RemoteMessage remoteMessage) {
+        if (intent == null || remoteMessage == null) {
+            return;
+        }
+
+        String route = normalize(remoteMessage.getData().get("route"));
+        String conversationId = normalize(remoteMessage.getData().get("conversationId"));
+        String groupId = normalize(remoteMessage.getData().get("groupId"));
+        String kind = normalize(remoteMessage.getData().get("kind"));
+
+        if (kind == null) {
+            if (conversationId != null) {
+                kind = "conversation";
+            } else if (groupId != null) {
+                kind = "group";
+            } else {
+                kind = "route";
+            }
+        }
+
+        intent.putExtra(EXTRA_TARGET_KIND, kind);
+        intent.putExtra(EXTRA_TARGET_SOURCE, "push");
+
+        if (route != null) {
+            intent.putExtra(EXTRA_TARGET_ROUTE, route);
+        } else if ("route".equals(kind)) {
+            intent.putExtra(EXTRA_TARGET_ROUTE, "/tabs/chat");
+        }
+
+        if (conversationId != null) {
+            intent.putExtra(EXTRA_CONVERSATION_ID, conversationId);
+        }
+
+        if (groupId != null) {
+            intent.putExtra(EXTRA_GROUP_ID, groupId);
+        }
     }
 
     private void createNotificationChannelIfNeeded() {
@@ -95,5 +139,14 @@ public class YinjieFirebaseMessagingService extends FirebaseMessagingService {
         );
         channel.setDescription("隐界的新消息与提醒");
         manager.createNotificationChannel(channel);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

@@ -69,6 +69,8 @@
 - `getPushToken()`
 - `getNotificationPermissionState()`
 - `requestNotificationPermission()`
+- `getPendingLaunchTarget()`
+- `clearPendingLaunchTarget()`
 
 失败策略：
 
@@ -112,6 +114,7 @@ iOS push token 约定：
 - 原生层将 APNs token 写入 `UserDefaults.standard["YinjiePushToken"]`
 - `YinjieMobileBridge.getPushToken()` 读取该值
 - `YinjieMobileBridge.getNotificationPermissionState()` / `requestNotificationPermission()` 负责读取和触发通知授权
+- `YinjieMobileBridge.getPendingLaunchTarget()` / `clearPendingLaunchTarget()` 负责让 Web 层消费通知点击后的落点
 - `YinjieMobileBridge.pickImages()` 通过 `PHPickerViewController` 选择图片并返回临时文件资产
 - 通知展示逻辑与用户可见通知体验仍是后续里程碑
 
@@ -137,7 +140,16 @@ iOS push token 约定：
 3. 在 Android 原生层补 `YinjieSecureStorage`
 4. 在 Android 原生层补 `YinjieMobileBridge`
 5. 配置 `YinjieFirebaseMessagingService` 与 FCM token 缓存
-6. 补媒体选择与通知展示
+6. 补通知点击落点缓存与 `MainActivity.onNewIntent` 同步
+7. 补媒体选择与通知展示
+
+Android 通知点击 payload 约定：
+
+- `kind`: `route | conversation | group`
+- `route`: 直接落到 Web 路由，例如 `/tabs/chat`
+- `conversationId`: 单聊落点
+- `groupId`: 群聊落点
+- Web 层会在根布局里读取 pending launch target，并在登录态存在时自动跳转
 
 建议优先级：
 

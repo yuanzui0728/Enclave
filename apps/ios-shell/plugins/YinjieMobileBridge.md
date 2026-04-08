@@ -16,6 +16,8 @@
 4. `getPushToken()`
 5. `getNotificationPermissionState()`
 6. `requestNotificationPermission()`
+7. `getPendingLaunchTarget()`
+8. `clearPendingLaunchTarget()`
 
 ## 返回结构
 
@@ -50,6 +52,18 @@
 }
 ```
 
+### getPendingLaunchTarget
+
+```json
+{
+  "target": {
+    "kind": "conversation",
+    "conversationId": "conversation-123",
+    "source": "push"
+  }
+}
+```
+
 ## Swift 侧建议
 
 建议实现：
@@ -61,6 +75,8 @@
 - `getPushToken(_ call: CAPPluginCall)`
 - `getNotificationPermissionState(_ call: CAPPluginCall)`
 - `requestNotificationPermission(_ call: CAPPluginCall)`
+- `getPendingLaunchTarget(_ call: CAPPluginCall)`
+- `clearPendingLaunchTarget(_ call: CAPPluginCall)`
 
 数据来源建议：
 
@@ -69,11 +85,13 @@
 3. 图片选择：`PHPickerViewController`
 4. Push token：已注册到 APNs 后缓存于原生层
 5. 通知权限：`UNUserNotificationCenter`
+6. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 当前 stub 行为：
 
 - `pickImages` 会通过 `PHPickerViewController` 选择图片
 - 选中的资源会复制到临时目录，再以 `path / webPath / fileName / mimeType` 返回给 Web 层
+- `getPendingLaunchTarget` / `clearPendingLaunchTarget` 当前读取和清理 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 ## 失败策略
 

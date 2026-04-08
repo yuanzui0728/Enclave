@@ -113,6 +113,24 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
     }
 
+    @objc func getPendingLaunchTarget(_ call: CAPPluginCall) {
+        guard let payload = UserDefaults.standard.dictionary(forKey: "YinjiePendingLaunchTarget") else {
+            call.resolve([
+                "target": NSNull()
+            ])
+            return
+        }
+
+        call.resolve([
+            "target": payload
+        ])
+    }
+
+    @objc func clearPendingLaunchTarget(_ call: CAPPluginCall) {
+        UserDefaults.standard.removeObject(forKey: "YinjiePendingLaunchTarget")
+        call.resolve()
+    }
+
     private func mapAuthorizationStatus(_ status: UNAuthorizationStatus) -> String {
         switch status {
         case .authorized, .provisional, .ephemeral:

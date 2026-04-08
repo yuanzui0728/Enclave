@@ -13,6 +13,14 @@ export type MobileBridgeImageAsset = {
   fileName?: string;
 };
 
+export type MobileBridgeLaunchTarget = {
+  kind: "route" | "conversation" | "group";
+  route?: string;
+  conversationId?: string;
+  groupId?: string;
+  source?: string;
+};
+
 type MobileBridgePlugin = {
   openExternalUrl(options: { url: string }): Promise<void>;
   share(options: MobileBridgeSharePayload): Promise<void>;
@@ -20,6 +28,8 @@ type MobileBridgePlugin = {
   getPushToken(): Promise<{ token: string | null }>;
   getNotificationPermissionState(): Promise<{ state: string }>;
   requestNotificationPermission(): Promise<{ state: string }>;
+  getPendingLaunchTarget(): Promise<{ target: MobileBridgeLaunchTarget | null }>;
+  clearPendingLaunchTarget(): Promise<void>;
 };
 
 const mobileBridge = registerPlugin<MobileBridgePlugin>("YinjieMobileBridge");
@@ -106,5 +116,31 @@ export async function requestNativeNotificationPermission() {
     return result.state;
   } catch {
     return "unknown";
+  }
+}
+
+export async function getPendingNativeLaunchTarget() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return null;
+  }
+
+  try {
+    const result = await mobileBridge.getPendingLaunchTarget();
+    return result.target ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearPendingNativeLaunchTarget() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return false;
+  }
+
+  try {
+    await mobileBridge.clearPendingLaunchTarget();
+    return true;
+  } catch {
+    return false;
   }
 }

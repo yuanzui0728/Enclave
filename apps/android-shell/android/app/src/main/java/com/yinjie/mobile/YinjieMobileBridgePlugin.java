@@ -1,6 +1,7 @@
 package com.yinjie.mobile;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -31,6 +32,16 @@ import com.getcapacitor.annotation.PermissionCallback;
 public class YinjieMobileBridgePlugin extends Plugin {
     private static final String PREFERENCES_NAME = "com.yinjie.mobile_bridge";
     private static final String PUSH_TOKEN_KEY = "push_token";
+    private static final String LAUNCH_TARGET_KIND_KEY = "launch_target_kind";
+    private static final String LAUNCH_TARGET_ROUTE_KEY = "launch_target_route";
+    private static final String LAUNCH_TARGET_CONVERSATION_ID_KEY = "launch_target_conversation_id";
+    private static final String LAUNCH_TARGET_GROUP_ID_KEY = "launch_target_group_id";
+    private static final String LAUNCH_TARGET_SOURCE_KEY = "launch_target_source";
+    private static final String EXTRA_TARGET_KIND = "yinjie_target_kind";
+    private static final String EXTRA_TARGET_ROUTE = "yinjie_target_route";
+    private static final String EXTRA_CONVERSATION_ID = "yinjie_conversation_id";
+    private static final String EXTRA_GROUP_ID = "yinjie_group_id";
+    private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
 
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
@@ -172,6 +183,19 @@ public class YinjieMobileBridgePlugin extends Plugin {
         call.resolve(result);
     }
 
+    @PluginMethod
+    public void getPendingLaunchTarget(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("target", readPendingLaunchTarget());
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void clearPendingLaunchTarget(PluginCall call) {
+        clearPendingLaunchTarget();
+        call.resolve();
+    }
+
     private JSObject buildAsset(Uri uri) {
         JSObject asset = new JSObject();
         asset.put("path", uri.toString());
@@ -217,6 +241,50 @@ public class YinjieMobileBridgePlugin extends Plugin {
         return getContext().getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 
+    private JSObject readPendingLaunchTarget() {
+        SharedPreferences preferences = getPreferences();
+        String kind = normalize(preferences.getString(LAUNCH_TARGET_KIND_KEY, null));
+        if (kind == null) {
+            return null;
+        }
+
+        JSObject target = new JSObject();
+        target.put("kind", kind);
+
+        String route = normalize(preferences.getString(LAUNCH_TARGET_ROUTE_KEY, null));
+        if (route != null) {
+            target.put("route", route);
+        }
+
+        String conversationId = normalize(preferences.getString(LAUNCH_TARGET_CONVERSATION_ID_KEY, null));
+        if (conversationId != null) {
+            target.put("conversationId", conversationId);
+        }
+
+        String groupId = normalize(preferences.getString(LAUNCH_TARGET_GROUP_ID_KEY, null));
+        if (groupId != null) {
+            target.put("groupId", groupId);
+        }
+
+        String source = normalize(preferences.getString(LAUNCH_TARGET_SOURCE_KEY, null));
+        if (source != null) {
+            target.put("source", source);
+        }
+
+        return target;
+    }
+
+    private void clearPendingLaunchTarget() {
+        getPreferences()
+            .edit()
+            .remove(LAUNCH_TARGET_KIND_KEY)
+            .remove(LAUNCH_TARGET_ROUTE_KEY)
+            .remove(LAUNCH_TARGET_CONVERSATION_ID_KEY)
+            .remove(LAUNCH_TARGET_GROUP_ID_KEY)
+            .remove(LAUNCH_TARGET_SOURCE_KEY)
+            .apply();
+    }
+
     private String readNotificationPermissionState() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return "granted";
@@ -227,6 +295,64 @@ public class YinjieMobileBridgePlugin extends Plugin {
     }
 
     private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    static void cacheLaunchTarget(Context context, Intent intent) {
+        if (context == null || intent == null) {
+            return;
+        }
+
+        String kind = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_KIND));
+        String route = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_ROUTE));
+        String conversationId = normalizeStatic(intent.getStringExtra(EXTRA_CONVERSATION_ID));
+        String groupId = normalizeStatic(intent.getStringExtra(EXTRA_GROUP_ID));
+        String source = normalizeStatic(intent.getStringExtra(EXTRA_TARGET_SOURCE));
+
+        if (kind == null) {
+            if (conversationId != null) {
+                kind = "conversation";
+            } else if (groupId != null) {
+                kind = "group";
+            } else if (route != null) {
+                kind = "route";
+            }
+        }
+
+        if (kind == null) {
+            return;
+        }
+
+        SharedPreferences preferences = context.getSharedPreferences(PREFERENCES_NAME, Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit().putString(LAUNCH_TARGET_KIND_KEY, kind);
+
+        if (route != null) {
+            editor.putString(LAUNCH_TARGET_ROUTE_KEY, route);
+        } else {
+            editor.remove(LAUNCH_TARGET_ROUTE_KEY);
+        }
+
+        if (conversationId != null) {
+            editor.putString(LAUNCH_TARGET_CONVERSATION_ID_KEY, conversationId);
+        } else {
+            editor.remove(LAUNCH_TARGET_CONVERSATION_ID_KEY);
+        }
+
+        if (groupId != null) {
+            editor.putString(LAUNCH_TARGET_GROUP_ID_KEY, groupId);
+        } else {
+            editor.remove(LAUNCH_TARGET_GROUP_ID_KEY);
+        }
+
+        editor.putString(LAUNCH_TARGET_SOURCE_KEY, source != null ? source : "notification").apply();
+    }
+
+    private static String normalizeStatic(String value) {
         if (value == null) {
             return null;
         }
