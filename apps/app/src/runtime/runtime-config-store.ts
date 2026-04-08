@@ -38,8 +38,9 @@ function createInitialRuntimeConfig() {
   const persistedConfig = readPersistedRuntimeConfig();
   const envApiBaseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
   const envSocketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL ?? import.meta.env.VITE_CORE_API_BASE_URL;
+  const envCloudApiBaseUrl = import.meta.env.VITE_CLOUD_API_BASE_URL;
   const bootstrapSource =
-    injectedConfig ? "window" : persistedConfig ? "storage" : envApiBaseUrl || envSocketBaseUrl ? "env" : "default";
+    injectedConfig ? "window" : persistedConfig ? "storage" : envApiBaseUrl || envSocketBaseUrl || envCloudApiBaseUrl ? "env" : "default";
   const initialConfig: Parameters<typeof normalizeAppRuntimeConfig>[0] = {
     ...persistedConfig,
     ...injectedConfig,
@@ -48,6 +49,10 @@ function createInitialRuntimeConfig() {
       injectedConfig?.socketBaseUrl ??
       persistedConfig?.socketBaseUrl ??
       envSocketBaseUrl,
+    cloudApiBaseUrl:
+      injectedConfig?.cloudApiBaseUrl ??
+      persistedConfig?.cloudApiBaseUrl ??
+      envCloudApiBaseUrl,
     environment: injectedConfig?.environment ?? persistedConfig?.environment ?? import.meta.env.MODE,
     publicAppName: injectedConfig?.publicAppName ?? persistedConfig?.publicAppName ?? "Yinjie",
     bootstrapSource: injectedConfig?.bootstrapSource ?? persistedConfig?.bootstrapSource ?? bootstrapSource,

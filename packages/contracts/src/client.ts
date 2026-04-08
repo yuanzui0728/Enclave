@@ -1,4 +1,5 @@
 import type {
+  SessionPayload,
   SuccessResponse,
 } from "./auth";
 import type {
@@ -15,6 +16,15 @@ import type {
   SendGroupMessageRequest,
 } from "./chat";
 import type { Character, CharacterDraft } from "./characters";
+import type {
+  CloudWorldLookupResponse,
+  CloudWorldRequestRecord,
+  CreateCloudWorldRequest,
+  SendPhoneCodeRequest,
+  SendPhoneCodeResponse,
+  VerifyPhoneCodeRequest,
+  VerifyPhoneCodeResponse,
+} from "./cloud";
 import type { AiModelResponse, AvailableModelsResponse, UpdateAiModelRequest } from "./config";
 import type {
   CreateFeedCommentRequest,
@@ -87,7 +97,10 @@ import type {
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
+export const DEFAULT_CLOUD_API_BASE_URL = "http://localhost:3001";
 let coreApiBaseUrlProvider: (() => string | null | undefined) | null = null;
+let cloudApiBaseUrlProvider: (() => string | null | undefined) | null = null;
+let authTokenProvider: (() => string | null | undefined) | null = null;
 
 export function resolveCoreApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
   const configuredValue = override || coreApiBaseUrlProvider?.();
@@ -106,11 +119,36 @@ export function setCoreApiBaseUrlProvider(provider: (() => string | null | undef
   coreApiBaseUrlProvider = provider;
 }
 
+export function resolveCloudApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
+  const configuredValue = override || cloudApiBaseUrlProvider?.();
+  if (configuredValue) {
+    return configuredValue;
+  }
+
+  if (options?.allowDefault === false) {
+    return undefined;
+  }
+
+  return DEFAULT_CLOUD_API_BASE_URL;
+}
+
+export function setCloudApiBaseUrlProvider(provider: (() => string | null | undefined) | null) {
+  cloudApiBaseUrlProvider = provider;
+}
+
+export function setAuthTokenProvider(provider: (() => string | null | undefined) | null) {
+  authTokenProvider = provider;
+}
+
 async function request<T>(path: string, init?: RequestInit, baseUrl?: string): Promise<T> {
   const headers = new Headers(init?.headers);
+  const authToken = authTokenProvider?.();
 
   if (!headers.has("Content-Type") && init?.body) {
     headers.set("Content-Type", "application/json");
+  }
+  if (!headers.has("Authorization") && authToken) {
+    headers.set("Authorization", `Bearer ${authToken}`);
   }
 
   const response = await fetch(`${resolveCoreApiBaseUrl(baseUrl)}${path}`, {
@@ -142,12 +180,171 @@ function requestLegacyApi<T>(path: string, init?: RequestInit, baseUrl?: string)
   return request<T>(`${LEGACY_API_PREFIX}${path}`, init, baseUrl);
 }
 
+function requestCloudApi<T>(path: string, init?: RequestInit, baseUrl?: string) {
+  return request<T>(path, init, resolveCloudApiBaseUrl(baseUrl));
+}
+
+function resolveOptionalBaseUrl(primary?: string, secondary?: string) {
+  if (secondary) {
+    return secondary;
+  }
+
+  if (primary && (/^https?:\/\//.test(primary) || primary.startsWith("/"))) {
+    return primary;
+  }
+
+  return undefined;
+}
+
 export function getSystemStatus(baseUrl?: string) {
   return request<SystemStatus>("/system/status", undefined, baseUrl);
 }
 
+export function sendCloudPhoneCode(payload: SendPhoneCodeRequest, baseUrl?: string) {
+  return requestCloudApi<SendPhoneCodeResponse>(
+    "/cloud/auth/send-code",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function verifyCloudPhoneCode(payload: VerifyPhoneCodeRequest, baseUrl?: string) {
+  return requestCloudApi<VerifyPhoneCodeResponse>(
+    "/cloud/auth/verify-code",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+function buildCloudAuthHeaders(accessToken: string, init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers);
+  headers.set("Authorization", `Bearer ${accessToken}`);
+
+  return {
+    ...init,
+    headers,
+  };
+}
+
+export function getMyCloudWorld(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<CloudWorldLookupResponse>("/cloud/me/world", buildCloudAuthHeaders(accessToken), baseUrl);
+}
+
+export function createMyCloudWorldRequest(payload: CreateCloudWorldRequest, accessToken: string, baseUrl?: string) {
+  return requestCloudApi<CloudWorldRequestRecord>(
+    "/cloud/me/world-requests",
+    buildCloudAuthHeaders(accessToken, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+    baseUrl,
+  );
+}
+
+export function getLatestMyCloudWorldRequest(accessToken: string, baseUrl?: string) {
+  return requestCloudApi<CloudWorldRequestRecord | null>(
+    "/cloud/me/world-requests/latest",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
+}
+
 export function getSchedulerStatus(baseUrl?: string) {
   return request<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
+}
+
+export function loginUser(payload: { username: string; password: string }, baseUrl?: string) {
+  return requestLegacyApi<SessionPayload>(
+    "/auth/login",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function initUser(payload: { username: string }, baseUrl?: string) {
+  return requestLegacyApi<SessionPayload>(
+    "/auth/init",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function completeOnboarding(userId: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/auth/users/${encodeURIComponent(userId)}/onboarding-complete`,
+    {
+      method: "PATCH",
+    },
+    baseUrl,
+  );
+}
+
+export function getCurrentUser(baseUrl?: string) {
+  return requestLegacyApi<WorldOwner>("/auth/me", undefined, baseUrl);
+}
+
+export function updateUser(userId: string, payload: UpdateWorldOwnerRequest, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/auth/users/${encodeURIComponent(userId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function setUserApiKey(userId: string, payload: UpdateWorldOwnerApiKeyRequest, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/auth/users/${encodeURIComponent(userId)}/api-key`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function clearUserApiKey(userId: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/auth/users/${encodeURIComponent(userId)}/api-key`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function deleteUser(userId: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/auth/users/${encodeURIComponent(userId)}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function logoutCurrentSession(baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    "/auth/logout",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
 }
 
 export function runSchedulerJob(id: string, baseUrl?: string) {
@@ -493,12 +690,14 @@ export function getLatestWorldContext(baseUrl?: string) {
   return requestLegacyApi<WorldContext>("/world/context", undefined, baseUrl);
 }
 
-export function getFriendRequests(baseUrl?: string) {
-  return requestLegacyApi<FriendRequest[]>("/social/friend-requests", undefined, baseUrl);
+export function getFriendRequests(userIdOrBaseUrl?: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
+  return requestLegacyApi<FriendRequest[]>("/social/friend-requests", undefined, resolvedBaseUrl);
 }
 
-export function getConversations(baseUrl?: string) {
-  return requestLegacyApi<ConversationListItem[]>("/conversations", undefined, baseUrl);
+export function getConversations(userIdOrBaseUrl?: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
+  return requestLegacyApi<ConversationListItem[]>("/conversations", undefined, resolvedBaseUrl);
 }
 
 export function getOrCreateConversation(payload: GetOrCreateConversationRequest, baseUrl?: string) {
@@ -602,32 +801,36 @@ export function sendGroupMessage(id: string, payload: SendGroupMessageRequest, b
   );
 }
 
-export function acceptFriendRequest(id: string, baseUrl?: string) {
+export function acceptFriendRequest(id: string, _payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
+  const resolvedBaseUrl = typeof _payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(_payloadOrBaseUrl, baseUrl) : baseUrl;
   return requestLegacyApi<FriendListItem["friendship"]>(
     `/social/friend-requests/${id}/accept`,
     {
       method: "POST",
     },
-    baseUrl,
+    resolvedBaseUrl,
   );
 }
 
-export function declineFriendRequest(id: string, baseUrl?: string) {
+export function declineFriendRequest(id: string, _payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
+  const resolvedBaseUrl = typeof _payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(_payloadOrBaseUrl, baseUrl) : baseUrl;
   return requestLegacyApi<SuccessResponse>(
     `/social/friend-requests/${id}/decline`,
     {
       method: "POST",
     },
-    baseUrl,
+    resolvedBaseUrl,
   );
 }
 
-export function getFriends(baseUrl?: string) {
-  return requestLegacyApi<FriendListItem[]>("/social/friends", undefined, baseUrl);
+export function getFriends(userIdOrBaseUrl?: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
+  return requestLegacyApi<FriendListItem[]>("/social/friends", undefined, resolvedBaseUrl);
 }
 
-export function getBlockedCharacters(baseUrl?: string) {
-  return requestLegacyApi<BlockedCharacter[]>("/social/blocks", undefined, baseUrl);
+export function getBlockedCharacters(userIdOrBaseUrl?: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
+  return requestLegacyApi<BlockedCharacter[]>("/social/blocks", undefined, resolvedBaseUrl);
 }
 
 export function blockCharacter(payload: BlockCharacterRequest, baseUrl?: string) {
@@ -652,8 +855,9 @@ export function unblockCharacter(payload: UnblockCharacterRequest, baseUrl?: str
   );
 }
 
-export function listModerationReports(baseUrl?: string) {
-  return requestLegacyApi<ModerationReport[]>("/moderation/reports", undefined, baseUrl);
+export function listModerationReports(userIdOrBaseUrl?: string, baseUrl?: string) {
+  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
+  return requestLegacyApi<ModerationReport[]>("/moderation/reports", undefined, resolvedBaseUrl);
 }
 
 export function createModerationReport(payload: CreateModerationReportRequest, baseUrl?: string) {
@@ -698,13 +902,14 @@ export function addMomentComment(id: string, payload: CreateMomentCommentRequest
   );
 }
 
-export function toggleMomentLike(id: string, baseUrl?: string) {
+export function toggleMomentLike(id: string, payloadOrBaseUrl?: { authorId?: string } | string, baseUrl?: string) {
+  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
   return requestLegacyApi<ToggleMomentLikeResult>(
     `/moments/${id}/like`,
     {
       method: "POST",
     },
-    baseUrl,
+    resolvedBaseUrl,
   );
 }
 
@@ -762,23 +967,25 @@ export function addFeedComment(id: string, payload: CreateFeedCommentRequest, ba
   );
 }
 
-export function likeFeedPost(id: string, baseUrl?: string) {
+export function likeFeedPost(id: string, payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
+  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
   return requestLegacyApi<void>(
     `/feed/${id}/like`,
     {
       method: "POST",
     },
-    baseUrl,
+    resolvedBaseUrl,
   );
 }
 
-export function shake(baseUrl?: string) {
+export function shake(payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
+  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
   return requestLegacyApi<ShakeResult | null>(
     "/social/shake",
     {
       method: "POST",
     },
-    baseUrl,
+    resolvedBaseUrl,
   );
 }
 

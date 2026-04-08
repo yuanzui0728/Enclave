@@ -34,9 +34,11 @@ export interface FeedListResponse {
 }
 
 export interface CreateFeedPostRequest {
+  authorId?: string;
   text: string;
 }
 
 export interface CreateFeedCommentRequest {
+  authorId?: string;
   text: string;
 }

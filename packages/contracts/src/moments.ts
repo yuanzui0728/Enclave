@@ -44,10 +44,12 @@ export interface Moment {
 }
 
 export interface CreateUserMomentRequest {
+  userId?: string;
   text: string;
 }
 
 export interface CreateMomentCommentRequest {
+  authorId?: string;
   text: string;
 }
 
