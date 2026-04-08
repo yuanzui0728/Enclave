@@ -99,7 +99,6 @@ export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
 export const DEFAULT_CLOUD_API_BASE_URL = "http://localhost:3001";
 let coreApiBaseUrlProvider: (() => string | null | undefined) | null = null;
 let cloudApiBaseUrlProvider: (() => string | null | undefined) | null = null;
-let authTokenProvider: (() => string | null | undefined) | null = null;
 
 export function resolveCoreApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
   const configuredValue = override || coreApiBaseUrlProvider?.();
@@ -135,19 +134,11 @@ export function setCloudApiBaseUrlProvider(provider: (() => string | null | unde
   cloudApiBaseUrlProvider = provider;
 }
 
-export function setAuthTokenProvider(provider: (() => string | null | undefined) | null) {
-  authTokenProvider = provider;
-}
-
 async function request<T>(path: string, init?: RequestInit, baseUrl?: string): Promise<T> {
   const headers = new Headers(init?.headers);
-  const authToken = authTokenProvider?.();
 
   if (!headers.has("Content-Type") && init?.body) {
     headers.set("Content-Type", "application/json");
-  }
-  if (!headers.has("Authorization") && authToken) {
-    headers.set("Authorization", `Bearer ${authToken}`);
   }
 
   const response = await fetch(`${resolveCoreApiBaseUrl(baseUrl)}${path}`, {
@@ -776,9 +767,9 @@ export function createModerationReport(payload: CreateModerationReportRequest, b
   );
 }
 
-export function getMoments(authorId?: string, baseUrl?: string) {
-  const path = authorId ? `/moments?authorId=${encodeURIComponent(authorId)}` : "/moments";
-  return requestLegacyApi<Moment[]>(path, undefined, baseUrl);
+export function getMoments(baseUrlOrLegacyUnused?: string, baseUrl?: string) {
+  const resolvedBaseUrl = baseUrl ?? baseUrlOrLegacyUnused;
+  return requestLegacyApi<Moment[]>("/moments", undefined, resolvedBaseUrl);
 }
 
 export function getMoment(id: string, baseUrl?: string) {

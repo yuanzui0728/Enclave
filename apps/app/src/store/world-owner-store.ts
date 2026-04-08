@@ -5,8 +5,6 @@ import { createSessionStateStorage } from "../runtime/session-storage";
 
 type WorldOwnerState = {
   id: string | null;
-  userId: string | null;
-  token: string | null;
   username: string | null;
   onboardingCompleted: boolean;
   avatar: string;
@@ -39,8 +37,6 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
   persist(
     (set) => ({
       id: null,
-      userId: null,
-      token: null,
       username: null,
       onboardingCompleted: false,
       avatar: defaultAvatar,
@@ -51,7 +47,6 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       hydrateOwner: (owner) =>
         set({
           id: owner.id,
-          userId: owner.id,
           username: owner.username,
           onboardingCompleted: owner.onboardingCompleted,
           avatar: owner.avatar ?? defaultAvatar,
@@ -79,8 +74,6 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       logout: () =>
         set({
           id: null,
-          userId: null,
-          token: null,
           username: null,
           onboardingCompleted: false,
           avatar: defaultAvatar,
@@ -92,8 +85,6 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       clearOwner: () =>
         set({
           id: null,
-          userId: null,
-          token: null,
           username: null,
           onboardingCompleted: false,
           avatar: defaultAvatar,

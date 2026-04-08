@@ -3,13 +3,11 @@ import {
   DEFAULT_CORE_API_BASE_URL,
   resolveCloudApiBaseUrl,
   resolveCoreApiBaseUrl,
-  setAuthTokenProvider,
   setCloudApiBaseUrlProvider,
   setCoreApiBaseUrlProvider,
 } from "@yinjie/contracts";
 import { resolveAppRuntimeContext } from "../runtime/platform";
 import { getAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { useWorldOwnerStore } from "../store/world-owner-store";
 
 function fallbackBrowserBaseUrl() {
   if (typeof window === "undefined") {
@@ -56,7 +54,6 @@ export function configureContractsRuntime() {
     const runtimeConfig = getAppRuntimeConfig();
     return runtimeConfig.cloudApiBaseUrl ?? DEFAULT_CLOUD_API_BASE_URL;
   });
-  setAuthTokenProvider(() => useWorldOwnerStore.getState().token);
 }
 
 export function resolveConfiguredCoreApiBaseUrl() {

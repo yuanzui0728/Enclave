@@ -22,7 +22,7 @@ export function MomentsPage() {
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
-    queryFn: () => getMoments(),
+    queryFn: () => getMoments(baseUrl),
   });
   const blockedQuery = useQuery({
     queryKey: ["app-moments-blocked-characters", baseUrl],
