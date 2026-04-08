@@ -212,6 +212,10 @@ function updateCapacitorConfig(config) {
     ...readJson(capacitorConfigPath),
     appId: config.appId,
     appName: config.appName,
+    server: {
+      ...readJson(capacitorConfigPath).server,
+      androidScheme: config.allowCleartextTraffic ? "http" : "https",
+    },
   };
 
   return writeTextFile(capacitorConfigPath, `${JSON.stringify(nextConfig, null, 2)}\n`);
