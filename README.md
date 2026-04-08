@@ -86,6 +86,12 @@ pnpm android:run
 pnpm android:run:local
 ```
 
+或者直接运行仓库根目录脚本：
+
+```bash
+./start-android-emulator.sh
+```
+
 这个命令会先在 `127.0.0.1:39092` 启动隐界 API，再把安卓模拟器配置成访问 `10.0.2.2:39092`。
 
 ## 文档
