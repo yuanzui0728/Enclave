@@ -83,6 +83,7 @@
 - `apps/ios-shell/plugins/YinjieSecureStorage.md`
 - `apps/ios-shell/plugins/YinjieMobileBridge.md`
 - `apps/ios-shell/plugins/swift-stub/*.swift`
+- `apps/ios-shell/xcode-template/AppDelegatePush.example.swift`
 - `apps/ios-shell/scripts/configure-ios-project.mjs`
 - `apps/ios-shell/scripts/doctor-ios.mjs`
 
@@ -91,9 +92,10 @@
 1. `pnpm ios:sync`
 2. `pnpm ios:configure`
 3. 把 `Plugins/*.swift` 加入 Xcode target
-4. 先实现 `YinjieRuntime`
-5. 再实现 `YinjieSecureStorage`
-6. 最后实现 `YinjieMobileBridge`
+4. 把 `AppDelegatePush.example.swift` 的 APNs token 缓存逻辑并入真实 `AppDelegate`
+5. 先实现 `YinjieRuntime`
+6. 再实现 `YinjieSecureStorage`
+7. 最后实现 `YinjieMobileBridge`
 
 建议优先级：
 
@@ -102,6 +104,12 @@
 3. push token
 4. external url / share
 5. image picker
+
+iOS push token 约定：
+
+- 原生层将 APNs token 写入 `UserDefaults.standard["YinjiePushToken"]`
+- `YinjieMobileBridge.getPushToken()` 读取该值
+- 通知展示逻辑与用户可见通知体验仍是后续里程碑
 
 ## Android 执行面
 

@@ -28,6 +28,10 @@ const copies = [
     to: path.join(appRoot, "App.entitlements.example"),
   },
   {
+    from: path.join(cwd, "xcode-template", "AppDelegatePush.example.swift"),
+    to: path.join(appRoot, "AppDelegatePush.example.swift"),
+  },
+  {
     from: path.join(cwd, "xcode-template", "Podfile.example"),
     to: path.join(iosRoot, "Podfile.example"),
   },

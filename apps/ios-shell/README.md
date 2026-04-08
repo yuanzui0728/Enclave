@@ -21,6 +21,7 @@
 6. 执行 `pnpm --dir apps/ios-shell open`
 7. 参考 `xcode-template/` 与 `docs/ios-xcode-integration-checklist.md`
 8. 在 Xcode 中补齐签名、Capabilities、Keychain、Push、Privacy 文案
+9. 将 `xcode-template/AppDelegatePush.example.swift` 的 APNs token 缓存逻辑并入真实 `AppDelegate`
 
 ## iOS Runtime 注入
 
@@ -38,6 +39,11 @@
 - `YinjieRuntime`
 - `YinjieSecureStorage`
 - `YinjieMobileBridge`
+
+Push token 约定：
+
+- APNs token 由原生 `AppDelegate` 写入 `UserDefaults.standard["YinjiePushToken"]`
+- `YinjieMobileBridge.getPushToken()` 读取该值并返回给 Web 层
 
 ## 关键环境变量
 

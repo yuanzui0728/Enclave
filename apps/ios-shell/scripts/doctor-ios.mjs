@@ -14,7 +14,9 @@ const checks = [
   },
   {
     label: "xcode-template",
-    ok: fs.existsSync(path.join(shellRoot, "xcode-template", "Info.plist.example")),
+    ok:
+      fs.existsSync(path.join(shellRoot, "xcode-template", "Info.plist.example")) &&
+      fs.existsSync(path.join(shellRoot, "xcode-template", "AppDelegatePush.example.swift")),
     detail: "xcode-template samples are present",
   },
   {
