@@ -54,6 +54,7 @@ function MobileChatListPage() {
   });
 
   const conversations = useMemo(() => conversationsQuery.data ?? [], [conversationsQuery.data]);
+  const hasConversations = conversations.length > 0;
 
   const quickStart = useMemo(
     () => (friendsQuery.data ?? []).slice(0, 3),
@@ -67,22 +68,24 @@ function MobileChatListPage() {
 
   return (
     <AppPage>
-      <AppHeader
-        eyebrow="Messages"
-        title="Recent conversations"
-        description="Open an existing chat or start a new thread with someone you already know."
-        actions={
-          <Link to="/friend-requests">
-            <Button variant="secondary" className="rounded-full">
-              Friend requests
-            </Button>
-          </Link>
-        }
-      />
+      {hasConversations ? (
+        <AppHeader
+          eyebrow="Messages"
+          title="Recent conversations"
+          description="Open an existing chat or start a new thread with someone you already know."
+          actions={
+            <Link to="/friend-requests">
+              <Button variant="secondary" className="rounded-full">
+                Friend requests
+              </Button>
+            </Link>
+          }
+        />
+      ) : null}
 
       {notice ? <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice> : null}
 
-      {conversations.length > 0 && quickStart.length > 0 ? (
+      {hasConversations && quickStart.length > 0 ? (
         <AppSection className="space-y-4">
           <div>
             <div className="text-sm font-medium text-white">Quick start</div>
@@ -112,8 +115,8 @@ function MobileChatListPage() {
         </AppSection>
       ) : null}
 
-      <AppSection className="space-y-4">
-        <div className="text-sm font-medium text-white">Recent messages</div>
+      <AppSection className={hasConversations ? "space-y-4" : "min-h-[calc(100vh-120px)]"}>
+        {hasConversations ? <div className="text-sm font-medium text-white">Recent messages</div> : null}
 
         {conversationsQuery.isLoading ? <LoadingBlock label="Loading conversations..." /> : null}
         {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
@@ -126,7 +129,7 @@ function MobileChatListPage() {
           <ErrorBlock message={startChatMutation.error.message} />
         ) : null}
 
-        {!conversationsQuery.isLoading && conversations.length > 0
+        {!conversationsQuery.isLoading && hasConversations
           ? conversations.map((conversation) => (
               <Link
                 key={conversation.id}
