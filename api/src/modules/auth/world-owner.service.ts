@@ -173,6 +173,7 @@ export class WorldOwnerService {
 
   async getOwnerOrThrow() {
     const owner = await this.userRepo.findOne({
+      where: {},
       order: { createdAt: 'ASC' },
     });
 
