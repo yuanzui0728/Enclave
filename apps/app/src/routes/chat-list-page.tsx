@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { getConversations, getFriends, getOrCreateConversation } from "@yinjie/contracts";
-import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { EmptyState } from "../components/empty-state";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
@@ -68,29 +70,25 @@ function MobileChatListPage() {
 
   return (
     <AppPage>
-      {hasConversations ? (
-        <AppHeader
-          eyebrow="Messages"
-          title="Recent conversations"
-          description="Open an existing chat or start a new thread with someone you already know."
-          actions={
-            <Link to="/friend-requests">
-              <Button variant="secondary" className="rounded-full">
-                Friend requests
-              </Button>
-            </Link>
-          }
-        />
-      ) : null}
+      <TabPageTopBar
+        title="消息"
+        rightActions={
+          <Link to="/friend-requests">
+            <Button variant="ghost" size="sm" className="rounded-full text-white">
+              新的朋友
+            </Button>
+          </Link>
+        }
+      />
 
       {notice ? <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice> : null}
 
-      {hasConversations && quickStart.length > 0 ? (
+      {quickStart.length > 0 ? (
         <AppSection className="space-y-4">
           <div>
-            <div className="text-sm font-medium text-white">Quick start</div>
+            <div className="text-sm font-medium text-white">快捷开始</div>
             <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-              Jump back into a conversation with the people you recently connected with.
+              从最近建立联系的人里直接开始，不用先切到通讯录。
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -106,7 +104,7 @@ function MobileChatListPage() {
                 <div className="mt-3 line-clamp-1 text-sm font-medium text-white">{character.name}</div>
                 <div className="mt-1 line-clamp-1 text-[11px] text-[color:var(--text-muted)]">
                   {startChatMutation.variables === character.id && startChatMutation.isPending
-                    ? "Starting..."
+                    ? "进入中..."
                     : character.relationship}
                 </div>
               </button>
@@ -115,10 +113,10 @@ function MobileChatListPage() {
         </AppSection>
       ) : null}
 
-      <AppSection className={hasConversations ? "space-y-4" : "min-h-[calc(100vh-120px)]"}>
-        {hasConversations ? <div className="text-sm font-medium text-white">Recent messages</div> : null}
+      <AppSection className={hasConversations ? "space-y-4" : "space-y-4"}>
+        {hasConversations ? <div className="text-sm font-medium text-white">最近消息</div> : null}
 
-        {conversationsQuery.isLoading ? <LoadingBlock label="Loading conversations..." /> : null}
+        {conversationsQuery.isLoading ? <LoadingBlock label="正在读取会话..." /> : null}
         {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
           <ErrorBlock message={conversationsQuery.error.message} />
         ) : null}
@@ -159,6 +157,18 @@ function MobileChatListPage() {
               </Link>
             ))
           : null}
+
+        {!conversationsQuery.isLoading && !conversationsQuery.isError && !hasConversations ? (
+          <EmptyState
+            title="消息页还没有新的对话"
+            description="等角色先来敲门，或者从下面的快捷开始里主动打开一个会话。"
+            action={
+              <Link to="/friend-requests">
+                <Button variant="secondary">查看新的朋友</Button>
+              </Link>
+            }
+          />
+        ) : null}
       </AppSection>
     </AppPage>
   );

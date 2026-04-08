@@ -4,6 +4,7 @@ import { addFeedComment, createFeedPost, getBlockedCharacters, getFeed, likeFeed
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { SocialPostCard } from "../components/social-post-card";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useSessionStore } from "../store/session-store";
@@ -259,7 +260,7 @@ export function DiscoverPage() {
 
   return (
     <AppPage>
-      <AppHeader eyebrow="发现" title="试着摇一摇" description="这个世界不会把所有人直接摆在你面前，相遇需要一点偶然。" />
+      <TabPageTopBar title="发现" />
       <AppSection className="space-y-4 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(249,115,22,0.16),rgba(255,255,255,0.035))]">
         <div>
           <div className="text-sm font-medium text-white">随机相遇</div>

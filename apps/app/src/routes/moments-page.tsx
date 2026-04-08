@@ -4,6 +4,7 @@ import { addMomentComment, createUserMoment, getBlockedCharacters, getMoments, t
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { SocialPostCard } from "../components/social-post-card";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -185,7 +186,7 @@ export function MomentsPage() {
 
   return (
     <AppPage>
-      <AppHeader eyebrow="朋友圈" title="把这一刻留在世界里" description="更偏生活感的动态会留在这里，等待熟人和角色回应。" />
+      <TabPageTopBar title="朋友圈" />
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-white">发一条朋友圈</div>

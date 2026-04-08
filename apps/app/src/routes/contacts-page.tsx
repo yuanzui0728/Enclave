@@ -5,6 +5,7 @@ import { getFriends, getOrCreateConversation, listCharacters } from "@yinjie/con
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -141,10 +142,15 @@ export function ContactsPage() {
 
   return (
     <AppPage>
-      <AppHeader
-        eyebrow="通讯录"
-        title="你认识的人，会越来越多"
-        description="角色不是模板卡片，而是会随着世界时间继续活动的人。"
+      <TabPageTopBar
+        title="通讯录"
+        rightActions={
+          <Link to="/friend-requests">
+            <Button variant="ghost" size="sm" className="rounded-full text-white">
+              新的朋友
+            </Button>
+          </Link>
+        }
       />
 
       <AppSection className="space-y-4">
