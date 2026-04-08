@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getSystemStatus } from "@yinjie/contracts";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
@@ -7,10 +8,15 @@ import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 
 export function DesktopRuntimeGuard() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
   const hasDesktopRuntimeControl = runtimeContext.hostRole === "host";
   const needsRemoteConfiguration = runtimeContext.deploymentMode === "remote-connected" && requiresRemoteServiceConfiguration();
+  const onSetupRoute = pathname === "/setup";
   const attemptedAutostartRef = useRef(false);
   const {
     desktopAvailable,
@@ -46,6 +52,10 @@ export function DesktopRuntimeGuard() {
   }, [desktopAvailable, desktopStatusQuery.data, hasDesktopRuntimeControl, startMutation]);
 
   if (hasDesktopRuntimeControl && !desktopAvailable) {
+    return null;
+  }
+
+  if (!hasDesktopRuntimeControl && needsRemoteConfiguration && onSetupRoute) {
     return null;
   }
 
@@ -92,7 +102,7 @@ export function DesktopRuntimeGuard() {
     }
 
     if (needsRemoteConfiguration) {
-      window.location.reload();
+      void navigate({ to: "/setup", replace: true });
       return;
     }
 
