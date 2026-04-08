@@ -5,7 +5,7 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -13,13 +13,13 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="yinjie.api_base_url"
-            android:value="" />
+            android:value="http://10.0.2.2:39091" />
         <meta-data
             android:name="yinjie.socket_base_url"
-            android:value="" />
+            android:value="http://10.0.2.2:39091" />
         <meta-data
             android:name="yinjie.environment"
-            android:value="production" />
+            android:value="development" />
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
