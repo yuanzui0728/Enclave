@@ -12,12 +12,12 @@
 |------|------|------|
 | **后端** | NestJS + TypeORM + SQLite + Socket.IO（`api/`） | 3000 |
 | **云世界平台后端** | NestJS + TypeORM + SQLite（`apps/cloud-api/`） | 3001 |
-| 主 App | React + Vite，iOS / Android / Web（`apps/app/`） | 5180 |
+| 主 App | React + Vite，承载 Web / iOS / Android / Desktop 共享业务界面（`apps/app/`） | 5180 |
 | **管理后台** | React + Vite + `@yinjie/ui`（`apps/admin/`） | 5181 |
 | **云世界管理平台** | React + Vite（`apps/cloud-console/`） | 5182 |
-| 桌面端 | Tauri 壳，远程连接后端（`apps/desktop/`） | - |
-| Android | Capacitor 壳（`apps/android-shell/`） | - |
-| iOS | Capacitor 壳（`apps/ios-shell/`） | - |
+| 桌面端壳 | Tauri 远程客户端壳（`apps/desktop/`） | - |
+| Android 壳 | Capacitor 壳（`apps/android-shell/`） | - |
+| iOS 壳 | Capacitor 壳（`apps/ios-shell/`） | - |
 
 ## 后端模块（`api/src/modules/`）
 `ai` · `admin` · `auth` · `characters` · `chat` · `config` · `import` · `moments` · `social` · `feed` · `world` · `scheduler` · `events` · `narrative` · `analytics`
@@ -29,7 +29,6 @@
 - `splash-page.tsx`：启动屏，识别运行时环境并决定是否先进入世界入口
 - `setup-page.tsx`：世界入口，支持云世界与本地世界选择
 - `onboarding-page.tsx`：世界主人资料初始化与叙事入场
-- `login-page.tsx`：历史兼容页，当前主要引导去 Setup / Onboarding
 - `tabs/chat-list-page` · `moments-page` · `contacts-page` · `discover-page` · `profile-page`
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
@@ -63,6 +62,17 @@
 - `CloudWorld`：官方云世界记录，手机号唯一绑定
 - `CloudWorldRequest`：客户端发起的建世界申请单
 
+## 云世界平台职责（当前真实口径）
+- 云平台当前负责：
+  - 手机号验证
+  - 云世界申请单管理
+  - 云世界记录与地址回填
+  - 官方控制台审核与状态流转
+- 云平台当前**不负责**：
+  - 自动创建每个用户的世界实例
+  - 自动编排、拉起、销毁世界实例
+  - 托管单个实例内的多用户管理
+
 ## 会话管理结构（2026-04-08）
 - `Conversation` 表保留字段：`isPinned`、`pinnedAt`、`isHidden`、`hiddenAt`、`lastClearedAt`、`lastActivityAt`
 - 会话管理路由：
@@ -72,10 +82,16 @@
 
 ## 前端状态约束
 - 世界主人主状态存放于 `apps/app/src/store/world-owner-store.ts`
-- `apps/app/src/store/session-store.ts` 仅作为兼容别名导出，底层仍指向世界主人 store
-- `token`、`userId`、`onboardingCompleted` 等兼容字段仍通过该 store 暴露，供入口页与资料页复用
+- `apps/app/src/store/session-store.ts` 目前仅作为兼容别名导出，底层仍指向世界主人 store；后续收口时应删除
+- `token`、`userId`、`onboardingCompleted` 等兼容字段目前仍通过该 store 暴露，后续收口时应继续移除
 - 运行时世界入口状态存放于 `apps/app/src/runtime/runtime-config.ts` / `runtime-config-store.ts`
 - Setup 页必须先完成世界入口选择（云世界或本地世界）后才能继续进入应用
+
+## 客户端运行约束
+- 所有客户端均为 `remote-connected` 模式
+- 客户端不在本地拉起 Core API
+- `apps/app` 是唯一业务前端，桌面端、Android、iOS 只负责承载它
+- 桌面端只负责远程连接、壳级诊断与系统集成，不承担本地后端托管
 
 ## 管理后台约束
 - Admin 仅面向实例拥有者，用于实例级 Provider、角色、诊断、配置与评估
@@ -94,7 +110,7 @@
 ## 当前产品口径
 - 官方云与自部署复用同一套客户端入口体验，但世界实例后端仍保持单世界模型
 - 所有客户端均为 `remote-connected` 模式，不在本地拉起 Core API
-- 每个实例只服务一个世界主人，客户端只是把该世界可视化展示给他
+- 每个实例只服务一个世界主人，客户端只是把他的世界可视化展示给他
 - 世界主人可在 App 内设置自己的 API Key，服务端仅加密存储
 - Setup 页先选择云世界或本地世界：本地世界手动填写地址，云世界通过手机号进入
 - 官方云世界通过手机号索引，一个手机号只对应一个云世界
@@ -102,9 +118,10 @@
 - 管理后台仅用于实例运维，不承载实例内用户管理
 
 ## 部署
-- 云端：`docker compose up`（`api/` + SQLite 数据卷）
+- 世界实例：`docker compose up`（当前根 `docker-compose.yml` 只包含 `api/`）
 - 客户端首次启动：在 Setup 页选择云世界或本地世界
 - 本地世界：手动填写实例地址，若世界主人尚未初始化则进入 Onboarding
 - 云世界：手机号验证后进入已开通世界，未开通时提交建世界申请
 - 管理后台：访问 `apps/admin`，输入 `ADMIN_SECRET` 鉴权
 - 云世界管理平台：访问 `apps/cloud-console`，输入 `CLOUD_ADMIN_SECRET` 鉴权
+- 云平台当前不是自动实例编排器，如需“每用户一个独立实例”的自动化托管能力，需要额外实现

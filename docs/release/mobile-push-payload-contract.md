@@ -16,15 +16,13 @@
 
 ## 标准字段
 
-必须字段：
-
+必填字段：
 - `kind`
   - `route`
   - `conversation`
   - `group`
 
 可选字段：
-
 - `route`
 - `conversationId`
 - `groupId`
@@ -39,10 +37,8 @@
    - 若缺失，客户端默认回落到 `/tabs/chat`
 2. `kind=conversation`
    - 必须提供 `conversationId`
-   - `route` 可省略
 3. `kind=group`
    - 必须提供 `groupId`
-   - `route` 可省略
 4. `source`
    - 建议由原生层补成 `push`
    - Web 层只读，不依赖它做路由判断
@@ -54,7 +50,7 @@
 ```json
 {
   "kind": "conversation",
-  "conversationId": "user_123_char_doctor",
+  "conversationId": "direct_char_doctor",
   "title": "林医生",
   "body": "我刚想到一件事，想先和你确认。"
 }
@@ -71,7 +67,7 @@
 }
 ```
 
-### 打开发现页或聊天列表
+### 打开聊天列表
 
 ```json
 {
@@ -93,7 +89,7 @@
     }
   },
   "kind": "conversation",
-  "conversationId": "user_123_char_doctor"
+  "conversationId": "direct_char_doctor"
 }
 ```
 
@@ -102,7 +98,7 @@
 ### Android
 
 - `YinjieFirebaseMessagingService` 从通知 payload 中读取 `kind / route / conversationId / groupId`
-- 点击通知时把这些字段通过 `Intent extras` 带回 `MainActivity`
+- 点击通知时通过 `Intent extras` 带回 `MainActivity`
 - `YinjieMobileBridgePlugin.cacheLaunchTarget()` 将其落到 `SharedPreferences`
 
 ### iOS
@@ -113,11 +109,11 @@
 ## Web 层消费约定
 
 - `apps/app/src/features/shell/mobile-notification-launch-bridge.tsx` 负责读取 pending target
-- 已登录时：
+- 世界主人状态可用时：
   - `conversation` -> `/chat/:conversationId`
   - `group` -> `/group/:groupId`
   - `route` -> 指定 route
-- 未登录时先保留原生缓存，等会话建立后再消费
+- 世界主人状态尚未建立时先保留原生缓存，等 Setup / Onboarding 完成后再消费
 
 ## 发送侧禁忌
 
@@ -129,32 +125,8 @@
 ## 当前版本结论
 
 当前移动端已经消费以上最小合同。后续如果扩展到：
-
 - moment / friend-request / moderation-report
 - Web URL deep link
 - notification action buttons
 
 应在这份文档上增量扩展，而不是另起一套字段。
-
-## 共享 helper
-
-仓库内已提供共享 helper：
-
-- `@yinjie/contracts`
-- `buildMobilePushPayload(...)`
-- `normalizeMobilePushLaunchTarget(...)`
-
-发送侧示例：
-
-```ts
-import { buildMobilePushPayload } from "@yinjie/contracts";
-
-const payload = buildMobilePushPayload({
-  kind: "conversation",
-  conversationId: "user_123_char_doctor",
-  title: "林医生",
-  body: "我刚想到一件事，想先和你确认。",
-});
-```
-
-如果输入字段不完整或不合法，helper 会返回 `null`，发送侧应直接拒绝发出，而不是把脏 payload 交给移动端兜底。

@@ -1,26 +1,30 @@
 # 隐界部署指南
 
 ## 架构说明
-- 官方云与自部署共用同一套后端代码
-- 每个实例都是一个单用户世界，数据库默认使用 SQLite
-- iOS、Android、Windows、macOS、Web 全部作为远程客户端接入
-- 客户端只需要填写服务器地址，不在本地启动 Core API
-- 世界主人可选配置自己的 API Key，服务端仅保存加密后的密文
 
-## 快速部署
+- 每个世界实例都是一个单用户世界，默认数据库使用 SQLite
+- iOS、Android、Windows、macOS、Web 全部作为远程客户端接入
+- 客户端只需要填写服务端地址，不在本地启动 Core API
+- 世界主人可选配置自己的 API Key，服务端仅保存加密后的密文
+- 官方云平台当前负责手机号验证、申请单、世界记录与地址回填
+- 官方云平台当前不负责自动创建、调度、销毁每个用户的世界实例
+
+## 快速部署世界实例
 
 ### 1. 克隆仓库
+
 ```bash
 git clone https://github.com/your-org/yinjieAPP.git
 cd yinjieAPP
 ```
 
 ### 2. 配置环境变量
+
 ```bash
 cp api/.env.example api/.env
 ```
 
-至少需要配置这些值：
+至少需要配置：
 
 ```env
 DEEPSEEK_API_KEY=sk-xxxxx
@@ -33,17 +37,17 @@ PUBLIC_API_BASE_URL=https://api.your-domain.com
 USER_API_KEY_ENCRYPTION_SECRET=replace-with-a-second-long-random-secret
 ```
 
-### 3. 启动服务
+### 3. 启动世界实例
+
 ```bash
 docker compose up -d
 ```
 
 ### 4. 验证服务
+
 ```bash
 curl http://localhost:3000/health
 ```
-
-如果返回健康状态，说明后端已经可用。
 
 ## 单用户世界迁移
 
@@ -55,7 +59,7 @@ curl http://localhost:3000/health
 
 ## 反向代理
 
-推荐为后端单独配置 HTTPS 域名，例如 `https://api.your-domain.com`。
+推荐为世界实例单独配置 HTTPS 域名，例如 `https://api.your-domain.com`。
 
 ```nginx
 server {
@@ -80,10 +84,11 @@ server {
 
 所有客户端流程一致：
 1. 首次启动进入 `Setup`
-2. 填写服务器地址，例如 `https://api.your-domain.com`
-3. 如未单独暴露 Socket 服务，Socket 地址留空或与 API 地址一致
-4. 保存配置后继续初始化世界主人资料
-5. 进入聊天、社交和内容流
+2. 选择云世界或本地世界
+3. 本地世界：填写实例地址
+4. 云世界：通过手机号验证并获取已开通世界地址
+5. 若世界主人尚未初始化，则进入 `Onboarding`
+6. 进入聊天、社交和内容流
 
 适用端：
 - iOS
@@ -100,7 +105,7 @@ server {
 - 未配置个人 Key 时，走实例默认 Provider
 - 配置个人 Key 后，仅该世界主人的请求使用该 Key
 - 清除个人 Key 后，立即回退到实例默认 Provider
-- 任意读取接口都不会返回 Key 明文
+- 任何读取接口都不会返回 Key 明文
 
 接口：
 
@@ -111,6 +116,19 @@ PATCH /api/world/owner/api-key
 DELETE /api/world/owner/api-key
 ```
 
+## 云平台部署说明
+
+当前根目录 `docker-compose.yml` 只包含世界实例 `api/`。
+
+如果要部署官方云平台，还需要额外部署：
+- `apps/cloud-api/`
+- `apps/cloud-console/`
+
+如果要部署实例管理后台，还需要额外部署：
+- `apps/admin/`
+
+这些端当前不包含在根 compose 的默认交付里。
+
 ## 环境变量
 
 | 变量名 | 必填 | 说明 |
@@ -119,7 +137,7 @@ DELETE /api/world/owner/api-key
 | `OPENAI_BASE_URL` | 否 | 默认 Provider 的 OpenAI 兼容地址 |
 | `AI_MODEL` | 否 | 默认模型 |
 | `ADMIN_SECRET` | 是 | 管理后台鉴权密钥 |
-| `PORT` | 否 | 服务端口，默认 `3000` |
+| `PORT` | 否 | 服务端端口，默认 `3000` |
 | `DATABASE_PATH` | 否 | SQLite 文件路径 |
 | `CORS_ALLOWED_ORIGINS` | 建议 | 允许访问的客户端域名，逗号分隔 |
 | `PUBLIC_API_BASE_URL` | 建议 | 对外公开访问的 API 地址 |
