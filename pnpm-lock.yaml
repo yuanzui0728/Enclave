@@ -124,6 +124,9 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.109.2
         version: 1.168.10(react-dom@19.2.4)(react@19.2.4)
+      '@tauri-apps/api':
+        specifier: ^2.2.0
+        version: 2.10.1
       '@yinjie/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -2071,6 +2074,10 @@ packages:
 
   /@tanstack/store@0.9.3:
     resolution: {integrity: sha512-8reSzl/qGWGGVKhBoxXPMWzATSbZLZFWhwBAFO9NAyp0TxzfBP0mIrGb8CP8KrQTmvzXlR/vFPPUrHTLBGyFyw==, tarball: https://registry.npmmirror.com/@tanstack/store/-/store-0.9.3.tgz}
+    dev: false
+
+  /@tauri-apps/api@2.10.1:
+    resolution: {integrity: sha512-hKL/jWf293UDSUN09rR69hrToyIXBb8CjGaWC7gfinvnQrBVvnLr08FeFi38gxtugAVyVcTa5/FD/Xnkb1siBw==, tarball: https://registry.npmmirror.com/@tauri-apps/api/-/api-2.10.1.tgz}
     dev: false
 
   /@tauri-apps/cli-darwin-arm64@2.10.1:
