@@ -1,0 +1,30 @@
+{
+  "name": "@yinjie/cloud-console",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.app.json && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "lint": "tsc --noEmit -p tsconfig.app.json"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.66.8",
+    "@tanstack/react-router": "^1.109.2",
+    "@yinjie/contracts": "workspace:*",
+    "@yinjie/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.4.1",
+    "@yinjie/tooling": "workspace:*",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.9.3",
+    "vite": "^6.1.0"
+  }
+}
