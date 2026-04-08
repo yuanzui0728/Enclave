@@ -78,14 +78,23 @@ start_api() {
   ensure_cache_dir
 
   log "Starting local API on ${HOST_API_URL}"
-  nohup env \
-    PORT="$API_PORT" \
-    DATABASE_PATH="$API_DATABASE_PATH" \
-    CORS_ALLOWED_ORIGINS="*" \
-    USER_API_KEY_ENCRYPTION_SECRET="dev_secret_yinjie_android" \
-    DEEPSEEK_API_KEY="$AI_API_KEY" \
-    OPENAI_BASE_URL="$AI_BASE_URL" \
-    pnpm --dir "$ROOT_DIR/api" start:dev >"$API_LOG_PATH" 2>&1 &
+  local launch_script="$CACHE_DIR/start-api.sh"
+  cat >"$launch_script" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$ROOT_DIR/api"
+exec env \\
+  PORT="$API_PORT" \\
+  DATABASE_PATH="$API_DATABASE_PATH" \\
+  CORS_ALLOWED_ORIGINS="*" \\
+  USER_API_KEY_ENCRYPTION_SECRET="dev_secret_yinjie_android" \\
+  DEEPSEEK_API_KEY="$AI_API_KEY" \\
+  OPENAI_BASE_URL="$AI_BASE_URL" \\
+  pnpm start
+EOF
+  chmod +x "$launch_script"
+
+  setsid "$launch_script" >"$API_LOG_PATH" 2>&1 < /dev/null &
   echo $! >"$API_PID_PATH"
 
   for _ in $(seq 1 60); do
