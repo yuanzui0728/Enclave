@@ -22,6 +22,23 @@
 7. 参考 `xcode-template/` 与 `docs/ios-xcode-integration-checklist.md`
 8. 在 Xcode 中补齐签名、Capabilities、Keychain、Push、Privacy 文案
 
+## iOS Runtime 注入
+
+当前 iOS 壳优先从以下位置向 Web 层提供运行时配置：
+
+1. `Info.plist`
+   - `YinjieApiBaseUrl`
+   - `YinjieSocketBaseUrl`
+   - `YinjieEnvironment`
+   - `YinjiePublicAppName`
+2. bundle 内 `runtime-config.json`
+
+原生 plugin：
+
+- `YinjieRuntime`
+- `YinjieSecureStorage`
+- `YinjieMobileBridge`
+
 ## 关键环境变量
 
 - `YINJIE_IOS_CORE_API_BASE_URL`

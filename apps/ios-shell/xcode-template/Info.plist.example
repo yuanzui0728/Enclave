@@ -8,6 +8,14 @@
   <string>com.yinjie.ios</string>
   <key>CFBundleName</key>
   <string>Yinjie</string>
+  <key>YinjieApiBaseUrl</key>
+  <string>https://api.example.yinjie.app</string>
+  <key>YinjieSocketBaseUrl</key>
+  <string>https://api.example.yinjie.app</string>
+  <key>YinjieEnvironment</key>
+  <string>production</string>
+  <key>YinjiePublicAppName</key>
+  <string>Yinjie</string>
   <key>LSRequiresIPhoneOS</key>
   <true/>
   <key>NSCameraUsageDescription</key>
