@@ -11,9 +11,10 @@ ANDROID_CONFIG_PATH="$ROOT_DIR/apps/android-shell/android-shell.config.local.jso
 CACHE_DIR="$ROOT_DIR/.cache/android-api"
 API_LOG_PATH="$CACHE_DIR/server.log"
 API_PID_PATH="$CACHE_DIR/server.pid"
-API_DATABASE_PATH="$ROOT_DIR/runtime-data/android-api.sqlite"
+API_DATABASE_PATH="$CACHE_DIR/android-api.sqlite"
 AI_API_KEY="${YINJIE_ANDROID_DEEPSEEK_API_KEY:-android-local-placeholder-key}"
 AI_BASE_URL="${YINJIE_ANDROID_OPENAI_BASE_URL:-https://api.deepseek.com}"
+BACKUP_DIR=""
 
 log() {
   printf '[android-run-local] %s\n' "$*"
@@ -26,6 +27,21 @@ fail() {
 
 ensure_cache_dir() {
   mkdir -p "$CACHE_DIR"
+}
+
+backup_generated_files() {
+  BACKUP_DIR="$(mktemp -d)"
+
+  cp "$ROOT_DIR/apps/app/public/runtime-config.json" "$BACKUP_DIR/runtime-config.json"
+  cp "$ROOT_DIR/apps/android-shell/android/app/src/main/AndroidManifest.xml" "$BACKUP_DIR/AndroidManifest.xml"
+}
+
+restore_generated_files() {
+  [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]] || return 0
+
+  cp "$BACKUP_DIR/runtime-config.json" "$ROOT_DIR/apps/app/public/runtime-config.json"
+  cp "$BACKUP_DIR/AndroidManifest.xml" "$ROOT_DIR/apps/android-shell/android/app/src/main/AndroidManifest.xml"
+  rm -rf "$BACKUP_DIR"
 }
 
 write_android_local_config() {
@@ -85,6 +101,9 @@ start_api() {
 
 main() {
   cd "$ROOT_DIR"
+  ensure_cache_dir
+  backup_generated_files
+  trap restore_generated_files EXIT
   write_android_local_config
   start_api
   pnpm android:run
