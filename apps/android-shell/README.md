@@ -43,6 +43,17 @@ The mobile web layer now expects two Android-side contracts:
    - `YinjieSecureStorage`
    - `YinjieMobileBridge`
 
+Current Android-side implementation status:
+
+- `YinjieSecureStorage`
+  - uses `EncryptedSharedPreferences` when available
+  - falls back to private app `SharedPreferences` if encrypted storage cannot be created
+- `YinjieMobileBridge`
+  - `openExternalUrl` is wired
+  - `share` is wired
+  - `pickImages` opens Android document picker and returns URI assets
+  - `getPushToken` currently reads a cached token slot and still needs real FCM registration wiring
+
 Expected `YinjieMobileBridge` methods:
 
 - `openExternalUrl({ url })`
