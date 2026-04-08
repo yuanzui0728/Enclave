@@ -12,6 +12,8 @@ CACHE_DIR="$ROOT_DIR/.cache/android-api"
 API_LOG_PATH="$CACHE_DIR/server.log"
 API_PID_PATH="$CACHE_DIR/server.pid"
 API_DATABASE_PATH="$ROOT_DIR/runtime-data/android-api.sqlite"
+AI_API_KEY="${YINJIE_ANDROID_DEEPSEEK_API_KEY:-android-local-placeholder-key}"
+AI_BASE_URL="${YINJIE_ANDROID_OPENAI_BASE_URL:-https://api.deepseek.com}"
 
 log() {
   printf '[android-run-local] %s\n' "$*"
@@ -65,6 +67,8 @@ start_api() {
     DATABASE_PATH="$API_DATABASE_PATH" \
     CORS_ALLOWED_ORIGINS="*" \
     USER_API_KEY_ENCRYPTION_SECRET="dev_secret_yinjie_android" \
+    DEEPSEEK_API_KEY="$AI_API_KEY" \
+    OPENAI_BASE_URL="$AI_BASE_URL" \
     pnpm --dir "$ROOT_DIR/api" start:dev >"$API_LOG_PATH" 2>&1 &
   echo $! >"$API_PID_PATH"
 
