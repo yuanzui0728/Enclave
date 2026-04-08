@@ -53,9 +53,10 @@ Current Android-side implementation status:
   - `share` is wired
   - `pickImages` opens Android document picker and returns URI assets
   - `getPushToken` reads the cached token slot used by `YinjieFirebaseMessagingService`
+  - `getNotificationPermissionState` and `requestNotificationPermission` are wired
 - `YinjieFirebaseMessagingService`
   - persists the latest FCM registration token into the bridge cache
-  - does not render notifications yet; notification UX remains a later milestone
+  - creates a basic notification channel and shows fallback notifications for incoming FCM messages
 
 Expected `YinjieMobileBridge` methods:
 

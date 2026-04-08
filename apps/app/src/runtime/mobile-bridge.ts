@@ -18,6 +18,8 @@ type MobileBridgePlugin = {
   share(options: MobileBridgeSharePayload): Promise<void>;
   pickImages(options?: { multiple?: boolean }): Promise<{ assets: MobileBridgeImageAsset[] }>;
   getPushToken(): Promise<{ token: string | null }>;
+  getNotificationPermissionState(): Promise<{ state: string }>;
+  requestNotificationPermission(): Promise<{ state: string }>;
 };
 
 const mobileBridge = registerPlugin<MobileBridgePlugin>("YinjieMobileBridge");
@@ -78,5 +80,31 @@ export async function readNativePushToken() {
     return result.token ?? null;
   } catch {
     return null;
+  }
+}
+
+export async function getNativeNotificationPermissionState() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return "unsupported";
+  }
+
+  try {
+    const result = await mobileBridge.getNotificationPermissionState();
+    return result.state;
+  } catch {
+    return "unknown";
+  }
+}
+
+export async function requestNativeNotificationPermission() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return "unsupported";
+  }
+
+  try {
+    const result = await mobileBridge.requestNotificationPermission();
+    return result.state;
+  } catch {
+    return "unknown";
   }
 }

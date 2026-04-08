@@ -67,6 +67,8 @@
 - `share({ title?, text?, url? })`
 - `pickImages({ multiple? })`
 - `getPushToken()`
+- `getNotificationPermissionState()`
+- `requestNotificationPermission()`
 
 失败策略：
 

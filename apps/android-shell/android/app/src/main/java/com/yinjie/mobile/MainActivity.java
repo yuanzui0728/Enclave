@@ -1,0 +1,15 @@
+package com.yinjie.mobile;
+
+import android.os.Bundle;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(YinjieRuntimePlugin.class);
+        registerPlugin(YinjieSecureStoragePlugin.class);
+        registerPlugin(YinjieMobileBridgePlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+}
