@@ -115,6 +115,7 @@ iOS push token 约定：
 - `YinjieMobileBridge.getPushToken()` 读取该值
 - `YinjieMobileBridge.getNotificationPermissionState()` / `requestNotificationPermission()` 负责读取和触发通知授权
 - `YinjieMobileBridge.getPendingLaunchTarget()` / `clearPendingLaunchTarget()` 负责让 Web 层消费通知点击后的落点
+- `UNUserNotificationCenterDelegate.didReceive` 建议把 `kind / route / conversationId / groupId / source` 写入 `UserDefaults.standard["YinjiePendingLaunchTarget"]`
 - `YinjieMobileBridge.pickImages()` 通过 `PHPickerViewController` 选择图片并返回临时文件资产
 - 通知展示逻辑与用户可见通知体验仍是后续里程碑
 

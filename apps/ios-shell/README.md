@@ -45,6 +45,12 @@ Push token 约定：
 - APNs token 由原生 `AppDelegate` 写入 `UserDefaults.standard["YinjiePushToken"]`
 - `YinjieMobileBridge.getPushToken()` 读取该值并返回给 Web 层
 
+通知点击落点约定：
+
+- 原生 `AppDelegate` 在通知点击回调里把 payload 写入 `UserDefaults.standard["YinjiePendingLaunchTarget"]`
+- payload 支持 `kind / route / conversationId / groupId / source`
+- `YinjieMobileBridge.getPendingLaunchTarget()` / `clearPendingLaunchTarget()` 负责让 Web 层消费这条落点
+
 ## 关键环境变量
 
 - `YINJIE_IOS_CORE_API_BASE_URL`

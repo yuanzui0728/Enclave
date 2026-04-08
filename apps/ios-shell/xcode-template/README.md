@@ -18,5 +18,5 @@
 1. 通过 `pnpm ios:sync` 生成/同步 Capacitor iOS 工程
 2. 把本目录样例内容复制进真实 iOS 工程
 3. 将 `plugins/swift-stub/` 迁移进 `Plugins/`
-4. 将 `AppDelegatePush.example.swift` 中的 push token 缓存逻辑并入真实 `AppDelegate.swift`
+4. 将 `AppDelegatePush.example.swift` 中的 push token 缓存和通知点击落点缓存逻辑并入真实 `AppDelegate.swift`
 5. 在 Xcode 中补 Team、Signing、Bundle Identifier 和 Capabilities
