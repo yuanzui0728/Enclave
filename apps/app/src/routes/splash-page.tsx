@@ -34,7 +34,7 @@ export function SplashPage() {
     }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [hydrateOwner, navigate, runtimeConfig.apiBaseUrl, runtimeConfig.appPlatform]);
+  }, [hydrateOwner, navigate, runtimeConfig.apiBaseUrl, runtimeConfig.appPlatform, runtimeConfig.worldAccessMode]);
 
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center py-10 text-center">

@@ -1,10 +1,15 @@
 import {
+  DEFAULT_CLOUD_API_BASE_URL,
   DEFAULT_CORE_API_BASE_URL,
+  resolveCloudApiBaseUrl,
   resolveCoreApiBaseUrl,
+  setAuthTokenProvider,
+  setCloudApiBaseUrlProvider,
   setCoreApiBaseUrlProvider,
 } from "@yinjie/contracts";
 import { resolveAppRuntimeContext } from "../runtime/platform";
 import { getAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 
 function fallbackBrowserBaseUrl() {
   if (typeof window === "undefined") {
@@ -47,6 +52,11 @@ export function resolveAppSocketBaseUrl() {
 
 export function configureContractsRuntime() {
   setCoreApiBaseUrlProvider(() => resolveAppCoreApiBaseUrl());
+  setCloudApiBaseUrlProvider(() => {
+    const runtimeConfig = getAppRuntimeConfig();
+    return runtimeConfig.cloudApiBaseUrl ?? DEFAULT_CLOUD_API_BASE_URL;
+  });
+  setAuthTokenProvider(() => useWorldOwnerStore.getState().token);
 }
 
 export function resolveConfiguredCoreApiBaseUrl() {
@@ -58,8 +68,20 @@ export function hasRemoteServiceConfiguration() {
   return Boolean(runtimeConfig.apiBaseUrl || fallbackBrowserBaseUrl());
 }
 
+export function resolveAppCloudApiBaseUrl() {
+  const runtimeConfig = getAppRuntimeConfig();
+  if (runtimeConfig.cloudApiBaseUrl) {
+    return runtimeConfig.cloudApiBaseUrl;
+  }
+
+  return resolveCloudApiBaseUrl();
+}
+
 export function requiresRemoteServiceConfiguration() {
   const runtimeConfig = getAppRuntimeConfig();
   const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
-  return runtimeContext.deploymentMode === "remote-connected" && !hasRemoteServiceConfiguration();
+  return (
+    runtimeContext.deploymentMode === "remote-connected" &&
+    (!runtimeConfig.worldAccessMode || !hasRemoteServiceConfiguration())
+  );
 }

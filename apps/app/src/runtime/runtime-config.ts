@@ -7,12 +7,16 @@ export type AppRuntimeConfigStatus = "unconfigured" | "configured" | "validated"
 export type AppRuntimeConfig = {
   apiBaseUrl?: string;
   socketBaseUrl?: string;
+  cloudApiBaseUrl?: string;
   environment: AppRuntimeEnvironment;
   appPlatform: AppPlatform;
   channel: AppChannel;
   bootstrapSource: AppRuntimeBootstrapSource;
   configStatus: AppRuntimeConfigStatus;
   publicAppName: string;
+  worldAccessMode?: "cloud" | "local";
+  cloudPhone?: string;
+  cloudWorldId?: string;
   applicationId?: string;
   appVersionName?: string;
   appVersionCode?: number;
@@ -86,11 +90,13 @@ function normalizeConfigStatus(
 export function normalizeAppRuntimeConfig(config: AppRuntimeConfigInput, platform: AppPlatform): AppRuntimeConfig {
   const apiBaseUrl = normalizeBaseUrl(config.apiBaseUrl);
   const socketBaseUrl = normalizeBaseUrl(config.socketBaseUrl ?? config.apiBaseUrl);
+  const cloudApiBaseUrl = normalizeBaseUrl(config.cloudApiBaseUrl);
   const runtimeContext = resolveAppRuntimeContext(platform);
 
   return {
     apiBaseUrl,
     socketBaseUrl,
+    cloudApiBaseUrl,
     environment: normalizeEnvironment(config.environment),
     appPlatform: platform,
     channel: config.channel === "desktop" || config.channel === "mobile" || config.channel === "web"
@@ -99,6 +105,9 @@ export function normalizeAppRuntimeConfig(config: AppRuntimeConfigInput, platfor
     bootstrapSource: normalizeBootstrapSource(config.bootstrapSource),
     configStatus: normalizeConfigStatus(config.configStatus, platform, apiBaseUrl),
     publicAppName: config.publicAppName?.trim() || "Yinjie",
+    worldAccessMode: config.worldAccessMode === "cloud" ? "cloud" : config.worldAccessMode === "local" ? "local" : undefined,
+    cloudPhone: normalizeOptionalText(config.cloudPhone),
+    cloudWorldId: normalizeOptionalText(config.cloudWorldId),
     applicationId: normalizeOptionalText(config.applicationId),
     appVersionName: normalizeOptionalText(config.appVersionName),
     appVersionCode: normalizeVersionCode(config.appVersionCode),
