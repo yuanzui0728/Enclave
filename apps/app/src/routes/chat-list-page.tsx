@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { MessagesSquare } from "lucide-react";
 import { getConversations, getFriends, getOrCreateConversation } from "@yinjie/contracts";
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
-import { EmptyState } from "../components/empty-state";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
@@ -84,7 +82,7 @@ function MobileChatListPage() {
 
       {notice ? <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice> : null}
 
-      {quickStart.length > 0 ? (
+      {conversations.length > 0 && quickStart.length > 0 ? (
         <AppSection className="space-y-4">
           <div>
             <div className="text-sm font-medium text-white">Quick start</div>
@@ -115,12 +113,7 @@ function MobileChatListPage() {
       ) : null}
 
       <AppSection className="space-y-4">
-        <div>
-          <div className="text-sm font-medium text-white">Recent messages</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            Every direct chat and group thread lives here. Realtime updates continue on the same thread.
-          </div>
-        </div>
+        <div className="text-sm font-medium text-white">Recent messages</div>
 
         {conversationsQuery.isLoading ? <LoadingBlock label="Loading conversations..." /> : null}
         {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
@@ -151,7 +144,7 @@ function MobileChatListPage() {
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-3">
                     <div className="truncate text-sm text-[color:var(--text-secondary)]">
-                      {conversation.lastMessage?.text ?? "No messages yet."}
+                      {conversation.lastMessage?.text ?? ""}
                     </div>
                     {conversation.unreadCount > 0 ? (
                       <div className="min-w-6 rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.98),rgba(251,191,36,0.92))] px-2 py-0.5 text-center text-[11px] text-white shadow-[var(--shadow-soft)]">
@@ -163,22 +156,6 @@ function MobileChatListPage() {
               </Link>
             ))
           : null}
-
-        {!conversationsQuery.isLoading && conversations.length === 0 ? (
-          <EmptyState
-            title="No conversations yet"
-            description="Visit Contacts to meet someone first, then come back here when the first message arrives."
-            action={
-              <Link
-                to="/tabs/contacts"
-                className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.05))] px-4 py-2 text-sm text-white shadow-[var(--shadow-soft)]"
-              >
-                <MessagesSquare size={16} />
-                Open Contacts
-              </Link>
-            }
-          />
-        ) : null}
       </AppSection>
     </AppPage>
   );
