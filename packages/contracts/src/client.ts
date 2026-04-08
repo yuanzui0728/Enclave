@@ -197,7 +197,7 @@ function resolveOptionalBaseUrl(primary?: string, secondary?: string) {
 }
 
 export function getSystemStatus(baseUrl?: string) {
-  return request<SystemStatus>("/system/status", undefined, baseUrl);
+  return requestLegacyApi<SystemStatus>("/system/status", undefined, baseUrl);
 }
 
 export function sendCloudPhoneCode(payload: SendPhoneCodeRequest, baseUrl?: string) {
@@ -256,7 +256,7 @@ export function getLatestMyCloudWorldRequest(accessToken: string, baseUrl?: stri
 }
 
 export function getSchedulerStatus(baseUrl?: string) {
-  return request<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
+  return requestLegacyApi<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
 }
 
 export function loginUser(payload: { username: string; password: string }, baseUrl?: string) {
@@ -348,7 +348,7 @@ export function logoutCurrentSession(baseUrl?: string) {
 }
 
 export function runSchedulerJob(id: string, baseUrl?: string) {
-  return request<OperationResult>(
+  return requestLegacyApi<OperationResult>(
     `/system/scheduler/run/${encodeURIComponent(id)}`,
     {
       method: "POST",
@@ -358,11 +358,11 @@ export function runSchedulerJob(id: string, baseUrl?: string) {
 }
 
 export function getRealtimeStatus(baseUrl?: string) {
-  return request<RealtimeStatus>("/system/realtime", undefined, baseUrl);
+  return requestLegacyApi<RealtimeStatus>("/system/realtime", undefined, baseUrl);
 }
 
 export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: string) {
-  return request<ProviderTestResult>(
+  return requestLegacyApi<ProviderTestResult>(
     "/system/provider/test",
     {
       method: "POST",
@@ -373,11 +373,11 @@ export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: s
 }
 
 export function getProviderConfig(baseUrl?: string) {
-  return request<ProviderConfig>("/system/provider", undefined, baseUrl);
+  return requestLegacyApi<ProviderConfig>("/system/provider", undefined, baseUrl);
 }
 
 export function setProviderConfig(payload: ProviderConfig, baseUrl?: string) {
-  return request<ProviderConfig>(
+  return requestLegacyApi<ProviderConfig>(
     "/system/provider",
     {
       method: "PUT",
@@ -388,7 +388,7 @@ export function setProviderConfig(payload: ProviderConfig, baseUrl?: string) {
 }
 
 export function runInferencePreview(payload: InferencePreviewRequest, baseUrl?: string) {
-  return request<InferencePreviewResponse>(
+  return requestLegacyApi<InferencePreviewResponse>(
     "/system/inference/preview",
     {
       method: "POST",
@@ -399,31 +399,31 @@ export function runInferencePreview(payload: InferencePreviewRequest, baseUrl?: 
 }
 
 export function getSystemLogs(baseUrl?: string) {
-  return request<LogIndexResponse>("/system/logs", undefined, baseUrl);
+  return requestLegacyApi<LogIndexResponse>("/system/logs", undefined, baseUrl);
 }
 
 export function getEvalOverview(baseUrl?: string) {
-  return request<EvalOverview>("/system/evals/overview", undefined, baseUrl);
+  return requestLegacyApi<EvalOverview>("/system/evals/overview", undefined, baseUrl);
 }
 
 export function listEvalDatasets(baseUrl?: string) {
-  return request<EvalDatasetManifest[]>("/system/evals/datasets", undefined, baseUrl);
+  return requestLegacyApi<EvalDatasetManifest[]>("/system/evals/datasets", undefined, baseUrl);
 }
 
 export function listEvalMemoryStrategies(baseUrl?: string) {
-  return request<EvalMemoryStrategyRecord[]>("/system/evals/strategies", undefined, baseUrl);
+  return requestLegacyApi<EvalMemoryStrategyRecord[]>("/system/evals/strategies", undefined, baseUrl);
 }
 
 export function listEvalPromptVariants(baseUrl?: string) {
-  return request<EvalPromptVariantRecord[]>("/system/evals/prompt-variants", undefined, baseUrl);
+  return requestLegacyApi<EvalPromptVariantRecord[]>("/system/evals/prompt-variants", undefined, baseUrl);
 }
 
 export function listEvalExperimentPresets(baseUrl?: string) {
-  return request<EvalExperimentPresetRecord[]>("/system/evals/experiments", undefined, baseUrl);
+  return requestLegacyApi<EvalExperimentPresetRecord[]>("/system/evals/experiments", undefined, baseUrl);
 }
 
 export function runEvalExperimentPreset(id: string, baseUrl?: string) {
-  return request<EvalExperimentRunResponse>(
+  return requestLegacyApi<EvalExperimentRunResponse>(
     `/system/evals/experiments/${encodeURIComponent(id)}/run`,
     {
       method: "POST",
@@ -433,11 +433,11 @@ export function runEvalExperimentPreset(id: string, baseUrl?: string) {
 }
 
 export function listEvalExperimentReports(baseUrl?: string) {
-  return request<EvalExperimentReportRecord[]>("/system/evals/reports", undefined, baseUrl);
+  return requestLegacyApi<EvalExperimentReportRecord[]>("/system/evals/reports", undefined, baseUrl);
 }
 
 export function updateEvalReportDecision(id: string, payload: UpdateEvalReportDecisionRequest, baseUrl?: string) {
-  return request<EvalExperimentReportRecord>(
+  return requestLegacyApi<EvalExperimentReportRecord>(
     `/system/evals/reports/${encodeURIComponent(id)}/decision`,
     {
       method: "POST",
@@ -448,11 +448,11 @@ export function updateEvalReportDecision(id: string, payload: UpdateEvalReportDe
 }
 
 export function getEvalDataset(id: string, baseUrl?: string) {
-  return request<EvalDatasetDetail>(`/system/evals/datasets/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<EvalDatasetDetail>(`/system/evals/datasets/${encodeURIComponent(id)}`, undefined, baseUrl);
 }
 
 export function listEvalRuns(baseUrl?: string) {
-  return request<EvalRunRecord[]>("/system/evals/runs", undefined, baseUrl);
+  return requestLegacyApi<EvalRunRecord[]>("/system/evals/runs", undefined, baseUrl);
 }
 
 export function listEvalRunsWithQuery(query: ListEvalRunsQuery, baseUrl?: string) {
@@ -465,7 +465,7 @@ export function listEvalRunsWithQuery(query: ListEvalRunsQuery, baseUrl?: string
   if (query.memoryPolicyVariant) params.set("memoryPolicyVariant", query.memoryPolicyVariant);
   const suffix = params.toString();
 
-  return request<EvalRunRecord[]>(
+  return requestLegacyApi<EvalRunRecord[]>(
     `/system/evals/runs${suffix ? `?${suffix}` : ""}`,
     undefined,
     baseUrl,
@@ -473,11 +473,11 @@ export function listEvalRunsWithQuery(query: ListEvalRunsQuery, baseUrl?: string
 }
 
 export function getEvalRun(id: string, baseUrl?: string) {
-  return request<EvalRunRecord>(`/system/evals/runs/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<EvalRunRecord>(`/system/evals/runs/${encodeURIComponent(id)}`, undefined, baseUrl);
 }
 
 export function runEvalDataset(payload: RunEvalDatasetRequest, baseUrl?: string) {
-  return request<EvalRunRecord>(
+  return requestLegacyApi<EvalRunRecord>(
     "/system/evals/runs",
     {
       method: "POST",
@@ -488,7 +488,7 @@ export function runEvalDataset(payload: RunEvalDatasetRequest, baseUrl?: string)
 }
 
 export function compareEvalRuns(payload: CompareEvalRunsRequest, baseUrl?: string) {
-  return request<EvalComparisonRecord>(
+  return requestLegacyApi<EvalComparisonRecord>(
     "/system/evals/compare",
     {
       method: "POST",
@@ -508,7 +508,7 @@ export function listEvalComparisonsWithQuery(query: ListEvalComparisonsQuery, ba
   if (query.memoryPolicyVariant) params.set("memoryPolicyVariant", query.memoryPolicyVariant);
   const suffix = params.toString();
 
-  return request<EvalComparisonRecord[]>(
+  return requestLegacyApi<EvalComparisonRecord[]>(
     `/system/evals/comparisons${suffix ? `?${suffix}` : ""}`,
     undefined,
     baseUrl,
@@ -516,7 +516,7 @@ export function listEvalComparisonsWithQuery(query: ListEvalComparisonsQuery, ba
 }
 
 export function runPairwiseEval(payload: RunPairwiseEvalRequest, baseUrl?: string) {
-  return request<PairwiseEvalRunResponse>(
+  return requestLegacyApi<PairwiseEvalRunResponse>(
     "/system/evals/compare/run",
     {
       method: "POST",
@@ -527,7 +527,7 @@ export function runPairwiseEval(payload: RunPairwiseEvalRequest, baseUrl?: strin
 }
 
 export function listGenerationTraces(baseUrl?: string) {
-  return request<GenerationTrace[]>("/system/evals/traces", undefined, baseUrl);
+  return requestLegacyApi<GenerationTrace[]>("/system/evals/traces", undefined, baseUrl);
 }
 
 export function listGenerationTracesWithQuery(
@@ -546,7 +546,7 @@ export function listGenerationTracesWithQuery(
   if (typeof query.limit === "number") params.set("limit", String(query.limit));
   const suffix = params.toString();
 
-  return request<GenerationTrace[]>(
+  return requestLegacyApi<GenerationTrace[]>(
     `/system/evals/traces${suffix ? `?${suffix}` : ""}`,
     undefined,
     baseUrl,
@@ -554,7 +554,7 @@ export function listGenerationTracesWithQuery(
 }
 
 export function getGenerationTrace(id: string, baseUrl?: string) {
-  return request<GenerationTrace>(`/system/evals/traces/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<GenerationTrace>(`/system/evals/traces/${encodeURIComponent(id)}`, undefined, baseUrl);
 }
 
 export function listPersonaAssets(_baseUrl?: string) {
@@ -562,7 +562,7 @@ export function listPersonaAssets(_baseUrl?: string) {
 }
 
 export function exportDiagnostics(baseUrl?: string) {
-  return request<OperationResult>(
+  return requestLegacyApi<OperationResult>(
     "/system/diag/export",
     {
       method: "POST",
@@ -572,7 +572,7 @@ export function exportDiagnostics(baseUrl?: string) {
 }
 
 export function createBackup(baseUrl?: string) {
-  return request<OperationResult>(
+  return requestLegacyApi<OperationResult>(
     "/system/backup/create",
     {
       method: "POST",
@@ -582,7 +582,7 @@ export function createBackup(baseUrl?: string) {
 }
 
 export function restoreBackup(baseUrl?: string) {
-  return request<OperationResult>(
+  return requestLegacyApi<OperationResult>(
     "/system/backup/restore",
     {
       method: "POST",
