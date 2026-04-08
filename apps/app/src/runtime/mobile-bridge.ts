@@ -21,6 +21,14 @@ export type MobileBridgeLaunchTarget = {
   source?: string;
 };
 
+type RawLaunchTarget = {
+  kind?: string | null;
+  route?: string | null;
+  conversationId?: string | null;
+  groupId?: string | null;
+  source?: string | null;
+} | null;
+
 type MobileBridgePlugin = {
   openExternalUrl(options: { url: string }): Promise<void>;
   share(options: MobileBridgeSharePayload): Promise<void>;
@@ -33,6 +41,53 @@ type MobileBridgePlugin = {
 };
 
 const mobileBridge = registerPlugin<MobileBridgePlugin>("YinjieMobileBridge");
+
+function normalizeText(value: string | null | undefined) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeLaunchTarget(target: RawLaunchTarget): MobileBridgeLaunchTarget | null {
+  if (!target) {
+    return null;
+  }
+
+  const route = normalizeText(target.route);
+  const conversationId = normalizeText(target.conversationId);
+  const groupId = normalizeText(target.groupId);
+  const source = normalizeText(target.source) ?? undefined;
+  const kind = normalizeText(target.kind);
+
+  if ((kind === "conversation" || (!kind && conversationId)) && conversationId) {
+    return {
+      kind: "conversation",
+      conversationId,
+      source,
+    };
+  }
+
+  if ((kind === "group" || (!kind && groupId)) && groupId) {
+    return {
+      kind: "group",
+      groupId,
+      source,
+    };
+  }
+
+  if ((kind === "route" || (!kind && route)) && route?.startsWith("/")) {
+    return {
+      kind: "route",
+      route,
+      source,
+    };
+  }
+
+  return null;
+}
 
 export function isNativeMobileBridgeAvailable() {
   return Capacitor.isNativePlatform() && (Capacitor.getPlatform() === "ios" || Capacitor.getPlatform() === "android");
@@ -126,7 +181,7 @@ export async function getPendingNativeLaunchTarget() {
 
   try {
     const result = await mobileBridge.getPendingLaunchTarget();
-    return result.target ?? null;
+    return normalizeLaunchTarget(result.target as RawLaunchTarget);
   } catch {
     return null;
   }
