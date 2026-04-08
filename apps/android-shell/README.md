@@ -4,6 +4,7 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 
 ## Commands
 
+- `pnpm android:run`
 - `pnpm android:configure`
 - `pnpm android:init`
 - `pnpm android:sync`
@@ -13,6 +14,10 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 - `pnpm android:doctor`
 
 ## Notes
+
+- `pnpm android:run` is the default local development entrypoint for Android.
+- It will auto-detect `ANDROID_SDK_ROOT`, reuse a connected device or start the first available emulator, and install-launch the debug app.
+- If the current Java runtime is lower than 11, it downloads a local JDK 17 into `.cache/tools/jdk-17` and uses it only for this repository.
 
 - The Android shell targets remote Core API mode.
 - `apps/app/dist` is used as the web bundle source.
