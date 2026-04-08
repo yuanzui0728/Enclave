@@ -16,25 +16,7 @@ export function MobileShell({ children }: PropsWithChildren) {
   const showTabs = pathname.startsWith("/tabs/");
 
   return (
-    <div className="h-dvh min-h-dvh overflow-hidden bg-transparent text-[color:var(--text-primary)]">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 opacity-45"
-        style={{
-          backgroundImage: "var(--bg-grid)",
-          backgroundSize: "22px 22px",
-          maskImage: "linear-gradient(180deg, rgba(0,0,0,0.45), transparent 85%)",
-        }}
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_68%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 bottom-0 h-56 bg-[radial-gradient(circle_at_bottom,rgba(56,189,248,0.08),transparent_64%)]"
-      />
-
+    <div className="h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
       <div
         className="relative mx-auto flex h-full min-h-0 w-full max-w-[460px] flex-col px-3 sm:px-4"
         style={{
@@ -44,11 +26,11 @@ export function MobileShell({ children }: PropsWithChildren) {
           paddingLeft: "calc(0.75rem + var(--safe-area-inset-left))",
         }}
       >
-        <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[38px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(10,14,24,0.94),rgba(13,22,35,0.86)_48%,rgba(8,12,22,0.94))] shadow-[var(--shadow-shell)] before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.16),transparent)] before:content-['']">
+        <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[38px] border border-[color:var(--border-faint)] bg-[color:var(--surface-section)] shadow-[var(--shadow-shell)]">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
           {showTabs ? (
             <nav
-              className="shrink-0 grid grid-cols-5 border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(7,12,20,0.62),rgba(7,12,20,0.82))] px-2 pt-2 backdrop-blur-xl"
+              className="shrink-0 grid grid-cols-5 border-t border-[color:var(--border-faint)] bg-white px-2 pt-2"
               style={{ paddingBottom: "max(0.5rem, var(--safe-area-inset-bottom))" }}
             >
               {tabs.map(({ to, label, icon: Icon }) => {
@@ -58,10 +40,10 @@ export function MobileShell({ children }: PropsWithChildren) {
                     key={to}
                     to={to}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-[20px] px-2 py-2 text-[11px] transition-[background-color,color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      "flex flex-col items-center gap-1 rounded-[20px] px-2 py-2 text-[11px] transition-[color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
-                        ? "bg-[linear-gradient(135deg,rgba(249,115,22,0.18),rgba(255,255,255,0.08))] text-white shadow-[var(--shadow-soft)]"
-                        : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-white",
+                        ? "text-[color:var(--brand-primary)]"
+                        : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
                     )}
                   >
                     <Icon size={17} />

@@ -59,7 +59,7 @@ export function CreateGroupPage() {
       />
 
       <AppSection>
-        <div className="text-sm font-medium text-white">群名称</div>
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">群名称</div>
         <TextField
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -73,7 +73,7 @@ export function CreateGroupPage() {
 
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">选择成员</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">选择成员</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
             至少选择一位已经建立关系的人，才能开始一个新的群聊。
           </div>
@@ -102,19 +102,19 @@ export function CreateGroupPage() {
               className={`flex w-full items-center gap-3 rounded-[24px] border px-4 py-4 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] ${
                 checked
                   ? "border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(249,115,22,0.16),rgba(251,191,36,0.08))]"
-                  : "border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.04))]"
+                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
               } disabled:opacity-60`}
             >
               <AvatarChip name={character.name} src={character.avatar} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-white">{character.name}</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">{character.name}</div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">{character.relationship}</div>
               </div>
               <div
                 className={`h-5 w-5 rounded-full border ${
                   checked
                     ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
-                    : "border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.04))]"
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
                 }`}
               />
             </button>

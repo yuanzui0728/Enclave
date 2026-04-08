@@ -50,7 +50,7 @@ export function ConversationThreadPanel({
         ) : null}
         <AvatarChip name={conversationTitle} />
         <div className="min-w-0 flex-1">
-          <div className={isDesktop ? "truncate text-base font-semibold text-white" : "truncate text-sm font-medium text-white"}>
+          <div className={isDesktop ? "truncate text-base font-semibold text-[color:var(--text-primary)]" : "truncate text-sm font-medium text-[color:var(--text-primary)]"}>
             {conversationTitle}
           </div>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">

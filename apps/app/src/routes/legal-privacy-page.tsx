@@ -12,7 +12,7 @@ export function LegalPrivacyPage() {
       </Button>
       <AppSection className="mt-4 space-y-4 p-6">
         <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--text-muted)]">Privacy</div>
-        <h1 className="text-2xl font-semibold text-white">隐私政策</h1>
+        <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">隐私政策</h1>
         <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
           隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、会话同步和安全审计。
         </p>

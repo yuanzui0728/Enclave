@@ -82,13 +82,13 @@ export function FriendRequestsPage() {
         {(requestsQuery.data ?? []).map((request) => (
           <div
             key={request.id}
-            className="rounded-[30px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] p-4 shadow-[var(--shadow-card)]"
+            className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-card)]"
           >
             <div className="flex items-start gap-3">
               <AvatarChip name={request.characterName} src={request.characterAvatar} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-white">{request.characterName}</div>
-                <div className="mt-3 rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">{request.characterName}</div>
+                <div className="mt-3 rounded-[22px] bg-[color:var(--surface-soft)] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
                   {request.greeting || "想认识你。"}
                 </div>
                 {request.triggerScene ? (

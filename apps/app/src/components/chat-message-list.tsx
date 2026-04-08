@@ -47,7 +47,7 @@ export function ChatMessageList({ messages, groupMode = false, emptyState }: Cha
                 className={`rounded-[22px] px-4 py-3 text-sm leading-7 ${
                   isUser
                     ? "bg-[linear-gradient(135deg,rgba(249,115,22,0.95),rgba(251,191,36,0.9))] text-white shadow-[var(--shadow-soft)]"
-                    : "border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.04))] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                    : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                 }`}
               >
                 {message.text}

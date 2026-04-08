@@ -111,7 +111,7 @@ export function ProfilePage() {
         <div className="flex items-center gap-4">
           <AvatarChip name={draftName} src={avatar} size="lg" />
           <div>
-            <div className="text-xl font-semibold text-white">{username ?? "世界主人"}</div>
+            <div className="text-xl font-semibold text-[color:var(--text-primary)]">{username ?? "世界主人"}</div>
             <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
               编辑你的身份、签名与这个世界对你的称呼。
             </div>
@@ -147,7 +147,7 @@ export function ProfilePage() {
 
       <AppSection className="space-y-4 p-5">
         <div>
-          <div className="text-sm font-medium text-white">专属 AI Key</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">专属 AI Key</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
             默认会使用实例级 Provider。你也可以只为这个世界主人覆盖成自己的 API Key。
           </div>
@@ -211,7 +211,7 @@ export function ProfilePage() {
 
       <AppSection className="space-y-4 p-5">
         <div>
-          <div className="text-sm font-medium text-white">快捷入口</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">快捷入口</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
             常用页面和说明文档都放在这里。
           </div>

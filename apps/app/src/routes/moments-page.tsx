@@ -8,12 +8,12 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { useSessionStore } from "../store/session-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function MomentsPage() {
   const isDesktopLayout = useDesktopLayout();
   const queryClient = useQueryClient();
-  const userId = useSessionStore((state) => state.userId);
+  const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
   const [text, setText] = useState("");
@@ -25,17 +25,16 @@ export function MomentsPage() {
     queryFn: () => getMoments(),
   });
   const blockedQuery = useQuery({
-    queryKey: ["app-moments-blocked-characters", baseUrl, userId],
-    queryFn: () => getBlockedCharacters(userId!),
-    enabled: Boolean(userId),
+    queryKey: ["app-moments-blocked-characters", baseUrl],
+    queryFn: () => getBlockedCharacters(baseUrl),
+    enabled: Boolean(ownerId),
   });
 
   const createMutation = useMutation({
     mutationFn: () =>
       createUserMoment({
-        userId: userId!,
         text: text.trim(),
-      }),
+      }, baseUrl),
     onSuccess: async () => {
       setText("");
       setSuccessNotice("朋友圈已发布。");
@@ -45,9 +44,7 @@ export function MomentsPage() {
 
   const likeMutation = useMutation({
     mutationFn: (momentId: string) =>
-      toggleMomentLike(momentId, {
-        authorId: userId!,
-      }),
+      toggleMomentLike(momentId, baseUrl),
     onSuccess: async () => {
       setSuccessNotice("朋友圈互动已更新。");
       await queryClient.invalidateQueries({ queryKey: ["app-moments", baseUrl] });
@@ -57,9 +54,8 @@ export function MomentsPage() {
   const commentMutation = useMutation({
     mutationFn: (momentId: string) =>
       addMomentComment(momentId, {
-        authorId: userId!,
         text: commentDrafts[momentId].trim(),
-      }),
+      }, baseUrl),
     onSuccess: async (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setSuccessNotice("朋友圈互动已更新。");
@@ -95,7 +91,7 @@ export function MomentsPage() {
         <div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
           <AppSection className="space-y-4 xl:sticky xl:top-6 xl:self-start">
             <div>
-              <div className="text-sm font-medium text-white">发一条朋友圈</div>
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条朋友圈</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">桌面端把发布区单独留下，方便边看边写。</div>
             </div>
             <TextAreaField
@@ -117,7 +113,7 @@ export function MomentsPage() {
 
           <AppSection className="space-y-4">
             <div>
-              <div className="text-sm font-medium text-white">最近动态</div>
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">最近动态</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">正文优先，互动控件退到辅助位置，不抢阅读注意力。</div>
             </div>
             {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
@@ -138,10 +134,10 @@ export function MomentsPage() {
                 }
                 secondary={
                   moment.comments.length > 0 ? (
-                    <div className="space-y-2 rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] p-3">
+                    <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
                       {moment.comments.slice(-3).map((comment) => (
                         <div key={comment.id} className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                          <span className="text-white">{comment.authorName}</span>
+                          <span className="text-[color:var(--text-primary)]">{comment.authorName}</span>
                           {`：${comment.text}`}
                         </div>
                       ))}
@@ -189,7 +185,7 @@ export function MomentsPage() {
       <TabPageTopBar title="朋友圈" />
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">发一条朋友圈</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条朋友圈</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里更偏向熟人视角，适合留住细一点、慢一点的生活片段。</div>
         </div>
         <TextAreaField
@@ -210,7 +206,7 @@ export function MomentsPage() {
 
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">最近动态</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">最近动态</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">生活流内容应该更轻一点，评论和互动只做辅助，不压过正文。</div>
         </div>
         {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
@@ -233,10 +229,10 @@ export function MomentsPage() {
             }
             secondary={
               moment.comments.length > 0 ? (
-                <div className="space-y-2 rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] p-3">
+                <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
                   {moment.comments.slice(-3).map((comment) => (
                     <div key={comment.id} className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                      <span className="text-white">{comment.authorName}</span>
+                      <span className="text-[color:var(--text-primary)]">{comment.authorName}</span>
                       {`：${comment.text}`}
                     </div>
                   ))}

@@ -7,7 +7,7 @@ import { SocialPostCard } from "../components/social-post-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
-import { useSessionStore } from "../store/session-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 
 const scenes = [
   { id: "coffee_shop", label: "咖啡馆" },
@@ -19,7 +19,7 @@ const scenes = [
 export function DiscoverPage() {
   const isDesktopLayout = useDesktopLayout();
   const queryClient = useQueryClient();
-  const userId = useSessionStore((state) => state.userId);
+  const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
   const [text, setText] = useState("");
@@ -33,17 +33,16 @@ export function DiscoverPage() {
     queryFn: () => getFeed(1, 20),
   });
   const blockedQuery = useQuery({
-    queryKey: ["app-discover-blocked-characters", baseUrl, userId],
-    queryFn: () => getBlockedCharacters(userId!),
-    enabled: Boolean(userId),
+    queryKey: ["app-discover-blocked-characters", baseUrl],
+    queryFn: () => getBlockedCharacters(baseUrl),
+    enabled: Boolean(ownerId),
   });
 
   const createPostMutation = useMutation({
     mutationFn: () =>
       createFeedPost({
-        authorId: userId!,
         text: text.trim(),
-      }),
+      }, baseUrl),
     onSuccess: async () => {
       setText("");
       setSuccessNotice("发现页动态已发布。");
@@ -53,16 +52,16 @@ export function DiscoverPage() {
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
-      const result = await shake({ userId: userId! });
+      const result = await shake(baseUrl);
       if (!result) {
         return null;
       }
       await sendFriendRequest(
         {
-          userId: userId!,
           characterId: result.character.id,
           greeting: result.greeting,
         },
+        baseUrl,
       );
       return result;
     },
@@ -74,16 +73,15 @@ export function DiscoverPage() {
 
       setSuccessNotice("新的好友申请已发送。");
       setShakeMessage(`${result.character.name} 向你发来了好友申请：${result.greeting}`);
-      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl, userId] });
+      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
     },
   });
 
   const sceneMutation = useMutation({
     mutationFn: async (scene: string) => {
       const result = await triggerSceneFriendRequest({
-        userId: userId!,
         scene,
-      });
+      }, baseUrl);
       return { request: result, scene };
     },
     onSuccess: ({ request, scene }) => {
@@ -98,12 +96,12 @@ export function DiscoverPage() {
       setSceneMessage(
         `${request.characterName} 在${sceneLabel}里注意到了你：${request.greeting ?? "对你产生了兴趣。"}`
       );
-      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl, userId] });
+      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
     },
   });
 
   const likeMutation = useMutation({
-    mutationFn: (postId: string) => likeFeedPost(postId, { userId: userId! }),
+    mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
     onSuccess: async () => {
       setSuccessNotice("发现页互动已更新。");
       await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
@@ -113,9 +111,8 @@ export function DiscoverPage() {
   const commentMutation = useMutation({
     mutationFn: (postId: string) =>
       addFeedComment(postId, {
-        authorId: userId!,
         text: commentDrafts[postId].trim(),
-      }),
+      }, baseUrl),
     onSuccess: async (_, postId) => {
       setCommentDrafts((current) => ({ ...current, [postId]: "" }));
       setSuccessNotice("发现页互动已更新。");
@@ -153,9 +150,9 @@ export function DiscoverPage() {
 
         <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
           <div className="space-y-5">
-            <AppSection className="space-y-4 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(249,115,22,0.16),rgba(255,255,255,0.035))]">
+            <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
               <div>
-                <div className="text-sm font-medium text-white">随机相遇</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">随机相遇</div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">把偶遇、场景和反馈放在同一块桌面面板中。</div>
               </div>
               <div className="flex items-center gap-3">
@@ -185,7 +182,7 @@ export function DiscoverPage() {
 
             <AppSection className="space-y-4">
               <div>
-                <div className="text-sm font-medium text-white">发一条发现页动态</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条发现页动态</div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">左侧负责动作和发布，右侧专注内容流。</div>
               </div>
               <TextAreaField
@@ -203,7 +200,7 @@ export function DiscoverPage() {
 
           <AppSection className="space-y-4">
             <div>
-              <div className="text-sm font-medium text-white">广场动态</div>
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">广场动态</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">在桌面端保留更宽正文和更清晰的互动区。</div>
             </div>
             {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
@@ -260,10 +257,11 @@ export function DiscoverPage() {
 
   return (
     <AppPage>
+
       <TabPageTopBar title="发现" />
-      <AppSection className="space-y-4 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(249,115,22,0.16),rgba(255,255,255,0.035))]">
+            <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
         <div>
-          <div className="text-sm font-medium text-white">随机相遇</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">随机相遇</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">轻轻推动世界一次，看看今天会从哪里有人靠近你。</div>
         </div>
         <div className="flex items-center gap-3">
@@ -297,7 +295,7 @@ export function DiscoverPage() {
 
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">发一条发现页动态</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条发现页动态</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里更像公共广场，动态会等待熟人和角色来回应。</div>
         </div>
         <TextAreaField
@@ -318,7 +316,7 @@ export function DiscoverPage() {
 
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">广场动态</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">广场动态</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">先看内容，再做互动，避免控件把注意力从正文上抢走。</div>
         </div>
         {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}

@@ -111,17 +111,17 @@ export function DesktopRuntimeGuard() {
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(7,10,18,0.96),rgba(9,13,21,0.98))] px-6">
-      <div className="w-full max-w-md rounded-[32px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.045))] p-6 text-white shadow-[var(--shadow-shell)] backdrop-blur-xl">
+      <div className="w-full max-w-md rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 text-[color:var(--text-primary)] shadow-[var(--shadow-shell)] backdrop-blur-xl">
         <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">请稍候</div>
         <h2 className="mt-4 text-2xl font-semibold">{title}</h2>
         <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{description}</p>
 
-        <div className="mt-5 rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+        <div className="mt-5 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
           {hasDesktopRuntimeControl && busy ? "正在唤醒隐界..." : busy ? "正在重新检查入口..." : helperText}
         </div>
 
         {hasDesktopRuntimeControl && diagnostics ? (
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]">
             <div>命令来源：{diagnostics.coreApiCommandSource}</div>
             <div>内置 Core API：{diagnostics.bundledCoreApiExists ? "已找到" : "未找到"}</div>
             <div>端口占用：{diagnostics.coreApiPortOccupied ? "是" : "否"}</div>

@@ -11,7 +11,7 @@ import { Button, ErrorBlock, InlineNotice, LoadingBlock, SetupStatusCard, SetupS
 import { setAppRuntimeConfig, useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 
 type DesktopSetupPanelProps = {
-  token: string | null;
+  hasOwner: boolean;
   onContinue: () => void;
 };
 
@@ -38,7 +38,7 @@ function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   }
 }
 
-export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps) {
+export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelProps) {
   const runtimeConfig = useAppRuntimeConfig();
   const [mode, setMode] = useState<WorldAccessMode>(
     runtimeConfig.worldAccessMode ?? (runtimeConfig.apiBaseUrl ? "local" : "cloud"),
@@ -292,19 +292,19 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
         />
         <SetupStatusCard
           title="Next step"
-          value={token ? "Return to world" : "Finish setup"}
+          value={hasOwner ? "Return to world" : "Finish setup"}
           detail={
-            token
+            hasOwner
               ? "After the entry is confirmed, the desktop app can jump back into your world."
               : "After the entry is confirmed, you can continue into onboarding."
           }
-          ok={Boolean(token)}
+          ok={hasOwner}
         />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))] p-5 shadow-[var(--shadow-section)]">
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => selectMode("cloud")}
@@ -331,8 +331,8 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))] p-5 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-white">
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
               {mode === "local" ? "Local world connection" : "Cloud world verification"}
             </div>
             <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
@@ -384,7 +384,7 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
                     variant="secondary"
                     size="lg"
                   >
-                    {token ? "Enter Yinjie" : "Continue"}
+                    {hasOwner ? "Enter Yinjie" : "Continue"}
                   </Button>
                 </div>
               </div>
@@ -456,7 +456,7 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
                     variant="secondary"
                     size="lg"
                   >
-                    {token ? "Enter Yinjie" : "Continue"}
+                    {hasOwner ? "Enter Yinjie" : "Continue"}
                   </Button>
                 </div>
               </div>
@@ -465,8 +465,8 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))] p-5 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-white">Desktop entry notes</div>
+          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">Desktop entry notes</div>
             <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
               <p>The desktop shell stays in remote-connected mode, but the entry flow is laid out for a wide workspace.</p>
               <p>Once the entry is confirmed, chat pages switch to the desktop workspace instead of the mobile list layout.</p>
@@ -474,8 +474,8 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
           </section>
 
           {mode === "cloud" ? (
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))] p-5 shadow-[var(--shadow-section)]">
-              <div className="text-sm font-medium text-white">Cloud world status</div>
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">Cloud world status</div>
 
               {cloudStatusQuery.isLoading ? (
                 <LoadingBlock className="mt-4 px-0 py-0 text-left" label="Checking your cloud world..." />
@@ -497,7 +497,7 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
 
               {cloudCanRequestWorld ? (
                 <div className="mt-4 space-y-3 rounded-[24px] border border-[color:var(--border-faint)] bg-black/10 p-4">
-                  <div className="text-sm font-medium text-white">No cloud world yet</div>
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">No cloud world yet</div>
                   <div className="text-sm leading-7 text-[color:var(--text-secondary)]">
                     Submit a world request and we will keep showing the latest platform response here.
                   </div>
@@ -523,8 +523,8 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
               ) : null}
             </section>
           ) : (
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035))] p-5 shadow-[var(--shadow-section)]">
-              <div className="text-sm font-medium text-white">Local world checklist</div>
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">Local world checklist</div>
               <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
                 <p>Confirm the Core API is reachable from this desktop before continuing.</p>
                 <p>Recommended default for local debugging: `http://127.0.0.1:3000`.</p>
@@ -550,3 +550,5 @@ export function DesktopSetupPanel({ token, onContinue }: DesktopSetupPanelProps)
     </div>
   );
 }
+
+

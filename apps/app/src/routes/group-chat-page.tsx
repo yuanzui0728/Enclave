@@ -68,7 +68,7 @@ export function GroupChatPage() {
         </Button>
         <AvatarChip name={groupQuery.data?.name ?? "群聊"} />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-white">{groupQuery.data?.name ?? "群聊"}</div>
+          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">{groupQuery.data?.name ?? "群聊"}</div>
           <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
             {membersQuery.data?.length ?? 0} 位成员
           </div>
@@ -83,7 +83,7 @@ export function GroupChatPage() {
             <InlineNotice className="rounded-full px-3 py-2 text-xs" tone="muted">正在读取成员...</InlineNotice>
           ) : null}
           {(membersQuery.data ?? []).map((member) => (
-            <div key={member.id} className="flex min-w-fit items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.065),rgba(255,255,255,0.04))] px-3 py-2 shadow-[var(--shadow-soft)]">
+            <div key={member.id} className="flex min-w-fit items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]">
               <AvatarChip name={member.memberName ?? member.memberId} src={member.memberAvatar} size="sm" />
               <span className="text-xs text-[color:var(--text-secondary)]">{member.memberName ?? member.memberId}</span>
             </div>

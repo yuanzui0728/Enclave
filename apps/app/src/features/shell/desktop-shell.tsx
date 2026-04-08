@@ -120,33 +120,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
     <div className="h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
       <div
         className={cn(
-          "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-white/10 bg-[linear-gradient(180deg,rgba(7,11,18,0.9),rgba(9,14,22,0.92))] shadow-[0_30px_90px_rgba(2,6,23,0.46)] backdrop-blur-[36px]",
+          "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-[var(--shadow-shell)]",
           shellInsetClass,
         )}
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-45"
-          style={{
-            backgroundImage: "var(--bg-grid)",
-            backgroundSize: "26px 26px",
-            maskImage: "linear-gradient(180deg, rgba(0,0,0,0.8), transparent 92%)",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)]"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-[-8%] top-[-16%] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.16),transparent_68%)] blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute bottom-[-20%] right-[-10%] h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,0.12),transparent_72%)] blur-3xl"
-        />
 
-        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-5">
+        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] px-5">
           <div
             className="flex min-w-0 flex-1 items-center gap-3"
             data-tauri-drag-region
@@ -158,17 +137,17 @@ export function DesktopShell({ children }: PropsWithChildren) {
               void desktopWindow.toggleMaximize();
             }}
           >
-            <div className="flex h-10 items-center gap-3 rounded-full border border-white/10 bg-white/6 px-3 shadow-[0_12px_30px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+            <div className="flex h-10 items-center gap-3 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-[var(--shadow-soft)]">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(249,115,22,0.95),rgba(251,191,36,0.86))] text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(249,115,22,0.28)]">
                 YJ
               </div>
               <div className="leading-none">
-                <div className="text-sm font-medium text-white">Yinjie</div>
-                <div className="mt-1 text-[11px] tracking-[0.22em] text-white/45">DESKTOP WORLD</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">Yinjie</div>
+                <div className="mt-1 text-[11px] tracking-[0.22em] text-[color:var(--text-dim)]">DESKTOP WORLD</div>
               </div>
             </div>
 
-            <div className="hidden min-w-0 items-center gap-2 rounded-full border border-white/8 bg-black/12 px-3 py-2 text-xs text-white/55 xl:flex">
+            <div className="hidden min-w-0 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--text-muted)] xl:flex">
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]" />
               <span className="truncate">Soft shell desktop frame</span>
             </div>
@@ -216,7 +195,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1 gap-4 p-4 pt-3">
-          <aside className="hidden w-[94px] shrink-0 rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(8,13,20,0.84),rgba(10,16,24,0.76))] p-3 shadow-[0_22px_60px_rgba(15,23,42,0.24)] lg:flex lg:flex-col">
+          <aside className="hidden w-[94px] shrink-0 rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3 shadow-[var(--shadow-soft)] lg:flex lg:flex-col">
             <nav className="flex flex-1 flex-col gap-2">
               {navItems.map(({ to, label, icon: Icon, shortLabel }) => {
                 const active = isActive(pathname, to);
@@ -228,16 +207,16 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     className={cn(
                       "group flex flex-col items-center gap-2 rounded-[22px] px-3 py-3 text-[11px] transition-[background-color,color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
-                        ? "bg-[linear-gradient(135deg,rgba(255,255,255,0.12),rgba(249,115,22,0.18))] text-white shadow-[0_18px_35px_rgba(15,23,42,0.22)]"
-                        : "text-[color:var(--text-muted)] hover:bg-white/6 hover:text-white",
+                        ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] shadow-[var(--shadow-soft)]"
+                        : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
                     )}
                   >
                     <div
                       className={cn(
                         "flex h-11 w-11 items-center justify-center rounded-[18px] border transition-colors",
                         active
-                          ? "border-white/10 bg-white/8"
-                          : "border-transparent bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015))] group-hover:border-white/8 group-hover:bg-white/6",
+                          ? "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)]"
+                          : "border-transparent bg-[color:var(--surface-soft)] group-hover:border-[color:var(--border-faint)] group-hover:bg-[color:var(--surface-secondary)]",
                       )}
                     >
                       <Icon size={18} />
@@ -250,7 +229,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
             </nav>
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(11,17,27,0.86),rgba(10,16,26,0.82))] shadow-[0_24px_70px_rgba(2,6,23,0.28)] backdrop-blur-[28px]">
+          <main className="min-w-0 flex-1 overflow-hidden rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-[var(--shadow-card)]">
             {children}
           </main>
         </div>
@@ -275,10 +254,10 @@ function DesktopWindowButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-full border text-white/78 transition-[background-color,color,border-color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+        "flex h-9 w-9 items-center justify-center rounded-full border text-[color:var(--text-muted)] transition-[background-color,color,border-color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
         danger
-          ? "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] hover:border-red-400/45 hover:bg-[linear-gradient(180deg,rgba(248,113,113,0.28),rgba(239,68,68,0.22))] hover:text-white"
-          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] hover:border-white/14 hover:bg-white/8 hover:text-white",
+          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-danger)] hover:bg-[color:var(--state-danger-bg)] hover:text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}

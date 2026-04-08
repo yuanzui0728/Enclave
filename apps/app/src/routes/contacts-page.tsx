@@ -54,7 +54,7 @@ export function ContactsPage() {
           <AppSection className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-white">我的联系人</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">我的联系人</div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">已建立关系的人优先停留在左侧工作区。</div>
               </div>
               <div className="flex items-center gap-3">
@@ -74,18 +74,18 @@ export function ContactsPage() {
                   type="button"
                   onClick={() => startChatMutation.mutate(character.id)}
                   disabled={startChatMutation.isPending}
-                  className="flex w-full items-center gap-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.05))] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
+                  className="flex w-full items-center gap-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
                 >
                   <AvatarChip name={character.name} src={character.avatar} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-white">{character.name}</div>
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">{character.name}</div>
                     <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                       {pendingCharacterId === character.id
                         ? "正在发起会话..."
                         : `${character.relationship} · 亲密度 ${friendship.intimacyLevel}`}
                     </div>
                   </div>
-                  <div className={`h-2.5 w-2.5 rounded-full ${character.isOnline ? "bg-emerald-400" : "bg-slate-600"}`} />
+                  <div className={`h-2.5 w-2.5 rounded-full ${character.isOnline ? "bg-emerald-400" : "bg-gray-300"}`} />
                 </button>
               ))}
               {!friendsQuery.isLoading && !friendsQuery.isError && !friendsQuery.data?.length ? (
@@ -108,7 +108,7 @@ export function ContactsPage() {
 
           <AppSection className="space-y-4">
             <div>
-              <div className="text-sm font-medium text-white">世界里的人</div>
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">世界里的人</div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">桌面端把待接近角色放到更宽的资料网格里，浏览时不用挤在单列。</div>
             </div>
             <InlineNotice tone="muted">这里展示尚未建立关系的角色档案。可以先浏览，再决定是否进入对话。</InlineNotice>
@@ -120,10 +120,10 @@ export function ContactsPage() {
                   key={character.id}
                   to="/character/$characterId"
                   params={{ characterId: character.id }}
-                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] p-5 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.055))] hover:shadow-[var(--shadow-card)]"
+                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]"
                 >
                   <AvatarChip name={character.name} src={character.avatar} size="lg" />
-                  <div className="mt-4 text-base font-medium text-white">{character.name}</div>
+                  <div className="mt-4 text-base font-medium text-[color:var(--text-primary)]">{character.name}</div>
                   <div className="mt-1 line-clamp-1 text-xs text-[color:var(--text-muted)]">{character.relationship}</div>
                   <div className="mt-3 line-clamp-3 text-sm leading-7 text-[color:var(--text-secondary)]">{character.bio}</div>
                 </Link>
@@ -156,7 +156,7 @@ export function ContactsPage() {
       <AppSection className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-white">我的联系人</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">我的联系人</div>
             <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">已经认识的人会先聚在这里，你可以直接继续对话或拉进群聊。</div>
           </div>
           <div className="flex items-center gap-3">
@@ -176,18 +176,18 @@ export function ContactsPage() {
               type="button"
               onClick={() => startChatMutation.mutate(character.id)}
               disabled={startChatMutation.isPending}
-              className="flex w-full items-center gap-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.05))] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
+              className="flex w-full items-center gap-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
             >
               <AvatarChip name={character.name} src={character.avatar} />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-white">{character.name}</div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">{character.name}</div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                   {pendingCharacterId === character.id
                     ? "正在发起会话..."
                     : `${character.relationship} · 亲密度 ${friendship.intimacyLevel}`}
                 </div>
               </div>
-              <div className={`h-2.5 w-2.5 rounded-full ${character.isOnline ? "bg-emerald-400" : "bg-slate-600"}`} />
+              <div className={`h-2.5 w-2.5 rounded-full ${character.isOnline ? "bg-emerald-400" : "bg-gray-300"}`} />
             </button>
           ))}
           {!friendsQuery.isLoading && !friendsQuery.isError && !friendsQuery.data?.length ? (
@@ -210,7 +210,7 @@ export function ContactsPage() {
 
       <AppSection className="space-y-4">
         <div>
-          <div className="text-sm font-medium text-white">世界里的人</div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">世界里的人</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">尚未建立关系的角色会留在这一层，适合先浏览，再决定是否接近。</div>
         </div>
         <InlineNotice tone="muted">
@@ -224,10 +224,10 @@ export function ContactsPage() {
               key={character.id}
               to="/character/$characterId"
               params={{ characterId: character.id }}
-              className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] p-4 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.055))] hover:shadow-[var(--shadow-card)]"
+              className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]"
             >
               <AvatarChip name={character.name} src={character.avatar} size="lg" />
-              <div className="mt-4 text-sm font-medium text-white">{character.name}</div>
+              <div className="mt-4 text-sm font-medium text-[color:var(--text-primary)]">{character.name}</div>
               <div className="mt-1 line-clamp-1 text-xs text-[color:var(--text-muted)]">{character.relationship}</div>
               <div className="mt-3 line-clamp-2 text-xs leading-6 text-[color:var(--text-secondary)]">{character.bio}</div>
             </Link>

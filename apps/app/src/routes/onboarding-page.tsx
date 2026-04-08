@@ -71,18 +71,18 @@ export function OnboardingPage() {
 
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center py-8 text-center">
-      <AppSection className="w-full max-w-md bg-[linear-gradient(135deg,rgba(249,115,22,0.18),rgba(255,255,255,0.04)_44%,rgba(15,23,42,0.24)_100%)] px-6 py-8">
+      <AppSection className="w-full max-w-md bg-[linear-gradient(135deg,rgba(249,115,22,0.08),#ffffff_60%)] px-6 py-8">
         <div className="text-[11px] uppercase tracking-[0.36em] text-[color:var(--brand-secondary)]">
           世界主人
         </div>
-        <h1 className="mt-6 text-3xl font-semibold tracking-[0.16em] text-white">
+        <h1 className="mt-6 text-3xl font-semibold tracking-[0.16em] text-[color:var(--text-primary)]">
           告诉我，你叫什么名字？
         </h1>
         <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
           这个世界会围绕你持续运转，先留下一个名字，我们就开始。
         </p>
 
-        <div className="mt-8 rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] p-5 text-left shadow-[var(--shadow-section)]">
+        <div className="mt-8 rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-5 text-left shadow-[var(--shadow-section)]">
           <TextField
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -111,13 +111,13 @@ export function OnboardingPage() {
           </Button>
         </div>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[color:var(--text-muted)]">
-          <Link to="/legal/privacy" className="transition hover:text-white">
+          <Link to="/legal/privacy" className="transition hover:text-[color:var(--text-primary)]">
             隐私政策
           </Link>
-          <Link to="/legal/terms" className="transition hover:text-white">
+          <Link to="/legal/terms" className="transition hover:text-[color:var(--text-primary)]">
             用户协议
           </Link>
-          <Link to="/legal/community" className="transition hover:text-white">
+          <Link to="/legal/community" className="transition hover:text-[color:var(--text-primary)]">
             社区规范
           </Link>
         </div>

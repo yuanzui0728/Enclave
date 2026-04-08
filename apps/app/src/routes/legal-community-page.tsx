@@ -12,7 +12,7 @@ export function LegalCommunityPage() {
       </Button>
       <AppSection className="mt-4 space-y-4 p-6">
         <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--text-muted)]">Safety</div>
-        <h1 className="text-2xl font-semibold text-white">社区与安全说明</h1>
+        <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">社区与安全说明</h1>
         <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
           如果你遇到骚扰、不适、误导或越界内容，可以在角色详情页、聊天页和资料页发起举报，也可以直接屏蔽角色。
         </p>

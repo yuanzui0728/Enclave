@@ -10,9 +10,9 @@ const buttonVariants = cva(
         primary:
           "border-transparent bg-[var(--brand-gradient)] px-4 py-2.5 text-white shadow-[var(--shadow-card)] hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[var(--shadow-lift)]",
         secondary:
-          "border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.045))] px-4 py-2.5 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.06))] hover:shadow-[var(--shadow-card)]",
+          "border-[color:var(--border-subtle)] bg-white px-4 py-2.5 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]",
         ghost:
-          "border-transparent bg-transparent px-3 py-2 text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-white",
+          "border-transparent bg-transparent px-3 py-2 text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
         danger:
           "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(239,68,68,0.18),rgba(239,68,68,0.14))] px-4 py-2.5 text-[color:var(--state-danger-text)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[rgba(239,68,68,0.22)]",
       },

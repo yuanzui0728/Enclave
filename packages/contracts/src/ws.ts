@@ -14,16 +14,12 @@ export type ChatEventName = (typeof CHAT_EVENTS)[keyof typeof CHAT_EVENTS];
 
 export interface JoinConversationPayload {
   conversationId: string;
-  userId?: string;
-  token?: string;
 }
 
 export interface SendMessagePayload {
   conversationId: string;
   characterId: string;
   text: string;
-  userId?: string;
-  token?: string;
 }
 
 export interface TypingPayload {
@@ -41,3 +37,4 @@ export interface ConversationUpdatedPayload {
 export interface ChatErrorPayload {
   message: string;
 }
+

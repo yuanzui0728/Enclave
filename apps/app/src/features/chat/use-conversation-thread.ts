@@ -12,12 +12,12 @@ import {
   onTypingStop,
 } from "../../lib/socket";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
-import { useSessionStore } from "../../store/session-store";
+import { useWorldOwnerStore } from "../../store/world-owner-store";
 
 export function useConversationThread(conversationId: string) {
   const queryClient = useQueryClient();
-  const userId = useSessionStore((state) => state.userId);
-  const username = useSessionStore((state) => state.username);
+  const ownerId = useWorldOwnerStore((state) => state.id);
+  const username = useWorldOwnerStore((state) => state.username);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
   const [text, setText] = useState("");
@@ -36,9 +36,9 @@ export function useConversationThread(conversationId: string) {
   });
 
   const conversationsQuery = useQuery({
-    queryKey: ["app-conversations", baseUrl, userId],
-    queryFn: () => getConversations(userId!, baseUrl),
-    enabled: Boolean(userId),
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: Boolean(ownerId),
   });
 
   useEffect(() => {
@@ -63,9 +63,9 @@ export function useConversationThread(conversationId: string) {
 
     setSocketError(null);
     setTypingCharacterId(null);
-    joinConversationRoom({ conversationId, userId: userId ?? undefined });
+    joinConversationRoom({ conversationId });
     void markConversationRead(conversationId, baseUrl).then(() => {
-      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] });
+      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
     });
 
     const offMessage = onChatMessage((payload) => {
@@ -76,7 +76,7 @@ export function useConversationThread(conversationId: string) {
       setSocketError(null);
       setMessages((current) => {
         const withoutPendingEcho =
-          payload.senderType === "user" && payload.senderId === userId
+          payload.senderType === "user" && payload.senderId === ownerId
             ? removePendingUserEcho(current, payload)
             : current;
 
@@ -86,7 +86,7 @@ export function useConversationThread(conversationId: string) {
 
         return [...withoutPendingEcho, payload];
       });
-      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] });
+      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
     });
 
     const offTypingStart = onTypingStart((payload) => {
@@ -109,7 +109,7 @@ export function useConversationThread(conversationId: string) {
       setConversationTitle(payload.title);
       setConversationType(payload.type);
       setParticipants(payload.participants);
-      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl, userId] });
+      void queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
     });
 
     const offError = onChatError((message) => {
@@ -124,18 +124,18 @@ export function useConversationThread(conversationId: string) {
       offConversationUpdated();
       offError();
     };
-  }, [baseUrl, conversationId, queryClient, userId]);
+  }, [baseUrl, conversationId, ownerId, queryClient]);
 
   const sendMutation = useMutation({
     mutationFn: async () => {
       const trimmed = text.trim();
-      if (!trimmed || !userId) {
+      if (!trimmed || !ownerId) {
         return;
       }
 
       const targetCharacterId = resolveTargetCharacterId({
         conversationId,
-        userId,
+        ownerId,
         messages,
         participants,
       });
@@ -148,7 +148,6 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         text: trimmed,
-        userId,
       });
 
       setSocketError(null);
@@ -158,7 +157,7 @@ export function useConversationThread(conversationId: string) {
           id: `local_${Date.now()}`,
           conversationId,
           senderType: "user",
-          senderId: userId,
+          senderId: ownerId,
           senderName: username ?? "You",
           type: "text",
           text: trimmed,
@@ -212,7 +211,7 @@ function removePendingUserEcho(current: Message[], incoming: Message) {
 
 function resolveTargetCharacterId(input: {
   conversationId: string;
-  userId: string;
+  ownerId: string;
   messages: Message[];
   participants: string[];
 }) {
@@ -226,7 +225,7 @@ function resolveTargetCharacterId(input: {
     return fromParticipants;
   }
 
-  const directPrefix = `${input.userId}_`;
+  const directPrefix = `${input.ownerId}_`;
   if (input.conversationId.startsWith(directPrefix)) {
     const inferred = input.conversationId.slice(directPrefix.length).trim();
     if (inferred) {

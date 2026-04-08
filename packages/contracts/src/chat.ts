@@ -35,7 +35,6 @@ export interface ConversationListItem extends Conversation {
 }
 
 export interface GetOrCreateConversationRequest {
-  userId?: string;
   characterId: string;
 }
 
@@ -94,3 +93,4 @@ export interface SendGroupMessageRequest {
   senderType?: GroupMemberType;
   text: string;
 }
+

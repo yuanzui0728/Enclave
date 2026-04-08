@@ -63,11 +63,11 @@ export function CharacterDetailPage() {
       {characterQuery.isLoading ? (
         <LoadingBlock label="正在读取角色资料..." />
       ) : character ? (
-        <AppSection className="space-y-5 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(13,22,35,0.74))] p-6">
+        <AppSection className="space-y-5 p-6">
           <div className="flex items-center gap-4">
             <AvatarChip name={character.name} src={character.avatar} size="lg" />
             <div>
-              <div className="text-xl font-semibold text-white">{character.name}</div>
+              <div className="text-xl font-semibold text-[color:var(--text-primary)]">{character.name}</div>
               <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
             </div>
           </div>
@@ -75,13 +75,13 @@ export function CharacterDetailPage() {
           <p className="text-sm leading-7 text-[color:var(--text-secondary)]">{character.bio}</p>
 
           <div className="grid gap-3">
-            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               专长：{character.expertDomains.join("、") || "未设置"}
             </div>
-            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               当前状态：{character.currentActivity ?? (character.isOnline ? "在线" : "离线")}
             </div>
-            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               语气：{character.profile.traits.emotionalTone}
             </div>
           </div>

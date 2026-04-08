@@ -38,11 +38,11 @@ export function SplashPage() {
 
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center py-10 text-center">
-      <AppSection className="w-full max-w-sm bg-[linear-gradient(135deg,rgba(249,115,22,0.2),rgba(255,255,255,0.04)_42%,rgba(15,23,42,0.28)_100%)] px-8 py-10">
+      <AppSection className="w-full max-w-sm bg-[linear-gradient(135deg,rgba(249,115,22,0.08),#ffffff_60%)] px-8 py-10">
         <div className="text-[11px] uppercase tracking-[0.42em] text-[color:var(--text-muted)]">
           Beyond Reality
         </div>
-        <h1 className="mt-5 text-4xl font-semibold tracking-[0.22em] text-white">隐界</h1>
+        <h1 className="mt-5 text-4xl font-semibold tracking-[0.22em] text-[color:var(--text-primary)]">隐界</h1>
         <p className="mt-5 text-sm leading-8 text-[color:var(--text-secondary)]">
           你连接的不是一个账号，而是一整个持续运转的个人世界。
         </p>

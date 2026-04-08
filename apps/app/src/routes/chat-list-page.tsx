@@ -74,7 +74,7 @@ function MobileChatListPage() {
         title="消息"
         rightActions={
           <Link to="/friend-requests">
-            <Button variant="ghost" size="sm" className="rounded-full text-white">
+            <Button variant="ghost" size="sm" className="rounded-full text-[color:var(--text-secondary)]">
               新的朋友
             </Button>
           </Link>
@@ -86,7 +86,7 @@ function MobileChatListPage() {
       {quickStart.length > 0 ? (
         <AppSection className="space-y-4">
           <div>
-            <div className="text-sm font-medium text-white">快捷开始</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">快捷开始</div>
             <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
               从最近建立联系的人里直接开始，不用先切到通讯录。
             </div>
@@ -98,10 +98,10 @@ function MobileChatListPage() {
                 type="button"
                 onClick={() => startChatMutation.mutate(character.id)}
                 disabled={startChatMutation.isPending}
-                className="rounded-[26px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.04))] p-3 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.095),rgba(255,255,255,0.06))] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
+                className="rounded-[26px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3 text-left shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)] disabled:opacity-60"
               >
                 <AvatarChip name={character.name} src={character.avatar} />
-                <div className="mt-3 line-clamp-1 text-sm font-medium text-white">{character.name}</div>
+                <div className="mt-3 line-clamp-1 text-sm font-medium text-[color:var(--text-primary)]">{character.name}</div>
                 <div className="mt-1 line-clamp-1 text-[11px] text-[color:var(--text-muted)]">
                   {startChatMutation.variables === character.id && startChatMutation.isPending
                     ? "进入中..."
@@ -113,8 +113,8 @@ function MobileChatListPage() {
         </AppSection>
       ) : null}
 
-      <AppSection className={hasConversations ? "space-y-4" : "space-y-4"}>
-        {hasConversations ? <div className="text-sm font-medium text-white">最近消息</div> : null}
+      <AppSection className="space-y-4">
+        {hasConversations ? <div className="text-sm font-medium text-[color:var(--text-primary)]">最近消息</div> : null}
 
         {conversationsQuery.isLoading ? <LoadingBlock label="正在读取会话..." /> : null}
         {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
@@ -133,12 +133,12 @@ function MobileChatListPage() {
                 key={conversation.id}
                 to="/chat/$conversationId"
                 params={{ conversationId: conversation.id }}
-                className="flex items-center gap-3 rounded-[26px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.035))] px-4 py-4 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.05))] hover:shadow-[var(--shadow-card)]"
+                className="flex items-center gap-3 rounded-[26px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-soft)] transition-[background-color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]"
               >
                 <AvatarChip name={conversation.title} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="truncate text-sm font-medium text-white">{conversation.title}</div>
+                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">{conversation.title}</div>
                     <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
                       {formatTimestamp(conversation.lastMessage?.createdAt ?? conversation.updatedAt)}
                     </div>

@@ -601,14 +601,12 @@ export function getLatestWorldContext(baseUrl?: string) {
   return requestLegacyApi<WorldContext>("/world/context", undefined, baseUrl);
 }
 
-export function getFriendRequests(userIdOrBaseUrl?: string, baseUrl?: string) {
-  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
-  return requestLegacyApi<FriendRequest[]>("/social/friend-requests", undefined, resolvedBaseUrl);
+export function getFriendRequests(baseUrl?: string) {
+  return requestLegacyApi<FriendRequest[]>("/social/friend-requests", undefined, baseUrl);
 }
 
-export function getConversations(userIdOrBaseUrl?: string, baseUrl?: string) {
-  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
-  return requestLegacyApi<ConversationListItem[]>("/conversations", undefined, resolvedBaseUrl);
+export function getConversations(baseUrl?: string) {
+  return requestLegacyApi<ConversationListItem[]>("/conversations", undefined, baseUrl);
 }
 
 export function getOrCreateConversation(payload: GetOrCreateConversationRequest, baseUrl?: string) {
@@ -712,36 +710,32 @@ export function sendGroupMessage(id: string, payload: SendGroupMessageRequest, b
   );
 }
 
-export function acceptFriendRequest(id: string, _payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
-  const resolvedBaseUrl = typeof _payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(_payloadOrBaseUrl, baseUrl) : baseUrl;
+export function acceptFriendRequest(id: string, baseUrl?: string) {
   return requestLegacyApi<FriendListItem["friendship"]>(
     `/social/friend-requests/${id}/accept`,
     {
       method: "POST",
     },
-    resolvedBaseUrl,
+    baseUrl,
   );
 }
 
-export function declineFriendRequest(id: string, _payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
-  const resolvedBaseUrl = typeof _payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(_payloadOrBaseUrl, baseUrl) : baseUrl;
+export function declineFriendRequest(id: string, baseUrl?: string) {
   return requestLegacyApi<SuccessResponse>(
     `/social/friend-requests/${id}/decline`,
     {
       method: "POST",
     },
-    resolvedBaseUrl,
+    baseUrl,
   );
 }
 
-export function getFriends(userIdOrBaseUrl?: string, baseUrl?: string) {
-  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
-  return requestLegacyApi<FriendListItem[]>("/social/friends", undefined, resolvedBaseUrl);
+export function getFriends(baseUrl?: string) {
+  return requestLegacyApi<FriendListItem[]>("/social/friends", undefined, baseUrl);
 }
 
-export function getBlockedCharacters(userIdOrBaseUrl?: string, baseUrl?: string) {
-  const resolvedBaseUrl = resolveOptionalBaseUrl(userIdOrBaseUrl, baseUrl);
-  return requestLegacyApi<BlockedCharacter[]>("/social/blocks", undefined, resolvedBaseUrl);
+export function getBlockedCharacters(baseUrl?: string) {
+  return requestLegacyApi<BlockedCharacter[]>("/social/blocks", undefined, baseUrl);
 }
 
 export function blockCharacter(payload: BlockCharacterRequest, baseUrl?: string) {
@@ -813,14 +807,13 @@ export function addMomentComment(id: string, payload: CreateMomentCommentRequest
   );
 }
 
-export function toggleMomentLike(id: string, payloadOrBaseUrl?: { authorId?: string } | string, baseUrl?: string) {
-  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
+export function toggleMomentLike(id: string, baseUrl?: string) {
   return requestLegacyApi<ToggleMomentLikeResult>(
     `/moments/${id}/like`,
     {
       method: "POST",
     },
-    resolvedBaseUrl,
+    baseUrl,
   );
 }
 
@@ -878,25 +871,23 @@ export function addFeedComment(id: string, payload: CreateFeedCommentRequest, ba
   );
 }
 
-export function likeFeedPost(id: string, payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
-  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
+export function likeFeedPost(id: string, baseUrl?: string) {
   return requestLegacyApi<void>(
     `/feed/${id}/like`,
     {
       method: "POST",
     },
-    resolvedBaseUrl,
+    baseUrl,
   );
 }
 
-export function shake(payloadOrBaseUrl?: { userId?: string } | string, baseUrl?: string) {
-  const resolvedBaseUrl = typeof payloadOrBaseUrl === "string" ? resolveOptionalBaseUrl(payloadOrBaseUrl, baseUrl) : baseUrl;
+export function shake(baseUrl?: string) {
   return requestLegacyApi<ShakeResult | null>(
     "/social/shake",
     {
       method: "POST",
     },
-    resolvedBaseUrl,
+    baseUrl,
   );
 }
 
@@ -921,3 +912,4 @@ export function triggerSceneFriendRequest(payload: TriggerSceneRequest, baseUrl?
     baseUrl,
   );
 }
+
