@@ -17,22 +17,22 @@ export class ConversationEntity {
   @Column('simple-json')
   participants: string[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastReadAt?: Date | null;
 
   @Column({ default: false })
   isPinned: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   pinnedAt?: Date | null;
 
   @Column({ default: false })
   isHidden: boolean;
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   hiddenAt?: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastClearedAt?: Date | null;
 
   @Column({
