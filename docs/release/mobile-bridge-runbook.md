@@ -111,6 +111,7 @@ iOS push token 约定：
 
 - 原生层将 APNs token 写入 `UserDefaults.standard["YinjiePushToken"]`
 - `YinjieMobileBridge.getPushToken()` 读取该值
+- `YinjieMobileBridge.getNotificationPermissionState()` / `requestNotificationPermission()` 负责读取和触发通知授权
 - 通知展示逻辑与用户可见通知体验仍是后续里程碑
 
 ## Android 执行面

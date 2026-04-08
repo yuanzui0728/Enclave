@@ -14,6 +14,8 @@
 2. `share({ title?, text?, url? })`
 3. `pickImages({ multiple? })`
 4. `getPushToken()`
+5. `getNotificationPermissionState()`
+6. `requestNotificationPermission()`
 
 ## 返回结构
 
@@ -40,6 +42,14 @@
 }
 ```
 
+### getNotificationPermissionState / requestNotificationPermission
+
+```json
+{
+  "state": "granted"
+}
+```
+
 ## Swift 侧建议
 
 建议实现：
@@ -49,6 +59,8 @@
 - `share(_ call: CAPPluginCall)`
 - `pickImages(_ call: CAPPluginCall)`
 - `getPushToken(_ call: CAPPluginCall)`
+- `getNotificationPermissionState(_ call: CAPPluginCall)`
+- `requestNotificationPermission(_ call: CAPPluginCall)`
 
 数据来源建议：
 
@@ -56,6 +68,7 @@
 2. 分享：`UIActivityViewController`
 3. 图片选择：`PHPickerViewController`
 4. Push token：已注册到 APNs 后缓存于原生层
+5. 通知权限：`UNUserNotificationCenter`
 
 ## 失败策略
 
@@ -65,3 +78,4 @@
 - 分享：返回失败，不阻断主流程
 - 图片选择：返回空数组
 - Push token：返回 `null`
+- 通知权限：返回 `unknown`

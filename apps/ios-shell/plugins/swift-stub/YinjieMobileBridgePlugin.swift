@@ -1,6 +1,7 @@
 import Foundation
 import Capacitor
 import UIKit
+import UserNotifications
 
 @objc(YinjieMobileBridgePlugin)
 public class YinjieMobileBridgePlugin: CAPPlugin {
@@ -66,5 +67,45 @@ public class YinjieMobileBridgePlugin: CAPPlugin {
         call.resolve([
             "token": token ?? NSNull()
         ])
+    }
+
+    @objc func getNotificationPermissionState(_ call: CAPPluginCall) {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            call.resolve([
+                "state": self.mapAuthorizationStatus(settings.authorizationStatus)
+            ])
+        }
+    }
+
+    @objc func requestNotificationPermission(_ call: CAPPluginCall) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, error in
+            if let error {
+                call.reject("failed to request notification permission", nil, error)
+                return
+            }
+
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+
+                call.resolve([
+                    "state": self.mapAuthorizationStatus(settings.authorizationStatus)
+                ])
+            }
+        }
+    }
+
+    private func mapAuthorizationStatus(_ status: UNAuthorizationStatus) -> String {
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            return "granted"
+        case .denied:
+            return "denied"
+        case .notDetermined:
+            return "prompt"
+        @unknown default:
+            return "unknown"
+        }
     }
 }
