@@ -33,17 +33,17 @@ function normalizeBaseUrl(value: string) {
 function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   switch (data?.status) {
     case "active":
-      return "已开通";
+      return "World active";
     case "pending":
-      return "待审核";
+      return "Request pending";
     case "provisioning":
-      return "开通中";
+      return "Provisioning in progress";
     case "rejected":
-      return "申请被驳回";
+      return "Request rejected";
     case "disabled":
-      return "已停用";
+      return "World disabled";
     default:
-      return "未发现云世界";
+      return "No cloud world found";
   }
 }
 
@@ -66,6 +66,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
   const normalizedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
   const normalizedLocalSocketBaseUrl = normalizeBaseUrl(localSocketBaseUrl);
   const normalizedCloudApiBaseUrl = normalizeBaseUrl(cloudApiBaseUrl);
+
   const cloudStatusQuery = useQuery({
     queryKey: ["setup-cloud-world", normalizedCloudApiBaseUrl || "default", cloudAccessToken],
     queryFn: () => getMyCloudWorld(cloudAccessToken, normalizedCloudApiBaseUrl || undefined),
@@ -108,7 +109,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
       ),
     onSuccess: (result) => {
       setPhone(result.phone);
-      setNotice("验证码已发送，请查看手机短信。");
+      setNotice("Verification code sent.");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -134,7 +135,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
       setPhone(result.phone);
       setCode("");
       setCloudAccessToken(result.accessToken);
-      setNotice("手机号验证成功，正在查询你的云世界。");
+      setNotice("Phone verified. Checking cloud world status.");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -157,7 +158,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
         normalizedCloudApiBaseUrl || undefined,
       ),
     onSuccess: async () => {
-      setNotice("建世界申请已提交，等待平台开通。");
+      setNotice("Cloud world request submitted.");
       await cloudStatusQuery.refetch();
     },
   });
@@ -172,24 +173,29 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
   const localCanContinue = Boolean(normalizedLocalApiBaseUrl);
   const configuredWorldSummary =
     runtimeConfig.worldAccessMode === "cloud"
-      ? runtimeConfig.cloudWorldId || runtimeConfig.cloudPhone || "云世界待确认"
-      : runtimeConfig.apiBaseUrl || "未配置";
+      ? runtimeConfig.cloudWorldId || runtimeConfig.cloudPhone || "Cloud world pending confirmation"
+      : runtimeConfig.apiBaseUrl || "Not configured";
 
   const steps = useMemo(() => {
     if (mode === "cloud") {
       return [
         {
-          label: "选择云世界",
-          hint: normalizedCloudApiBaseUrl || runtimeConfig.cloudApiBaseUrl || "将使用默认云世界平台地址。",
+          label: "Choose cloud",
+          hint:
+            normalizedCloudApiBaseUrl ||
+            runtimeConfig.cloudApiBaseUrl ||
+            "Use the default cloud platform endpoint.",
           ok: true,
         },
         {
-          label: "手机号验证",
-          hint: phone.trim() ? `当前手机号：${phone.trim()}` : "先输入手机号并完成验证码验证。",
+          label: "Verify phone",
+          hint: phone.trim()
+            ? `Current phone: ${phone.trim()}`
+            : "Enter a phone number and verify with the code.",
           ok: Boolean(cloudAccessToken),
         },
         {
-          label: "云世界状态",
+          label: "World status",
           hint:
             currentCloudWorld?.apiBaseUrl ??
             cloudStatusQuery.data?.latestRequest?.note ??
@@ -201,18 +207,20 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
 
     return [
       {
-        label: "选择本地世界",
-        hint: "输入你自己的隐界实例地址。",
+        label: "Choose local",
+        hint: "Enter your own world instance address.",
         ok: true,
       },
       {
         label: "World API",
-        hint: normalizedLocalApiBaseUrl || "先填写一个可访问的世界地址。",
+        hint: normalizedLocalApiBaseUrl || "Fill in a reachable world address.",
         ok: Boolean(normalizedLocalApiBaseUrl),
       },
       {
-        label: "准备进入",
-        hint: localCanContinue ? "地址已保存，可以继续进入世界。" : "保存地址后才能继续。",
+        label: "Ready to enter",
+        hint: localCanContinue
+          ? "Address saved. You can continue into the world."
+          : "Save a valid address before continuing.",
         ok: localCanContinue,
       },
     ];
@@ -238,7 +246,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
       bootstrapSource: "user",
       configStatus: normalizedLocalApiBaseUrl ? "configured" : "unconfigured",
     });
-    setNotice("本地世界入口已保存。");
+    setNotice("Local world entry saved.");
   }
 
   function continueWithLocalWorld() {
@@ -283,29 +291,37 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
 
   return (
     <SetupScaffold
-      badge="世界入口"
-      title="先确认你要进入哪一个世界"
-      description="现在进入客户端前，必须先决定你要连接官方云世界，还是你自己托管的本地世界。"
+      badge="World Entry"
+      title="Choose which world to enter first."
+      description="Before entering the client, choose whether this device connects to an official cloud world or your own self-hosted world."
       heroAside={<SetupStepList steps={steps} />}
       left={
         <div className="space-y-5">
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <SetupStatusCard
-              title="当前模式"
-              value={mode === "cloud" ? "云世界" : "本地世界"}
-              detail={mode === "cloud" ? "通过手机号找到已开通的世界。" : "直接连接你自己的实例地址。"}
+              title="Current mode"
+              value={mode === "cloud" ? "Cloud world" : "Local world"}
+              detail={
+                mode === "cloud"
+                  ? "Find an official cloud world by phone number."
+                  : "Connect directly to your own instance address."
+              }
               ok
             />
             <SetupStatusCard
-              title="当前入口"
+              title="Current entry"
               value={configuredWorldSummary}
-              detail="切换世界入口后，会覆盖当前客户端保存的入口配置。"
+              detail="Switching the world entry updates the runtime configuration saved on this device."
               ok={Boolean(runtimeConfig.worldAccessMode)}
             />
             <SetupStatusCard
-              title="继续进入"
-              value={hasOwner ? "已有主人状态" : "尚未进入世界"}
-              detail={hasOwner ? "可继续进入聊天与世界页面。" : "入口确认后会继续到资料初始化或世界主页。"}
+              title="Continue"
+              value={hasOwner ? "Owner already exists" : "Owner not initialized"}
+              detail={
+                hasOwner
+                  ? "You can continue into chat and world pages."
+                  : "After confirming the entry, continue into onboarding."
+              }
               ok={hasOwner}
             />
           </section>
@@ -319,7 +335,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
               size="lg"
               className={modeButtonClassName}
             >
-              进入云世界
+              Enter cloud world
             </Button>
             <Button
               onClick={() => selectMode("local")}
@@ -327,7 +343,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
               size="lg"
               className={modeButtonClassName}
             >
-              进入本地世界
+              Enter local world
             </Button>
           </div>
 
@@ -339,7 +355,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="primary"
                 size="lg"
               >
-                保存本地世界
+                Save local world
               </Button>
               <Button
                 onClick={continueWithLocalWorld}
@@ -347,7 +363,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="secondary"
                 size="lg"
               >
-                {hasOwner ? "进入隐界" : "继续进入"}
+                {hasOwner ? "Enter Yinjie" : "Continue"}
               </Button>
             </div>
           ) : (
@@ -358,7 +374,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="primary"
                 size="lg"
               >
-                {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
+                {sendCodeMutation.isPending ? "Sending..." : "Send code"}
               </Button>
               <Button
                 onClick={() => verifyCodeMutation.mutate()}
@@ -366,7 +382,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="secondary"
                 size="lg"
               >
-                {verifyCodeMutation.isPending ? "验证中..." : "验证手机"}
+                {verifyCodeMutation.isPending ? "Verifying..." : "Verify phone"}
               </Button>
               <Button
                 onClick={() => void cloudStatusQuery.refetch()}
@@ -374,7 +390,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="secondary"
                 size="lg"
               >
-                {cloudStatusQuery.isFetching ? "刷新中..." : "刷新云世界状态"}
+                {cloudStatusQuery.isFetching ? "Refreshing..." : "Refresh status"}
               </Button>
               <Button
                 onClick={continueWithCloudWorld}
@@ -382,7 +398,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 variant="secondary"
                 size="lg"
               >
-                {hasOwner ? "进入隐界" : "继续进入"}
+                {hasOwner ? "Enter Yinjie" : "Continue"}
               </Button>
             </div>
           )}
@@ -392,7 +408,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
         <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.04))] p-5 shadow-[var(--shadow-section)]">
           {mode === "local" ? (
             <div className="space-y-4">
-              <div className="text-sm font-medium text-white">本地世界入口</div>
+              <div className="text-sm font-medium text-white">Local world entry</div>
               <label className="block space-y-2">
                 <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
                   World API URL
@@ -416,12 +432,12 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
               </label>
 
               <InlineNotice tone="info">
-                如果 Socket 地址和 World API 一样，可以直接保持一致。保存后客户端就会把它当成你的默认入口。
+                If the Socket URL matches the World API URL, you can keep them the same. After saving, the client will treat this as the default entry.
               </InlineNotice>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="text-sm font-medium text-white">云世界入口</div>
+              <div className="text-sm font-medium text-white">Cloud world entry</div>
 
               <label className="block space-y-2">
                 <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
@@ -436,62 +452,64 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
 
               <label className="block space-y-2">
                 <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                  手机号
+                  Phone number
                 </span>
                 <TextField
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
-                  placeholder="请输入手机号"
+                  placeholder="Enter your phone number"
                 />
               </label>
 
               <label className="block space-y-2">
                 <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                  验证码
+                  Verification code
                 </span>
                 <TextField
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
-                  placeholder="请输入验证码"
+                  placeholder="Enter the verification code"
                 />
               </label>
 
-              {cloudStatusQuery.isLoading ? <LoadingBlock className="px-0 py-0 text-left" label="正在查询云世界状态..." /> : null}
+              {cloudStatusQuery.isLoading ? (
+                <LoadingBlock className="px-0 py-0 text-left" label="Checking cloud world status..." />
+              ) : null}
               {cloudStatusQuery.data ? (
                 <InlineNotice tone={cloudCanContinue ? "success" : "info"}>
                   {cloudCanContinue
-                    ? `已找到云世界：${currentCloudWorld?.name ?? "未命名世界"}`
-                    : `当前状态：${describeCloudStatus(cloudStatusQuery.data)}`}
+                    ? `Cloud world found: ${currentCloudWorld?.name ?? "Unnamed world"}`
+                    : `Current status: ${describeCloudStatus(cloudStatusQuery.data)}`}
                 </InlineNotice>
               ) : null}
 
               {currentCloudWorld?.apiBaseUrl ? (
                 <InlineNotice tone="muted">
-                  云世界地址：{currentCloudWorld.apiBaseUrl}
+                  Cloud world URL: {currentCloudWorld.apiBaseUrl}
                 </InlineNotice>
               ) : null}
 
               {cloudCanRequestWorld ? (
                 <div className="space-y-3 rounded-[24px] border border-[color:var(--border-faint)] bg-black/10 p-4">
-                  <div className="text-sm font-medium text-white">还没有云世界，先提交申请</div>
+                  <div className="text-sm font-medium text-white">No cloud world yet. Submit a request first.</div>
                   <TextField
                     value={worldName}
                     onChange={(event) => setWorldName(event.target.value)}
-                    placeholder="给你的世界起个名字"
+                    placeholder="Give your world a name"
                   />
                   <Button
                     onClick={() => createWorldRequestMutation.mutate()}
                     disabled={!worldName.trim() || createWorldRequestMutation.isPending}
                     variant="primary"
                   >
-                    {createWorldRequestMutation.isPending ? "提交中..." : "提交建世界申请"}
+                    {createWorldRequestMutation.isPending ? "Submitting..." : "Submit world request"}
                   </Button>
                 </div>
               ) : null}
 
               {cloudStatusQuery.data?.latestRequest?.note ? (
                 <InlineNotice tone="warning">
-                  平台备注：{cloudStatusQuery.data.latestRequest.note}
+                  Platform note: {cloudStatusQuery.data.latestRequest.note}
                 </InlineNotice>
               ) : null}
             </div>
