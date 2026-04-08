@@ -1,28 +1,41 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppPage, AppSection, InlineNotice } from "@yinjie/ui";
+import { resolveAppRuntimeContext } from "../runtime/platform";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useSessionStore } from "../store/session-store";
+import { requiresRemoteServiceConfiguration } from "../lib/runtime-config";
 
 export function SplashPage() {
   const navigate = useNavigate();
   const token = useSessionStore((state) => state.token);
   const onboardingCompleted = useSessionStore((state) => state.onboardingCompleted);
+  const runtimeConfig = useAppRuntimeConfig();
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
+      const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+      if (runtimeContext.hostRole === "host" || requiresRemoteServiceConfiguration()) {
+        void navigate({
+          to: "/setup",
+          replace: true,
+        });
+        return;
+      }
+
       if (!token) {
-        navigate({
+        void navigate({
           to: "/onboarding",
           replace: true,
         });
         return;
       }
 
-      navigate({ to: onboardingCompleted ? "/tabs/chat" : "/onboarding", replace: true });
-    }, 1400);
+      void navigate({ to: onboardingCompleted ? "/tabs/chat" : "/onboarding", replace: true });
+    }, 900);
 
     return () => window.clearTimeout(timer);
-  }, [navigate, onboardingCompleted, token]);
+  }, [navigate, onboardingCompleted, runtimeConfig.appPlatform, token]);
 
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center py-10 text-center">

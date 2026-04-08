@@ -1,12 +1,17 @@
-import type { AppPlatform } from "./platform";
+import { resolveAppRuntimeContext, type AppChannel, type AppPlatform } from "./platform";
 
 export type AppRuntimeEnvironment = "development" | "staging" | "production";
+export type AppRuntimeBootstrapSource = "default" | "env" | "storage" | "window" | "native" | "user";
+export type AppRuntimeConfigStatus = "unconfigured" | "configured" | "validated";
 
 export type AppRuntimeConfig = {
   apiBaseUrl?: string;
   socketBaseUrl?: string;
   environment: AppRuntimeEnvironment;
   appPlatform: AppPlatform;
+  channel: AppChannel;
+  bootstrapSource: AppRuntimeBootstrapSource;
+  configStatus: AppRuntimeConfigStatus;
   publicAppName: string;
   applicationId?: string;
   appVersionName?: string;
@@ -53,12 +58,51 @@ function normalizeVersionCode(value?: number | null) {
   return Math.trunc(value);
 }
 
+function normalizeBootstrapSource(value?: string | null): AppRuntimeBootstrapSource {
+  switch (value) {
+    case "env":
+    case "storage":
+    case "window":
+    case "native":
+    case "user":
+      return value;
+    default:
+      return "default";
+  }
+}
+
+function normalizeConfigStatus(
+  value: string | null | undefined,
+  platform: AppPlatform,
+  apiBaseUrl?: string,
+): AppRuntimeConfigStatus {
+  const runtimeContext = resolveAppRuntimeContext(platform);
+  if (runtimeContext.deploymentMode === "local-hosted") {
+    return value === "validated" ? "validated" : "configured";
+  }
+
+  if (!apiBaseUrl) {
+    return "unconfigured";
+  }
+
+  return value === "validated" ? "validated" : "configured";
+}
+
 export function normalizeAppRuntimeConfig(config: AppRuntimeConfigInput, platform: AppPlatform): AppRuntimeConfig {
+  const apiBaseUrl = normalizeBaseUrl(config.apiBaseUrl);
+  const socketBaseUrl = normalizeBaseUrl(config.socketBaseUrl ?? config.apiBaseUrl);
+  const runtimeContext = resolveAppRuntimeContext(platform);
+
   return {
-    apiBaseUrl: normalizeBaseUrl(config.apiBaseUrl),
-    socketBaseUrl: normalizeBaseUrl(config.socketBaseUrl ?? config.apiBaseUrl),
+    apiBaseUrl,
+    socketBaseUrl,
     environment: normalizeEnvironment(config.environment),
     appPlatform: platform,
+    channel: config.channel === "desktop" || config.channel === "mobile" || config.channel === "web"
+      ? config.channel
+      : runtimeContext.channel,
+    bootstrapSource: normalizeBootstrapSource(config.bootstrapSource),
+    configStatus: normalizeConfigStatus(config.configStatus, platform, apiBaseUrl),
     publicAppName: config.publicAppName?.trim() || "Yinjie",
     applicationId: normalizeOptionalText(config.applicationId),
     appVersionName: normalizeOptionalText(config.appVersionName),

@@ -6,5 +6,6 @@
 
 1. `YinjieRuntime`
 2. `YinjieSecureStorage`
+3. `YinjieMobileBridge`
 
 后续在 Xcode 工程内接入时，应保持方法名与返回结构不变，避免再次改动 Web 业务层。

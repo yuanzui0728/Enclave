@@ -26,7 +26,8 @@ const checks = [
     label: "plugin-stubs",
     ok:
       fs.existsSync(path.join(shellRoot, "plugins", "swift-stub", "YinjieRuntimePlugin.swift")) &&
-      fs.existsSync(path.join(shellRoot, "plugins", "swift-stub", "YinjieSecureStoragePlugin.swift")),
+      fs.existsSync(path.join(shellRoot, "plugins", "swift-stub", "YinjieSecureStoragePlugin.swift")) &&
+      fs.existsSync(path.join(shellRoot, "plugins", "swift-stub", "YinjieMobileBridgePlugin.swift")),
     detail: "native plugin stubs are present",
   },
   {

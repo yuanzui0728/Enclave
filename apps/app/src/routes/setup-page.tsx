@@ -1,24 +1,31 @@
-import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { AppPage, AppSection, InlineNotice } from "@yinjie/ui";
+import { AppPage } from "@yinjie/ui";
+import { DesktopSetupPanel } from "../features/desktop/setup/desktop-setup-panel";
+import { MobileSetupPanel } from "../features/mobile/setup/mobile-setup-panel";
+import { resolveAppRuntimeContext } from "../runtime/platform";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useSessionStore } from "../store/session-store";
 
 export function SetupPage() {
   const navigate = useNavigate();
   const token = useSessionStore((state) => state.token);
+  const runtimeConfig = useAppRuntimeConfig();
+  const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
 
-  useEffect(() => {
+  function continueIntoWorld() {
     void navigate({
       to: token ? "/tabs/chat" : "/onboarding",
       replace: true,
     });
-  }, [navigate, token]);
+  }
 
   return (
-    <AppPage className="flex min-h-full flex-col items-center justify-center py-10 text-center">
-      <AppSection className="w-full max-w-sm px-8 py-10">
-        <InlineNotice tone="info">正在带你回到隐界。</InlineNotice>
-      </AppSection>
+    <AppPage className="pb-8">
+      {runtimeContext.deploymentMode === "local-hosted" ? (
+        <DesktopSetupPanel token={token} onContinue={continueIntoWorld} />
+      ) : (
+        <MobileSetupPanel token={token} onContinue={continueIntoWorld} />
+      )}
     </AppPage>
   );
 }

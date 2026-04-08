@@ -4,6 +4,9 @@ import { getIosRuntimeCapabilities, isIosPlatform } from "./adapters/ios";
 import { getWebRuntimeCapabilities } from "./adapters/web";
 
 export type AppPlatform = "web" | "desktop" | "android" | "ios";
+export type AppChannel = "desktop" | "mobile" | "web";
+export type DeploymentMode = "local-hosted" | "remote-connected";
+export type HostRole = "host" | "client";
 
 export type AppRuntimeCapabilities = {
   canManageLocalCoreApi: boolean;
@@ -12,6 +15,19 @@ export type AppRuntimeCapabilities = {
   canUseSecureStorage: boolean;
   canReceivePush: boolean;
   canPickImages: boolean;
+  canConfigureRemoteService: boolean;
+  canExportDiagnostics: boolean;
+  canManageProvider: boolean;
+  canScanBootstrapCode: boolean;
+  canOpenExternalLinks: boolean;
+};
+
+export type AppRuntimeContext = {
+  platform: AppPlatform;
+  channel: AppChannel;
+  deploymentMode: DeploymentMode;
+  hostRole: HostRole;
+  capabilities: AppRuntimeCapabilities;
 };
 
 export function detectAppPlatform(): AppPlatform {
@@ -41,4 +57,28 @@ export function getAppRuntimeCapabilities(platform = detectAppPlatform()): AppRu
     default:
       return getWebRuntimeCapabilities();
   }
+}
+
+function resolveAppChannel(platform: AppPlatform): AppChannel {
+  switch (platform) {
+    case "desktop":
+      return "desktop";
+    case "android":
+    case "ios":
+      return "mobile";
+    default:
+      return "web";
+  }
+}
+
+export function resolveAppRuntimeContext(platform = detectAppPlatform()): AppRuntimeContext {
+  const capabilities = getAppRuntimeCapabilities(platform);
+
+  return {
+    platform,
+    channel: resolveAppChannel(platform),
+    deploymentMode: capabilities.canManageLocalCoreApi ? "local-hosted" : "remote-connected",
+    hostRole: capabilities.canManageLocalCoreApi ? "host" : "client",
+    capabilities,
+  };
 }

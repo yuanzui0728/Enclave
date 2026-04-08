@@ -7,6 +7,7 @@ target 'App' do
   # Native plugins:
   # - YinjieRuntimePlugin
   # - YinjieSecureStoragePlugin
+  # - YinjieMobileBridgePlugin
 end
 
 post_install do |installer|

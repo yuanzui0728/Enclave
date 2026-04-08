@@ -75,25 +75,28 @@
 
 `crates/core-api` 启动时会自动读取根目录 `.env`，并用 `YINJIE_PROVIDER_*` 覆盖默认 provider 配置；前端默认值只读取非敏感项，不再内置 API Key。
 
-## 桌面构建与发版
+## 多端产品线
 
-当前桌面壳是 `apps/desktop` 的 Tauri 2 方案。
+当前仓库已经按两条产品线收敛：
 
-- Windows 构建说明：[docs/windows-build.md](docs/windows-build.md)
-- Windows 发版清单：[docs/release/windows-desktop-checklist.md](docs/release/windows-desktop-checklist.md)
-- macOS 构建说明：[docs/release/macos-desktop.md](docs/release/macos-desktop.md)
-- macOS 发版清单：[docs/release/macos-desktop-checklist.md](docs/release/macos-desktop-checklist.md)
+- `Desktop Host`
+  - Windows
+  - macOS
+- `Mobile Client`
+  - iOS
+  - Android
 
-Windows 本地构建入口：
+说明文档：
 
-```bash
-pnpm desktop:build:windows:x64
-```
+- 双产品线总览：[docs/product-lines.md](docs/product-lines.md)
+- Desktop Host 回归清单：[docs/release/desktop-host-regression.md](docs/release/desktop-host-regression.md)
+- Mobile Client 回归清单：[docs/release/mobile-client-regression.md](docs/release/mobile-client-regression.md)
+- 移动桥接与壳层接线执行单：[docs/release/mobile-bridge-runbook.md](docs/release/mobile-bridge-runbook.md)
 
-说明：
+当前定位：
 
-- Linux 环境可以继续做脚本、类型和文档收尾
-- Windows 安装包构建、安装器行为、首启验证、升级卸载验证仍必须在真实 Windows runner / Windows VM / Windows 实机上完成
+- Desktop Host 负责本地世界托管、provider、runtime、diagnostics
+- Mobile Client 负责远程连接、登录态恢复、推送、媒体与系统集成
 
 > *"在你走进来之前，我只需要知道一件事——你叫什么名字？"*
 

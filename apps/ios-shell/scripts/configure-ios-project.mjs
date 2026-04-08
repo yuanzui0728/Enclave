@@ -39,6 +39,10 @@ const copies = [
     from: path.join(cwd, "plugins", "swift-stub", "YinjieSecureStoragePlugin.swift"),
     to: path.join(pluginsRoot, "YinjieSecureStoragePlugin.swift"),
   },
+  {
+    from: path.join(cwd, "plugins", "swift-stub", "YinjieMobileBridgePlugin.swift"),
+    to: path.join(pluginsRoot, "YinjieMobileBridgePlugin.swift"),
+  },
 ];
 
 for (const file of copies) {

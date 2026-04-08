@@ -8,5 +8,10 @@ export function getWebRuntimeCapabilities(): AppRuntimeCapabilities {
     canUseSecureStorage: false,
     canReceivePush: false,
     canPickImages: false,
+    canConfigureRemoteService: true,
+    canExportDiagnostics: false,
+    canManageProvider: false,
+    canScanBootstrapCode: false,
+    canOpenExternalLinks: true,
   };
 }

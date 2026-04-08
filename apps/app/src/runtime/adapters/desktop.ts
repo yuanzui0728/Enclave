@@ -13,5 +13,10 @@ export function getDesktopRuntimeCapabilities(): AppRuntimeCapabilities {
     canUseSecureStorage: false,
     canReceivePush: false,
     canPickImages: false,
+    canConfigureRemoteService: false,
+    canExportDiagnostics: true,
+    canManageProvider: true,
+    canScanBootstrapCode: false,
+    canOpenExternalLinks: true,
   };
 }

@@ -3,12 +3,8 @@ import {
   resolveCoreApiBaseUrl,
   setCoreApiBaseUrlProvider,
 } from "@yinjie/contracts";
+import { resolveAppRuntimeContext } from "../runtime/platform";
 import { getAppRuntimeConfig } from "../runtime/runtime-config-store";
-
-function trimEnvValue(value: string | undefined) {
-  const normalized = value?.trim();
-  return normalized ? normalized : null;
-}
 
 function fallbackBrowserBaseUrl() {
   if (typeof window === "undefined") {
@@ -28,16 +24,30 @@ export function resolveAppCoreApiBaseUrl() {
     return runtimeConfig.apiBaseUrl;
   }
 
-  if (runtimeConfig.appPlatform === "desktop") {
+  const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+  if (runtimeContext.deploymentMode === "local-hosted") {
     return DEFAULT_CORE_API_BASE_URL;
   }
 
-  return fallbackBrowserBaseUrl() ?? DEFAULT_CORE_API_BASE_URL;
+  const browserBaseUrl = fallbackBrowserBaseUrl();
+  if (browserBaseUrl) {
+    return browserBaseUrl;
+  }
+
+  throw new Error("Remote Core API base URL is not configured for this runtime.");
 }
 
 export function resolveAppSocketBaseUrl() {
   const runtimeConfig = getAppRuntimeConfig();
-  return runtimeConfig.socketBaseUrl ?? trimEnvValue(import.meta.env.VITE_SOCKET_BASE_URL) ?? resolveAppCoreApiBaseUrl();
+  if (runtimeConfig.socketBaseUrl) {
+    return runtimeConfig.socketBaseUrl;
+  }
+
+  if (runtimeConfig.apiBaseUrl) {
+    return runtimeConfig.apiBaseUrl;
+  }
+
+  return resolveAppCoreApiBaseUrl();
 }
 
 export function configureContractsRuntime() {
@@ -45,10 +55,16 @@ export function configureContractsRuntime() {
 }
 
 export function resolveConfiguredCoreApiBaseUrl() {
-  return resolveCoreApiBaseUrl();
+  return resolveCoreApiBaseUrl(undefined, { allowDefault: false });
+}
+
+export function hasRemoteServiceConfiguration() {
+  const runtimeConfig = getAppRuntimeConfig();
+  return Boolean(runtimeConfig.apiBaseUrl || fallbackBrowserBaseUrl());
 }
 
 export function requiresRemoteServiceConfiguration() {
   const runtimeConfig = getAppRuntimeConfig();
-  return !runtimeConfig.apiBaseUrl && !fallbackBrowserBaseUrl();
+  const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+  return runtimeContext.deploymentMode === "remote-connected" && !hasRemoteServiceConfiguration();
 }

@@ -2,19 +2,21 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSystemStatus } from "@yinjie/contracts";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
-import { getPlatformCapabilities } from "../../lib/platform";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
+import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 
 export function DesktopRuntimeGuard() {
   const runtimeConfig = useAppRuntimeConfig();
-  const { hasDesktopRuntimeControl, runtimeMode } = getPlatformCapabilities();
-  const needsRemoteConfiguration = runtimeMode === "remote" && requiresRemoteServiceConfiguration();
+  const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+  const hasDesktopRuntimeControl = runtimeContext.hostRole === "host";
+  const needsRemoteConfiguration = runtimeContext.deploymentMode === "remote-connected" && requiresRemoteServiceConfiguration();
   const attemptedAutostartRef = useRef(false);
   const {
     desktopAvailable,
     desktopStatusQuery,
     probeMutation,
+    runtimeDiagnosticsQuery,
     startMutation,
   } = useDesktopRuntime({
     queryKeyPrefix: "desktop",
@@ -61,14 +63,25 @@ export function DesktopRuntimeGuard() {
   const busy = hasDesktopRuntimeControl
     ? startMutation.isPending || probeMutation.isPending
     : remoteStatusQuery.isFetching;
+  const diagnostics = runtimeDiagnosticsQuery.data;
   const title = hasDesktopRuntimeControl ? "隐界正在醒来" : "暂时无法进入隐界";
+
+  const desktopDescription = diagnostics?.bundledCoreApiExists === false
+    ? "当前桌面包里没有找到内置 Core API，宿主端还没法完整启动。"
+    : diagnostics?.coreApiPortOccupied
+      ? "本地端口似乎已被占用，桌面壳正在尝试重新接管入口。"
+      : diagnostics?.lastCoreApiError?.trim()
+        ? diagnostics.lastCoreApiError
+        : "我们正在为你整理入口。稍等片刻，再试一次就好。";
   const description = hasDesktopRuntimeControl
-    ? "我们正在为你整理入口。稍等片刻，再试一次就好。"
+    ? desktopDescription
     : needsRemoteConfiguration
-      ? "入口暂时还没有准备好，请稍后再试。"
-      : "连接暂时不可用，请稍后再试。";
+      ? "当前设备还没有配置远程世界地址，请先回到 setup 连接你的实例。"
+      : remoteStatusQuery.error instanceof Error
+        ? remoteStatusQuery.error.message
+        : "连接暂时不可用，请稍后再试。";
   const helperText = hasDesktopRuntimeControl
-    ? "隐界会继续在后台恢复，你只需要稍候片刻。"
+    ? diagnostics?.summary || "隐界会继续在后台恢复，你只需要稍候片刻。"
     : "如果长时间没有恢复，稍后重新打开应用即可。";
 
   function retry() {
@@ -96,6 +109,14 @@ export function DesktopRuntimeGuard() {
         <div className="mt-5 rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
           {hasDesktopRuntimeControl && busy ? "正在唤醒隐界..." : busy ? "正在重新检查入口..." : helperText}
         </div>
+
+        {hasDesktopRuntimeControl && diagnostics ? (
+          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]">
+            <div>命令来源：{diagnostics.coreApiCommandSource}</div>
+            <div>内置 Core API：{diagnostics.bundledCoreApiExists ? "已找到" : "未找到"}</div>
+            <div>端口占用：{diagnostics.coreApiPortOccupied ? "是" : "否"}</div>
+          </div>
+        ) : null}
 
         <div className="mt-5">
           <Button

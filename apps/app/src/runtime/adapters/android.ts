@@ -22,5 +22,10 @@ export function getAndroidRuntimeCapabilities(): AppRuntimeCapabilities {
     canUseSecureStorage: true,
     canReceivePush: true,
     canPickImages: true,
+    canConfigureRemoteService: true,
+    canExportDiagnostics: false,
+    canManageProvider: false,
+    canScanBootstrapCode: false,
+    canOpenExternalLinks: true,
   };
 }

@@ -95,8 +95,17 @@ export const DEFAULT_CORE_API_BASE_URL = "http://localhost:39091";
 let authTokenProvider: (() => string | null | undefined) | null = null;
 let coreApiBaseUrlProvider: (() => string | null | undefined) | null = null;
 
-export function resolveCoreApiBaseUrl(override?: string) {
-  return override || coreApiBaseUrlProvider?.() || DEFAULT_CORE_API_BASE_URL;
+export function resolveCoreApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
+  const configuredValue = override || coreApiBaseUrlProvider?.();
+  if (configuredValue) {
+    return configuredValue;
+  }
+
+  if (options?.allowDefault === false) {
+    return undefined;
+  }
+
+  return DEFAULT_CORE_API_BASE_URL;
 }
 
 export function setAuthTokenProvider(provider: (() => string | null | undefined) | null) {

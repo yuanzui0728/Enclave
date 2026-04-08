@@ -4,7 +4,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { deleteUser, getBlockedCharacters, listCharacters, listModerationReports, logoutCurrentSession, unblockCharacter, updateUser } from "@yinjie/contracts";
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { DesktopRuntimePanel } from "../features/profile/desktop-runtime-panel";
 import { disconnectChatSocket } from "../lib/socket";
+import { resolveAppRuntimeContext } from "../runtime/platform";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useSessionStore } from "../store/session-store";
 
@@ -19,6 +21,7 @@ export function ProfilePage() {
   const logout = useSessionStore((state) => state.logout);
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
+  const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
   const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
 
   const [draftName, setDraftName] = useState(username ?? "");
@@ -281,6 +284,12 @@ export function ProfilePage() {
           删除账号会立即让当前账号和所有历史会话失效。后续将继续收口动态、好友和会话数据的完整清理策略。
         </InlineNotice>
       </AppSection>
+
+      {runtimeContext.hostRole === "host" ? (
+        <AppSection className="space-y-4 p-5">
+          <DesktopRuntimePanel />
+        </AppSection>
+      ) : null}
     </AppPage>
   );
 }

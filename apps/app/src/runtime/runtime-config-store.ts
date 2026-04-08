@@ -36,17 +36,22 @@ function createInitialRuntimeConfig() {
   const platform = detectAppPlatform();
   const injectedConfig = readInjectedRuntimeConfig();
   const persistedConfig = readPersistedRuntimeConfig();
+  const envApiBaseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const envSocketBaseUrl = import.meta.env.VITE_SOCKET_BASE_URL ?? import.meta.env.VITE_CORE_API_BASE_URL;
+  const bootstrapSource =
+    injectedConfig ? "window" : persistedConfig ? "storage" : envApiBaseUrl || envSocketBaseUrl ? "env" : "default";
   const initialConfig: Parameters<typeof normalizeAppRuntimeConfig>[0] = {
     ...persistedConfig,
     ...injectedConfig,
-    apiBaseUrl: injectedConfig?.apiBaseUrl ?? persistedConfig?.apiBaseUrl ?? import.meta.env.VITE_CORE_API_BASE_URL,
+    apiBaseUrl: injectedConfig?.apiBaseUrl ?? persistedConfig?.apiBaseUrl ?? envApiBaseUrl,
     socketBaseUrl:
       injectedConfig?.socketBaseUrl ??
       persistedConfig?.socketBaseUrl ??
-      import.meta.env.VITE_SOCKET_BASE_URL ??
-      import.meta.env.VITE_CORE_API_BASE_URL,
+      envSocketBaseUrl,
     environment: injectedConfig?.environment ?? persistedConfig?.environment ?? import.meta.env.MODE,
     publicAppName: injectedConfig?.publicAppName ?? persistedConfig?.publicAppName ?? "Yinjie",
+    bootstrapSource: injectedConfig?.bootstrapSource ?? persistedConfig?.bootstrapSource ?? bootstrapSource,
+    configStatus: injectedConfig?.configStatus ?? persistedConfig?.configStatus,
   };
 
   return normalizeAppRuntimeConfig(initialConfig, platform);
@@ -69,6 +74,7 @@ export function setAppRuntimeConfig(nextConfig: Partial<AppRuntimeConfig>) {
     {
       ...runtimeConfig,
       ...nextConfig,
+      bootstrapSource: nextConfig.bootstrapSource ?? "user",
     },
     runtimeConfig.appPlatform,
   );
@@ -96,12 +102,17 @@ export async function hydrateNativeRuntimeConfig() {
 
   runtimeConfig = normalizeAppRuntimeConfig(
     {
-      ...nativeConfig,
       ...runtimeConfig,
-      apiBaseUrl: runtimeConfig.apiBaseUrl ?? nativeConfig.apiBaseUrl,
-      socketBaseUrl: runtimeConfig.socketBaseUrl ?? nativeConfig.socketBaseUrl ?? nativeConfig.apiBaseUrl,
-      environment: runtimeConfig.environment ?? nativeConfig.environment,
-      publicAppName: runtimeConfig.publicAppName || nativeConfig.publicAppName,
+      ...nativeConfig,
+      apiBaseUrl: nativeConfig.apiBaseUrl ?? runtimeConfig.apiBaseUrl,
+      socketBaseUrl: nativeConfig.socketBaseUrl ?? nativeConfig.apiBaseUrl ?? runtimeConfig.socketBaseUrl,
+      environment: nativeConfig.environment ?? runtimeConfig.environment,
+      publicAppName: nativeConfig.publicAppName ?? runtimeConfig.publicAppName,
+      applicationId: nativeConfig.applicationId ?? runtimeConfig.applicationId,
+      appVersionName: nativeConfig.appVersionName ?? runtimeConfig.appVersionName,
+      appVersionCode: nativeConfig.appVersionCode ?? runtimeConfig.appVersionCode,
+      bootstrapSource: "native",
+      configStatus: nativeConfig.apiBaseUrl ? "validated" : runtimeConfig.configStatus,
     },
     runtimeConfig.appPlatform,
   );

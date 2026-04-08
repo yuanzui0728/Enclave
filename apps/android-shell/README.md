@@ -25,3 +25,27 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 - `pnpm android:doctor` will fail the production endpoint check until `runtime.apiBaseUrl` is configured.
 - Production defaults disable cleartext traffic; local debugging can override it in `android-shell.config.local.json`.
 - Android backup and device-transfer extraction are explicitly disabled in the generated manifest resources.
+
+## Web-to-Shell Contract
+
+The mobile web layer now expects two Android-side contracts:
+
+1. Runtime config injection
+   - Provide `apiBaseUrl`
+   - Provide `socketBaseUrl`
+   - Provide `environment`
+   - Provide app metadata such as `applicationId`, `versionName`, and `versionCode`
+   - `android:configure` already writes the web fallback file at `apps/app/public/runtime-config.json`
+
+2. Native bridge surface
+   - `YinjieSecureStorage`
+   - `YinjieMobileBridge`
+
+Expected `YinjieMobileBridge` methods:
+
+- `openExternalUrl({ url })`
+- `share({ title?, text?, url? })`
+- `pickImages({ multiple? })`
+- `getPushToken()`
+
+The web layer will gracefully fall back when the bridge is not wired yet, but Android release builds should eventually connect these methods to platform-native implementations.

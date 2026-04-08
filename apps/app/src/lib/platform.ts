@@ -1,4 +1,4 @@
-import { detectAppPlatform, getAppRuntimeCapabilities, type AppPlatform as RuntimePlatform } from "../runtime/platform";
+import { resolveAppRuntimeContext, type AppPlatform as RuntimePlatform } from "../runtime/platform";
 
 export type AppPlatform = RuntimePlatform | "ios";
 export type AppRuntimeMode = "self-hosted" | "remote";
@@ -38,19 +38,18 @@ function detectBrowserPlatform(): AppPlatform {
 }
 
 export function getPlatformCapabilities(): PlatformCapabilities {
-  const envPlatform = normalizePlatform(import.meta.env.VITE_APP_PLATFORM);
-  const detectedPlatform = detectAppPlatform();
-  const platform = envPlatform ?? (detectedPlatform === "web" ? detectBrowserPlatform() : detectedPlatform);
-  const runtimeCapabilities = getAppRuntimeCapabilities(platform === "ios" ? "web" : platform);
-  const runtimeMode: AppRuntimeMode = runtimeCapabilities.canManageLocalCoreApi ? "self-hosted" : "remote";
+  const envPlatform = normalizePlatform(import.meta.env.VITE_APP_PLATFORM) ?? detectBrowserPlatform();
+  const runtimeContext = resolveAppRuntimeContext(envPlatform);
+  const runtimeCapabilities = runtimeContext.capabilities;
+  const runtimeMode: AppRuntimeMode = runtimeContext.deploymentMode === "local-hosted" ? "self-hosted" : "remote";
 
   return {
-    platform,
+    platform: runtimeContext.platform,
     runtimeMode,
     hasDesktopRuntimeControl: runtimeCapabilities.canManageLocalCoreApi,
-    hasNativeShell: platform === "desktop" || platform === "ios" || platform === "android",
-    hasSafeAreaInsets: platform === "ios" || platform === "android",
-    storageMode: platform === "ios" || runtimeCapabilities.canUseSecureStorage ? "secure-storage" : "web-storage",
+    hasNativeShell: runtimeContext.platform === "desktop" || runtimeContext.platform === "ios" || runtimeContext.platform === "android",
+    hasSafeAreaInsets: runtimeContext.platform === "ios" || runtimeContext.platform === "android",
+    storageMode: runtimeCapabilities.canUseSecureStorage ? "secure-storage" : "web-storage",
     requiresEnvironmentSetup: runtimeCapabilities.canManageLocalCoreApi,
   };
 }
