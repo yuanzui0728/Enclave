@@ -635,10 +635,12 @@ export function WelcomePage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="flex min-h-full items-center justify-center p-6 sm:p-8">
-        <div className="relative w-full max-w-3xl">
-          <div className="pointer-events-none absolute inset-0 rounded-[40px] bg-[rgba(255,255,255,0.42)] blur-2xl" />
-          <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(252,248,242,0.94))] px-7 py-8 shadow-[var(--shadow-overlay)] backdrop-blur-2xl">
+      <AppPage className="relative flex min-h-full items-center justify-center overflow-hidden p-6 sm:p-8">
+        <div className="pointer-events-none absolute inset-0 bg-[rgba(35,41,38,0.18)] backdrop-blur-[18px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(28,34,31,0.28)_74%)]" />
+        <div className="relative z-10 w-full max-w-3xl">
+          <div className="pointer-events-none absolute inset-0 rounded-[44px] bg-[rgba(255,255,255,0.24)] blur-3xl" />
+          <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(252,248,242,0.94))] px-7 py-8 shadow-[0_28px_72px_rgba(42,50,46,0.34)] backdrop-blur-2xl">
             <div className="inline-flex rounded-full border border-[rgba(255,179,71,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
               世界入口
             </div>
