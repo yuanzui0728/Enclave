@@ -11,6 +11,7 @@ export * from "./moments";
 export * from "./moderation";
 export * from "./push";
 export * from "./social";
+export * from "./speech";
 export * from "./system";
 export * from "./world";
 export * from "./ws";

@@ -55,6 +55,7 @@ import type {
   TriggerSceneRequest,
   UnblockCharacterRequest,
 } from "./social";
+import type { SpeechTranscriptionResult } from "./speech";
 import type {
   InferencePreviewRequest,
   InferencePreviewResponse,
@@ -137,8 +138,10 @@ export function setCloudApiBaseUrlProvider(provider: (() => string | null | unde
 
 async function request<T>(path: string, init?: RequestInit, baseUrl?: string): Promise<T> {
   const headers = new Headers(init?.headers);
+  const isFormDataBody =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
 
-  if (!headers.has("Content-Type") && init?.body) {
+  if (!headers.has("Content-Type") && init?.body && !isFormDataBody) {
     headers.set("Content-Type", "application/json");
   }
 
@@ -177,6 +180,17 @@ function requestCloudApi<T>(path: string, init?: RequestInit, baseUrl?: string) 
 
 export function getSystemStatus(baseUrl?: string) {
   return requestLegacyApi<SystemStatus>("/system/status", undefined, baseUrl);
+}
+
+export function createSpeechTranscription(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<SpeechTranscriptionResult>(
+    "/ai/transcriptions",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
 }
 
 export function sendCloudPhoneCode(payload: SendPhoneCodeRequest, baseUrl?: string) {
@@ -901,4 +915,3 @@ export function triggerSceneFriendRequest(payload: TriggerSceneRequest, baseUrl?
     baseUrl,
   );
 }
-
