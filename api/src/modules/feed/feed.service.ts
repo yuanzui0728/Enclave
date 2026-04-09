@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { FeedPostEntity } from './feed-post.entity';
 import { FeedCommentEntity } from './feed-comment.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+
+type FeedListItem = FeedPostEntity & {
+  commentsPreview: FeedCommentEntity[];
+};
 
 @Injectable()
 export class FeedService {
@@ -24,13 +28,37 @@ export class FeedService {
     private readonly worldOwnerService: WorldOwnerService,
   ) {}
 
-  async getFeed(page = 1, limit = 20): Promise<{ posts: FeedPostEntity[]; total: number }> {
+  async getFeed(page = 1, limit = 20): Promise<{ posts: FeedListItem[]; total: number }> {
     const [posts, total] = await this.postRepo.findAndCount({
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
-    return { posts, total };
+
+    if (!posts.length) {
+      return { posts: [], total };
+    }
+
+    const postIds = posts.map((post) => post.id);
+    const comments = await this.commentRepo.find({
+      where: { postId: In(postIds) },
+      order: { createdAt: 'ASC' },
+    });
+    const commentMap = new Map<string, FeedCommentEntity[]>();
+
+    for (const comment of comments) {
+      const currentComments = commentMap.get(comment.postId) ?? [];
+      currentComments.push(comment);
+      commentMap.set(comment.postId, currentComments.slice(-3));
+    }
+
+    return {
+      posts: posts.map((post) => ({
+        ...post,
+        commentsPreview: commentMap.get(post.id) ?? [],
+      })),
+      total,
+    };
   }
 
   async getPostWithComments(postId: string) {

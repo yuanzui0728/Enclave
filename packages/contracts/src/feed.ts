@@ -24,12 +24,16 @@ export interface FeedComment {
   createdAt: string;
 }
 
+export interface FeedPostListItem extends FeedPost {
+  commentsPreview: FeedComment[];
+}
+
 export interface FeedPostWithComments extends FeedPost {
   comments: FeedComment[];
 }
 
 export interface FeedListResponse {
-  posts: FeedPost[];
+  posts: FeedPostListItem[];
   total: number;
 }
 
@@ -40,4 +44,3 @@ export interface CreateFeedPostRequest {
 export interface CreateFeedCommentRequest {
   text: string;
 }
-
