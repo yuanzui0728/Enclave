@@ -1,9 +1,12 @@
 import { Mic, Plus, SendHorizontal, Smile, Square, WandSparkles, X } from "lucide-react";
+import { type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MobileSpeechInputSheet } from "./mobile-speech-input-sheet";
 import { useSpeechInput } from "../features/chat/use-speech-input";
+import { loadRecentStickers, pushRecentSticker } from "../features/chat/stickers/recent-stickers";
+import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 
 type ChatComposerProps = {
   value: string;
@@ -16,6 +19,7 @@ type ChatComposerProps = {
     conversationId: string;
     enabled: boolean;
   };
+  onSendSticker?: (sticker: StickerAttachment) => void | Promise<void>;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -27,12 +31,17 @@ export function ChatComposer({
   pending = false,
   error,
   speechInput,
+  onSendSticker,
   onChange,
   onSubmit,
 }: ChatComposerProps) {
   const { keyboardInset, keyboardOpen } = useKeyboardInset();
   const isDesktop = variant === "desktop";
   const [mobileSpeechSheetOpen, setMobileSpeechSheetOpen] = useState(false);
+  const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
+  const [activeStickerPackId, setActiveStickerPackId] = useState("yinjie-mochi");
+  const [recentStickers, setRecentStickers] = useState(() => loadRecentStickers());
+  const desktopStickerRef = useRef<HTMLDivElement | null>(null);
   const speech = useSpeechInput({
     baseUrl: speechInput?.baseUrl,
     conversationId: speechInput?.conversationId ?? "",
@@ -54,6 +63,42 @@ export function ChatComposer({
     }
   };
 
+  useEffect(() => {
+    if (!isDesktop || !stickerPanelOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!desktopStickerRef.current?.contains(event.target as Node)) {
+        setStickerPanelOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [isDesktop, stickerPanelOpen]);
+
+  const toggleStickerPanel = () => {
+    if (!onSendSticker) {
+      return;
+    }
+
+    if (speech.status === "listening") {
+      speech.stop();
+    }
+    setStickerPanelOpen((current) => !current);
+  };
+
+  const handleSendSticker = async (sticker: StickerAttachment) => {
+    if (!onSendSticker) {
+      return;
+    }
+
+    await onSendSticker(sticker);
+    setRecentStickers(pushRecentSticker(sticker.packId, sticker.stickerId));
+    setStickerPanelOpen(false);
+  };
+
   return (
     <>
       <div
@@ -68,10 +113,21 @@ export function ChatComposer({
             : isDesktop ? "0.75rem" : "0.35rem",
         }}
       >
-        <div className={`flex items-center gap-2 ${isDesktop ? "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : ""}`}>
+        <div
+          ref={isDesktop ? desktopStickerRef : undefined}
+          className={`relative flex items-center gap-2 ${isDesktop ? "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : ""}`}
+        >
           {isDesktop ? (
             <>
-              <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]" aria-label="表情">
+              <button
+                type="button"
+                onClick={toggleStickerPanel}
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]",
+                  stickerPanelOpen ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]" : "",
+                )}
+                aria-label="表情"
+              >
                 <Smile size={18} />
               </button>
               <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]" aria-label="更多功能">
@@ -110,7 +166,7 @@ export function ChatComposer({
               className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
             {!isDesktop ? (
-              <button type="button" className="text-[color:var(--text-secondary)]" aria-label="表情">
+              <button type="button" onClick={toggleStickerPanel} className="text-[color:var(--text-secondary)]" aria-label="表情">
                 <Smile size={18} />
               </button>
             ) : (
@@ -162,6 +218,17 @@ export function ChatComposer({
           ) : (
             <div className="h-10 w-[74px]" />
           )}
+
+          {stickerPanelOpen && onSendSticker ? (
+            <StickerPanel
+              variant={variant}
+              activePackId={activeStickerPackId}
+              recentItems={recentStickers}
+              onClose={() => setStickerPanelOpen(false)}
+              onPackChange={setActiveStickerPackId}
+              onSelect={(sticker) => void handleSendSticker(sticker)}
+            />
+          ) : null}
         </div>
         {!isDesktop && speech.status === "ready" && speechDisplayText ? (
           <InlineNotice className="mt-2 flex items-center justify-between gap-3 text-xs" tone="info">
