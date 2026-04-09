@@ -9,6 +9,7 @@ import { ChatComposer } from "../components/chat-composer";
 import { ChatMessageList } from "../components/chat-message-list";
 import { EmptyState } from "../components/empty-state";
 import { useScrollAnchor } from "../hooks/use-scroll-anchor";
+import { parseTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupChatPage() {
@@ -49,7 +50,10 @@ export function GroupChatPage() {
     },
   });
   const orderedMessages = useMemo(
-    () => [...(messagesQuery.data ?? [])].sort((left, right) => Number(left.createdAt) - Number(right.createdAt)),
+    () =>
+      [...(messagesQuery.data ?? [])].sort(
+        (left, right) => (parseTimestamp(left.createdAt) ?? 0) - (parseTimestamp(right.createdAt) ?? 0),
+      ),
     [messagesQuery.data],
   );
 

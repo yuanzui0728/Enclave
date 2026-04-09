@@ -11,6 +11,7 @@ import {
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
+import { parseTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
@@ -173,7 +174,9 @@ export function useConversationThread(conversationId: string) {
     for (const item of messages) {
       deduped.set(item.id, item);
     }
-    return [...deduped.values()].sort((left, right) => Number(left.createdAt) - Number(right.createdAt));
+    return [...deduped.values()].sort(
+      (left, right) => (parseTimestamp(left.createdAt) ?? 0) - (parseTimestamp(right.createdAt) ?? 0),
+    );
   }, [messages]);
 
   return {
