@@ -28,17 +28,17 @@ function normalizeBaseUrl(value: string) {
 function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   switch (data?.status) {
     case "active":
-      return "World is active";
+      return "云世界已开通";
     case "pending":
-      return "Request received";
+      return "申请单已提交";
     case "provisioning":
-      return "Provisioning in progress";
+      return "正在准备世界";
     case "rejected":
-      return "Request needs attention";
+      return "申请需要处理";
     case "disabled":
-      return "World is disabled";
+      return "云世界已停用";
     default:
-      return "No cloud world found";
+      return "还没有找到云世界";
   }
 }
 
@@ -107,7 +107,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
       ),
     onSuccess: (result) => {
       setPhone(result.phone);
-      setNotice("Verification code sent.");
+      setNotice("验证码已发送。");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -133,7 +133,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
       setPhone(result.phone);
       setCode("");
       setCloudAccessToken(result.accessToken);
-      setNotice("Phone verified. Checking your cloud world now.");
+      setNotice("手机号验证完成，正在检查你的云世界。");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -156,7 +156,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
         normalizedCloudApiBaseUrl || undefined,
       ),
     onSuccess: async () => {
-      setNotice("Cloud world request submitted.");
+      setNotice("建世界申请已提交。");
       await cloudStatusQuery.refetch();
     },
   });
@@ -171,8 +171,8 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
   const localCanContinue = Boolean(normalizedLocalApiBaseUrl);
   const configuredWorldSummary =
     runtimeConfig.worldAccessMode === "cloud"
-      ? runtimeConfig.cloudWorldId || runtimeConfig.cloudPhone || "Cloud world pending"
-      : runtimeConfig.apiBaseUrl || "Not configured yet";
+      ? runtimeConfig.cloudWorldId || runtimeConfig.cloudPhone || "等待云世界确认"
+      : runtimeConfig.apiBaseUrl || "尚未配置";
 
   useEffect(() => {
     setContinueError("");
@@ -182,17 +182,17 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
     if (mode === "cloud") {
       return [
         {
-          label: "Choose cloud entry",
-          hint: normalizedCloudApiBaseUrl || runtimeConfig.cloudApiBaseUrl || "Use the default cloud platform.",
+          label: "选择官方云入口",
+          hint: normalizedCloudApiBaseUrl || runtimeConfig.cloudApiBaseUrl || "默认使用官方云平台地址。",
           ok: true,
         },
         {
-          label: "Verify phone",
-          hint: phone.trim() ? `Current phone: ${phone.trim()}` : "Enter your phone number and verify it.",
+          label: "验证手机号",
+          hint: phone.trim() ? `当前手机号：${phone.trim()}` : "输入手机号并完成验证码验证。",
           ok: Boolean(cloudAccessToken),
         },
         {
-          label: "Confirm world",
+          label: "确认世界状态",
           hint:
             currentCloudWorld?.apiBaseUrl ??
             cloudStatusQuery.data?.latestRequest?.note ??
@@ -204,23 +204,24 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
 
     return [
       {
-        label: "Choose local entry",
-        hint: "Connect this desktop app to your own world endpoint.",
+        label: "选择本地入口",
+        hint: "把这台桌面端连接到你自己的世界实例。",
         ok: true,
       },
       {
-        label: "Save API endpoint",
-        hint: normalizedLocalApiBaseUrl || "Fill in a reachable world API URL.",
+        label: "保存世界地址",
+        hint: normalizedLocalApiBaseUrl || "先填写一个可访问的世界地址。",
         ok: Boolean(normalizedLocalApiBaseUrl),
       },
       {
-        label: "Ready to enter",
-        hint: localCanContinue ? "The local world endpoint is saved." : "Save the endpoint before entering the world.",
+        label: "准备进入",
+        hint: localCanContinue ? "本地世界入口已经保存。" : "保存有效入口后再进入世界。",
         ok: localCanContinue,
       },
     ];
   }, [
     cloudCanContinue,
+    cloudAccessToken,
     cloudStatusQuery.data,
     currentCloudWorld?.apiBaseUrl,
     localCanContinue,
@@ -241,7 +242,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
       bootstrapSource: "user",
       configStatus: normalizedLocalApiBaseUrl ? "configured" : "unconfigured",
     });
-    setNotice("Local world entry saved.");
+    setNotice("本地世界入口已保存。");
   }
 
   async function continueWithLocalWorld() {
@@ -310,28 +311,28 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
     <div className="space-y-6">
       <section className="grid gap-4 xl:grid-cols-3">
         <SetupStatusCard
-          title="Current mode"
-          value={mode === "cloud" ? "Cloud world" : "Local world"}
+          title="当前入口模式"
+          value={mode === "cloud" ? "官方云世界" : "本地世界"}
           detail={
             mode === "cloud"
-              ? "Look up your official cloud world with a phone number."
-              : "Connect directly to a self-hosted world API."
+              ? "通过手机号找到官方开通的云世界。"
+              : "直接连接到你自己的世界实例。"
           }
           ok
         />
         <SetupStatusCard
-          title="Current entry"
+          title="当前入口"
           value={configuredWorldSummary}
-          detail="Switching the entry here updates the runtime configuration saved on this desktop."
+          detail="在这里切换入口，会同步更新这台桌面设备保存的运行时配置。"
           ok={Boolean(runtimeConfig.worldAccessMode)}
         />
         <SetupStatusCard
-          title="Next step"
-          value={hasOwner ? "Return to world" : "Finish setup"}
+          title="下一步"
+          value={hasOwner ? "回到世界" : "继续初始化"}
           detail={
             hasOwner
-              ? "After the entry is confirmed, the desktop app can jump back into your world."
-              : "After the entry is confirmed, you can continue into onboarding."
+              ? "入口确认完成后，可以直接回到桌面聊天工作台。"
+              : "入口确认完成后，将继续完成世界主人的首次命名。"
           }
           ok={hasOwner}
         />
@@ -339,7 +340,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
 
       <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
         <div className="space-y-6">
-          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,239,0.94))] p-5 shadow-[var(--shadow-section)]">
             <div className="flex flex-wrap gap-3">
               <Button
                 onClick={() => selectMode("cloud")}
@@ -347,7 +348,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                 size="lg"
                 className="rounded-2xl"
               >
-                Use cloud world
+                使用官方云世界
               </Button>
               <Button
                 onClick={() => selectMode("local")}
@@ -355,7 +356,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                 size="lg"
                 className="rounded-2xl"
               >
-                Use local world
+                使用本地世界
               </Button>
             </div>
 
@@ -366,42 +367,42 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] p-5 shadow-[var(--shadow-section)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {mode === "local" ? "Local world connection" : "Cloud world verification"}
+              {mode === "local" ? "本地世界连接" : "官方云世界验证"}
             </div>
             <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
               {mode === "local"
-                ? "Use this when your desktop app should connect to your own deployment."
-                : "Use this when your world is hosted on the official cloud platform."}
+                ? "当你的桌面客户端需要连接自己的部署实例时，使用这里。"
+                : "当你的世界由官方云平台托管时，使用这里完成验证。"}
             </div>
 
             {mode === "local" ? (
               <div className="mt-5 grid gap-4">
                 <label className="block space-y-2">
                   <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                    World API URL
+                    世界 API 地址
                   </span>
                   <TextField
                     value={localApiBaseUrl}
                     onChange={(event) => setLocalApiBaseUrl(event.target.value)}
-                    placeholder="http://127.0.0.1:3000"
+                    placeholder="例如 http://127.0.0.1:3000"
                   />
                 </label>
 
                 <label className="block space-y-2">
                   <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                    Socket URL
+                    Socket 地址
                   </span>
                   <TextField
                     value={localSocketBaseUrl}
                     onChange={(event) => setLocalSocketBaseUrl(event.target.value)}
-                    placeholder="http://127.0.0.1:3000"
+                    placeholder="通常与 API 地址保持一致"
                   />
                 </label>
 
                 <InlineNotice tone="info">
-                  If the socket service lives on the same address, you can keep both fields identical.
+                  如果 Socket 服务与 API 服务使用同一地址，两个输入框可以保持一致。
                 </InlineNotice>
 
                 <div className="flex flex-wrap gap-3">
@@ -411,7 +412,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="primary"
                     size="lg"
                   >
-                    Save local entry
+                    保存本地入口
                   </Button>
                   <Button
                     onClick={() => void continueWithLocalWorld()}
@@ -419,7 +420,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="secondary"
                     size="lg"
                   >
-                    {isContinuing ? "Checking world..." : hasOwner ? "Enter Yinjie" : "Continue"}
+                    {isContinuing ? "正在检查世界..." : hasOwner ? "进入隐界" : "继续"}
                   </Button>
                 </div>
               </div>
@@ -427,35 +428,35 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
               <div className="mt-5 grid gap-4">
                 <label className="block space-y-2">
                   <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                    Cloud API URL
+                    云平台地址
                   </span>
                   <TextField
                     value={cloudApiBaseUrl}
                     onChange={(event) => setCloudApiBaseUrl(event.target.value)}
-                    placeholder="https://cloud.example.com"
+                    placeholder="留空可使用默认官方平台"
                   />
                 </label>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="block space-y-2">
                     <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                      Phone number
+                      手机号
                     </span>
                     <TextField
                       value={phone}
                       onChange={(event) => setPhone(event.target.value)}
-                      placeholder="Enter phone number"
+                      placeholder="输入申请云世界时使用的手机号"
                     />
                   </label>
 
                   <label className="block space-y-2">
                     <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
-                      Verification code
+                      验证码
                     </span>
                     <TextField
                       value={code}
                       onChange={(event) => setCode(event.target.value)}
-                      placeholder="Enter verification code"
+                      placeholder="输入收到的验证码"
                     />
                   </label>
                 </div>
@@ -467,7 +468,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="primary"
                     size="lg"
                   >
-                    {sendCodeMutation.isPending ? "Sending..." : "Send code"}
+                    {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
                   </Button>
                   <Button
                     onClick={() => verifyCodeMutation.mutate()}
@@ -475,7 +476,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="secondary"
                     size="lg"
                   >
-                    {verifyCodeMutation.isPending ? "Verifying..." : "Verify phone"}
+                    {verifyCodeMutation.isPending ? "验证中..." : "验证手机号"}
                   </Button>
                   <Button
                     onClick={() => void cloudStatusQuery.refetch()}
@@ -483,7 +484,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="secondary"
                     size="lg"
                   >
-                    {cloudStatusQuery.isFetching ? "Refreshing..." : "Refresh status"}
+                    {cloudStatusQuery.isFetching ? "刷新中..." : "刷新状态"}
                   </Button>
                   <Button
                     onClick={() => void continueWithCloudWorld()}
@@ -491,7 +492,7 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
                     variant="secondary"
                     size="lg"
                   >
-                    {isContinuing ? "Checking world..." : hasOwner ? "Enter Yinjie" : "Continue"}
+                    {isContinuing ? "正在检查世界..." : hasOwner ? "进入隐界" : "继续"}
                   </Button>
                 </div>
               </div>
@@ -500,70 +501,70 @@ export function DesktopSetupPanel({ hasOwner, onContinue }: DesktopSetupPanelPro
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">Desktop entry notes</div>
+          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,248,239,0.94))] p-5 shadow-[var(--shadow-section)]">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">桌面端入口说明</div>
             <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-              <p>The desktop shell stays in remote-connected mode, but the entry flow is laid out for a wide workspace.</p>
-              <p>Once the entry is confirmed, chat pages switch to the desktop workspace instead of the mobile list layout.</p>
+              <p>桌面端仍然保持 remote-connected 模式，但入口流程会按宽屏工作区来组织信息。</p>
+              <p>入口确认完成后，聊天页会直接切换到桌面工作台，而不是退回手机式列表布局。</p>
             </div>
           </section>
 
           {mode === "cloud" ? (
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">Cloud world status</div>
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] p-5 shadow-[var(--shadow-section)]">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">官方云世界状态</div>
 
               {cloudStatusQuery.isLoading ? (
-                <LoadingBlock className="mt-4 px-0 py-0 text-left" label="Checking your cloud world..." />
+                <LoadingBlock className="mt-4 px-0 py-0 text-left" label="正在检查你的云世界..." />
               ) : null}
 
               {cloudStatusQuery.data ? (
                 <InlineNotice className="mt-4" tone={cloudCanContinue ? "success" : "info"}>
                   {cloudCanContinue
-                    ? `World ready: ${currentCloudWorld?.name ?? "Unnamed world"}`
-                    : `Current status: ${describeCloudStatus(cloudStatusQuery.data)}`}
+                    ? `世界已就绪：${currentCloudWorld?.name ?? "未命名世界"}`
+                    : `当前状态：${describeCloudStatus(cloudStatusQuery.data)}`}
                 </InlineNotice>
               ) : null}
 
               {currentCloudWorld?.apiBaseUrl ? (
                 <InlineNotice className="mt-4" tone="muted">
-                  API: {currentCloudWorld.apiBaseUrl}
+                  世界地址：{currentCloudWorld.apiBaseUrl}
                 </InlineNotice>
               ) : null}
 
               {cloudCanRequestWorld ? (
-                <div className="mt-4 space-y-3 rounded-[24px] border border-[color:var(--border-faint)] bg-black/10 p-4">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">No cloud world yet</div>
+                <div className="mt-4 space-y-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] p-4">
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">还没有开通云世界</div>
                   <div className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                    Submit a world request and we will keep showing the latest platform response here.
+                    先提交建世界申请，平台的最新处理结果会一直显示在这里。
                   </div>
                   <TextField
                     value={worldName}
                     onChange={(event) => setWorldName(event.target.value)}
-                    placeholder="Name your world"
+                    placeholder="先给你的世界起一个名字"
                   />
                   <Button
                     onClick={() => createWorldRequestMutation.mutate()}
                     disabled={!worldName.trim() || createWorldRequestMutation.isPending}
                     variant="primary"
                   >
-                    {createWorldRequestMutation.isPending ? "Submitting..." : "Submit world request"}
+                    {createWorldRequestMutation.isPending ? "提交中..." : "提交建世界申请"}
                   </Button>
                 </div>
               ) : null}
 
               {cloudStatusQuery.data?.latestRequest?.note ? (
                 <InlineNotice className="mt-4" tone="warning">
-                  Platform note: {cloudStatusQuery.data.latestRequest.note}
+                  平台备注：{cloudStatusQuery.data.latestRequest.note}
                 </InlineNotice>
               ) : null}
             </section>
           ) : (
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">Local world checklist</div>
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] p-5 shadow-[var(--shadow-section)]">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">本地世界检查清单</div>
               <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                <p>Confirm the Core API is reachable from this desktop before continuing.</p>
-                <p>Recommended default for local debugging: `http://127.0.0.1:3000`.</p>
-                <p>Keep the socket URL aligned with the API URL unless you intentionally expose them separately.</p>
+                <p>继续之前，先确认这台桌面设备可以访问到世界实例的 Core API。</p>
+                <p>本地调试推荐默认地址：`http://127.0.0.1:3000`。</p>
+                <p>除非你明确拆分了服务，否则 Socket 地址建议与 API 地址保持一致。</p>
               </div>
             </section>
           )}
