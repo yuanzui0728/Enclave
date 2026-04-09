@@ -42,26 +42,64 @@ export function ChatComposer({
   const [activeStickerPackId, setActiveStickerPackId] = useState("yinjie-mochi");
   const [recentStickers, setRecentStickers] = useState(() => loadRecentStickers());
   const desktopStickerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const showSpeechEntry = Boolean(speechInput?.enabled && speechInput?.conversationId);
   const speech = useSpeechInput({
     baseUrl: speechInput?.baseUrl,
     conversationId: speechInput?.conversationId ?? "",
-    enabled: Boolean(speechInput?.enabled && speechInput?.conversationId),
+    enabled: showSpeechEntry,
   });
+  const speechSupported = showSpeechEntry && speech.supported;
+  const speechDisabledReason = showSpeechEntry && !speechSupported ? "当前浏览器不支持语音输入，请改用键盘输入。" : null;
+  const speechButtonDisabled =
+    !speechSupported || speech.status === "requesting-permission" || speech.status === "processing";
   const composerError = error ?? speech.error;
   const speechDisplayText = speech.displayText.trim();
+
+  const focusInput = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) {
+        return;
+      }
+
+      input.focus();
+      const selection = input.value.length;
+      input.setSelectionRange(selection, selection);
+    });
+  };
 
   const commitSpeechInput = () => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
     setMobileSpeechSheetOpen(false);
+    focusInput();
   };
 
   const toggleMobileSpeech = async () => {
+    if (!speechSupported) {
+      return;
+    }
+
+    inputRef.current?.blur();
+    setStickerPanelOpen(false);
     setMobileSpeechSheetOpen(true);
     if (speech.status === "idle" || speech.status === "error") {
       await speech.start();
     }
   };
+
+  useEffect(() => {
+    if (showSpeechEntry) {
+      return;
+    }
+
+    setMobileSpeechSheetOpen(false);
+  }, [showSpeechEntry]);
 
   useEffect(() => {
     if (!isDesktop || !stickerPanelOpen) {
@@ -134,26 +172,29 @@ export function ChatComposer({
                 <Plus size={18} />
               </button>
             </>
-          ) : (
+          ) : showSpeechEntry ? (
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => void toggleMobileSpeech()}
+              disabled={speechButtonDisabled}
+              title={speechDisabledReason ?? undefined}
               className={cn(
-                "h-10 w-10 rounded-full border border-white/70 bg-white/80 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] hover:bg-white",
+                "h-10 w-10 rounded-full border border-white/70 bg-white/80 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-45",
                 speech.status === "listening"
                   ? "border-[rgba(249,115,22,0.35)] text-[color:var(--brand-primary)]"
                   : "",
               )}
-              aria-label="语音输入"
+              aria-label={speechDisabledReason ?? "语音输入"}
             >
               {speech.status === "listening" ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
             </Button>
-          )}
+          ) : null}
 
           <div className={`flex min-w-0 flex-1 items-center gap-2 ${isDesktop ? "" : "rounded-[24px] border border-white/80 bg-white/90 px-3 py-2 shadow-[var(--shadow-soft)]"}`}>
             <input
+              ref={inputRef}
               value={value}
               onChange={(event) => onChange(event.target.value)}
               onKeyDown={(event) => {
@@ -169,7 +210,7 @@ export function ChatComposer({
               <button type="button" onClick={toggleStickerPanel} className="text-[color:var(--text-secondary)]" aria-label="表情">
                 <Smile size={18} />
               </button>
-            ) : (
+            ) : showSpeechEntry ? (
               <button
                 type="button"
                 onClick={() => {
@@ -177,19 +218,22 @@ export function ChatComposer({
                     speech.stop();
                     return;
                   }
+                  setStickerPanelOpen(false);
                   void speech.start();
                 }}
+                disabled={speechButtonDisabled && speech.status !== "listening"}
+                title={speechDisabledReason ?? undefined}
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]",
+                  "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)] disabled:cursor-not-allowed disabled:opacity-45",
                   speech.status === "listening"
                     ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
                     : "",
                 )}
-                aria-label={speech.status === "listening" ? "停止语音输入" : "语音输入"}
+                aria-label={speechDisabledReason ?? (speech.status === "listening" ? "停止语音输入" : "语音输入")}
               >
                 {speech.status === "listening" ? <Square size={15} fill="currentColor" /> : <Mic size={18} />}
               </button>
-            )}
+            ) : null}
           </div>
 
           {value.trim() ? (
@@ -230,6 +274,11 @@ export function ChatComposer({
             />
           ) : null}
         </div>
+        {speechDisabledReason ? (
+          <InlineNotice className="mt-2 text-xs" tone="muted">
+            {speechDisabledReason}
+          </InlineNotice>
+        ) : null}
         {!isDesktop && speech.status === "ready" && speechDisplayText ? (
           <InlineNotice className="mt-2 flex items-center justify-between gap-3 text-xs" tone="info">
             <span className="truncate">识别完成：{speechDisplayText}</span>
@@ -283,7 +332,7 @@ export function ChatComposer({
         ) : null}
       </div>
       <MobileSpeechInputSheet
-        open={mobileSpeechSheetOpen}
+        open={showSpeechEntry && mobileSpeechSheetOpen}
         supported={speech.supported}
         status={speech.status}
         text={speechDisplayText}
