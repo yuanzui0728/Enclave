@@ -112,7 +112,7 @@ function MobileChatListPage() {
       <TabPageTopBar
         title="消息"
         subtitle={`共 ${conversations.length} 个会话`}
-        className="space-y-4 px-4 pb-4 pt-3 text-[color:var(--text-primary)]"
+        className="z-40 space-y-4 overflow-visible px-4 pb-4 pt-3 text-[color:var(--text-primary)]"
         titleAlign="center"
         rightActions={
           <div className="relative">
