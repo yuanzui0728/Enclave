@@ -29,7 +29,7 @@ export function TabPageTopBar({
         {leftActions ? <div className="shrink-0">{leftActions}</div> : titleAlign === "center" ? <div className="w-9 shrink-0" aria-hidden="true" /> : null}
         <h1
           className={cn(
-            "truncate text-xl font-semibold tracking-[0.01em] text-white",
+            "truncate text-xl font-semibold tracking-[0.01em] text-current",
             titleAlign === "center" ? "pointer-events-none absolute inset-x-12 text-center" : undefined,
           )}
         >
