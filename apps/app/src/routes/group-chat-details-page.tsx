@@ -59,7 +59,10 @@ export function GroupChatDetailsPage() {
       updateGroup(groupId, payload, baseUrl),
     onSuccess: async (_, payload) => {
       setNotice(payload.name ? "群聊名称已更新。" : "群公告已更新。");
-      await queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
     },
   });
 
@@ -67,7 +70,10 @@ export function GroupChatDetailsPage() {
     mutationFn: (pinned: boolean) => setGroupPinned(groupId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
       setNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
-      await queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
     },
   });
 
@@ -91,6 +97,7 @@ export function GroupChatDetailsPage() {
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
         }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
       ]);
     },
   });
@@ -106,6 +113,7 @@ export function GroupChatDetailsPage() {
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
         }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
       ]);
       void navigate({ to: "/tabs/chat" });
     },
