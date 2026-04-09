@@ -5,8 +5,8 @@ export class UserFeedInteractionEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  userId: string;
+  @Column({ name: 'userId' })
+  ownerId: string;
 
   @Column()
   postId: string;

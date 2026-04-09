@@ -131,3 +131,4 @@
 - `packages/contracts/src/evals.ts` now uses `ownerId` for trace owner semantics.
 - `ConversationEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.
+- `UserFeedInteractionEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.

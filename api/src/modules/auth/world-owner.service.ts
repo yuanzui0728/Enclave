@@ -64,7 +64,7 @@ export class WorldOwnerService {
       await manager.getRepository(FriendshipEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(FriendRequestEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(NarrativeArcEntity).delete({ ownerId: In(removedOwnerIds) });
-      await manager.getRepository(UserFeedInteractionEntity).delete({ userId: In(removedOwnerIds) });
+      await manager.getRepository(UserFeedInteractionEntity).delete({ ownerId: In(removedOwnerIds) });
 
       await manager
         .createQueryBuilder()
