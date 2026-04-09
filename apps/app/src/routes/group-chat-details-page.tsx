@@ -5,6 +5,7 @@ import {
   clearGroupMessages,
   getGroup,
   getGroupMembers,
+  hideGroup,
   leaveGroup,
   setGroupPinned,
   updateGroup,
@@ -15,6 +16,7 @@ import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
+import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import {
   readGroupChatDetailPreferences,
@@ -60,19 +62,28 @@ export function GroupChatDetailsPage() {
     onSuccess: async (_, payload) => {
       setNotice(payload.name ? "群聊名称已更新。" : "群公告已更新。");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
 
   const pinMutation = useMutation({
-    mutationFn: (pinned: boolean) => setGroupPinned(groupId, { pinned }, baseUrl),
+    mutationFn: (pinned: boolean) =>
+      setGroupPinned(groupId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
       setNotice(pinned ? "群聊已置顶。" : "群聊已取消置顶。");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
@@ -93,11 +104,15 @@ export function GroupChatDetailsPage() {
     onSuccess: async () => {
       setNotice("群聊记录已清空。");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, groupId],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
         }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
@@ -106,14 +121,33 @@ export function GroupChatDetailsPage() {
     mutationFn: () => leaveGroup(groupId, baseUrl),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-group", baseUrl, groupId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, groupId],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-members", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
         }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+      void navigate({ to: "/tabs/chat" });
+    },
+  });
+
+  const hideMutation = useMutation({
+    mutationFn: () => hideGroup(groupId, baseUrl),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
       void navigate({ to: "/tabs/chat" });
     },
@@ -131,7 +165,8 @@ export function GroupChatDetailsPage() {
     pinMutation.isPending ||
     updateNicknameMutation.isPending ||
     clearMutation.isPending ||
-    leaveMutation.isPending;
+    leaveMutation.isPending ||
+    hideMutation.isPending;
 
   const memberItems = useMemo(() => {
     const members = (membersQuery.data ?? []).slice(0, 10).map((member) => ({
@@ -165,9 +200,7 @@ export function GroupChatDetailsPage() {
     <ChatDetailsShell
       title={groupQuery.data?.name ?? "群聊信息"}
       subtitle={
-        membersQuery.data
-          ? `${membersQuery.data.length} 人群聊`
-          : "群聊信息"
+        membersQuery.data ? `${membersQuery.data.length} 人群聊` : "群聊信息"
       }
       onBack={() => {
         void navigate({ to: "/group/$groupId", params: { groupId } });
@@ -194,21 +227,29 @@ export function GroupChatDetailsPage() {
 
       {!groupQuery.isLoading && !groupQuery.data ? (
         <div className="px-3">
-          <EmptyState title="群聊不存在" description="这个群聊暂时不可用，返回消息列表再试一次。" />
+          <EmptyState
+            title="群聊不存在"
+            description="这个群聊暂时不可用，返回消息列表再试一次。"
+          />
         </div>
       ) : null}
 
       {groupQuery.data ? (
         <>
-          <ChatMemberGrid items={memberItems} />
+          <ChatDetailsSection title="群聊成员">
+            <ChatMemberGrid items={memberItems} />
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="群聊资料">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="群聊名称"
                 value={groupQuery.data.name}
                 onClick={() => {
-                  const nextName = window.prompt("修改群聊名称", groupQuery.data.name);
+                  const nextName = window.prompt(
+                    "修改群聊名称",
+                    groupQuery.data.name,
+                  );
                   if (!nextName || nextName.trim() === groupQuery.data.name) {
                     return;
                   }
@@ -232,9 +273,9 @@ export function GroupChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="聊天记录">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="查找聊天记录"
@@ -246,16 +287,18 @@ export function GroupChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="消息设置">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="消息免打扰"
                 checked={preferences.muted}
                 onToggle={(checked) => {
                   setPreferences((current) => ({ ...current, muted: checked }));
-                  setNotice(checked ? "已开启群消息免打扰。" : "已关闭群消息免打扰。");
+                  setNotice(
+                    checked ? "已开启群消息免打扰。" : "已关闭群消息免打扰。",
+                  );
                 }}
               />
               <ChatSettingRow
@@ -267,13 +310,15 @@ export function GroupChatDetailsPage() {
                 label="保存到通讯录"
                 value="暂不支持"
                 onClick={() => {
-                  setNotice("群聊保存到通讯录能力当前未接入，先保留微信式入口。");
+                  setNotice(
+                    "群聊保存到通讯录能力当前未接入，先保留微信式入口。",
+                  );
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="群内资料">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="我在本群的昵称"
@@ -300,13 +345,17 @@ export function GroupChatDetailsPage() {
                     ...current,
                     showMemberNicknames: checked,
                   }));
-                  setNotice(checked ? "已开启显示群成员昵称。" : "已关闭显示群成员昵称。");
+                  setNotice(
+                    checked
+                      ? "已开启显示群成员昵称。"
+                      : "已关闭显示群成员昵称。",
+                  );
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="聊天背景">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="聊天背景"
@@ -320,10 +369,24 @@ export function GroupChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="危险操作">
             <div className="divide-y divide-black/5">
+              <ChatSettingRow
+                label="隐藏聊天"
+                disabled={busy}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
+                    )
+                  ) {
+                    return;
+                  }
+                  hideMutation.mutate();
+                }}
+              />
               <ChatSettingRow
                 label="清空聊天记录"
                 danger
@@ -340,16 +403,21 @@ export function GroupChatDetailsPage() {
                 danger
                 disabled={busy}
                 onClick={() => {
-                  if (!window.confirm("删除并退出后，该群聊会从当前世界中移除。确认继续吗？")) {
+                  if (
+                    !window.confirm(
+                      "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
+                    )
+                  ) {
                     return;
                   }
                   leaveMutation.mutate();
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          {updateGroupMutation.isError && updateGroupMutation.error instanceof Error ? (
+          {updateGroupMutation.isError &&
+          updateGroupMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={updateGroupMutation.error.message} />
             </div>
@@ -373,6 +441,11 @@ export function GroupChatDetailsPage() {
           {leaveMutation.isError && leaveMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={leaveMutation.error.message} />
+            </div>
+          ) : null}
+          {hideMutation.isError && hideMutation.error instanceof Error ? (
+            <div className="px-3">
+              <ErrorBlock message={hideMutation.error.message} />
             </div>
           ) : null}
         </>

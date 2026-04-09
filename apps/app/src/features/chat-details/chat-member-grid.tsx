@@ -16,8 +16,8 @@ type ChatMemberGridProps = {
 
 export function ChatMemberGrid({ items, className }: ChatMemberGridProps) {
   return (
-    <section className={cn("border-y border-black/5 bg-white px-4 py-4", className)}>
-      <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+    <div className={cn("px-4 py-4", className)}>
+      <div className="grid grid-cols-5 gap-x-3 gap-y-4">
         {items.map((item) => {
           const isAction = item.kind === "add" || item.kind === "remove";
           return (
@@ -30,7 +30,7 @@ export function ChatMemberGrid({ items, className }: ChatMemberGridProps) {
               {isAction ? (
                 <div
                   className={cn(
-                    "flex h-12 w-12 items-center justify-center rounded-xl border border-dashed text-2xl shadow-none transition-colors",
+                    "flex h-11 w-11 items-center justify-center rounded-[12px] border border-dashed text-2xl shadow-none transition-colors",
                     item.kind === "remove"
                       ? "border-[rgba(220,38,38,0.25)] bg-[rgba(254,242,242,0.8)] text-red-500"
                       : "border-black/10 bg-[#f7f7f7] text-[color:var(--text-secondary)]",
@@ -41,11 +41,13 @@ export function ChatMemberGrid({ items, className }: ChatMemberGridProps) {
               ) : (
                 <AvatarChip name={item.label} src={item.src} size="wechat" />
               )}
-              <span className="w-full truncate text-[12px] text-[color:var(--text-secondary)]">{item.label}</span>
+              <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+                {item.label}
+              </span>
             </button>
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

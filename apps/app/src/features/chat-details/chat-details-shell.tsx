@@ -36,14 +36,20 @@ export function ChatDetailsShell({
             <ArrowLeft size={18} />
           </Button>
           <div className="min-w-0 flex-1 text-center">
-            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">{title}</div>
-            {subtitle ? <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">{subtitle}</div> : null}
+            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+              {title}
+            </div>
+            {subtitle ? (
+              <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                {subtitle}
+              </div>
+            ) : null}
           </div>
           <div className="w-9 shrink-0" aria-hidden="true" />
         </div>
       </header>
 
-      <div className="space-y-2 px-0 pb-6 pt-3">{children}</div>
+      <div className="space-y-3 px-0 pb-6 pt-3">{children}</div>
     </AppPage>
   );
 }

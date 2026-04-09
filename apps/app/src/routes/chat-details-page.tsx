@@ -17,6 +17,7 @@ import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
+import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import {
   readDirectChatDetailPreferences,
@@ -270,9 +271,11 @@ export function ChatDetailsPage() {
 
       {conversation ? (
         <>
-          <ChatMemberGrid items={memberItems} />
+          <ChatDetailsSection title="聊天成员">
+            <ChatMemberGrid items={memberItems} />
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="聊天记录">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="查找聊天记录"
@@ -284,9 +287,9 @@ export function ChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="消息设置">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="消息免打扰"
@@ -315,9 +318,9 @@ export function ChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="聊天扩展">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="保存到通讯录"
@@ -338,9 +341,9 @@ export function ChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
-          <section className="border-y border-black/5 bg-white">
+          <ChatDetailsSection title="危险操作">
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="清空聊天记录"
@@ -380,7 +383,7 @@ export function ChatDetailsPage() {
                 }}
               />
             </div>
-          </section>
+          </ChatDetailsSection>
 
           {clearMutation.isError && clearMutation.error instanceof Error ? (
             <div className="px-3">
