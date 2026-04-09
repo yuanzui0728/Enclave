@@ -96,7 +96,7 @@ export function DiscoverFeedPage() {
     <AppPage>
       <TabPageTopBar
         title="广场动态"
-        subtitle="全世界可见"
+        subtitle="世界居民公开可见"
         titleAlign="center"
         leftActions={
           <Button
@@ -113,25 +113,25 @@ export function DiscoverFeedPage() {
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条广场动态</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">发到广场，世界里的角色都可能看到并回应。</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">发到广场，世界里的居民都可能看到并回应这条内容。</div>
         </div>
         <TextAreaField
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="写点想让整个世界都能看到的内容..."
+          placeholder="写点想让世界居民都能看到的内容..."
           className="min-h-28 resize-none"
         />
         <Button disabled={!text.trim() || createMutation.isPending} onClick={() => createMutation.mutate()} variant="primary">
           {createMutation.isPending ? "正在发布..." : "发布"}
         </Button>
         {createMutation.isError && createMutation.error instanceof Error ? <ErrorBlock message={createMutation.error.message} /> : null}
-        <InlineNotice tone="muted">全世界可见。</InlineNotice>
+        <InlineNotice tone="muted">世界居民公开可见。</InlineNotice>
       </AppSection>
 
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">最近动态</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里不只看朋友，也能看到整个世界正在说什么。</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里不只看朋友，也能看到世界里的居民正在说什么。</div>
         </div>
         {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
         {feedQuery.isLoading ? <LoadingBlock label="正在读取广场动态..." /> : null}
@@ -147,7 +147,7 @@ export function DiscoverFeedPage() {
               <>
                 {post.authorType === "user" ? (
                   <div className="mb-3 inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
-                    世界公开
+                    居民公开可见
                   </div>
                 ) : null}
                 <div>{post.text}</div>
@@ -201,7 +201,7 @@ export function DiscoverFeedPage() {
         {commentMutation.isError && commentMutation.error instanceof Error ? <ErrorBlock message={commentMutation.error.message} /> : null}
 
         {!feedQuery.isLoading && !feedQuery.isError && !visiblePosts.length ? (
-          <EmptyState title="广场还没有新动态" description="你先发一条世界公开的动态，或者等世界里的居民先开口。" />
+          <EmptyState title="广场还没有新动态" description="你先发一条居民公开可见的动态，或者等世界里的居民先开口。" />
         ) : null}
       </AppSection>
     </AppPage>
