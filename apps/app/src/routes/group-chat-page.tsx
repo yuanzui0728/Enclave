@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Ellipsis, Phone, Video } from "lucide-react";
+import { ArrowLeft, Ellipsis } from "lucide-react";
 import { getGroup, getGroupMembers, getGroupMessages, sendGroupMessage } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -61,7 +61,7 @@ export function GroupChatPage() {
   return (
     <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)] px-0 py-0">
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <header className="border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,239,0.94))] px-3 pb-3 pt-3">
+        <header className="border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,239,0.94))] px-3 py-3">
           <div className="flex items-start gap-2.5">
             <Button
               onClick={() => navigate({ to: "/tabs/chat" })}
@@ -85,25 +85,6 @@ export function GroupChatPage() {
               aria-label="更多操作"
             >
               <Ellipsis size={18} />
-            </button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-              aria-label="语音通话"
-            >
-              <Phone size={16} />
-              <span>语音</span>
-            </button>
-            <button
-              type="button"
-              className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-              aria-label="视频通话"
-            >
-              <Video size={16} />
-              <span>视频</span>
             </button>
           </div>
         </header>
