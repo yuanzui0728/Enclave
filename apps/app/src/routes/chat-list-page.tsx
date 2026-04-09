@@ -171,7 +171,7 @@ function MobileChatListPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="搜索"
-            className="h-10 w-full rounded-2xl border border-white/8 bg-white/10 pl-11 pr-4 text-sm text-white outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-white/45 focus:border-white/16 focus:bg-white/14"
+            className="h-10 w-full rounded-2xl border border-white/8 bg-white/10 pl-11 pr-4 text-center text-sm text-white outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-center placeholder:text-white/45 focus:border-white/16 focus:bg-white/14"
           />
         </label>
       </TabPageTopBar>
