@@ -27,7 +27,7 @@ function normalizeBaseUrl(value: string) {
 function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   switch (data?.status) {
     case "active":
-      return "你的官方云世界已经准备好了。";
+      return "你的官方世界已经准备好了。";
     case "pending":
       return "建世界申请已提交，等待官方处理。";
     case "provisioning":
@@ -35,9 +35,9 @@ function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
     case "rejected":
       return "申请需要你补充信息后重新提交。";
     case "disabled":
-      return "这个官方云世界当前不可用。";
+      return "这个官方世界当前不可用。";
     default:
-      return "还没有找到可进入的官方云世界。";
+      return "还没有找到可进入的官方世界。";
   }
 }
 
@@ -55,6 +55,10 @@ export function WelcomePage() {
   const [localApiBaseUrl, setLocalApiBaseUrl] = useState(
     runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL,
   );
+  const [localSocketBaseUrl, setLocalSocketBaseUrl] = useState(
+    runtimeConfig.socketBaseUrl ?? runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL,
+  );
+  const [cloudApiBaseUrl, setCloudApiBaseUrl] = useState(runtimeConfig.cloudApiBaseUrl ?? "");
   const [phone, setPhone] = useState(runtimeConfig.cloudPhone ?? "");
   const [code, setCode] = useState("");
   const [worldName, setWorldName] = useState("");
@@ -68,15 +72,25 @@ export function WelcomePage() {
   const [isContinuing, setIsContinuing] = useState(false);
 
   const normalizedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
+  const normalizedLocalSocketBaseUrl = normalizeBaseUrl(localSocketBaseUrl);
+  const normalizedCloudApiBaseUrl = normalizeBaseUrl(cloudApiBaseUrl);
   const showOwnerStep = Boolean(readyBaseUrl) && !onboardingCompleted;
 
   useEffect(() => {
     setLocalApiBaseUrl(runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL);
+    setLocalSocketBaseUrl(runtimeConfig.socketBaseUrl ?? runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL);
+    setCloudApiBaseUrl(runtimeConfig.cloudApiBaseUrl ?? "");
     setPhone(runtimeConfig.cloudPhone ?? "");
     if (runtimeConfig.worldAccessMode) {
       setMode(runtimeConfig.worldAccessMode);
     }
-  }, [runtimeConfig.apiBaseUrl, runtimeConfig.cloudPhone, runtimeConfig.worldAccessMode]);
+  }, [
+    runtimeConfig.apiBaseUrl,
+    runtimeConfig.cloudApiBaseUrl,
+    runtimeConfig.cloudPhone,
+    runtimeConfig.socketBaseUrl,
+    runtimeConfig.worldAccessMode,
+  ]);
 
   useEffect(() => {
     setOwnerName(storedName ?? "");
@@ -137,17 +151,20 @@ export function WelcomePage() {
   }, [hydrateOwner, navigate, onboardingCompleted, runtimeConfig.apiBaseUrl, runtimeConfig.worldAccessMode]);
 
   const cloudStatusQuery = useQuery({
-    queryKey: ["welcome-cloud-world", cloudAccessToken],
-    queryFn: () => getMyCloudWorld(cloudAccessToken),
+    queryKey: ["welcome-cloud-world", normalizedCloudApiBaseUrl || "default", cloudAccessToken],
+    queryFn: () => getMyCloudWorld(cloudAccessToken, normalizedCloudApiBaseUrl || undefined),
     enabled: Boolean(cloudAccessToken),
     retry: false,
   });
 
   const sendCodeMutation = useMutation({
     mutationFn: () =>
-      sendCloudPhoneCode({
-        phone: phone.trim(),
-      }),
+      sendCloudPhoneCode(
+        {
+          phone: phone.trim(),
+        },
+        normalizedCloudApiBaseUrl || undefined,
+      ),
     onSuccess: (result) => {
       setPhone(result.phone);
       setNotice("验证码已发送，请查收短信。");
@@ -157,7 +174,7 @@ export function WelcomePage() {
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
         worldAccessMode: "cloud",
-        cloudApiBaseUrl: undefined,
+        cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
         cloudPhone: result.phone,
         cloudWorldId: undefined,
         bootstrapSource: "user",
@@ -172,6 +189,7 @@ export function WelcomePage() {
           worldName: worldName.trim(),
         },
         cloudAccessToken,
+        normalizedCloudApiBaseUrl || undefined,
       ),
     onSuccess: async () => {
       setNotice("建世界申请已经提交。");
@@ -204,7 +222,7 @@ export function WelcomePage() {
 
     setAppRuntimeConfig({
       apiBaseUrl: normalizedLocalApiBaseUrl,
-      socketBaseUrl: normalizedLocalApiBaseUrl,
+      socketBaseUrl: normalizedLocalSocketBaseUrl || normalizedLocalApiBaseUrl,
       worldAccessMode: "local",
       cloudApiBaseUrl: undefined,
       cloudPhone: undefined,
@@ -224,7 +242,7 @@ export function WelcomePage() {
         return;
       }
 
-      setNotice("世界已连接。");
+      setNotice("世界已连上。");
     } catch (error) {
       setReadyBaseUrl(null);
       setEntryError(describeRequestError(error, "当前世界地址暂时不可用，请检查后重试。"));
@@ -253,19 +271,22 @@ export function WelcomePage() {
       let verifiedPhone = phone.trim();
 
       if (!accessToken) {
-        const verifyResult = await verifyCloudPhoneCode({
-          phone: phone.trim(),
-          code: code.trim(),
-        });
+        const verifyResult = await verifyCloudPhoneCode(
+          {
+            phone: phone.trim(),
+            code: code.trim(),
+          },
+          normalizedCloudApiBaseUrl || undefined,
+        );
 
         accessToken = verifyResult.accessToken;
         verifiedPhone = verifyResult.phone;
         setPhone(verifyResult.phone);
         setCloudAccessToken(verifyResult.accessToken);
-        setNotice("手机号验证完成，正在检查你的官方云世界。");
+        setNotice("手机号验证完成，正在检查你的官方世界。");
       }
 
-      const cloudStatus = await getMyCloudWorld(accessToken);
+      const cloudStatus = await getMyCloudWorld(accessToken, normalizedCloudApiBaseUrl || undefined);
       const cloudWorld = cloudStatus.world ?? null;
 
       setCloudAccessToken(accessToken);
@@ -273,7 +294,7 @@ export function WelcomePage() {
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
         worldAccessMode: "cloud",
-        cloudApiBaseUrl: undefined,
+        cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
         cloudPhone: verifiedPhone,
         cloudWorldId: cloudWorld?.id,
         bootstrapSource: "user",
@@ -289,7 +310,7 @@ export function WelcomePage() {
         apiBaseUrl: cloudWorld.apiBaseUrl,
         socketBaseUrl: cloudWorld.apiBaseUrl,
         worldAccessMode: "cloud",
-        cloudApiBaseUrl: undefined,
+        cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
         cloudPhone: verifiedPhone,
         cloudWorldId: cloudWorld.id,
         bootstrapSource: "user",
@@ -305,10 +326,10 @@ export function WelcomePage() {
         return;
       }
 
-      setNotice("世界已连接。");
+      setNotice("世界已连上。");
     } catch (error) {
       setReadyBaseUrl(null);
-      setEntryError(describeRequestError(error, "官方云世界暂时不可用，请稍后再试。"));
+      setEntryError(describeRequestError(error, "官方世界暂时不可用，请稍后再试。"));
     } finally {
       setIsContinuing(false);
     }
@@ -360,7 +381,7 @@ export function WelcomePage() {
                 setCloudAccessToken("");
                 setEntryError("");
               }}
-              placeholder="输入申请官方云世界时使用的手机号"
+              placeholder="输入申请官方世界时使用的手机号"
             />
           </label>
 
@@ -390,7 +411,7 @@ export function WelcomePage() {
           </div>
 
           {cloudStatusQuery.isLoading ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的官方云世界..." />
+            <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的官方世界..." />
           ) : null}
 
           {cloudStatusQuery.data ? (
@@ -410,7 +431,7 @@ export function WelcomePage() {
               <TextField
                 value={worldName}
                 onChange={(event) => setWorldName(event.target.value)}
-                placeholder="给你的世界起一个名字"
+                placeholder="给你的世界起个名字"
               />
               <Button
                 onClick={() => createWorldRequestMutation.mutate()}
@@ -432,6 +453,25 @@ export function WelcomePage() {
           >
             {isContinuing ? "进入中..." : "进入我的世界"}
           </Button>
+
+          <details className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-4 py-3">
+            <summary className="cursor-pointer text-sm font-medium text-[color:var(--text-primary)]">高级设置</summary>
+            <div className="mt-4">
+              <label className="block space-y-2">
+                <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">云平台地址</span>
+                <TextField
+                  value={cloudApiBaseUrl}
+                  onChange={(event) => {
+                    setCloudApiBaseUrl(event.target.value);
+                    setCloudAccessToken("");
+                    setCode("");
+                    setEntryError("");
+                  }}
+                  placeholder="留空则使用官方默认地址"
+                />
+              </label>
+            </div>
+          </details>
         </div>
       );
     }
@@ -446,9 +486,23 @@ export function WelcomePage() {
               setLocalApiBaseUrl(event.target.value);
               setEntryError("");
             }}
-            placeholder={DEFAULT_CORE_API_BASE_URL}
+            placeholder="例如 http://127.0.0.1:3000"
           />
         </label>
+
+        <details className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium text-[color:var(--text-primary)]">高级设置</summary>
+          <div className="mt-4">
+            <label className="block space-y-2">
+              <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">Socket 地址</span>
+              <TextField
+                value={localSocketBaseUrl}
+                onChange={(event) => setLocalSocketBaseUrl(event.target.value)}
+                placeholder="留空则默认跟世界地址一致"
+              />
+            </label>
+          </div>
+        </details>
 
         <Button
           onClick={() => void continueWithLocalWorld()}
@@ -536,7 +590,7 @@ export function WelcomePage() {
                 : "border-[color:var(--border-faint)] bg-white/76 hover:bg-white"
             }`}
           >
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">使用官方云世界</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">官方托管</div>
           </button>
 
           <button
@@ -548,7 +602,7 @@ export function WelcomePage() {
                 : "border-[color:var(--border-faint)] bg-white/76 hover:bg-white"
             }`}
           >
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">我已有世界地址</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">本地世界</div>
           </button>
         </div>
 
