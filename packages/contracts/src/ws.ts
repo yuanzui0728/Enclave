@@ -1,3 +1,9 @@
+import type {
+  ContactCardAttachment,
+  ImageAttachment,
+  LocationCardAttachment,
+} from "./attachments";
+
 export const CHAT_NAMESPACE = "/chat";
 
 export const CHAT_EVENTS = {
@@ -32,6 +38,27 @@ export type SendMessagePayload =
         packId: string;
         stickerId: string;
       };
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "image";
+      text?: string;
+      attachment: ImageAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "contact_card";
+      text?: string;
+      attachment: ContactCardAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "location_card";
+      text?: string;
+      attachment: LocationCardAttachment;
     };
 
 export interface TypingPayload {

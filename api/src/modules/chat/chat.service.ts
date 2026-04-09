@@ -1,3 +1,7 @@
+import { existsSync } from 'fs';
+import { mkdir, writeFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
+import path from 'path';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, MoreThan, Repository } from 'typeorm';
@@ -8,7 +12,15 @@ import { CharactersService } from '../characters/characters.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
-import { Conversation, Message, StickerAttachment } from './chat.types';
+import {
+  ContactCardAttachment,
+  Conversation,
+  ImageAttachment,
+  LocationCardAttachment,
+  Message,
+  MessageAttachment,
+  StickerAttachment,
+} from './chat.types';
 import { findStickerAttachment } from './sticker-catalog';
 
 type SendConversationMessageInput =
@@ -23,7 +35,29 @@ type SendConversationMessageInput =
         packId: string;
         stickerId: string;
       };
+    }
+  | {
+      type: 'image';
+      text?: string;
+      attachment: ImageAttachment;
+    }
+  | {
+      type: 'contact_card';
+      text?: string;
+      attachment: ContactCardAttachment;
+    }
+  | {
+      type: 'location_card';
+      text?: string;
+      attachment: LocationCardAttachment;
     };
+
+type UploadedImageFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname?: string;
+  size: number;
+};
 
 @Injectable()
 export class ChatService {
@@ -78,20 +112,27 @@ export class ChatService {
     return entity ? this._entityToConversation(entity) : undefined;
   }
 
-  async getConversations(): Promise<(Conversation & { lastMessage?: Message; unreadCount: number })[]> {
+  async getConversations(): Promise<
+    (Conversation & { lastMessage?: Message; unreadCount: number })[]
+  > {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const convs = await this.convRepo.find({
       where: { ownerId: owner.id, isHidden: false },
     });
 
-    const result: (Conversation & { lastMessage?: Message; unreadCount: number })[] = [];
+    const result: (Conversation & {
+      lastMessage?: Message;
+      unreadCount: number;
+    })[] = [];
     for (const conv of convs) {
       const cutoff = this.getVisibleMessageCutoff(conv);
       const lastMsgEntity = await this.msgRepo.findOne({
         where: this.buildMessageWhere(conv.id, cutoff),
         order: { createdAt: 'DESC' },
       });
-      const lastMessage = lastMsgEntity ? this._entityToMessage(lastMsgEntity) : undefined;
+      const lastMessage = lastMsgEntity
+        ? this._entityToMessage(lastMsgEntity)
+        : undefined;
 
       const unreadCutoff = this.getUnreadCutoff(conv);
       const unreadCount = await this.msgRepo.count({
@@ -100,7 +141,11 @@ export class ChatService {
         }),
       });
 
-      result.push({ ...this._entityToConversation(conv), lastMessage, unreadCount });
+      result.push({
+        ...this._entityToConversation(conv),
+        lastMessage,
+        unreadCount,
+      });
     }
 
     result.sort((left, right) => {
@@ -108,12 +153,17 @@ export class ChatService {
         return left.isPinned ? -1 : 1;
       }
 
-      const pinnedDelta = this.getSortableTimestamp(right.pinnedAt) - this.getSortableTimestamp(left.pinnedAt);
+      const pinnedDelta =
+        this.getSortableTimestamp(right.pinnedAt) -
+        this.getSortableTimestamp(left.pinnedAt);
       if (pinnedDelta !== 0) {
         return pinnedDelta;
       }
 
-      return this.getSortableTimestamp(right.lastActivityAt) - this.getSortableTimestamp(left.lastActivityAt);
+      return (
+        this.getSortableTimestamp(right.lastActivityAt) -
+        this.getSortableTimestamp(left.lastActivityAt)
+      );
     });
 
     return result;
@@ -123,7 +173,10 @@ export class ChatService {
     await this.convRepo.update({ id: convId }, { lastReadAt: new Date() });
   }
 
-  async setConversationPinned(convId: string, pinned: boolean): Promise<Conversation> {
+  async setConversationPinned(
+    convId: string,
+    pinned: boolean,
+  ): Promise<Conversation> {
     const entity = await this.requireOwnedConversation(convId);
     const updated = await this.convRepo.save({
       ...entity,
@@ -175,7 +228,10 @@ export class ChatService {
     }
 
     const entities = await this.msgRepo.find({
-      where: this.buildMessageWhere(conversationId, this.getVisibleMessageCutoff(conversation)),
+      where: this.buildMessageWhere(
+        conversationId,
+        this.getVisibleMessageCutoff(conversation),
+      ),
       order: { createdAt: 'ASC' },
     });
 
@@ -185,6 +241,52 @@ export class ChatService {
   async getCharacterActivity(charId: string): Promise<string | undefined> {
     const char = await this.characters.findById(charId);
     return char?.currentActivity;
+  }
+
+  async saveUploadedImageAttachment(
+    file: UploadedImageFile,
+    metadata: { width?: number; height?: number },
+  ): Promise<ImageAttachment> {
+    if (!file.mimetype.startsWith('image/')) {
+      throw new NotFoundException('当前只支持上传图片附件。');
+    }
+
+    const originalName = sanitizeAttachmentFileName(
+      file.originalname ?? 'image',
+    );
+    const extension =
+      path.extname(originalName) || guessImageExtension(file.mimetype);
+    const baseName = path.basename(originalName, extension) || 'image';
+    const storedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeAttachmentFileName(baseName)}${extension}`;
+    const storageDir = this.resolveAttachmentStorageDir();
+
+    await mkdir(storageDir, { recursive: true });
+    await writeFile(path.join(storageDir, storedFileName), file.buffer);
+
+    return {
+      kind: 'image',
+      url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+      mimeType: file.mimetype,
+      fileName: originalName.endsWith(extension)
+        ? originalName
+        : `${originalName}${extension}`,
+      size: file.size,
+      width: normalizeOptionalDimension(metadata.width),
+      height: normalizeOptionalDimension(metadata.height),
+    };
+  }
+
+  getAttachmentStorageDir(): string {
+    return this.resolveAttachmentStorageDir();
+  }
+
+  normalizeAttachmentFileName(fileName: string): string {
+    const normalized = path.basename(fileName).trim();
+    if (!normalized) {
+      throw new NotFoundException('Attachment not found');
+    }
+
+    return normalized;
   }
 
   async saveProactiveMessage(
@@ -209,7 +311,10 @@ export class ChatService {
     });
 
     await this.msgRepo.save(messageEntity);
-    await this.touchConversationActivity(entity, messageEntity.createdAt ?? new Date());
+    await this.touchConversationActivity(
+      entity,
+      messageEntity.createdAt ?? new Date(),
+    );
 
     const history = await this.ensureConversationHistory(entity);
     history.push({ role: 'assistant', content: text, characterId });
@@ -218,7 +323,10 @@ export class ChatService {
     return this._entityToMessage(messageEntity);
   }
 
-  async saveSystemMessage(conversationId: string, text: string): Promise<Message> {
+  async saveSystemMessage(
+    conversationId: string,
+    text: string,
+  ): Promise<Message> {
     const entity = await this.convRepo.findOneBy({ id: conversationId });
     if (!entity) {
       throw new NotFoundException(`Conversation ${conversationId} not found`);
@@ -235,18 +343,25 @@ export class ChatService {
     });
 
     await this.msgRepo.save(messageEntity);
-    await this.touchConversationActivity(entity, messageEntity.createdAt ?? new Date());
+    await this.touchConversationActivity(
+      entity,
+      messageEntity.createdAt ?? new Date(),
+    );
     return this._entityToMessage(messageEntity);
   }
 
-  async sendMessage(convId: string, input: SendConversationMessageInput): Promise<Message[]> {
+  async sendMessage(
+    convId: string,
+    input: SendConversationMessageInput,
+  ): Promise<Message[]> {
     const entity = await this.convRepo.findOneBy({ id: convId });
     if (!entity) {
       throw new NotFoundException(`Conversation ${convId} not found`);
     }
 
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const aiKeyOverride = (await this.worldOwnerService.getOwnerAiConfig()) ?? undefined;
+    const aiKeyOverride =
+      (await this.worldOwnerService.getOwnerAiConfig()) ?? undefined;
     const normalizedInput = this.normalizeOutgoingMessageInput(input);
 
     const userMsgEntity = this.msgRepo.create({
@@ -263,7 +378,10 @@ export class ChatService {
         : null,
     });
     await this.msgRepo.save(userMsgEntity);
-    await this.touchConversationActivity(entity, userMsgEntity.createdAt ?? new Date());
+    await this.touchConversationActivity(
+      entity,
+      userMsgEntity.createdAt ?? new Date(),
+    );
 
     const userMsg = this._entityToMessage(userMsgEntity);
     const history = await this.ensureConversationHistory(entity);
@@ -285,13 +403,22 @@ export class ChatService {
       );
 
       if (intent.needsGroupChat && intent.requiredDomains.length > 0) {
-        const ownerConversations = await this.convRepo.find({ where: { ownerId: owner.id } });
+        const ownerConversations = await this.convRepo.find({
+          where: { ownerId: owner.id },
+        });
         const ownerFriendIds = new Set(
-          ownerConversations.flatMap((conversation) => conversation.participants).filter((id) => id !== charId),
+          ownerConversations
+            .flatMap((conversation) => conversation.participants)
+            .filter((id) => id !== charId),
         );
 
-        const invitedChars = (await this.characters.findByDomains(intent.requiredDomains))
-          .filter((character) => character.id !== charId && ownerFriendIds.has(character.id))
+        const invitedChars = (
+          await this.characters.findByDomains(intent.requiredDomains)
+        )
+          .filter(
+            (character) =>
+              character.id !== charId && ownerFriendIds.has(character.id),
+          )
           .slice(0, 2);
 
         if (invitedChars.length > 0) {
@@ -304,7 +431,9 @@ export class ChatService {
           });
           await this.convRepo.save(entity);
 
-          const invitedNames = invitedChars.map((character) => character.name).join(', ');
+          const invitedNames = invitedChars
+            .map((character) => character.name)
+            .join(', ');
           const coordPrompt = `Explain that you want to invite ${invitedNames} into this conversation to help with the user's question. Keep it under 30 words.`;
           const coordReply = await this.ai.generateReply({
             profile,
@@ -322,8 +451,15 @@ export class ChatService {
             text: coordReply.text,
           });
           await this.msgRepo.save(coordEntity);
-          await this.touchConversationActivity(entity, coordEntity.createdAt ?? new Date());
-          history.push({ role: 'assistant', content: coordReply.text, characterId: charId });
+          await this.touchConversationActivity(
+            entity,
+            coordEntity.createdAt ?? new Date(),
+          );
+          history.push({
+            role: 'assistant',
+            content: coordReply.text,
+            characterId: charId,
+          });
           results.push(this._entityToMessage(coordEntity));
 
           for (const invited of invitedChars) {
@@ -337,7 +473,10 @@ export class ChatService {
               text: `${profile.name} invited ${invited.name} into the conversation.`,
             });
             await this.msgRepo.save(sysEntity);
-            await this.touchConversationActivity(entity, sysEntity.createdAt ?? new Date());
+            await this.touchConversationActivity(
+              entity,
+              sysEntity.createdAt ?? new Date(),
+            );
             results.push(this._entityToMessage(sysEntity));
           }
 
@@ -349,11 +488,11 @@ export class ChatService {
 
             const reply = await this.ai.generateReply({
               profile: invitedProfile,
-            conversationHistory: history,
-            userMessage: normalizedInput.promptText,
-            isGroupChat: true,
-            aiKeyOverride,
-          });
+              conversationHistory: history,
+              userMessage: normalizedInput.promptText,
+              isGroupChat: true,
+              aiKeyOverride,
+            });
             const aiEntity = this.msgRepo.create({
               id: `msg_${Date.now()}_${invited.id}`,
               conversationId: convId,
@@ -364,8 +503,15 @@ export class ChatService {
               text: reply.text,
             });
             await this.msgRepo.save(aiEntity);
-            await this.touchConversationActivity(entity, aiEntity.createdAt ?? new Date());
-            history.push({ role: 'assistant', content: reply.text, characterId: invited.id });
+            await this.touchConversationActivity(
+              entity,
+              aiEntity.createdAt ?? new Date(),
+            );
+            history.push({
+              role: 'assistant',
+              content: reply.text,
+              characterId: invited.id,
+            });
             results.push(this._entityToMessage(aiEntity));
           }
 
@@ -404,8 +550,15 @@ export class ChatService {
         text: reply.text,
       });
       await this.msgRepo.save(aiEntity);
-      await this.touchConversationActivity(entity, aiEntity.createdAt ?? new Date());
-      history.push({ role: 'assistant', content: reply.text, characterId: charId });
+      await this.touchConversationActivity(
+        entity,
+        aiEntity.createdAt ?? new Date(),
+      );
+      history.push({
+        role: 'assistant',
+        content: reply.text,
+        characterId: charId,
+      });
       this.conversationHistory.set(convId, history);
       results.push(this._entityToMessage(aiEntity));
     } else {
@@ -432,8 +585,15 @@ export class ChatService {
           text: reply.text,
         });
         await this.msgRepo.save(aiEntity);
-        await this.touchConversationActivity(entity, aiEntity.createdAt ?? new Date());
-        history.push({ role: 'assistant', content: reply.text, characterId: charId });
+        await this.touchConversationActivity(
+          entity,
+          aiEntity.createdAt ?? new Date(),
+        );
+        history.push({
+          role: 'assistant',
+          content: reply.text,
+          characterId: charId,
+        });
         results.push(this._entityToMessage(aiEntity));
       }
 
@@ -489,7 +649,9 @@ export class ChatService {
     });
   }
 
-  private async ensureConversationHistory(conversation: ConversationEntity): Promise<ChatMessage[]> {
+  private async ensureConversationHistory(
+    conversation: ConversationEntity,
+  ): Promise<ChatMessage[]> {
     const existing = this.conversationHistory.get(conversation.id);
     if (existing) {
       return existing;
@@ -502,19 +664,28 @@ export class ChatService {
       ),
       order: { createdAt: 'ASC' },
     });
-    const rebuiltHistory = allMsgs.map((message) => ({
-      role: message.senderType === 'user' ? 'user' : 'assistant',
-      content: message.text,
-      characterId: message.senderType === 'character' ? message.senderId : undefined,
-    }) satisfies ChatMessage);
+    const rebuiltHistory = allMsgs.map(
+      (message) =>
+        ({
+          role: message.senderType === 'user' ? 'user' : 'assistant',
+          content: message.text,
+          characterId:
+            message.senderType === 'character' ? message.senderId : undefined,
+        }) satisfies ChatMessage,
+    );
 
     this.conversationHistory.set(conversation.id, rebuiltHistory);
     return rebuiltHistory;
   }
 
-  private async requireOwnedConversation(convId: string): Promise<ConversationEntity> {
+  private async requireOwnedConversation(
+    convId: string,
+  ): Promise<ConversationEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const entity = await this.convRepo.findOneBy({ id: convId, ownerId: owner.id });
+    const entity = await this.convRepo.findOneBy({
+      id: convId,
+      ownerId: owner.id,
+    });
     if (!entity) {
       throw new NotFoundException(`Conversation ${convId} not found`);
     }
@@ -534,8 +705,12 @@ export class ChatService {
     };
   }
 
-  private getVisibleMessageCutoff(conversation: ConversationEntity): Date | undefined {
-    return conversation.lastClearedAt ? new Date(conversation.lastClearedAt) : undefined;
+  private getVisibleMessageCutoff(
+    conversation: ConversationEntity,
+  ): Date | undefined {
+    return conversation.lastClearedAt
+      ? new Date(conversation.lastClearedAt)
+      : undefined;
   }
 
   private getUnreadCutoff(conversation: ConversationEntity): Date | undefined {
@@ -558,7 +733,10 @@ export class ChatService {
     return new Date(value).getTime();
   }
 
-  private async touchConversationActivity(conversation: ConversationEntity, at: Date) {
+  private async touchConversationActivity(
+    conversation: ConversationEntity,
+    at: Date,
+  ) {
     conversation.lastActivityAt = at;
     if (conversation.isHidden) {
       conversation.isHidden = false;
@@ -580,7 +758,8 @@ export class ChatService {
       mutedAt: entity.mutedAt ?? undefined,
       lastReadAt: entity.lastReadAt ?? undefined,
       lastClearedAt: entity.lastClearedAt ?? undefined,
-      lastActivityAt: entity.lastActivityAt ?? entity.updatedAt ?? entity.createdAt,
+      lastActivityAt:
+        entity.lastActivityAt ?? entity.updatedAt ?? entity.createdAt,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
@@ -593,7 +772,14 @@ export class ChatService {
       senderType: entity.senderType as 'user' | 'character' | 'system',
       senderId: entity.senderId,
       senderName: entity.senderName,
-      type: entity.type as 'text' | 'system' | 'proactive' | 'sticker',
+      type: entity.type as
+        | 'text'
+        | 'system'
+        | 'proactive'
+        | 'sticker'
+        | 'image'
+        | 'contact_card'
+        | 'location_card',
       text: entity.text,
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
@@ -601,10 +787,10 @@ export class ChatService {
   }
 
   private normalizeOutgoingMessageInput(input: SendConversationMessageInput): {
-    type: 'text' | 'sticker';
+    type: 'text' | 'sticker' | 'image' | 'contact_card' | 'location_card';
     text: string;
     promptText: string;
-    attachment?: StickerAttachment;
+    attachment?: MessageAttachment;
   } {
     if (input.type === 'sticker') {
       const attachment = findStickerAttachment(
@@ -615,12 +801,33 @@ export class ChatService {
         throw new NotFoundException('Sticker not found');
       }
 
-      const fallbackText = input.text?.trim() || `[表情包] ${attachment.label ?? attachment.stickerId}`;
+      const fallbackText =
+        input.text?.trim() ||
+        `[表情包] ${attachment.label ?? attachment.stickerId}`;
       return {
         type: 'sticker',
         text: fallbackText,
         promptText: fallbackText,
         attachment,
+      };
+    }
+
+    if (
+      input.type === 'image' ||
+      input.type === 'contact_card' ||
+      input.type === 'location_card'
+    ) {
+      if (!input.attachment || input.attachment.kind !== input.type) {
+        throw new NotFoundException('Attachment payload is invalid');
+      }
+
+      const fallbackText =
+        input.text?.trim() || this.getAttachmentFallbackText(input.attachment);
+      return {
+        type: input.type,
+        text: fallbackText,
+        promptText: fallbackText,
+        attachment: input.attachment,
       };
     }
 
@@ -636,15 +843,89 @@ export class ChatService {
     };
   }
 
-  private parseAttachment(entity: MessageEntity): StickerAttachment | undefined {
-    if (entity.attachmentKind !== 'sticker' || !entity.attachmentPayload) {
+  private getAttachmentFallbackText(attachment: MessageAttachment): string {
+    if (attachment.kind === 'image') {
+      return `[图片] ${attachment.fileName}`.trim();
+    }
+
+    if (attachment.kind === 'contact_card') {
+      return `[名片] ${attachment.name}`.trim();
+    }
+
+    if (attachment.kind === 'location_card') {
+      return `[位置] ${attachment.title}`.trim();
+    }
+
+    return `[表情包] ${attachment.label ?? attachment.stickerId}`.trim();
+  }
+
+  private parseAttachment(
+    entity: MessageEntity,
+  ): MessageAttachment | undefined {
+    if (!entity.attachmentKind || !entity.attachmentPayload) {
       return undefined;
     }
 
     try {
-      return JSON.parse(entity.attachmentPayload) as StickerAttachment;
+      const parsed = JSON.parse(entity.attachmentPayload) as MessageAttachment;
+      if (parsed.kind !== entity.attachmentKind) {
+        return undefined;
+      }
+
+      return parsed;
     } catch {
       return undefined;
     }
   }
+
+  private resolveAttachmentStorageDir(): string {
+    const cwd = process.cwd();
+    const apiRoot =
+      existsSync(path.join(cwd, 'src')) &&
+      existsSync(path.join(cwd, 'package.json'))
+        ? cwd
+        : path.join(cwd, 'api');
+
+    return path.join(apiRoot, 'storage', 'chat-attachments');
+  }
+
+  private resolvePublicApiBaseUrl(): string {
+    return (
+      process.env.PUBLIC_API_BASE_URL?.trim() ||
+      `http://localhost:${process.env.PORT ?? 3000}`
+    ).replace(/\/+$/, '');
+  }
+}
+
+function sanitizeAttachmentFileName(value: string) {
+  return value
+    .normalize('NFKD')
+    .replace(/[^\w.-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+}
+
+function guessImageExtension(mimeType: string) {
+  if (mimeType === 'image/png') {
+    return '.png';
+  }
+
+  if (mimeType === 'image/webp') {
+    return '.webp';
+  }
+
+  if (mimeType === 'image/gif') {
+    return '.gif';
+  }
+
+  return '.jpg';
+}
+
+function normalizeOptionalDimension(value?: number) {
+  if (!value || !Number.isFinite(value) || value <= 0) {
+    return undefined;
+  }
+
+  return Math.round(value);
 }

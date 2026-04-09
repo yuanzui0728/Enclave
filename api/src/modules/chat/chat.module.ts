@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatGateway } from './chat.gateway';
 import { ChatService } from './chat.service';
-import { ChatController, GroupController } from './chat.controller';
+import {
+  ChatAttachmentController,
+  ChatController,
+  GroupController,
+} from './chat.controller';
 import { GroupService } from './group.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
@@ -21,12 +25,15 @@ import { GroupMessageEntity } from './group-message.entity';
     CharactersModule,
     NarrativeModule,
     TypeOrmModule.forFeature([
-      ConversationEntity, MessageEntity,
-      GroupEntity, GroupMemberEntity, GroupMessageEntity,
+      ConversationEntity,
+      MessageEntity,
+      GroupEntity,
+      GroupMemberEntity,
+      GroupMessageEntity,
     ]),
   ],
   providers: [ChatGateway, ChatService, GroupService],
-  controllers: [ChatController, GroupController],
+  controllers: [ChatController, ChatAttachmentController, GroupController],
   exports: [ChatService, GroupService, ChatGateway],
 })
 export class ChatModule {}

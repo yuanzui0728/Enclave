@@ -1,8 +1,20 @@
-import type { MessageAttachment } from "./sticker-types";
+import type {
+  ContactCardAttachment,
+  ImageAttachment,
+  LocationCardAttachment,
+  MessageAttachment,
+} from "./attachments";
 
 export type MessageSenderType = "user" | "character" | "system";
 export type ConversationType = "direct" | "group";
-export type MessageType = "text" | "system" | "proactive" | "sticker";
+export type MessageType =
+  | "text"
+  | "system"
+  | "proactive"
+  | "sticker"
+  | "image"
+  | "contact_card"
+  | "location_card";
 export type GroupMemberType = "user" | "character";
 
 export interface Message {
@@ -94,11 +106,39 @@ export interface GroupMessage {
   senderAvatar?: string;
   text: string;
   type: MessageType;
+  attachment?: MessageAttachment;
   createdAt: string;
 }
 
-export interface SendGroupMessageRequest {
-  senderId?: string;
-  senderType?: GroupMemberType;
-  text: string;
+export type SendGroupMessageRequest =
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type?: "text";
+      text: string;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "image";
+      text?: string;
+      attachment: ImageAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "contact_card";
+      text?: string;
+      attachment: ContactCardAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "location_card";
+      text?: string;
+      attachment: LocationCardAttachment;
+    };
+
+export interface UploadChatAttachmentResponse {
+  attachment: ImageAttachment;
 }

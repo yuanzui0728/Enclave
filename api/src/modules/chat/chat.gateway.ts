@@ -10,6 +10,11 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import type {
+  ContactCardAttachment,
+  ImageAttachment,
+  LocationCardAttachment,
+} from './chat.types';
 
 type SendMessagePayload =
   | {
@@ -27,10 +32,30 @@ type SendMessagePayload =
         packId: string;
         stickerId: string;
       };
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'image';
+      text?: string;
+      attachment: ImageAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'contact_card';
+      text?: string;
+      attachment: ContactCardAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'location_card';
+      text?: string;
+      attachment: LocationCardAttachment;
     };
 
-const configuredSocketOrigins = process.env.CORS_ALLOWED_ORIGINS
-  ?.split(',')
+const configuredSocketOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',')
   .map((value) => value.trim())
   .filter(Boolean);
 
@@ -93,13 +118,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     const { conversationId, characterId } = payload;
-    const replyText = payload.type === 'sticker' ? payload.text ?? '[表情包]' : payload.text;
+    const replyText =
+      payload.type === 'sticker'
+        ? (payload.text ?? '[表情包]')
+        : payload.type === 'image'
+          ? (payload.text ?? `[图片] ${payload.attachment.fileName}`)
+          : payload.type === 'contact_card'
+            ? (payload.text ?? `[名片] ${payload.attachment.name}`)
+            : payload.type === 'location_card'
+              ? (payload.text ?? `[位置] ${payload.attachment.title}`)
+              : payload.text;
 
     try {
       let convId = conversationId;
       const existing = await this.chatService.getConversation(convId);
       if (!existing) {
-        const conv = await this.chatService.getOrCreateConversation(characterId, conversationId);
+        const conv = await this.chatService.getOrCreateConversation(
+          characterId,
+          conversationId,
+        );
         convId = conv.id;
       }
 
@@ -108,21 +145,39 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await this.emitSystemMessage(convId, SLEEP_HINTS);
         const delay = 12_000 + Math.random() * 10_000;
         setTimeout(() => {
-          void this.deliverConversationReply(convId, characterId, payload, replyText);
+          void this.deliverConversationReply(
+            convId,
+            characterId,
+            payload,
+            replyText,
+          );
         }, delay);
         return { event: 'message_sent', data: { conversationId: convId } };
       }
 
       if (activity && ['working', 'commuting'].includes(activity)) {
-        await this.emitSystemMessage(convId, BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。']);
+        await this.emitSystemMessage(
+          convId,
+          BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。'],
+        );
         const delay = 8_000 + Math.random() * 7_000;
         setTimeout(() => {
-          void this.deliverConversationReply(convId, characterId, payload, replyText);
+          void this.deliverConversationReply(
+            convId,
+            characterId,
+            payload,
+            replyText,
+          );
         }, delay);
         return { event: 'message_sent', data: { conversationId: convId } };
       }
 
-      await this.deliverConversationReply(convId, characterId, payload, replyText);
+      await this.deliverConversationReply(
+        convId,
+        characterId,
+        payload,
+        replyText,
+      );
       return { event: 'message_sent', data: { conversationId: convId } };
     } catch (err) {
       this.logger.error('Error handling message', err);
@@ -160,18 +215,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: SendMessagePayload,
     replyText: string,
   ) {
-    this.server.to(convId).emit('typing_start', { conversationId: convId, characterId });
+    this.server
+      .to(convId)
+      .emit('typing_start', { conversationId: convId, characterId });
 
     try {
       const messages = await this.chatService.sendMessage(convId, payload);
-      const aiReply = messages.find((message) => message.senderType === 'character');
+      const aiReply = messages.find(
+        (message) => message.senderType === 'character',
+      );
       if (aiReply) {
-        const lengthBasis = aiReply.type === 'sticker' ? replyText.length : aiReply.text.length;
+        const lengthBasis =
+          aiReply.type === 'sticker' ? replyText.length : aiReply.text.length;
         const delay = Math.min(Math.max(lengthBasis * 16, 400), 3_000);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
+      this.server
+        .to(convId)
+        .emit('typing_stop', { conversationId: convId, characterId });
 
       for (const message of messages) {
         this.server.to(convId).emit('new_message', message);
@@ -187,7 +249,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
     } catch (error) {
-      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
+      this.server
+        .to(convId)
+        .emit('typing_stop', { conversationId: convId, characterId });
       throw error;
     }
   }

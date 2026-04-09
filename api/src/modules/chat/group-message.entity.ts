@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('group_messages')
 export class GroupMessageEntity {
@@ -25,6 +30,12 @@ export class GroupMessageEntity {
 
   @Column({ default: 'text' })
   type: string; // 'text' | 'system'
+
+  @Column('text', { nullable: true })
+  attachmentKind?: string | null;
+
+  @Column('text', { nullable: true })
+  attachmentPayload?: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

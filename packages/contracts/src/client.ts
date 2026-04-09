@@ -1,6 +1,4 @@
-import type {
-  SuccessResponse,
-} from "./auth";
+import type { SuccessResponse } from "./auth";
 import type {
   AddGroupMemberRequest,
   Conversation,
@@ -14,6 +12,7 @@ import type {
   SetConversationPinnedRequest,
   SetConversationMutedRequest,
   SendGroupMessageRequest,
+  UploadChatAttachmentResponse,
 } from "./chat";
 import type { Character, CharacterDraft } from "./characters";
 import type {
@@ -25,7 +24,11 @@ import type {
   VerifyPhoneCodeRequest,
   VerifyPhoneCodeResponse,
 } from "./cloud";
-import type { AiModelResponse, AvailableModelsResponse, UpdateAiModelRequest } from "./config";
+import type {
+  AiModelResponse,
+  AvailableModelsResponse,
+  UpdateAiModelRequest,
+} from "./config";
 import type {
   CreateFeedCommentRequest,
   FeedComment,
@@ -102,7 +105,10 @@ export const DEFAULT_CLOUD_API_BASE_URL = "http://localhost:3001";
 let coreApiBaseUrlProvider: (() => string | null | undefined) | null = null;
 let cloudApiBaseUrlProvider: (() => string | null | undefined) | null = null;
 
-export function resolveCoreApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
+export function resolveCoreApiBaseUrl(
+  override?: string,
+  options?: { allowDefault?: boolean },
+) {
   const configuredValue = override || coreApiBaseUrlProvider?.();
   if (configuredValue) {
     return configuredValue;
@@ -115,11 +121,16 @@ export function resolveCoreApiBaseUrl(override?: string, options?: { allowDefaul
   return DEFAULT_CORE_API_BASE_URL;
 }
 
-export function setCoreApiBaseUrlProvider(provider: (() => string | null | undefined) | null) {
+export function setCoreApiBaseUrlProvider(
+  provider: (() => string | null | undefined) | null,
+) {
   coreApiBaseUrlProvider = provider;
 }
 
-export function resolveCloudApiBaseUrl(override?: string, options?: { allowDefault?: boolean }) {
+export function resolveCloudApiBaseUrl(
+  override?: string,
+  options?: { allowDefault?: boolean },
+) {
   const configuredValue = override || cloudApiBaseUrlProvider?.();
   if (configuredValue) {
     return configuredValue;
@@ -132,11 +143,17 @@ export function resolveCloudApiBaseUrl(override?: string, options?: { allowDefau
   return DEFAULT_CLOUD_API_BASE_URL;
 }
 
-export function setCloudApiBaseUrlProvider(provider: (() => string | null | undefined) | null) {
+export function setCloudApiBaseUrlProvider(
+  provider: (() => string | null | undefined) | null,
+) {
   cloudApiBaseUrlProvider = provider;
 }
 
-async function request<T>(path: string, init?: RequestInit, baseUrl?: string): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  baseUrl?: string,
+): Promise<T> {
   const headers = new Headers(init?.headers);
   const isFormDataBody =
     typeof FormData !== "undefined" && init?.body instanceof FormData;
@@ -170,11 +187,19 @@ async function request<T>(path: string, init?: RequestInit, baseUrl?: string): P
   return (rawBody ? (JSON.parse(rawBody) as T) : undefined) as T;
 }
 
-function requestLegacyApi<T>(path: string, init?: RequestInit, baseUrl?: string) {
+function requestLegacyApi<T>(
+  path: string,
+  init?: RequestInit,
+  baseUrl?: string,
+) {
   return request<T>(`${LEGACY_API_PREFIX}${path}`, init, baseUrl);
 }
 
-function requestCloudApi<T>(path: string, init?: RequestInit, baseUrl?: string) {
+function requestCloudApi<T>(
+  path: string,
+  init?: RequestInit,
+  baseUrl?: string,
+) {
   return request<T>(path, init, resolveCloudApiBaseUrl(baseUrl));
 }
 
@@ -193,7 +218,10 @@ export function createSpeechTranscription(payload: FormData, baseUrl?: string) {
   );
 }
 
-export function sendCloudPhoneCode(payload: SendPhoneCodeRequest, baseUrl?: string) {
+export function sendCloudPhoneCode(
+  payload: SendPhoneCodeRequest,
+  baseUrl?: string,
+) {
   return requestCloudApi<SendPhoneCodeResponse>(
     "/cloud/auth/send-code",
     {
@@ -204,7 +232,10 @@ export function sendCloudPhoneCode(payload: SendPhoneCodeRequest, baseUrl?: stri
   );
 }
 
-export function verifyCloudPhoneCode(payload: VerifyPhoneCodeRequest, baseUrl?: string) {
+export function verifyCloudPhoneCode(
+  payload: VerifyPhoneCodeRequest,
+  baseUrl?: string,
+) {
   return requestCloudApi<VerifyPhoneCodeResponse>(
     "/cloud/auth/verify-code",
     {
@@ -215,7 +246,10 @@ export function verifyCloudPhoneCode(payload: VerifyPhoneCodeRequest, baseUrl?: 
   );
 }
 
-function buildCloudAuthHeaders(accessToken: string, init?: RequestInit): RequestInit {
+function buildCloudAuthHeaders(
+  accessToken: string,
+  init?: RequestInit,
+): RequestInit {
   const headers = new Headers(init?.headers);
   headers.set("Authorization", `Bearer ${accessToken}`);
 
@@ -226,10 +260,18 @@ function buildCloudAuthHeaders(accessToken: string, init?: RequestInit): Request
 }
 
 export function getMyCloudWorld(accessToken: string, baseUrl?: string) {
-  return requestCloudApi<CloudWorldLookupResponse>("/cloud/me/world", buildCloudAuthHeaders(accessToken), baseUrl);
+  return requestCloudApi<CloudWorldLookupResponse>(
+    "/cloud/me/world",
+    buildCloudAuthHeaders(accessToken),
+    baseUrl,
+  );
 }
 
-export function createMyCloudWorldRequest(payload: CreateCloudWorldRequest, accessToken: string, baseUrl?: string) {
+export function createMyCloudWorldRequest(
+  payload: CreateCloudWorldRequest,
+  accessToken: string,
+  baseUrl?: string,
+) {
   return requestCloudApi<CloudWorldRequestRecord>(
     "/cloud/me/world-requests",
     buildCloudAuthHeaders(accessToken, {
@@ -240,7 +282,10 @@ export function createMyCloudWorldRequest(payload: CreateCloudWorldRequest, acce
   );
 }
 
-export function getLatestMyCloudWorldRequest(accessToken: string, baseUrl?: string) {
+export function getLatestMyCloudWorldRequest(
+  accessToken: string,
+  baseUrl?: string,
+) {
   return requestCloudApi<CloudWorldRequestRecord | null>(
     "/cloud/me/world-requests/latest",
     buildCloudAuthHeaders(accessToken),
@@ -249,7 +294,11 @@ export function getLatestMyCloudWorldRequest(accessToken: string, baseUrl?: stri
 }
 
 export function getSchedulerStatus(baseUrl?: string) {
-  return requestLegacyApi<SchedulerStatus>("/system/scheduler", undefined, baseUrl);
+  return requestLegacyApi<SchedulerStatus>(
+    "/system/scheduler",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function runSchedulerJob(id: string, baseUrl?: string) {
@@ -263,10 +312,17 @@ export function runSchedulerJob(id: string, baseUrl?: string) {
 }
 
 export function getRealtimeStatus(baseUrl?: string) {
-  return requestLegacyApi<RealtimeStatus>("/system/realtime", undefined, baseUrl);
+  return requestLegacyApi<RealtimeStatus>(
+    "/system/realtime",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: string) {
+export function testProviderConnection(
+  payload: ProviderTestRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<ProviderTestResult>(
     "/system/provider/test",
     {
@@ -278,7 +334,11 @@ export function testProviderConnection(payload: ProviderTestRequest, baseUrl?: s
 }
 
 export function getProviderConfig(baseUrl?: string) {
-  return requestLegacyApi<ProviderConfig>("/system/provider", undefined, baseUrl);
+  return requestLegacyApi<ProviderConfig>(
+    "/system/provider",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function setProviderConfig(payload: ProviderConfig, baseUrl?: string) {
@@ -292,7 +352,10 @@ export function setProviderConfig(payload: ProviderConfig, baseUrl?: string) {
   );
 }
 
-export function runInferencePreview(payload: InferencePreviewRequest, baseUrl?: string) {
+export function runInferencePreview(
+  payload: InferencePreviewRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<InferencePreviewResponse>(
     "/system/inference/preview",
     {
@@ -308,23 +371,43 @@ export function getSystemLogs(baseUrl?: string) {
 }
 
 export function getEvalOverview(baseUrl?: string) {
-  return requestLegacyApi<EvalOverview>("/system/evals/overview", undefined, baseUrl);
+  return requestLegacyApi<EvalOverview>(
+    "/system/evals/overview",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listEvalDatasets(baseUrl?: string) {
-  return requestLegacyApi<EvalDatasetManifest[]>("/system/evals/datasets", undefined, baseUrl);
+  return requestLegacyApi<EvalDatasetManifest[]>(
+    "/system/evals/datasets",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listEvalMemoryStrategies(baseUrl?: string) {
-  return requestLegacyApi<EvalMemoryStrategyRecord[]>("/system/evals/strategies", undefined, baseUrl);
+  return requestLegacyApi<EvalMemoryStrategyRecord[]>(
+    "/system/evals/strategies",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listEvalPromptVariants(baseUrl?: string) {
-  return requestLegacyApi<EvalPromptVariantRecord[]>("/system/evals/prompt-variants", undefined, baseUrl);
+  return requestLegacyApi<EvalPromptVariantRecord[]>(
+    "/system/evals/prompt-variants",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listEvalExperimentPresets(baseUrl?: string) {
-  return requestLegacyApi<EvalExperimentPresetRecord[]>("/system/evals/experiments", undefined, baseUrl);
+  return requestLegacyApi<EvalExperimentPresetRecord[]>(
+    "/system/evals/experiments",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function runEvalExperimentPreset(id: string, baseUrl?: string) {
@@ -338,10 +421,18 @@ export function runEvalExperimentPreset(id: string, baseUrl?: string) {
 }
 
 export function listEvalExperimentReports(baseUrl?: string) {
-  return requestLegacyApi<EvalExperimentReportRecord[]>("/system/evals/reports", undefined, baseUrl);
+  return requestLegacyApi<EvalExperimentReportRecord[]>(
+    "/system/evals/reports",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function updateEvalReportDecision(id: string, payload: UpdateEvalReportDecisionRequest, baseUrl?: string) {
+export function updateEvalReportDecision(
+  id: string,
+  payload: UpdateEvalReportDecisionRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<EvalExperimentReportRecord>(
     `/system/evals/reports/${encodeURIComponent(id)}/decision`,
     {
@@ -353,21 +444,34 @@ export function updateEvalReportDecision(id: string, payload: UpdateEvalReportDe
 }
 
 export function getEvalDataset(id: string, baseUrl?: string) {
-  return requestLegacyApi<EvalDatasetDetail>(`/system/evals/datasets/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<EvalDatasetDetail>(
+    `/system/evals/datasets/${encodeURIComponent(id)}`,
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listEvalRuns(baseUrl?: string) {
-  return requestLegacyApi<EvalRunRecord[]>("/system/evals/runs", undefined, baseUrl);
+  return requestLegacyApi<EvalRunRecord[]>(
+    "/system/evals/runs",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function listEvalRunsWithQuery(query: ListEvalRunsQuery, baseUrl?: string) {
+export function listEvalRunsWithQuery(
+  query: ListEvalRunsQuery,
+  baseUrl?: string,
+) {
   const params = new URLSearchParams();
   if (query.datasetId) params.set("datasetId", query.datasetId);
-  if (query.experimentLabel) params.set("experimentLabel", query.experimentLabel);
+  if (query.experimentLabel)
+    params.set("experimentLabel", query.experimentLabel);
   if (query.providerModel) params.set("providerModel", query.providerModel);
   if (query.judgeModel) params.set("judgeModel", query.judgeModel);
   if (query.promptVariant) params.set("promptVariant", query.promptVariant);
-  if (query.memoryPolicyVariant) params.set("memoryPolicyVariant", query.memoryPolicyVariant);
+  if (query.memoryPolicyVariant)
+    params.set("memoryPolicyVariant", query.memoryPolicyVariant);
   const suffix = params.toString();
 
   return requestLegacyApi<EvalRunRecord[]>(
@@ -378,10 +482,17 @@ export function listEvalRunsWithQuery(query: ListEvalRunsQuery, baseUrl?: string
 }
 
 export function getEvalRun(id: string, baseUrl?: string) {
-  return requestLegacyApi<EvalRunRecord>(`/system/evals/runs/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<EvalRunRecord>(
+    `/system/evals/runs/${encodeURIComponent(id)}`,
+    undefined,
+    baseUrl,
+  );
 }
 
-export function runEvalDataset(payload: RunEvalDatasetRequest, baseUrl?: string) {
+export function runEvalDataset(
+  payload: RunEvalDatasetRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<EvalRunRecord>(
     "/system/evals/runs",
     {
@@ -392,7 +503,10 @@ export function runEvalDataset(payload: RunEvalDatasetRequest, baseUrl?: string)
   );
 }
 
-export function compareEvalRuns(payload: CompareEvalRunsRequest, baseUrl?: string) {
+export function compareEvalRuns(
+  payload: CompareEvalRunsRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<EvalComparisonRecord>(
     "/system/evals/compare",
     {
@@ -403,14 +517,19 @@ export function compareEvalRuns(payload: CompareEvalRunsRequest, baseUrl?: strin
   );
 }
 
-export function listEvalComparisonsWithQuery(query: ListEvalComparisonsQuery, baseUrl?: string) {
+export function listEvalComparisonsWithQuery(
+  query: ListEvalComparisonsQuery,
+  baseUrl?: string,
+) {
   const params = new URLSearchParams();
   if (query.datasetId) params.set("datasetId", query.datasetId);
-  if (query.experimentLabel) params.set("experimentLabel", query.experimentLabel);
+  if (query.experimentLabel)
+    params.set("experimentLabel", query.experimentLabel);
   if (query.providerModel) params.set("providerModel", query.providerModel);
   if (query.judgeModel) params.set("judgeModel", query.judgeModel);
   if (query.promptVariant) params.set("promptVariant", query.promptVariant);
-  if (query.memoryPolicyVariant) params.set("memoryPolicyVariant", query.memoryPolicyVariant);
+  if (query.memoryPolicyVariant)
+    params.set("memoryPolicyVariant", query.memoryPolicyVariant);
   const suffix = params.toString();
 
   return requestLegacyApi<EvalComparisonRecord[]>(
@@ -420,7 +539,10 @@ export function listEvalComparisonsWithQuery(query: ListEvalComparisonsQuery, ba
   );
 }
 
-export function runPairwiseEval(payload: RunPairwiseEvalRequest, baseUrl?: string) {
+export function runPairwiseEval(
+  payload: RunPairwiseEvalRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<PairwiseEvalRunResponse>(
     "/system/evals/compare/run",
     {
@@ -432,7 +554,11 @@ export function runPairwiseEval(payload: RunPairwiseEvalRequest, baseUrl?: strin
 }
 
 export function listGenerationTraces(baseUrl?: string) {
-  return requestLegacyApi<GenerationTrace[]>("/system/evals/traces", undefined, baseUrl);
+  return requestLegacyApi<GenerationTrace[]>(
+    "/system/evals/traces",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listGenerationTracesWithQuery(
@@ -459,7 +585,11 @@ export function listGenerationTracesWithQuery(
 }
 
 export function getGenerationTrace(id: string, baseUrl?: string) {
-  return requestLegacyApi<GenerationTrace>(`/system/evals/traces/${encodeURIComponent(id)}`, undefined, baseUrl);
+  return requestLegacyApi<GenerationTrace>(
+    `/system/evals/traces/${encodeURIComponent(id)}`,
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listPersonaAssets(_baseUrl?: string) {
@@ -500,7 +630,10 @@ export function getWorldOwner(baseUrl?: string) {
   return requestLegacyApi<WorldOwner>("/world/owner", undefined, baseUrl);
 }
 
-export function updateWorldOwner(payload: UpdateWorldOwnerRequest, baseUrl?: string) {
+export function updateWorldOwner(
+  payload: UpdateWorldOwnerRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<WorldOwner>(
     "/world/owner",
     {
@@ -511,7 +644,10 @@ export function updateWorldOwner(payload: UpdateWorldOwnerRequest, baseUrl?: str
   );
 }
 
-export function setWorldOwnerApiKey(payload: UpdateWorldOwnerApiKeyRequest, baseUrl?: string) {
+export function setWorldOwnerApiKey(
+  payload: UpdateWorldOwnerApiKeyRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<WorldOwner>(
     "/world/owner/api-key",
     {
@@ -533,7 +669,11 @@ export function clearWorldOwnerApiKey(baseUrl?: string) {
 }
 
 export function getAiModel(baseUrl?: string) {
-  return requestLegacyApi<AiModelResponse>("/config/ai-model", undefined, baseUrl);
+  return requestLegacyApi<AiModelResponse>(
+    "/config/ai-model",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function setAiModel(payload: UpdateAiModelRequest, baseUrl?: string) {
@@ -548,7 +688,11 @@ export function setAiModel(payload: UpdateAiModelRequest, baseUrl?: string) {
 }
 
 export function getAvailableModels(baseUrl?: string) {
-  return requestLegacyApi<AvailableModelsResponse>("/config/available-models", undefined, baseUrl);
+  return requestLegacyApi<AvailableModelsResponse>(
+    "/config/available-models",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function listCharacters(baseUrl?: string) {
@@ -570,7 +714,11 @@ export function createCharacter(payload: CharacterDraft, baseUrl?: string) {
   );
 }
 
-export function updateCharacter(id: string, payload: CharacterDraft, baseUrl?: string) {
+export function updateCharacter(
+  id: string,
+  payload: CharacterDraft,
+  baseUrl?: string,
+) {
   return requestLegacyApi<Character>(
     `/characters/${id}`,
     {
@@ -596,14 +744,25 @@ export function getLatestWorldContext(baseUrl?: string) {
 }
 
 export function getFriendRequests(baseUrl?: string) {
-  return requestLegacyApi<FriendRequest[]>("/social/friend-requests", undefined, baseUrl);
+  return requestLegacyApi<FriendRequest[]>(
+    "/social/friend-requests",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function getConversations(baseUrl?: string) {
-  return requestLegacyApi<ConversationListItem[]>("/conversations", undefined, baseUrl);
+  return requestLegacyApi<ConversationListItem[]>(
+    "/conversations",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function getOrCreateConversation(payload: GetOrCreateConversationRequest, baseUrl?: string) {
+export function getOrCreateConversation(
+  payload: GetOrCreateConversationRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<Conversation>(
     "/conversations",
     {
@@ -615,7 +774,11 @@ export function getOrCreateConversation(payload: GetOrCreateConversationRequest,
 }
 
 export function getConversationMessages(id: string, baseUrl?: string) {
-  return requestLegacyApi<Message[]>(`/conversations/${id}/messages`, undefined, baseUrl);
+  return requestLegacyApi<Message[]>(
+    `/conversations/${id}/messages`,
+    undefined,
+    baseUrl,
+  );
 }
 
 export function markConversationRead(id: string, baseUrl?: string) {
@@ -628,7 +791,11 @@ export function markConversationRead(id: string, baseUrl?: string) {
   );
 }
 
-export function setConversationPinned(id: string, payload: SetConversationPinnedRequest, baseUrl?: string) {
+export function setConversationPinned(
+  id: string,
+  payload: SetConversationPinnedRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<Conversation>(
     `/conversations/${id}/pin`,
     {
@@ -670,6 +837,17 @@ export function clearConversationHistory(id: string, baseUrl?: string) {
   );
 }
 
+export function uploadChatAttachment(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<UploadChatAttachmentResponse>(
+    "/chat/attachments",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
 export function createGroup(payload: CreateGroupRequest, baseUrl?: string) {
   return requestLegacyApi<Group>(
     "/groups",
@@ -686,10 +864,18 @@ export function getGroup(id: string, baseUrl?: string) {
 }
 
 export function getGroupMembers(id: string, baseUrl?: string) {
-  return requestLegacyApi<GroupMember[]>(`/groups/${id}/members`, undefined, baseUrl);
+  return requestLegacyApi<GroupMember[]>(
+    `/groups/${id}/members`,
+    undefined,
+    baseUrl,
+  );
 }
 
-export function addGroupMember(id: string, payload: AddGroupMemberRequest, baseUrl?: string) {
+export function addGroupMember(
+  id: string,
+  payload: AddGroupMemberRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<GroupMember>(
     `/groups/${id}/members`,
     {
@@ -701,10 +887,18 @@ export function addGroupMember(id: string, payload: AddGroupMemberRequest, baseU
 }
 
 export function getGroupMessages(id: string, baseUrl?: string) {
-  return requestLegacyApi<GroupMessage[]>(`/groups/${id}/messages`, undefined, baseUrl);
+  return requestLegacyApi<GroupMessage[]>(
+    `/groups/${id}/messages`,
+    undefined,
+    baseUrl,
+  );
 }
 
-export function sendGroupMessage(id: string, payload: SendGroupMessageRequest, baseUrl?: string) {
+export function sendGroupMessage(
+  id: string,
+  payload: SendGroupMessageRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<GroupMessage>(
     `/groups/${id}/messages`,
     {
@@ -736,14 +930,25 @@ export function declineFriendRequest(id: string, baseUrl?: string) {
 }
 
 export function getFriends(baseUrl?: string) {
-  return requestLegacyApi<FriendListItem[]>("/social/friends", undefined, baseUrl);
+  return requestLegacyApi<FriendListItem[]>(
+    "/social/friends",
+    undefined,
+    baseUrl,
+  );
 }
 
 export function getBlockedCharacters(baseUrl?: string) {
-  return requestLegacyApi<BlockedCharacter[]>("/social/blocks", undefined, baseUrl);
+  return requestLegacyApi<BlockedCharacter[]>(
+    "/social/blocks",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function blockCharacter(payload: BlockCharacterRequest, baseUrl?: string) {
+export function blockCharacter(
+  payload: BlockCharacterRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<BlockedCharacter>(
     "/social/block",
     {
@@ -754,7 +959,10 @@ export function blockCharacter(payload: BlockCharacterRequest, baseUrl?: string)
   );
 }
 
-export function unblockCharacter(payload: UnblockCharacterRequest, baseUrl?: string) {
+export function unblockCharacter(
+  payload: UnblockCharacterRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<SuccessResponse>(
     "/social/unblock",
     {
@@ -766,10 +974,17 @@ export function unblockCharacter(payload: UnblockCharacterRequest, baseUrl?: str
 }
 
 export function listModerationReports(baseUrl?: string) {
-  return requestLegacyApi<ModerationReport[]>("/moderation/reports", undefined, baseUrl);
+  return requestLegacyApi<ModerationReport[]>(
+    "/moderation/reports",
+    undefined,
+    baseUrl,
+  );
 }
 
-export function createModerationReport(payload: CreateModerationReportRequest, baseUrl?: string) {
+export function createModerationReport(
+  payload: CreateModerationReportRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<ModerationReport>(
     "/moderation/reports",
     {
@@ -788,7 +1003,10 @@ export function getMoment(id: string, baseUrl?: string) {
   return requestLegacyApi<Moment>(`/moments/${id}`, undefined, baseUrl);
 }
 
-export function createUserMoment(payload: CreateUserMomentRequest, baseUrl?: string) {
+export function createUserMoment(
+  payload: CreateUserMomentRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<Moment>(
     "/moments/user-post",
     {
@@ -799,7 +1017,11 @@ export function createUserMoment(payload: CreateUserMomentRequest, baseUrl?: str
   );
 }
 
-export function addMomentComment(id: string, payload: CreateMomentCommentRequest, baseUrl?: string) {
+export function addMomentComment(
+  id: string,
+  payload: CreateMomentCommentRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<MomentComment>(
     `/moments/${id}/comment`,
     {
@@ -849,10 +1071,17 @@ export function getFeed(page = 1, limit = 20, baseUrl?: string) {
 }
 
 export function getFeedPost(id: string, baseUrl?: string) {
-  return requestLegacyApi<FeedPostWithComments>(`/feed/${id}`, undefined, baseUrl);
+  return requestLegacyApi<FeedPostWithComments>(
+    `/feed/${id}`,
+    undefined,
+    baseUrl,
+  );
 }
 
-export function createFeedPost(payload: CreateFeedPostRequest, baseUrl?: string) {
+export function createFeedPost(
+  payload: CreateFeedPostRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<FeedPost>(
     "/feed",
     {
@@ -863,7 +1092,11 @@ export function createFeedPost(payload: CreateFeedPostRequest, baseUrl?: string)
   );
 }
 
-export function addFeedComment(id: string, payload: CreateFeedCommentRequest, baseUrl?: string) {
+export function addFeedComment(
+  id: string,
+  payload: CreateFeedCommentRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<FeedComment>(
     `/feed/${id}/comment`,
     {
@@ -894,7 +1127,10 @@ export function shake(baseUrl?: string) {
   );
 }
 
-export function sendFriendRequest(payload: SendFriendRequestRequest, baseUrl?: string) {
+export function sendFriendRequest(
+  payload: SendFriendRequestRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<FriendRequest>(
     "/social/friend-requests/send",
     {
@@ -905,7 +1141,10 @@ export function sendFriendRequest(payload: SendFriendRequestRequest, baseUrl?: s
   );
 }
 
-export function triggerSceneFriendRequest(payload: TriggerSceneRequest, baseUrl?: string) {
+export function triggerSceneFriendRequest(
+  payload: TriggerSceneRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<FriendRequest | null>(
     "/social/trigger-scene",
     {

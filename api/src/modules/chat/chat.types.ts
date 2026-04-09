@@ -8,15 +8,73 @@ export interface StickerAttachment {
   label?: string;
 }
 
+export interface ImageAttachment {
+  kind: 'image';
+  url: string;
+  mimeType: string;
+  fileName: string;
+  size: number;
+  width?: number;
+  height?: number;
+}
+
+export interface ContactCardAttachment {
+  kind: 'contact_card';
+  characterId: string;
+  name: string;
+  avatar?: string;
+  relationship?: string;
+  bio?: string;
+}
+
+export interface LocationCardAttachment {
+  kind: 'location_card';
+  sceneId: string;
+  title: string;
+  subtitle?: string;
+}
+
+export type MessageAttachment =
+  | StickerAttachment
+  | ImageAttachment
+  | ContactCardAttachment
+  | LocationCardAttachment;
+
 export interface Message {
   id: string;
   conversationId: string;
   senderType: 'user' | 'character' | 'system';
   senderId: string;
   senderName: string;
-  type: 'text' | 'system' | 'proactive' | 'sticker';
+  type:
+    | 'text'
+    | 'system'
+    | 'proactive'
+    | 'sticker'
+    | 'image'
+    | 'contact_card'
+    | 'location_card';
   text: string;
-  attachment?: StickerAttachment;
+  attachment?: MessageAttachment;
+  createdAt: Date;
+}
+
+export interface GroupMessage {
+  id: string;
+  groupId: string;
+  senderId: string;
+  senderType: 'user' | 'character' | 'system';
+  senderName: string;
+  senderAvatar?: string;
+  type:
+    | 'text'
+    | 'system'
+    | 'sticker'
+    | 'image'
+    | 'contact_card'
+    | 'location_card';
+  text: string;
+  attachment?: MessageAttachment;
   createdAt: Date;
 }
 
