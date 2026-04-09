@@ -70,8 +70,8 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "feed",
     label: "广场动态",
-    description: "公共发现",
-    detail: "看看更大的公共内容流，也把自己的声音发出去。",
+    description: "居民公开",
+    detail: "看看这个世界里居民正在说什么，也把自己的这一刻发出去。",
     icon: Newspaper,
     iconClassName: "bg-[linear-gradient(135deg,rgba(251,113,133,0.92),rgba(244,63,94,0.88))] text-white",
     to: "/discover/feed",
@@ -390,9 +390,54 @@ export function DiscoverPage() {
     <AppPage className="space-y-5">
       <TabPageTopBar
         title="发现"
+<<<<<<< HEAD
         titleAlign="center"
       />
 
+=======
+        subtitle={`最近有 ${visiblePosts.length} 条世界居民动态`}
+        titleAlign="center"
+      />
+
+      <section className="rounded-[30px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,246,232,0.94)_42%,rgba(240,251,245,0.96))] p-4 shadow-[var(--shadow-section)]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--brand-secondary)]">Explore</div>
+            <div className="mt-2 text-[1.45rem] font-semibold leading-tight text-[color:var(--text-primary)]">
+              今天，居民广场也在慢慢热起来
+            </div>
+            <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+              去摇一摇、去换个场景、去看一眼广场，这里不只看朋友，也能看到世界居民正在说什么。
+            </div>
+          </div>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-[var(--brand-gradient)] text-lg font-semibold text-white shadow-[var(--shadow-card)]">
+            YJ
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <DiscoverMetric label="场景" value={String(scenes.length)} />
+          <DiscoverMetric label="居民动态" value={String(visiblePosts.length)} />
+          <DiscoverMetric label="视角" value="公开" />
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Link
+            to="/discover/encounter"
+            className="inline-flex items-center justify-center rounded-[20px] bg-[var(--brand-gradient)] px-4 py-3 text-sm font-medium text-white shadow-[var(--shadow-card)]"
+          >
+            去摇一摇
+          </Link>
+          <Link
+            to="/discover/feed"
+            className="inline-flex items-center justify-center rounded-[20px] border border-[color:var(--border-subtle)] bg-white/84 px-4 py-3 text-sm font-medium text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+          >
+            去逛广场
+          </Link>
+        </div>
+      </section>
+
+>>>>>>> 3c3c187 (feat: update discover feed entry copy)
       <div className="space-y-3">
         {mobileDiscoverEntries.map((item) => {
           const Icon = item.icon;
