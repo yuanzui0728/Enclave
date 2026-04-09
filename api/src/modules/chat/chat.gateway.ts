@@ -191,7 +191,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return { event: 'message_sent', data: { conversationId: convId } };
     } catch (err) {
       this.logger.error('Error handling message', err);
-      client.emit('error', { message: '消息发送失败，请稍后重试。' });
+      client.emit('error', { message: this.describeReplyFailure(err) });
     }
   }
 
