@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const stateDir = path.join(rootDir, "logs", "dev-services");
 const nodeBinary = process.execPath;
-const pnpmBinary = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 
 const command = process.argv[2] ?? "status";
 const target = process.argv[3] ?? "workspace";
@@ -47,16 +46,20 @@ const services = {
     port: 3001,
     url: "http://127.0.0.1:3001/",
     prestart() {
-      const result = spawnSync(pnpmBinary, ["--filter", "@yinjie/cloud-api", "build"], {
-        cwd: rootDir,
+      const result = spawnSync(nodeBinary, [path.join(rootDir, "apps", "cloud-api", "node_modules", "@nestjs", "cli", "bin", "nest.js"), "build"], {
+        cwd: path.join(rootDir, "apps", "cloud-api"),
         env: process.env,
         shell: false,
         stdio: "inherit",
         windowsHide: true,
       });
 
+      if (result.error) {
+        throw result.error;
+      }
+
       if (result.status !== 0) {
-        throw new Error("cloud-api build failed.");
+        throw new Error(`cloud-api build failed with exit code ${result.status ?? "unknown"}.`);
       }
     },
   },
