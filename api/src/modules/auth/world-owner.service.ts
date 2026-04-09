@@ -122,12 +122,7 @@ export class WorldOwnerService {
       });
       const ownerConversationIds = ownerConversations.map((entry) => entry.id);
 
-      await manager
-        .createQueryBuilder()
-        .delete()
-        .from(ConversationEntity)
-        .where('userId IN (:...ids)', { ids: removedOwnerIds })
-        .execute();
+      await manager.getRepository(ConversationEntity).delete({ ownerId: In(removedOwnerIds) });
 
       await manager
         .createQueryBuilder()

@@ -132,3 +132,4 @@
 - `ConversationEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.
 - `UserFeedInteractionEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
+- Backend runtime code no longer uses `userId` as a world-owner semantic field; remaining `userId` usage is only for physical database column compatibility.
