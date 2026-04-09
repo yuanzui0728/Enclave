@@ -30,6 +30,13 @@ const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'video/webm',
 ]);
 
+type UploadedAudioFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname?: string;
+  size: number;
+};
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
@@ -269,7 +276,7 @@ ${chatHistory}
   }
 
   async transcribeAudio(
-    file: Express.Multer.File,
+    file: UploadedAudioFile,
     options: { conversationId?: string; mode?: string },
   ) {
     if (!file.buffer?.length) {
@@ -314,8 +321,6 @@ ${chatHistory}
         text,
         durationMs: Date.now() - startedAt,
         provider: provider.model,
-        conversationId: options.conversationId?.trim() || undefined,
-        mode: options.mode ?? 'dictation',
       };
     } catch (error) {
       if (error instanceof BadGatewayException) {

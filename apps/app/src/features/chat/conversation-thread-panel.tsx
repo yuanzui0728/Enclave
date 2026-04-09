@@ -5,6 +5,7 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
+import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 
 type ConversationThreadPanelProps = {
@@ -23,6 +24,7 @@ export function ConversationThreadPanel({
   onToggleInspector,
 }: ConversationThreadPanelProps) {
   const {
+    baseUrl,
     conversationTitle,
     conversationType,
     messagesQuery,
@@ -36,6 +38,7 @@ export function ConversationThreadPanel({
     text,
     typingCharacterId,
   } = useConversationThread(conversationId);
+  const runtimeConfig = useAppRuntimeConfig();
   const isDesktop = variant === "desktop";
   const desktopSubtitle =
     conversationType === "group"
@@ -187,6 +190,11 @@ export function ConversationThreadPanel({
         variant={isDesktop ? "desktop" : "mobile"}
         pending={sendMutation.isPending}
         error={sendMutation.error instanceof Error ? sendMutation.error.message : null}
+        speechInput={{
+          baseUrl,
+          conversationId,
+          enabled: runtimeConfig.appPlatform === "web",
+        }}
         onChange={(value) => {
           if (socketError) {
             setSocketError(null);

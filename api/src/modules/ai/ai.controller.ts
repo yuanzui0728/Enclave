@@ -9,6 +9,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AiOrchestratorService } from './ai-orchestrator.service';
 
+type UploadedAudioFile = {
+  buffer: Buffer;
+  mimetype: string;
+  originalname?: string;
+  size: number;
+};
+
 @Controller('ai')
 export class AiController {
   constructor(private readonly ai: AiOrchestratorService) {}
@@ -22,7 +29,7 @@ export class AiController {
     }),
   )
   createTranscription(
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile() file: UploadedAudioFile | undefined,
     @Body() body: { conversationId?: string; mode?: string },
   ) {
     if (!file) {
