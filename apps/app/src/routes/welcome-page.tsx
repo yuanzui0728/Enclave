@@ -24,6 +24,18 @@ function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, "");
 }
 
+function resolveDefaultLocalApiBaseUrl(configuredApiBaseUrl?: string) {
+  if (configuredApiBaseUrl) {
+    return configuredApiBaseUrl;
+  }
+
+  if (typeof window !== "undefined" && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+    return window.location.origin;
+  }
+
+  return DEFAULT_CORE_API_BASE_URL;
+}
+
 function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   switch (data?.status) {
     case "active":
@@ -53,7 +65,7 @@ export function WelcomePage() {
     runtimeConfig.worldAccessMode ?? (runtimeConfig.apiBaseUrl ? "local" : "cloud"),
   );
   const [localApiBaseUrl, setLocalApiBaseUrl] = useState(
-    runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL,
+    resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl),
   );
   const [phone, setPhone] = useState(runtimeConfig.cloudPhone ?? "");
   const [code, setCode] = useState("");
@@ -72,7 +84,7 @@ export function WelcomePage() {
   const showOwnerStep = Boolean(readyBaseUrl) && !onboardingCompleted;
 
   useEffect(() => {
-    setLocalApiBaseUrl(runtimeConfig.apiBaseUrl ?? DEFAULT_CORE_API_BASE_URL);
+    setLocalApiBaseUrl(resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl));
     setPhone(runtimeConfig.cloudPhone ?? "");
     if (runtimeConfig.worldAccessMode) {
       setMode(runtimeConfig.worldAccessMode);
