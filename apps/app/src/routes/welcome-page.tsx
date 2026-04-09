@@ -26,7 +26,7 @@ function normalizeBaseUrl(value: string) {
 function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
   switch (data?.status) {
     case "active":
-      return "你的云世界已经准备好了。";
+      return "你的官方世界已经准备好了。";
     case "pending":
       return "建世界申请已提交，等待官方处理。";
     case "provisioning":
@@ -34,9 +34,9 @@ function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
     case "rejected":
       return "申请需要你补充信息后重新提交。";
     case "disabled":
-      return "这个云世界当前不可用。";
+      return "这个官方世界当前不可用。";
     default:
-      return "还没有找到可进入的云世界。";
+      return "还没有找到可进入的官方世界。";
   }
 }
 
@@ -166,33 +166,7 @@ export function WelcomePage() {
       setPhone(result.phone);
       setNotice("验证码已发送，请查收短信。");
       setEntryError("");
-      setAppRuntimeConfig({
-        apiBaseUrl: undefined,
-        socketBaseUrl: undefined,
-        worldAccessMode: "cloud",
-        cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
-        cloudPhone: result.phone,
-        cloudWorldId: undefined,
-        bootstrapSource: "user",
-      });
-    },
-  });
-
-  const verifyCodeMutation = useMutation({
-    mutationFn: () =>
-      verifyCloudPhoneCode(
-        {
-          phone: phone.trim(),
-          code: code.trim(),
-        },
-        normalizedCloudApiBaseUrl || undefined,
-      ),
-    onSuccess: (result) => {
-      setPhone(result.phone);
-      setCode("");
-      setCloudAccessToken(result.accessToken);
-      setNotice("手机号验证完成，正在检查你的云世界。");
-      setEntryError("");
+      setCloudAccessToken("");
       setAppRuntimeConfig({
         apiBaseUrl: undefined,
         socketBaseUrl: undefined,
@@ -222,9 +196,6 @@ export function WelcomePage() {
   });
 
   const currentCloudWorld = cloudStatusQuery.data?.world ?? null;
-  const cloudCanContinue = Boolean(
-    cloudStatusQuery.data?.status === "active" && currentCloudWorld?.apiBaseUrl,
-  );
   const cloudCanRequestWorld =
     Boolean(cloudAccessToken) &&
     (cloudStatusQuery.data?.status === "none" || cloudStatusQuery.data?.status === "rejected");
@@ -277,8 +248,13 @@ export function WelcomePage() {
   }
 
   async function continueWithCloudWorld() {
-    if (!cloudCanContinue || !currentCloudWorld?.apiBaseUrl) {
-      setEntryError("先完成手机号验证，并等待云世界准备完成。");
+    if (!phone.trim()) {
+      setEntryError("先填写手机号。");
+      return;
+    }
+
+    if (!cloudAccessToken && !code.trim()) {
+      setEntryError("先填写验证码。");
       return;
     }
 
@@ -287,21 +263,59 @@ export function WelcomePage() {
     setOwnerError("");
 
     try {
-      await assertWorldReachable(currentCloudWorld.apiBaseUrl);
+      let accessToken = cloudAccessToken;
+      let verifiedPhone = phone.trim();
+
+      if (!accessToken) {
+        const verifyResult = await verifyCloudPhoneCode(
+          {
+            phone: phone.trim(),
+            code: code.trim(),
+          },
+          normalizedCloudApiBaseUrl || undefined,
+        );
+
+        accessToken = verifyResult.accessToken;
+        verifiedPhone = verifyResult.phone;
+        setPhone(verifyResult.phone);
+        setCloudAccessToken(verifyResult.accessToken);
+        setNotice("手机号验证完成，正在检查你的官方世界。");
+      }
+
+      const cloudStatus = await getMyCloudWorld(accessToken, normalizedCloudApiBaseUrl || undefined);
+      const cloudWorld = cloudStatus.world ?? null;
+
+      setCloudAccessToken(accessToken);
       setAppRuntimeConfig({
-        apiBaseUrl: currentCloudWorld.apiBaseUrl,
-        socketBaseUrl: currentCloudWorld.apiBaseUrl,
+        apiBaseUrl: undefined,
+        socketBaseUrl: undefined,
         worldAccessMode: "cloud",
         cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
-        cloudPhone: phone.trim() || runtimeConfig.cloudPhone,
-        cloudWorldId: currentCloudWorld.id,
+        cloudPhone: verifiedPhone,
+        cloudWorldId: cloudWorld?.id,
+        bootstrapSource: "user",
+      });
+
+      if (cloudStatus.status !== "active" || !cloudWorld?.apiBaseUrl) {
+        setEntryError(describeCloudStatus(cloudStatus));
+        return;
+      }
+
+      await assertWorldReachable(cloudWorld.apiBaseUrl);
+      setAppRuntimeConfig({
+        apiBaseUrl: cloudWorld.apiBaseUrl,
+        socketBaseUrl: cloudWorld.apiBaseUrl,
+        worldAccessMode: "cloud",
+        cloudApiBaseUrl: normalizedCloudApiBaseUrl || undefined,
+        cloudPhone: verifiedPhone,
+        cloudWorldId: cloudWorld.id,
         bootstrapSource: "user",
         configStatus: "configured",
       });
 
-      const owner = await getWorldOwner(currentCloudWorld.apiBaseUrl);
+      const owner = await getWorldOwner(cloudWorld.apiBaseUrl);
       hydrateOwner(owner);
-      setReadyBaseUrl(currentCloudWorld.apiBaseUrl);
+      setReadyBaseUrl(cloudWorld.apiBaseUrl);
       setOwnerName(owner.username ?? "");
       if (owner.onboardingCompleted) {
         void navigate({ to: "/tabs/chat", replace: true });
@@ -311,7 +325,7 @@ export function WelcomePage() {
       setNotice("世界已连上。");
     } catch (error) {
       setReadyBaseUrl(null);
-      setEntryError(describeRequestError(error, "云世界暂时不可用，请稍后再试。"));
+      setEntryError(describeRequestError(error, "官方世界暂时不可用，请稍后再试。"));
     } finally {
       setIsContinuing(false);
     }
@@ -360,55 +374,45 @@ export function WelcomePage() {
               onChange={(event) => {
                 setPhone(event.target.value);
                 setCode("");
+                setCloudAccessToken("");
                 setEntryError("");
-                if (event.target.value.trim() !== (runtimeConfig.cloudPhone ?? "")) {
-                  setCloudAccessToken("");
-                }
               }}
-              placeholder="输入申请云世界时使用的手机号"
+              placeholder="输入申请官方世界时使用的手机号"
             />
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">验证码</span>
-            <TextField
-              value={code}
-              onChange={(event) => {
-                setCode(event.target.value);
-                setEntryError("");
-              }}
-              placeholder="输入短信验证码"
-            />
-          </label>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              onClick={() => sendCodeMutation.mutate()}
-              disabled={!phone.trim() || sendCodeMutation.isPending}
-              variant="primary"
-              size="lg"
-              className="rounded-2xl"
-            >
-              {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
-            </Button>
-            <Button
-              onClick={() => verifyCodeMutation.mutate()}
-              disabled={!phone.trim() || !code.trim() || verifyCodeMutation.isPending}
-              variant="secondary"
-              size="lg"
-              className="rounded-2xl"
-            >
-              {verifyCodeMutation.isPending ? "验证中..." : "验证手机号"}
-            </Button>
+          <div className="space-y-2">
+            <span className="block text-xs uppercase tracking-[0.24em] text-[color:var(--text-muted)]">验证码</span>
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <TextField
+                  value={code}
+                  onChange={(event) => {
+                    setCode(event.target.value);
+                    setEntryError("");
+                  }}
+                  placeholder="输入短信验证码"
+                />
+              </div>
+              <Button
+                onClick={() => sendCodeMutation.mutate()}
+                disabled={!phone.trim() || sendCodeMutation.isPending}
+                variant="secondary"
+                size="lg"
+                className="shrink-0 rounded-2xl px-5"
+              >
+                {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
+              </Button>
+            </div>
           </div>
 
           {cloudStatusQuery.isLoading ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的云世界..." />
+            <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的官方世界..." />
           ) : null}
 
           {cloudStatusQuery.data ? (
-            <InlineNotice tone={cloudCanContinue ? "success" : "info"}>
-              {cloudCanContinue
+            <InlineNotice tone={cloudStatusQuery.data.status === "active" ? "success" : "info"}>
+              {cloudStatusQuery.data.status === "active"
                 ? `世界已准备好：${currentCloudWorld?.name ?? "未命名世界"}`
                 : describeCloudStatus(cloudStatusQuery.data)}
             </InlineNotice>
@@ -436,26 +440,15 @@ export function WelcomePage() {
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button
-              onClick={() => void cloudStatusQuery.refetch()}
-              disabled={!cloudAccessToken || cloudStatusQuery.isFetching}
-              variant="secondary"
-              size="lg"
-              className="rounded-2xl"
-            >
-              {cloudStatusQuery.isFetching ? "刷新中..." : "刷新状态"}
-            </Button>
-            <Button
-              onClick={() => void continueWithCloudWorld()}
-              disabled={!cloudCanContinue || isContinuing}
-              variant="primary"
-              size="lg"
-              className="rounded-2xl"
-            >
-              {isContinuing ? "连接中..." : "进入我的世界"}
-            </Button>
-          </div>
+          <Button
+            onClick={() => void continueWithCloudWorld()}
+            disabled={isContinuing}
+            variant="primary"
+            size="lg"
+            className="w-full rounded-2xl"
+          >
+            {isContinuing ? "进入中..." : "进入我的世界"}
+          </Button>
 
           <details className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-4 py-3">
             <summary className="cursor-pointer text-sm font-medium text-[color:var(--text-primary)]">高级设置</summary>
@@ -514,7 +507,7 @@ export function WelcomePage() {
           size="lg"
           className="w-full rounded-2xl"
         >
-          {isContinuing ? "连接中..." : "连接我的世界"}
+          {isContinuing ? "连接中..." : "进入我的世界"}
         </Button>
       </div>
     );
@@ -593,7 +586,7 @@ export function WelcomePage() {
                 : "border-[color:var(--border-faint)] bg-white/76 hover:bg-white"
             }`}
           >
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">使用官方云世界</div>
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">使用官方世界</div>
           </button>
 
           <button
@@ -619,9 +612,6 @@ export function WelcomePage() {
         {entryError ? <ErrorBlock message={entryError} /> : null}
         {sendCodeMutation.isError && sendCodeMutation.error instanceof Error ? (
           <ErrorBlock message={sendCodeMutation.error.message} />
-        ) : null}
-        {verifyCodeMutation.isError && verifyCodeMutation.error instanceof Error ? (
-          <ErrorBlock message={verifyCodeMutation.error.message} />
         ) : null}
         {cloudStatusQuery.isError && cloudStatusQuery.error instanceof Error ? (
           <ErrorBlock message={cloudStatusQuery.error.message} />
