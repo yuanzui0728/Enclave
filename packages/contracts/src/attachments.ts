@@ -18,6 +18,14 @@ export interface ImageAttachment {
   height?: number;
 }
 
+export interface FileAttachment {
+  kind: "file";
+  url: string;
+  mimeType: string;
+  fileName: string;
+  size: number;
+}
+
 export interface ContactCardAttachment {
   kind: "contact_card";
   characterId: string;
@@ -37,5 +45,8 @@ export interface LocationCardAttachment {
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
+  | FileAttachment
   | ContactCardAttachment
   | LocationCardAttachment;
+
+export type UploadableAttachment = ImageAttachment | FileAttachment;

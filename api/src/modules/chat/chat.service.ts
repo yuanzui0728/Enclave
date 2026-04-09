@@ -15,6 +15,7 @@ import { MessageEntity } from './message.entity';
 import {
   ContactCardAttachment,
   Conversation,
+  FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
   Message,
@@ -42,6 +43,11 @@ type SendConversationMessageInput =
       attachment: ImageAttachment;
     }
   | {
+      type: 'file';
+      text?: string;
+      attachment: FileAttachment;
+    }
+  | {
       type: 'contact_card';
       text?: string;
       attachment: ContactCardAttachment;
@@ -52,7 +58,7 @@ type SendConversationMessageInput =
       attachment: LocationCardAttachment;
     };
 
-type UploadedImageFile = {
+type UploadedAttachmentFile = {
   buffer: Buffer;
   mimetype: string;
   originalname?: string;
@@ -243,36 +249,44 @@ export class ChatService {
     return char?.currentActivity;
   }
 
-  async saveUploadedImageAttachment(
-    file: UploadedImageFile,
+  async saveUploadedAttachment(
+    file: UploadedAttachmentFile,
     metadata: { width?: number; height?: number },
-  ): Promise<ImageAttachment> {
-    if (!file.mimetype.startsWith('image/')) {
-      throw new NotFoundException('当前只支持上传图片附件。');
-    }
-
-    const originalName = sanitizeAttachmentFileName(
-      file.originalname ?? 'image',
+  ): Promise<ImageAttachment | FileAttachment> {
+    const isImage = file.mimetype.startsWith('image/');
+    const displayName = normalizeDisplayAttachmentName(
+      file.originalname,
+      isImage ? 'image' : 'file',
+      file.mimetype,
     );
     const extension =
-      path.extname(originalName) || guessImageExtension(file.mimetype);
-    const baseName = path.basename(originalName, extension) || 'image';
+      path.extname(displayName) || guessAttachmentExtension(file.mimetype);
+    const baseName = path.basename(displayName, extension) || 'attachment';
     const storedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeAttachmentFileName(baseName)}${extension}`;
     const storageDir = this.resolveAttachmentStorageDir();
+    const normalizedMimeType = file.mimetype || 'application/octet-stream';
 
     await mkdir(storageDir, { recursive: true });
     await writeFile(path.join(storageDir, storedFileName), file.buffer);
 
+    if (isImage) {
+      return {
+        kind: 'image',
+        url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+        mimeType: normalizedMimeType,
+        fileName: displayName,
+        size: file.size,
+        width: normalizeOptionalDimension(metadata.width),
+        height: normalizeOptionalDimension(metadata.height),
+      };
+    }
+
     return {
-      kind: 'image',
+      kind: 'file',
       url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
-      mimeType: file.mimetype,
-      fileName: originalName.endsWith(extension)
-        ? originalName
-        : `${originalName}${extension}`,
+      mimeType: normalizedMimeType,
+      fileName: displayName,
       size: file.size,
-      width: normalizeOptionalDimension(metadata.width),
-      height: normalizeOptionalDimension(metadata.height),
     };
   }
 
@@ -778,6 +792,7 @@ export class ChatService {
         | 'proactive'
         | 'sticker'
         | 'image'
+        | 'file'
         | 'contact_card'
         | 'location_card',
       text: entity.text,
@@ -787,7 +802,13 @@ export class ChatService {
   }
 
   private normalizeOutgoingMessageInput(input: SendConversationMessageInput): {
-    type: 'text' | 'sticker' | 'image' | 'contact_card' | 'location_card';
+    type:
+      | 'text'
+      | 'sticker'
+      | 'image'
+      | 'file'
+      | 'contact_card'
+      | 'location_card';
     text: string;
     promptText: string;
     attachment?: MessageAttachment;
@@ -814,6 +835,7 @@ export class ChatService {
 
     if (
       input.type === 'image' ||
+      input.type === 'file' ||
       input.type === 'contact_card' ||
       input.type === 'location_card'
     ) {
@@ -846,6 +868,10 @@ export class ChatService {
   private getAttachmentFallbackText(attachment: MessageAttachment): string {
     if (attachment.kind === 'image') {
       return `[图片] ${attachment.fileName}`.trim();
+    }
+
+    if (attachment.kind === 'file') {
+      return `[文件] ${attachment.fileName}`.trim();
     }
 
     if (attachment.kind === 'contact_card') {
@@ -906,7 +932,11 @@ function sanitizeAttachmentFileName(value: string) {
     .toLowerCase();
 }
 
-function guessImageExtension(mimeType: string) {
+function guessAttachmentExtension(mimeType: string) {
+  if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+    return '.jpg';
+  }
+
   if (mimeType === 'image/png') {
     return '.png';
   }
@@ -919,7 +949,34 @@ function guessImageExtension(mimeType: string) {
     return '.gif';
   }
 
-  return '.jpg';
+  if (mimeType === 'application/pdf') {
+    return '.pdf';
+  }
+
+  if (mimeType === 'text/plain') {
+    return '.txt';
+  }
+
+  if (mimeType === 'application/zip') {
+    return '.zip';
+  }
+
+  return '.bin';
+}
+
+function normalizeDisplayAttachmentName(
+  originalName: string | undefined,
+  fallbackBaseName: string,
+  mimeType: string,
+) {
+  const rawName = (originalName ?? '').trim();
+  const baseName = rawName ? path.basename(rawName) : fallbackBaseName;
+  const extension =
+    path.extname(baseName) || guessAttachmentExtension(mimeType);
+  const nameWithoutExtension =
+    path.basename(baseName, extension).trim() || fallbackBaseName;
+
+  return `${nameWithoutExtension}${extension}`;
 }
 
 function normalizeOptionalDimension(value?: number) {

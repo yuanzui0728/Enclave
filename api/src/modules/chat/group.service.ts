@@ -6,6 +6,7 @@ import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import {
   ContactCardAttachment,
+  FileAttachment,
   GroupMessage,
   ImageAttachment,
   LocationCardAttachment,
@@ -36,6 +37,11 @@ type SendGroupMessageInput =
       type: 'image';
       text?: string;
       attachment: ImageAttachment;
+    }
+  | {
+      type: 'file';
+      text?: string;
+      attachment: FileAttachment;
     }
   | {
       type: 'contact_card';
@@ -266,12 +272,13 @@ export class GroupService {
   }
 
   private normalizeOutgoingMessageInput(input: SendGroupMessageInput): {
-    type: 'text' | 'image' | 'contact_card' | 'location_card';
+    type: 'text' | 'image' | 'file' | 'contact_card' | 'location_card';
     text: string;
     attachment?: MessageAttachment;
   } {
     if (
       input.type === 'image' ||
+      input.type === 'file' ||
       input.type === 'contact_card' ||
       input.type === 'location_card'
     ) {
@@ -304,6 +311,10 @@ export class GroupService {
       return `[图片] ${attachment.fileName}`.trim();
     }
 
+    if (attachment.kind === 'file') {
+      return `[文件] ${attachment.fileName}`.trim();
+    }
+
     if (attachment.kind === 'contact_card') {
       return `[名片] ${attachment.name}`.trim();
     }
@@ -328,6 +339,7 @@ export class GroupService {
         | 'system'
         | 'sticker'
         | 'image'
+        | 'file'
         | 'contact_card'
         | 'location_card',
       text: entity.text,

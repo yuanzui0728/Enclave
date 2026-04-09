@@ -1,5 +1,6 @@
 import type {
   ContactCardAttachment,
+  FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
 } from "./attachments";
@@ -45,6 +46,13 @@ export type SendMessagePayload =
       type: "image";
       text?: string;
       attachment: ImageAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "file";
+      text?: string;
+      attachment: FileAttachment;
     }
   | {
       conversationId: string;

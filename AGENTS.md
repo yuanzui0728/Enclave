@@ -164,8 +164,8 @@
 
 - `GET /api/moments` no longer accepts `authorId`; it always returns the current world's feed.
 - 聊天消息契约现已支持 `sticker` 类型；消息附件元数据由共享表情包目录解析并写入 `Message.attachment`
-- 聊天附件消息现已扩展支持 `image`、`contact_card`、`location_card`；群聊消息同步支持附件元数据
-- `POST /api/groups/:id/messages` 现已支持图片、名片、位置卡片附件负载
+- 聊天附件消息现已扩展支持 `image`、`file`、`contact_card`、`location_card`；群聊消息同步支持附件元数据
+- `POST /api/groups/:id/messages` 现已支持图片、文件、名片、位置卡片附件负载
 - AI 语音转写路由已提供：
   - `POST /api/ai/transcriptions`
 - 社交屏蔽路由已提供：

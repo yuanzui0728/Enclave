@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import type {
   ContactCardAttachment,
+  FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
 } from './chat.types';
@@ -39,6 +40,13 @@ type SendMessagePayload =
       type: 'image';
       text?: string;
       attachment: ImageAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'file';
+      text?: string;
+      attachment: FileAttachment;
     }
   | {
       conversationId: string;
@@ -123,11 +131,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ? (payload.text ?? '[表情包]')
         : payload.type === 'image'
           ? (payload.text ?? `[图片] ${payload.attachment.fileName}`)
-          : payload.type === 'contact_card'
-            ? (payload.text ?? `[名片] ${payload.attachment.name}`)
-            : payload.type === 'location_card'
-              ? (payload.text ?? `[位置] ${payload.attachment.title}`)
-              : payload.text;
+          : payload.type === 'file'
+            ? (payload.text ?? `[文件] ${payload.attachment.fileName}`)
+            : payload.type === 'contact_card'
+              ? (payload.text ?? `[名片] ${payload.attachment.name}`)
+              : payload.type === 'location_card'
+                ? (payload.text ?? `[位置] ${payload.attachment.title}`)
+                : payload.text;
 
     try {
       let convId = conversationId;

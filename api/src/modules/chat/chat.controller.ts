@@ -16,6 +16,7 @@ import { ChatService } from './chat.service';
 import { GroupService } from './group.service';
 import type {
   ContactCardAttachment,
+  FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
 } from './chat.types';
@@ -92,11 +93,11 @@ export class ChatAttachmentController {
     @Body() body: { width?: string; height?: string },
   ) {
     if (!file) {
-      throw new BadRequestException('请先选择一张图片。');
+      throw new BadRequestException('请先选择一个附件。');
     }
 
     return {
-      attachment: await this.chatService.saveUploadedImageAttachment(file, {
+      attachment: await this.chatService.saveUploadedAttachment(file, {
         width: body.width ? Number(body.width) : undefined,
         height: body.height ? Number(body.height) : undefined,
       }),
@@ -165,6 +166,11 @@ export class GroupController {
           type: 'image';
           text?: string;
           attachment: ImageAttachment;
+        }
+      | {
+          type: 'file';
+          text?: string;
+          attachment: FileAttachment;
         }
       | {
           type: 'contact_card';

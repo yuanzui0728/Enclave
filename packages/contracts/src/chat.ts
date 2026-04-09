@@ -1,8 +1,10 @@
 import type {
   ContactCardAttachment,
+  FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
   MessageAttachment,
+  UploadableAttachment,
 } from "./attachments";
 
 export type MessageSenderType = "user" | "character" | "system";
@@ -13,6 +15,7 @@ export type MessageType =
   | "proactive"
   | "sticker"
   | "image"
+  | "file"
   | "contact_card"
   | "location_card";
 export type GroupMemberType = "user" | "character";
@@ -127,6 +130,13 @@ export type SendGroupMessageRequest =
   | {
       senderId?: string;
       senderType?: GroupMemberType;
+      type: "file";
+      text?: string;
+      attachment: FileAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
       type: "contact_card";
       text?: string;
       attachment: ContactCardAttachment;
@@ -140,5 +150,5 @@ export type SendGroupMessageRequest =
     };
 
 export interface UploadChatAttachmentResponse {
-  attachment: ImageAttachment;
+  attachment: UploadableAttachment;
 }
