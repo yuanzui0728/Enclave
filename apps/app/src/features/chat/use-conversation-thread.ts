@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getConversationMessages, getConversations, markConversationRead, type Message } from "@yinjie/contracts";
+import { getConversationMessages, getConversations, markConversationRead, type Message, type SendMessagePayload, type StickerAttachment } from "@yinjie/contracts";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import {
   emitChatMessage,
@@ -130,9 +130,8 @@ export function useConversationThread(conversationId: string) {
   }, [baseUrl, conversationId, ownerId, queryClient]);
 
   const sendMutation = useMutation({
-    mutationFn: async () => {
-      const trimmed = text.trim();
-      if (!trimmed || !ownerId) {
+    mutationFn: async (payload: SendMessagePayload) => {
+      if (!ownerId) {
         return;
       }
 
@@ -147,29 +146,67 @@ export function useConversationThread(conversationId: string) {
         throw new Error("The target character is not ready yet.");
       }
 
-      emitChatMessage({
-        conversationId,
-        characterId: targetCharacterId,
-        text: trimmed,
-      });
+      emitChatMessage(payload);
 
       setSocketError(null);
-      setMessages((current) => [
-        ...current,
-        {
-          id: `local_${Date.now()}`,
-          conversationId,
-          senderType: "user",
-          senderId: ownerId,
-          senderName: username ?? "You",
-          type: "text",
-          text: trimmed,
-          createdAt: String(Date.now()),
-        },
-      ]);
-      setText("");
+      setMessages((current) => [...current, buildOptimisticMessage(payload, ownerId, username ?? "You")]);
+      if (payload.type !== "sticker") {
+        setText("");
+      }
     },
   });
+
+  const sendTextMessage = async () => {
+    const trimmed = text.trim();
+    if (!trimmed || !ownerId) {
+      return;
+    }
+
+    const targetCharacterId = resolveTargetCharacterId({
+      conversationId,
+      ownerId,
+      messages,
+      participants,
+    });
+
+    if (!targetCharacterId) {
+      throw new Error("The target character is not ready yet.");
+    }
+
+    await sendMutation.mutateAsync({
+      conversationId,
+      characterId: targetCharacterId,
+      text: trimmed,
+    });
+  };
+
+  const sendStickerMessage = async (sticker: StickerAttachment) => {
+    if (!ownerId) {
+      return;
+    }
+
+    const targetCharacterId = resolveTargetCharacterId({
+      conversationId,
+      ownerId,
+      messages,
+      participants,
+    });
+
+    if (!targetCharacterId) {
+      throw new Error("The target character is not ready yet.");
+    }
+
+    await sendMutation.mutateAsync({
+      conversationId,
+      characterId: targetCharacterId,
+      type: "sticker",
+      text: `[表情包] ${sticker.label ?? sticker.stickerId}`,
+      sticker: {
+        packId: sticker.packId,
+        stickerId: sticker.stickerId,
+      },
+    });
+  };
 
   const renderedMessages = useMemo(() => {
     const deduped = new Map<string, Message>();
@@ -190,6 +227,8 @@ export function useConversationThread(conversationId: string) {
     renderedMessages,
     scrollAnchorRef,
     sendMutation,
+    sendStickerMessage,
+    sendTextMessage,
     setSocketError,
     setText,
     socketError,
@@ -204,7 +243,8 @@ function removePendingUserEcho(current: Message[], incoming: Message) {
       item.id.startsWith("local_") &&
       item.senderType === "user" &&
       item.senderId === incoming.senderId &&
-      item.text === incoming.text,
+      item.text === incoming.text &&
+      attachmentsEqual(item.attachment, incoming.attachment),
   );
 
   if (pendingIndex === -1) {
@@ -212,6 +252,63 @@ function removePendingUserEcho(current: Message[], incoming: Message) {
   }
 
   return current.filter((_, index) => index !== pendingIndex);
+}
+
+function attachmentsEqual(left?: Message["attachment"], right?: Message["attachment"]) {
+  if (!left && !right) {
+    return true;
+  }
+
+  if (!left || !right) {
+    return false;
+  }
+
+  if (left.kind !== right.kind) {
+    return false;
+  }
+
+  if (left.kind === "sticker" && right.kind === "sticker") {
+    return left.packId === right.packId && left.stickerId === right.stickerId;
+  }
+
+  return false;
+}
+
+function buildOptimisticMessage(payload: SendMessagePayload, ownerId: string, senderName: string): Message {
+  const createdAt = String(Date.now());
+
+  if (payload.type === "sticker") {
+    return {
+      id: `local_${createdAt}`,
+      conversationId: payload.conversationId,
+      senderType: "user",
+      senderId: ownerId,
+      senderName,
+      type: "sticker",
+      text: payload.text ?? "[表情包]",
+      attachment: {
+        kind: "sticker",
+        packId: payload.sticker.packId,
+        stickerId: payload.sticker.stickerId,
+        url: `/stickers/${payload.sticker.packId}/${payload.sticker.stickerId}.svg`,
+        width: 160,
+        height: 160,
+        label: payload.text?.replace(/^\[表情包\]\s*/, "") || payload.sticker.stickerId,
+      },
+      createdAt,
+    };
+  }
+
+  return {
+    id: `local_${createdAt}`,
+    conversationId: payload.conversationId,
+    senderType: "user",
+    senderId: ownerId,
+    senderName,
+    type: "text",
+    text: payload.text,
+    createdAt,
+  };
 }
 
 function resolveTargetCharacterId(input: {

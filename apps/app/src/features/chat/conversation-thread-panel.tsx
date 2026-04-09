@@ -32,6 +32,8 @@ export function ConversationThreadPanel({
     renderedMessages,
     scrollAnchorRef,
     sendMutation,
+    sendStickerMessage,
+    sendTextMessage,
     setSocketError,
     setText,
     socketError,
@@ -201,7 +203,13 @@ export function ConversationThreadPanel({
           }
           setText(value);
         }}
-        onSubmit={() => void sendMutation.mutateAsync()}
+        onSendSticker={async (sticker) => {
+          if (socketError) {
+            setSocketError(null);
+          }
+          await sendStickerMessage(sticker);
+        }}
+        onSubmit={() => void sendTextMessage()}
       />
     </div>
   );

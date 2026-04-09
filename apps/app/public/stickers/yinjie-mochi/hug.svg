@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="36" fill="#F9A8D4"/>
+  <circle cx="80" cy="70" r="36" fill="#FDF2F8"/>
+  <circle cx="67" cy="66" r="5" fill="#9D174D"/>
+  <circle cx="93" cy="66" r="5" fill="#9D174D"/>
+  <path d="M64 86c8 8 24 8 32 0" stroke="#9D174D" stroke-width="6" stroke-linecap="round"/>
+  <path d="M44 94c8 16 20 24 36 24s28-8 36-24" stroke="#9D174D" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <text x="80" y="138" font-size="18" text-anchor="middle" fill="#9D174D" font-family="Arial, sans-serif">HUG</text>
+</svg>

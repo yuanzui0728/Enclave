@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <rect width="180" height="180" rx="38" fill="#FDBA74"/>
+  <rect x="24" y="28" width="132" height="92" rx="28" fill="#FFF7ED"/>
+  <path d="M66 120l14 18 22-18" fill="#FFF7ED"/>
+  <text x="90" y="82" font-size="22" text-anchor="middle" fill="#C2410C" font-family="Arial, sans-serif">笑出声</text>
+  <text x="90" y="156" font-size="18" text-anchor="middle" fill="#C2410C" font-family="Arial, sans-serif">HAHA</text>
+</svg>

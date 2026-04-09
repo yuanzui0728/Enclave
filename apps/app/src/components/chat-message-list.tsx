@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { formatMessageTimestamp } from "../lib/format";
@@ -8,6 +9,13 @@ type ChatRenderableMessage = {
   senderName?: string | null;
   type?: string | null;
   text: string;
+  attachment?: {
+    kind: string;
+    url: string;
+    width: number;
+    height: number;
+    label?: string;
+  };
   createdAt: string;
 };
 
@@ -62,7 +70,7 @@ export function ChatMessageList({
                   <div className="mb-1 px-1 text-[11px] text-[color:var(--text-muted)]">{message.senderName}</div>
                 ) : null}
                 <div
-                  className={`rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
+                  className={message.type === "sticker" ? "" : `rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
                     isUser
                       ? isDesktop
                         ? "bg-[var(--brand-gradient)] text-white shadow-[var(--shadow-soft)]"
@@ -72,7 +80,15 @@ export function ChatMessageList({
                         : "border border-[rgba(255,240,220,0.80)] bg-[rgba(255,253,248,0.92)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                   }`}
                 >
-                  {message.text}
+                  {message.type === "sticker" && message.attachment?.kind === "sticker" ? (
+                    <StickerMessage
+                      url={message.attachment.url}
+                      label={message.attachment.label ?? message.text}
+                      maxSize={isDesktop ? 160 : 132}
+                    />
+                  ) : (
+                    message.text
+                  )}
                 </div>
               </div>
               {isUser ? <AvatarChip name="我" size="wechat" /> : null}
@@ -81,5 +97,36 @@ export function ChatMessageList({
         );
       })}
     </div>
+  );
+}
+
+function StickerMessage({
+  url,
+  label,
+  maxSize,
+}: {
+  url: string;
+  label: string;
+  maxSize: number;
+}) {
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  if (loadFailed) {
+    return (
+      <div className="flex h-24 w-24 items-center justify-center rounded-[22px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
+        {label || "[表情包]"}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={url}
+      alt={label}
+      onError={() => setLoadFailed(true)}
+      className="rounded-[22px] bg-white/70 object-contain shadow-[var(--shadow-soft)]"
+      style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
+      loading="lazy"
+    />
   );
 }

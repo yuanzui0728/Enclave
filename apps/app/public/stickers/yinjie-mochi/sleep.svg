@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="36" fill="#93C5FD"/>
+  <circle cx="80" cy="74" r="38" fill="#EFF6FF"/>
+  <path d="M60 70h12" stroke="#1D4ED8" stroke-width="6" stroke-linecap="round"/>
+  <path d="M88 70h12" stroke="#1D4ED8" stroke-width="6" stroke-linecap="round"/>
+  <path d="M65 90c10 6 20 6 30 0" stroke="#1D4ED8" stroke-width="6" stroke-linecap="round"/>
+  <text x="116" y="48" font-size="22" fill="#1D4ED8" font-family="Arial, sans-serif">Z</text>
+  <text x="126" y="34" font-size="16" fill="#1D4ED8" font-family="Arial, sans-serif">z</text>
+  <text x="80" y="138" font-size="18" text-anchor="middle" fill="#1D4ED8" font-family="Arial, sans-serif">SLEEP</text>
+</svg>
