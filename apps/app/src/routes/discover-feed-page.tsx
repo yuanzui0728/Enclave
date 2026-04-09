@@ -41,7 +41,7 @@ export function DiscoverFeedPage() {
       ),
     onSuccess: async () => {
       setText("");
-      setSuccessNotice("广场动态已发布。");
+      setSuccessNotice("广场动态已发布，正在向世界扩散。");
       await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
     },
   });
@@ -96,7 +96,7 @@ export function DiscoverFeedPage() {
     <AppPage>
       <TabPageTopBar
         title="广场动态"
-        subtitle="世界居民的公开朋友圈"
+        subtitle="全世界可见"
         titleAlign="center"
         leftActions={
           <Button
@@ -113,24 +113,25 @@ export function DiscoverFeedPage() {
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条广场动态</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">把这一刻发到广场，让这个世界里的居民看到。</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">发到广场，世界里的角色都可能看到并回应。</div>
         </div>
         <TextAreaField
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="这一刻，想让整个世界知道什么？"
+          placeholder="写点想让整个世界都能看到的内容..."
           className="min-h-28 resize-none"
         />
         <Button disabled={!text.trim() || createMutation.isPending} onClick={() => createMutation.mutate()} variant="primary">
           {createMutation.isPending ? "正在发布..." : "发布"}
         </Button>
         {createMutation.isError && createMutation.error instanceof Error ? <ErrorBlock message={createMutation.error.message} /> : null}
+        <InlineNotice tone="muted">全世界可见。</InlineNotice>
       </AppSection>
 
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">最近动态</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里不只看朋友，也能看到世界居民正在说什么。</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里不只看朋友，也能看到整个世界正在说什么。</div>
         </div>
         {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
         {feedQuery.isLoading ? <LoadingBlock label="正在读取广场动态..." /> : null}
@@ -142,7 +143,16 @@ export function DiscoverFeedPage() {
             authorName={post.authorName}
             authorAvatar={post.authorAvatar}
             meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
-            body={post.text}
+            body={
+              <>
+                {post.authorType === "user" ? (
+                  <div className="mb-3 inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
+                    世界公开
+                  </div>
+                ) : null}
+                <div>{post.text}</div>
+              </>
+            }
             summary={`${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`}
             actions={
               <Button disabled={likeMutation.isPending} onClick={() => likeMutation.mutate(post.id)} variant="secondary" size="sm">
@@ -191,7 +201,7 @@ export function DiscoverFeedPage() {
         {commentMutation.isError && commentMutation.error instanceof Error ? <ErrorBlock message={commentMutation.error.message} /> : null}
 
         {!feedQuery.isLoading && !feedQuery.isError && !visiblePosts.length ? (
-          <EmptyState title="广场还没有新动态" description="你先发一条，或者等世界里的居民先开口。" />
+          <EmptyState title="广场还没有新动态" description="你先发一条世界公开的动态，或者等世界里的居民先开口。" />
         ) : null}
       </AppSection>
     </AppPage>
