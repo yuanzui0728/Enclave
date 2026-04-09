@@ -1,4 +1,4 @@
-import { useEffect, useState, type PropsWithChildren } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent, type PropsWithChildren } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BellDot,
@@ -25,6 +25,7 @@ type DesktopWindowHandle = {
   isMaximized: () => Promise<boolean>;
   minimize: () => Promise<void>;
   onResized: (handler: () => void) => Promise<() => void>;
+  startDragging: () => Promise<void>;
   toggleMaximize: () => Promise<void>;
 };
 
@@ -45,8 +46,63 @@ function isActive(pathname: string, to: string) {
   return pathname.startsWith(to);
 }
 
-function isTauriDesktop() {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+async function resolveDesktopWindowHandle(): Promise<DesktopWindowHandle | null> {
+  try {
+    const [{ invoke }, { getCurrentWindow }] = await Promise.all([
+      import("@tauri-apps/api/core"),
+      import("@tauri-apps/api/window"),
+    ]);
+    const currentWindow = getCurrentWindow();
+
+    return {
+      close: async () => {
+        try {
+          await currentWindow.close();
+        } catch {
+          await invoke("desktop_window_close");
+        }
+      },
+      isMaximized: async () => {
+        try {
+          return await currentWindow.isMaximized();
+        } catch {
+          return await invoke<boolean>("desktop_window_is_maximized");
+        }
+      },
+      minimize: async () => {
+        try {
+          await currentWindow.minimize();
+        } catch {
+          await invoke("desktop_window_minimize");
+        }
+      },
+      onResized: async (handler) => {
+        try {
+          return await currentWindow.onResized(() => {
+            handler();
+          });
+        } catch {
+          return () => {};
+        }
+      },
+      startDragging: async () => {
+        try {
+          await currentWindow.startDragging();
+        } catch {
+          await invoke("desktop_window_drag");
+        }
+      },
+      toggleMaximize: async () => {
+        try {
+          await currentWindow.toggleMaximize();
+        } catch {
+          await invoke("desktop_window_toggle_maximize");
+        }
+      },
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function DesktopShell({ children }: PropsWithChildren) {
@@ -69,18 +125,13 @@ export function DesktopShell({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (!isTauriDesktop()) {
-      return;
-    }
-
     let cancelled = false;
     let unlistenResize: (() => void) | null = null;
 
     async function bindDesktopWindow() {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      const currentWindow = getCurrentWindow() as DesktopWindowHandle;
+      const currentWindow = await resolveDesktopWindowHandle();
 
-      if (cancelled) {
+      if (cancelled || !currentWindow) {
         return;
       }
 
@@ -116,6 +167,19 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   const shellInsetClass = isMaximized ? "rounded-none" : "m-2 rounded-[30px]";
 
+  const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || !desktopWindow) {
+      return;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("button, a, input, textarea, select, [role='button']")) {
+      return;
+    }
+
+    void desktopWindow.startDragging();
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
       <div
@@ -127,8 +191,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
         <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] px-5">
           <div
-            className="flex min-w-0 flex-1 items-center gap-3"
+            className="flex min-w-0 flex-1 cursor-grab select-none items-center gap-3 active:cursor-grabbing"
             data-tauri-drag-region
+            onMouseDown={handleTitleBarMouseDown}
             onDoubleClick={() => {
               if (!desktopWindow) {
                 return;
@@ -252,7 +317,10 @@ function DesktopWindowButton({
     <button
       type="button"
       aria-label={label}
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
       className={cn(
         "flex h-9 w-9 items-center justify-center rounded-full border text-[color:var(--text-muted)] transition-[background-color,color,border-color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
         danger
