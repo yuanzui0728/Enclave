@@ -8,7 +8,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { formatTimestamp } from "../lib/format";
+import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type QuickActionItem = {
@@ -270,7 +270,7 @@ function MobileChatListPage() {
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <div className="text-[11px] text-[#b2b2b2]">
-                            {formatTimestamp(conversation.lastMessage?.createdAt ?? conversation.updatedAt)}
+                            {formatConversationTimestamp(conversation.lastMessage?.createdAt ?? conversation.updatedAt)}
                           </div>
                           {conversation.unreadCount > 0 ? (
                             <div

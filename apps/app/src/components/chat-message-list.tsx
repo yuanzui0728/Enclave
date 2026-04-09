@@ -1,6 +1,6 @@
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
-import { formatTimestamp } from "../lib/format";
+import { formatMessageTimestamp } from "../lib/format";
 
 type ChatRenderableMessage = {
   id: string;
@@ -23,40 +23,47 @@ export function ChatMessageList({ messages, groupMode = false, emptyState }: Cha
   }
 
   return (
-    <>
+    <div className="space-y-4">
       {messages.map((message) => {
         const isUser = message.senderType === "user";
         const isSystem = message.type === "system" || message.senderType === "system";
 
         if (isSystem) {
           return (
-            <InlineNotice key={message.id} className="mx-auto max-w-[84%] text-center text-xs" tone="muted">
+            <InlineNotice
+              key={message.id}
+              className="mx-auto max-w-[84%] rounded-xl border-none bg-[#d9d9d9] px-3 py-1.5 text-center text-[11px] text-[#6e6e73]"
+              tone="muted"
+            >
               {message.text}
             </InlineNotice>
           );
         }
 
         return (
-          <div key={message.id} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
-            {!isUser ? <AvatarChip name={message.senderName} size="sm" /> : null}
-            <div className={`max-w-[78%] ${isUser ? "items-end" : "items-start"} flex flex-col`}>
-              {!isUser && groupMode ? (
-                <div className="mb-1 text-[11px] text-[color:var(--text-muted)]">{message.senderName}</div>
-              ) : null}
-              <div
-                className={`rounded-[22px] px-4 py-3 text-sm leading-7 ${
-                  isUser
-                    ? "bg-[linear-gradient(135deg,rgba(249,115,22,0.95),rgba(251,191,36,0.9))] text-white shadow-[var(--shadow-soft)]"
-                    : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
-                }`}
-              >
-                {message.text}
+          <div key={message.id} className="space-y-1.5">
+            <div className="text-center text-[11px] text-[#9a9a9a]">{formatMessageTimestamp(message.createdAt)}</div>
+            <div className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}>
+              {!isUser ? <AvatarChip name={message.senderName} size="wechat" /> : null}
+              <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+                {!isUser && groupMode ? (
+                  <div className="mb-1 px-1 text-[11px] text-[#8e8e93]">{message.senderName}</div>
+                ) : null}
+                <div
+                  className={`rounded-[6px] px-3.5 py-2.5 text-[15px] leading-6 shadow-[0_1px_1px_rgba(0,0,0,0.04)] ${
+                    isUser
+                      ? "bg-[#95ec69] text-[#111111]"
+                      : "bg-white text-[#111111]"
+                  }`}
+                >
+                  {message.text}
+                </div>
               </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">{formatTimestamp(message.createdAt)}</div>
+              {isUser ? <AvatarChip name="我" size="wechat" /> : null}
             </div>
           </div>
         );
       })}
-    </>
+    </div>
   );
 }
