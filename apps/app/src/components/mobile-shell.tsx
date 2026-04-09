@@ -1,13 +1,12 @@
 import type { PropsWithChildren } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BellDot, Compass, MessageCircleMore, UsersRound, UserRound } from "lucide-react";
+import { Compass, MessageCircleMore, UserRound, UsersRound } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 const tabs = [
   { to: "/tabs/chat", label: "消息", icon: MessageCircleMore },
-  { to: "/tabs/moments", label: "朋友圈", icon: BellDot },
-  { to: "/tabs/discover", label: "发现", icon: Compass },
   { to: "/tabs/contacts", label: "通讯录", icon: UsersRound },
+  { to: "/tabs/discover", label: "发现", icon: Compass },
   { to: "/tabs/profile", label: "我", icon: UserRound },
 ];
 
@@ -30,7 +29,7 @@ export function MobileShell({ children }: PropsWithChildren) {
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
           {showTabs ? (
             <nav
-              className="shrink-0 grid grid-cols-5 border-t border-[color:var(--border-faint)] bg-white px-2 pt-2"
+              className="shrink-0 grid grid-cols-4 border-t border-[color:var(--border-faint)] bg-white px-2 pt-2"
               style={{ paddingBottom: "max(0.5rem, var(--safe-area-inset-bottom))" }}
             >
               {tabs.map(({ to, label, icon: Icon }) => {
