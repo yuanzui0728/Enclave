@@ -5,8 +5,8 @@ export class ConversationEntity {
   @PrimaryColumn()
   id: string;
 
-  @Column()
-  userId: string;
+  @Column({ name: 'userId' })
+  ownerId: string;
 
   @Column({ default: 'direct' })
   type: string;
