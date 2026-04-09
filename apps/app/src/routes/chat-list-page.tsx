@@ -104,7 +104,7 @@ function MobileChatListPage() {
           type="button"
           aria-label="关闭快捷菜单"
           onClick={() => setIsQuickMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-black/24"
+          className="fixed inset-0 z-30"
         />
       ) : null}
 
