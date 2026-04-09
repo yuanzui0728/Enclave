@@ -4,13 +4,16 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, MoreThan, Repository } from 'typeorm';
+import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { ConversationEntity } from './conversation.entity';
+import { GroupEntity } from './group.entity';
+import { GroupMemberEntity } from './group-member.entity';
+import { GroupMessageEntity } from './group-message.entity';
 import { MessageEntity } from './message.entity';
 import {
   ContactCardAttachment,
@@ -78,6 +81,12 @@ export class ChatService {
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
     private msgRepo: Repository<MessageEntity>,
+    @InjectRepository(GroupEntity)
+    private groupRepo: Repository<GroupEntity>,
+    @InjectRepository(GroupMemberEntity)
+    private groupMemberRepo: Repository<GroupMemberEntity>,
+    @InjectRepository(GroupMessageEntity)
+    private groupMessageRepo: Repository<GroupMessageEntity>,
   ) {}
 
   async getOrCreateConversation(
@@ -151,6 +160,40 @@ export class ChatService {
         ...this._entityToConversation(conv),
         lastMessage,
         unreadCount,
+      });
+    }
+
+    const groupMemberships = await this.groupMemberRepo.find({
+      where: {
+        memberId: owner.id,
+        memberType: 'user',
+      },
+    });
+    const groupIds = [...new Set(groupMemberships.map((item) => item.groupId))];
+    const groups = groupIds.length
+      ? await this.groupRepo.find({
+          where: { id: In(groupIds) },
+        })
+      : [];
+
+    for (const group of groups) {
+      const members = await this.groupMemberRepo.find({
+        where: { groupId: group.id },
+        order: { joinedAt: 'ASC' },
+      });
+      const lastGroupMessage = await this.groupMessageRepo.findOne({
+        where: group.lastClearedAt
+          ? {
+              groupId: group.id,
+              createdAt: MoreThan(group.lastClearedAt),
+            }
+          : { groupId: group.id },
+        order: { createdAt: 'DESC' },
+      });
+
+      result.push({
+        ...this.groupToConversation(group, members, lastGroupMessage),
+        unreadCount: 0,
       });
     }
 
@@ -799,6 +842,77 @@ export class ChatService {
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
     };
+  }
+
+  private groupToConversation(
+    group: GroupEntity,
+    members: GroupMemberEntity[],
+    lastMessageEntity?: GroupMessageEntity | null,
+  ): Conversation & { lastMessage?: Message } {
+    const lastMessage = lastMessageEntity
+      ? this.groupMessageToConversationMessage(group.id, lastMessageEntity)
+      : undefined;
+
+    return {
+      id: group.id,
+      type: 'group',
+      title: group.name,
+      participants: members.map((member) => member.memberId),
+      messages: [],
+      isPinned: group.isPinned ?? false,
+      pinnedAt: group.pinnedAt ?? undefined,
+      lastReadAt: undefined,
+      lastClearedAt: group.lastClearedAt ?? undefined,
+      lastActivityAt:
+        lastMessage?.createdAt ?? group.updatedAt ?? group.createdAt,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      lastMessage,
+    };
+  }
+
+  private groupMessageToConversationMessage(
+    conversationId: string,
+    entity: GroupMessageEntity,
+  ): Message {
+    return {
+      id: entity.id,
+      conversationId,
+      senderType: entity.senderType as 'user' | 'character' | 'system',
+      senderId: entity.senderId,
+      senderName: entity.senderName,
+      type: entity.type as
+        | 'text'
+        | 'system'
+        | 'proactive'
+        | 'sticker'
+        | 'image'
+        | 'file'
+        | 'contact_card'
+        | 'location_card',
+      text: entity.text,
+      attachment: this.parseGroupAttachment(entity),
+      createdAt: entity.createdAt,
+    };
+  }
+
+  private parseGroupAttachment(
+    entity: GroupMessageEntity,
+  ): MessageAttachment | undefined {
+    if (!entity.attachmentKind || !entity.attachmentPayload) {
+      return undefined;
+    }
+
+    try {
+      const parsed = JSON.parse(entity.attachmentPayload) as MessageAttachment;
+      if (parsed.kind !== entity.attachmentKind) {
+        return undefined;
+      }
+
+      return parsed;
+    } catch {
+      return undefined;
+    }
   }
 
   private normalizeOutgoingMessageInput(input: SendConversationMessageInput): {
