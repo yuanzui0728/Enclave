@@ -41,14 +41,18 @@ type ChatComposerProps = {
   onSubmit: () => void;
 };
 
+type ImageDraft = {
+  file: File;
+  fileName: string;
+  previewUrl: string;
+  width?: number;
+  height?: number;
+};
+
 type AttachmentDraft =
   | {
-      kind: "image";
-      file: File;
-      fileName: string;
-      previewUrl: string;
-      width?: number;
-      height?: number;
+      kind: "images";
+      items: ImageDraft[];
     }
   | {
       kind: "file";
@@ -177,9 +181,7 @@ export function ChatComposer({
 
   useEffect(() => {
     return () => {
-      if (attachmentDraft?.kind === "image") {
-        URL.revokeObjectURL(attachmentDraft.previewUrl);
-      }
+      releaseAttachmentDraft(attachmentDraft);
     };
   }, [attachmentDraft]);
 
@@ -249,19 +251,22 @@ export function ChatComposer({
   };
 
   const handleImageSelection = async (fileList: FileList | null) => {
-    const file = fileList?.[0];
-    if (!file) {
+    const files = [...(fileList ?? [])].slice(0, MAX_ALBUM_IMAGE_COUNT);
+    if (!files.length) {
       return;
     }
 
     try {
-      const draft = await createImageDraft(file);
-      if (attachmentDraft?.kind === "image") {
-        URL.revokeObjectURL(attachmentDraft.previewUrl);
-      }
+      const draftItems = await Promise.all(
+        files.map((file) => createImageDraft(file)),
+      );
+      releaseAttachmentDraft(attachmentDraft);
       setAttachmentError(null);
       setPlusPanelOpen(false);
-      setAttachmentDraft(draft);
+      setAttachmentDraft({
+        kind: "images",
+        items: draftItems,
+      });
     } catch (fileError) {
       setAttachmentError(
         fileError instanceof Error
@@ -277,9 +282,7 @@ export function ChatComposer({
       return;
     }
 
-    if (attachmentDraft?.kind === "image") {
-      URL.revokeObjectURL(attachmentDraft.previewUrl);
-    }
+    releaseAttachmentDraft(attachmentDraft);
 
     setAttachmentError(null);
     setPlusPanelOpen(false);
@@ -293,9 +296,7 @@ export function ChatComposer({
   };
 
   const handleCancelAttachmentDraft = () => {
-    if (attachmentDraft?.kind === "image") {
-      URL.revokeObjectURL(attachmentDraft.previewUrl);
-    }
+    releaseAttachmentDraft(attachmentDraft);
     setAttachmentDraft(null);
   };
 
@@ -331,22 +332,43 @@ export function ChatComposer({
     }
 
     const currentDraft = attachmentDraft;
-    const sent =
-      currentDraft.kind === "image"
-        ? await handleSendAttachment({
+    if (currentDraft.kind === "images") {
+      setAttachmentBusy(true);
+      setAttachmentError(null);
+
+      try {
+        for (const item of currentDraft.items) {
+          await onSendAttachment?.({
             type: "image",
-            file: currentDraft.file,
-            fileName: currentDraft.fileName,
-            width: currentDraft.width,
-            height: currentDraft.height,
-          })
-        : await handleSendAttachment({
-            type: "file",
-            file: currentDraft.file,
-            fileName: currentDraft.fileName,
-            mimeType: currentDraft.mimeType,
-            size: currentDraft.size,
+            file: item.file,
+            fileName: item.fileName,
+            width: item.width,
+            height: item.height,
           });
+        }
+
+        setPlusPanelOpen(false);
+        handleCancelAttachmentDraft();
+      } catch (attachmentActionError) {
+        setAttachmentError(
+          attachmentActionError instanceof Error
+            ? attachmentActionError.message
+            : "图片发送失败，请稍后再试。",
+        );
+      } finally {
+        setAttachmentBusy(false);
+      }
+
+      return;
+    }
+
+    const sent = await handleSendAttachment({
+      type: "file",
+      file: currentDraft.file,
+      fileName: currentDraft.fileName,
+      mimeType: currentDraft.mimeType,
+      size: currentDraft.size,
+    });
 
     if (sent) {
       handleCancelAttachmentDraft();
@@ -372,10 +394,17 @@ export function ChatComposer({
         {!isDesktop && attachmentDraft ? (
           <MobileChatAttachmentPreview
             kind={attachmentDraft.kind}
-            fileName={attachmentDraft.fileName}
-            previewUrl={
-              attachmentDraft.kind === "image"
-                ? attachmentDraft.previewUrl
+            fileName={
+              attachmentDraft.kind === "images"
+                ? (attachmentDraft.items[0]?.fileName ?? "image")
+                : attachmentDraft.fileName
+            }
+            imagePreviews={
+              attachmentDraft.kind === "images"
+                ? attachmentDraft.items.map((item) => ({
+                    fileName: item.fileName,
+                    previewUrl: item.previewUrl,
+                  }))
                 : undefined
             }
             mimeType={
@@ -651,6 +680,7 @@ export function ChatComposer({
               ref={albumInputRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
               onChange={(event) => {
                 void handleImageSelection(event.target.files);
@@ -716,9 +746,7 @@ export function ChatComposer({
   );
 }
 
-async function createImageDraft(
-  file: File,
-): Promise<Extract<AttachmentDraft, { kind: "image" }>> {
+async function createImageDraft(file: File): Promise<ImageDraft> {
   if (!file.type.startsWith("image/")) {
     throw new Error("当前只支持图片附件。");
   }
@@ -728,7 +756,6 @@ async function createImageDraft(
   try {
     const size = await readImageDimensions(previewUrl);
     return {
-      kind: "image",
       file,
       fileName: file.name || "image",
       previewUrl,
@@ -765,3 +792,15 @@ function blurActiveElement() {
     activeElement.blur();
   }
 }
+
+function releaseAttachmentDraft(draft: AttachmentDraft | null) {
+  if (!draft || draft.kind !== "images") {
+    return;
+  }
+
+  for (const item of draft.items) {
+    URL.revokeObjectURL(item.previewUrl);
+  }
+}
+
+const MAX_ALBUM_IMAGE_COUNT = 9;
