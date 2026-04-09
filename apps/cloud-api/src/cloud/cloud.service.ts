@@ -34,7 +34,7 @@ export class CloudService {
       phone: normalizedPhone,
       status: world ? this.toStatus(world.status) : latestRequest ? this.toStatus(latestRequest.status) : "none",
       world: world ? this.serializeWorld(world) : null,
-      latestRequest: latestRequest ? this.serializeRequest(latestRequest) : null,
+      latestRequest: latestRequest ? this.serializeRequest(latestRequest, world) : null,
     };
   }
 
@@ -44,7 +44,14 @@ export class CloudService {
       where: { phone: normalizedPhone },
       order: { updatedAt: "DESC" },
     });
-    return latestRequest ? this.serializeRequest(latestRequest) : null;
+    if (!latestRequest) {
+      return null;
+    }
+
+    const world = await this.worldRepo.findOne({
+      where: { phone: normalizedPhone },
+    });
+    return this.serializeRequest(latestRequest, world);
   }
 
   async createWorldRequest(phone: string, worldName: string) {
@@ -76,7 +83,8 @@ export class CloudService {
       where,
       order: { updatedAt: "DESC" },
     });
-    return items.map((item) => this.serializeRequest(item));
+    const worldsByPhone = await this.loadWorldsByPhone(items.map((item) => item.phone));
+    return items.map((item) => this.serializeRequest(item, worldsByPhone.get(item.phone)));
   }
 
   async getRequestById(id: string) {
@@ -84,7 +92,10 @@ export class CloudService {
     if (!request) {
       throw new NotFoundException("找不到该云世界申请。");
     }
-    return this.serializeRequest(request);
+    const world = await this.worldRepo.findOne({
+      where: { phone: request.phone },
+    });
+    return this.serializeRequest(request, world);
   }
 
   async updateRequest(
@@ -120,7 +131,10 @@ export class CloudService {
       adminUrl: normalizedAdminUrl,
     });
 
-    return this.serializeRequest(request);
+    const world = await this.worldRepo.findOne({
+      where: { phone: request.phone },
+    });
+    return this.serializeRequest(request, world);
   }
 
   async listWorlds(status?: EditableRequestStatus) {
@@ -232,16 +246,32 @@ export class CloudService {
     };
   }
 
-  private serializeRequest(request: CloudWorldRequestEntity): CloudWorldRequestRecord {
+  private serializeRequest(request: CloudWorldRequestEntity, world?: CloudWorldEntity | null): CloudWorldRequestRecord {
     return {
       id: request.id,
       phone: request.phone,
       worldName: request.worldName,
       status: this.toStatus(request.status),
+      apiBaseUrl: world?.apiBaseUrl ?? null,
+      adminUrl: world?.adminUrl ?? null,
       note: request.note,
       createdAt: request.createdAt.toISOString(),
       updatedAt: request.updatedAt.toISOString(),
     };
+  }
+
+  private async loadWorldsByPhone(phones: string[]) {
+    const uniquePhones = [...new Set(phones)];
+    if (!uniquePhones.length) {
+      return new Map<string, CloudWorldEntity>();
+    }
+
+    const worlds = await this.worldRepo
+      .createQueryBuilder("world")
+      .where("world.phone IN (:...phones)", { phones: uniquePhones })
+      .getMany();
+
+    return new Map(worlds.map((world) => [world.phone, world]));
   }
 
   private toStatus(value: string): EditableRequestStatus {
