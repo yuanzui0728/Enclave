@@ -27,8 +27,9 @@
 
 ## 主 App 页面（`apps/app/src/routes/`）
 - `splash-page.tsx`：启动屏，识别运行时环境并决定是否先进入世界入口
-- `setup-page.tsx`：世界入口，支持云世界与本地世界选择
-- `onboarding-page.tsx`：世界主人资料初始化与叙事入场
+- `welcome-page.tsx`：统一世界入口页，合并世界连接与世界主人命名两步流程
+- `setup-page.tsx`：兼容旧入口路由，当前应重定向到统一世界入口页
+- `onboarding-page.tsx`：兼容旧初始化路由，当前应重定向到统一世界入口页
 - 底部 Tab：`tabs/chat-list-page` · `contacts-page` · `discover-page` · `profile-page`
 - `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
 - `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态
