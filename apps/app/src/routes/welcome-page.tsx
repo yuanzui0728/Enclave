@@ -11,6 +11,7 @@ import {
   type CloudWorldLookupResponse,
 } from "@yinjie/contracts";
 import { AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { describeRequestError } from "../lib/request-error";
 import { assertWorldReachable } from "../lib/world-entry";
 import { setAppRuntimeConfig, useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -41,6 +42,7 @@ function describeCloudStatus(data?: CloudWorldLookupResponse | null) {
 
 export function WelcomePage() {
   const navigate = useNavigate();
+  const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   const storedName = useWorldOwnerStore((state) => state.username);
@@ -628,6 +630,28 @@ export function WelcomePage() {
           <ErrorBlock message={createWorldRequestMutation.error.message} />
         ) : null}
       </div>
+    );
+  }
+
+  if (isDesktopLayout) {
+    return (
+      <AppPage className="flex min-h-full items-center justify-center p-6 sm:p-8">
+        <div className="relative w-full max-w-3xl">
+          <div className="pointer-events-none absolute inset-0 rounded-[40px] bg-[rgba(255,255,255,0.42)] blur-2xl" />
+          <AppSection className="relative mx-auto w-full max-w-xl rounded-[32px] border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(252,248,242,0.94))] px-7 py-8 shadow-[var(--shadow-overlay)] backdrop-blur-2xl">
+            <div className="inline-flex rounded-full border border-[rgba(255,179,71,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
+              世界入口
+            </div>
+            <h1 className="mt-5 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
+              进入你的世界
+            </h1>
+
+            <div className="mt-6">
+              {showOwnerStep ? renderOwnerStep() : renderEntryStep()}
+            </div>
+          </AppSection>
+        </div>
+      </AppPage>
     );
   }
 
