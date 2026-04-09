@@ -30,7 +30,8 @@
 - `setup-page.tsx`：世界入口，支持云世界与本地世界选择
 - `onboarding-page.tsx`：世界主人资料初始化与叙事入场
 - 底部 Tab：`tabs/chat-list-page` · `contacts-page` · `discover-page` · `profile-page`
-- `discover-page.tsx`：移动端承载微信式发现入口列表，细分进入朋友圈 / 摇一摇 / 场景相遇 / 广场动态
+- `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
+- `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
@@ -115,7 +116,7 @@
 - 每个实例只服务一个世界主人，客户端只是把他的世界可视化展示给他
 - 世界主人可在 App 内设置自己的 API Key，服务端仅加密存储
 - 移动端底部导航当前对齐微信四项：`消息 / 通讯录 / 发现 / 我`
-- 移动端“发现”聚合朋友圈、摇一摇、场景相遇、广场动态等入口；朋友圈不再占用独立底部 Tab
+- 移动端“发现”聚合朋友圈、摇一摇、场景相遇、广场动态等入口；点击入口后进入独立二级页，朋友圈不再占用独立底部 Tab
 - Setup 页先选择云世界或本地世界：本地世界手动填写地址，云世界通过手机号进入
 - 官方云世界通过手机号索引，一个手机号只对应一个云世界
 - 官方云世界创建流程为客户端提交申请、官方平台人工开通、再回填世界地址

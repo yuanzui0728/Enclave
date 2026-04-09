@@ -33,6 +33,21 @@ const DiscoverPage = lazy(async () => {
   return { default: mod.DiscoverPage };
 });
 
+const DiscoverEncounterPage = lazy(async () => {
+  const mod = await import("./routes/discover-encounter-page");
+  return { default: mod.DiscoverEncounterPage };
+});
+
+const DiscoverScenePage = lazy(async () => {
+  const mod = await import("./routes/discover-scene-page");
+  return { default: mod.DiscoverScenePage };
+});
+
+const DiscoverFeedPage = lazy(async () => {
+  const mod = await import("./routes/discover-feed-page");
+  return { default: mod.DiscoverFeedPage };
+});
+
 const ContactsPage = lazy(async () => {
   const mod = await import("./routes/contacts-page");
   return { default: mod.ContactsPage };
@@ -183,6 +198,34 @@ const createGroupRoute = createRoute({
   component: CreateGroupPage,
 });
 
+const discoverMomentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/moments",
+  beforeLoad: requireWorldReady,
+  component: MomentsPage,
+});
+
+const discoverEncounterRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/encounter",
+  beforeLoad: requireWorldReady,
+  component: DiscoverEncounterPage,
+});
+
+const discoverSceneRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/scene",
+  beforeLoad: requireWorldReady,
+  component: DiscoverScenePage,
+});
+
+const discoverFeedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/feed",
+  beforeLoad: requireWorldReady,
+  component: DiscoverFeedPage,
+});
+
 const legalPrivacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/legal/privacy",
@@ -211,6 +254,10 @@ const routeTree = rootRoute.addChildren([
   friendRequestsRoute,
   groupChatRoute,
   createGroupRoute,
+  discoverMomentsRoute,
+  discoverEncounterRoute,
+  discoverSceneRoute,
+  discoverFeedRoute,
   legalPrivacyRoute,
   legalTermsRoute,
   legalCommunityRoute,
