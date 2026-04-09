@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { BookUser, Search, Tag, UserPlus, Users } from "lucide-react";
@@ -35,6 +35,7 @@ type DesktopSelection =
   | null;
 
 export function ContactsPage() {
+  const pageRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
@@ -43,6 +44,7 @@ export function ContactsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [showWorldCharacters, setShowWorldCharacters] = useState(false);
   const [desktopSelection, setDesktopSelection] = useState<DesktopSelection>(null);
+  const [activeMobileIndexKey, setActiveMobileIndexKey] = useState<string | null>(null);
   const deferredSearchText = useDeferredValue(searchText);
 
   const friendsQuery = useQuery({
@@ -140,6 +142,70 @@ export function ContactsPage() {
   }, [baseUrl, resetStartChatMutation]);
 
   useEffect(() => {
+    if (normalizedSearchText || !friendSections.length) {
+      setActiveMobileIndexKey(null);
+      return;
+    }
+
+    setActiveMobileIndexKey((current) => {
+      if (current && friendSections.some((section) => section.anchorId === current)) {
+        return current;
+      }
+
+      return friendSections[0]?.anchorId ?? null;
+    });
+  }, [friendSections, normalizedSearchText]);
+
+  const syncActiveMobileIndexKey = useEffectEvent(() => {
+    if (isDesktopLayout || normalizedSearchText || !friendSections.length || typeof document === "undefined") {
+      return;
+    }
+
+    const scrollContainer = pageRef.current?.parentElement;
+    if (!scrollContainer) {
+      return;
+    }
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const stickyOffset = 104;
+    let nextActiveKey = friendSections[0]?.anchorId ?? null;
+
+    for (const section of friendSections) {
+      const sectionElement = document.getElementById(section.anchorId);
+      if (!sectionElement) {
+        continue;
+      }
+
+      const topOffset = sectionElement.getBoundingClientRect().top - containerRect.top;
+      if (topOffset <= stickyOffset) {
+        nextActiveKey = section.anchorId;
+      } else {
+        break;
+      }
+    }
+
+    setActiveMobileIndexKey(nextActiveKey);
+  });
+
+  useEffect(() => {
+    if (isDesktopLayout || normalizedSearchText || !friendSections.length) {
+      return;
+    }
+
+    const scrollContainer = pageRef.current?.parentElement;
+    if (!scrollContainer) {
+      return;
+    }
+
+    syncActiveMobileIndexKey();
+    scrollContainer.addEventListener("scroll", syncActiveMobileIndexKey, { passive: true });
+
+    return () => {
+      scrollContainer.removeEventListener("scroll", syncActiveMobileIndexKey);
+    };
+  }, [friendSections, isDesktopLayout, normalizedSearchText, syncActiveMobileIndexKey]);
+
+  useEffect(() => {
     if (!isDesktopLayout) {
       return;
     }
@@ -179,13 +245,19 @@ export function ContactsPage() {
 
   function handleOpenWorldCharacters() {
     setNotice(null);
-    setShowWorldCharacters(true);
 
-    if (isDesktopLayout && worldCharacterDirectoryItems[0]) {
-      setDesktopSelection({ kind: "world-character", id: worldCharacterDirectoryItems[0].character.id });
+    const willExpand = !showWorldCharacters;
+    setShowWorldCharacters(willExpand);
+
+    if (isDesktopLayout) {
+      if (willExpand && worldCharacterDirectoryItems[0]) {
+        setDesktopSelection({ kind: "world-character", id: worldCharacterDirectoryItems[0].character.id });
+      } else if (!willExpand && desktopSelection?.kind === "world-character" && friendDirectoryItems[0]) {
+        setDesktopSelection({ kind: "friend", id: friendDirectoryItems[0].character.id });
+      }
     }
 
-    if (typeof document === "undefined") {
+    if (!willExpand || typeof document === "undefined") {
       return;
     }
 
@@ -207,6 +279,8 @@ export function ContactsPage() {
   }
 
   function handleIndexJump(anchorId: string) {
+    setActiveMobileIndexKey(anchorId);
+
     if (typeof document === "undefined") {
       return;
     }
@@ -246,7 +320,11 @@ export function ContactsPage() {
     {
       key: "world-characters",
       label: "世界角色",
-      subtitle: showWorldCharacters ? "角色目录已展开" : `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`,
+      subtitle: showWorldCharacters
+        ? "收起角色目录"
+        : worldCharacterDirectoryItems.length > 0
+          ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
+          : "当前没有新的角色可认识",
       icon: BookUser,
       iconClassName: "bg-[linear-gradient(135deg,#22c55e,#0f766e)]",
       onClick: handleOpenWorldCharacters,
@@ -255,269 +333,269 @@ export function ContactsPage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(248,249,251,0.96),rgba(243,245,247,0.98))] px-0 py-0">
-        <div className="flex h-full min-h-0">
-          <section className="flex w-[340px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(246,247,249,0.98),rgba(240,243,246,0.98))]">
-            <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-base font-medium text-[color:var(--text-primary)]">通讯录</div>
-                <div className="text-xs text-[color:var(--text-muted)]">
-                  {filteredFriendItems.length}
-                  {filteredWorldCharacterItems.length ? ` + ${filteredWorldCharacterItems.length}` : ""}
+      <div ref={pageRef} className="h-full min-h-0">
+        <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(248,249,251,0.96),rgba(243,245,247,0.98))] px-0 py-0">
+          <div className="flex h-full min-h-0">
+            <section className="flex w-[340px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(246,247,249,0.98),rgba(240,243,246,0.98))]">
+              <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-base font-medium text-[color:var(--text-primary)]">通讯录</div>
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    {filteredFriendItems.length}
+                    {filteredWorldCharacterItems.length ? ` + ${filteredWorldCharacterItems.length}` : ""}
+                  </div>
                 </div>
+
+                <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+                  <Search size={15} className="shrink-0" />
+                  <input
+                    type="search"
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                    placeholder="搜索"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                  />
+                </label>
               </div>
 
-              <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
-                <Search size={15} className="shrink-0" />
-                <input
-                  type="search"
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="搜索"
-                  className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
-                />
-              </label>
-            </div>
+              <div className="px-3 py-3">
+                <ContactShortcutList items={shortcutItems} compact className="shadow-[0_10px_32px_rgba(15,23,42,0.05)]" />
+              </div>
 
-            <div className="px-3 py-3">
-              <ContactShortcutList items={shortcutItems} compact className="shadow-[0_10px_32px_rgba(15,23,42,0.05)]" />
-            </div>
+              <div className="min-h-0 flex-1 overflow-auto bg-[rgba(244,246,248,0.82)] pb-4">
+                {notice ? (
+                  <div className="px-3 pb-3">
+                    <InlineNotice tone="info">{notice}</InlineNotice>
+                  </div>
+                ) : null}
+                {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={friendsQuery.error.message} />
+                  </div>
+                ) : null}
+                {charactersQuery.isError && charactersQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={charactersQuery.error.message} />
+                  </div>
+                ) : null}
+                {friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={friendRequestsQuery.error.message} />
+                  </div>
+                ) : null}
+                {startChatMutation.isError && startChatMutation.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={startChatMutation.error.message} />
+                  </div>
+                ) : null}
 
-            <div className="min-h-0 flex-1 overflow-auto bg-[rgba(244,246,248,0.82)] pb-4">
-              {notice ? (
-                <div className="px-3 pb-3">
-                  <InlineNotice tone="info">{notice}</InlineNotice>
-                </div>
-              ) : null}
-              {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-                <div className="px-3 pb-3">
-                  <ErrorBlock message={friendsQuery.error.message} />
-                </div>
-              ) : null}
-              {charactersQuery.isError && charactersQuery.error instanceof Error ? (
-                <div className="px-3 pb-3">
-                  <ErrorBlock message={charactersQuery.error.message} />
-                </div>
-              ) : null}
-              {friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error ? (
-                <div className="px-3 pb-3">
-                  <ErrorBlock message={friendRequestsQuery.error.message} />
-                </div>
-              ) : null}
-              {startChatMutation.isError && startChatMutation.error instanceof Error ? (
-                <div className="px-3 pb-3">
-                  <ErrorBlock message={startChatMutation.error.message} />
-                </div>
-              ) : null}
+                {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
 
-              {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
+                {!friendsQuery.isLoading && friendSections.length ? (
+                  <div className="border-y border-[rgba(15,23,42,0.06)] bg-white">
+                    {friendSections.map((section) => (
+                      <div key={section.key} id={section.anchorId}>
+                        <SectionHeader title={section.title} desktop />
+                        {section.items.map((item, index) => (
+                          <FriendListRow
+                            key={item.character.id}
+                            item={item}
+                            index={index}
+                            desktop
+                            active={desktopSelection?.kind === "friend" && desktopSelection.id === item.character.id}
+                            pendingCharacterId={pendingCharacterId}
+                            onClick={() => setDesktopSelection({ kind: "friend", id: item.character.id })}
+                            onDoubleClick={() => handleStartChat(item.character.id)}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
 
-              {!friendsQuery.isLoading && friendSections.length ? (
-                <div className="border-y border-[rgba(15,23,42,0.06)] bg-white">
-                  {friendSections.map((section) => (
-                    <div key={section.key} id={section.anchorId}>
-                      <SectionHeader title={section.title} desktop />
-                      {section.items.map((item, index) => (
-                        <FriendListRow
-                          key={item.character.id}
-                          item={item}
-                          index={index}
-                          desktop
-                          active={desktopSelection?.kind === "friend" && desktopSelection.id === item.character.id}
-                          pendingCharacterId={pendingCharacterId}
-                          onClick={() => setDesktopSelection({ kind: "friend", id: item.character.id })}
-                          onDoubleClick={() => handleStartChat(item.character.id)}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {!friendsQuery.isLoading && !friendsQuery.isError && !friendSections.length ? (
-                <div className="px-3">
-                  <EmptyState
-                    title={normalizedSearchText ? "没有找到匹配的联系人" : "通讯录还是空的"}
-                    description={
-                      normalizedSearchText
-                        ? "换个关键词试试，或者展开世界角色目录继续找人。"
-                        : "先从新的朋友里建立关系，或者去看看世界角色。"
-                    }
-                    action={
-                      normalizedSearchText ? (
-                        <Button variant="secondary" onClick={() => setSearchText("")}>
-                          清空搜索
-                        </Button>
-                      ) : (
-                        <Button variant="secondary" onClick={handleOpenWorldCharacters}>
-                          浏览世界角色
-                        </Button>
-                      )
-                    }
-                  />
-                </div>
-              ) : null}
-
-              {filteredWorldCharacterItems.length ? (
-                <div id="world-character-directory" className="mt-3 border-y border-[rgba(15,23,42,0.06)] bg-white">
-                  <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} desktop />
-                  {filteredWorldCharacterItems.map((item, index) => (
-                    <WorldCharacterRow
-                      key={item.character.id}
-                      item={item}
-                      index={index}
-                      desktop
-                      active={desktopSelection?.kind === "world-character" && desktopSelection.id === item.character.id}
-                      onClick={() => setDesktopSelection({ kind: "world-character", id: item.character.id })}
+                {!friendsQuery.isLoading && !friendsQuery.isError && !friendSections.length ? (
+                  <div className="px-3">
+                    <EmptyState
+                      title={normalizedSearchText ? "没有找到匹配的联系人" : "通讯录还是空的"}
+                      description={
+                        normalizedSearchText
+                          ? "换个关键词试试，或者展开世界角色目录继续找人。"
+                          : "先从新的朋友里建立关系，或者去看看世界角色。"
+                      }
+                      action={
+                        normalizedSearchText ? (
+                          <Button variant="secondary" onClick={() => setSearchText("")}>
+                            清空搜索
+                          </Button>
+                        ) : (
+                          <Button variant="secondary" onClick={handleOpenWorldCharacters}>
+                            浏览世界角色
+                          </Button>
+                        )
+                      }
                     />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </section>
+                  </div>
+                ) : null}
 
-          <section className="min-w-0 flex-1">
-            <ContactDetailPane
-              character={selectedFriendItem?.character ?? selectedWorldCharacterItem?.character ?? null}
-              friendship={selectedFriendItem?.friendship ?? null}
-              onStartChat={
-                selectedFriendItem
-                  ? () => handleStartChat(selectedFriendItem.character.id)
-                  : undefined
-              }
-              chatPending={selectedFriendItem?.character.id === pendingCharacterId}
-              onOpenProfile={() => {
-                const characterId = selectedFriendItem?.character.id ?? selectedWorldCharacterItem?.character.id;
-                if (!characterId) {
-                  return;
-                }
+                {filteredWorldCharacterItems.length ? (
+                  <div id="world-character-directory" className="mt-3 border-y border-[rgba(15,23,42,0.06)] bg-white">
+                    <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} desktop />
+                    {filteredWorldCharacterItems.map((item, index) => (
+                      <WorldCharacterRow
+                        key={item.character.id}
+                        item={item}
+                        index={index}
+                        desktop
+                        active={desktopSelection?.kind === "world-character" && desktopSelection.id === item.character.id}
+                        onClick={() => setDesktopSelection({ kind: "world-character", id: item.character.id })}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
 
-                handleOpenProfile(characterId);
-              }}
-            />
-          </section>
-        </div>
-      </AppPage>
+            <section className="min-w-0 flex-1">
+              <ContactDetailPane
+                character={selectedFriendItem?.character ?? selectedWorldCharacterItem?.character ?? null}
+                friendship={selectedFriendItem?.friendship ?? null}
+                onStartChat={selectedFriendItem ? () => handleStartChat(selectedFriendItem.character.id) : undefined}
+                chatPending={selectedFriendItem?.character.id === pendingCharacterId}
+                onOpenProfile={() => {
+                  const characterId = selectedFriendItem?.character.id ?? selectedWorldCharacterItem?.character.id;
+                  if (!characterId) {
+                    return;
+                  }
+
+                  handleOpenProfile(characterId);
+                }}
+              />
+            </section>
+          </div>
+        </AppPage>
+      </div>
     );
   }
 
   return (
-    <AppPage className="relative min-h-full space-y-0 bg-[#ededed] px-0 py-0">
-      <TabPageTopBar
-        title="通讯录"
-        titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
-      >
-        <div className="pt-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
-            <Search size={15} className="shrink-0" />
-            <input
-              type="search"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索"
-              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
-            />
-          </label>
-        </div>
-      </TabPageTopBar>
-
-      <div className="pb-8">
-        {notice ? (
-          <div className="px-3 pt-3">
-            <InlineNotice tone="info">{notice}</InlineNotice>
-          </div>
-        ) : null}
-        {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
-            <ErrorBlock message={friendsQuery.error.message} />
-          </div>
-        ) : null}
-        {charactersQuery.isError && charactersQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
-            <ErrorBlock message={charactersQuery.error.message} />
-          </div>
-        ) : null}
-        {friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
-            <ErrorBlock message={friendRequestsQuery.error.message} />
-          </div>
-        ) : null}
-        {startChatMutation.isError && startChatMutation.error instanceof Error ? (
-          <div className="px-3 pt-3">
-            <ErrorBlock message={startChatMutation.error.message} />
-          </div>
-        ) : null}
-
-        <ContactShortcutList items={shortcutItems} className="mt-2 border-x-0 shadow-none" />
-
-        <section className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
-          {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
-
-          {!friendsQuery.isLoading && !friendSections.length ? (
-            <div className="px-3 py-6">
-              <EmptyState
-                title={normalizedSearchText ? "没有找到匹配的联系人" : "通讯录还是空的"}
-                description={
-                  normalizedSearchText
-                    ? "换个关键词试试，或者继续搜索世界角色。"
-                    : "先处理新的朋友，或者去浏览世界角色。"
-                }
-                action={
-                  normalizedSearchText ? (
-                    <Button variant="secondary" onClick={() => setSearchText("")}>
-                      清空搜索
-                    </Button>
-                  ) : (
-                    <Button variant="secondary" onClick={handleOpenWorldCharacters}>
-                      浏览世界角色
-                    </Button>
-                  )
-                }
+    <div ref={pageRef}>
+      <AppPage className="relative min-h-full space-y-0 bg-[#ededed] px-0 py-0">
+        <TabPageTopBar
+          title="通讯录"
+          titleAlign="center"
+          className="mx-0 mt-0 mb-0 border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        >
+          <div className="pt-3">
+            <label className="flex items-center gap-2 rounded-[10px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+              <Search size={15} className="shrink-0" />
+              <input
+                type="search"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="搜索"
+                className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
+            </label>
+          </div>
+        </TabPageTopBar>
+
+        <div className="pb-8">
+          {notice ? (
+            <div className="px-3 pt-3">
+              <InlineNotice tone="info">{notice}</InlineNotice>
+            </div>
+          ) : null}
+          {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={friendsQuery.error.message} />
+            </div>
+          ) : null}
+          {charactersQuery.isError && charactersQuery.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={charactersQuery.error.message} />
+            </div>
+          ) : null}
+          {friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={friendRequestsQuery.error.message} />
+            </div>
+          ) : null}
+          {startChatMutation.isError && startChatMutation.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={startChatMutation.error.message} />
             </div>
           ) : null}
 
-          {friendSections.map((section) => (
-            <div key={section.key} id={section.anchorId}>
-              <SectionHeader title={section.title} />
-              {section.items.map((item, index) => (
-                <FriendListRow
+          <ContactShortcutList items={shortcutItems} className="mt-2 border-x-0 shadow-none" />
+
+          <section className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
+            {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
+
+            {!friendsQuery.isLoading && !friendSections.length ? (
+              <div className="px-3 py-6">
+                <EmptyState
+                  title={normalizedSearchText ? "没有找到匹配的联系人" : "通讯录还是空的"}
+                  description={
+                    normalizedSearchText
+                      ? "换个关键词试试，或者继续搜索世界角色。"
+                      : "先处理新的朋友，或者去浏览世界角色。"
+                  }
+                  action={
+                    normalizedSearchText ? (
+                      <Button variant="secondary" onClick={() => setSearchText("")}>
+                        清空搜索
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" onClick={handleOpenWorldCharacters}>
+                        浏览世界角色
+                      </Button>
+                    )
+                  }
+                />
+              </div>
+            ) : null}
+
+            {friendSections.map((section) => (
+              <div key={section.key} id={section.anchorId}>
+                <SectionHeader title={section.title} />
+                {section.items.map((item, index) => (
+                  <FriendListRow
+                    key={item.character.id}
+                    item={item}
+                    index={index}
+                    pendingCharacterId={pendingCharacterId}
+                    onClick={() => handleStartChat(item.character.id)}
+                  />
+                ))}
+              </div>
+            ))}
+          </section>
+
+          {filteredWorldCharacterItems.length ? (
+            <section id="world-character-directory" className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
+              <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} />
+              {filteredWorldCharacterItems.map((item, index) => (
+                <WorldCharacterRow
                   key={item.character.id}
                   item={item}
                   index={index}
-                  pendingCharacterId={pendingCharacterId}
-                  onClick={() => handleStartChat(item.character.id)}
+                  onClick={() => handleOpenProfile(item.character.id)}
                 />
               ))}
-            </div>
-          ))}
-        </section>
+            </section>
+          ) : null}
+        </div>
 
-        {filteredWorldCharacterItems.length ? (
-          <section id="world-character-directory" className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
-            <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} />
-            {filteredWorldCharacterItems.map((item, index) => (
-              <WorldCharacterRow
-                key={item.character.id}
-                item={item}
-                index={index}
-                onClick={() => handleOpenProfile(item.character.id)}
-              />
-            ))}
-          </section>
+        {!normalizedSearchText && friendSections.length ? (
+          <ContactIndexList
+            items={friendSections.map((section) => ({ key: section.anchorId, indexLabel: section.indexLabel }))}
+            activeKey={activeMobileIndexKey}
+            className="fixed right-1 top-[55%] z-30 -translate-y-1/2"
+            onSelect={handleIndexJump}
+          />
         ) : null}
-      </div>
-
-      {!normalizedSearchText && friendSections.length ? (
-        <ContactIndexList
-          items={friendSections.map((section) => ({ key: section.anchorId, indexLabel: section.indexLabel }))}
-          activeKey={friendSections[0]?.anchorId ?? null}
-          className="fixed right-1 top-[55%] z-30 -translate-y-1/2"
-          onSelect={handleIndexJump}
-        />
-      ) : null}
-    </AppPage>
+      </AppPage>
+    </div>
   );
 }
 
@@ -547,7 +625,7 @@ function FriendListRow({
         "flex w-full items-center gap-3 bg-white text-left transition-colors",
         desktop ? "px-4 py-3.5 hover:bg-[rgba(15,23,42,0.04)]" : "px-4 py-3 hover:bg-[rgba(15,23,42,0.03)]",
         index > 0 ? "border-t border-[rgba(15,23,42,0.06)]" : undefined,
-        active ? "bg-[rgba(22,163,74,0.08)]" : undefined,
+        active ? "bg-[rgba(22,163,74,0.10)] shadow-[inset_3px_0_0_0_#16a34a]" : undefined,
       )}
     >
       <AvatarChip name={item.character.name} src={item.character.avatar} size="wechat" />
@@ -556,7 +634,7 @@ function FriendListRow({
         <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
           {pendingCharacterId === item.character.id
             ? "正在打开会话..."
-            : item.character.currentStatus?.trim() || item.character.relationship || "联系人"}
+            : item.character.currentStatus?.trim() || `${item.character.relationship} · 亲密度 ${item.friendship.intimacyLevel}`}
         </div>
       </div>
       {item.character.isOnline ? <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#22c55e]" /> : null}
@@ -585,7 +663,7 @@ function WorldCharacterRow({
         "flex w-full items-center gap-3 bg-white text-left transition-colors",
         desktop ? "px-4 py-3.5 hover:bg-[rgba(15,23,42,0.04)]" : "px-4 py-3 hover:bg-[rgba(15,23,42,0.03)]",
         index > 0 ? "border-t border-[rgba(15,23,42,0.06)]" : undefined,
-        active ? "bg-[rgba(15,23,42,0.04)]" : undefined,
+        active ? "bg-[rgba(15,23,42,0.04)] shadow-[inset_3px_0_0_0_rgba(15,23,42,0.18)]" : undefined,
       )}
     >
       <AvatarChip name={item.character.name} src={item.character.avatar} size="wechat" />
