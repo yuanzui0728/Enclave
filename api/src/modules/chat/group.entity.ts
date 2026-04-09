@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('groups')
 export class GroupEntity {
@@ -17,6 +23,21 @@ export class GroupEntity {
   @Column({ default: 'user' })
   creatorType: string; // 'user' | 'character'
 
+  @Column('text', { nullable: true })
+  announcement?: string | null;
+
+  @Column({ default: false })
+  isPinned: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  pinnedAt?: Date | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  lastClearedAt?: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

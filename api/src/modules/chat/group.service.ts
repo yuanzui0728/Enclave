@@ -1,12 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import {
   ContactCardAttachment,
   FileAttachment,
+  Group,
   GroupMessage,
   ImageAttachment,
   LocationCardAttachment,
@@ -26,6 +31,11 @@ export interface AddMemberDto {
   memberType: 'user' | 'character';
   memberName: string;
   memberAvatar?: string;
+}
+
+export interface UpdateGroupDto {
+  name?: string;
+  announcement?: string | null;
 }
 
 type SendGroupMessageInput =
@@ -70,7 +80,7 @@ export class GroupService {
     private readonly worldOwnerService: WorldOwnerService,
   ) {}
 
-  async createGroup(dto: CreateGroupDto): Promise<GroupEntity> {
+  async createGroup(dto: CreateGroupDto): Promise<Group> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const group = this.groupRepo.create({
       name: dto.name,
@@ -102,7 +112,7 @@ export class GroupService {
     this.logger.log(
       `Created group ${group.id} with ${dto.memberIds.length + 1} members`,
     );
-    return group;
+    return this.toGroup(group);
   }
 
   async addMember(
@@ -132,25 +142,123 @@ export class GroupService {
     return member;
   }
 
-  async getGroup(groupId: string): Promise<GroupEntity | null> {
-    return this.groupRepo.findOne({ where: { id: groupId } });
+  async getGroup(groupId: string): Promise<Group | null> {
+    const group = await this.findAccessibleGroup(groupId);
+    return group ? this.toGroup(group) : null;
   }
 
   async getMembers(groupId: string): Promise<GroupMemberEntity[]> {
-    return this.memberRepo.find({
+    await this.requireAccessibleGroup(groupId);
+    const members = await this.memberRepo.find({
       where: { groupId },
       order: { joinedAt: 'ASC' },
     });
+
+    return Promise.all(
+      members.map(async (member) => {
+        if (member.memberType !== 'character') {
+          return member;
+        }
+
+        const character = await this.characters.findById(member.memberId);
+        if (!character) {
+          return member;
+        }
+
+        return {
+          ...member,
+          memberName: member.memberName ?? character.name,
+          memberAvatar: member.memberAvatar ?? character.avatar ?? undefined,
+        };
+      }),
+    );
   }
 
   async getMessages(groupId: string, limit = 100): Promise<GroupMessage[]> {
+    const group = await this.requireAccessibleGroup(groupId);
     const messages = await this.messageRepo.find({
-      where: { groupId },
+      where: group.lastClearedAt
+        ? {
+            groupId,
+            createdAt: MoreThan(group.lastClearedAt),
+          }
+        : { groupId },
       order: { createdAt: 'DESC' },
       take: limit,
     });
 
     return messages.reverse().map((item) => this.toGroupMessage(item));
+  }
+
+  async updateGroup(groupId: string, dto: UpdateGroupDto): Promise<Group> {
+    const group = await this.requireOwnedGroup(groupId);
+    const nextName = dto.name?.trim();
+    const nextAnnouncement =
+      dto.announcement === undefined ? undefined : dto.announcement?.trim() || null;
+    const updated = await this.groupRepo.save({
+      ...group,
+      name: nextName || group.name,
+      announcement:
+        nextAnnouncement === undefined ? group.announcement ?? null : nextAnnouncement,
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async setGroupPinned(groupId: string, pinned: boolean): Promise<Group> {
+    const group = await this.requireOwnedGroup(groupId);
+    const updated = await this.groupRepo.save({
+      ...group,
+      isPinned: pinned,
+      pinnedAt: pinned ? new Date() : null,
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async clearGroupMessages(groupId: string): Promise<Group> {
+    const group = await this.requireOwnedGroup(groupId);
+    const now = new Date();
+    const updated = await this.groupRepo.save({
+      ...group,
+      lastClearedAt: now,
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async updateOwnerNickname(
+    groupId: string,
+    nickname: string,
+  ): Promise<GroupMemberEntity> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.requireOwnedGroup(groupId);
+    const member = await this.memberRepo.findOne({
+      where: {
+        groupId,
+        memberId: owner.id,
+        memberType: 'user',
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException(`Owner member for group ${groupId} not found`);
+    }
+
+    return this.memberRepo.save({
+      ...member,
+      memberName: nickname.trim() || member.memberName,
+    });
+  }
+
+  async leaveGroup(groupId: string): Promise<{ success: true }> {
+    const group = await this.requireOwnedGroup(groupId);
+
+    await this.memberRepo.delete({ groupId: group.id });
+    await this.messageRepo.delete({ groupId: group.id });
+    await this.groupRepo.delete({ id: group.id });
+
+    return { success: true };
   }
 
   async sendMessage(
@@ -161,6 +269,7 @@ export class GroupService {
     input: SendGroupMessageInput,
     senderAvatar?: string,
   ): Promise<GroupMessage> {
+    await this.requireAccessibleGroup(groupId);
     const normalizedInput = this.normalizeOutgoingMessageInput(input);
     const message = this.messageRepo.create({
       groupId,
@@ -196,6 +305,7 @@ export class GroupService {
     groupId: string,
     text: string,
   ): Promise<GroupMessage> {
+    await this.requireAccessibleGroup(groupId);
     const message = this.messageRepo.create({
       groupId,
       senderId: 'system',
@@ -214,6 +324,7 @@ export class GroupService {
     userMessage: string,
     senderName: string,
   ): Promise<void> {
+    await this.requireAccessibleGroup(groupId);
     const members = await this.memberRepo.find({
       where: { groupId, memberType: 'character' },
     });
@@ -365,5 +476,64 @@ export class GroupService {
     } catch {
       return undefined;
     }
+  }
+
+  private async findAccessibleGroup(groupId: string): Promise<GroupEntity | null> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const membership = await this.memberRepo.findOne({
+      where: {
+        groupId,
+        memberId: owner.id,
+        memberType: 'user',
+      },
+    });
+
+    if (!membership) {
+      return null;
+    }
+
+    return this.groupRepo.findOne({ where: { id: groupId } });
+  }
+
+  private async requireAccessibleGroup(groupId: string): Promise<GroupEntity> {
+    const group = await this.findAccessibleGroup(groupId);
+    if (!group) {
+      throw new NotFoundException(`Group ${groupId} not found`);
+    }
+
+    return group;
+  }
+
+  private async requireOwnedGroup(groupId: string): Promise<GroupEntity> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const group = await this.groupRepo.findOne({
+      where: {
+        id: groupId,
+        creatorId: owner.id,
+        creatorType: 'user',
+      },
+    });
+
+    if (!group) {
+      throw new NotFoundException(`Group ${groupId} not found`);
+    }
+
+    return group;
+  }
+
+  private toGroup(entity: GroupEntity): Group {
+    return {
+      id: entity.id,
+      name: entity.name,
+      avatar: entity.avatar ?? undefined,
+      creatorId: entity.creatorId,
+      creatorType: entity.creatorType as 'user' | 'character',
+      announcement: entity.announcement ?? undefined,
+      isPinned: entity.isPinned ?? false,
+      pinnedAt: entity.pinnedAt ?? undefined,
+      lastClearedAt: entity.lastClearedAt ?? undefined,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+    };
   }
 }

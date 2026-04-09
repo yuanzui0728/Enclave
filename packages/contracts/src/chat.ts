@@ -72,7 +72,12 @@ export interface Group {
   avatar?: string;
   creatorId: string;
   creatorType: GroupMemberType;
+  announcement?: string;
+  isPinned: boolean;
+  pinnedAt?: string;
+  lastClearedAt?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateGroupRequest {
@@ -98,6 +103,19 @@ export interface AddGroupMemberRequest {
   memberType: GroupMemberType;
   memberName?: string;
   memberAvatar?: string;
+}
+
+export interface UpdateGroupRequest {
+  name?: string;
+  announcement?: string | null;
+}
+
+export interface SetGroupPinnedRequest {
+  pinned: boolean;
+}
+
+export interface UpdateGroupOwnerProfileRequest {
+  nickname: string;
 }
 
 export interface GroupMessage {

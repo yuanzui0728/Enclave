@@ -15,10 +15,13 @@ import type {
   GroupMember,
   GroupMessage,
   Message,
+  SetGroupPinnedRequest,
   SetConversationPinnedRequest,
   SetConversationMutedRequest,
   SendGroupMessageRequest,
   UploadChatAttachmentResponse,
+  UpdateGroupOwnerProfileRequest,
+  UpdateGroupRequest,
 } from "./chat";
 import type { Character, CharacterDraft } from "./characters";
 import type {
@@ -937,6 +940,21 @@ export function getGroup(id: string, baseUrl?: string) {
   return requestLegacyApi<Group>(`/groups/${id}`, undefined, baseUrl);
 }
 
+export function updateGroup(
+  id: string,
+  payload: UpdateGroupRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
 export function getGroupMembers(id: string, baseUrl?: string) {
   return requestLegacyApi<GroupMember[]>(
     `/groups/${id}/members`,
@@ -964,6 +982,56 @@ export function getGroupMessages(id: string, baseUrl?: string) {
   return requestLegacyApi<GroupMessage[]>(
     `/groups/${id}/messages`,
     undefined,
+    baseUrl,
+  );
+}
+
+export function setGroupPinned(
+  id: string,
+  payload: SetGroupPinnedRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/pin`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function clearGroupMessages(id: string, baseUrl?: string) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/clear`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function updateGroupOwnerProfile(
+  id: string,
+  payload: UpdateGroupOwnerProfileRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<GroupMember>(
+    `/groups/${id}/me`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function leaveGroup(id: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/groups/${id}/leave`,
+    {
+      method: "POST",
+    },
     baseUrl,
   );
 }

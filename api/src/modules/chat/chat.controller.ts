@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Res,
@@ -127,6 +128,14 @@ export class GroupController {
     return this.groupService.createGroup(body);
   }
 
+  @Patch(':id')
+  updateGroup(
+    @Param('id') id: string,
+    @Body() body: { name?: string; announcement?: string | null },
+  ) {
+    return this.groupService.updateGroup(id, body);
+  }
+
   @Get(':id')
   getGroup(@Param('id') id: string) {
     return this.groupService.getGroup(id);
@@ -140,6 +149,29 @@ export class GroupController {
   @Get(':id/messages')
   getMessages(@Param('id') id: string, @Query('limit') limit?: string) {
     return this.groupService.getMessages(id, Number(limit) || 100);
+  }
+
+  @Post(':id/pin')
+  pinGroup(@Param('id') id: string, @Body() body: { pinned: boolean }) {
+    return this.groupService.setGroupPinned(id, body.pinned);
+  }
+
+  @Post(':id/clear')
+  clearGroup(@Param('id') id: string) {
+    return this.groupService.clearGroupMessages(id);
+  }
+
+  @Patch(':id/me')
+  updateOwnerGroupProfile(
+    @Param('id') id: string,
+    @Body() body: { nickname: string },
+  ) {
+    return this.groupService.updateOwnerNickname(id, body.nickname);
+  }
+
+  @Post(':id/leave')
+  leaveGroup(@Param('id') id: string) {
+    return this.groupService.leaveGroup(id);
   }
 
   @Post(':id/members')

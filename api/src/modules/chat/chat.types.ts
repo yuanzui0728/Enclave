@@ -89,6 +89,20 @@ export interface GroupMessage {
   createdAt: Date;
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  avatar?: string;
+  creatorId: string;
+  creatorType: 'user' | 'character';
+  announcement?: string;
+  isPinned: boolean;
+  pinnedAt?: Date;
+  lastClearedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Conversation {
   id: string;
   type: 'direct' | 'group';
