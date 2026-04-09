@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet } from "@tanstack/react-router";
 import { DesktopRuntimeGuard } from "./desktop-runtime-guard";
 import { getAdminSecret, setAdminSecret } from "../lib/admin-api";
@@ -7,6 +8,7 @@ const NAV_LINK = "rounded-full border border-[color:var(--border-subtle)] px-4 p
 const NAV_LINK_ACTIVE = "rounded-full border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-2 text-[color:var(--brand-primary)] font-medium";
 
 export function RootLayout() {
+  const queryClient = useQueryClient();
   const [secret, setSecret] = useState(getAdminSecret);
   const [editingSecret, setEditingSecret] = useState(!getAdminSecret());
   const [draft, setDraft] = useState(getAdminSecret);
@@ -15,6 +17,7 @@ export function RootLayout() {
     setAdminSecret(draft);
     setSecret(draft);
     setEditingSecret(false);
+    void queryClient.invalidateQueries();
   }
 
   return (
