@@ -5,6 +5,7 @@ import {
   getGroup,
   getGroupMembers,
   getGroupMessages,
+  markGroupRead,
   sendGroupMessage,
   uploadChatAttachment,
 } from "@yinjie/contracts";
@@ -62,6 +63,18 @@ export function GroupChatThreadPanel({
   useEffect(() => {
     setText("");
   }, [baseUrl, groupId]);
+
+  useEffect(() => {
+    if (!groupId) {
+      return;
+    }
+
+    void markGroupRead(groupId, baseUrl).then(() => {
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    });
+  }, [baseUrl, groupId, messagesQuery.data?.length, queryClient]);
 
   const sendMutation = useMutation({
     mutationFn: (payload: Parameters<typeof sendGroupMessage>[1]) =>
