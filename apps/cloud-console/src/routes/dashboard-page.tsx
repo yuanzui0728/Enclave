@@ -40,7 +40,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">最新申请</div>
-              <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">用户在客户端提交云世界创建需求后会出现在这里。</div>
+              <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">客户端提交云世界申请后会出现在这里，等待人工审核与开通处理。</div>
             </div>
             <Link to="/requests" className="text-sm text-[color:var(--brand)]">
               查看全部
@@ -69,7 +69,7 @@ export function DashboardPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">最新世界</div>
-              <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里维护手机号、世界状态和最终交付地址。</div>
+              <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">这里维护手机号、世界状态，以及最终回填给客户端的访问地址。</div>
             </div>
             <Link to="/worlds" className="text-sm text-[color:var(--brand)]">
               查看全部
