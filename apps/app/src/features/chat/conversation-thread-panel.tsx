@@ -37,7 +37,13 @@ export function ConversationThreadPanel({
     typingCharacterId,
   } = useConversationThread(conversationId);
   const isDesktop = variant === "desktop";
-  const subtitle =
+  const desktopSubtitle =
+    conversationType === "group"
+      ? `${participants.length || 0} 人群聊`
+      : typingCharacterId
+        ? "对方正在输入..."
+        : "连接顺畅";
+  const mobileSubtitle =
     conversationType === "group"
       ? `${participants.length || 0} 人群聊`
       : typingCharacterId
@@ -65,7 +71,7 @@ export function ConversationThreadPanel({
               <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">{conversationTitle}</div>
               <div className="mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
                 {conversationType === "group" ? <Users size={12} /> : null}
-                <span>{subtitle}</span>
+                <span>{desktopSubtitle}</span>
               </div>
             </div>
 
@@ -129,10 +135,10 @@ export function ConversationThreadPanel({
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">{conversationTitle}</div>
-                {subtitle ? (
+                {mobileSubtitle ? (
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
                     {conversationType === "group" ? <Users size={12} /> : null}
-                    <span>{subtitle}</span>
+                    <span>{mobileSubtitle}</span>
                   </div>
                 ) : null}
               </div>
