@@ -92,8 +92,7 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
     <div className="relative flex h-full min-h-0">
       <section className="flex w-[320px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(246,247,249,0.98),rgba(242,244,247,0.98))]">
         <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-base font-medium text-[color:var(--text-primary)]">消息</div>
+          <div className="flex items-center justify-end">
             <div className="text-xs text-[color:var(--text-muted)]">
               {filteredConversations.length} / {unreadMessageCount}
             </div>
