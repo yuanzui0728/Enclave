@@ -98,7 +98,7 @@ export function DiscoverPage() {
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [momentText, setMomentText] = useState("");
   const [feedText, setFeedText] = useState("");
   const [shakeMessage, setShakeMessage] = useState("");

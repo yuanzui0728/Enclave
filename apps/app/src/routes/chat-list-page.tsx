@@ -59,7 +59,7 @@ export function ChatListPage() {
 function MobileChatListPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);

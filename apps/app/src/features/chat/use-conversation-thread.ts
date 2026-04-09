@@ -20,7 +20,7 @@ export function useConversationThread(conversationId: string) {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const username = useWorldOwnerStore((state) => state.username);
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingCharacterId, setTypingCharacterId] = useState<string | null>(null);

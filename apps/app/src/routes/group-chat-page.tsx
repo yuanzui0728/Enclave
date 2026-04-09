@@ -17,7 +17,7 @@ export function GroupChatPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
 
   const groupQuery = useQuery({

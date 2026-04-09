@@ -15,7 +15,7 @@ export function DiscoverFeedPage() {
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [successNotice, setSuccessNotice] = useState("");

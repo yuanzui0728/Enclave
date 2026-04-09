@@ -12,7 +12,7 @@ export function CharacterDetailPage() {
   const { characterId } = useParams({ from: "/character/$characterId" });
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],

@@ -30,7 +30,7 @@ export function DesktopRuntimeGuard() {
   });
 
   const remoteStatusQuery = useQuery({
-    queryKey: ["app-availability", runtimeConfig.apiBaseUrl ?? "default"],
+    queryKey: ["app-availability", runtimeConfig.apiBaseUrl ?? "__default__"],
     queryFn: () => getSystemStatus(runtimeConfig.apiBaseUrl),
     enabled: !hasDesktopRuntimeControl && !needsRemoteConfiguration,
     retry: false,

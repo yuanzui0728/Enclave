@@ -14,7 +14,7 @@ export function ContactsPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],

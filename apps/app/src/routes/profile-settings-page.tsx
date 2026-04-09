@@ -25,7 +25,7 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 export function ProfileSettingsPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const username = useWorldOwnerStore((state) => state.username);
   const signature = useWorldOwnerStore((state) => state.signature);
   const updateOwnerStore = useWorldOwnerStore((state) => state.updateOwner);

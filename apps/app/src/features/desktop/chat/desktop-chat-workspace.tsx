@@ -29,7 +29,7 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
   const navigate = useNavigate();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [notice, setNotice] = useState<NoticeState | null>(null);
 
   const conversationsQuery = useQuery({
