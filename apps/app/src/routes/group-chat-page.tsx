@@ -22,17 +22,17 @@ export function GroupChatPage() {
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
-    queryFn: () => getGroup(groupId),
+    queryFn: () => getGroup(groupId, baseUrl),
   });
 
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
-    queryFn: () => getGroupMembers(groupId),
+    queryFn: () => getGroupMembers(groupId, baseUrl),
   });
 
   const messagesQuery = useQuery({
     queryKey: ["app-group-messages", baseUrl, groupId],
-    queryFn: () => getGroupMessages(groupId),
+    queryFn: () => getGroupMessages(groupId, baseUrl),
     refetchInterval: 3_000,
   });
   const scrollAnchorRef = useScrollAnchor<HTMLDivElement>(`${groupId}:${messagesQuery.data?.length ?? 0}`);
