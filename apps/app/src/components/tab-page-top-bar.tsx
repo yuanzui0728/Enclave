@@ -6,7 +6,7 @@ type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
   rightActions?: ReactNode;
 };
 
-export function TabPageTopBar({ className, title, rightActions, ...props }: TabPageTopBarProps) {
+export function TabPageTopBar({ className, title, rightActions, children, ...props }: TabPageTopBarProps) {
   return (
     <div
       className={cn(
@@ -19,6 +19,7 @@ export function TabPageTopBar({ className, title, rightActions, ...props }: TabP
         <h1 className="truncate text-xl font-semibold tracking-[0.01em] text-white">{title}</h1>
         {rightActions ? <div className="shrink-0">{rightActions}</div> : null}
       </div>
+      {children}
     </div>
   );
 }
