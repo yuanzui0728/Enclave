@@ -62,7 +62,7 @@ export function ConversationThreadPanel({
         className={
           isDesktop
             ? "flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.96))] px-5 py-4"
-            : "border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,254,250,0.92),rgba(255,248,238,0.95))] px-3 pb-3 pt-3"
+            : "border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,254,250,0.92),rgba(255,248,238,0.95))] px-3 py-3"
         }
       >
         {isDesktop ? (
@@ -148,25 +148,6 @@ export function ConversationThreadPanel({
                 aria-label="更多操作"
               >
                 <Ellipsis size={18} />
-              </button>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-                aria-label="语音通话"
-              >
-                <Phone size={16} />
-                <span>语音</span>
-              </button>
-              <button
-                type="button"
-                className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-                aria-label="视频通话"
-              >
-                <Video size={16} />
-                <span>视频</span>
               </button>
             </div>
           </>
