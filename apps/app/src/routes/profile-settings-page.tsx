@@ -106,24 +106,36 @@ export function ProfileSettingsPage() {
   return (
     <AppPage className="space-y-4">
       <TabPageTopBar
+        eyebrow="世界设置"
         title="设置"
+        subtitle="管理资料、专属 API Key 和当前世界的个性化配置"
         titleAlign="center"
         leftActions={
           <Button
             onClick={() => navigate({ to: "/tabs/profile" })}
             variant="ghost"
             size="icon"
-            className="text-white/78"
+            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
 
+      <section className="rounded-[30px] border border-white/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,246,232,0.94)_42%,rgba(240,251,245,0.96))] p-5 shadow-[var(--shadow-section)]">
+        <div className="text-xs uppercase tracking-[0.22em] text-[color:var(--brand-secondary)]">Owner Settings</div>
+        <div className="mt-2 text-[1.4rem] font-semibold leading-tight text-[color:var(--text-primary)]">
+          {draftName.trim() || "世界主人"}，把世界调整成你喜欢的样子
+        </div>
+        <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+          你可以在这里修改展示身份，也可以选择继续沿用实例级 Provider，或者切换成自己的专属 API Key。
+        </div>
+      </section>
+
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">个人资料</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">修改你在这个世界里的名字和签名。</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">修改你在这个世界里的名字和签名，让角色更准确地认识你。</div>
         </div>
 
         <div className="space-y-3">
@@ -157,7 +169,7 @@ export function ProfileSettingsPage() {
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">AI 设置</div>
           <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            默认会使用实例级 Provider。你也可以只为这个世界主人覆盖成自己的 API Key。
+            默认会使用实例级 Provider。你也可以只为这个世界主人切换成自己的 API Key。
           </div>
         </div>
 
