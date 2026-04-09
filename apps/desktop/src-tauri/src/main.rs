@@ -6,7 +6,7 @@ use std::{
 };
 
 use serde::Serialize;
-use tauri::Manager;
+use tauri::{Manager, Window};
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 #[cfg(target_os = "windows")]
@@ -93,6 +93,11 @@ fn main() {
             desktop_runtime_context,
             desktop_core_api_status,
             desktop_runtime_diagnostics,
+            desktop_window_close,
+            desktop_window_drag,
+            desktop_window_is_maximized,
+            desktop_window_minimize,
+            desktop_window_toggle_maximize,
             probe_core_api_health,
             start_core_api,
             stop_core_api,
@@ -219,6 +224,39 @@ fn restart_core_api() -> DesktopOperationResult {
     DesktopOperationResult {
         success: true,
         message: "Desktop shell no longer restarts a local Core API. Re-check the remote server instead.".to_string(),
+    }
+}
+
+#[tauri::command]
+fn desktop_window_close(window: Window) -> Result<(), String> {
+    window.close().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn desktop_window_drag(window: Window) -> Result<(), String> {
+    window.start_dragging().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn desktop_window_is_maximized(window: Window) -> Result<bool, String> {
+    window.is_maximized().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn desktop_window_minimize(window: Window) -> Result<(), String> {
+    window.minimize().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn desktop_window_toggle_maximize(window: Window) -> Result<bool, String> {
+    let is_maximized = window.is_maximized().map_err(|error| error.to_string())?;
+
+    if is_maximized {
+        window.unmaximize().map_err(|error| error.to_string())?;
+        Ok(false)
+    } else {
+        window.maximize().map_err(|error| error.to_string())?;
+        Ok(true)
     }
 }
 
