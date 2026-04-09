@@ -18,5 +18,20 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5180,
     allowedHosts: ["1gw06751dd053.vicp.fun"],
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:3000",
+        changeOrigin: true,
+      },
+      "/health": {
+        target: "http://127.0.0.1:3000",
+        changeOrigin: true,
+      },
+      "/socket.io": {
+        target: "ws://127.0.0.1:3000",
+        changeOrigin: true,
+        ws: true,
+      },
+    },
   },
 });
