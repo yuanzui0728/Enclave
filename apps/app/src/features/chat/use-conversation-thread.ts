@@ -225,7 +225,7 @@ function resolveTargetCharacterId(input: {
     return fromParticipants;
   }
 
-  const directPrefix = `${input.ownerId}_`;
+  const directPrefix = "direct_";
   if (input.conversationId.startsWith(directPrefix)) {
     const inferred = input.conversationId.slice(directPrefix.length).trim();
     if (inferred) {

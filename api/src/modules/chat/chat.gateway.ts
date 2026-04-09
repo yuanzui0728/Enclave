@@ -143,7 +143,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private async deliverConversationReply(convId: string, characterId: string, text: string) {
-    this.server.to(convId).emit('typing_start', { characterId });
+    this.server.to(convId).emit('typing_start', { conversationId: convId, characterId });
 
     try {
       const messages = await this.chatService.sendMessage(convId, text);
@@ -153,7 +153,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.server.to(convId).emit('typing_stop', { characterId });
+      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
 
       for (const message of messages) {
         this.server.to(convId).emit('new_message', message);
@@ -169,7 +169,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
     } catch (error) {
-      this.server.to(convId).emit('typing_stop', { characterId });
+      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
       throw error;
     }
   }
