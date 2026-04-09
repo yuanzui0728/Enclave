@@ -1,0 +1,91 @@
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
+import { triggerSceneFriendRequest } from "@yinjie/contracts";
+import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+
+const scenes = [
+  { id: "coffee_shop", label: "咖啡馆" },
+  { id: "gym", label: "健身房" },
+  { id: "library", label: "图书馆" },
+  { id: "park", label: "公园" },
+];
+
+export function DiscoverScenePage() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const [message, setMessage] = useState("");
+
+  const sceneMutation = useMutation({
+    mutationFn: async (scene: string) => {
+      const result = await triggerSceneFriendRequest(
+        {
+          scene,
+        },
+        baseUrl,
+      );
+      return { request: result, scene };
+    },
+    onSuccess: ({ request, scene }) => {
+      const sceneLabel = scenes.find((item) => item.id === scene)?.label ?? scene;
+
+      if (!request) {
+        setMessage(`${sceneLabel} 里暂时没有新的相遇。`);
+        return;
+      }
+
+      setMessage(`${request.characterName} 在${sceneLabel}里注意到了你：${request.greeting ?? "对你产生了兴趣。"}`);
+      void queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
+    },
+  });
+
+  useEffect(() => {
+    setMessage("");
+  }, [baseUrl]);
+
+  return (
+    <AppPage>
+      <AppHeader
+        eyebrow="发现"
+        title="场景相遇"
+        description="选一个地方，看看这个世界会不会给你安排新的故事。"
+        actions={
+          <Button
+            onClick={() => navigate({ to: "/tabs/discover" })}
+            variant="ghost"
+            size="icon"
+            className="text-[color:var(--text-secondary)]"
+          >
+            <ArrowLeft size={18} />
+          </Button>
+        }
+      />
+
+      <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
+        <div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">选择一个地点</div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">不同地点会触发不同角色的靠近方式，并写入新的好友申请。</div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {scenes.map((scene) => (
+            <Button
+              key={scene.id}
+              onClick={() => sceneMutation.mutate(scene.id)}
+              disabled={sceneMutation.isPending}
+              variant="secondary"
+              size="sm"
+            >
+              {sceneMutation.isPending && sceneMutation.variables === scene.id ? `正在前往${scene.label}...` : scene.label}
+            </Button>
+          ))}
+        </div>
+        {message ? <InlineNotice tone="info">{message}</InlineNotice> : null}
+        {sceneMutation.isError && sceneMutation.error instanceof Error ? <ErrorBlock message={sceneMutation.error.message} /> : null}
+      </AppSection>
+    </AppPage>
+  );
+}

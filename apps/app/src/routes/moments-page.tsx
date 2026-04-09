@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { addMomentComment, createUserMoment, getBlockedCharacters, getMoments, toggleMomentLike } from "@yinjie/contracts";
 import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
@@ -12,6 +14,8 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function MomentsPage() {
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
@@ -68,6 +72,7 @@ export function MomentsPage() {
   const visibleMoments = (momentsQuery.data ?? []).filter(
     (moment) => moment.authorType !== "character" || !blockedCharacterIds.has(moment.authorId),
   );
+  const isDiscoverSubPage = pathname === "/discover/moments";
 
   useEffect(() => {
     setText("");
@@ -182,7 +187,25 @@ export function MomentsPage() {
 
   return (
     <AppPage>
-      <TabPageTopBar title="朋友圈" />
+      {isDiscoverSubPage ? (
+        <AppHeader
+          eyebrow="发现"
+          title="朋友圈"
+          description="从发现里进入熟人动态，阅读和发布都留在这个独立页面里。"
+          actions={
+            <Button
+              onClick={() => navigate({ to: "/tabs/discover" })}
+              variant="ghost"
+              size="icon"
+              className="text-[color:var(--text-secondary)]"
+            >
+              <ArrowLeft size={18} />
+            </Button>
+          }
+        />
+      ) : (
+        <TabPageTopBar title="朋友圈" />
+      )}
       <AppSection className="space-y-4">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">发一条朋友圈</div>
