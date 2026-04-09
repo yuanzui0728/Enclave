@@ -3,6 +3,7 @@ import { cn } from "@yinjie/ui";
 
 type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
+  leftActions?: ReactNode;
   rightActions?: ReactNode;
   titleAlign?: "left" | "center";
 };
@@ -10,6 +11,7 @@ type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
 export function TabPageTopBar({
   className,
   title,
+  leftActions,
   rightActions,
   titleAlign = "left",
   children,
@@ -24,6 +26,7 @@ export function TabPageTopBar({
       {...props}
     >
       <div className="relative flex min-h-11 items-center justify-between gap-3">
+        {leftActions ? <div className="shrink-0">{leftActions}</div> : titleAlign === "center" ? <div className="w-9 shrink-0" aria-hidden="true" /> : null}
         <h1
           className={cn(
             "truncate text-xl font-semibold tracking-[0.01em] text-white",
@@ -32,10 +35,9 @@ export function TabPageTopBar({
         >
           {title}
         </h1>
-        {titleAlign === "center" ? <div className="w-9 shrink-0" aria-hidden="true" /> : null}
         {rightActions ? (
           <div className={cn("shrink-0", titleAlign === "center" ? "ml-auto" : undefined)}>{rightActions}</div>
-        ) : null}
+        ) : titleAlign === "center" ? <div className="w-9 shrink-0" aria-hidden="true" /> : null}
       </div>
       {children}
     </div>

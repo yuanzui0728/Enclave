@@ -188,16 +188,15 @@ export function MomentsPage() {
   return (
     <AppPage>
       {isDiscoverSubPage ? (
-        <AppHeader
-          eyebrow="发现"
+        <TabPageTopBar
           title="朋友圈"
-          description="从发现里进入熟人动态，阅读和发布都留在这个独立页面里。"
-          actions={
+          titleAlign="center"
+          leftActions={
             <Button
               onClick={() => navigate({ to: "/tabs/discover" })}
               variant="ghost"
               size="icon"
-              className="text-[color:var(--text-secondary)]"
+              className="text-white/78"
             >
               <ArrowLeft size={18} />
             </Button>

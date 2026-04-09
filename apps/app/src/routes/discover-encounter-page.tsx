@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { sendFriendRequest, shake } from "@yinjie/contracts";
-import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
+import { AppPage, AppSection, Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function DiscoverEncounterPage() {
@@ -47,16 +48,15 @@ export function DiscoverEncounterPage() {
 
   return (
     <AppPage>
-      <AppHeader
-        eyebrow="发现"
+      <TabPageTopBar
         title="摇一摇"
-        description="轻轻推动世界一次，看看今天会从哪里有人靠近你。"
-        actions={
+        titleAlign="center"
+        leftActions={
           <Button
             onClick={() => navigate({ to: "/tabs/discover" })}
             variant="ghost"
             size="icon"
-            className="text-[color:var(--text-secondary)]"
+            className="text-white/78"
           >
             <ArrowLeft size={18} />
           </Button>

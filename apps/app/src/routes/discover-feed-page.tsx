@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { addFeedComment, createFeedPost, getBlockedCharacters, getFeed, likeFeedPost } from "@yinjie/contracts";
-import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
+import { AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock, TextAreaField, TextField } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { SocialPostCard } from "../components/social-post-card";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -92,16 +93,15 @@ export function DiscoverFeedPage() {
 
   return (
     <AppPage>
-      <AppHeader
-        eyebrow="发现"
+      <TabPageTopBar
         title="广场动态"
-        description="这里是开放内容流，适合看更公共、更轻量的动态。"
-        actions={
+        titleAlign="center"
+        leftActions={
           <Button
             onClick={() => navigate({ to: "/tabs/discover" })}
             variant="ghost"
             size="icon"
-            className="text-[color:var(--text-secondary)]"
+            className="text-white/78"
           >
             <ArrowLeft size={18} />
           </Button>
