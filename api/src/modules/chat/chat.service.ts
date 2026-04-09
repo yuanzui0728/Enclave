@@ -37,7 +37,7 @@ export class ChatService {
       const char = await this.characters.findById(characterId);
       entity = this.convRepo.create({
         id: convId,
-        userId: owner.id,
+        ownerId: owner.id,
         type: 'direct',
         title: char?.name ?? characterId,
         participants: [characterId],
@@ -66,7 +66,7 @@ export class ChatService {
   async getConversations(): Promise<(Conversation & { lastMessage?: Message; unreadCount: number })[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const convs = await this.convRepo.find({
-      where: { userId: owner.id, isHidden: false },
+      where: { ownerId: owner.id, isHidden: false },
     });
 
     const result: (Conversation & { lastMessage?: Message; unreadCount: number })[] = [];
@@ -230,7 +230,7 @@ export class ChatService {
       const intent = await this.ai.classifyIntent(text, profile.name, profile.expertDomains);
 
       if (intent.needsGroupChat && intent.requiredDomains.length > 0) {
-        const ownerConversations = await this.convRepo.find({ where: { userId: owner.id } });
+        const ownerConversations = await this.convRepo.find({ where: { ownerId: owner.id } });
         const ownerFriendIds = new Set(
           ownerConversations.flatMap((conversation) => conversation.participants).filter((id) => id !== charId),
         );
@@ -459,7 +459,7 @@ export class ChatService {
 
   private async requireOwnedConversation(convId: string): Promise<ConversationEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const entity = await this.convRepo.findOneBy({ id: convId, userId: owner.id });
+    const entity = await this.convRepo.findOneBy({ id: convId, ownerId: owner.id });
     if (!entity) {
       throw new NotFoundException(`Conversation ${convId} not found`);
     }

@@ -118,7 +118,7 @@ export class WorldOwnerService {
 
       const ownerConversations = await manager.getRepository(ConversationEntity).find({
         select: ['id'],
-        where: { userId: owner.id },
+        where: { ownerId: owner.id },
       });
       const ownerConversationIds = ownerConversations.map((entry) => entry.id);
 
