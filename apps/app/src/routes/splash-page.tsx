@@ -20,7 +20,7 @@ export function SplashPage() {
         return;
       }
 
-      void getWorldOwner(runtimeConfig.apiBaseUrl ?? "default")
+      void getWorldOwner(runtimeConfig.apiBaseUrl)
         .then((owner) => {
           hydrateOwner(owner);
           void navigate({

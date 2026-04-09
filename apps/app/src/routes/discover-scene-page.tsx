@@ -18,7 +18,7 @@ export function DiscoverScenePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [message, setMessage] = useState("");
 
   const sceneMutation = useMutation({

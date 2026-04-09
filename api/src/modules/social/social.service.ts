@@ -8,6 +8,7 @@ import { CharacterEntity } from '../characters/character.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
 
 @Injectable()
 export class SocialService {
@@ -66,6 +67,7 @@ export class SocialService {
 
   async getFriends(): Promise<{ friendship: FriendshipEntity; character: CharacterEntity | null }[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.ensureDefaultFriendships(owner.id);
     const friendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const result = await Promise.all(
       friendships.map(async (friendship) => ({
@@ -74,6 +76,31 @@ export class SocialService {
       })),
     );
     return result.filter((entry) => entry.character !== null);
+  }
+
+  async ensureDefaultFriendships(ownerId?: string): Promise<void> {
+    const resolvedOwnerId = ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
+
+    for (const characterId of DEFAULT_CHARACTER_IDS) {
+      const character = await this.characterRepo.findOneBy({ id: characterId });
+      if (!character) {
+        continue;
+      }
+
+      const existing = await this.friendshipRepo.findOneBy({ ownerId: resolvedOwnerId, characterId });
+      if (!existing) {
+        await this.friendshipRepo.save(
+          this.friendshipRepo.create({
+            ownerId: resolvedOwnerId,
+            characterId,
+            intimacyLevel: characterId === DEFAULT_CHARACTER_IDS[0] ? 100 : 60,
+            status: 'friend',
+          }),
+        );
+      }
+
+      await this.narrativeService.ensureArc(character.id, character.name);
+    }
   }
 
   async triggerSceneFriendRequest(scene: string): Promise<FriendRequestEntity | null> {

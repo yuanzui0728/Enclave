@@ -11,7 +11,7 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 export function CreateGroupPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [name, setName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 

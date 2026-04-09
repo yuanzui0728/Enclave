@@ -1,4 +1,4 @@
-import { SendHorizontal } from "lucide-react";
+import { Mic, Plus, SendHorizontal, Smile } from "lucide-react";
 import { Button, InlineNotice } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 
@@ -16,34 +16,71 @@ export function ChatComposer({ value, placeholder, pending = false, error, onCha
 
   return (
     <div
-      className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 pt-3"
+      className="border-t border-black/6 bg-[#f7f7f7] px-3 pt-2"
       style={{
         paddingBottom: keyboardOpen
-          ? `max(0.75rem, ${keyboardInset}px)`
-          : "max(0.75rem, var(--safe-area-inset-bottom))",
+          ? `${keyboardInset}px`
+          : "0.35rem",
       }}
     >
-      <div className="flex items-center gap-3 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 shadow-[var(--shadow-soft)]">
-        <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && value.trim()) {
-              event.preventDefault();
-              onSubmit();
-            }
-          }}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
-        />
-        <Button onClick={onSubmit} disabled={!value.trim() || pending} variant="primary" size="icon" className="shrink-0">
-          <SendHorizontal size={16} />
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-full border-none bg-transparent text-[#5f5f5f] shadow-none hover:bg-black/5"
+          aria-label="语音输入"
+        >
+          <Mic size={18} />
         </Button>
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[22px] border border-black/8 bg-white px-3 py-2">
+          <input
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && value.trim()) {
+                event.preventDefault();
+                onSubmit();
+              }
+            }}
+            placeholder={placeholder}
+            className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[#111111] outline-none placeholder:text-[#a0a0a0]"
+          />
+          <button type="button" className="text-[#5f5f5f]" aria-label="表情">
+            <Smile size={18} />
+          </button>
+        </div>
+        {value.trim() ? (
+          <Button
+            onClick={onSubmit}
+            disabled={pending}
+            variant="primary"
+            className="h-9 rounded-lg bg-[#07c160] px-3 text-sm font-medium text-white hover:bg-[#06ad56]"
+          >
+            发送
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full border-none bg-transparent text-[#5f5f5f] shadow-none hover:bg-black/5"
+            aria-label="更多功能"
+          >
+            <Plus size={18} />
+          </Button>
+        )}
       </div>
       {error ? (
-        <InlineNotice className="mt-3 text-xs" tone="danger">
+        <InlineNotice className="mt-2 text-xs" tone="danger">
           {error}
         </InlineNotice>
+      ) : null}
+      {pending ? (
+        <div className="mt-2 flex items-center gap-1.5 text-[12px] text-[#8e8e93]">
+          <SendHorizontal size={12} />
+          <span>正在发送...</span>
+        </div>
       ) : null}
     </div>
   );

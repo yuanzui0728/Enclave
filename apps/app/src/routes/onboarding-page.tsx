@@ -9,7 +9,7 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 export function OnboardingPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
   const storedName = useWorldOwnerStore((state) => state.username);
   const [name, setName] = useState("");

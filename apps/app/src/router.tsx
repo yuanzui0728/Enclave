@@ -58,6 +58,11 @@ const ProfilePage = lazy(async () => {
   return { default: mod.ProfilePage };
 });
 
+const ProfileSettingsPage = lazy(async () => {
+  const mod = await import("./routes/profile-settings-page");
+  return { default: mod.ProfileSettingsPage };
+});
+
 const ChatRoomPage = lazy(async () => {
   const mod = await import("./routes/chat-room-page");
   return { default: mod.ChatRoomPage };
@@ -226,6 +231,13 @@ const discoverFeedRoute = createRoute({
   component: DiscoverFeedPage,
 });
 
+const profileSettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/settings",
+  beforeLoad: requireWorldReady,
+  component: ProfileSettingsPage,
+});
+
 const legalPrivacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/legal/privacy",
@@ -258,6 +270,7 @@ const routeTree = rootRoute.addChildren([
   discoverEncounterRoute,
   discoverSceneRoute,
   discoverFeedRoute,
+  profileSettingsRoute,
   legalPrivacyRoute,
   legalTermsRoute,
   legalCommunityRoute,

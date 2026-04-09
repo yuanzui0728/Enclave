@@ -40,8 +40,23 @@ export class AiOrchestratorService {
     return this.client;
   }
 
+  private hasAvailableApiKey(override?: AiKeyOverride): boolean {
+    return Boolean(override?.apiKey?.trim() || this.config.get<string>('DEEPSEEK_API_KEY')?.trim());
+  }
+
+  private buildUnavailableReply(profile: PersonalityProfile): GenerateReplyResult {
+    return {
+      text: `${profile.name}看到了你的消息，但这个世界还没有配置可用的 AI Key。先去“我 > 设置”里补上 API Key，我就能继续回复你。`,
+      tokensUsed: 0,
+    };
+  }
+
   async generateReply(options: GenerateReplyOptions): Promise<GenerateReplyResult> {
     const { profile, conversationHistory, userMessage, isGroupChat, otherParticipants, chatContext, aiKeyOverride } = options;
+    if (!this.hasAvailableApiKey(aiKeyOverride)) {
+      return this.buildUnavailableReply(profile);
+    }
+
     const client = this.getClient(aiKeyOverride);
 
     let systemPrompt = profile.systemPrompt
@@ -172,23 +187,27 @@ ${chatHistory}
     characterName: string,
     characterDomains: string[],
   ): Promise<{ needsGroupChat: boolean; reason: string; requiredDomains: string[] }> {
+    if (!this.hasAvailableApiKey()) {
+      return { needsGroupChat: false, reason: '', requiredDomains: [] };
+    }
+
     const prompt = this.promptBuilder.buildIntentClassificationPrompt(
       userMessage,
       characterName,
       characterDomains,
     );
 
-    const model = await this.configService.getAiModel();
-    const response = await this.client.chat.completions.create({
-      model,
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 200,
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
-    });
-
-    const raw = response.choices[0]?.message?.content ?? '{}';
     try {
+      const model = await this.configService.getAiModel();
+      const response = await this.client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 200,
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+      });
+
+      const raw = response.choices[0]?.message?.content ?? '{}';
       return JSON.parse(raw) as { needsGroupChat: boolean; reason: string; requiredDomains: string[] };
     } catch {
       return { needsGroupChat: false, reason: '', requiredDomains: [] };

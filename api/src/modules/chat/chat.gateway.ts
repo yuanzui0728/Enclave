@@ -92,12 +92,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const activity = await this.chatService.getCharacterActivity(characterId);
       if (activity === 'sleeping') {
-        this.emitSystemMessage(convId, SLEEP_HINTS);
+        await this.emitSystemMessage(convId, SLEEP_HINTS);
+        const delay = 12_000 + Math.random() * 10_000;
+        setTimeout(() => {
+          void this.deliverConversationReply(convId, characterId, text);
+        }, delay);
         return { event: 'message_sent', data: { conversationId: convId } };
       }
 
       if (activity && ['working', 'commuting'].includes(activity)) {
-        this.emitSystemMessage(convId, BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。']);
+        await this.emitSystemMessage(convId, BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。']);
         const delay = 8_000 + Math.random() * 7_000;
         setTimeout(() => {
           void this.deliverConversationReply(convId, characterId, text);
@@ -129,21 +133,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return message;
   }
 
-  private emitSystemMessage(conversationId: string, hints: string[]) {
-    this.server.to(conversationId).emit('new_message', {
-      id: `msg_${Date.now()}_sys`,
+  private async emitSystemMessage(conversationId: string, hints: string[]) {
+    const message = await this.chatService.saveSystemMessage(
       conversationId,
-      senderType: 'system',
-      senderId: 'system',
-      senderName: 'system',
-      type: 'system',
-      text: hints[Math.floor(Math.random() * hints.length)],
-      createdAt: new Date(),
-    });
+      hints[Math.floor(Math.random() * hints.length)],
+    );
+    this.server.to(conversationId).emit('new_message', message);
   }
 
   private async deliverConversationReply(convId: string, characterId: string, text: string) {
-    this.server.to(convId).emit('typing_start', { characterId });
+    this.server.to(convId).emit('typing_start', { conversationId: convId, characterId });
 
     try {
       const messages = await this.chatService.sendMessage(convId, text);
@@ -153,7 +152,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
-      this.server.to(convId).emit('typing_stop', { characterId });
+      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
 
       for (const message of messages) {
         this.server.to(convId).emit('new_message', message);
@@ -169,7 +168,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
     } catch (error) {
-      this.server.to(convId).emit('typing_stop', { characterId });
+      this.server.to(convId).emit('typing_stop', { conversationId: convId, characterId });
       throw error;
     }
   }

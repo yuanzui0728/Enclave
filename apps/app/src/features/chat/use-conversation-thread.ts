@@ -11,6 +11,7 @@ import {
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
+import { parseTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
@@ -19,7 +20,7 @@ export function useConversationThread(conversationId: string) {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const username = useWorldOwnerStore((state) => state.username);
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl ?? "default";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingCharacterId, setTypingCharacterId] = useState<string | null>(null);
@@ -173,7 +174,9 @@ export function useConversationThread(conversationId: string) {
     for (const item of messages) {
       deduped.set(item.id, item);
     }
-    return [...deduped.values()].sort((left, right) => Number(left.createdAt) - Number(right.createdAt));
+    return [...deduped.values()].sort(
+      (left, right) => (parseTimestamp(left.createdAt) ?? 0) - (parseTimestamp(right.createdAt) ?? 0),
+    );
   }, [messages]);
 
   return {
@@ -225,7 +228,7 @@ function resolveTargetCharacterId(input: {
     return fromParticipants;
   }
 
-  const directPrefix = `${input.ownerId}_`;
+  const directPrefix = "direct_";
   if (input.conversationId.startsWith(directPrefix)) {
     const inferred = input.conversationId.slice(directPrefix.length).trim();
     if (inferred) {
