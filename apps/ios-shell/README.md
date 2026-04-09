@@ -54,5 +54,9 @@ Push token 约定：
 ## 关键环境变量
 
 - `YINJIE_IOS_CORE_API_BASE_URL`
+- `YINJIE_IOS_SOCKET_BASE_URL`（可选，默认等于 `YINJIE_IOS_CORE_API_BASE_URL`）
+- `YINJIE_IOS_ENVIRONMENT`（可选，默认 `production`）
+- `YINJIE_IOS_PUBLIC_APP_NAME`（可选，默认 `Yinjie`）
 
-这条变量用于标记 iOS 发布链路连接的远程 Core API 地址。Web 层仍通过 `VITE_CORE_API_BASE_URL` 注入实际请求地址。
+`pnpm ios:sync` 会基于这些变量生成打包进 iOS App 的 `runtime-config.json`。
+其中 `YINJIE_IOS_CORE_API_BASE_URL` 是必填项；未设置时，同步会直接失败，避免把示例地址打进壳里。

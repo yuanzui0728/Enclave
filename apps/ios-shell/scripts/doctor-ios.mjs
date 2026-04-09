@@ -44,7 +44,7 @@ const checks = [
     ok: Boolean(process.env.YINJIE_IOS_CORE_API_BASE_URL),
     detail: process.env.YINJIE_IOS_CORE_API_BASE_URL
       ? `YINJIE_IOS_CORE_API_BASE_URL=${process.env.YINJIE_IOS_CORE_API_BASE_URL}`
-      : "YINJIE_IOS_CORE_API_BASE_URL is not set",
+      : "YINJIE_IOS_CORE_API_BASE_URL is not set, `pnpm ios:sync` will fail",
   },
 ];
 
