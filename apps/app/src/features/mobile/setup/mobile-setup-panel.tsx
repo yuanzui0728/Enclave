@@ -313,14 +313,30 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
   }
 
   function selectMode(nextMode: WorldAccessMode) {
-    setMode(nextMode);
-    setNotice("");
-    if (nextMode === "local") {
+    if (nextMode === mode) {
       return;
     }
 
-    setCloudAccessToken("");
+    setMode(nextMode);
+    setNotice("");
+  }
+
+  function handleCloudApiBaseUrlChange(value: string) {
+    setCloudApiBaseUrl(value);
+    if (normalizeBaseUrl(value) !== (runtimeConfig.cloudApiBaseUrl ?? "")) {
+      setCloudAccessToken("");
+    }
     setCode("");
+    setContinueError("");
+  }
+
+  function handlePhoneChange(value: string) {
+    setPhone(value);
+    if (value.trim() !== (runtimeConfig.cloudPhone ?? "")) {
+      setCloudAccessToken("");
+    }
+    setCode("");
+    setContinueError("");
   }
 
   const modeButtonClassName = "flex-1 rounded-[24px]";
@@ -481,7 +497,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 </span>
                 <TextField
                   value={cloudApiBaseUrl}
-                  onChange={(event) => setCloudApiBaseUrl(event.target.value)}
+                  onChange={(event) => handleCloudApiBaseUrlChange(event.target.value)}
                   placeholder="留空可使用默认官方平台"
                 />
               </label>
@@ -492,7 +508,7 @@ export function MobileSetupPanel({ hasOwner, onContinue }: MobileSetupPanelProps
                 </span>
                 <TextField
                   value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
+                  onChange={(event) => handlePhoneChange(event.target.value)}
                   placeholder="输入申请云世界时使用的手机号"
                 />
               </label>
