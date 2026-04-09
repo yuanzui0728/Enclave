@@ -150,7 +150,6 @@ export function ContactsPage() {
                       : character.currentStatus?.trim() || `${character.relationship} · 亲密度 ${friendship.intimacyLevel}`}
                   </div>
                 </div>
-                <div className={cn("h-2.5 w-2.5 rounded-full", character.isOnline ? "bg-emerald-400" : "bg-gray-300")} />
               </button>
             ))}
 
@@ -268,7 +267,6 @@ export function ContactsPage() {
                         : character.currentStatus?.trim() || `${character.relationship} · 亲密度 ${friendship.intimacyLevel}`}
                     </div>
                   </div>
-                  {character.isOnline ? <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--brand-accent)]" /> : null}
                 </button>
               ))
             : null}
