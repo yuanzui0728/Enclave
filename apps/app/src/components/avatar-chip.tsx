@@ -7,11 +7,13 @@ export function AvatarChip({
 }: {
   name?: string | null;
   src?: string | null;
-  size?: "sm" | "md" | "lg" | "wechat";
+  size?: "sm" | "md" | "lg" | "xl" | "wechat";
 }) {
   const classes =
     size === "sm"
       ? "h-9 w-9 rounded-[16px] text-sm"
+      : size === "xl"
+        ? "h-16 w-16 rounded-full text-2xl"
       : size === "wechat"
         ? "h-12 w-12 rounded-xl text-base"
       : size === "lg"

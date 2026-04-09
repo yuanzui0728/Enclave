@@ -11,7 +11,7 @@ import {
   shake,
   triggerSceneFriendRequest,
 } from "@yinjie/contracts";
-import { ChevronRight, Compass, Newspaper, Sparkles, Users } from "lucide-react";
+import { ChevronRight, Newspaper, Sparkles, Users } from "lucide-react";
 import {
   AppHeader,
   AppPage,
@@ -67,15 +67,7 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
     iconClassName: "bg-[var(--brand-gradient)] text-white",
     to: "/discover/encounter",
   },
-  {
-    key: "scene",
-    label: "场景相遇",
-    description: "地点触发",
-    detail: "换一个地点，就换一种更有画面感的靠近方式。",
-    icon: Compass,
-    iconClassName: "bg-[linear-gradient(135deg,#2f78b5,#285f96)] text-white",
-    to: "/discover/scene",
-  },
+
   {
     key: "feed",
     label: "广场动态",
