@@ -18,6 +18,11 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 5180,
     allowedHosts: ["1gw06751dd053.vicp.fun"],
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+    },
     proxy: {
       "/api": {
         target: "http://127.0.0.1:3000",
