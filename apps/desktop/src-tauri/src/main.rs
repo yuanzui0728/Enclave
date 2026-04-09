@@ -2,15 +2,29 @@
 
 use std::{
     path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use serde::Serialize;
-use tauri::{Manager, Window};
+use tauri::{
+    menu::MenuBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    AppHandle, Manager, Window, WindowEvent,
+};
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 #[cfg(target_os = "windows")]
 use window_vibrancy::apply_acrylic;
+
+const MAIN_WINDOW_LABEL: &str = "main";
+const TRAY_ICON_ID: &str = "main-tray";
+const TRAY_MENU_SHOW_ID: &str = "tray-show";
+const TRAY_MENU_QUIT_ID: &str = "tray-quit";
+
+struct DesktopWindowState {
+    allow_exit: AtomicBool,
+}
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,6 +88,10 @@ struct RuntimePaths {
 
 fn main() {
     tauri::Builder::default()
+        .manage(DesktopWindowState {
+            allow_exit: AtomicBool::new(false),
+        })
+        .on_window_event(handle_window_event)
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main") {
                 #[cfg(target_os = "windows")]
@@ -86,6 +104,8 @@ fn main() {
                     let _ = apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None);
                 }
             }
+
+            setup_system_tray(app)?;
 
             Ok(())
         })
@@ -105,6 +125,93 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running yinjie desktop");
+}
+
+fn setup_system_tray(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    let tray_menu = MenuBuilder::new(app)
+        .text(TRAY_MENU_SHOW_ID, "打开隐界")
+        .separator()
+        .text(TRAY_MENU_QUIT_ID, "退出")
+        .build()?;
+    let mut tray_builder = TrayIconBuilder::with_id(TRAY_ICON_ID)
+        .menu(&tray_menu)
+        .show_menu_on_left_click(false)
+        .tooltip("隐界");
+
+    if let Some(icon) = app.default_window_icon().cloned() {
+        tray_builder = tray_builder.icon(icon);
+    }
+
+    tray_builder
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            TRAY_MENU_SHOW_ID => {
+                let _ = show_main_window(app);
+            }
+            TRAY_MENU_QUIT_ID => {
+                if let Some(state) = app.try_state::<DesktopWindowState>() {
+                    state.allow_exit.store(true, Ordering::SeqCst);
+                }
+                app.exit(0);
+            }
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            }
+            | TrayIconEvent::DoubleClick {
+                button: MouseButton::Left,
+                ..
+            } => {
+                let _ = show_main_window(&tray.app_handle());
+            }
+            _ => {}
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
+fn handle_window_event(window: &Window, event: &WindowEvent) {
+    if window.label() != MAIN_WINDOW_LABEL {
+        return;
+    }
+
+    if let WindowEvent::CloseRequested { api, .. } = event {
+        let state = window.state::<DesktopWindowState>();
+        if state.allow_exit.load(Ordering::SeqCst) {
+            return;
+        }
+
+        api.prevent_close();
+        let _ = hide_main_window(&window.app_handle());
+    }
+}
+
+fn hide_main_window(app: &AppHandle) -> tauri::Result<()> {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        window.set_skip_taskbar(true)?;
+        window.hide()?;
+    }
+
+    Ok(())
+}
+
+fn show_main_window(app: &AppHandle) -> tauri::Result<()> {
+    if let Some(state) = app.try_state::<DesktopWindowState>() {
+        state.allow_exit.store(false, Ordering::SeqCst);
+    }
+
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+        window.set_skip_taskbar(false)?;
+        let _ = window.unminimize();
+        window.show()?;
+        window.set_focus()?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
