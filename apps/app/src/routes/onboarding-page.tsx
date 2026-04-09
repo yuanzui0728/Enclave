@@ -73,7 +73,7 @@ export function OnboardingPage() {
   return (
     <AppPage className="flex min-h-full flex-col items-center justify-center py-8 text-center">
       <AppSection className="w-full max-w-xl bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,246,232,0.94)_44%,rgba(240,251,245,0.96))] px-6 py-8">
-        <div className="inline-flex rounded-full border border-[rgba(255,179,71,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
+        <div className="inline-flex rounded-full border border-[rgba(255,179,71,0.24)] bg-white/88 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
           世界主人
         </div>
         <h1 className="mt-6 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
@@ -84,21 +84,21 @@ export function OnboardingPage() {
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[22px] bg-white/82 p-4 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">更自然</div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">对话会直接围绕你的身份展开。</div>
           </div>
-          <div className="rounded-[22px] bg-white/82 p-4 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">更亲近</div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">世界中的角色会更准确地回应你。</div>
           </div>
-          <div className="rounded-[22px] bg-white/82 p-4 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">更有归属感</div>
             <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">你的世界，从这一步开始真正属于你。</div>
           </div>
         </div>
 
-        <div className="mt-8 rounded-[30px] border border-[color:var(--border-faint)] bg-white/84 p-5 text-left shadow-[var(--shadow-section)]">
+        <div className="mt-8 rounded-[30px] border border-[color:var(--border-faint)] bg-white/92 p-5 text-left shadow-[var(--shadow-section)]">
           <TextField
             value={name}
             onChange={(event) => setName(event.target.value)}

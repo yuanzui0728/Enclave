@@ -194,8 +194,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
       <div
         className={cn(
           nativeDesktopShell
-            ? "relative flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#fbfff8,#f4faf7)]"
-            : "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fbfff8,#f4faf7)] shadow-[var(--shadow-shell)]",
+            ? "relative flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#f8fcf9,#edf5f1)]"
+            : "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-subtle)] bg-[linear-gradient(180deg,#f8fcf9,#edf5f1)] shadow-[var(--shadow-shell)]",
           shellInsetClass,
         )}
       >
@@ -205,7 +205,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[rgba(74,222,128,0.1)] blur-3xl" />
         </div>
 
-        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-white/80 bg-white/46 px-5 backdrop-blur-xl">
+        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-5 backdrop-blur-2xl">
           <div
             className={cn(
               "flex min-w-0 flex-1 select-none items-center gap-3",
@@ -221,7 +221,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               void desktopWindow.toggleMaximize();
             }}
           >
-            <div className="flex h-10 items-center gap-3 rounded-full border border-white/80 bg-white/82 px-3 shadow-[var(--shadow-soft)]">
+            <div className="flex h-10 items-center gap-3 rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-3 shadow-[var(--shadow-soft)]">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-gradient)] text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(255,138,61,0.24)]">
                 YJ
               </div>
@@ -231,7 +231,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
             </div>
 
-            <div className="hidden min-w-0 items-center gap-2 rounded-full border border-white/80 bg-white/68 px-3 py-2 text-xs text-[color:var(--text-muted)] xl:flex">
+            <div className="hidden min-w-0 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.84)] px-3 py-2 text-xs text-[color:var(--text-secondary)] xl:flex">
               <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.9)]" />
               <span className="truncate">远程世界连接顺畅</span>
             </div>
@@ -279,7 +279,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
             </div>
           ) : (
             <div className="hidden items-center gap-2 xl:flex">
-              <div className="rounded-full border border-white/80 bg-white/68 px-3 py-2 text-xs text-[color:var(--text-muted)]">
+              <div className="rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.84)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
                 浏览器桌面布局
               </div>
             </div>
@@ -287,7 +287,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1 gap-4 p-4 pt-3">
-          <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-white/80 bg-white/74 p-3 shadow-[var(--shadow-section)] backdrop-blur-xl lg:flex lg:flex-col">
+          <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] p-3 shadow-[var(--shadow-section)] backdrop-blur-2xl lg:flex lg:flex-col">
             <nav className="flex flex-1 flex-col gap-2">
               {navItems.map(({ to, label, icon: Icon, shortLabel }) => {
                 const active = isActive(pathname, to);
@@ -300,7 +300,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       "group flex flex-col items-center gap-2 rounded-[22px] px-3 py-3 text-[11px] transition-[background-color,color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
                         ? "bg-white/92 text-[color:var(--brand-primary)] shadow-[var(--shadow-card)]"
-                        : "text-[color:var(--text-muted)] hover:bg-white/72 hover:text-[color:var(--text-primary)]",
+                        : "text-[color:var(--text-secondary)] hover:bg-white/88 hover:text-[color:var(--text-primary)]",
                     )}
                   >
                     <div
@@ -308,7 +308,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                         "flex h-11 w-11 items-center justify-center rounded-[18px] border transition-colors",
                         active
                           ? "border-[color:var(--border-brand)] bg-[rgba(255,138,61,0.12)]"
-                          : "border-transparent bg-[rgba(255,255,255,0.62)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white/82",
+                          : "border-transparent bg-[rgba(255,255,255,0.82)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white",
                       )}
                     >
                       <Icon size={18} />
@@ -321,7 +321,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
             </nav>
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-hidden rounded-[32px] border border-white/80 bg-white/68 shadow-[var(--shadow-section)] backdrop-blur-xl">
+          <main className="min-w-0 flex-1 overflow-hidden rounded-[32px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] shadow-[var(--shadow-section)] backdrop-blur-2xl">
             {children}
           </main>
         </div>
