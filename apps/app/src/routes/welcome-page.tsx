@@ -24,13 +24,35 @@ function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, "");
 }
 
+function resolveBrowserBaseUrl() {
+  if (typeof window !== "undefined" && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+    return window.location.origin;
+  }
+
+  return undefined;
+}
+
+function isLoopbackBaseUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "0.0.0.0", "10.0.2.2"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function resolveDefaultLocalApiBaseUrl(configuredApiBaseUrl?: string) {
+  const browserBaseUrl = resolveBrowserBaseUrl();
   if (configuredApiBaseUrl) {
+    if (browserBaseUrl && isLoopbackBaseUrl(configuredApiBaseUrl) && !isLoopbackBaseUrl(browserBaseUrl)) {
+      return browserBaseUrl;
+    }
+
     return configuredApiBaseUrl;
   }
 
-  if (typeof window !== "undefined" && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
-    return window.location.origin;
+  if (browserBaseUrl) {
+    return browserBaseUrl;
   }
 
   return DEFAULT_CORE_API_BASE_URL;
