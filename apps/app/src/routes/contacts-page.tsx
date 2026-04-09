@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, UserPlus, Users } from "lucide-react";
@@ -38,9 +38,13 @@ export function ContactsPage() {
   const pendingCharacterId = startChatMutation.isPending ? startChatMutation.variables : null;
   const visibleCharacters = charactersQuery.data ?? [];
 
-  useEffect(() => {
+  const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
-  }, [baseUrl]);
+  });
+
+  useEffect(() => {
+    resetStartChatMutation();
+  }, [baseUrl, resetStartChatMutation]);
 
   if (isDesktopLayout) {
     return (

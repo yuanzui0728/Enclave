@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -103,10 +103,14 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
     return conversations[0];
   }, [conversations, selectedConversationId]);
 
-  useEffect(() => {
+  const resetStartChatState = useEffectEvent(() => {
     setNotice(null);
     startChatMutation.reset();
-  }, [baseUrl, ownerId]);
+  });
+
+  useEffect(() => {
+    resetStartChatState();
+  }, [baseUrl, ownerId, resetStartChatState]);
 
   return (
     <div className="flex h-full min-h-0">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -145,9 +145,13 @@ export function CharacterEditorPage() {
     },
   });
 
-  useEffect(() => {
+  const resetSaveMutation = useEffectEvent(() => {
     saveMutation.reset();
-  }, [baseUrl, characterId]);
+  });
+
+  useEffect(() => {
+    resetSaveMutation();
+  }, [baseUrl, characterId, resetSaveMutation]);
 
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
   const canSave = Boolean(draft.name?.trim() && draft.relationship?.trim());

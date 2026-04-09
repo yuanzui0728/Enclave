@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   compareEvalRuns,
@@ -38,6 +38,7 @@ import {
 
 const EVALS_STATE_KEY = "yinjie-admin-evals-state";
 const EVALS_PRESETS_KEY = "yinjie-admin-evals-presets";
+const EMPTY_LIST: never[] = [];
 
 type EvalsViewState = {
   compactView: boolean;
@@ -157,7 +158,7 @@ export function EvalsPage() {
     queryKey: ["admin-eval-datasets", baseUrl],
     queryFn: () => listEvalDatasets(baseUrl),
   });
-  const datasetList = datasetsQuery.data ?? [];
+  const datasetList = useMemo(() => datasetsQuery.data ?? EMPTY_LIST, [datasetsQuery.data]);
 
   const strategiesQuery = useQuery({
     queryKey: ["admin-eval-strategies", baseUrl],
@@ -178,7 +179,10 @@ export function EvalsPage() {
     queryKey: ["admin-eval-experiment-reports", baseUrl],
     queryFn: () => listEvalExperimentReports(baseUrl),
   });
-  const experimentReports = experimentReportsQuery.data ?? [];
+  const experimentReports = useMemo(
+    () => experimentReportsQuery.data ?? EMPTY_LIST,
+    [experimentReportsQuery.data],
+  );
   const selectedReport = experimentReports.find((report) => report.id === selectedReportId) ?? experimentReports[0] ?? null;
 
   const runsQuery = useQuery({
@@ -205,7 +209,7 @@ export function EvalsPage() {
         baseUrl,
       ),
   });
-  const allRuns = runsQuery.data ?? [];
+  const allRuns = useMemo(() => runsQuery.data ?? EMPTY_LIST, [runsQuery.data]);
   const recentRuns = allRuns.slice(0, 5);
 
   const comparisonsQuery = useQuery({
@@ -388,13 +392,17 @@ export function EvalsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
-  useEffect(() => {
+  const resetEvalMutations = useEffectEvent(() => {
     setSuccessNotice("");
     runDatasetMutation.reset();
     runPairwiseMutation.reset();
     runExperimentPresetMutation.reset();
     updateReportDecisionMutation.reset();
-  }, [baseUrl]);
+  });
+
+  useEffect(() => {
+    resetEvalMutations();
+  }, [baseUrl, resetEvalMutations]);
 
   const selectedRunTraceIds = new Set((runDetailQuery.data?.caseResults ?? []).flatMap((caseResult) => caseResult.traceIds));
   const compareTraceIds = new Set((compareQuery.data?.caseComparisons ?? []).flatMap((comparison) => [
@@ -429,7 +437,7 @@ export function EvalsPage() {
       traceFailureTagMap.set(traceId, failureTags);
     }
   }
-  const tracePool = tracesQuery.data ?? [];
+  const tracePool = useMemo(() => tracesQuery.data ?? EMPTY_LIST, [tracesQuery.data]);
   const scopedTraces =
     traceScopeFilter === "run"
       ? tracePool.filter((trace) => selectedRunTraceIds.has(trace.id))

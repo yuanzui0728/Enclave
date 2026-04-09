@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -34,11 +34,15 @@ export function CreateGroupPage() {
     },
   });
 
-  useEffect(() => {
+  const resetCreateGroupState = useEffectEvent(() => {
     setName("");
     setSelectedIds([]);
     createMutation.reset();
-  }, [baseUrl]);
+  });
+
+  useEffect(() => {
+    resetCreateGroupState();
+  }, [baseUrl, resetCreateGroupState]);
 
   return (
     <AppPage>

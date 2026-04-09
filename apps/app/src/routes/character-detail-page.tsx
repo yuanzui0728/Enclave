@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircleMore } from "lucide-react";
@@ -38,9 +38,13 @@ export function CharacterDetailPage() {
     },
   });
 
-  useEffect(() => {
+  const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
-  }, [baseUrl, characterId]);
+  });
+
+  useEffect(() => {
+    resetStartChatMutation();
+  }, [baseUrl, characterId, resetStartChatMutation]);
 
   return (
     <AppPage>

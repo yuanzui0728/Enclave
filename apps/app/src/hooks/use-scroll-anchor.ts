@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef } from "react";
 
-export function useScrollAnchor<T extends HTMLElement>(deps: readonly unknown[]) {
+export function useScrollAnchor<T extends HTMLElement>(trigger: unknown) {
   const ref = useRef<T | null>(null);
   const scrollToBottom = useEffectEvent(() => {
     const element = ref.current;
@@ -13,7 +13,7 @@ export function useScrollAnchor<T extends HTMLElement>(deps: readonly unknown[])
 
   useEffect(() => {
     scrollToBottom();
-  }, [scrollToBottom, ...deps]);
+  }, [scrollToBottom, trigger]);
 
   return ref;
 }

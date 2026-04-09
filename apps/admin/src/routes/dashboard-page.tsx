@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../lib/admin-api";
 import { Link } from "@tanstack/react-router";
@@ -223,14 +223,18 @@ export function DashboardPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
-  useEffect(() => {
+  const resetDashboardMutations = useEffectEvent(() => {
     setSuccessNotice("");
     previewMutation.reset();
     exportDiagnosticsMutation.reset();
     createBackupMutation.reset();
     restoreBackupMutation.reset();
     schedulerRunMutation.reset();
-  }, [baseUrl]);
+  });
+
+  useEffect(() => {
+    resetDashboardMutations();
+  }, [baseUrl, resetDashboardMutations]);
 
   return (
     <div className="space-y-6">

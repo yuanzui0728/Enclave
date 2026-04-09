@@ -35,7 +35,7 @@ export function GroupChatPage() {
     queryFn: () => getGroupMessages(groupId),
     refetchInterval: 3_000,
   });
-  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>([groupId, messagesQuery.data?.length ?? 0]);
+  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>(`${groupId}:${messagesQuery.data?.length ?? 0}`);
 
   useEffect(() => {
     setText("");

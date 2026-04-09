@@ -28,7 +28,9 @@ export function useConversationThread(conversationId: string) {
   const [conversationTitle, setConversationTitle] = useState("Conversation");
   const [conversationType, setConversationType] = useState<"direct" | "group">("direct");
   const [participants, setParticipants] = useState<string[]>([]);
-  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>([messages.length, typingCharacterId, conversationId]);
+  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>(
+    `${conversationId}:${messages.length}:${typingCharacterId ?? ""}`,
+  );
 
   const messagesQuery = useQuery({
     queryKey: ["app-conversation-messages", baseUrl, conversationId],
