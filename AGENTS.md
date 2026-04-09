@@ -39,6 +39,10 @@
 - `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
 - `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态
 - `profile/settings`：我的二级设置页，集中承载资料编辑与专属 API Key 配置
+- `chat/$conversationId/details`：单聊右上角三个点详情页，对齐微信式聊天信息页
+- `chat/$conversationId/search`：单聊聊天记录检索页，由聊天信息页进入
+- `group/$groupId/details`：群聊右上角三个点详情页，对齐微信式群聊信息页
+- `group/$groupId/search`：群聊聊天记录检索页，由群聊信息页进入
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 

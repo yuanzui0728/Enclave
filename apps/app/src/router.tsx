@@ -63,6 +63,16 @@ const ChatRoomPage = lazy(async () => {
   return { default: mod.ChatRoomPage };
 });
 
+const ChatDetailsPage = lazy(async () => {
+  const mod = await import("./routes/chat-details-page");
+  return { default: mod.ChatDetailsPage };
+});
+
+const ChatMessageSearchPage = lazy(async () => {
+  const mod = await import("./routes/chat-message-search-page");
+  return { default: mod.ChatMessageSearchPage };
+});
+
 const CharacterDetailPage = lazy(async () => {
   const mod = await import("./routes/character-detail-page");
   return { default: mod.CharacterDetailPage };
@@ -76,6 +86,16 @@ const FriendRequestsPage = lazy(async () => {
 const GroupChatPage = lazy(async () => {
   const mod = await import("./routes/group-chat-page");
   return { default: mod.GroupChatPage };
+});
+
+const GroupChatDetailsPage = lazy(async () => {
+  const mod = await import("./routes/group-chat-details-page");
+  return { default: mod.GroupChatDetailsPage };
+});
+
+const GroupMessageSearchPage = lazy(async () => {
+  const mod = await import("./routes/group-message-search-page");
+  return { default: mod.GroupMessageSearchPage };
 });
 
 const CreateGroupPage = lazy(async () => {
@@ -180,6 +200,20 @@ const chatRoomRoute = createRoute({
   component: ChatRoomPage,
 });
 
+const chatDetailsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat/$conversationId/details",
+  beforeLoad: requireWorldReady,
+  component: ChatDetailsPage,
+});
+
+const chatMessageSearchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat/$conversationId/search",
+  beforeLoad: requireWorldReady,
+  component: ChatMessageSearchPage,
+});
+
 const characterDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/character/$characterId",
@@ -199,6 +233,20 @@ const groupChatRoute = createRoute({
   path: "/group/$groupId",
   beforeLoad: requireWorldReady,
   component: GroupChatPage,
+});
+
+const groupChatDetailsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/group/$groupId/details",
+  beforeLoad: requireWorldReady,
+  component: GroupChatDetailsPage,
+});
+
+const groupMessageSearchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/group/$groupId/search",
+  beforeLoad: requireWorldReady,
+  component: GroupMessageSearchPage,
 });
 
 const createGroupRoute = createRoute({
@@ -268,9 +316,13 @@ const routeTree = rootRoute.addChildren([
   setupRoute,
   tabsRoute.addChildren([chatListRoute, momentsRoute, discoverRoute, contactsRoute, profileRoute]),
   chatRoomRoute,
+  chatDetailsRoute,
+  chatMessageSearchRoute,
   characterDetailRoute,
   friendRequestsRoute,
   groupChatRoute,
+  groupChatDetailsRoute,
+  groupMessageSearchRoute,
   createGroupRoute,
   discoverMomentsRoute,
   discoverEncounterRoute,

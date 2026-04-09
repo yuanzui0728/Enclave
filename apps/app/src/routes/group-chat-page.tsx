@@ -142,6 +142,9 @@ export function GroupChatPage() {
             </div>
             <button
               type="button"
+              onClick={() => {
+                void navigate({ to: "/group/$groupId/details", params: { groupId } });
+              }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/65 bg-white/72 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
               aria-label="更多操作"
             >
