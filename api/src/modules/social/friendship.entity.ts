@@ -5,8 +5,8 @@ export class FriendshipEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  userId: string;
+  @Column({ name: 'userId' })
+  ownerId: string;
 
   @Column()
   characterId: string;

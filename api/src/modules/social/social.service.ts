@@ -30,27 +30,27 @@ export class SocialService {
   async getPendingRequests(): Promise<FriendRequestEntity[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     return this.friendRequestRepo.find({
-      where: { userId: owner.id, status: 'pending' },
+      where: { ownerId: owner.id, status: 'pending' },
       order: { createdAt: 'DESC' },
     });
   }
 
   async acceptRequest(requestId: string): Promise<FriendshipEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const req = await this.friendRequestRepo.findOneBy({ id: requestId, userId: owner.id });
+    const req = await this.friendRequestRepo.findOneBy({ id: requestId, ownerId: owner.id });
     if (!req) throw new Error('Request not found');
 
     req.status = 'accepted';
     await this.friendRequestRepo.save(req);
 
-    const existing = await this.friendshipRepo.findOneBy({ userId: owner.id, characterId: req.characterId });
+    const existing = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId: req.characterId });
     if (existing) {
       await this.narrativeService.ensureArc(req.characterId, req.characterName);
       return existing;
     }
 
     const friendship = this.friendshipRepo.create({
-      userId: owner.id,
+      ownerId: owner.id,
       characterId: req.characterId,
       intimacyLevel: 10,
     });
@@ -61,12 +61,12 @@ export class SocialService {
 
   async declineRequest(requestId: string): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    await this.friendRequestRepo.update({ id: requestId, userId: owner.id }, { status: 'declined' });
+    await this.friendRequestRepo.update({ id: requestId, ownerId: owner.id }, { status: 'declined' });
   }
 
   async getFriends(): Promise<{ friendship: FriendshipEntity; character: CharacterEntity | null }[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendships = await this.friendshipRepo.find({ where: { userId: owner.id } });
+    const friendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const result = await Promise.all(
       friendships.map(async (friendship) => ({
         friendship,
@@ -82,14 +82,14 @@ export class SocialService {
     const candidates = chars.filter((character) => character.triggerScenes?.includes(scene));
     if (candidates.length === 0) return null;
 
-    const existingFriendships = await this.friendshipRepo.find({ where: { userId: owner.id } });
+    const existingFriendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const existingIds = new Set(existingFriendships.map((friendship) => friendship.characterId));
     const available = candidates.filter((character) => !existingIds.has(character.id));
     if (available.length === 0) return null;
 
     const char = available[Math.floor(Math.random() * available.length)];
 
-    const existing = await this.friendRequestRepo.findOneBy({ userId: owner.id, characterId: char.id, status: 'pending' });
+    const existing = await this.friendRequestRepo.findOneBy({ ownerId: owner.id, characterId: char.id, status: 'pending' });
     if (existing) return null;
 
     let greeting = `Hi, I'm ${char.name}. We crossed paths at ${scene}. Want to connect?`;
@@ -109,7 +109,7 @@ export class SocialService {
     tomorrow.setHours(23, 59, 59, 999);
 
     const req = this.friendRequestRepo.create({
-      userId: owner.id,
+      ownerId: owner.id,
       characterId: char.id,
       characterName: char.name,
       characterAvatar: char.avatar,
@@ -124,7 +124,7 @@ export class SocialService {
   async shake(): Promise<{ character: CharacterEntity; greeting: string } | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const all = await this.characterRepo.find();
-    const existingFriendships = await this.friendshipRepo.find({ where: { userId: owner.id } });
+    const existingFriendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
     const existingIds = new Set(existingFriendships.map((friendship) => friendship.characterId));
     const available = all.filter((character) => !existingIds.has(character.id));
     if (available.length === 0) return null;
@@ -151,7 +151,7 @@ export class SocialService {
     const char = await this.characterRepo.findOneBy({ id: characterId });
     if (!char) throw new Error('Character not found');
 
-    const existing = await this.friendRequestRepo.findOneBy({ userId: owner.id, characterId, status: 'pending' });
+    const existing = await this.friendRequestRepo.findOneBy({ ownerId: owner.id, characterId, status: 'pending' });
     if (existing) return existing;
 
     const tomorrow = new Date();
@@ -159,7 +159,7 @@ export class SocialService {
     tomorrow.setHours(23, 59, 59, 999);
 
     const req = this.friendRequestRepo.create({
-      userId: owner.id,
+      ownerId: owner.id,
       characterId,
       characterName: char.name,
       characterAvatar: char.avatar,
@@ -173,7 +173,7 @@ export class SocialService {
 
   async updateIntimacy(characterId: string, delta: number): Promise<void> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const friendship = await this.friendshipRepo.findOneBy({ userId: owner.id, characterId });
+    const friendship = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
     if (!friendship) return;
     friendship.intimacyLevel = Math.min(100, Math.max(0, friendship.intimacyLevel + delta));
     friendship.lastInteractedAt = new Date();

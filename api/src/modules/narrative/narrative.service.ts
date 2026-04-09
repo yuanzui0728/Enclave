@@ -21,7 +21,7 @@ export class NarrativeService {
   async getForCurrentWorld(): Promise<NarrativeArcEntity[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     return this.narrativeRepo.find({
-      where: { userId: owner.id },
+      where: { ownerId: owner.id },
       order: { createdAt: 'DESC' },
     });
   }
@@ -32,7 +32,7 @@ export class NarrativeService {
   ): Promise<NarrativeArcEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const existing = await this.narrativeRepo.findOne({
-      where: { userId: owner.id, characterId, status: 'active' },
+      where: { ownerId: owner.id, characterId, status: 'active' },
       order: { createdAt: 'DESC' },
     });
 
@@ -41,7 +41,7 @@ export class NarrativeService {
     }
 
     const arc = this.narrativeRepo.create({
-      userId: owner.id,
+      ownerId: owner.id,
       characterId,
       title: `${characterName ?? characterId} relationship arc`,
       status: 'active',

@@ -61,9 +61,9 @@ export class WorldOwnerService {
     const removedOwnerIds = others.map((entry) => entry.id);
 
     await this.dataSource.transaction(async (manager) => {
-      await manager.getRepository(FriendshipEntity).delete({ userId: In(removedOwnerIds) });
-      await manager.getRepository(FriendRequestEntity).delete({ userId: In(removedOwnerIds) });
-      await manager.getRepository(NarrativeArcEntity).delete({ userId: In(removedOwnerIds) });
+      await manager.getRepository(FriendshipEntity).delete({ ownerId: In(removedOwnerIds) });
+      await manager.getRepository(FriendRequestEntity).delete({ ownerId: In(removedOwnerIds) });
+      await manager.getRepository(NarrativeArcEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(UserFeedInteractionEntity).delete({ userId: In(removedOwnerIds) });
 
       await manager

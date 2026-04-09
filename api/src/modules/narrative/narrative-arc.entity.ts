@@ -5,8 +5,8 @@ export class NarrativeArcEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  userId: string;
+  @Column({ name: 'userId' })
+  ownerId: string;
 
   @Column()
   characterId: string;
