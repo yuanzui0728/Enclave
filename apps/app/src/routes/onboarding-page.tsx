@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { getWorldOwner, updateWorldOwner } from "@yinjie/contracts";
 import { AppPage, AppSection, Button, InlineNotice, TextField } from "@yinjie/ui";
+import { describeRequestError } from "../lib/request-error";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -63,7 +64,7 @@ export function OnboardingPage() {
       hydrateOwner(owner);
       void navigate({ to: "/tabs/chat", replace: true });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "进入失败，请稍后重试");
+      setError(describeRequestError(caught, "进入失败，请稍后重试。"));
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
+import { describeRequestError } from "../../lib/request-error";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -79,17 +80,15 @@ export function DesktopRuntimeGuard() {
   const desktopDescription = diagnostics?.bundledCoreApiExists === false
     ? "当前桌面包里没有找到内置 Core API，宿主端还没法完整启动。"
     : diagnostics?.coreApiPortOccupied
-      ? "本地端口似乎已被占用，桌面壳正在尝试重新接管入口。"
+      ? "本地端口似乎已经被占用，桌面壳正在尝试重新接管入口。"
       : diagnostics?.lastCoreApiError?.trim()
         ? diagnostics.lastCoreApiError
-        : "我们正在为你整理入口。稍等片刻，再试一次就好。";
+        : "我们正在为你整理入口，稍等片刻后再试一次就好。";
   const description = hasDesktopRuntimeControl
     ? desktopDescription
     : needsRemoteConfiguration
       ? "当前设备还没有配置远程世界地址，请先回到 setup 连接你的实例。"
-      : remoteStatusQuery.error instanceof Error
-        ? remoteStatusQuery.error.message
-        : "连接暂时不可用，请稍后再试。";
+      : describeRequestError(remoteStatusQuery.error, "连接暂时不可用，请稍后再试。");
   const helperText = hasDesktopRuntimeControl
     ? diagnostics?.summary || "隐界会继续在后台恢复，你只需要稍候片刻。"
     : "如果长时间没有恢复，稍后重新打开应用即可。";
