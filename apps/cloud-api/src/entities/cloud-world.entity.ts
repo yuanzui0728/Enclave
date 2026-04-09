@@ -15,13 +15,13 @@ export class CloudWorldEntity {
   @Column()
   status: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   apiBaseUrl: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   adminUrl: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   note: string | null;
 
   @CreateDateColumn()

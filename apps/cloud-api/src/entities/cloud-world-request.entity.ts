@@ -15,7 +15,7 @@ export class CloudWorldRequestEntity {
   @Column()
   status: string;
 
-  @Column({ nullable: true })
+  @Column({ type: "text", nullable: true })
   note: string | null;
 
   @Column({ default: "app" })
