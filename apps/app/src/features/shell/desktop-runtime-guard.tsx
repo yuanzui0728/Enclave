@@ -14,6 +14,10 @@ export function DesktopRuntimeGuard() {
   });
   const runtimeConfig = useAppRuntimeConfig();
   const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
+  if (runtimeContext.channel === "mobile") {
+    return null;
+  }
+
   const hasDesktopRuntimeControl = runtimeContext.hostRole === "host";
   const needsRemoteConfiguration = runtimeContext.deploymentMode === "remote-connected" && requiresRemoteServiceConfiguration();
   const onSetupRoute = pathname === "/setup";
