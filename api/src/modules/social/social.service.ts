@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { FriendshipEntity } from './friendship.entity';
 import { FriendRequestEntity } from './friend-request.entity';
 import { AIRelationshipEntity } from './ai-relationship.entity';
@@ -68,7 +68,9 @@ export class SocialService {
   async getFriends(): Promise<{ friendship: FriendshipEntity; character: CharacterEntity | null }[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     await this.ensureDefaultFriendships(owner.id);
-    const friendships = await this.friendshipRepo.find({ where: { ownerId: owner.id } });
+    const friendships = await this.friendshipRepo.find({
+      where: { ownerId: owner.id, status: Not('blocked') },
+    });
     const result = await Promise.all(
       friendships.map(async (friendship) => ({
         friendship,
@@ -76,6 +78,26 @@ export class SocialService {
       })),
     );
     return result.filter((entry) => entry.character !== null);
+  }
+
+  async getBlockedCharacters(): Promise<Array<{
+    id: string;
+    characterId: string;
+    reason?: string;
+    createdAt: Date;
+  }>> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const blocked = await this.friendshipRepo.find({
+      where: { ownerId: owner.id, status: 'blocked' },
+      order: { createdAt: 'DESC' },
+    });
+
+    return blocked.map((item) => ({
+      id: item.id,
+      characterId: item.characterId,
+      reason: undefined,
+      createdAt: item.createdAt,
+    }));
   }
 
   async ensureDefaultFriendships(ownerId?: string): Promise<void> {
@@ -196,6 +218,59 @@ export class SocialService {
       expiresAt: tomorrow,
     });
     return this.friendRequestRepo.save(req);
+  }
+
+  async blockCharacter(characterId: string, _reason?: string): Promise<{
+    id: string;
+    characterId: string;
+    reason?: string;
+    createdAt: Date;
+  }> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const existing = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
+
+    if (existing) {
+      existing.status = 'blocked';
+      const saved = await this.friendshipRepo.save(existing);
+      return {
+        id: saved.id,
+        characterId: saved.characterId,
+        reason: undefined,
+        createdAt: saved.createdAt,
+      };
+    }
+
+    const saved = await this.friendshipRepo.save(
+      this.friendshipRepo.create({
+        ownerId: owner.id,
+        characterId,
+        intimacyLevel: 0,
+        status: 'blocked',
+      }),
+    );
+
+    return {
+      id: saved.id,
+      characterId: saved.characterId,
+      reason: undefined,
+      createdAt: saved.createdAt,
+    };
+  }
+
+  async unblockCharacter(characterId: string): Promise<void> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const existing = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
+    if (!existing || existing.status !== 'blocked') {
+      return;
+    }
+
+    if ((DEFAULT_CHARACTER_IDS as readonly string[]).includes(characterId)) {
+      existing.status = 'friend';
+      await this.friendshipRepo.save(existing);
+      return;
+    }
+
+    await this.friendshipRepo.remove(existing);
   }
 
   async updateIntimacy(characterId: string, delta: number): Promise<void> {

@@ -136,6 +136,10 @@
 
 ## Single-world cleanup notes (2026-04-09)
 - `GET /api/moments` no longer accepts `authorId`; it always returns the current world's feed.
+- 社交屏蔽路由已提供：
+  - `GET /api/social/blocks`
+  - `POST /api/social/block`
+  - `POST /api/social/unblock`
 - `packages/contracts/src/evals.ts` now uses `ownerId` for trace owner semantics.
 - `ConversationEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.
