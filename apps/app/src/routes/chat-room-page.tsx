@@ -14,7 +14,7 @@ export function ChatRoomPage() {
   }
 
   return (
-    <AppPage className="px-0 pb-0">
+    <AppPage className="bg-[#e5ddd5] px-0 pb-0">
       <ConversationThreadPanel
         conversationId={conversationId}
         onBack={() => {
