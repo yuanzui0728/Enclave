@@ -119,10 +119,10 @@ function MobileChatListPage() {
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
-              className="rounded-full text-white/78"
+              className="h-8 w-8 rounded-full border border-white/10 bg-white/10 text-white/78 shadow-[0_6px_16px_rgba(0,0,0,0.16)] backdrop-blur-sm"
               aria-label="打开快捷菜单"
             >
-              <Plus size={18} />
+              <Plus size={16} />
             </Button>
 
             {isQuickMenuOpen ? (
