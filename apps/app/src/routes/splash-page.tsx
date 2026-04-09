@@ -16,7 +16,7 @@ export function SplashPage() {
     const timer = window.setTimeout(() => {
       const runtimeContext = resolveAppRuntimeContext(runtimeConfig.appPlatform);
       if (runtimeContext.hostRole === "host" || requiresRemoteServiceConfiguration()) {
-        void navigate({ to: "/setup", replace: true });
+        void navigate({ to: "/welcome", replace: true });
         return;
       }
 
@@ -24,12 +24,12 @@ export function SplashPage() {
         .then((owner) => {
           hydrateOwner(owner);
           void navigate({
-            to: owner.onboardingCompleted ? "/tabs/chat" : "/onboarding",
+            to: owner.onboardingCompleted ? "/tabs/chat" : "/welcome",
             replace: true,
           });
         })
         .catch(() => {
-          void navigate({ to: "/setup", replace: true });
+          void navigate({ to: "/welcome", replace: true });
         });
     }, 900);
 

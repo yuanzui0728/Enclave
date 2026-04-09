@@ -18,7 +18,7 @@ export function DesktopRuntimeGuard() {
   const isMobileRuntime = runtimeContext.channel === "mobile";
   const hasDesktopRuntimeControl = runtimeContext.hostRole === "host";
   const needsRemoteConfiguration = runtimeContext.deploymentMode === "remote-connected" && requiresRemoteServiceConfiguration();
-  const onSetupRoute = pathname === "/setup";
+  const onEntryRoute = pathname === "/setup" || pathname === "/onboarding" || pathname === "/welcome";
   const attemptedAutostartRef = useRef(false);
   const {
     desktopAvailable,
@@ -61,7 +61,7 @@ export function DesktopRuntimeGuard() {
     return null;
   }
 
-  if (!hasDesktopRuntimeControl && onSetupRoute && runtimeContext.capabilities.canConfigureRemoteService) {
+  if (!hasDesktopRuntimeControl && onEntryRoute && runtimeContext.capabilities.canConfigureRemoteService) {
     return null;
   }
 
@@ -106,7 +106,7 @@ export function DesktopRuntimeGuard() {
     }
 
     if (needsRemoteConfiguration) {
-      void navigate({ to: "/setup", replace: true });
+      void navigate({ to: "/welcome", replace: true });
       return;
     }
 

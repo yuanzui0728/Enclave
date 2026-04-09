@@ -8,14 +8,9 @@ const SplashPage = lazy(async () => {
   return { default: mod.SplashPage };
 });
 
-const OnboardingPage = lazy(async () => {
-  const mod = await import("./routes/onboarding-page");
-  return { default: mod.OnboardingPage };
-});
-
-const SetupPage = lazy(async () => {
-  const mod = await import("./routes/setup-page");
-  return { default: mod.SetupPage };
+const WelcomePage = lazy(async () => {
+  const mod = await import("./routes/welcome-page");
+  return { default: mod.WelcomePage };
 });
 
 const ChatListPage = lazy(async () => {
@@ -110,7 +105,7 @@ const rootRoute = createRootRoute({
 function requireWorldReady() {
   const state = useWorldOwnerStore.getState();
   if (!state.onboardingCompleted) {
-    throw redirect({ to: "/onboarding" });
+    throw redirect({ to: "/welcome" });
   }
 }
 
@@ -120,16 +115,26 @@ const indexRoute = createRoute({
   component: SplashPage,
 });
 
+const welcomeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/welcome",
+  component: WelcomePage,
+});
+
 const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/onboarding",
-  component: OnboardingPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/welcome", replace: true });
+  },
 });
 
 const setupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/setup",
-  component: SetupPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/welcome", replace: true });
+  },
 });
 
 const tabsRoute = createRoute({
@@ -258,6 +263,7 @@ const legalCommunityRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  welcomeRoute,
   onboardingRoute,
   setupRoute,
   tabsRoute.addChildren([chatListRoute, momentsRoute, discoverRoute, contactsRoute, profileRoute]),
