@@ -193,6 +193,27 @@ export class ChatService {
     return this._entityToMessage(messageEntity);
   }
 
+  async saveSystemMessage(conversationId: string, text: string): Promise<Message> {
+    const entity = await this.convRepo.findOneBy({ id: conversationId });
+    if (!entity) {
+      throw new NotFoundException(`Conversation ${conversationId} not found`);
+    }
+
+    const messageEntity = this.msgRepo.create({
+      id: `msg_${Date.now()}_sys`,
+      conversationId,
+      senderType: 'system',
+      senderId: 'system',
+      senderName: 'system',
+      type: 'system',
+      text,
+    });
+
+    await this.msgRepo.save(messageEntity);
+    await this.touchConversationActivity(entity, messageEntity.createdAt ?? new Date());
+    return this._entityToMessage(messageEntity);
+  }
+
   async sendMessage(convId: string, text: string): Promise<Message[]> {
     const entity = await this.convRepo.findOneBy({ id: convId });
     if (!entity) {
