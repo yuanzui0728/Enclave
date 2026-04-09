@@ -5,6 +5,7 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
+  TextField,
   TextAreaField,
   cn,
 } from "@yinjie/ui";
@@ -13,11 +14,13 @@ import {
   Bot,
   PenSquare,
   RefreshCcw,
+  Search,
   UserRound,
   X,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { parseTimestamp } from "../../../lib/format";
 import { DesktopMomentDetailPanel } from "./desktop-moment-detail-panel";
 import { DesktopMomentRow } from "./desktop-moment-row";
 
@@ -81,8 +84,10 @@ export function DesktopMomentsWorkspace({
   onTextChange,
 }: DesktopMomentsWorkspaceProps) {
   const [activeFilter, setActiveFilter] = useState<FeedFilter>("all");
+  const [searchText, setSearchText] = useState("");
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
+  const hasAutoSelectedMomentRef = useRef(false);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const authorSummaries = useMemo(() => {
@@ -121,12 +126,16 @@ export function DesktopMomentsWorkspace({
         authorId,
         ...summary,
       }))
-      .sort((left, right) =>
-        right.latestPostedAt.localeCompare(left.latestPostedAt),
+      .sort(
+        (left, right) =>
+          (parseTimestamp(right.latestPostedAt) ?? 0) -
+          (parseTimestamp(left.latestPostedAt) ?? 0),
       );
   }, [moments]);
 
   const filteredMoments = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+
     return moments.filter((moment) => {
       if (activeFilter === "owner" && moment.authorType !== "user") {
         return false;
@@ -140,9 +149,74 @@ export function DesktopMomentsWorkspace({
         return false;
       }
 
-      return true;
+      if (!keyword) {
+        return true;
+      }
+
+      const commentText = moment.comments
+        .map((comment) => comment.text)
+        .join(" ")
+        .toLowerCase();
+
+      return (
+        moment.authorName.toLowerCase().includes(keyword) ||
+        moment.text.toLowerCase().includes(keyword) ||
+        commentText.includes(keyword)
+      );
     });
-  }, [activeFilter, moments, selectedAuthorId]);
+  }, [activeFilter, moments, searchText, selectedAuthorId]);
+
+  const selectedAuthorSummary =
+    authorSummaries.find((author) => author.authorId === selectedAuthorId) ??
+    null;
+
+  const filteredCountLabel = useMemo(() => {
+    if (selectedAuthorSummary) {
+      return `${selectedAuthorSummary.authorName} · ${filteredMoments.length} 条`;
+    }
+
+    if (searchText.trim()) {
+      return `搜索结果 ${filteredMoments.length} 条`;
+    }
+
+    return `当前展示 ${filteredMoments.length} 条`;
+  }, [filteredMoments.length, searchText, selectedAuthorSummary]);
+
+  useEffect(() => {
+    if (!filteredMoments.length) {
+      setSelectedMomentId(null);
+      return;
+    }
+
+    if (
+      selectedMomentId &&
+      filteredMoments.some((moment) => moment.id === selectedMomentId)
+    ) {
+      return;
+    }
+
+    if (!hasAutoSelectedMomentRef.current && !selectedMomentId) {
+      hasAutoSelectedMomentRef.current = true;
+      setSelectedMomentId(filteredMoments[0].id);
+      return;
+    }
+
+    if (selectedMomentId) {
+      setSelectedMomentId(filteredMoments[0].id);
+    }
+  }, [filteredMoments, selectedMomentId]);
+
+  useEffect(() => {
+    if (!selectedAuthorId) {
+      return;
+    }
+
+    if (
+      !authorSummaries.some((author) => author.authorId === selectedAuthorId)
+    ) {
+      setSelectedAuthorId(null);
+    }
+  }, [authorSummaries, selectedAuthorId]);
 
   const selectedMoment = useMemo(
     () =>
@@ -160,15 +234,11 @@ export function DesktopMomentsWorkspace({
     (total, moment) => total + moment.commentCount,
     0,
   );
-  const selectedAuthorSummary =
-    authorSummaries.find((author) => author.authorId === selectedAuthorId) ??
-    null;
 
-  useEffect(() => {
-    if (!filteredMoments.some((moment) => moment.id === selectedMomentId)) {
-      setSelectedMomentId(null);
-    }
-  }, [filteredMoments, selectedMomentId]);
+  function focusAuthor(authorId: string) {
+    setActiveFilter("all");
+    setSelectedAuthorId(authorId);
+  }
 
   return (
     <div className="relative flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,249,241,0.96))]">
@@ -246,6 +316,24 @@ export function DesktopMomentsWorkspace({
               ) : null}
             </div>
 
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <label className="relative block min-w-[240px] flex-1 max-w-[420px]">
+                <Search
+                  size={15}
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
+                />
+                <TextField
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="搜索动态正文、作者或评论"
+                  className="rounded-full border-[rgba(15,23,42,0.08)] bg-white/86 pl-11 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+                />
+              </label>
+              <div className="text-[12px] text-[color:var(--text-muted)]">
+                {filteredCountLabel}
+              </div>
+            </div>
+
             {successNotice ? (
               <div className="mt-4">
                 <InlineNotice tone="success">{successNotice}</InlineNotice>
@@ -294,7 +382,7 @@ export function DesktopMomentsWorkspace({
                     onLike={() => onLike(moment.id)}
                     onOpenDetail={() => setSelectedMomentId(moment.id)}
                     onSelectAuthor={() => {
-                      setSelectedAuthorId(moment.authorId);
+                      focusAuthor(moment.authorId);
                       setSelectedMomentId(moment.id);
                     }}
                   />
@@ -338,7 +426,7 @@ export function DesktopMomentsWorkspace({
             }
             onCommentSubmit={() => onCommentSubmit(selectedMoment.id)}
             onLike={() => onLike(selectedMoment.id)}
-            onSelectAuthor={() => setSelectedAuthorId(selectedMoment.authorId)}
+            onSelectAuthor={() => focusAuthor(selectedMoment.authorId)}
           />
         ) : (
           <div className="flex h-full min-h-0 flex-col">
@@ -413,7 +501,7 @@ export function DesktopMomentsWorkspace({
                     <button
                       key={author.authorId}
                       type="button"
-                      onClick={() => setSelectedAuthorId(author.authorId)}
+                      onClick={() => focusAuthor(author.authorId)}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-[border-color,background-color]",
                         selectedAuthorId === author.authorId
@@ -505,6 +593,10 @@ export function DesktopMomentsWorkspace({
                     <ErrorBlock message={composeErrorMessage} />
                   </div>
                 ) : null}
+
+                <div className="mt-4 text-[12px] text-[color:var(--text-muted)]">
+                  草稿会自动保存在当前浏览器，直到你发布或清空内容。
+                </div>
 
                 <div className="mt-5 flex items-center justify-between gap-3">
                   <div className="text-[12px] text-[color:var(--text-muted)]">

@@ -36,6 +36,7 @@ export function MomentsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerUsername = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
+  const draftStorageKey = `yinjie.desktop.moments.draft:${baseUrl}:${ownerId ?? "owner"}`;
   const [text, setText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
@@ -62,6 +63,9 @@ export function MomentsPage() {
         baseUrl,
       ),
     onSuccess: async () => {
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(draftStorageKey);
+      }
       setText("");
       setShowCompose(false);
       setSuccessNotice("朋友圈已发布。");
@@ -130,11 +134,43 @@ export function MomentsPage() {
       : null;
 
   useEffect(() => {
-    setText("");
     setCommentDrafts({});
     setSuccessNotice("");
     setShowCompose(false);
-  }, [baseUrl]);
+
+    if (typeof window === "undefined") {
+      setText("");
+      return;
+    }
+
+    if (isDesktopLayout) {
+      setText(window.localStorage.getItem(draftStorageKey) ?? "");
+      return;
+    }
+
+    setText("");
+  }, [baseUrl, draftStorageKey, isDesktopLayout]);
+
+  useEffect(() => {
+    if (!isDesktopLayout || pathname !== "/discover/moments") {
+      return;
+    }
+
+    void navigate({ to: "/tabs/moments", replace: true });
+  }, [isDesktopLayout, navigate, pathname]);
+
+  useEffect(() => {
+    if (!isDesktopLayout || typeof window === "undefined") {
+      return;
+    }
+
+    if (text.trim()) {
+      window.localStorage.setItem(draftStorageKey, text);
+      return;
+    }
+
+    window.localStorage.removeItem(draftStorageKey);
+  }, [draftStorageKey, isDesktopLayout, text]);
 
   useEffect(() => {
     if (!successNotice) {
