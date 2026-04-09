@@ -42,7 +42,7 @@ export function ChatMessageList({
               key={message.id}
               className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
                 isDesktop
-                  ? "border border-[rgba(15,23,42,0.06)] bg-[rgba(255,255,255,0.86)]"
+                  ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
                   : "border border-white/70 bg-white/82 shadow-[var(--shadow-soft)]"
               }`}
               tone="muted"
@@ -65,10 +65,10 @@ export function ChatMessageList({
                   className={`rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
                     isUser
                       ? isDesktop
-                        ? "bg-[rgba(149,236,105,0.98)] text-[color:#1f2329]"
+                        ? "bg-[var(--brand-gradient)] text-white shadow-[var(--shadow-soft)]"
                         : "bg-[linear-gradient(135deg,rgba(251,191,36,0.96),rgba(249,115,22,0.90))] text-white [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-[var(--shadow-soft)]"
                       : isDesktop
-                        ? "border border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+                        ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                         : "border border-[rgba(255,240,220,0.80)] bg-[rgba(255,253,248,0.92)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                   }`}
                 >

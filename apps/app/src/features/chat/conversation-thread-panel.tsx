@@ -48,14 +48,14 @@ export function ConversationThreadPanel({
     <div
       className={`flex h-full min-h-0 flex-col ${
         isDesktop
-          ? "bg-[linear-gradient(180deg,rgba(245,245,245,0.98),rgba(242,242,242,0.98))]"
+          ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
           : "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
       }`}
     >
       <header
         className={
           isDesktop
-            ? "flex items-center gap-3 border-b border-[rgba(15,23,42,0.06)] bg-[rgba(249,249,249,0.96)] px-5 py-4"
+            ? "flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.96))] px-5 py-4"
             : "border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,254,250,0.92),rgba(255,248,238,0.95))] px-3 pb-3 pt-3"
         }
       >
@@ -72,28 +72,28 @@ export function ConversationThreadPanel({
             <div className="hidden items-center gap-1.5 xl:flex">
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
                 aria-label="搜索"
               >
                 <Search size={16} />
               </button>
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
                 aria-label="语音通话"
               >
                 <Phone size={16} />
               </button>
               <button
                 type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
                 aria-label="视频通话"
               >
                 <Video size={16} />
               </button>
               <Link
                 to="/tabs/contacts"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
                 aria-label="通讯录"
               >
                 <Users size={16} />
@@ -102,7 +102,7 @@ export function ConversationThreadPanel({
                 type="button"
                 onClick={onToggleInspector}
                 className={`flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition ${
-                  inspectorOpen ? "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]" : "hover:bg-white"
+                  inspectorOpen ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]" : "hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
                 }`}
                 aria-label="更多"
               >
@@ -167,7 +167,7 @@ export function ConversationThreadPanel({
 
       <div
         ref={scrollAnchorRef}
-        className={isDesktop ? "flex-1 space-y-4 overflow-auto bg-[rgba(245,245,245,0.96)] px-8 py-6" : "flex-1 overflow-auto px-3 py-4"}
+        className={isDesktop ? "flex-1 space-y-4 overflow-auto bg-[linear-gradient(180deg,rgba(255,252,246,0.94),rgba(255,248,240,0.96))] px-8 py-6" : "flex-1 overflow-auto px-3 py-4"}
       >
         {messagesQuery.isLoading ? <LoadingBlock label="正在读取会话..." /> : null}
         {messagesQuery.isError && messagesQuery.error instanceof Error ? <ErrorBlock message={messagesQuery.error.message} /> : null}
