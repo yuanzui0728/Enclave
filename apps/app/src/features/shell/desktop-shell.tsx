@@ -174,7 +174,11 @@ export function DesktopShell({ children }: PropsWithChildren) {
     };
   }, [nativeDesktopShell]);
 
-  const shellInsetClass = nativeDesktopShell && isMaximized ? "rounded-none" : "m-2 rounded-[30px]";
+  const shellInsetClass = nativeDesktopShell
+    ? isMaximized
+      ? "rounded-none"
+      : "rounded-[30px]"
+    : "m-2 rounded-[30px]";
 
   const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !desktopWindow) {
@@ -193,7 +197,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
     <div className="h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
       <div
         className={cn(
-          "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-[var(--shadow-shell)]",
+          nativeDesktopShell
+            ? "relative flex h-screen flex-col overflow-hidden bg-[color:var(--bg-canvas)]"
+            : "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-[var(--shadow-shell)]",
           shellInsetClass,
         )}
       >
