@@ -14,8 +14,8 @@ export function ChatRoomPage() {
   }
 
   return (
-    <AppPage className="flex min-h-full flex-col space-y-0 bg-[#e5ddd5] px-0 py-0">
-      <div className="min-h-0 flex-1">
+    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[#e5ddd5] px-0 py-0">
+      <div className="h-full min-h-0 flex-1">
         <ConversationThreadPanel
           conversationId={conversationId}
           onBack={() => {

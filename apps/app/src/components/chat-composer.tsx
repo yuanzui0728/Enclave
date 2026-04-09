@@ -19,8 +19,8 @@ export function ChatComposer({ value, placeholder, pending = false, error, onCha
       className="border-t border-black/6 bg-[#f7f7f7] px-3 pt-2"
       style={{
         paddingBottom: keyboardOpen
-          ? `max(0.75rem, ${keyboardInset}px)`
-          : "max(0.75rem, var(--safe-area-inset-bottom))",
+          ? `${keyboardInset}px`
+          : "0.35rem",
       }}
     >
       <div className="flex items-center gap-2">

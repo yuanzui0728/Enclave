@@ -110,6 +110,7 @@ function MobileChatListPage() {
       <TabPageTopBar
         title="消息"
         className="space-y-3 border-b border-black/5 bg-[#ededed] px-4 pb-3 pt-2 text-[#111111]"
+        titleClassName="text-[#111111]"
         titleAlign="center"
         rightActions={
           <div className="relative">
@@ -118,10 +119,10 @@ function MobileChatListPage() {
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
-              className="h-8 w-8 rounded-full border-none bg-transparent text-[#1f1f1f] shadow-none hover:bg-black/5"
+              className="h-8 w-8 rounded-full border border-black/8 bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-[#f7f7f7]"
               aria-label="打开快捷菜单"
             >
-              <Plus size={16} />
+              <Plus size={16} strokeWidth={2.4} />
             </Button>
 
             {isQuickMenuOpen ? (
@@ -171,7 +172,7 @@ function MobileChatListPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="搜索"
-            className="h-9 w-full rounded-xl border border-black/5 bg-white pl-11 pr-4 text-center text-sm text-[#111111] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-center placeholder:text-[#8e8e93] focus:border-black/10 focus:bg-white"
+            className="h-9 w-full rounded-xl border border-black/5 bg-white pl-11 pr-4 text-center text-sm font-medium text-[#111111] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-center placeholder:font-normal placeholder:text-[#8e8e93] focus:border-black/10 focus:bg-white"
           />
         </label>
       </TabPageTopBar>

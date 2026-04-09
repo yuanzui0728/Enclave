@@ -6,6 +6,7 @@ type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
   leftActions?: ReactNode;
   rightActions?: ReactNode;
   titleAlign?: "left" | "center";
+  titleClassName?: string;
 };
 
 export function TabPageTopBar({
@@ -14,6 +15,7 @@ export function TabPageTopBar({
   leftActions,
   rightActions,
   titleAlign = "left",
+  titleClassName,
   children,
   ...props
 }: TabPageTopBarProps) {
@@ -30,6 +32,7 @@ export function TabPageTopBar({
         <h1
           className={cn(
             "truncate text-xl font-semibold tracking-[0.01em] text-current",
+            titleClassName,
             titleAlign === "center" ? "pointer-events-none absolute inset-x-12 text-center" : undefined,
           )}
         >

@@ -59,8 +59,8 @@ export function GroupChatPage() {
   const sendError = sendMutation.error instanceof Error ? sendMutation.error.message : null;
 
   return (
-    <AppPage className="flex min-h-full flex-col space-y-0 bg-[#e5ddd5] px-0 py-0">
-      <div className="flex min-h-0 flex-1 flex-col">
+    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[#e5ddd5] px-0 py-0">
+      <div className="flex h-full min-h-0 flex-1 flex-col">
         <header className="flex items-center gap-2 border-b border-black/6 bg-[#ededed] px-3 py-2.5">
           <Button
             onClick={() => navigate({ to: "/tabs/chat" })}
