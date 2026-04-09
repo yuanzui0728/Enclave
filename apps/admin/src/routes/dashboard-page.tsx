@@ -251,6 +251,12 @@ export function DashboardPage() {
         }
       />
       {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+      {adminStatsQuery.isError && adminStatsQuery.error instanceof Error ? (
+        <ErrorBlock message={adminStatsQuery.error.message} />
+      ) : null}
+      {adminSystemQuery.isError && adminSystemQuery.error instanceof Error ? (
+        <ErrorBlock message={adminSystemQuery.error.message} />
+      ) : null}
 
       {/* NestJS 后端统计 */}
       {(adminStatsQuery.data || adminSystemQuery.data) && (
