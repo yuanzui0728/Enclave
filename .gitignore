@@ -29,6 +29,8 @@ crates/*/target/
 # Database
 api/database.sqlite
 api/database.sqlite-journal
+cloud-platform.sqlite
+cloud-platform.sqlite-journal
 
 # Logs
 logs/
