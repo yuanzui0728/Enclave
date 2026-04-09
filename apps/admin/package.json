@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node ../../scripts/dev-services.mjs start admin",
+    "dev:raw": "vite",
+    "dev:stop": "node ../../scripts/dev-services.mjs stop admin",
+    "dev:restart": "node ../../scripts/dev-services.mjs restart admin",
+    "dev:status": "node ../../scripts/dev-services.mjs status admin",
     "build": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint ."

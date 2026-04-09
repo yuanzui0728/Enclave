@@ -4,8 +4,16 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
-    "start": "node dist/main",
+    "dev": "node ../../scripts/dev-services.mjs start cloud-api",
+    "dev:raw": "nest start --watch",
+    "dev:stop": "node ../../scripts/dev-services.mjs stop cloud-api",
+    "dev:restart": "node ../../scripts/dev-services.mjs restart cloud-api",
+    "dev:status": "node ../../scripts/dev-services.mjs status cloud-api",
+    "start": "node ../../scripts/dev-services.mjs start cloud-api",
+    "start:raw": "node dist/main",
+    "start:stop": "node ../../scripts/dev-services.mjs stop cloud-api",
+    "start:restart": "node ../../scripts/dev-services.mjs restart cloud-api",
+    "start:status": "node ../../scripts/dev-services.mjs status cloud-api",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "tsc --noEmit -p tsconfig.json"
   },

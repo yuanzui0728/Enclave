@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node ../../scripts/dev-services.mjs start cloud-console",
+    "dev:raw": "vite",
+    "dev:stop": "node ../../scripts/dev-services.mjs stop cloud-console",
+    "dev:restart": "node ../../scripts/dev-services.mjs restart cloud-console",
+    "dev:status": "node ../../scripts/dev-services.mjs status cloud-console",
     "build": "tsc -p tsconfig.app.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "tsc --noEmit -p tsconfig.app.json"
