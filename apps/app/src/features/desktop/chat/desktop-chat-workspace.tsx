@@ -157,15 +157,7 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
 
       {activeConversation && inspectorOpen ? (
         <aside className="absolute bottom-0 right-0 top-[73px] z-20 hidden w-[280px] border-l border-[rgba(15,23,42,0.06)] bg-[rgba(248,249,251,0.98)] shadow-[-8px_0_24px_rgba(15,23,42,0.08)] xl:flex xl:flex-col">
-          <div className="flex items-center justify-between border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
-            <div className="min-w-0">
-              <div className="truncate text-lg font-semibold text-[color:var(--text-primary)]">
-                {activeConversation.title}
-              </div>
-              <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
-                {activeConversation.type === "group" ? "群聊" : "单聊"}
-              </div>
-            </div>
+          <div className="flex items-center justify-end px-4 py-3">
             <button
               type="button"
               onClick={() => setInspectorOpen(false)}
@@ -176,45 +168,50 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
             </button>
           </div>
 
-          <div className="space-y-4 px-5 py-5">
-            <div className="rounded-[20px] border border-white/80 bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-              <div className="flex items-center gap-3">
-                <AvatarChip name={activeConversation.title} />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">{activeConversation.title}</div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {activeConversation.type === "group" ? "群聊" : "单聊"}
-                  </div>
-                </div>
-              </div>
+          <div className="border-b border-[rgba(15,23,42,0.06)] px-6 pb-6 text-center">
+            <div className="flex justify-center">
+              <AvatarChip name={activeConversation.title} size="lg" />
             </div>
+            <div className="mt-4 truncate text-lg font-medium text-[color:var(--text-primary)]">
+              {activeConversation.title}
+            </div>
+            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+              {activeConversation.type === "group" ? "群聊" : "联系人"}
+            </div>
+          </div>
 
-            <DetailMetric label="参与成员" value={String(activeConversation.participants.length || 1)} />
-            <DetailMetric
-              label="最后活跃"
-              value={formatTimestamp(activeConversation.lastMessage?.createdAt ?? activeConversation.updatedAt)}
-            />
-            <DetailMetric
-              label="未读消息"
-              value={activeConversation.unreadCount > 0 ? String(activeConversation.unreadCount) : "已读"}
-            />
+          <div className="space-y-6 overflow-auto px-6 py-6">
+            <section className="space-y-3">
+              <InspectorRow label="类型" value={activeConversation.type === "group" ? "群聊" : "单聊"} />
+              <InspectorRow label="成员" value={String(activeConversation.participants.length || 1)} />
+              <InspectorRow
+                label="最后活跃"
+                value={formatTimestamp(activeConversation.lastMessage?.createdAt ?? activeConversation.updatedAt)}
+              />
+              <InspectorRow
+                label="未读消息"
+                value={activeConversation.unreadCount > 0 ? String(activeConversation.unreadCount) : "无"}
+              />
+            </section>
 
-            <div className="rounded-[20px] border border-white/80 bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-              <div className="grid grid-cols-1 gap-2">
+            <section className="border-t border-[rgba(15,23,42,0.06)] pt-4">
+              <div className="space-y-2">
                 <Link
                   to="/tabs/contacts"
-                  className="rounded-[14px] bg-[rgba(15,23,42,0.04)] px-3 py-3 text-sm text-[color:var(--text-secondary)] transition hover:bg-[rgba(15,23,42,0.07)] hover:text-[color:var(--text-primary)]"
+                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-white"
                 >
-                  通讯录
+                  <span>通讯录</span>
+                  <span className="text-[color:var(--text-muted)]">›</span>
                 </Link>
                 <Link
                   to="/tabs/profile"
-                  className="rounded-[14px] bg-[rgba(15,23,42,0.04)] px-3 py-3 text-sm text-[color:var(--text-secondary)] transition hover:bg-[rgba(15,23,42,0.07)] hover:text-[color:var(--text-primary)]"
+                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-white"
                 >
-                  我的资料
+                  <span>我的资料</span>
+                  <span className="text-[color:var(--text-muted)]">›</span>
                 </Link>
               </div>
-            </div>
+            </section>
           </div>
         </aside>
       ) : null}
@@ -262,11 +259,11 @@ function ConversationCard({
   );
 }
 
-function DetailMetric({ label, value }: { label: string; value: string }) {
+function InspectorRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] border border-white/80 bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-3 text-base font-medium text-[color:var(--text-primary)]">{value}</div>
+    <div className="flex items-center justify-between rounded-[14px] bg-white px-4 py-3">
+      <div className="text-sm text-[color:var(--text-secondary)]">{label}</div>
+      <div className="max-w-[132px] truncate text-sm font-medium text-[color:var(--text-primary)]">{value}</div>
     </div>
   );
 }
