@@ -17,5 +17,6 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5180,
+    allowedHosts: ["1gw06751dd053.vicp.fun"],
   },
 });
