@@ -30,7 +30,6 @@ export function ContactDetailPane({
   const detailItems = friendship
     ? [
         { label: "关系", value: character.relationship || "联系人" },
-        { label: "亲密度", value: `${friendship.intimacyLevel}` },
         { label: "在线状态", value: character.isOnline ? "在线" : "离线" },
         { label: "最近互动", value: formatTimestamp(friendship.lastInteractedAt ?? character.lastActiveAt ?? null) },
       ]
