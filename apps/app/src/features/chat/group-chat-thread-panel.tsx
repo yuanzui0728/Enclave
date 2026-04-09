@@ -181,45 +181,41 @@ export function GroupChatThreadPanel({
         />
       )}
 
-      <div
-        className={
-          isDesktop
-            ? "border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.92))] px-5 py-3"
-            : "border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,239,0.94))] px-3 pb-3"
-        }
-      >
-        {groupQuery.isError && groupQuery.error instanceof Error ? (
-          <ErrorBlock className="mb-2" message={groupQuery.error.message} />
-        ) : null}
-        {membersQuery.isError && membersQuery.error instanceof Error ? (
-          <ErrorBlock className="mb-2" message={membersQuery.error.message} />
-        ) : null}
-        <div className="flex gap-2 overflow-auto">
-          {membersQuery.isLoading ? (
-            <InlineNotice
-              className="rounded-full border-white/70 bg-white/82 px-3 py-2 text-xs text-[color:var(--text-muted)]"
-              tone="muted"
-            >
-              正在读取成员...
-            </InlineNotice>
+      {isDesktop ? (
+        <div className="border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.92))] px-5 py-3">
+          {groupQuery.isError && groupQuery.error instanceof Error ? (
+            <ErrorBlock className="mb-2" message={groupQuery.error.message} />
           ) : null}
-          {(membersQuery.data ?? []).map((member) => (
-            <div
-              key={member.id}
-              className="flex min-w-fit items-center gap-2 rounded-full border border-white/80 bg-white/88 px-2.5 py-1.5 shadow-[var(--shadow-soft)]"
-            >
-              <AvatarChip
-                name={member.memberName ?? member.memberId}
-                src={member.memberAvatar}
-                size="sm"
-              />
-              <span className="text-xs text-[color:var(--text-secondary)]">
-                {member.memberName ?? member.memberId}
-              </span>
-            </div>
-          ))}
+          {membersQuery.isError && membersQuery.error instanceof Error ? (
+            <ErrorBlock className="mb-2" message={membersQuery.error.message} />
+          ) : null}
+          <div className="flex gap-2 overflow-auto">
+            {membersQuery.isLoading ? (
+              <InlineNotice
+                className="rounded-full border-white/70 bg-white/82 px-3 py-2 text-xs text-[color:var(--text-muted)]"
+                tone="muted"
+              >
+                正在读取成员...
+              </InlineNotice>
+            ) : null}
+            {(membersQuery.data ?? []).map((member) => (
+              <div
+                key={member.id}
+                className="flex min-w-fit items-center gap-2 rounded-full border border-white/80 bg-white/88 px-2.5 py-1.5 shadow-[var(--shadow-soft)]"
+              >
+                <AvatarChip
+                  name={member.memberName ?? member.memberId}
+                  src={member.memberAvatar}
+                  size="sm"
+                />
+                <span className="text-xs text-[color:var(--text-secondary)]">
+                  {member.memberName ?? member.memberId}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="relative flex-1 overflow-hidden">
         <div
@@ -234,6 +230,16 @@ export function GroupChatThreadPanel({
             isDesktop ? "px-8 py-6" : "px-3 py-4"
           }`}
         >
+          {!isDesktop &&
+          groupQuery.isError &&
+          groupQuery.error instanceof Error ? (
+            <ErrorBlock className="mb-3" message={groupQuery.error.message} />
+          ) : null}
+          {!isDesktop &&
+          membersQuery.isError &&
+          membersQuery.error instanceof Error ? (
+            <ErrorBlock className="mb-3" message={membersQuery.error.message} />
+          ) : null}
           {messagesQuery.isLoading ? (
             <LoadingBlock label="正在读取群消息..." />
           ) : null}
