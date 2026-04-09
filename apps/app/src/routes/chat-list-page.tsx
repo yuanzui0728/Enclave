@@ -121,7 +121,7 @@ function MobileChatListPage() {
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
-              className="h-9 w-9 rounded-full border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+              className="h-9 w-9 rounded-full border border-black bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
               aria-label="打开快捷菜单"
             >
               <Plus size={16} strokeWidth={2.4} />
