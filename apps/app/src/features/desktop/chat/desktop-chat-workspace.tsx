@@ -90,8 +90,8 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
 
   return (
     <div className="relative flex h-full min-h-0">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(246,247,249,0.98),rgba(242,244,247,0.98))]">
-        <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,239,0.98))]">
+        <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
           <div className="flex items-center justify-end">
             <div className="text-xs text-[color:var(--text-muted)]">
               {filteredConversations.length} / {unreadMessageCount}
@@ -102,7 +102,7 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="搜索"
-              className="rounded-[18px] border-[rgba(15,23,42,0.06)] bg-white/92 px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
+              className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
             />
           </div>
         </div>
@@ -156,19 +156,19 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
       </section>
 
       {activeConversation && inspectorOpen ? (
-        <aside className="absolute bottom-0 right-0 top-[73px] z-20 hidden w-[280px] border-l border-[rgba(15,23,42,0.06)] bg-[rgba(248,249,251,0.98)] shadow-[-8px_0_24px_rgba(15,23,42,0.08)] xl:flex xl:flex-col">
+        <aside className="absolute bottom-0 right-0 top-[73px] z-20 hidden w-[280px] border-l border-[color:var(--border-faint)] bg-[rgba(255,251,245,0.98)] shadow-[-10px_0_30px_rgba(160,90,10,0.10)] xl:flex xl:flex-col">
           <div className="flex items-center justify-end px-4 py-3">
             <button
               type="button"
               onClick={() => setInspectorOpen(false)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
               aria-label="关闭"
             >
               <X size={16} />
             </button>
           </div>
 
-          <div className="border-b border-[rgba(15,23,42,0.06)] px-6 pb-6 text-center">
+          <div className="border-b border-[color:var(--border-faint)] px-6 pb-6 text-center">
             <div className="flex justify-center">
               <AvatarChip name={activeConversation.title} size="lg" />
             </div>
@@ -194,21 +194,21 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
               />
             </section>
 
-            <section className="border-t border-[rgba(15,23,42,0.06)] pt-4">
+            <section className="border-t border-[color:var(--border-faint)] pt-4">
               <div className="space-y-2">
                 <Link
                   to="/tabs/contacts"
-                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-white"
+                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
                 >
                   <span>通讯录</span>
-                  <span className="text-[color:var(--text-muted)]">›</span>
+                  <span className="text-[color:var(--brand-secondary)]">›</span>
                 </Link>
                 <Link
                   to="/tabs/profile"
-                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-white"
+                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
                 >
                   <span>我的资料</span>
-                  <span className="text-[color:var(--text-muted)]">›</span>
+                  <span className="text-[color:var(--brand-secondary)]">›</span>
                 </Link>
               </div>
             </section>
@@ -232,8 +232,8 @@ function ConversationCard({
       params={{ conversationId: conversation.id }}
       className={
         active
-          ? "flex items-center gap-3 rounded-[18px] border border-transparent bg-[rgba(226,230,235,0.96)] px-4 py-3"
-          : "flex items-center gap-3 rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,255,255,0.82)]"
+          ? "flex items-center gap-3 rounded-[18px] border border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] px-4 py-3 shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
+          : "flex items-center gap-3 rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
       }
     >
       <AvatarChip name={conversation.title} />
@@ -249,7 +249,7 @@ function ConversationCard({
             {conversation.lastMessage?.text ?? "从这里开始第一句问候"}
           </div>
           {conversation.unreadCount > 0 ? (
-            <div className="min-w-6 rounded-full bg-[rgba(7,193,96,0.92)] px-2 py-0.5 text-center text-[11px] text-white">
+            <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-white shadow-[var(--shadow-soft)]">
               {conversation.unreadCount}
             </div>
           ) : null}
@@ -261,7 +261,7 @@ function ConversationCard({
 
 function InspectorRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-[14px] bg-white px-4 py-3">
+    <div className="flex items-center justify-between rounded-[14px] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-soft)]">
       <div className="text-sm text-[color:var(--text-secondary)]">{label}</div>
       <div className="max-w-[132px] truncate text-sm font-medium text-[color:var(--text-primary)]">{value}</div>
     </div>
