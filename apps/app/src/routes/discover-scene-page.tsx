@@ -58,7 +58,7 @@ export function DiscoverScenePage() {
             onClick={() => navigate({ to: "/tabs/discover" })}
             variant="ghost"
             size="icon"
-            className="text-white/78"
+            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
           >
             <ArrowLeft size={18} />
           </Button>

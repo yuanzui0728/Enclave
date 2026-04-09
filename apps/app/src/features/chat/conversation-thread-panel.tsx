@@ -38,15 +38,15 @@ export function ConversationThreadPanel({
       ? `${participants.length || 0}人群聊`
       : typingCharacterId
         ? "对方正在输入..."
-        : "在线";
+        : "连接顺畅";
 
   return (
-    <div className={`flex h-full min-h-0 flex-col ${isDesktop ? "bg-[color:var(--surface-section)]" : "bg-[#e5ddd5]"}`}>
+    <div className={`flex h-full min-h-0 flex-col ${isDesktop ? "bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(246,251,247,0.98))]" : "bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)]"}`}>
       <header
         className={
           isDesktop
-            ? "flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(9,14,23,0.94),rgba(12,20,32,0.9))] px-6 py-5"
-            : "flex items-center gap-2 border-b border-black/6 bg-[#ededed] px-3 py-2.5"
+            ? "flex items-center gap-3 border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,247,236,0.94))] px-6 py-5"
+            : "flex items-center gap-2 border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,239,0.94))] px-3 py-2.5"
         }
       >
         {!isDesktop && onBack ? (
@@ -54,7 +54,7 @@ export function ConversationThreadPanel({
             onClick={onBack}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-none bg-transparent text-[#1f1f1f] shadow-none hover:bg-black/5"
+            className="h-9 w-9 rounded-full border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
             aria-label="返回"
           >
             <ArrowLeft size={18} />
@@ -62,10 +62,10 @@ export function ConversationThreadPanel({
         ) : null}
         {!isDesktop ? <AvatarChip name={conversationTitle} size="wechat" /> : null}
         <div className="min-w-0 flex-1">
-          <div className={isDesktop ? "truncate text-base font-semibold text-[color:var(--text-primary)]" : "truncate text-[16px] font-medium text-[#111111]"}>
+          <div className={isDesktop ? "truncate text-base font-semibold text-[color:var(--text-primary)]" : "truncate text-[16px] font-medium text-[color:var(--text-primary)]"}>
             {conversationTitle}
           </div>
-          <div className={isDesktop ? "mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]" : "mt-0.5 flex items-center gap-1.5 text-[11px] text-[#7a7a7a]"}>
+          <div className={isDesktop ? "mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]" : "mt-0.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]"}>
             {conversationType === "group" ? <Users size={12} /> : null}
             <span>{subtitle}</span>
           </div>
@@ -73,18 +73,18 @@ export function ConversationThreadPanel({
         {isDesktop ? (
           <div className="hidden items-center gap-2 xl:flex">
             <Link to="/tabs/contacts" className="text-xs text-[color:var(--brand-secondary)]">
-              Contacts
+              查看通讯录
             </Link>
           </div>
         ) : (
           <div className="flex items-center gap-1">
-            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[#1f1f1f] hover:bg-black/5" aria-label="语音通话">
+            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] hover:bg-white/72" aria-label="语音通话">
               <Phone size={18} />
             </button>
-            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[#1f1f1f] hover:bg-black/5" aria-label="视频通话">
+            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] hover:bg-white/72" aria-label="视频通话">
               <Video size={18} />
             </button>
-            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[#1f1f1f] hover:bg-black/5" aria-label="更多操作">
+            <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] hover:bg-white/72" aria-label="更多操作">
               <Ellipsis size={18} />
             </button>
           </div>
@@ -113,7 +113,11 @@ export function ConversationThreadPanel({
           }
         />
 
-        {typingCharacterId && !isDesktop ? <InlineNotice tone="muted" className="mt-3 border-none bg-[#d9d9d9] text-[#6e6e73]">对方正在输入...</InlineNotice> : null}
+        {typingCharacterId && !isDesktop ? (
+          <InlineNotice tone="muted" className="mt-3 border-white/70 bg-white/82 text-[color:var(--text-muted)]">
+            对方正在输入...
+          </InlineNotice>
+        ) : null}
       </div>
 
       <ChatComposer
