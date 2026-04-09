@@ -36,6 +36,7 @@ type MobileChatPlusPanelProps = {
 };
 
 type PanelView = "root" | "contacts" | "locations";
+const ROOT_ACTIONS_PER_PAGE = 4;
 
 const rootActions = [
   {
@@ -82,6 +83,7 @@ export function MobileChatPlusPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [activeView, setActiveView] = useState<PanelView>("root");
+  const [activeRootPage, setActiveRootPage] = useState(0);
 
   const friendsQuery = useQuery({
     queryKey: ["app-chat-plus-friends", baseUrl],
@@ -92,8 +94,11 @@ export function MobileChatPlusPanel({
   useEffect(() => {
     if (!open) {
       setActiveView("root");
+      setActiveRootPage(0);
     }
   }, [open]);
+
+  const rootActionPages = chunkRootActions(rootActions, ROOT_ACTIONS_PER_PAGE);
 
   if (!open) {
     return null;
@@ -106,42 +111,84 @@ export function MobileChatPlusPanel({
       </div>
 
       {activeView === "root" ? (
-        <div className="grid grid-cols-4 gap-y-4 px-4 pb-5 pt-1">
-          {rootActions.map((item) => {
-            const Icon = item.icon;
-            const handleClick =
-              item.key === "album"
-                ? onPickAlbum
-                : item.key === "camera"
-                  ? onPickCamera
-                  : item.key === "contact"
-                    ? () => setActiveView("contacts")
-                    : item.key === "file"
-                      ? onPickFile
-                      : () => setActiveView("locations");
+        <div className="pb-5 pt-1">
+          <div className="px-4">
+            <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+              更多功能
+            </div>
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              常用入口放在第一页，低频附件继续向右切换。
+            </div>
+          </div>
 
-            return (
-              <button
-                key={item.key}
-                type="button"
-                onClick={handleClick}
-                disabled={busy}
-                className="flex flex-col items-center gap-2 text-center disabled:opacity-60"
-              >
+          <div className="relative mt-4 overflow-hidden">
+            <div
+              className="flex transition-transform duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              style={{ transform: `translateX(-${activeRootPage * 100}%)` }}
+            >
+              {rootActionPages.map((page, pageIndex) => (
                 <div
-                  className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-[18px] text-white shadow-[var(--shadow-soft)]",
-                    item.iconClassName,
-                  )}
+                  key={`page-${pageIndex}`}
+                  className="grid min-w-full grid-cols-4 gap-y-4 px-4"
                 >
-                  <Icon size={22} />
+                  {page.map((item) => {
+                    const Icon = item.icon;
+                    const handleClick =
+                      item.key === "album"
+                        ? onPickAlbum
+                        : item.key === "camera"
+                          ? onPickCamera
+                          : item.key === "contact"
+                            ? () => setActiveView("contacts")
+                            : item.key === "file"
+                              ? onPickFile
+                              : () => setActiveView("locations");
+
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={handleClick}
+                        disabled={busy}
+                        className="flex flex-col items-center gap-2 text-center disabled:opacity-60"
+                      >
+                        <div
+                          className={cn(
+                            "flex h-14 w-14 items-center justify-center rounded-[18px] text-white shadow-[var(--shadow-soft)]",
+                            item.iconClassName,
+                          )}
+                        >
+                          <Icon size={22} />
+                        </div>
+                        <span className="text-xs text-[color:var(--text-secondary)]">
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-                <span className="text-xs text-[color:var(--text-secondary)]">
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
+              ))}
+            </div>
+          </div>
+
+          {rootActionPages.length > 1 ? (
+            <div className="mt-4 flex items-center justify-center gap-1.5">
+              {rootActionPages.map((_, pageIndex) => (
+                <button
+                  key={`dot-${pageIndex}`}
+                  type="button"
+                  onClick={() => setActiveRootPage(pageIndex)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    activeRootPage === pageIndex
+                      ? "w-5 bg-[color:var(--brand-primary)]"
+                      : "w-1.5 bg-[rgba(148,163,184,0.42)]",
+                  )}
+                  aria-label={`切换到第 ${pageIndex + 1} 页`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -251,4 +298,14 @@ function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
       </div>
     </div>
   );
+}
+
+function chunkRootActions<T>(items: readonly T[], size: number) {
+  const result: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    result.push([...items.slice(index, index + size)]);
+  }
+
+  return result;
 }
