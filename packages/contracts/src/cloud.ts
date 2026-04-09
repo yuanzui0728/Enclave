@@ -42,6 +42,8 @@ export interface CloudWorldRequestRecord {
   phone: string;
   worldName: string;
   status: Exclude<CloudWorldStatus, "none">;
+  apiBaseUrl?: string | null;
+  adminUrl?: string | null;
   note?: string | null;
   createdAt: string;
   updatedAt: string;
