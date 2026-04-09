@@ -539,7 +539,7 @@ export function WelcomePage() {
   function renderEntryStep() {
     return (
       <div className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => chooseMode("cloud")}
