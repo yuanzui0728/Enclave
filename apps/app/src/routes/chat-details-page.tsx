@@ -14,6 +14,8 @@ import {
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
+import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import {
@@ -25,7 +27,9 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ChatDetailsPage() {
-  const { conversationId } = useParams({ from: "/chat/$conversationId/details" });
+  const { conversationId } = useParams({
+    from: "/chat/$conversationId/details",
+  });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
@@ -53,9 +57,12 @@ export function ChatDetailsPage() {
 
   const conversation = useMemo(
     () =>
-      (conversationsQuery.data ?? []).find((item) => item.id === conversationId) ?? null,
+      (conversationsQuery.data ?? []).find(
+        (item) => item.id === conversationId,
+      ) ?? null,
     [conversationId, conversationsQuery.data],
   );
+  const backgroundQuery = useConversationBackground(conversationId);
   const targetCharacterId = conversation?.participants[0] ?? "";
 
   const characterQuery = useQuery({
@@ -89,7 +96,9 @@ export function ChatDetailsPage() {
       setConversationPinned(conversationId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
       setNotice(pinned ? "聊天已置顶。" : "聊天已取消置顶。");
-      await queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
     },
   });
 
@@ -109,7 +118,9 @@ export function ChatDetailsPage() {
     },
     onSuccess: async () => {
       setNotice("已发起保存到通讯录请求。");
-      await queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-friend-requests", baseUrl],
+      });
     },
   });
 
@@ -121,7 +132,9 @@ export function ChatDetailsPage() {
         queryClient.invalidateQueries({
           queryKey: ["app-conversation-messages", baseUrl, conversationId],
         }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
@@ -164,9 +177,15 @@ export function ChatDetailsPage() {
     onSuccess: async () => {
       setNotice("已加入黑名单。");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-chat-details-blocked", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-chat-blocked-characters", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-chat-details-blocked", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-chat-blocked-characters", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
@@ -204,11 +223,17 @@ export function ChatDetailsPage() {
       title={conversation?.title ?? "聊天信息"}
       subtitle={targetCharacter?.relationship ?? "聊天信息"}
       onBack={() => {
-        void navigate({ to: "/chat/$conversationId", params: { conversationId } });
+        void navigate({
+          to: "/chat/$conversationId",
+          params: { conversationId },
+        });
       }}
     >
-      {conversationsQuery.isLoading ? <LoadingBlock label="正在读取聊天信息..." /> : null}
-      {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
+      {conversationsQuery.isLoading ? (
+        <LoadingBlock label="正在读取聊天信息..." />
+      ) : null}
+      {conversationsQuery.isError &&
+      conversationsQuery.error instanceof Error ? (
         <div className="px-3">
           <ErrorBlock message={conversationsQuery.error.message} />
         </div>
@@ -236,7 +261,10 @@ export function ChatDetailsPage() {
 
       {!conversationsQuery.isLoading && !conversation ? (
         <div className="px-3">
-          <EmptyState title="会话不存在" description="这段聊天暂时不可用，返回消息列表再试一次。" />
+          <EmptyState
+            title="会话不存在"
+            description="这段聊天暂时不可用，返回消息列表再试一次。"
+          />
         </div>
       ) : null}
 
@@ -265,7 +293,9 @@ export function ChatDetailsPage() {
                 checked={preferences.muted}
                 onToggle={(checked) => {
                   setPreferences((current) => ({ ...current, muted: checked }));
-                  setNotice(checked ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+                  setNotice(
+                    checked ? "已开启消息免打扰。" : "已关闭消息免打扰。",
+                  );
                 }}
               />
               <ChatSettingRow
@@ -277,7 +307,10 @@ export function ChatDetailsPage() {
                 label="强提醒"
                 checked={preferences.strongReminder}
                 onToggle={(checked) => {
-                  setPreferences((current) => ({ ...current, strongReminder: checked }));
+                  setPreferences((current) => ({
+                    ...current,
+                    strongReminder: checked,
+                  }));
                   setNotice(checked ? "已开启强提醒。" : "已关闭强提醒。");
                 }}
               />
@@ -294,9 +327,14 @@ export function ChatDetailsPage() {
               />
               <ChatSettingRow
                 label="设置当前聊天背景"
-                value={preferences.backgroundLabel}
+                value={getChatBackgroundLabel(
+                  backgroundQuery.data?.effectiveBackground,
+                )}
                 onClick={() => {
-                  setNotice("聊天背景入口已预留，首版先保留默认背景。");
+                  void navigate({
+                    to: "/chat/$conversationId/background",
+                    params: { conversationId },
+                  });
                 }}
               />
             </div>
@@ -331,7 +369,11 @@ export function ChatDetailsPage() {
                 danger
                 disabled={busy || isBlocked || !targetCharacterId}
                 onClick={() => {
-                  if (!window.confirm("加入黑名单后，将不再接收该角色的互动。确认继续吗？")) {
+                  if (
+                    !window.confirm(
+                      "加入黑名单后，将不再接收该角色的互动。确认继续吗？",
+                    )
+                  ) {
                     return;
                   }
                   blockMutation.mutate();
@@ -350,7 +392,8 @@ export function ChatDetailsPage() {
               <ErrorBlock message={pinMutation.error.message} />
             </div>
           ) : null}
-          {saveToContactsMutation.isError && saveToContactsMutation.error instanceof Error ? (
+          {saveToContactsMutation.isError &&
+          saveToContactsMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={saveToContactsMutation.error.message} />
             </div>

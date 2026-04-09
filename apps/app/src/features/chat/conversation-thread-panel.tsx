@@ -5,6 +5,8 @@ import { AvatarChip } from "../../components/avatar-chip";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
+import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
+import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 
@@ -42,8 +44,10 @@ export function ConversationThreadPanel({
     typingCharacterId,
   } = useConversationThread(conversationId);
   const runtimeConfig = useAppRuntimeConfig();
+  const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
   const desktopSubtitle =
+  const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
     conversationType === "group"
       ? `${participants.length || 0} 人群聊`
       : typingCharacterId
@@ -166,43 +170,67 @@ export function ConversationThreadPanel({
       </header>
 
       <div
-        ref={scrollAnchorRef}
-        className={
+        className={`relative flex-1 overflow-hidden ${
           isDesktop
-            ? "flex-1 space-y-4 overflow-auto bg-[linear-gradient(180deg,rgba(255,252,246,0.94),rgba(255,248,240,0.96))] px-8 py-6"
-            : "flex-1 overflow-auto px-3 py-4"
-        }
+            ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.94),rgba(255,248,240,0.96))]"
+            : ""
+        }`}
       >
-        {messagesQuery.isLoading ? (
-          <LoadingBlock label="正在读取会话..." />
-        ) : null}
-        {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-          <ErrorBlock message={messagesQuery.error.message} />
-        ) : null}
-        {socketError ? <ErrorBlock message={socketError} /> : null}
-        {sendMutation.isError && sendMutation.error instanceof Error ? (
-          <ErrorBlock message={sendMutation.error.message} />
-        ) : null}
-
-        <ChatMessageList
-          messages={renderedMessages}
-          groupMode={conversationType === "group"}
-          variant={isDesktop ? "desktop" : "mobile"}
-          emptyState={
-            isDesktop && !messagesQuery.isLoading && !messagesQuery.isError ? (
-              <EmptyState title="还没有消息" description="先发一句开场白，把这段对话真正聊起来。" />
-            ) : null
-          }
+        <div
+          className={`absolute inset-0 ${
+            isDesktop
+              ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.94),rgba(255,248,240,0.96))]"
+              : "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
+          }`}
+          style={buildChatBackgroundStyle(effectiveBackground)}
+        />
+        <div
+          className={`absolute inset-0 ${
+            isDesktop
+              ? "bg-[rgba(255,249,242,0.36)]"
+              : "bg-[rgba(255,250,244,0.30)]"
+          }`}
         />
 
-        {typingCharacterId && !isDesktop ? (
-          <InlineNotice
-            tone="muted"
-            className="mt-3 border-white/70 bg-white/82 text-[color:var(--text-muted)]"
-          >
-            对方正在输入...
-          </InlineNotice>
-        ) : null}
+        <div
+          ref={scrollAnchorRef}
+          className={
+            isDesktop
+              ? "relative flex h-full flex-col space-y-4 overflow-auto px-8 py-6"
+              : "relative flex h-full flex-col overflow-auto px-3 py-4"
+          }
+        >
+          {messagesQuery.isLoading ? (
+            <LoadingBlock label="正在读取会话..." />
+          ) : null}
+          {messagesQuery.isError && messagesQuery.error instanceof Error ? (
+            <ErrorBlock message={messagesQuery.error.message} />
+          ) : null}
+          {socketError ? <ErrorBlock message={socketError} /> : null}
+          {sendMutation.isError && sendMutation.error instanceof Error ? (
+            <ErrorBlock message={sendMutation.error.message} />
+          ) : null}
+
+          <ChatMessageList
+            messages={renderedMessages}
+            groupMode={conversationType === "group"}
+            variant={isDesktop ? "desktop" : "mobile"}
+            emptyState={
+              isDesktop && !messagesQuery.isLoading && !messagesQuery.isError ? (
+                <EmptyState title="还没有消息" description="先发一句开场白，把这段对话真正聊起来。" />
+              ) : null
+            }
+          />
+
+          {typingCharacterId && !isDesktop ? (
+            <InlineNotice
+              tone="muted"
+              className="mt-3 border-white/70 bg-white/82 text-[color:var(--text-muted)]"
+            >
+              对方正在输入...
+            </InlineNotice>
+          ) : null}
+        </div>
       </div>
 
       <ChatComposer

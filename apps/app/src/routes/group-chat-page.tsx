@@ -21,6 +21,8 @@ import { ChatComposer } from "../components/chat-composer";
 import { ChatMessageList } from "../components/chat-message-list";
 import { EmptyState } from "../components/empty-state";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
+import { buildChatBackgroundStyle } from "../features/chat/backgrounds/chat-background-helpers";
+import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../hooks/use-scroll-anchor";
 import { parseTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -31,6 +33,7 @@ export function GroupChatPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const ownerQuery = useDefaultChatBackground();
   const [text, setText] = useState("");
 
   const groupQuery = useQuery({
@@ -78,6 +81,7 @@ export function GroupChatPage() {
 
   const sendError =
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
+  const defaultBackground = ownerQuery.data?.defaultChatBackground ?? null;
 
   const sendAttachmentMessage = async (
     payload: ChatComposerAttachmentPayload,
@@ -212,26 +216,37 @@ export function GroupChatPage() {
           </div>
         </div>
 
-        <div ref={scrollAnchorRef} className="flex-1 overflow-auto px-3 py-4">
-          {messagesQuery.isLoading ? (
-            <LoadingBlock label="正在读取群消息..." />
-          ) : null}
-          {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-            <ErrorBlock message={messagesQuery.error.message} />
-          ) : null}
-
-          <ChatMessageList
-            messages={orderedMessages}
-            groupMode
-            emptyState={
-              !messagesQuery.isLoading && !messagesQuery.isError ? (
-                <EmptyState
-                  title="群里还没有消息"
-                  description="发一条消息，让这个群先热起来。"
-                />
-              ) : null
-            }
+        <div className="relative flex-1 overflow-hidden">
+          <div
+            className="absolute inset-0 bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
+            style={buildChatBackgroundStyle(defaultBackground)}
           />
+          <div className="absolute inset-0 bg-[rgba(255,250,244,0.30)]" />
+
+          <div
+            ref={scrollAnchorRef}
+            className="relative flex h-full flex-col overflow-auto px-3 py-4"
+          >
+            {messagesQuery.isLoading ? (
+              <LoadingBlock label="正在读取群消息..." />
+            ) : null}
+            {messagesQuery.isError && messagesQuery.error instanceof Error ? (
+              <ErrorBlock message={messagesQuery.error.message} />
+            ) : null}
+
+            <ChatMessageList
+              messages={orderedMessages}
+              groupMode
+              emptyState={
+                !messagesQuery.isLoading && !messagesQuery.isError ? (
+                  <EmptyState
+                    title="群里还没有消息"
+                    description="发一条消息，让这个群先热起来。"
+                  />
+                ) : null
+              }
+            />
+          </div>
         </div>
 
         <ChatComposer

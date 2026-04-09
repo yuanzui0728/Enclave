@@ -1,5 +1,10 @@
 import { lazy } from "react";
-import { createRootRoute, createRoute, createRouter, redirect } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  redirect,
+} from "@tanstack/react-router";
 import { RootLayout } from "./features/shell/root-layout";
 import { useWorldOwnerStore } from "./store/world-owner-store";
 
@@ -61,6 +66,11 @@ const ProfileSettingsPage = lazy(async () => {
 const ChatRoomPage = lazy(async () => {
   const mod = await import("./routes/chat-room-page");
   return { default: mod.ChatRoomPage };
+});
+
+const ChatBackgroundPage = lazy(async () => {
+  const mod = await import("./routes/chat-background-page");
+  return { default: mod.ChatBackgroundPage };
 });
 
 const ChatDetailsPage = lazy(async () => {
@@ -207,6 +217,13 @@ const chatDetailsRoute = createRoute({
   component: ChatDetailsPage,
 });
 
+const chatBackgroundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat/$conversationId/background",
+  beforeLoad: requireWorldReady,
+  component: ChatBackgroundPage,
+});
+
 const chatMessageSearchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat/$conversationId/search",
@@ -314,9 +331,16 @@ const routeTree = rootRoute.addChildren([
   welcomeRoute,
   onboardingRoute,
   setupRoute,
-  tabsRoute.addChildren([chatListRoute, momentsRoute, discoverRoute, contactsRoute, profileRoute]),
+  tabsRoute.addChildren([
+    chatListRoute,
+    momentsRoute,
+    discoverRoute,
+    contactsRoute,
+    profileRoute,
+  ]),
   chatRoomRoute,
   chatDetailsRoute,
+  chatBackgroundRoute,
   chatMessageSearchRoute,
   characterDetailRoute,
   friendRequestsRoute,

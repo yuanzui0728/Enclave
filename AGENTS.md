@@ -40,6 +40,7 @@
 - `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态
 - `profile/settings`：我的二级设置页，集中承载资料编辑与专属 API Key 配置
 - `chat-background-page.tsx`：聊天背景设置页，承载默认背景图与好友专属背景图配置
+- `chat/$conversationId/background`：单聊聊天背景设置路由，对齐微信式“聊天信息 -> 聊天背景”
 - `chat/$conversationId/details`：单聊右上角三个点详情页，对齐微信式聊天信息页
 - `chat/$conversationId/search`：单聊聊天记录检索页，由聊天信息页进入
 - `group/$groupId/details`：群聊右上角三个点详情页，对齐微信式群聊信息页

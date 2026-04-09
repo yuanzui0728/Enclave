@@ -19,7 +19,9 @@ type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
 };
 
-export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWorkspaceProps) {
+export function DesktopChatWorkspace({
+  selectedConversationId,
+}: DesktopChatWorkspaceProps) {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -47,7 +49,8 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
     () =>
       (conversationsQuery.data ?? []).filter(
         (conversation) =>
-          conversation.type !== "direct" || !conversation.participants.some((id) => blockedCharacterIds.has(id)),
+          conversation.type !== "direct" ||
+          !conversation.participants.some((id) => blockedCharacterIds.has(id)),
       ),
     [blockedCharacterIds, conversationsQuery.data],
   );
@@ -66,7 +69,11 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
   }, [conversations, searchTerm]);
 
   const unreadMessageCount = useMemo(
-    () => filteredConversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+    () =>
+      filteredConversations.reduce(
+        (total, conversation) => total + conversation.unreadCount,
+        0,
+      ),
     [filteredConversations],
   );
 
@@ -76,7 +83,11 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
     }
 
     if (selectedConversationId) {
-      return filteredConversations.find((conversation) => conversation.id === selectedConversationId) ?? filteredConversations[0];
+      return (
+        filteredConversations.find(
+          (conversation) => conversation.id === selectedConversationId,
+        ) ?? filteredConversations[0]
+      );
     }
 
     return filteredConversations[0];
@@ -122,8 +133,11 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
-          {conversationsQuery.isLoading ? <LoadingBlock label="正在读取会话..." /> : null}
-          {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
+          {conversationsQuery.isLoading ? (
+            <LoadingBlock label="正在读取会话..." />
+          ) : null}
+          {conversationsQuery.isError &&
+          conversationsQuery.error instanceof Error ? (
             <ErrorBlock message={conversationsQuery.error.message} />
           ) : null}
           {blockedQuery.isError && blockedQuery.error instanceof Error ? (
@@ -144,7 +158,11 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
             <div className="pt-4">
               <EmptyState
                 title={searchTerm.trim() ? "没有匹配的会话" : "还没有任何会话"}
-                description={searchTerm.trim() ? "换个关键词试试。" : "等第一条消息出现后，这里就会开始热起来。"}
+                description={
+                  searchTerm.trim()
+                    ? "换个关键词试试。"
+                    : "等第一条消息出现后，这里就会开始热起来。"
+                }
               />
             </div>
           ) : null}
@@ -196,20 +214,41 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
 
           <div className="space-y-6 overflow-auto px-6 py-6">
             <section className="space-y-3">
-              <InspectorRow label="类型" value={activeConversation.type === "group" ? "群聊" : "单聊"} />
-              <InspectorRow label="成员" value={String(activeConversation.participants.length || 1)} />
+              <InspectorRow
+                label="类型"
+                value={activeConversation.type === "group" ? "群聊" : "单聊"}
+              />
+              <InspectorRow
+                label="成员"
+                value={String(activeConversation.participants.length || 1)}
+              />
               <InspectorRow
                 label="最后活跃"
-                value={formatTimestamp(activeConversation.lastMessage?.createdAt ?? activeConversation.updatedAt)}
+                value={formatTimestamp(
+                  activeConversation.lastMessage?.createdAt ??
+                    activeConversation.updatedAt,
+                )}
               />
               <InspectorRow
                 label="未读消息"
-                value={activeConversation.unreadCount > 0 ? String(activeConversation.unreadCount) : "无"}
+                value={
+                  activeConversation.unreadCount > 0
+                    ? String(activeConversation.unreadCount)
+                    : "无"
+                }
               />
             </section>
 
             <section className="border-t border-[color:var(--border-faint)] pt-4">
               <div className="space-y-2">
+                <Link
+                  to="/chat/$conversationId/background"
+                  params={{ conversationId: activeConversation.id }}
+                  className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
+                >
+                  <span>聊天背景</span>
+                  <span className="text-[color:var(--brand-secondary)]">›</span>
+                </Link>
                 <Link
                   to="/tabs/contacts"
                   className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
@@ -283,7 +322,9 @@ function InspectorRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between rounded-[14px] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-soft)]">
       <div className="text-sm text-[color:var(--text-secondary)]">{label}</div>
-      <div className="max-w-[132px] truncate text-sm font-medium text-[color:var(--text-primary)]">{value}</div>
+      <div className="max-w-[132px] truncate text-sm font-medium text-[color:var(--text-primary)]">
+        {value}
+      </div>
     </div>
   );
 }
