@@ -42,7 +42,7 @@ export function ConversationThreadPanel({
       ? `${participants.length || 0} 人群聊`
       : typingCharacterId
         ? "对方正在输入..."
-        : "连接顺畅";
+        : "";
 
   return (
     <div
@@ -129,10 +129,12 @@ export function ConversationThreadPanel({
               </div>
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">{conversationTitle}</div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
-                  {conversationType === "group" ? <Users size={12} /> : null}
-                  <span>{subtitle}</span>
-                </div>
+                {subtitle ? (
+                  <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+                    {conversationType === "group" ? <Users size={12} /> : null}
+                    <span>{subtitle}</span>
+                  </div>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -179,7 +181,7 @@ export function ConversationThreadPanel({
           groupMode={conversationType === "group"}
           variant={isDesktop ? "desktop" : "mobile"}
           emptyState={
-            !messagesQuery.isLoading && !messagesQuery.isError ? (
+            isDesktop && !messagesQuery.isLoading && !messagesQuery.isError ? (
               <EmptyState title="还没有消息" description="先发一句开场白，把这段对话真正聊起来。" />
             ) : null
           }

@@ -137,7 +137,7 @@ export function GroupChatPage() {
             messages={orderedMessages}
             groupMode
             emptyState={
-              !messagesQuery.isLoading && !messagesQuery.isError ? (
+              isDesktopLayout && !messagesQuery.isLoading && !messagesQuery.isError ? (
                 <EmptyState title="群里还没有消息" description="发一条消息，让这个群先热起来。" />
               ) : null
             }
