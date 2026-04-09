@@ -18,7 +18,7 @@ export function RequestsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">云世界申请列表</div>
-          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">优先处理 `pending`，进入部署后切到 `provisioning`，交付地址后再切到 `active`。</div>
+          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">优先处理 `pending`，进入人工开通和地址录入阶段后切到 `provisioning`，确认可访问后再切到 `active`。</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {["all", "pending", "provisioning", "active", "rejected", "disabled"].map((status) => (

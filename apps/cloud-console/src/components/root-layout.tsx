@@ -29,10 +29,10 @@ export function RootLayout() {
       />
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-6 rounded-[30px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-6 py-5 shadow-[var(--shadow-overlay)]">
-          <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">隐界 Cloud Ops</div>
+          <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">Yinjie Cloud Ops</div>
           <div className="mt-2 text-3xl font-semibold">官方云世界管理平台</div>
           <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-            管理手机号绑定的云世界、接收创建申请、录入世界地址并控制开通状态。
+            管理手机号绑定的云世界、接收创建申请、人工开通并回填世界地址，不负责自动实例编排。
           </div>
 
           <div className="mt-4">

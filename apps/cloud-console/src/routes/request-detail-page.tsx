@@ -46,6 +46,8 @@ export function RequestDetailPage() {
       setDraftStatus(request.status);
       setPhone(request.phone);
       setWorldName(request.worldName);
+      setApiBaseUrl(request.apiBaseUrl ?? "");
+      setAdminUrl(request.adminUrl ?? "");
       setNote(request.note ?? "");
     }
   }, [request]);
@@ -101,10 +103,10 @@ export function RequestDetailPage() {
       <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
         <div className="text-sm font-semibold text-[color:var(--text-primary)]">处理建议</div>
         <div className="mt-3 space-y-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-          <p>`pending` 表示刚收到申请，还未开始开通。</p>
-          <p>`provisioning` 表示实例部署或资源准备中。</p>
-          <p>`active` 需要同时填写 `apiBaseUrl`，客户端才能真正进入世界。</p>
-          <p>`rejected` 和 `disabled` 都会阻止客户端进入，区别在于前者面向申请单，后者面向已交付世界。</p>
+          <p>`pending` 表示刚收到申请，还没开始人工处理。</p>
+          <p>`provisioning` 表示正在人工开通、登记资源信息或录入世界地址，不代表平台会自动创建实例。</p>
+          <p>`active` 需要同时填好 `apiBaseUrl`，客户端才能真正进入这个世界。</p>
+          <p>`rejected` 和 `disabled` 都会阻止客户端进入，前者面向申请单，后者面向已交付世界。</p>
         </div>
       </div>
     </section>

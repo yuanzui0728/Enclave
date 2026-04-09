@@ -18,7 +18,7 @@ export function WorldsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">云世界列表</div>
-          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">手机号、世界名称、状态和对外地址都在这里维护。</div>
+          <div className="mt-1 text-sm text-[color:var(--text-secondary)]">手机号、世界名称、状态和对外地址都在这里维护，地址由人工录入后回填给客户端。</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {["all", "pending", "provisioning", "active", "rejected", "disabled"].map((status) => (
