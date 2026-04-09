@@ -4,9 +4,17 @@ import { cn } from "@yinjie/ui";
 type TabPageTopBarProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   rightActions?: ReactNode;
+  titleAlign?: "left" | "center";
 };
 
-export function TabPageTopBar({ className, title, rightActions, children, ...props }: TabPageTopBarProps) {
+export function TabPageTopBar({
+  className,
+  title,
+  rightActions,
+  titleAlign = "left",
+  children,
+  ...props
+}: TabPageTopBarProps) {
   return (
     <div
       className={cn(
@@ -15,8 +23,15 @@ export function TabPageTopBar({ className, title, rightActions, children, ...pro
       )}
       {...props}
     >
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <h1 className="truncate text-xl font-semibold tracking-[0.01em] text-white">{title}</h1>
+      <div className="relative flex min-h-11 items-center justify-between gap-3">
+        <h1
+          className={cn(
+            "truncate text-xl font-semibold tracking-[0.01em] text-white",
+            titleAlign === "center" ? "pointer-events-none absolute inset-x-12 text-center" : undefined,
+          )}
+        >
+          {title}
+        </h1>
         {rightActions ? <div className="shrink-0">{rightActions}</div> : null}
       </div>
       {children}
