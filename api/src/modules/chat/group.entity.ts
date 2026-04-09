@@ -35,6 +35,21 @@ export class GroupEntity {
   @Column({ type: 'datetime', nullable: true })
   lastClearedAt?: Date | null;
 
+  @Column({ type: 'datetime', nullable: true })
+  lastReadAt?: Date | null;
+
+  @Column({ default: false })
+  isHidden: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  hiddenAt?: Date | null;
+
+  @Column({
+    type: 'datetime',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  lastActivityAt: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

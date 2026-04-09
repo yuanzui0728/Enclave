@@ -99,6 +99,10 @@ export interface Group {
   isPinned: boolean;
   pinnedAt?: Date;
   lastClearedAt?: Date;
+  lastReadAt?: Date;
+  isHidden: boolean;
+  hiddenAt?: Date;
+  lastActivityAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }

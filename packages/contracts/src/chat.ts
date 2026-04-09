@@ -76,6 +76,10 @@ export interface Group {
   isPinned: boolean;
   pinnedAt?: string;
   lastClearedAt?: string;
+  lastReadAt?: string;
+  isHidden: boolean;
+  hiddenAt?: string;
+  lastActivityAt: string;
   createdAt: string;
   updatedAt: string;
 }
