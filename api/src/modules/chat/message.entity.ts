@@ -23,7 +23,7 @@ export class MessageEntity {
   @Column('text')
   text: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   attachmentKind?: string | null;
 
   @Column('text', { nullable: true })
