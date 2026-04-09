@@ -1,6 +1,5 @@
 import {
   DEFAULT_CLOUD_API_BASE_URL,
-  DEFAULT_CORE_API_BASE_URL,
   resolveCloudApiBaseUrl,
   resolveCoreApiBaseUrl,
   setCloudApiBaseUrlProvider,

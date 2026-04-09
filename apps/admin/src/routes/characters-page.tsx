@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { deleteCharacter, listCharacters, type Character } from "@yinjie/contracts";
-import { AppHeader, Button, Card, ErrorBlock, InlineNotice, LoadingBlock, SectionHeading, StatusPill } from "@yinjie/ui";
+import { AppHeader, Button, Card, ErrorBlock, InlineNotice, LoadingBlock, StatusPill } from "@yinjie/ui";
 
 function relationshipTone(type: Character["relationshipType"]) {
   switch (type) {

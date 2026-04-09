@@ -8,7 +8,7 @@ import {
   getOrCreateConversation,
   type ConversationListItem,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { ConversationThreadPanel } from "../../chat/conversation-thread-panel";
