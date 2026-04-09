@@ -26,12 +26,14 @@ export function isNativeMobileRuntime() {
 }
 
 export async function readNativeRuntimeConfig() {
-  if (isNativeMobileRuntime()) {
-    try {
-      return await yinjieRuntime.getConfig();
-    } catch {
-      // Fall through to bundled runtime-config.json when the native plugin is not wired yet.
-    }
+  if (!isNativeMobileRuntime()) {
+    return null;
+  }
+
+  try {
+    return await yinjieRuntime.getConfig();
+  } catch {
+    // Fall through to bundled runtime-config.json when the native plugin is not wired yet.
   }
 
   try {
