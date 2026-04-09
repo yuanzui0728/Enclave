@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { X } from "lucide-react";
+import { MessageSquarePlus, Search, X } from "lucide-react";
 import {
   getBlockedCharacters,
   getConversations,
@@ -90,20 +90,34 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
 
   return (
     <div className="relative flex h-full min-h-0">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,239,0.98))]">
+      <section className="flex w-[336px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,239,0.98))]">
         <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
-          <div className="flex items-center justify-end">
-            <div className="text-xs text-[color:var(--text-muted)]">
-              {filteredConversations.length} / {unreadMessageCount}
+          <div className="flex items-center justify-between">
+            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">消息</div>
+            <div className="rounded-full bg-[color:var(--surface-soft)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+              未读 {unreadMessageCount}
             </div>
           </div>
-          <div className="mt-3">
-            <TextField
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="搜索"
-              className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
-            />
+          <div className="mt-3 flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search
+                size={14}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
+              />
+              <TextField
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="搜索"
+                className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-2.5 pl-10 pr-4 shadow-none hover:bg-white focus:shadow-none"
+              />
+            </div>
+            <Link
+              to="/tabs/contacts"
+              className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)] transition hover:bg-white"
+              aria-label="通讯录"
+            >
+              <MessageSquarePlus size={16} />
+            </Link>
           </div>
         </div>
 
@@ -116,7 +130,7 @@ export function DesktopChatWorkspace({ selectedConversationId }: DesktopChatWork
             <ErrorBlock message={blockedQuery.error.message} />
           ) : null}
 
-          <div className="space-y-1.5">
+          <div className="space-y-0.5">
             {filteredConversations.map((conversation) => (
               <ConversationCard
                 key={conversation.id}
@@ -232,27 +246,33 @@ function ConversationCard({
       params={{ conversationId: conversation.id }}
       className={
         active
-          ? "flex items-center gap-3 rounded-[18px] border border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] px-4 py-3 shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
-          : "flex items-center gap-3 rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+          ? "flex items-center gap-3 rounded-[14px] border border-[rgba(249,115,22,0.18)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] px-3 py-3"
+          : "flex items-center gap-3 rounded-[14px] border border-transparent bg-transparent px-3 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
       }
     >
-      <AvatarChip name={conversation.title} />
+      <AvatarChip name={conversation.title} size="sm" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-3">
-          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">{conversation.title}</div>
-          <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
-            {formatTimestamp(conversation.lastMessage?.createdAt ?? conversation.updatedAt)}
-          </div>
-        </div>
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <div className="truncate text-sm text-[color:var(--text-secondary)]">
-            {conversation.lastMessage?.text ?? "从这里开始第一句问候"}
-          </div>
-          {conversation.unreadCount > 0 ? (
-            <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-white shadow-[var(--shadow-soft)]">
-              {conversation.unreadCount}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">{conversation.title}</div>
+            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+              {conversation.lastMessage?.text ?? "从这里开始第一句问候"}
             </div>
-          ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <div className="text-[11px] text-[color:var(--text-dim)]">
+              {formatTimestamp(conversation.lastMessage?.createdAt ?? conversation.updatedAt)}
+            </div>
+            {conversation.unreadCount > 0 ? (
+              <div className="min-w-5 rounded-full bg-[var(--brand-gradient)] px-1.5 py-0.5 text-center text-[10px] text-white shadow-[var(--shadow-soft)]">
+                {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+              </div>
+            ) : conversation.isPinned ? (
+              <div className="rounded-full border border-[color:var(--border-faint)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+                置顶
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </Link>
