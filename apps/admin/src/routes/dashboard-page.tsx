@@ -39,6 +39,7 @@ import {
   TextAreaField,
   useDesktopRuntime,
 } from "@yinjie/ui";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type InferencePreviewForm = {
   prompt: string;
@@ -46,7 +47,7 @@ type InferencePreviewForm = {
 };
 
 export function DashboardPage() {
-  const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
 
   const adminStatsQuery = useQuery({

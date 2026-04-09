@@ -23,6 +23,7 @@ import {
   TextField as UiTextField,
   ToggleChip,
 } from "@yinjie/ui";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const emptyCharacterDraft: CharacterDraft = {
   name: "",
@@ -100,7 +101,7 @@ export function CharacterEditorPage() {
   const isNew = characterId === "new";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const baseUrl = resolveAdminCoreApiBaseUrl();
   const [draft, setDraft] = useState<CharacterDraft>(emptyCharacterDraft);
 
   const characterQuery = useQuery({

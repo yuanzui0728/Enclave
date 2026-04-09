@@ -35,6 +35,7 @@ import {
   TagBadge,
   TextField,
 } from "@yinjie/ui";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const EVALS_STATE_KEY = "yinjie-admin-evals-state";
 const EVALS_PRESETS_KEY = "yinjie-admin-evals-presets";
@@ -91,7 +92,7 @@ type EvalsPreset = {
 };
 
 export function EvalsPage() {
-  const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
   const persistedState = readInitialEvalsState(baseUrl);
   const [compactView, setCompactView] = useState(persistedState.compactView);

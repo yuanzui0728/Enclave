@@ -2,9 +2,10 @@ import { useProviderSetup, Button, InlineNotice, ProviderSetupForm, SetupScaffol
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 export function SetupPage() {
-  const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const baseUrl = resolveAdminCoreApiBaseUrl();
 
   const systemStatusQuery = useQuery({
     queryKey: ["admin-setup-system-status", baseUrl],

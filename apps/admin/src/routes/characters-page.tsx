@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { deleteCharacter, listCharacters, type Character } from "@yinjie/contracts";
 import { AppHeader, Button, Card, ErrorBlock, InlineNotice, LoadingBlock, StatusPill } from "@yinjie/ui";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function relationshipTone(type: Character["relationshipType"]) {
   switch (type) {
@@ -16,7 +17,7 @@ function relationshipTone(type: Character["relationshipType"]) {
 }
 
 export function CharactersPage() {
-  const baseUrl = import.meta.env.VITE_CORE_API_BASE_URL;
+  const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
 
   const charactersQuery = useQuery({
