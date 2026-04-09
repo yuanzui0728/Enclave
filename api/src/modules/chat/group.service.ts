@@ -86,6 +86,9 @@ export class GroupService {
       name: dto.name,
       creatorId: owner.id,
       creatorType: 'user',
+      isHidden: false,
+      lastReadAt: new Date(),
+      lastActivityAt: new Date(),
     });
     await this.groupRepo.save(group);
 
@@ -222,6 +225,28 @@ export class GroupService {
     const updated = await this.groupRepo.save({
       ...group,
       lastClearedAt: now,
+      lastReadAt: now,
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async markGroupRead(groupId: string): Promise<Group> {
+    const group = await this.requireAccessibleGroup(groupId);
+    const updated = await this.groupRepo.save({
+      ...group,
+      lastReadAt: new Date(),
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async hideGroup(groupId: string): Promise<Group> {
+    const group = await this.requireOwnedGroup(groupId);
+    const updated = await this.groupRepo.save({
+      ...group,
+      isHidden: true,
+      hiddenAt: new Date(),
     });
 
     return this.toGroup(updated);
@@ -269,7 +294,7 @@ export class GroupService {
     input: SendGroupMessageInput,
     senderAvatar?: string,
   ): Promise<GroupMessage> {
-    await this.requireAccessibleGroup(groupId);
+    const group = await this.requireAccessibleGroup(groupId);
     const normalizedInput = this.normalizeOutgoingMessageInput(input);
     const message = this.messageRepo.create({
       groupId,
@@ -286,6 +311,11 @@ export class GroupService {
     });
 
     await this.messageRepo.save(message);
+    await this.touchGroupActivity(
+      group,
+      message.createdAt ?? new Date(),
+      senderType === 'user',
+    );
     return this.toGroupMessage(message);
   }
 
@@ -305,7 +335,7 @@ export class GroupService {
     groupId: string,
     text: string,
   ): Promise<GroupMessage> {
-    await this.requireAccessibleGroup(groupId);
+    const group = await this.requireAccessibleGroup(groupId);
     const message = this.messageRepo.create({
       groupId,
       senderId: 'system',
@@ -316,6 +346,7 @@ export class GroupService {
     });
 
     await this.messageRepo.save(message);
+    await this.touchGroupActivity(group, message.createdAt ?? new Date());
     return this.toGroupMessage(message);
   }
 
@@ -532,8 +563,28 @@ export class GroupService {
       isPinned: entity.isPinned ?? false,
       pinnedAt: entity.pinnedAt ?? undefined,
       lastClearedAt: entity.lastClearedAt ?? undefined,
+      lastReadAt: entity.lastReadAt ?? undefined,
+      isHidden: entity.isHidden ?? false,
+      hiddenAt: entity.hiddenAt ?? undefined,
+      lastActivityAt: entity.lastActivityAt ?? entity.updatedAt ?? entity.createdAt,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
+  }
+
+  private async touchGroupActivity(
+    group: GroupEntity,
+    at: Date,
+    markRead = false,
+  ) {
+    group.lastActivityAt = at;
+    if (group.isHidden) {
+      group.isHidden = false;
+      group.hiddenAt = null;
+    }
+    if (markRead) {
+      group.lastReadAt = at;
+    }
+    await this.groupRepo.save(group);
   }
 }

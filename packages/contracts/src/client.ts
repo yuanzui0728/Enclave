@@ -1011,6 +1011,26 @@ export function clearGroupMessages(id: string, baseUrl?: string) {
   );
 }
 
+export function markGroupRead(id: string, baseUrl?: string) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/read`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function hideGroup(id: string, baseUrl?: string) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/hide`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function updateGroupOwnerProfile(
   id: string,
   payload: UpdateGroupOwnerProfileRequest,

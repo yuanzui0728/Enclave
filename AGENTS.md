@@ -100,7 +100,7 @@
 - `Conversation` 表保留字段：`isPinned`、`pinnedAt`、`isHidden`、`hiddenAt`、`lastClearedAt`、`lastActivityAt`
 - `Conversation` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载会话专属聊天背景配置
 - `Message` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载 `sticker` 表情包消息元数据
-- `Group` 表现已扩展字段：`announcement`、`isPinned`、`pinnedAt`、`lastClearedAt`
+- `Group` 表现已扩展字段：`announcement`、`isPinned`、`pinnedAt`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
 - 会话管理路由：
@@ -113,6 +113,8 @@
   - `PATCH /api/groups/:id`
   - `POST /api/groups/:id/pin`
   - `POST /api/groups/:id/clear`
+  - `POST /api/groups/:id/read`
+  - `POST /api/groups/:id/hide`
   - `PATCH /api/groups/:id/me`
   - `POST /api/groups/:id/leave`
   - `POST /api/chat/attachments`

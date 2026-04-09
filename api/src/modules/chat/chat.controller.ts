@@ -161,6 +161,16 @@ export class GroupController {
     return this.groupService.clearGroupMessages(id);
   }
 
+  @Post(':id/read')
+  markGroupRead(@Param('id') id: string) {
+    return this.groupService.markGroupRead(id);
+  }
+
+  @Post(':id/hide')
+  hideGroup(@Param('id') id: string) {
+    return this.groupService.hideGroup(id);
+  }
+
   @Patch(':id/me')
   updateOwnerGroupProfile(
     @Param('id') id: string,

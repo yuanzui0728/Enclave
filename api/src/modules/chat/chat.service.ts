@@ -172,7 +172,7 @@ export class ChatService {
     const groupIds = [...new Set(groupMemberships.map((item) => item.groupId))];
     const groups = groupIds.length
       ? await this.groupRepo.find({
-          where: { id: In(groupIds) },
+          where: { id: In(groupIds), isHidden: false },
         })
       : [];
 
@@ -190,10 +190,16 @@ export class ChatService {
           : { groupId: group.id },
         order: { createdAt: 'DESC' },
       });
+      const unreadCutoff = this.getGroupUnreadCutoff(group);
+      const unreadCount = await this.groupMessageRepo.count({
+        where: this.buildGroupMessageWhere(group.id, unreadCutoff, {
+          senderType: 'character',
+        }),
+      });
 
       result.push({
         ...this.groupToConversation(group, members, lastGroupMessage),
-        unreadCount: 0,
+        unreadCount,
       });
     }
 
@@ -861,10 +867,13 @@ export class ChatService {
       messages: [],
       isPinned: group.isPinned ?? false,
       pinnedAt: group.pinnedAt ?? undefined,
-      lastReadAt: undefined,
+      lastReadAt: group.lastReadAt ?? undefined,
       lastClearedAt: group.lastClearedAt ?? undefined,
       lastActivityAt:
-        lastMessage?.createdAt ?? group.updatedAt ?? group.createdAt,
+        group.lastActivityAt ??
+        lastMessage?.createdAt ??
+        group.updatedAt ??
+        group.createdAt,
       createdAt: group.createdAt,
       updatedAt: group.updatedAt,
       lastMessage,
@@ -913,6 +922,32 @@ export class ChatService {
     } catch {
       return undefined;
     }
+  }
+
+  private buildGroupMessageWhere(
+    groupId: string,
+    since?: Date,
+    extra: Partial<Pick<GroupMessageEntity, 'senderType' | 'senderId' | 'type'>> = {},
+  ): FindOptionsWhere<GroupMessageEntity> {
+    return {
+      groupId,
+      ...(since ? { createdAt: MoreThan(since) } : {}),
+      ...extra,
+    };
+  }
+
+  private getGroupUnreadCutoff(group: GroupEntity): Date | undefined {
+    const timestamps = [group.lastReadAt, group.lastClearedAt]
+      .filter(Boolean)
+      .map((value) => new Date(value!));
+
+    if (!timestamps.length) {
+      return undefined;
+    }
+
+    return timestamps.reduce((latest, current) =>
+      current.getTime() > latest.getTime() ? current : latest,
+    );
   }
 
   private normalizeOutgoingMessageInput(input: SendConversationMessageInput): {
