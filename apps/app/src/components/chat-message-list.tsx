@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ContactRound, MapPin } from "lucide-react";
+import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
@@ -90,6 +90,9 @@ export function ChatMessageList({
                     label={message.attachment.fileName || message.text}
                     maxSize={isDesktop ? 180 : 144}
                   />
+                ) : message.type === "file" &&
+                  message.attachment?.kind === "file" ? (
+                  <FileAttachmentMessage attachment={message.attachment} />
                 ) : message.type === "contact_card" &&
                   message.attachment?.kind === "contact_card" ? (
                   <ContactCardMessage attachment={message.attachment} />
@@ -182,6 +185,38 @@ function ContactCardMessage({
   );
 }
 
+function FileAttachmentMessage({
+  attachment,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "file" }>;
+}) {
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noreferrer"
+      className="block w-[220px] rounded-[22px] border border-white/80 bg-white/92 p-3 shadow-[var(--shadow-soft)] transition-colors hover:bg-white"
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,rgba(196,181,253,0.25),rgba(129,140,248,0.2))] text-[color:var(--brand-primary)]">
+          <FileText size={20} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {attachment.fileName}
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {formatFileSize(attachment.size)}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+        文件
+      </div>
+    </a>
+  );
+}
+
 function LocationCardMessage({
   attachment,
 }: {
@@ -234,4 +269,16 @@ function StickerMessage({
       loading="lazy"
     />
   );
+}
+
+function formatFileSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (size >= 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+
+  return `${size} B`;
 }

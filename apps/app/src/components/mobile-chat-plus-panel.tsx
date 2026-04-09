@@ -9,6 +9,7 @@ import {
   Camera,
   ChevronLeft,
   ContactRound,
+  FileText,
   ImagePlus,
   MapPin,
 } from "lucide-react";
@@ -25,6 +26,7 @@ type MobileChatPlusPanelProps = {
   busy?: boolean;
   onPickAlbum: () => void;
   onPickCamera: () => void;
+  onPickFile: () => void;
   onSelectContactCard: (
     attachment: ContactCardAttachment,
   ) => void | Promise<void>;
@@ -60,6 +62,12 @@ const rootActions = [
     icon: MapPin,
     iconClassName: "bg-[linear-gradient(135deg,#fda4af,#fb7185)]",
   },
+  {
+    key: "file",
+    label: "文件",
+    icon: FileText,
+    iconClassName: "bg-[linear-gradient(135deg,#c4b5fd,#818cf8)]",
+  },
 ] as const;
 
 export function MobileChatPlusPanel({
@@ -67,6 +75,7 @@ export function MobileChatPlusPanel({
   busy = false,
   onPickAlbum,
   onPickCamera,
+  onPickFile,
   onSelectContactCard,
   onSelectLocationCard,
 }: MobileChatPlusPanelProps) {
@@ -107,7 +116,9 @@ export function MobileChatPlusPanel({
                   ? onPickCamera
                   : item.key === "contact"
                     ? () => setActiveView("contacts")
-                    : () => setActiveView("locations");
+                    : item.key === "file"
+                      ? onPickFile
+                      : () => setActiveView("locations");
 
             return (
               <button

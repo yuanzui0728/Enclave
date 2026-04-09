@@ -41,13 +41,22 @@ type ChatComposerProps = {
   onSubmit: () => void;
 };
 
-type ImageDraft = {
-  file: File;
-  fileName: string;
-  previewUrl: string;
-  width?: number;
-  height?: number;
-};
+type AttachmentDraft =
+  | {
+      kind: "image";
+      file: File;
+      fileName: string;
+      previewUrl: string;
+      width?: number;
+      height?: number;
+    }
+  | {
+      kind: "file";
+      file: File;
+      fileName: string;
+      mimeType: string;
+      size: number;
+    };
 
 export function ChatComposer({
   value,
@@ -66,7 +75,8 @@ export function ChatComposer({
   const [mobileSpeechSheetOpen, setMobileSpeechSheetOpen] = useState(false);
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
   const [plusPanelOpen, setPlusPanelOpen] = useState(false);
-  const [imageDraft, setImageDraft] = useState<ImageDraft | null>(null);
+  const [attachmentDraft, setAttachmentDraft] =
+    useState<AttachmentDraft | null>(null);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [activeStickerPackId, setActiveStickerPackId] =
@@ -78,6 +88,7 @@ export function ChatComposer({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const showSpeechEntry = Boolean(
     speechInput?.enabled && speechInput?.conversationId,
   );
@@ -166,11 +177,11 @@ export function ChatComposer({
 
   useEffect(() => {
     return () => {
-      if (imageDraft?.previewUrl) {
-        URL.revokeObjectURL(imageDraft.previewUrl);
+      if (attachmentDraft?.kind === "image") {
+        URL.revokeObjectURL(attachmentDraft.previewUrl);
       }
     };
-  }, [imageDraft?.previewUrl]);
+  }, [attachmentDraft]);
 
   const toggleStickerPanel = () => {
     if (!onSendSticker) {
@@ -228,7 +239,16 @@ export function ChatComposer({
     cameraInputRef.current?.click();
   };
 
-  const handleFileSelection = async (fileList: FileList | null) => {
+  const pickFile = () => {
+    if (attachmentBusy) {
+      return;
+    }
+
+    setAttachmentError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelection = async (fileList: FileList | null) => {
     const file = fileList?.[0];
     if (!file) {
       return;
@@ -236,12 +256,12 @@ export function ChatComposer({
 
     try {
       const draft = await createImageDraft(file);
-      if (imageDraft?.previewUrl) {
-        URL.revokeObjectURL(imageDraft.previewUrl);
+      if (attachmentDraft?.kind === "image") {
+        URL.revokeObjectURL(attachmentDraft.previewUrl);
       }
       setAttachmentError(null);
       setPlusPanelOpen(false);
-      setImageDraft(draft);
+      setAttachmentDraft(draft);
     } catch (fileError) {
       setAttachmentError(
         fileError instanceof Error
@@ -251,11 +271,32 @@ export function ChatComposer({
     }
   };
 
-  const handleCancelImageDraft = () => {
-    if (imageDraft?.previewUrl) {
-      URL.revokeObjectURL(imageDraft.previewUrl);
+  const handleGenericFileSelection = (fileList: FileList | null) => {
+    const file = fileList?.[0];
+    if (!file) {
+      return;
     }
-    setImageDraft(null);
+
+    if (attachmentDraft?.kind === "image") {
+      URL.revokeObjectURL(attachmentDraft.previewUrl);
+    }
+
+    setAttachmentError(null);
+    setPlusPanelOpen(false);
+    setAttachmentDraft({
+      kind: "file",
+      file,
+      fileName: file.name || "file",
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+    });
+  };
+
+  const handleCancelAttachmentDraft = () => {
+    if (attachmentDraft?.kind === "image") {
+      URL.revokeObjectURL(attachmentDraft.previewUrl);
+    }
+    setAttachmentDraft(null);
   };
 
   const handleSendAttachment = async (
@@ -284,22 +325,31 @@ export function ChatComposer({
     }
   };
 
-  const handleSendImageDraft = async () => {
-    if (!imageDraft) {
+  const handleSendDraftAttachment = async () => {
+    if (!attachmentDraft) {
       return;
     }
 
-    const currentDraft = imageDraft;
-    const sent = await handleSendAttachment({
-      type: "image",
-      file: currentDraft.file,
-      fileName: currentDraft.fileName,
-      width: currentDraft.width,
-      height: currentDraft.height,
-    });
+    const currentDraft = attachmentDraft;
+    const sent =
+      currentDraft.kind === "image"
+        ? await handleSendAttachment({
+            type: "image",
+            file: currentDraft.file,
+            fileName: currentDraft.fileName,
+            width: currentDraft.width,
+            height: currentDraft.height,
+          })
+        : await handleSendAttachment({
+            type: "file",
+            file: currentDraft.file,
+            fileName: currentDraft.fileName,
+            mimeType: currentDraft.mimeType,
+            size: currentDraft.size,
+          });
 
     if (sent) {
-      handleCancelImageDraft();
+      handleCancelAttachmentDraft();
     }
   };
 
@@ -319,13 +369,26 @@ export function ChatComposer({
               : "0.35rem",
         }}
       >
-        {!isDesktop && imageDraft ? (
+        {!isDesktop && attachmentDraft ? (
           <MobileChatAttachmentPreview
-            fileName={imageDraft.fileName}
-            previewUrl={imageDraft.previewUrl}
+            kind={attachmentDraft.kind}
+            fileName={attachmentDraft.fileName}
+            previewUrl={
+              attachmentDraft.kind === "image"
+                ? attachmentDraft.previewUrl
+                : undefined
+            }
+            mimeType={
+              attachmentDraft.kind === "file"
+                ? attachmentDraft.mimeType
+                : undefined
+            }
+            size={
+              attachmentDraft.kind === "file" ? attachmentDraft.size : undefined
+            }
             pending={attachmentBusy}
-            onCancel={handleCancelImageDraft}
-            onSend={handleSendImageDraft}
+            onCancel={handleCancelAttachmentDraft}
+            onSend={handleSendDraftAttachment}
           />
         ) : null}
         <div
@@ -489,6 +552,7 @@ export function ChatComposer({
             busy={attachmentBusy}
             onPickAlbum={pickAlbum}
             onPickCamera={pickCamera}
+            onPickFile={pickFile}
             onSelectContactCard={(attachment) =>
               void handleSendAttachment({
                 type: "contact_card",
@@ -589,7 +653,7 @@ export function ChatComposer({
               accept="image/*"
               className="hidden"
               onChange={(event) => {
-                void handleFileSelection(event.target.files);
+                void handleImageSelection(event.target.files);
                 event.currentTarget.value = "";
               }}
             />
@@ -600,7 +664,16 @@ export function ChatComposer({
               capture="environment"
               className="hidden"
               onChange={(event) => {
-                void handleFileSelection(event.target.files);
+                void handleImageSelection(event.target.files);
+                event.currentTarget.value = "";
+              }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(event) => {
+                handleGenericFileSelection(event.target.files);
                 event.currentTarget.value = "";
               }}
             />
@@ -643,7 +716,9 @@ export function ChatComposer({
   );
 }
 
-async function createImageDraft(file: File): Promise<ImageDraft> {
+async function createImageDraft(
+  file: File,
+): Promise<Extract<AttachmentDraft, { kind: "image" }>> {
   if (!file.type.startsWith("image/")) {
     throw new Error("当前只支持图片附件。");
   }
@@ -653,6 +728,7 @@ async function createImageDraft(file: File): Promise<ImageDraft> {
   try {
     const size = await readImageDimensions(previewUrl);
     return {
+      kind: "image",
       file,
       fileName: file.name || "image",
       previewUrl,

@@ -12,6 +12,13 @@ export type ChatComposerAttachmentPayload =
       height?: number;
     }
   | {
+      type: "file";
+      file: File;
+      fileName: string;
+      mimeType: string;
+      size: number;
+    }
+  | {
       type: "contact_card";
       attachment: ContactCardAttachment;
     }

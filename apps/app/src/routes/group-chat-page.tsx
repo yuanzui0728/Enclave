@@ -88,9 +88,31 @@ export function GroupChatPage() {
       formData.set("width", String(payload.width ?? ""));
       formData.set("height", String(payload.height ?? ""));
       const result = await uploadChatAttachment(formData, baseUrl);
+
+      if (result.attachment.kind !== "image") {
+        throw new Error("图片上传结果异常。");
+      }
+
       await sendMutation.mutateAsync({
         type: "image",
         text: `[图片] ${result.attachment.fileName}`,
+        attachment: result.attachment,
+      });
+      return;
+    }
+
+    if (payload.type === "file") {
+      const formData = new FormData();
+      formData.set("file", payload.file);
+      const result = await uploadChatAttachment(formData, baseUrl);
+
+      if (result.attachment.kind !== "file") {
+        throw new Error("文件上传结果异常。");
+      }
+
+      await sendMutation.mutateAsync({
+        type: "file",
+        text: `[文件] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -143,7 +165,10 @@ export function GroupChatPage() {
             <button
               type="button"
               onClick={() => {
-                void navigate({ to: "/group/$groupId/details", params: { groupId } });
+                void navigate({
+                  to: "/group/$groupId/details",
+                  params: { groupId },
+                });
               }}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/65 bg-white/72 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
               aria-label="更多操作"

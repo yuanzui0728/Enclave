@@ -259,11 +259,34 @@ export function useConversationThread(conversationId: string) {
       formData.set("height", String(payload.height ?? ""));
       const result = await uploadChatAttachment(formData, baseUrl);
 
+      if (result.attachment.kind !== "image") {
+        throw new Error("图片上传结果异常。");
+      }
+
       await sendMutation.mutateAsync({
         conversationId,
         characterId: targetCharacterId,
         type: "image",
         text: `[图片] ${result.attachment.fileName}`,
+        attachment: result.attachment,
+      });
+      return;
+    }
+
+    if (payload.type === "file") {
+      const formData = new FormData();
+      formData.set("file", payload.file);
+      const result = await uploadChatAttachment(formData, baseUrl);
+
+      if (result.attachment.kind !== "file") {
+        throw new Error("文件上传结果异常。");
+      }
+
+      await sendMutation.mutateAsync({
+        conversationId,
+        characterId: targetCharacterId,
+        type: "file",
+        text: `[文件] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -362,6 +385,10 @@ function attachmentsEqual(
     return left.url === right.url && left.fileName === right.fileName;
   }
 
+  if (left.kind === "file" && right.kind === "file") {
+    return left.url === right.url && left.fileName === right.fileName;
+  }
+
   if (left.kind === "contact_card" && right.kind === "contact_card") {
     return left.characterId === right.characterId;
   }
@@ -406,6 +433,7 @@ function buildOptimisticMessage(
 
   if (
     payload.type === "image" ||
+    payload.type === "file" ||
     payload.type === "contact_card" ||
     payload.type === "location_card"
   ) {
@@ -422,7 +450,9 @@ function buildOptimisticMessage(
           ? `[名片] ${payload.attachment.name}`
           : payload.type === "location_card"
             ? `[位置] ${payload.attachment.title}`
-            : `[图片] ${payload.attachment.fileName}`),
+            : payload.type === "file"
+              ? `[文件] ${payload.attachment.fileName}`
+              : `[图片] ${payload.attachment.fileName}`),
       attachment: payload.attachment,
       createdAt,
     };
