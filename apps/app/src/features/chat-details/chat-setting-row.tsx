@@ -6,6 +6,7 @@ type ChatSettingRowProps = {
   value?: string;
   onClick?: () => void;
   danger?: boolean;
+  disabled?: boolean;
   checked?: boolean;
   onToggle?: (checked: boolean) => void;
   className?: string;
@@ -16,6 +17,7 @@ export function ChatSettingRow({
   value,
   onClick,
   danger = false,
+  disabled = false,
   checked,
   onToggle,
   className,
@@ -26,6 +28,9 @@ export function ChatSettingRow({
     <button
       type="button"
       onClick={() => {
+        if (disabled) {
+          return;
+        }
         if (isSwitch) {
           onToggle?.(!checked);
           return;
@@ -35,10 +40,12 @@ export function ChatSettingRow({
       className={cn(
         "flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left",
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
+        disabled ? "opacity-60" : undefined,
         className,
       )}
       role={isSwitch ? "switch" : undefined}
       aria-checked={isSwitch ? checked : undefined}
+      aria-disabled={disabled}
     >
       <span className="text-[16px]">{label}</span>
       <span className="flex shrink-0 items-center gap-2">
