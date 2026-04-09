@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Ellipsis, Phone, Video } from "lucide-react";
 import {
   getGroup,
   getGroupMembers,
@@ -9,13 +8,14 @@ import {
   sendGroupMessage,
   uploadChatAttachment,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
+import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useDefaultChatBackground } from "./backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import { parseTimestamp } from "../../lib/format";
@@ -156,29 +156,9 @@ export function GroupChatThreadPanel({
           : "bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)]"
       }`}
     >
-      <header
-        className={
-          isDesktop
-            ? "border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.96))] px-5 py-4"
-            : "border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,248,239,0.94))] px-3 pb-3 pt-3"
-        }
-      >
-        <div className="flex items-start gap-2.5">
-          {!isDesktop && onBack ? (
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              size="icon"
-              className="mt-0.5 h-9 w-9 shrink-0 rounded-full border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-              aria-label="返回"
-            >
-              <ArrowLeft size={18} />
-            </Button>
-          ) : null}
-          <div className="shrink-0">
-            <AvatarChip name={groupQuery.data?.name ?? "群聊"} size="wechat" />
-          </div>
-          <div className="min-w-0 flex-1 pt-0.5">
+      {isDesktop ? (
+        <header className="border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.96))] px-5 py-4">
+          <div className="min-w-0">
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {groupQuery.data?.name ?? "群聊"}
             </div>
@@ -186,42 +166,20 @@ export function GroupChatThreadPanel({
               {membersQuery.data?.length ?? 0} 人群聊
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              void navigate({
-                to: "/group/$groupId/details",
-                params: { groupId },
-              });
-            }}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/65 bg-white/72 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-            aria-label="更多操作"
-          >
-            <Ellipsis size={18} />
-          </button>
-        </div>
-
-        {!isDesktop ? (
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-            <button
-              type="button"
-              className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-              aria-label="语音通话"
-            >
-              <Phone size={16} />
-              <span>语音</span>
-            </button>
-            <button
-              type="button"
-              className="flex h-9 min-w-[92px] items-center justify-center gap-1.5 rounded-full border border-white/65 bg-white/78 px-3 text-[13px] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-              aria-label="视频通话"
-            >
-              <Video size={16} />
-              <span>视频</span>
-            </button>
-          </div>
-        ) : null}
-      </header>
+        </header>
+      ) : (
+        <MobileChatThreadHeader
+          title={groupQuery.data?.name ?? "群聊"}
+          subtitle={`${membersQuery.data?.length ?? 0} 人群聊`}
+          onBack={onBack}
+          onMore={() => {
+            void navigate({
+              to: "/group/$groupId/details",
+              params: { groupId },
+            });
+          }}
+        />
+      )}
 
       <div
         className={
@@ -276,7 +234,9 @@ export function GroupChatThreadPanel({
             isDesktop ? "px-8 py-6" : "px-3 py-4"
           }`}
         >
-          {messagesQuery.isLoading ? <LoadingBlock label="正在读取群消息..." /> : null}
+          {messagesQuery.isLoading ? (
+            <LoadingBlock label="正在读取群消息..." />
+          ) : null}
           {messagesQuery.isError && messagesQuery.error instanceof Error ? (
             <ErrorBlock message={messagesQuery.error.message} />
           ) : null}
