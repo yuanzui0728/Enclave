@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 
 const navItems = [
   { to: "/tabs/chat", label: "Messages", icon: MessageCircleMore, shortLabel: "Chat" },
@@ -107,6 +108,8 @@ async function resolveDesktopWindowHandle(): Promise<DesktopWindowHandle | null>
 
 export function DesktopShell({ children }: PropsWithChildren) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const [desktopWindow, setDesktopWindow] = useState<DesktopWindowHandle | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -125,6 +128,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
+    if (!nativeDesktopShell) {
+      setDesktopWindow(null);
+      setIsMaximized(false);
+      return;
+    }
+
     let cancelled = false;
     let unlistenResize: (() => void) | null = null;
 
@@ -163,9 +172,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
       setDesktopWindow(null);
       unlistenResize?.();
     };
-  }, []);
+  }, [nativeDesktopShell]);
 
-  const shellInsetClass = isMaximized ? "rounded-none" : "m-2 rounded-[30px]";
+  const shellInsetClass = nativeDesktopShell && isMaximized ? "rounded-none" : "m-2 rounded-[30px]";
 
   const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !desktopWindow) {
@@ -191,11 +200,14 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
         <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] px-5">
           <div
-            className="flex min-w-0 flex-1 cursor-grab select-none items-center gap-3 active:cursor-grabbing"
-            data-tauri-drag-region
+            className={cn(
+              "flex min-w-0 flex-1 select-none items-center gap-3",
+              nativeDesktopShell ? "cursor-grab active:cursor-grabbing" : "",
+            )}
+            data-tauri-drag-region={nativeDesktopShell ? "" : undefined}
             onMouseDown={handleTitleBarMouseDown}
             onDoubleClick={() => {
-              if (!desktopWindow) {
+              if (!nativeDesktopShell || !desktopWindow) {
                 return;
               }
 
@@ -218,45 +230,53 @@ export function DesktopShell({ children }: PropsWithChildren) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <DesktopWindowButton
-              label="Minimize"
-              onClick={() => {
-                if (!desktopWindow) {
-                  return;
-                }
+          {nativeDesktopShell ? (
+            <div className="flex items-center gap-2">
+              <DesktopWindowButton
+                label="Minimize"
+                onClick={() => {
+                  if (!desktopWindow) {
+                    return;
+                  }
 
-                void desktopWindow.minimize();
-              }}
-            >
-              <Minus size={15} strokeWidth={1.8} />
-            </DesktopWindowButton>
-            <DesktopWindowButton
-              label={isMaximized ? "Restore" : "Maximize"}
-              onClick={() => {
-                if (!desktopWindow) {
-                  return;
-                }
+                  void desktopWindow.minimize();
+                }}
+              >
+                <Minus size={15} strokeWidth={1.8} />
+              </DesktopWindowButton>
+              <DesktopWindowButton
+                label={isMaximized ? "Restore" : "Maximize"}
+                onClick={() => {
+                  if (!desktopWindow) {
+                    return;
+                  }
 
-                void desktopWindow.toggleMaximize();
-              }}
-            >
-              <Copy size={14} strokeWidth={1.8} />
-            </DesktopWindowButton>
-            <DesktopWindowButton
-              danger
-              label="Close"
-              onClick={() => {
-                if (!desktopWindow) {
-                  return;
-                }
+                  void desktopWindow.toggleMaximize();
+                }}
+              >
+                <Copy size={14} strokeWidth={1.8} />
+              </DesktopWindowButton>
+              <DesktopWindowButton
+                danger
+                label="Close"
+                onClick={() => {
+                  if (!desktopWindow) {
+                    return;
+                  }
 
-                void desktopWindow.close();
-              }}
-            >
-              <X size={14} strokeWidth={1.9} />
-            </DesktopWindowButton>
-          </div>
+                  void desktopWindow.close();
+                }}
+              >
+                <X size={14} strokeWidth={1.9} />
+              </DesktopWindowButton>
+            </div>
+          ) : (
+            <div className="hidden items-center gap-2 xl:flex">
+              <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--text-muted)]">
+                Browser desktop layout
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1 gap-4 p-4 pt-3">
