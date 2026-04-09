@@ -14,6 +14,7 @@ import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
+import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
 
 @Injectable()
 export class SchedulerService {
@@ -74,6 +75,13 @@ export class SchedulerService {
       const chars = await this.characterRepo.find();
       const hour = new Date().getHours();
       for (const char of chars) {
+        if (DEFAULT_CHARACTER_IDS.includes(char.id as (typeof DEFAULT_CHARACTER_IDS)[number])) {
+          char.isOnline = true;
+          char.currentActivity = 'free';
+          await this.characterRepo.save(char);
+          continue;
+        }
+
         const start = char.activeHoursStart ?? 8;
         const end = char.activeHoursEnd ?? 23;
         const shouldBeOnline = hour >= start && hour <= end;
@@ -175,6 +183,11 @@ export class SchedulerService {
       const activities = ['working', 'eating', 'resting', 'commuting', 'free', 'sleeping'];
 
       for (const char of chars) {
+        if (DEFAULT_CHARACTER_IDS.includes(char.id as (typeof DEFAULT_CHARACTER_IDS)[number])) {
+          await this.characterRepo.update(char.id, { currentActivity: 'free', isOnline: true });
+          continue;
+        }
+
         const activity = Math.random() < 0.8 ? baseActivity : activities[Math.floor(Math.random() * activities.length)];
         await this.characterRepo.update(char.id, { currentActivity: activity });
         this.logger.debug(`Updated activity for ${char.name}: ${activity}`);
