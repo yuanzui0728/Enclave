@@ -65,7 +65,7 @@ export function DesktopMomentsSidebar({
 }: DesktopMomentsSidebarProps) {
   if (mode === "detail" && selectedMoment) {
     return (
-      <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+      <aside className="flex w-[320px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <DesktopMomentDetailPanel
           commentDraft={commentDrafts[selectedMoment.id] ?? ""}
           commentLoading={commentPendingMomentId === selectedMoment.id}
@@ -84,7 +84,7 @@ export function DesktopMomentsSidebar({
 
   if (mode === "author" && activeAuthorSummary) {
     return (
-      <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+      <aside className="flex w-[320px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
@@ -156,13 +156,13 @@ export function DesktopMomentsSidebar({
               <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                 最近动态
               </div>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2.5">
                 {authorMoments.slice(0, 5).map((moment) => (
                   <button
                     key={moment.id}
                     type="button"
                     onClick={() => onSelectMoment(moment.id)}
-                    className="w-full rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)] px-4 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(249,115,22,0.12)] hover:bg-white"
+                    className="w-full rounded-[14px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)] px-3.5 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(249,115,22,0.12)] hover:bg-white"
                   >
                     <div className="line-clamp-2 text-[13px] leading-6 text-[color:var(--text-primary)]">
                       {moment.text}
@@ -181,8 +181,8 @@ export function DesktopMomentsSidebar({
   }
 
   return (
-    <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
-        <div className="flex h-full min-h-0 flex-col">
+    <aside className="flex w-[320px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+      <div className="flex h-full min-h-0 flex-col">
         <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
           <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
             概览

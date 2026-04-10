@@ -118,7 +118,7 @@ export function DesktopMomentDetailPanel({
             <span>{moment.authorType === "character" ? "角色动态" : "我的动态"}</span>
           </div>
 
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             <Button
               variant="secondary"
               size="sm"

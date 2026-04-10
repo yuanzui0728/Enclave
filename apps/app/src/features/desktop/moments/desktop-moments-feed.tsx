@@ -41,7 +41,7 @@ export function DesktopMomentsFeed({
       {isLoading ? <LoadingBlock label="正在读取朋友圈..." /> : null}
 
       {!isLoading && moments.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {moments.map((moment) => (
             <DesktopMomentRow
               key={moment.id}

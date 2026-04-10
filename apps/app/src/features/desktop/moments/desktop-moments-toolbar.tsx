@@ -44,7 +44,7 @@ export function DesktopMomentsToolbar({
 }: DesktopMomentsToolbarProps) {
   return (
     <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-4">
-      <div className="mx-auto w-full max-w-[760px]">
+      <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">

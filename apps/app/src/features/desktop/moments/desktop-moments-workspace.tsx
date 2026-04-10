@@ -229,7 +229,7 @@ export function DesktopMomentsWorkspace({
             ref={scrollViewportRef}
             className="min-h-0 flex-1 overflow-auto px-6 py-5"
           >
-            <div className="mx-auto w-full max-w-[760px]">
+            <div className="mx-auto w-full max-w-[720px]">
               <DesktopMomentsFeed
                 commentDrafts={commentDrafts}
                 commentPendingMomentId={commentPendingMomentId}
