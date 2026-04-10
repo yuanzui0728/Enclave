@@ -112,6 +112,34 @@ type ChatMessageListProps = {
   onSelectionModeChange?: (active: boolean) => void;
 };
 
+function SelectionModeActionButton({
+  icon,
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-[14px] border border-black/6 bg-white text-[12px] transition active:bg-[#f5f5f5] disabled:bg-[#f8f8f8] disabled:text-[#b8b8b8] ${
+        danger ? "text-[#d74b45]" : "text-[#111827]"
+      }`}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
 export function ChatMessageList({
   messages,
   threadContext,
@@ -2423,34 +2451,6 @@ function SelectionToggle({
       aria-label={checked ? "取消选择消息" : "选择消息"}
     >
       ✓
-    </button>
-  );
-}
-
-function SelectionModeActionButton({
-  icon,
-  label,
-  onClick,
-  disabled = false,
-  danger = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-[14px] border border-black/6 bg-white text-[12px] transition active:bg-[#f5f5f5] disabled:bg-[#f8f8f8] disabled:text-[#b8b8b8] ${
-        danger ? "text-[#d74b45]" : "text-[#111827]"
-      }`}
-    >
-      <span>{icon}</span>
-      <span>{label}</span>
     </button>
   );
 }
