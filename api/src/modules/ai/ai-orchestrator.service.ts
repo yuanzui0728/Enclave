@@ -491,7 +491,8 @@ export class AiOrchestratorService {
       },
     ];
     const worldCtx = await this.worldService.getLatest();
-    const worldContextText = await this.worldService.buildContextString(worldCtx);
+    const worldContextText =
+      await this.worldService.buildContextString(worldCtx);
 
     return {
       model: provider.model,

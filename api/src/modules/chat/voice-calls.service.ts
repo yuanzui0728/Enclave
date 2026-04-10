@@ -29,7 +29,9 @@ export class VoiceCallsService {
       input.conversationId,
     );
     if (!conversation) {
-      throw new NotFoundException(`Conversation ${input.conversationId} not found`);
+      throw new NotFoundException(
+        `Conversation ${input.conversationId} not found`,
+      );
     }
 
     if (conversation.type !== 'direct') {
@@ -54,7 +56,9 @@ export class VoiceCallsService {
       type: 'text',
       text: transcription.text,
     });
-    const userMessage = messages.find((message) => message.senderType === 'user');
+    const userMessage = messages.find(
+      (message) => message.senderType === 'user',
+    );
     const assistantMessage = messages.find(
       (message) =>
         message.senderType === 'character' && message.senderId === characterId,

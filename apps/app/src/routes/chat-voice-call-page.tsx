@@ -137,7 +137,7 @@ export function ChatVoiceCallPage() {
     voiceCall.stopReplyPlayback();
     void navigate({
       to: "/chat/$conversationId",
-      params: { conversationId },
+      params: { conversationId: resolvedConversationId },
     });
   };
 
