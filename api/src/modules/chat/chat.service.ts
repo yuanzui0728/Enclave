@@ -27,6 +27,7 @@ import {
   StickerAttachment,
 } from './chat.types';
 import { findStickerAttachment } from './sticker-catalog';
+import { MEMORY_COMPRESSION_INTERVAL } from '../ai/reply-logic.constants';
 
 type SendConversationMessageInput =
   | {
@@ -684,7 +685,10 @@ export class ChatService {
       this.conversationHistory.set(convId, history);
     }
 
-    if (history.length % 10 === 0 && history.length > 0) {
+    if (
+      history.length % MEMORY_COMPRESSION_INTERVAL === 0 &&
+      history.length > 0
+    ) {
       const primaryCharId = entity.participants[0];
       const char = await this.characters.findById(primaryCharId);
       if (char) {

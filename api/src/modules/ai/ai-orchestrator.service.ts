@@ -20,6 +20,7 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
 import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
+import { calculateHistoryWindow } from './reply-logic.constants';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
@@ -298,6 +299,101 @@ export class AiOrchestratorService {
     };
   }
 
+  async inspectReplyPreparation(options: GenerateReplyOptions): Promise<{
+    model: string;
+    systemPrompt: string;
+    worldContextText?: string;
+    historyWindow: number;
+    includedHistory: ChatMessage[];
+    requestMessages: Array<{
+      role: 'system' | 'user' | 'assistant';
+      content: string;
+    }>;
+    apiAvailable: boolean;
+  }> {
+    const {
+      profile,
+      conversationHistory,
+      userMessage,
+      isGroupChat,
+      chatContext,
+      aiKeyOverride,
+    } = options;
+    const provider = await this.resolveRuntimeProvider(aiKeyOverride);
+    const systemPrompt = await this.buildSystemPrompt(
+      profile,
+      isGroupChat,
+      chatContext,
+    );
+    const historyWindow = calculateHistoryWindow(
+      profile.memory?.forgettingCurve,
+    );
+    const includedHistory = conversationHistory.slice(-historyWindow);
+    const requestMessages: Array<{
+      role: 'system' | 'user' | 'assistant';
+      content: string;
+    }> = [
+      {
+        role: 'system',
+        content: systemPrompt,
+      },
+      ...includedHistory.map((message) => ({
+        role:
+          message.role === 'assistant'
+            ? ('assistant' as const)
+            : ('user' as const),
+        content: message.characterId
+          ? `[${message.characterId}]: ${message.content}`
+          : message.content,
+      })),
+      {
+        role: 'user',
+        content: userMessage,
+      },
+    ];
+    const worldCtx = await this.worldService.getLatest();
+    const worldContextText = this.worldService.buildContextString(worldCtx);
+
+    return {
+      model: provider.model,
+      systemPrompt,
+      worldContextText: worldContextText || undefined,
+      historyWindow,
+      includedHistory,
+      requestMessages,
+      apiAvailable: Boolean(provider.apiKey),
+    };
+  }
+
+  private async buildSystemPrompt(
+    profile: PersonalityProfile,
+    isGroupChat?: boolean,
+    chatContext?: GenerateReplyOptions['chatContext'],
+  ) {
+    let systemPrompt =
+      profile.systemPrompt ??
+      this.promptBuilder.buildChatSystemPrompt(
+        profile,
+        isGroupChat,
+        chatContext,
+      );
+
+    try {
+      const worldCtx = await this.worldService.getLatest();
+      const ctxStr = this.worldService.buildContextString(worldCtx);
+      if (ctxStr) {
+        systemPrompt = systemPrompt.replace(/当前时间：[^\n]*/, ctxStr);
+        if (!systemPrompt.includes(ctxStr)) {
+          systemPrompt += `\n\n【当前世界状态】${ctxStr}`;
+        }
+      }
+    } catch {
+      // ignore world context errors
+    }
+
+    return systemPrompt;
+  }
+
   async generateReply(
     options: GenerateReplyOptions,
   ): Promise<GenerateReplyResult> {
@@ -318,32 +414,14 @@ export class AiOrchestratorService {
 
     const client = this.createProviderClient(provider);
 
-    let systemPrompt =
-      profile.systemPrompt ??
-      this.promptBuilder.buildChatSystemPrompt(
-        profile,
-        isGroupChat,
-        chatContext,
-      );
-
-    // Inject WorldContext (current time/season/holiday)
-    try {
-      const worldCtx = await this.worldService.getLatest();
-      const ctxStr = this.worldService.buildContextString(worldCtx);
-      if (ctxStr) {
-        systemPrompt = systemPrompt.replace(/当前时间：[^\n]*/, ctxStr);
-        // If no existing time line, append
-        if (!systemPrompt.includes(ctxStr)) {
-          systemPrompt += `\n\n【当前世界状态】${ctxStr}`;
-        }
-      }
-    } catch {
-      // ignore world context errors
-    }
-
-    // Calculate history window size based on forgettingCurve
-    const forgettingCurve = profile.memory?.forgettingCurve ?? 70;
-    const historyWindow = Math.round(8 + (forgettingCurve / 100) * 22); // 8-30 条
+    const systemPrompt = await this.buildSystemPrompt(
+      profile,
+      isGroupChat,
+      chatContext,
+    );
+    const historyWindow = calculateHistoryWindow(
+      profile.memory?.forgettingCurve,
+    );
     const sanitizedHistory = conversationHistory
       .slice(-historyWindow)
       .map((m) => ({
