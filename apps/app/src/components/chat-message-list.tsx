@@ -490,11 +490,7 @@ export function ChatMessageList({
                       url={message.attachment.url}
                       label={message.attachment.fileName || displayText}
                       maxSize={isDesktop ? 180 : 144}
-                      onOpen={
-                        isDesktop
-                          ? () => setViewerMessageId(message.id)
-                          : undefined
-                      }
+                      onOpen={() => setViewerMessageId(message.id)}
                     />
                   ) : message.type === "file" &&
                     message.attachment?.kind === "file" ? (
@@ -628,8 +624,9 @@ export function ChatMessageList({
             : undefined
         }
       />
-      {isDesktop && activeImage ? (
-        <DesktopImageViewerOverlay
+      {activeImage ? (
+        <ImageViewerOverlay
+          variant={variant}
           activeImage={activeImage}
           activeIndex={activeImageIndex}
           total={imageMessages.length}
@@ -1003,7 +1000,8 @@ function StickerMessage({
   );
 }
 
-function DesktopImageViewerOverlay({
+function ImageViewerOverlay({
+  variant,
   activeImage,
   activeIndex,
   total,
@@ -1012,6 +1010,7 @@ function DesktopImageViewerOverlay({
   onNext,
   onLocate,
 }: {
+  variant: "mobile" | "desktop";
   activeImage: {
     id: string;
     url: string;
@@ -1025,6 +1024,8 @@ function DesktopImageViewerOverlay({
   onNext?: () => void;
   onLocate: () => void;
 }) {
+  const isDesktop = variant === "desktop";
+
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.86)] backdrop-blur-sm">
       <button
@@ -1034,7 +1035,13 @@ function DesktopImageViewerOverlay({
         aria-label="关闭图片查看器"
       />
 
-      <div className="absolute inset-x-8 top-5 z-10 flex items-center justify-between gap-4 text-white">
+      <div
+        className={`absolute inset-x-0 z-10 flex items-start justify-between gap-4 px-4 text-white ${
+          isDesktop
+            ? "top-5 px-8"
+            : "top-[calc(env(safe-area-inset-top,0px)+0.75rem)]"
+        }`}
+      >
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
             {activeImage.fileName || activeImage.label}
@@ -1044,10 +1051,18 @@ function DesktopImageViewerOverlay({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <ViewerActionButton label="定位到聊天位置" onClick={onLocate}>
+          <ViewerActionButton
+            compact={!isDesktop}
+            label="定位到聊天位置"
+            onClick={onLocate}
+          >
             <LocateFixed size={16} />
           </ViewerActionButton>
-          <ViewerActionButton label="关闭图片查看器" onClick={onClose}>
+          <ViewerActionButton
+            compact={!isDesktop}
+            label="关闭图片查看器"
+            onClick={onClose}
+          >
             <X size={16} />
           </ViewerActionButton>
         </div>
@@ -1055,6 +1070,7 @@ function DesktopImageViewerOverlay({
 
       {onPrevious ? (
         <ViewerNavButton
+          compact={!isDesktop}
           side="left"
           label="上一张图片"
           onClick={onPrevious}
@@ -1063,16 +1079,27 @@ function DesktopImageViewerOverlay({
         </ViewerNavButton>
       ) : null}
       {onNext ? (
-        <ViewerNavButton side="right" label="下一张图片" onClick={onNext}>
+        <ViewerNavButton
+          compact={!isDesktop}
+          side="right"
+          label="下一张图片"
+          onClick={onNext}
+        >
           <ChevronRight size={22} />
         </ViewerNavButton>
       ) : null}
 
-      <div className="absolute inset-0 flex items-center justify-center px-24 pb-10 pt-24">
+      <div
+        className={`absolute inset-0 flex items-center justify-center ${
+          isDesktop ? "px-24 pb-10 pt-24" : "px-4 pb-8 pt-24"
+        }`}
+      >
         <img
           src={activeImage.url}
           alt={activeImage.label}
-          className="max-h-full max-w-full rounded-[20px] object-contain shadow-[0_32px_80px_rgba(0,0,0,0.34)]"
+          className={`max-h-full max-w-full object-contain shadow-[0_32px_80px_rgba(0,0,0,0.34)] ${
+            isDesktop ? "rounded-[20px]" : "rounded-[14px]"
+          }`}
         />
       </div>
     </div>
@@ -1081,10 +1108,12 @@ function DesktopImageViewerOverlay({
 
 function ViewerActionButton({
   children,
+  compact = false,
   label,
   onClick,
 }: {
   children: ReactNode;
+  compact?: boolean;
   label: string;
   onClick: () => void;
 }) {
@@ -1092,23 +1121,27 @@ function ViewerActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 text-sm text-white transition hover:bg-white/16"
+      className={`flex items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
+        compact ? "h-10 w-10 justify-center" : "h-10 gap-2 px-4 text-sm"
+      }`}
       aria-label={label}
       title={label}
     >
       {children}
-      <span>{label}</span>
+      {!compact ? <span>{label}</span> : null}
     </button>
   );
 }
 
 function ViewerNavButton({
   children,
+  compact = false,
   label,
   onClick,
   side,
 }: {
   children: ReactNode;
+  compact?: boolean;
   label: string;
   onClick: () => void;
   side: "left" | "right";
@@ -1117,8 +1150,16 @@ function ViewerNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
-        side === "left" ? "left-8" : "right-8"
+      className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
+        compact ? "h-10 w-10" : "h-12 w-12"
+      } ${
+        side === "left"
+          ? compact
+            ? "left-3"
+            : "left-8"
+          : compact
+            ? "right-3"
+            : "right-8"
       }`}
       aria-label={label}
       title={label}
