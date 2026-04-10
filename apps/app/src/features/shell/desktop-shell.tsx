@@ -739,7 +739,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
 }
 
 function isStandaloneDesktopRoute(pathname: string) {
-  return pathname === "/desktop/chat-image-viewer";
+  return (
+    pathname === "/desktop/chat-image-viewer" ||
+    pathname === "/desktop/chat-window"
+  );
 }
 
 function DesktopWindowButton({

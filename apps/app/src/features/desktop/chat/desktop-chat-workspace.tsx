@@ -107,6 +107,7 @@ type DesktopChatWorkspaceProps = {
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
   selectedSpecialView?: "subscription-inbox";
+  standaloneWindow?: boolean;
 };
 
 type DesktopQuickActionItem = {
@@ -141,6 +142,7 @@ export function DesktopChatWorkspace({
   highlightedMessageId,
   routeContextNotice,
   selectedSpecialView,
+  standaloneWindow = false,
 }: DesktopChatWorkspaceProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -224,6 +226,10 @@ export function DesktopChatWorkspace({
     conversations,
     keyword: searchTerm,
   });
+  const hasNotifiedReminderGroup = useMemo(
+    () => filteredReminderGroups.some((group) => group.status === "notified"),
+    [filteredReminderGroups],
+  );
   const { openReminder, completeReminder } = useChatReminderActions({
     navigateToReminder: (entry) => {
       void navigate(buildChatReminderNavigation(entry));
@@ -236,6 +242,13 @@ export function DesktopChatWorkspace({
     () => messageEntriesQuery.data?.serviceConversations ?? [],
     [messageEntriesQuery.data?.serviceConversations],
   );
+
+  useEffect(() => {
+    if (!hasNotifiedReminderGroup && isNotifiedReminderGroupExpanded) {
+      setIsNotifiedReminderGroupExpanded(false);
+    }
+  }, [hasNotifiedReminderGroup, isNotifiedReminderGroupExpanded]);
+
   const subscriptionInboxActive = selectedSpecialView === "subscription-inbox";
   const serviceConversationActive = Boolean(selectedServiceAccountId);
   const showSubscriptionInboxItem = useMemo(() => {
@@ -272,23 +285,29 @@ export function DesktopChatWorkspace({
       return null;
     }
 
-    if (!filteredConversations.length) {
+    if (!conversations.length && !filteredConversations.length) {
       return null;
     }
 
     if (selectedConversationId) {
       return (
-        filteredConversations.find(
+        conversations.find(
           (conversation) => conversation.id === selectedConversationId,
-        ) ?? filteredConversations[0]
+        ) ?? (standaloneWindow ? null : filteredConversations[0])
       );
+    }
+
+    if (standaloneWindow) {
+      return null;
     }
 
     return filteredConversations[0];
   }, [
+    conversations,
     filteredConversations,
     selectedConversationId,
     serviceConversationActive,
+    standaloneWindow,
     subscriptionInboxActive,
   ]);
 
@@ -643,268 +662,273 @@ export function DesktopChatWorkspace({
         />
       ) : null}
 
-      <section className="flex w-[324px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
-        <div className="border-b border-black/6 bg-[#f3f3f3] px-3 py-3">
-          <div className="relative z-20 flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <TextField
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onKeyDown={handleSearchFieldKeyDown}
-                placeholder="搜索"
-                className="flex-1 rounded-[8px] border-black/6 bg-white py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-black/10 focus:shadow-none"
-              />
-              <button
-                type="button"
-                onClick={() => openDesktopSearch()}
-                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[7px] text-[color:var(--text-dim)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
-                aria-label="在搜一搜中搜索"
-                title="回车或点击进入搜一搜"
-              >
-                <Search size={15} />
-              </button>
-            </div>
-            <div className="relative shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsQuickMenuOpen((current) => !current)}
-                className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-black/6 bg-white text-[color:var(--text-primary)] transition hover:bg-[#f8f8f8]"
-                aria-label="打开快捷菜单"
-              >
-                <Plus size={17} strokeWidth={2.2} />
-              </button>
+      {standaloneWindow ? null : (
+        <section className="flex w-[324px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
+          <div className="border-b border-black/6 bg-[#f3f3f3] px-3 py-3">
+            <div className="relative z-20 flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <TextField
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onKeyDown={handleSearchFieldKeyDown}
+                  placeholder="搜索"
+                  className="flex-1 rounded-[8px] border-black/6 bg-white py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-black/10 focus:shadow-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => openDesktopSearch()}
+                  className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[7px] text-[color:var(--text-dim)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
+                  aria-label="在搜一搜中搜索"
+                  title="回车或点击进入搜一搜"
+                >
+                  <Search size={15} />
+                </button>
+              </div>
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsQuickMenuOpen((current) => !current)}
+                  className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-black/6 bg-white text-[color:var(--text-primary)] transition hover:bg-[#f8f8f8]"
+                  aria-label="打开快捷菜单"
+                >
+                  <Plus size={17} strokeWidth={2.2} />
+                </button>
 
-              {isQuickMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[12px] border border-black/8 bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
-                  {desktopQuickActionItems.map((item) => {
-                    const Icon = item.icon;
-
-                    return (
-                      <button
-                        key={item.key}
-                        type="button"
-                        onClick={() => handleQuickAction(item.key)}
-                        className="flex w-full items-center gap-3 rounded-[8px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#f5f5f5]"
-                      >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#f3f3f3] text-[color:var(--text-secondary)]">
-                          <Icon size={16} />
-                        </div>
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          {notice ? (
-            <InlineNotice
-              className="mt-3 border-black/6 bg-white text-xs"
-              tone="info"
-            >
-              {notice}
-            </InlineNotice>
-          ) : null}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto px-2 py-2.5">
-          {conversationsQuery.isLoading ? (
-            <LoadingBlock label="正在读取会话..." />
-          ) : null}
-          {conversationsQuery.isError &&
-          conversationsQuery.error instanceof Error ? (
-            <ErrorBlock message={conversationsQuery.error.message} />
-          ) : null}
-          {messageEntriesQuery.isError &&
-          messageEntriesQuery.error instanceof Error ? (
-            <ErrorBlock message={messageEntriesQuery.error.message} />
-          ) : null}
-          {blockedQuery.isError && blockedQuery.error instanceof Error ? (
-            <ErrorBlock message={blockedQuery.error.message} />
-          ) : null}
-
-          <div className="space-y-1">
-            {filteredReminderEntries.length ? (
-              <section className="overflow-hidden rounded-[10px] border border-[#dcefe3] bg-[#f8fcf9] p-2 shadow-none">
-                <div className="flex items-center justify-between gap-3 px-2 py-1.5">
-                  <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
-                      <BellRing size={14} />
-                    </div>
-                    <span>消息提醒</span>
-                  </div>
-                  <div className="text-[11px] text-[color:var(--text-dim)]">
-                    {filteredReminderSummary}
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  {filteredReminderGroups.map((group) =>
-                    (() => {
-                      const collapsible = isChatReminderGroupCollapsible(
-                        group.status,
-                      );
-                      const collapsed =
-                        collapsible && !isNotifiedReminderGroupExpanded;
+                {isQuickMenuOpen ? (
+                  <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[12px] border border-black/8 bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+                    {desktopQuickActionItems.map((item) => {
+                      const Icon = item.icon;
 
                       return (
-                        <section
-                          key={group.status}
-                          className="rounded-[14px] border border-white/70 bg-white/78"
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => handleQuickAction(item.key)}
+                          className="flex w-full items-center gap-3 rounded-[8px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#f5f5f5]"
                         >
-                          {collapsible ? (
-                            <div className="flex items-center justify-between px-3 py-2">
-                              <span
-                                className={cn(
-                                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                                  group.status === "notified"
-                                    ? "bg-[#fff7e6] text-[#d48806]"
-                                    : group.status === "due"
-                                      ? "bg-[#fff1f0] text-[#d74b45]"
-                                      : "bg-[#eaf8ef] text-[#07c160]",
-                                )}
-                              >
-                                {group.title}
-                              </span>
-                              <span className="flex items-center gap-2">
-                                {isChatReminderGroupClearable(group.status) ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      void handleClearReminderGroup(
-                                        group.status,
-                                        group.entries.map(
-                                          (entry) => entry.messageId,
-                                        ),
-                                      );
-                                    }}
-                                    className="rounded-full border border-transparent bg-[#f3f6f4] px-2.5 py-1 text-[10px] text-[#5f6b63] transition-colors hover:bg-[#e9eeeb]"
-                                  >
-                                    {getChatReminderGroupClearLabel(
-                                      group.status,
-                                    )}
-                                  </button>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setIsNotifiedReminderGroupExpanded(
-                                      (current) => !current,
-                                    )
-                                  }
-                                  className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]"
-                                  aria-expanded={!collapsed}
-                                >
-                                  <span>{group.count} 条</span>
-                                  <span>{collapsed ? "展开" : "收起"}</span>
-                                  {collapsed ? (
-                                    <ChevronRight size={12} />
-                                  ) : (
-                                    <ChevronDown size={12} />
-                                  )}
-                                </button>
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between px-3 py-2">
-                              <span
-                                className={cn(
-                                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                                  group.status === "notified"
-                                    ? "bg-[#fff7e6] text-[#d48806]"
-                                    : group.status === "due"
-                                      ? "bg-[#fff1f0] text-[#d74b45]"
-                                      : "bg-[#eaf8ef] text-[#07c160]",
-                                )}
-                              >
-                                {group.title}
-                              </span>
-                              <span className="text-[10px] text-[color:var(--text-dim)]">
-                                {group.count} 条
-                              </span>
-                            </div>
-                          )}
-                          {collapsed ? null : (
-                            <div className="space-y-1 border-t border-white/80 p-1.5">
-                              {group.entries.map((entry) => (
-                                <DesktopReminderCard
-                                  key={entry.messageId}
-                                  entry={entry}
-                                  active={
-                                    entry.threadId === selectedConversationId &&
-                                    entry.messageId === highlightedMessageId
-                                  }
-                                  onOpen={openReminder}
-                                  onDismiss={(targetEntry) => {
-                                    void completeReminder(targetEntry);
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </section>
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#f3f3f3] text-[color:var(--text-secondary)]">
+                            <Icon size={16} />
+                          </div>
+                          <span>{item.label}</span>
+                        </button>
                       );
-                    })(),
-                  )}
-                </div>
-              </section>
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            {notice ? (
+              <InlineNotice
+                className="mt-3 border-black/6 bg-white text-xs"
+                tone="info"
+              >
+                {notice}
+              </InlineNotice>
             ) : null}
-
-            {showSubscriptionInboxItem && subscriptionInboxSummary ? (
-              <SubscriptionInboxCard
-                summary={subscriptionInboxSummary}
-                variant="desktop"
-                active={subscriptionInboxActive}
-                onClick={() => {
-                  void navigate({ to: "/chat/subscription-inbox" });
-                }}
-              />
-            ) : null}
-
-            {filteredServiceConversations.map((conversation) => (
-              <OfficialServiceConversationCard
-                key={conversation.accountId}
-                conversation={conversation}
-                variant="desktop"
-                active={conversation.accountId === selectedServiceAccountId}
-                onClick={() => {
-                  void navigate({
-                    to: "/official-accounts/service/$accountId",
-                    params: { accountId: conversation.accountId },
-                  });
-                }}
-              />
-            ))}
-
-            {filteredConversations.map((conversation) => (
-              <ConversationCard
-                key={conversation.id}
-                active={conversation.id === activeConversation?.id}
-                conversation={conversation}
-                localMessageActionState={localMessageActionState}
-                contextMenuOpen={
-                  conversationContextMenu?.conversation.id === conversation.id
-                }
-                onContextMenu={handleConversationContextMenu}
-              />
-            ))}
           </div>
 
-          {!conversationsQuery.isLoading &&
-          !filteredReminderEntries.length &&
-          !filteredConversations.length &&
-          !filteredServiceConversations.length &&
-          !showSubscriptionInboxItem &&
-          searchTerm.trim() ? (
-            <div className="px-2 pt-5">
-              <EmptyState
-                title="没有匹配的会话"
-                description="换个关键词试试。"
-              />
+          <div className="min-h-0 flex-1 overflow-auto px-2 py-2.5">
+            {conversationsQuery.isLoading ? (
+              <LoadingBlock label="正在读取会话..." />
+            ) : null}
+            {conversationsQuery.isError &&
+            conversationsQuery.error instanceof Error ? (
+              <ErrorBlock message={conversationsQuery.error.message} />
+            ) : null}
+            {messageEntriesQuery.isError &&
+            messageEntriesQuery.error instanceof Error ? (
+              <ErrorBlock message={messageEntriesQuery.error.message} />
+            ) : null}
+            {blockedQuery.isError && blockedQuery.error instanceof Error ? (
+              <ErrorBlock message={blockedQuery.error.message} />
+            ) : null}
+
+            <div className="space-y-1">
+              {filteredReminderEntries.length ? (
+                <section className="overflow-hidden rounded-[10px] border border-[#dcefe3] bg-[#f8fcf9] p-2 shadow-none">
+                  <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
+                        <BellRing size={14} />
+                      </div>
+                      <span>消息提醒</span>
+                    </div>
+                    <div className="text-[11px] text-[color:var(--text-dim)]">
+                      {filteredReminderSummary}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {filteredReminderGroups.map((group) =>
+                      (() => {
+                        const collapsible = isChatReminderGroupCollapsible(
+                          group.status,
+                        );
+                        const collapsed =
+                          collapsible && !isNotifiedReminderGroupExpanded;
+
+                        return (
+                          <section
+                            key={group.status}
+                            className="rounded-[14px] border border-white/70 bg-white/78"
+                          >
+                            {collapsible ? (
+                              <div className="flex items-center justify-between px-3 py-2">
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                    group.status === "notified"
+                                      ? "bg-[#fff7e6] text-[#d48806]"
+                                      : group.status === "due"
+                                        ? "bg-[#fff1f0] text-[#d74b45]"
+                                        : "bg-[#eaf8ef] text-[#07c160]",
+                                  )}
+                                >
+                                  {group.title}
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  {isChatReminderGroupClearable(
+                                    group.status,
+                                  ) ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        void handleClearReminderGroup(
+                                          group.status,
+                                          group.entries.map(
+                                            (entry) => entry.messageId,
+                                          ),
+                                        );
+                                      }}
+                                      className="rounded-full border border-transparent bg-[#f3f6f4] px-2.5 py-1 text-[10px] text-[#5f6b63] transition-colors hover:bg-[#e9eeeb]"
+                                    >
+                                      {getChatReminderGroupClearLabel(
+                                        group.status,
+                                      )}
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setIsNotifiedReminderGroupExpanded(
+                                        (current) => !current,
+                                      )
+                                    }
+                                    className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]"
+                                    aria-expanded={!collapsed}
+                                  >
+                                    <span>{group.count} 条</span>
+                                    <span>{collapsed ? "展开" : "收起"}</span>
+                                    {collapsed ? (
+                                      <ChevronRight size={12} />
+                                    ) : (
+                                      <ChevronDown size={12} />
+                                    )}
+                                  </button>
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between px-3 py-2">
+                                <span
+                                  className={cn(
+                                    "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                    group.status === "notified"
+                                      ? "bg-[#fff7e6] text-[#d48806]"
+                                      : group.status === "due"
+                                        ? "bg-[#fff1f0] text-[#d74b45]"
+                                        : "bg-[#eaf8ef] text-[#07c160]",
+                                  )}
+                                >
+                                  {group.title}
+                                </span>
+                                <span className="text-[10px] text-[color:var(--text-dim)]">
+                                  {group.count} 条
+                                </span>
+                              </div>
+                            )}
+                            {collapsed ? null : (
+                              <div className="space-y-1 border-t border-white/80 p-1.5">
+                                {group.entries.map((entry) => (
+                                  <DesktopReminderCard
+                                    key={entry.messageId}
+                                    entry={entry}
+                                    active={
+                                      entry.threadId ===
+                                        selectedConversationId &&
+                                      entry.messageId === highlightedMessageId
+                                    }
+                                    onOpen={openReminder}
+                                    onDismiss={(targetEntry) => {
+                                      void completeReminder(targetEntry);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </section>
+                        );
+                      })(),
+                    )}
+                  </div>
+                </section>
+              ) : null}
+
+              {showSubscriptionInboxItem && subscriptionInboxSummary ? (
+                <SubscriptionInboxCard
+                  summary={subscriptionInboxSummary}
+                  variant="desktop"
+                  active={subscriptionInboxActive}
+                  onClick={() => {
+                    void navigate({ to: "/chat/subscription-inbox" });
+                  }}
+                />
+              ) : null}
+
+              {filteredServiceConversations.map((conversation) => (
+                <OfficialServiceConversationCard
+                  key={conversation.accountId}
+                  conversation={conversation}
+                  variant="desktop"
+                  active={conversation.accountId === selectedServiceAccountId}
+                  onClick={() => {
+                    void navigate({
+                      to: "/official-accounts/service/$accountId",
+                      params: { accountId: conversation.accountId },
+                    });
+                  }}
+                />
+              ))}
+
+              {filteredConversations.map((conversation) => (
+                <ConversationCard
+                  key={conversation.id}
+                  active={conversation.id === activeConversation?.id}
+                  conversation={conversation}
+                  localMessageActionState={localMessageActionState}
+                  contextMenuOpen={
+                    conversationContextMenu?.conversation.id === conversation.id
+                  }
+                  onContextMenu={handleConversationContextMenu}
+                />
+              ))}
             </div>
-          ) : null}
-        </div>
-      </section>
+
+            {!conversationsQuery.isLoading &&
+            !filteredReminderEntries.length &&
+            !filteredConversations.length &&
+            !filteredServiceConversations.length &&
+            !showSubscriptionInboxItem &&
+            searchTerm.trim() ? (
+              <div className="px-2 pt-5">
+                <EmptyState
+                  title="没有匹配的会话"
+                  description="换个关键词试试。"
+                />
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       <section className="min-w-0 flex-1">
         {subscriptionInboxActive ? (
@@ -954,6 +978,15 @@ export function DesktopChatWorkspace({
               }
             />
           )
+        ) : standaloneWindow ? (
+          <div className="flex h-full items-center justify-center px-10">
+            <div className="w-full max-w-md rounded-[22px] border border-black/6 bg-white px-8 py-10 shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
+              <EmptyState
+                title="这段聊天已经不存在"
+                description="它可能已被隐藏、删除，或者当前上下文已经失效。"
+              />
+            </div>
+          </div>
         ) : (
           <div className="flex h-full items-center justify-center px-10" />
         )}

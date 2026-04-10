@@ -158,6 +158,11 @@ const DesktopChatImageViewerPage = lazy(async () => {
   return { default: mod.DesktopChatImageViewerPage };
 });
 
+const DesktopChatWindowPage = lazy(async () => {
+  const mod = await import("./routes/desktop-chat-window-page");
+  return { default: mod.DesktopChatWindowPage };
+});
+
 const DesktopFeedbackPage = lazy(async () => {
   const mod = await import("./routes/desktop-feedback-page");
   return { default: mod.DesktopFeedbackPage };
@@ -655,6 +660,13 @@ const desktopChatImageViewerRoute = createRoute({
   component: DesktopChatImageViewerPage,
 });
 
+const desktopChatWindowRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/desktop/chat-window",
+  beforeLoad: requireWorldReady,
+  component: DesktopChatWindowPage,
+});
+
 const desktopFeedbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/desktop/feedback",
@@ -750,6 +762,7 @@ const routeTree = rootRoute.addChildren([
   desktopChatFilesRoute,
   desktopChatHistoryRoute,
   desktopChatImageViewerRoute,
+  desktopChatWindowRoute,
   desktopFeedbackRoute,
   desktopSettingsRoute,
   liveCompanionRoute,
