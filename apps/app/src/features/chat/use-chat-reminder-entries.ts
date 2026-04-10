@@ -6,6 +6,7 @@ import {
   formatChatReminderSummary,
   filterChatReminderEntries,
   getChatReminderStatus,
+  groupChatReminderEntries,
 } from "./chat-reminder-entries";
 import type { LocalChatMessageReminderRecord } from "./local-chat-message-actions";
 import { useChatReminderNowTimestamp } from "./use-chat-reminder-now-timestamp";
@@ -42,6 +43,10 @@ export function useChatReminderEntries({
     () => countChatReminderStatuses(filteredReminderEntries),
     [filteredReminderEntries],
   );
+  const filteredReminderGroups = useMemo(
+    () => groupChatReminderEntries(filteredReminderEntries),
+    [filteredReminderEntries],
+  );
   const filteredReminderSummary = useMemo(
     () => formatChatReminderSummary(filteredReminderStatusCounts),
     [filteredReminderStatusCounts],
@@ -53,6 +58,7 @@ export function useChatReminderEntries({
     filteredReminderEntries,
     dueReminderEntries,
     filteredReminderStatusCounts,
+    filteredReminderGroups,
     filteredReminderSummary,
     dueReminderCount: dueReminderEntries.length,
   };

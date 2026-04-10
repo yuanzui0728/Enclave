@@ -28,6 +28,13 @@ export type ChatReminderStatusCounts = {
   pendingCount: number;
 };
 
+export type ChatReminderGroup = {
+  status: ChatReminderStatus;
+  title: string;
+  count: number;
+  entries: ChatReminderEntry[];
+};
+
 export function buildChatReminderEntries(
   reminders: readonly LocalChatMessageReminderRecord[],
   conversations: readonly ConversationListItem[],
@@ -184,6 +191,39 @@ export function formatChatReminderSummary(counts: ChatReminderStatusCounts) {
   return parts.length > 0 ? parts.join(" · ") : "暂无提醒";
 }
 
+export function groupChatReminderEntries(
+  entries: readonly ChatReminderEntry[],
+): ChatReminderGroup[] {
+  const groups = new Map<ChatReminderStatus, ChatReminderEntry[]>();
+
+  entries.forEach((entry) => {
+    const status = getChatReminderStatus(entry);
+    const current = groups.get(status);
+    if (current) {
+      current.push(entry);
+      return;
+    }
+
+    groups.set(status, [entry]);
+  });
+
+  return getOrderedChatReminderStatuses()
+    .map((status) => {
+      const statusEntries = groups.get(status) ?? [];
+      if (statusEntries.length === 0) {
+        return null;
+      }
+
+      return {
+        status,
+        title: getChatReminderStatusTitle(status),
+        count: statusEntries.length,
+        entries: statusEntries,
+      };
+    })
+    .filter((group): group is ChatReminderGroup => Boolean(group));
+}
+
 function compareChatReminderEntries(
   left: ChatReminderEntry,
   right: ChatReminderEntry,
@@ -217,5 +257,20 @@ function getChatReminderStatusPriority(status: ChatReminderStatus) {
       return 1;
     case "pending":
       return 2;
+  }
+}
+
+function getOrderedChatReminderStatuses(): ChatReminderStatus[] {
+  return ["due", "notified", "pending"];
+}
+
+function getChatReminderStatusTitle(status: ChatReminderStatus) {
+  switch (status) {
+    case "due":
+      return "已到时间";
+    case "notified":
+      return "已通知";
+    case "pending":
+      return "待提醒";
   }
 }

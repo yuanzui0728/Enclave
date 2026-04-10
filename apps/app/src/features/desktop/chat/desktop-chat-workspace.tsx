@@ -201,12 +201,15 @@ export function DesktopChatWorkspace({
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, localMessageActionState, searchTerm]);
-  const { filteredReminderEntries, filteredReminderSummary } =
-    useChatReminderEntries({
-      reminders: localMessageActionState.reminders,
-      conversations,
-      keyword: searchTerm,
-    });
+  const {
+    filteredReminderEntries,
+    filteredReminderGroups,
+    filteredReminderSummary,
+  } = useChatReminderEntries({
+    reminders: localMessageActionState.reminders,
+    conversations,
+    keyword: searchTerm,
+  });
   const { openReminder, completeReminder } = useChatReminderActions({
     navigateToReminder: (entry) => {
       void navigate(buildChatReminderNavigation(entry));
@@ -626,7 +629,10 @@ export function DesktopChatWorkspace({
             </div>
           </div>
           {notice ? (
-            <InlineNotice className="mt-3 border-black/6 bg-white text-xs" tone="info">
+            <InlineNotice
+              className="mt-3 border-black/6 bg-white text-xs"
+              tone="info"
+            >
               {notice}
             </InlineNotice>
           ) : null}
@@ -663,18 +669,44 @@ export function DesktopChatWorkspace({
                   </div>
                 </div>
 
-                <div className="space-y-1.5 pt-1">
-                  {filteredReminderEntries.map((entry) => (
-                    <DesktopReminderCard
-                      key={entry.messageId}
-                      entry={entry}
-                      active={
-                        entry.threadId === selectedConversationId &&
-                        entry.messageId === highlightedMessageId
-                      }
-                      onOpen={openReminder}
-                      onDismiss={completeReminder}
-                    />
+                <div className="space-y-2 pt-1">
+                  {filteredReminderGroups.map((group) => (
+                    <section
+                      key={group.status}
+                      className="rounded-[14px] border border-white/70 bg-white/78"
+                    >
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                            group.status === "notified"
+                              ? "bg-[#fff7e6] text-[#d48806]"
+                              : group.status === "due"
+                                ? "bg-[#fff1f0] text-[#d74b45]"
+                                : "bg-[#eaf8ef] text-[#07c160]",
+                          )}
+                        >
+                          {group.title}
+                        </span>
+                        <span className="text-[10px] text-[color:var(--text-dim)]">
+                          {group.count} 条
+                        </span>
+                      </div>
+                      <div className="space-y-1 border-t border-white/80 p-1.5">
+                        {group.entries.map((entry) => (
+                          <DesktopReminderCard
+                            key={entry.messageId}
+                            entry={entry}
+                            active={
+                              entry.threadId === selectedConversationId &&
+                              entry.messageId === highlightedMessageId
+                            }
+                            onOpen={openReminder}
+                            onDismiss={completeReminder}
+                          />
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               </section>
