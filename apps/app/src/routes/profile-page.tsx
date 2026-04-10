@@ -3,9 +3,11 @@ import { Bell, ChevronRight, Globe, HelpCircle, Settings } from "lucide-react";
 import { AppPage, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ProfilePage() {
+  const isDesktopLayout = useDesktopLayout();
   const username = useWorldOwnerStore((state) => state.username);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
@@ -28,11 +30,13 @@ export function ProfilePage() {
         <ChevronRight size={18} className="shrink-0 text-[color:var(--text-dim)]" />
       </Link>
 
-      <div className="flex items-center gap-2">
-        <ProfileStat label="世界" value="探索中" />
-        <ProfileStat label="好友" value="通讯录" />
-        <ProfileStat label="动态" value="朋友圈" />
-      </div>
+      {isDesktopLayout ? null : (
+        <div className="flex items-center gap-2">
+          <ProfileStat label="世界" value="探索中" />
+          <ProfileStat label="好友" value="通讯录" />
+          <ProfileStat label="动态" value="朋友圈" />
+        </div>
+      )}
 
       <ProfileEntryGroup>
         <ProfileEntry icon={Settings} label="设置" to="/profile/settings" />
@@ -41,7 +45,14 @@ export function ProfilePage() {
 
       <ProfileEntryGroup>
         <ProfileEntry icon={Globe} label="世界设置" to="/profile/settings" />
-        <ProfileEntry icon={HelpCircle} label="帮助与反馈" to="/profile/settings" isFirst={false} />
+        {isDesktopLayout ? null : (
+          <ProfileEntry
+            icon={HelpCircle}
+            label="帮助与反馈"
+            to="/profile/settings"
+            isFirst={false}
+          />
+        )}
       </ProfileEntryGroup>
     </AppPage>
   );
