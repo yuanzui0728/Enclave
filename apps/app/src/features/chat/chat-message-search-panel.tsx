@@ -13,9 +13,9 @@ import { ChatDetailsSection } from "../chat-details/chat-details-section";
 import { ChatDetailsShell } from "../chat-details/chat-details-shell";
 import {
   filterSearchableChatMessages,
-  type LocalChatMessageReminderRecord,
   useLocalChatMessageActionState,
 } from "./local-chat-message-actions";
+import { useMessageReminders } from "./use-message-reminders";
 import { sanitizeDisplayedChatText } from "../../lib/chat-text";
 import {
   formatDetailedMessageTimestamp,
@@ -113,12 +113,10 @@ export function ChatMessageSearchPanel({
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
   const [senderFilter, setSenderFilter] = useState("all");
   const localMessageActionState = useLocalChatMessageActionState();
+  const { reminders } = useMessageReminders();
   const reminderMap = useMemo(
-    () =>
-      new Map(
-        localMessageActionState.reminders.map((item) => [item.messageId, item]),
-      ),
-    [localMessageActionState.reminders],
+    () => new Map(reminders.map((item) => [item.messageId, item])),
+    [reminders],
   );
 
   const trimmedKeyword = keyword.trim().toLowerCase();
@@ -479,7 +477,7 @@ export function ChatMessageSearchPanel({
 
 function buildIndexedSearchMessage(
   message: SearchableChatMessage,
-  reminder?: LocalChatMessageReminderRecord,
+  reminder?: { remindAt: string },
 ): IndexedSearchMessage {
   const normalizedText = sanitizeDisplayedChatText(message.text).trim();
   const supportText = resolveSupportText(message);

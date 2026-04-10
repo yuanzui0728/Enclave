@@ -64,6 +64,7 @@ import { buildSearchRouteHash } from "../../search/search-route-state";
 import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
+import { useMessageReminders } from "../../chat/use-message-reminders";
 import {
   splitChatTextSegments,
   summarizeChatMentions,
@@ -140,6 +141,7 @@ export function DesktopChatWorkspace({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
+  const { reminders, clearReminder } = useMessageReminders();
   const [searchTerm, setSearchTerm] = useState("");
   const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
     useState(false);
@@ -211,7 +213,7 @@ export function DesktopChatWorkspace({
     filteredReminderGroups,
     filteredReminderSummary,
   } = useChatReminderEntries({
-    reminders: localMessageActionState.reminders,
+    reminders,
     conversations,
     keyword: searchTerm,
   });
@@ -220,6 +222,7 @@ export function DesktopChatWorkspace({
       void navigate(buildChatReminderNavigation(entry));
     },
     onNoticeChange: setNotice,
+    onCompleteReminder: clearReminder,
   });
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations = useMemo(
@@ -751,7 +754,9 @@ export function DesktopChatWorkspace({
                                     entry.messageId === highlightedMessageId
                                   }
                                   onOpen={openReminder}
-                                  onDismiss={completeReminder}
+                                  onDismiss={(messageId) => {
+                                    void completeReminder(messageId);
+                                  }}
                                 />
                               ))}
                             </div>

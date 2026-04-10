@@ -14,6 +14,7 @@ import {
   filterSearchableChatMessages,
   useLocalChatMessageActionState,
 } from "../../chat/local-chat-message-actions";
+import { useMessageReminders } from "../../chat/use-message-reminders";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import {
@@ -93,6 +94,7 @@ export function DesktopChatHistoryPanel({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isGroupConversation = isPersistedGroupConversation(conversation);
   const localMessageActionState = useLocalChatMessageActionState();
+  const { reminders } = useMessageReminders();
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState<HistoryFilterType>("all");
   const [dateFilter, setDateFilter] = useState<HistoryDateFilter>("all");
@@ -135,13 +137,13 @@ export function DesktopChatHistoryPanel({
           (messagesQuery.data ?? []) as Array<Message | GroupMessage>,
           localMessageActionState,
         ),
-        localMessageActionState.reminders,
+        reminders,
       ).sort(
         (left, right) =>
           (parseTimestamp(right.createdAt) ?? 0) -
           (parseTimestamp(left.createdAt) ?? 0),
       ),
-    [localMessageActionState, messagesQuery.data],
+    [localMessageActionState, messagesQuery.data, reminders],
   );
   const senderOptions = useMemo(() => {
     if (!isGroupConversation) {

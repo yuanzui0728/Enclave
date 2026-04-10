@@ -17,6 +17,7 @@ import {
   filterSearchableChatMessages,
   useLocalChatMessageActionState,
 } from "../features/chat/local-chat-message-actions";
+import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { sanitizeDisplayedChatText } from "../lib/chat-text";
@@ -37,6 +38,7 @@ export function DesktopChatHistoryPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
+  const { reminders } = useMessageReminders();
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
@@ -132,13 +134,13 @@ export function DesktopChatHistoryPage() {
           (messagesQuery.data ?? []) as Array<Message | GroupMessage>,
           localMessageActionState,
         ),
-        localMessageActionState.reminders,
+        reminders,
       ).sort(
         (left, right) =>
           (parseTimestamp(right.createdAt) ?? 0) -
           (parseTimestamp(left.createdAt) ?? 0),
       ),
-    [localMessageActionState, messagesQuery.data],
+    [localMessageActionState, messagesQuery.data, reminders],
   );
   const mayHaveEarlierMessages =
     historyRows.length > 0 && historyRows.length >= historyLimit;

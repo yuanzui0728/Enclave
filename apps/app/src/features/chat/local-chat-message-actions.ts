@@ -116,6 +116,19 @@ export function markLocalChatMessageReminderNotified(
   return nextState;
 }
 
+export function replaceLocalChatMessageReminders(
+  reminders: LocalChatMessageReminderRecord[],
+) {
+  const current = readLocalChatMessageActionState();
+  const nextState = normalizeState({
+    hiddenMessageIds: current.hiddenMessageIds,
+    recalledMessageIds: current.recalledMessageIds,
+    reminders,
+  });
+  writeState(nextState);
+  return nextState;
+}
+
 export function removeLocalChatMessageReminder(messageId: string) {
   const current = readLocalChatMessageActionState();
   const nextState = normalizeState({

@@ -50,10 +50,7 @@ import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import {
   hideLocalChatMessage,
-  type LocalChatMessageReminderRecord,
   readLocalChatMessageActionState,
-  removeLocalChatMessageReminder,
-  upsertLocalChatMessageReminder,
 } from "../features/chat/local-chat-message-actions";
 import {
   MobileMessageReminderSheet,
@@ -90,6 +87,7 @@ import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
+import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { parseGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 
 export type ChatRenderableMessage = {
@@ -232,9 +230,8 @@ export function ChatMessageList({
   const [recalledMessageIds, setRecalledMessageIds] = useState<string[]>(
     () => readLocalChatMessageActionState().recalledMessageIds,
   );
-  const [messageReminders, setMessageReminders] = useState<
-    LocalChatMessageReminderRecord[]
-  >(() => readLocalChatMessageActionState().reminders);
+  const { reminders: messageReminders, clearReminder, setReminder } =
+    useMessageReminders();
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
     readDetailedTimestampMode(),
   );
@@ -990,7 +987,6 @@ export function ChatMessageList({
   ) => {
     setHiddenMessageIds(nextState.hiddenMessageIds);
     setRecalledMessageIds(nextState.recalledMessageIds);
-    setMessageReminders(nextState.reminders);
     clearTransientMessageState(targetMessageId);
   };
 
@@ -1014,21 +1010,20 @@ export function ChatMessageList({
     setReminderTargetMessage(message);
   };
 
-  const handleClearReminder = (messageId: string) => {
-    const nextState = removeLocalChatMessageReminder(messageId);
-    setMessageReminders(nextState.reminders);
+  const handleClearReminder = async (messageId: string) => {
+    await clearReminder(messageId);
     setReminderTargetMessage((current) =>
       current?.id === messageId ? null : current,
     );
     setActionNotice({
-      message: "已取消这条消息的本机提醒。",
+      message: "已取消这条消息的提醒。",
       tone: "success",
     });
   };
 
   const handleToggleReminder = (message: ChatRenderableMessage) => {
     if (messageReminderMap.has(message.id)) {
-      handleClearReminder(message.id);
+      void handleClearReminder(message.id);
       return;
     }
 
@@ -1060,26 +1055,43 @@ export function ChatMessageList({
     });
   };
 
-  const handleSelectReminder = (option: MobileMessageReminderOption) => {
+  const handleSelectReminder = async (option: MobileMessageReminderOption) => {
     if (!reminderTargetMessage) {
       return;
     }
 
-    const nextState = upsertLocalChatMessageReminder({
-      messageId: reminderTargetMessage.id,
-      remindAt: option.remindAt,
-      threadId: threadContext?.id ?? "",
-      threadType: threadContext?.type ?? "direct",
-      threadTitle: threadContext?.title,
-      previewText: buildClipboardText(reminderTargetMessage),
-    });
-    setMessageReminders(nextState.reminders);
-    setReminderTargetMessage(null);
+    try {
+      await setReminder(
+        {
+          messageId: reminderTargetMessage.id,
+          remindAt: option.remindAt,
+          threadId: threadContext?.id ?? "",
+          threadType: threadContext?.type ?? "direct",
+        },
+        {
+          messageId: reminderTargetMessage.id,
+          remindAt: option.remindAt,
+          threadId: threadContext?.id ?? "",
+          threadType: threadContext?.type ?? "direct",
+          threadTitle: threadContext?.title,
+          previewText: buildClipboardText(reminderTargetMessage),
+        },
+      );
+      setReminderTargetMessage(null);
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "设置提醒失败，请稍后再试。",
+        tone: "danger",
+      });
+      return;
+    }
+
     void requestNotificationPermission().then((permissionState) => {
       const summary = formatReminderSummary(option.remindAt);
       if (permissionState === "granted") {
         setActionNotice({
-          message: `已设为本机提醒 · ${summary}，系统通知已开启。`,
+          message: `已设为消息提醒 · ${summary}，系统通知已开启。`,
           tone: "success",
         });
         return;
@@ -1087,14 +1099,14 @@ export function ChatMessageList({
 
       if (permissionState === "denied") {
         setActionNotice({
-          message: `已设为本机提醒 · ${summary}，系统通知未开启。`,
+          message: `已设为消息提醒 · ${summary}，系统通知未开启。`,
           tone: "success",
         });
         return;
       }
 
       setActionNotice({
-        message: `已设为本机提醒 · ${summary}。`,
+        message: `已设为消息提醒 · ${summary}。`,
         tone: "success",
       });
     });
@@ -1320,7 +1332,6 @@ export function ChatMessageList({
 
         setHiddenMessageIds(nextState.hiddenMessageIds);
         setRecalledMessageIds(nextState.recalledMessageIds);
-        setMessageReminders(nextState.reminders);
         setViewerMessageId((current) =>
           current && deletedMessageIdSet.has(current) ? null : current,
         );

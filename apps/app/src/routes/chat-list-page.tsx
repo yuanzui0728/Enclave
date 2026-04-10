@@ -53,6 +53,7 @@ import {
   isChatReminderGroupCollapsible,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
+import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
@@ -131,6 +132,7 @@ function MobileChatListPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
+  const { reminders, clearReminder } = useMessageReminders();
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
     useState(false);
@@ -160,7 +162,7 @@ function MobileChatListPage() {
   );
   const { reminderEntries, filteredReminderGroups, filteredReminderSummary } =
     useChatReminderEntries({
-      reminders: localMessageActionState.reminders,
+      reminders,
       conversations,
     });
   const { openReminder, completeReminder } = useChatReminderActions({
@@ -168,6 +170,7 @@ function MobileChatListPage() {
       void navigate(buildChatReminderNavigation(entry));
     },
     onNoticeChange: setNotice,
+    onCompleteReminder: clearReminder,
   });
   const visibleConversations = useMemo(
     () =>
@@ -671,15 +674,15 @@ function MobileChatListPage() {
                                   )}
                                 </div>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  completeReminder(entry.messageId)
-                                }
-                                className="shrink-0 rounded-full border border-black/8 px-3 py-1.5 text-[12px] text-[#5f6368]"
-                              >
-                                完成
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void completeReminder(entry.messageId);
+                                  }}
+                                  className="shrink-0 rounded-full border border-black/8 px-3 py-1.5 text-[12px] text-[#5f6368]"
+                                >
+                                  完成
+                                </button>
                             </div>
                           ))}
                     </>
