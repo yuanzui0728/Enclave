@@ -3767,8 +3767,12 @@ function DirectCallInviteMessage({
               invite.connectionStatus === "ended"
                 ? "已结束"
                 : invite.connectionStatus === "connected"
-                  ? "已接通"
-                  : "等待接听"
+                  ? invite.kind === "video"
+                    ? "画面已接通"
+                    : "已接通"
+                  : invite.kind === "video"
+                    ? "等待接入画面"
+                    : "等待接听"
             }
           />
         ) : null}
@@ -3795,11 +3799,19 @@ function DirectCallInviteMessage({
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {invite.connectionStatus === "ended"
             ? onOpen
-              ? "点击可重新打开当前单聊通话工作台。"
-              : "这轮单聊通话已经结束，当前保留为状态记录卡片。"
+              ? invite.kind === "video"
+                ? "点击可重新打开当前单聊视频通话工作台。"
+                : "点击可重新打开当前单聊语音通话工作台。"
+              : invite.kind === "video"
+                ? "这轮单聊视频通话已经结束，当前保留为状态记录卡片。"
+                : "这轮单聊语音通话已经结束，当前保留为状态记录卡片。"
             : onOpen
-              ? "点击可回到当前单聊通话工作台。"
-              : "当前消息已转成单聊通话卡片，方便快速识别状态。"}
+              ? invite.kind === "video"
+                ? "点击可回到当前单聊视频通话工作台。"
+                : "点击可回到当前单聊语音通话工作台。"
+              : invite.kind === "video"
+                ? "当前消息已转成单聊视频通话卡片，方便快速识别状态。"
+                : "当前消息已转成单聊语音通话卡片，方便快速识别状态。"}
         </div>
         <div className="text-[11px] font-medium text-[#2563eb]">
           {invite.connectionStatus === "ended"

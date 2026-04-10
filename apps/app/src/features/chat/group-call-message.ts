@@ -38,12 +38,12 @@ export function buildDirectCallInviteMessage(
       : formatCallInviteDuration(status.durationMs ?? null);
   const sourceLabel =
     typeof status === "string" ? null : formatCallInviteSource(status.source);
-  const statusLabel =
-    normalizedStatus === "ended"
-      ? "已结束"
-      : normalizedStatus === "connected"
-        ? "已接通"
-        : "等待接听";
+  const statusLabel = formatDirectCallStatusLabel(kind, normalizedStatus);
+  const summaryLines = buildDirectCallSummaryLines({
+    kind,
+    status: normalizedStatus,
+    sourceLabel,
+  });
 
   return [
     kind === "voice" ? DIRECT_VOICE_CALL_PREFIX : DIRECT_VIDEO_CALL_PREFIX,
@@ -52,12 +52,7 @@ export function buildDirectCallInviteMessage(
     `${normalizedStatus === "ended" ? "结束于" : "发起于"} ${recordedAt ?? new Date().toISOString()}`,
     durationLabel ? `最近一轮 ${durationLabel}` : null,
     sourceLabel ? `发起设备 ${sourceLabel}` : null,
-    normalizedStatus === "ended"
-      ? "本轮单聊通话已在桌面端结束，可继续在聊天里跟进。"
-      : "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
-    normalizedStatus === "ended"
-      ? "如需再次发起，请重新打开当前聊天顶部的通话面板。"
-      : "如需继续加入或转到手机，请在当前聊天顶部的通话面板里操作。",
+    ...summaryLines,
   ].join("\n");
 }
 
@@ -223,7 +218,15 @@ function parseDirectCallStatus(line: string | undefined) {
     return "connected";
   }
 
+  if (line.includes("画面已接通")) {
+    return "connected";
+  }
+
   if (line.includes("等待接听")) {
+    return "waiting";
+  }
+
+  if (line.includes("等待接入画面")) {
     return "waiting";
   }
 
@@ -295,6 +298,46 @@ function formatCallInviteSource(source: DirectCallInviteSource | undefined) {
   }
 
   return null;
+}
+
+function formatDirectCallStatusLabel(
+  kind: DesktopChatCallKind,
+  status: DirectCallInviteStatus,
+) {
+  if (status === "ended") {
+    return "已结束";
+  }
+
+  if (status === "connected") {
+    return kind === "video" ? "画面已接通" : "已接通";
+  }
+
+  return kind === "video" ? "等待接入画面" : "等待接听";
+}
+
+function buildDirectCallSummaryLines(input: {
+  kind: DesktopChatCallKind;
+  status: DirectCallInviteStatus;
+  sourceLabel: string | null;
+}) {
+  const callLabel = input.kind === "video" ? "单聊视频通话" : "单聊语音通话";
+  const stateLabel =
+    input.kind === "video" ? "当前画面与通话状态" : "当前通话状态";
+  const panelLabel =
+    input.kind === "video" ? "视频通话面板" : "语音通话面板";
+  const sourceLabel = input.sourceLabel ?? "当前设备";
+
+  if (input.status === "ended") {
+    return [
+      `本轮${callLabel}已结束，可继续在聊天里跟进。`,
+      `如需再次发起，请重新打开当前聊天顶部的${panelLabel}。`,
+    ];
+  }
+
+  return [
+    `已从${sourceLabel}打开${callLabel}工作台，可直接查看${stateLabel}。`,
+    `如需继续加入或切回聊天，请在当前聊天顶部的${panelLabel}里操作。`,
+  ];
 }
 
 function parseGroupCallWaitingMetric(line: string | undefined) {
