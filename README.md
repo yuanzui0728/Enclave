@@ -52,6 +52,8 @@ cp api/.env.example api/.env
 docker compose up -d
 ```
 
+数据库默认统一保存在仓库根目录的 `data/database.sqlite`。重启服务不会清空数据；如果旧环境里存在 `api/database.sqlite` 或 `api/data/database.sqlite`，服务启动时会自动迁移到新位置。
+
 健康检查：
 
 ```bash
