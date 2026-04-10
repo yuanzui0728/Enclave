@@ -10,18 +10,13 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import type {
   ContactCardAttachment,
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
 } from './chat.types';
-import {
-  BUSY_DELAY_RANGE_MS,
-  BUSY_HINTS,
-  SLEEP_DELAY_RANGE_MS,
-  SLEEP_HINTS,
-} from '../ai/reply-logic.constants';
 
 type SendMessagePayload =
   | {
@@ -88,7 +83,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(ChatGateway.name);
 
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
+  ) {}
 
   handleConnection(client: Socket) {
     this.logger.log(`Client connected: ${client.id}`);
@@ -138,12 +136,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const activity = await this.chatService.getCharacterActivity(characterId);
+      const runtimeRules = await this.replyLogicRules.getRules();
       if (activity === 'sleeping') {
-        await this.emitSystemMessage(convId, [...SLEEP_HINTS]);
+        await this.emitSystemMessage(convId, [
+          ...runtimeRules.sleepHintMessages,
+        ]);
         const delay =
-          SLEEP_DELAY_RANGE_MS.min +
+          runtimeRules.sleepDelayMs.min +
           Math.random() *
-            (SLEEP_DELAY_RANGE_MS.max - SLEEP_DELAY_RANGE_MS.min);
+            (runtimeRules.sleepDelayMs.max - runtimeRules.sleepDelayMs.min);
         setTimeout(() => {
           void this.deliverConversationReply(
             convId,
@@ -158,12 +159,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (activity && ['working', 'commuting'].includes(activity)) {
         await this.emitSystemMessage(
           convId,
-          [...(BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。'])],
+          [
+            ...(
+              runtimeRules.busyHintMessages[
+                activity as keyof typeof runtimeRules.busyHintMessages
+              ] ?? ['对方现在有些忙，稍后会回复你。']
+            ),
+          ],
         );
         const delay =
-          BUSY_DELAY_RANGE_MS.min +
+          runtimeRules.busyDelayMs.min +
           Math.random() *
-            (BUSY_DELAY_RANGE_MS.max - BUSY_DELAY_RANGE_MS.min);
+            (runtimeRules.busyDelayMs.max - runtimeRules.busyDelayMs.min);
         setTimeout(() => {
           void this.deliverConversationReply(
             convId,

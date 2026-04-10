@@ -60,6 +60,16 @@ export class AdminController {
     return this.replyLogicAdminService.getOverview();
   }
 
+  @Get('reply-logic/rules')
+  getReplyLogicRules() {
+    return this.replyLogicAdminService.getRuntimeRules();
+  }
+
+  @Patch('reply-logic/rules')
+  setReplyLogicRules(@Body() body: Record<string, unknown>) {
+    return this.replyLogicAdminService.setRuntimeRules(body);
+  }
+
   @Get('reply-logic/characters/:id')
   getReplyLogicCharacter(@Param('id') id: string) {
     return this.replyLogicAdminService.getCharacterSnapshot(id);

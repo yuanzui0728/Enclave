@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NarrativeArcEntity } from './narrative-arc.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import { NARRATIVE_PROGRESS_STEPS } from '../ai/reply-logic.constants';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 
 type RecordConversationTurnInput = {
   characterId: string;
@@ -17,6 +17,7 @@ export class NarrativeService {
     @InjectRepository(NarrativeArcEntity)
     private readonly narrativeRepo: Repository<NarrativeArcEntity>,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
 
   async getForCurrentWorld(): Promise<NarrativeArcEntity[]> {
@@ -58,9 +59,17 @@ export class NarrativeService {
       return null;
     }
 
+    const runtimeRules = await this.replyLogicRules.getRules();
     const arc = await this.ensureArc(input.characterId, input.characterName);
-    const nextProgress = this.getProgressFromMessageCount(input.messageCount);
-    const nextMilestones = this.mergeMilestones(arc.milestones ?? [], input.messageCount);
+    const nextProgress = this.getProgressFromMessageCount(
+      input.messageCount,
+      runtimeRules.narrativeMilestones,
+    );
+    const nextMilestones = this.mergeMilestones(
+      arc.milestones ?? [],
+      input.messageCount,
+      runtimeRules.narrativeMilestones,
+    );
 
     let shouldSave = false;
     if (nextProgress > arc.progress) {
@@ -86,8 +95,11 @@ export class NarrativeService {
     return this.narrativeRepo.save(arc);
   }
 
-  private getProgressFromMessageCount(messageCount: number): number {
-    const matchedStep = [...NARRATIVE_PROGRESS_STEPS]
+  private getProgressFromMessageCount(
+    messageCount: number,
+    milestones: Array<{ threshold: number; label: string; progress: number }>,
+  ): number {
+    const matchedStep = [...milestones]
       .reverse()
       .find((step) => messageCount >= step.threshold);
     return matchedStep?.progress ?? 15;
@@ -96,10 +108,11 @@ export class NarrativeService {
   private mergeMilestones(
     current: { label: string; completedAt?: Date }[],
     messageCount: number,
+    milestones: Array<{ threshold: number; label: string; progress: number }>,
   ) {
     const next = [...current];
     const existingLabels = new Set(current.map((item) => item.label));
-    for (const milestone of NARRATIVE_PROGRESS_STEPS) {
+    for (const milestone of milestones) {
       if (messageCount < milestone.threshold || existingLabels.has(milestone.label)) {
         continue;
       }

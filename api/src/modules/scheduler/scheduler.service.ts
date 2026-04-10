@@ -91,6 +91,10 @@ export class SchedulerService {
         const end = char.activeHoursEnd ?? 23;
         const shouldBeOnline = hour >= start && hour <= end;
         const wasOnline = char.isOnline;
+        if (char.onlineMode === 'manual') {
+          continue;
+        }
+
         char.isOnline = shouldBeOnline;
         if (wasOnline !== shouldBeOnline) {
           await this.characterRepo.save(char);
@@ -274,6 +278,10 @@ export class SchedulerService {
             currentActivity: 'free',
             isOnline: true,
           });
+          continue;
+        }
+
+        if (char.activityMode === 'manual') {
           continue;
         }
 

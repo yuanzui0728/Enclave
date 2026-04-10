@@ -27,6 +27,9 @@ export class CharacterEntity {
   @Column({ default: false })
   isOnline: boolean;
 
+  @Column({ default: 'auto' })
+  onlineMode: string;
+
   @Column({ default: false })
   isTemplate: boolean;
 
@@ -72,4 +75,7 @@ export class CharacterEntity {
 
   @Column({ nullable: true })
   currentActivity?: string; // 'working' | 'eating' | 'resting' | 'commuting' | 'free' | 'sleeping'
+
+  @Column({ default: 'auto' })
+  activityMode: string;
 }

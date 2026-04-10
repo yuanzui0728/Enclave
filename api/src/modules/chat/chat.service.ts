@@ -6,6 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
@@ -27,7 +28,6 @@ import {
   StickerAttachment,
 } from './chat.types';
 import { findStickerAttachment } from './sticker-catalog';
-import { MEMORY_COMPRESSION_INTERVAL } from '../ai/reply-logic.constants';
 
 type SendConversationMessageInput =
   | {
@@ -79,6 +79,7 @@ export class ChatService {
     private readonly characters: CharactersService,
     private readonly narrativeService: NarrativeService,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -561,7 +562,9 @@ export class ChatService {
             }
 
             for (const invited of invitedChars) {
-              const invitedProfile = await this.characters.getProfile(invited.id);
+              const invitedProfile = await this.characters.getProfile(
+                invited.id,
+              );
               if (!invitedProfile) {
                 continue;
               }
@@ -687,8 +690,9 @@ export class ChatService {
       this.conversationHistory.set(convId, history);
     }
 
+    const runtimeRules = await this.replyLogicRules.getRules();
     if (
-      history.length % MEMORY_COMPRESSION_INTERVAL === 0 &&
+      history.length % runtimeRules.memoryCompressionEveryMessages === 0 &&
       history.length > 0
     ) {
       const primaryCharId = entity.participants[0];
@@ -903,8 +907,8 @@ export class ChatService {
       messages: [],
       isPinned: group.isPinned ?? false,
       pinnedAt: group.pinnedAt ?? undefined,
-      isMuted: false,
-      mutedAt: undefined,
+      isMuted: group.isMuted ?? false,
+      mutedAt: group.mutedAt ?? undefined,
       lastReadAt: group.lastReadAt ?? undefined,
       lastClearedAt: group.lastClearedAt ?? undefined,
       lastActivityAt:

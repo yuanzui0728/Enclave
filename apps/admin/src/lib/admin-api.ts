@@ -1,4 +1,5 @@
 import type {
+  ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
   ReplyLogicOverview,
@@ -88,6 +89,12 @@ export const adminApi = {
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
   getReplyLogicOverview: () => adminFetch<ReplyLogicOverview>("/reply-logic/overview"),
+  getReplyLogicRules: () => adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules"),
+  setReplyLogicRules: (payload: ReplyLogicConstantSummary) =>
+    adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
   getReplyLogicCharacterSnapshot: (id: string) =>
     adminFetch<ReplyLogicCharacterSnapshot>(`/reply-logic/characters/${id}`),
   getReplyLogicConversationSnapshot: (id: string) =>

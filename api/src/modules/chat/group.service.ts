@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { GroupEntity } from './group.entity';
@@ -15,13 +20,10 @@ import {
   MessageAttachment,
 } from './chat.types';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import {
-  GROUP_REPLY_CHANCE_BY_FREQUENCY,
-  GROUP_REPLY_DELAY_RANGE_MS,
-} from '../ai/reply-logic.constants';
 
 export interface CreateGroupDto {
   name: string;
@@ -31,13 +33,22 @@ export interface CreateGroupDto {
 export interface AddMemberDto {
   memberId: string;
   memberType: 'user' | 'character';
-  memberName: string;
+  memberName?: string;
   memberAvatar?: string;
 }
 
 export interface UpdateGroupDto {
   name?: string;
   announcement?: string | null;
+}
+
+export interface UpdateGroupPreferencesDto {
+  isMuted?: boolean;
+  savedToContacts?: boolean;
+  showMemberNicknames?: boolean;
+  notifyOnAtMe?: boolean;
+  notifyOnAtAll?: boolean;
+  notifyOnAnnouncement?: boolean;
 }
 
 type SendGroupMessageInput =
@@ -80,6 +91,7 @@ export class GroupService {
     private readonly ai: AiOrchestratorService,
     private readonly characters: CharactersService,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -124,6 +136,7 @@ export class GroupService {
     groupId: string,
     dto: AddMemberDto,
   ): Promise<GroupMemberEntity> {
+    await this.requireOwnedGroup(groupId);
     const existing = await this.memberRepo.findOne({
       where: { groupId, memberId: dto.memberId },
     });
@@ -133,12 +146,13 @@ export class GroupService {
       return existing;
     }
 
+    const resolvedMember = await this.resolveMemberProfile(dto);
     const member = this.memberRepo.create({
       groupId,
       memberId: dto.memberId,
       memberType: dto.memberType,
-      memberName: dto.memberName,
-      memberAvatar: dto.memberAvatar,
+      memberName: resolvedMember.memberName,
+      memberAvatar: resolvedMember.memberAvatar,
       role: 'member',
     });
 
@@ -209,6 +223,36 @@ export class GroupService {
         nextAnnouncement === undefined
           ? (group.announcement ?? null)
           : nextAnnouncement,
+    });
+
+    return this.toGroup(updated);
+  }
+
+  async updatePreferences(
+    groupId: string,
+    dto: UpdateGroupPreferencesDto,
+  ): Promise<Group> {
+    const group = await this.requireOwnedGroup(groupId);
+    const isMuted =
+      dto.isMuted === undefined ? (group.isMuted ?? false) : dto.isMuted;
+    const savedToContacts =
+      dto.savedToContacts === undefined
+        ? (group.savedToContacts ?? false)
+        : dto.savedToContacts;
+    const updated = await this.groupRepo.save({
+      ...group,
+      isMuted,
+      mutedAt: isMuted ? (group.mutedAt ?? new Date()) : null,
+      savedToContacts,
+      savedToContactsAt: savedToContacts
+        ? (group.savedToContactsAt ?? new Date())
+        : null,
+      showMemberNicknames:
+        dto.showMemberNicknames ?? group.showMemberNicknames ?? true,
+      notifyOnAtMe: dto.notifyOnAtMe ?? group.notifyOnAtMe ?? true,
+      notifyOnAtAll: dto.notifyOnAtAll ?? group.notifyOnAtAll ?? true,
+      notifyOnAnnouncement:
+        dto.notifyOnAnnouncement ?? group.notifyOnAnnouncement ?? true,
     });
 
     return this.toGroup(updated);
@@ -294,6 +338,24 @@ export class GroupService {
     return { success: true };
   }
 
+  async removeMember(groupId: string, memberId: string) {
+    await this.requireOwnedGroup(groupId);
+    const member = await this.memberRepo.findOne({
+      where: {
+        groupId,
+        memberId,
+        memberType: 'character',
+      },
+    });
+
+    if (!member) {
+      throw new NotFoundException(`Member ${memberId} not found in group`);
+    }
+
+    await this.memberRepo.delete({ id: member.id });
+    return { success: true as const };
+  }
+
   async sendMessage(
     groupId: string,
     senderId: string,
@@ -376,24 +438,26 @@ export class GroupService {
       .reverse()
       .map((message) => this.buildAiHistoryMessage(message));
     const currentUserMessage = this.buildCurrentUserAiMessage(userMessage);
+    const runtimeRules = await this.replyLogicRules.getRules();
 
     for (const member of members) {
       const char = await this.characters.findById(member.memberId);
       if (!char) continue;
 
       const replyChance =
-        GROUP_REPLY_CHANCE_BY_FREQUENCY[
+        runtimeRules.groupReplyChance[
           (char.activityFrequency as 'high' | 'normal' | 'low') ?? 'normal'
-        ] ?? GROUP_REPLY_CHANCE_BY_FREQUENCY.normal;
+        ] ?? runtimeRules.groupReplyChance.normal;
       if (Math.random() > replyChance) continue;
 
       const profile = await this.characters.getProfile(member.memberId);
       if (!profile) continue;
 
       const delay =
-        GROUP_REPLY_DELAY_RANGE_MS.min +
+        runtimeRules.groupReplyDelayMs.min +
         Math.random() *
-          (GROUP_REPLY_DELAY_RANGE_MS.max - GROUP_REPLY_DELAY_RANGE_MS.min);
+          (runtimeRules.groupReplyDelayMs.max -
+            runtimeRules.groupReplyDelayMs.min);
       setTimeout(async () => {
         try {
           const reply = await this.ai.generateReply({
@@ -714,6 +778,32 @@ export class GroupService {
     return group;
   }
 
+  private async resolveMemberProfile(dto: AddMemberDto) {
+    if (dto.memberType === 'character') {
+      const character = await this.characters.findById(dto.memberId);
+      if (!character) {
+        throw new NotFoundException(`Character ${dto.memberId} not found`);
+      }
+
+      return {
+        memberName: dto.memberName?.trim() || character.name,
+        memberAvatar: dto.memberAvatar ?? character.avatar ?? undefined,
+      };
+    }
+
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    if (dto.memberId !== owner.id) {
+      throw new BadRequestException(
+        'Only the world owner can be added as user',
+      );
+    }
+
+    return {
+      memberName: dto.memberName?.trim() || owner.username?.trim() || 'You',
+      memberAvatar: dto.memberAvatar ?? owner.avatar ?? undefined,
+    };
+  }
+
   private toGroup(entity: GroupEntity): Group {
     return {
       id: entity.id,
@@ -722,8 +812,16 @@ export class GroupService {
       creatorId: entity.creatorId,
       creatorType: entity.creatorType as 'user' | 'character',
       announcement: entity.announcement ?? undefined,
+      isMuted: entity.isMuted ?? false,
+      mutedAt: entity.mutedAt ?? undefined,
       isPinned: entity.isPinned ?? false,
       pinnedAt: entity.pinnedAt ?? undefined,
+      savedToContacts: entity.savedToContacts ?? false,
+      savedToContactsAt: entity.savedToContactsAt ?? undefined,
+      showMemberNicknames: entity.showMemberNicknames ?? true,
+      notifyOnAtMe: entity.notifyOnAtMe ?? true,
+      notifyOnAtAll: entity.notifyOnAtAll ?? true,
+      notifyOnAnnouncement: entity.notifyOnAnnouncement ?? true,
       lastClearedAt: entity.lastClearedAt ?? undefined,
       lastReadAt: entity.lastReadAt ?? undefined,
       isHidden: entity.isHidden ?? false,

@@ -122,9 +122,10 @@
 - `Conversation` 表保留字段：`isPinned`、`pinnedAt`、`isHidden`、`hiddenAt`、`lastClearedAt`、`lastActivityAt`
 - `Conversation` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载会话专属聊天背景配置
 - `Message` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载 `sticker` 表情包消息元数据
-- `Group` 表现已扩展字段：`announcement`、`isPinned`、`pinnedAt`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
+- `Group` 表现已扩展字段：`announcement`、`isMuted`、`mutedAt`、`isPinned`、`pinnedAt`、`savedToContacts`、`savedToContactsAt`、`showMemberNicknames`、`notifyOnAtMe`、`notifyOnAtAll`、`notifyOnAnnouncement`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
+- `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
 - 会话管理路由：
   - `POST /api/conversations/:id/pin`
   - `POST /api/conversations/:id/hide`
@@ -133,12 +134,14 @@
   - `PATCH /api/conversations/:id/background`
   - `DELETE /api/conversations/:id/background`
   - `PATCH /api/groups/:id`
+  - `PATCH /api/groups/:id/preferences`
   - `POST /api/groups/:id/pin`
   - `POST /api/groups/:id/clear`
   - `POST /api/groups/:id/read`
   - `POST /api/groups/:id/hide`
   - `PATCH /api/groups/:id/me`
   - `POST /api/groups/:id/leave`
+  - `DELETE /api/groups/:id/members/:memberId`
   - `POST /api/chat/attachments`
   - `GET /api/chat/attachments/:fileName`
   - `POST /api/chat/backgrounds`
@@ -182,6 +185,14 @@
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
+
+## 管理后台回复逻辑路由
+
+- `GET /api/admin/reply-logic/overview`
+- `GET /api/admin/reply-logic/rules`
+- `PATCH /api/admin/reply-logic/rules`
+- `GET /api/admin/reply-logic/characters/:id`
+- `GET /api/admin/reply-logic/conversations/:id`
 
 ## 环境变量（`api/.env`）
 

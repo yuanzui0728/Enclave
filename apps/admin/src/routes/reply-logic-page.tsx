@@ -10,6 +10,7 @@ import {
   type PersonalityProfile,
   type ReplyLogicActorSnapshot,
   type ReplyLogicCharacterSnapshot,
+  type ReplyLogicConstantSummary,
   type ReplyLogicConversationSnapshot,
   type ReplyLogicHistoryItem,
   type ReplyLogicNarrativeArcSummary,
@@ -81,6 +82,7 @@ export function ReplyLogicPage() {
   const [selectedConversationId, setSelectedConversationId] = useState("");
   const [configuredConversationActorId, setConfiguredConversationActorId] = useState("");
   const [characterDraft, setCharacterDraft] = useState<EditableCharacter | null>(null);
+  const [runtimeRulesDraft, setRuntimeRulesDraft] = useState<ReplyLogicConstantSummary | null>(null);
 
   const overviewQuery = useQuery({
     queryKey: ["admin-reply-logic-overview", baseUrl],
@@ -193,6 +195,10 @@ export function ReplyLogicPage() {
     () => (editableCharacterSeed ? JSON.stringify(editableCharacterSeed) : ""),
     [editableCharacterSeed],
   );
+  const runtimeRulesSeedSignature = useMemo(
+    () => (overview?.constants ? JSON.stringify(overview.constants) : ""),
+    [overview?.constants],
+  );
 
   async function refreshAll() {
     await Promise.all([
@@ -217,10 +223,25 @@ export function ReplyLogicPage() {
     },
   });
 
+  const runtimeRulesSaveMutation = useMutation({
+    mutationFn: async (draft: ReplyLogicConstantSummary) => adminApi.setReplyLogicRules(draft),
+    onSuccess: async () => {
+      await Promise.all([
+        refreshAll(),
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+      ]);
+    },
+  });
+
   useEffect(() => {
     setCharacterDraft(editableCharacterSeed);
     characterSaveMutation.reset();
   }, [editableCharacterSeedSignature]);
+
+  useEffect(() => {
+    setRuntimeRulesDraft(overview?.constants ?? null);
+    runtimeRulesSaveMutation.reset();
+  }, [runtimeRulesSeedSignature]);
 
   const isCharacterDraftDirty = useMemo(() => {
     if (!characterDraft || !editableCharacterSeedSignature) {
@@ -229,6 +250,13 @@ export function ReplyLogicPage() {
 
     return JSON.stringify(characterDraft) !== editableCharacterSeedSignature;
   }, [characterDraft, editableCharacterSeedSignature]);
+  const isRuntimeRulesDraftDirty = useMemo(() => {
+    if (!runtimeRulesDraft || !runtimeRulesSeedSignature) {
+      return false;
+    }
+
+    return JSON.stringify(runtimeRulesDraft) !== runtimeRulesSeedSignature;
+  }, [runtimeRulesDraft, runtimeRulesSeedSignature]);
 
   const providerLoadError =
     (providerSetup.providerQuery.error instanceof Error &&
@@ -265,6 +293,31 @@ export function ReplyLogicPage() {
     }
 
     characterSaveMutation.mutate(characterDraft);
+  }
+
+  function patchRuntimeRulesDraft(
+    updater: (current: ReplyLogicConstantSummary) => ReplyLogicConstantSummary,
+  ) {
+    setRuntimeRulesDraft((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return updater(current);
+    });
+  }
+
+  function resetRuntimeRulesDraft() {
+    setRuntimeRulesDraft(overview?.constants ?? null);
+    runtimeRulesSaveMutation.reset();
+  }
+
+  function saveRuntimeRulesDraft() {
+    if (!runtimeRulesDraft) {
+      return;
+    }
+
+    runtimeRulesSaveMutation.mutate(runtimeRulesDraft);
   }
 
   const providerFooterMessage =
@@ -377,7 +430,7 @@ export function ReplyLogicPage() {
                 <SectionHeading>运行时常量</SectionHeading>
                 <SnapshotPanel
                   className="mt-4"
-                  title="硬编码运行时摘要"
+                  title="当前生效运行时摘要"
                   value={formatRuntimeConstants(overview.constants)}
                 />
               </Card>
@@ -485,6 +538,34 @@ export function ReplyLogicPage() {
                           }
                         />
                         <SelectFieldBlock
+                          label="在线状态模式"
+                          value={characterDraft.onlineMode ?? "auto"}
+                          onChange={(value) =>
+                            patchCharacterDraft((current) => ({
+                              ...current,
+                              onlineMode: value === "manual" ? "manual" : "auto",
+                            }))
+                          }
+                          options={[
+                            { value: "auto", label: "自动调度" },
+                            { value: "manual", label: "人工锁定" },
+                          ]}
+                        />
+                        <SelectFieldBlock
+                          label="当前活动模式"
+                          value={characterDraft.activityMode ?? "auto"}
+                          onChange={(value) =>
+                            patchCharacterDraft((current) => ({
+                              ...current,
+                              activityMode: value === "manual" ? "manual" : "auto",
+                            }))
+                          }
+                          options={[
+                            { value: "auto", label: "自动调度" },
+                            { value: "manual", label: "人工锁定" },
+                          ]}
+                        />
+                        <SelectFieldBlock
                           label="当前活动"
                           value={characterDraft.currentActivity ?? ""}
                           onChange={(value) =>
@@ -541,6 +622,12 @@ export function ReplyLogicPage() {
                             }
                           />
                         </div>
+                        {(characterDraft.onlineMode ?? "auto") === "auto" ||
+                        (characterDraft.activityMode ?? "auto") === "auto" ? (
+                          <InlineNotice tone="warning">
+                            处于“自动调度”的字段仍会被定时任务更新；切到“人工锁定”后，后台手动设置的在线状态或当前活动才会持续生效。
+                          </InlineNotice>
+                        ) : null}
                       </ConfigSection>
 
                       <ConfigSection title="提示词覆盖与身份">
@@ -1070,6 +1157,21 @@ export function ReplyLogicPage() {
                   </div>
                 </div>
               </Card>
+
+              <RuntimeRulesEditorCard
+                draft={runtimeRulesDraft}
+                isDirty={isRuntimeRulesDraftDirty}
+                isPending={runtimeRulesSaveMutation.isPending}
+                error={
+                  runtimeRulesSaveMutation.error instanceof Error
+                    ? runtimeRulesSaveMutation.error.message
+                    : null
+                }
+                isSuccess={runtimeRulesSaveMutation.isSuccess}
+                onPatch={patchRuntimeRulesDraft}
+                onReset={resetRuntimeRulesDraft}
+                onSave={saveRuntimeRulesDraft}
+              />
             </div>
           </div>
         </>
@@ -1409,6 +1511,310 @@ function NarrativeCard({ arcs }: { arcs: ReplyLogicNarrativeArcSummary[] }) {
   );
 }
 
+function RuntimeRulesEditorCard({
+  draft,
+  isDirty,
+  isPending,
+  error,
+  isSuccess,
+  onPatch,
+  onReset,
+  onSave,
+}: {
+  draft: ReplyLogicConstantSummary | null;
+  isDirty: boolean;
+  isPending: boolean;
+  error: string | null;
+  isSuccess: boolean;
+  onPatch: (updater: (current: ReplyLogicConstantSummary) => ReplyLogicConstantSummary) => void;
+  onReset: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <div className="flex items-center justify-between gap-3">
+        <SectionHeading>运行规则配置</SectionHeading>
+        <StatusPill tone={isDirty ? "warning" : "healthy"}>
+          {draft ? (isDirty ? "草稿未保存" : "已同步") : "等待加载"}
+        </StatusPill>
+      </div>
+
+      {!draft ? (
+        <LoadingBlock className="mt-4" label="正在加载运行规则..." />
+      ) : (
+        <>
+          <InlineNotice className="mt-4" tone="muted">
+            这里改的是回复与生活调度的全局运行规则。保存后，角色快照、会话快照和状态门控摘要会按新规则刷新。
+          </InlineNotice>
+          {error ? <ErrorBlock message={error} /> : null}
+          {isSuccess ? <InlineNotice tone="success">运行规则已保存，快照正在刷新。</InlineNotice> : null}
+
+          <div className="mt-4 space-y-6">
+            <ConfigSection title="提示语与延迟">
+              <TextAreaBlock
+                label="睡眠提示语"
+                value={listToLines(draft.sleepHintMessages)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    sleepHintMessages: linesToList(value),
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="工作中提示语"
+                value={listToLines(draft.busyHintMessages.working)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    busyHintMessages: {
+                      ...current.busyHintMessages,
+                      working: linesToList(value),
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="通勤中提示语"
+                value={listToLines(draft.busyHintMessages.commuting)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    busyHintMessages: {
+                      ...current.busyHintMessages,
+                      commuting: linesToList(value),
+                    },
+                  }))
+                }
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock
+                  label="睡眠延迟最小值"
+                  value={draft.sleepDelayMs.min}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      sleepDelayMs: {
+                        ...current.sleepDelayMs,
+                        min: parseNonNegativeInteger(value, current.sleepDelayMs.min),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="睡眠延迟最大值"
+                  value={draft.sleepDelayMs.max}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      sleepDelayMs: {
+                        ...current.sleepDelayMs,
+                        max: parseNonNegativeInteger(value, current.sleepDelayMs.max),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="忙碌延迟最小值"
+                  value={draft.busyDelayMs.min}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      busyDelayMs: {
+                        ...current.busyDelayMs,
+                        min: parseNonNegativeInteger(value, current.busyDelayMs.min),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="忙碌延迟最大值"
+                  value={draft.busyDelayMs.max}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      busyDelayMs: {
+                        ...current.busyDelayMs,
+                        max: parseNonNegativeInteger(value, current.busyDelayMs.max),
+                      },
+                    }))
+                  }
+                />
+              </div>
+            </ConfigSection>
+
+            <ConfigSection title="群聊与记忆">
+              <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
+                <FieldBlock
+                  label="高频角色回复概率"
+                  value={draft.groupReplyChance.high}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      groupReplyChance: {
+                        ...current.groupReplyChance,
+                        high: parseProbability(value, current.groupReplyChance.high),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="中频角色回复概率"
+                  value={draft.groupReplyChance.normal}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      groupReplyChance: {
+                        ...current.groupReplyChance,
+                        normal: parseProbability(value, current.groupReplyChance.normal),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="低频角色回复概率"
+                  value={draft.groupReplyChance.low}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      groupReplyChance: {
+                        ...current.groupReplyChance,
+                        low: parseProbability(value, current.groupReplyChance.low),
+                      },
+                    }))
+                  }
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock
+                  label="群聊延迟最小值"
+                  value={draft.groupReplyDelayMs.min}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      groupReplyDelayMs: {
+                        ...current.groupReplyDelayMs,
+                        min: parseNonNegativeInteger(value, current.groupReplyDelayMs.min),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="群聊延迟最大值"
+                  value={draft.groupReplyDelayMs.max}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      groupReplyDelayMs: {
+                        ...current.groupReplyDelayMs,
+                        max: parseNonNegativeInteger(value, current.groupReplyDelayMs.max),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="记忆压缩间隔"
+                  value={draft.memoryCompressionEveryMessages}
+                  type="number"
+                  min={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      memoryCompressionEveryMessages: parsePositiveInteger(
+                        value,
+                        current.memoryCompressionEveryMessages,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+            </ConfigSection>
+
+            <ConfigSection title="窗口与叙事">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock
+                  label="历史窗口基础值"
+                  value={draft.historyWindow.base}
+                  type="number"
+                  min={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      historyWindow: {
+                        ...current.historyWindow,
+                        base: parsePositiveInteger(value, current.historyWindow.base),
+                      },
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="历史窗口浮动范围"
+                  value={draft.historyWindow.range}
+                  type="number"
+                  min={0}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      historyWindow: {
+                        ...current.historyWindow,
+                        range: parseNonNegativeInteger(value, current.historyWindow.range),
+                      },
+                    }))
+                  }
+                />
+              </div>
+              <TextAreaBlock
+                label="叙事里程碑"
+                value={narrativeMilestonesToLines(draft.narrativeMilestones)}
+                placeholder="每行一个：threshold|label|progress"
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    narrativeMilestones: parseNarrativeMilestones(
+                      value,
+                      current.narrativeMilestones,
+                    ),
+                  }))
+                }
+              />
+            </ConfigSection>
+
+            <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
+              <Button variant="secondary" onClick={onReset}>
+                重置运行规则
+              </Button>
+              <Button variant="primary" onClick={onSave} disabled={!isDirty || isPending}>
+                {isPending ? "保存中..." : "保存运行规则"}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function ConfigSection({
   title,
   children,
@@ -1582,9 +1988,11 @@ function createEditableCharacter(source: Character): EditableCharacter {
     ...source,
     avatar: source.avatar ?? "",
     bio: source.bio ?? "",
+    onlineMode: source.onlineMode ?? "auto",
     expertDomains,
     triggerScenes: source.triggerScenes?.filter(Boolean) ?? [],
     currentActivity: source.currentActivity ?? "free",
+    activityMode: source.activityMode ?? "auto",
     profile: {
       characterId: source.id,
       name: source.name ?? "",
@@ -1642,11 +2050,13 @@ function normalizeCharacterForSave(draft: EditableCharacter): EditableCharacter 
     avatar: normalized.avatar.trim(),
     relationship: normalized.relationship.trim(),
     bio: normalized.bio.trim(),
+    onlineMode: normalized.onlineMode === "manual" ? "manual" : "auto",
     expertDomains: expertDomains.length ? expertDomains : ["general"],
     triggerScenes: normalized.triggerScenes?.map((item) => item.trim()).filter(Boolean) ?? [],
     activeHoursStart: normalizeOptionalHour(normalized.activeHoursStart),
     activeHoursEnd: normalizeOptionalHour(normalized.activeHoursEnd),
     currentActivity: normalized.currentActivity?.trim() ? normalized.currentActivity : null,
+    activityMode: normalized.activityMode === "manual" ? "manual" : "auto",
     profile: {
       ...normalized.profile,
       characterId: normalized.id,
@@ -1865,6 +2275,74 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       进度: item.progress,
     })),
   } as Record<string, unknown>;
+}
+
+function listToLines(items?: string[] | null) {
+  return items?.join("\n") ?? "";
+}
+
+function linesToList(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseNonNegativeInteger(value: string, fallback: number) {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+
+  return Math.max(0, Math.round(parsed));
+}
+
+function parsePositiveInteger(value: string, fallback: number) {
+  return Math.max(1, parseNonNegativeInteger(value, fallback));
+}
+
+function parseProbability(value: string, fallback: number) {
+  const parsed = Number(value);
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(parsed, 0), 1);
+}
+
+function narrativeMilestonesToLines(
+  milestones: ReplyLogicConstantSummary["narrativeMilestones"],
+) {
+  return milestones
+    .map((item) => `${item.threshold}|${item.label}|${item.progress}`)
+    .join("\n");
+}
+
+function parseNarrativeMilestones(
+  value: string,
+  fallback: ReplyLogicConstantSummary["narrativeMilestones"],
+) {
+  const next = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [thresholdText, labelText, progressText] = line.split("|").map((item) => item.trim());
+      const threshold = Number(thresholdText);
+      const progress = Number(progressText);
+      if (!labelText || Number.isNaN(threshold) || Number.isNaN(progress)) {
+        return null;
+      }
+
+      return {
+        threshold: Math.max(1, Math.round(threshold)),
+        label: labelText,
+        progress: Math.min(Math.max(Math.round(progress), 0), 100),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  return next.length ? next : fallback;
 }
 
 function formatConversationType(type: string) {
