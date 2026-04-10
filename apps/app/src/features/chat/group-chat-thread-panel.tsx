@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -67,7 +67,14 @@ export function GroupChatThreadPanel({
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
+  const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const isDesktop = variant === "desktop";
+  const loadMoreRequestRef = useRef<{
+    previousCount: number;
+    scrollHeight: number;
+    scrollTop: number;
+  } | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -80,8 +87,8 @@ export function GroupChatThreadPanel({
   });
 
   const messagesQuery = useQuery({
-    queryKey: ["app-group-messages", baseUrl, groupId],
-    queryFn: () => getGroupMessages(groupId, baseUrl),
+    queryKey: ["app-group-messages", baseUrl, groupId, messageLimit],
+    queryFn: () => getGroupMessages(groupId, baseUrl, { limit: messageLimit }),
     refetchInterval: 3_000,
   });
   const {
@@ -95,6 +102,9 @@ export function GroupChatThreadPanel({
     setText("");
     setReplyDraft(null);
     setSelectionModeActive(false);
+    setMessageLimit(INITIAL_MESSAGE_LIMIT);
+    setHasOlderMessages(true);
+    loadMoreRequestRef.current = null;
   }, [baseUrl, groupId]);
 
   useEffect(() => {
@@ -143,6 +153,38 @@ export function GroupChatThreadPanel({
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
+
+  useEffect(() => {
+    const loadedCount = messagesQuery.data?.length ?? 0;
+    const pendingLoad = loadMoreRequestRef.current;
+
+    if (loadedCount < messageLimit) {
+      setHasOlderMessages(false);
+    } else if (!pendingLoad) {
+      setHasOlderMessages(true);
+    }
+
+    if (!pendingLoad || messagesQuery.isFetching) {
+      return;
+    }
+
+    loadMoreRequestRef.current = null;
+    if (loadedCount <= pendingLoad.previousCount) {
+      setHasOlderMessages(false);
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      const element = scrollAnchorRef.current;
+      if (!element) {
+        return;
+      }
+
+      element.scrollTop =
+        pendingLoad.scrollTop + (element.scrollHeight - pendingLoad.scrollHeight);
+    });
+  }, [messageLimit, messagesQuery.data, messagesQuery.isFetching, scrollAnchorRef]);
+
   useEffect(() => {
     if (!highlightedMessageId || !hasHighlightedMessage) {
       return;
@@ -264,6 +306,20 @@ export function GroupChatThreadPanel({
       text: replyDraft ? encodeChatReplyText(text, replyDraft) : text.trim(),
     });
     scrollToBottom("smooth");
+  };
+
+  const loadOlderMessages = async () => {
+    if (messagesQuery.isFetching || !hasOlderMessages) {
+      return;
+    }
+
+    const element = scrollAnchorRef.current;
+    loadMoreRequestRef.current = {
+      previousCount: messagesQuery.data?.length ?? 0,
+      scrollHeight: element?.scrollHeight ?? 0,
+      scrollTop: element?.scrollTop ?? 0,
+    };
+    setMessageLimit((current) => current + HISTORY_PAGE_SIZE);
   };
 
   const replyPreview = replyDraft
@@ -504,6 +560,13 @@ export function GroupChatThreadPanel({
             }
             variant={isDesktop ? "desktop" : "mobile"}
             highlightedMessageId={highlightedMessageId}
+            hasOlderMessages={hasOlderMessages}
+            loadingOlderMessages={
+              messagesQuery.isFetching && loadMoreRequestRef.current !== null
+            }
+            onLoadOlderMessages={() => {
+              void loadOlderMessages();
+            }}
             onReplyMessage={handleReplyMessage}
             onSelectionModeChange={setSelectionModeActive}
             emptyState={
@@ -593,3 +656,6 @@ function describeReplyPreview(message: ChatRenderableMessage) {
 
   return "消息";
 }
+
+const INITIAL_MESSAGE_LIMIT = 60;
+const HISTORY_PAGE_SIZE = 40;
