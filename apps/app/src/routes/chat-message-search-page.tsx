@@ -126,7 +126,10 @@ export function ChatMessageSearchPage() {
                   </div>
                 </div>
                 <div className="mt-1 text-[14px] leading-6 text-[color:var(--text-secondary)]">
-                  {renderHighlightedText(message.text, trimmedKeyword)}
+                  {renderHighlightedText(
+                    buildSearchPreview(message.text, trimmedKeyword),
+                    trimmedKeyword,
+                  )}
                 </div>
               </button>
             ))}
@@ -154,4 +157,19 @@ function renderHighlightedText(text: string, keyword: string) {
       {text.slice(end)}
     </>
   );
+}
+
+function buildSearchPreview(text: string, keyword: string) {
+  const normalized = text.toLowerCase();
+  const start = normalized.indexOf(keyword);
+  if (start === -1) {
+    return text;
+  }
+
+  const contextRadius = 18;
+  const previewStart = Math.max(0, start - contextRadius);
+  const previewEnd = Math.min(text.length, start + keyword.length + contextRadius);
+  const prefix = previewStart > 0 ? "..." : "";
+  const suffix = previewEnd < text.length ? "..." : "";
+  return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
 }

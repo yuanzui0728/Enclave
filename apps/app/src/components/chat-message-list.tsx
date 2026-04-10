@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
@@ -31,6 +31,25 @@ export function ChatMessageList({
   emptyState,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
+  const [activeHighlightedMessageId, setActiveHighlightedMessageId] = useState<
+    string | undefined
+  >(highlightedMessageId);
+
+  useEffect(() => {
+    if (!highlightedMessageId) {
+      setActiveHighlightedMessageId(undefined);
+      return;
+    }
+
+    setActiveHighlightedMessageId(highlightedMessageId);
+    const timer = window.setTimeout(() => {
+      setActiveHighlightedMessageId((current) =>
+        current === highlightedMessageId ? undefined : current,
+      );
+    }, 2400);
+
+    return () => window.clearTimeout(timer);
+  }, [highlightedMessageId]);
 
   if (!messages.length) {
     return emptyState ?? null;
@@ -42,7 +61,7 @@ export function ChatMessageList({
         const isUser = message.senderType === "user";
         const isSystem =
           message.type === "system" || message.senderType === "system";
-        const isHighlighted = message.id === highlightedMessageId;
+        const isHighlighted = message.id === activeHighlightedMessageId;
 
         if (isSystem) {
           return (
