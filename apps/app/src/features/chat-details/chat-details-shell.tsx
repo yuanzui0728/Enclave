@@ -20,17 +20,17 @@ export function ChatDetailsShell({
   return (
     <AppPage
       className={cn(
-        "min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[color:var(--text-primary)]",
+        "min-h-full space-y-0 bg-[#f3f3f3] px-0 py-0 text-[color:var(--text-primary)]",
         className,
       )}
     >
-      <header className="sticky top-0 z-20 border-b border-black/5 bg-[rgba(247,247,247,0.95)] px-3 py-2.5 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-black/6 bg-[rgba(245,245,245,0.96)] px-3 py-2.5 backdrop-blur-xl">
         <div className="flex min-h-10 items-center gap-2">
           <Button
             onClick={onBack}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] hover:bg-black/5"
+            className="h-9 w-9 rounded-[10px] border border-black/6 bg-white text-[color:var(--text-primary)] hover:bg-[#f2f2f2]"
             aria-label="返回"
           >
             <ArrowLeft size={18} />
@@ -49,7 +49,7 @@ export function ChatDetailsShell({
         </div>
       </header>
 
-      <div className="space-y-3 px-0 pb-6 pt-3">{children}</div>
+      <div className="space-y-3 px-0 pb-5 pt-2.5">{children}</div>
     </AppPage>
   );
 }
