@@ -135,6 +135,8 @@ export function GroupChatThreadPanel({
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
+  const groupMemberCount = membersQuery.data?.length ?? 0;
+  const groupSubtitle = groupMemberCount ? `${groupMemberCount} 人` : undefined;
 
   useEffect(() => {
     if (!highlightedMessageId || !hasHighlightedMessage) {
@@ -295,7 +297,7 @@ export function GroupChatThreadPanel({
       ) : (
         <MobileChatThreadHeader
           title={groupQuery.data?.name ?? "群聊"}
-          subtitle={undefined}
+          subtitle={groupSubtitle}
           onBack={onBack}
           onMore={() => {
             void navigate({
@@ -315,12 +317,12 @@ export function GroupChatThreadPanel({
               params: { groupId },
             });
           }}
-          className="flex items-center gap-2 border-b border-black/5 bg-[rgba(247,247,247,0.96)] px-4 py-2.5 text-left"
+          className="flex items-center gap-2.5 border-b border-black/5 bg-[#f7f7f7] px-4 py-2.5 text-left"
         >
-          <span className="shrink-0 rounded-full bg-[#07c160]/10 px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
+          <span className="shrink-0 rounded-[8px] bg-white px-2 py-0.5 text-[10px] font-medium text-[#8c8c8c]">
             群公告
           </span>
-          <span className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-secondary)]">
+          <span className="min-w-0 flex-1 truncate text-[13px] text-[#5f5f5f]">
             {announcement}
           </span>
         </button>

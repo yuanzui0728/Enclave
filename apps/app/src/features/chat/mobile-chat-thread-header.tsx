@@ -15,13 +15,13 @@ export function MobileChatThreadHeader({
   moreLabel = "更多操作",
 }: MobileChatThreadHeaderProps) {
   return (
-    <header className="border-b border-black/5 bg-[#f7f7f7] px-2 py-2.5">
+    <header className="border-b border-black/5 bg-[#f7f7f7] px-1.5 py-2">
       <div className="relative flex min-h-11 items-center gap-1.5">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#111827] transition active:bg-black/5"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-black/6"
             aria-label="返回"
           >
             <ArrowLeft size={20} />
@@ -44,7 +44,7 @@ export function MobileChatThreadHeader({
         <button
           type="button"
           onClick={onMore}
-          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#111827] transition active:bg-black/5"
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-black/6"
           aria-label={moreLabel}
         >
           <Ellipsis size={20} />
