@@ -10,6 +10,11 @@ import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 type ContactDetailPaneProps = {
   character?: Character | null;
   friendship?: FriendListItem["friendship"] | null;
+  commonGroups?: Array<{
+    id: string;
+    name: string;
+  }>;
+  onOpenGroup?: (groupId: string) => void;
   onOpenProfile: () => void;
   onStartChat?: () => void;
   chatPending?: boolean;
@@ -37,6 +42,8 @@ type FriendProfileFormState = {
 export function ContactDetailPane({
   character,
   friendship,
+  commonGroups = [],
+  onOpenGroup,
   onOpenProfile,
   onStartChat,
   chatPending = false,
@@ -280,7 +287,25 @@ export function ContactDetailPane({
               onClick={onOpenProfile}
             />
             <StaticDetailRow label="朋友圈" value="后续接入" muted />
-            <StaticDetailRow label="共同群聊" value="后续接入" muted />
+            <StaticDetailRow
+              label="共同群聊"
+              value={
+                commonGroups.length
+                  ? `${commonGroups.length} 个共同群聊`
+                  : "暂时没有共同群聊"
+              }
+              muted={!commonGroups.length}
+            />
+            {commonGroups.length && onOpenGroup
+              ? commonGroups.slice(0, 3).map((group) => (
+                  <ActionDetailRow
+                    key={group.id}
+                    label="群聊"
+                    value={group.name}
+                    onClick={() => onOpenGroup(group.id)}
+                  />
+                ))
+              : null}
           </DetailSection>
 
           {isFriend ? (

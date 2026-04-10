@@ -181,6 +181,22 @@ export function ContactsPage() {
         : null,
     [conversationsQuery.data, selectedFriendItem],
   );
+  const commonGroups = useMemo(
+    () =>
+      selectedFriendItem
+        ? (conversationsQuery.data ?? [])
+            .filter(
+              (conversation) =>
+                conversation.type === "group" &&
+                conversation.participants.includes(selectedFriendItem.character.id),
+            )
+            .map((conversation) => ({
+              id: conversation.id,
+              name: conversation.title,
+            }))
+        : [],
+    [conversationsQuery.data, selectedFriendItem],
+  );
 
   const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
@@ -627,6 +643,10 @@ export function ContactsPage() {
               <ContactDetailPane
                 character={selectedFriendItem?.character ?? selectedWorldCharacterItem?.character ?? null}
                 friendship={selectedFriendItem?.friendship ?? null}
+                commonGroups={commonGroups}
+                onOpenGroup={(groupId) => {
+                  void navigate({ to: "/group/$groupId", params: { groupId } });
+                }}
                 onStartChat={selectedFriendItem ? () => handleStartChat(selectedFriendItem.character.id) : undefined}
                 chatPending={selectedFriendItem?.character.id === pendingCharacterId}
                 isPinned={selectedConversation?.isPinned ?? false}
