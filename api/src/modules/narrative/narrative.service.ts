@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NarrativeArcEntity } from './narrative-arc.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import { NARRATIVE_PROGRESS_STEPS } from '../ai/reply-logic.constants';
 
 type RecordConversationTurnInput = {
   characterId: string;
@@ -86,11 +87,10 @@ export class NarrativeService {
   }
 
   private getProgressFromMessageCount(messageCount: number): number {
-    if (messageCount >= 24) return 100;
-    if (messageCount >= 18) return 78;
-    if (messageCount >= 12) return 54;
-    if (messageCount >= 8) return 32;
-    return 15;
+    const matchedStep = [...NARRATIVE_PROGRESS_STEPS]
+      .reverse()
+      .find((step) => messageCount >= step.threshold);
+    return matchedStep?.progress ?? 15;
   }
 
   private mergeMilestones(
@@ -99,15 +99,7 @@ export class NarrativeService {
   ) {
     const next = [...current];
     const existingLabels = new Set(current.map((item) => item.label));
-    const milestoneMap = [
-      { threshold: 4, label: 'first_breakthrough' },
-      { threshold: 8, label: 'shared_context' },
-      { threshold: 12, label: 'growing_trust' },
-      { threshold: 18, label: 'inner_circle' },
-      { threshold: 24, label: 'story_complete' },
-    ];
-
-    for (const milestone of milestoneMap) {
+    for (const milestone of NARRATIVE_PROGRESS_STEPS) {
       if (messageCount < milestone.threshold || existingLabels.has(milestone.label)) {
         continue;
       }

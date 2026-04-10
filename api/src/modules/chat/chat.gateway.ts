@@ -16,6 +16,12 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
 } from './chat.types';
+import {
+  BUSY_DELAY_RANGE_MS,
+  BUSY_HINTS,
+  SLEEP_DELAY_RANGE_MS,
+  SLEEP_HINTS,
+} from '../ai/reply-logic.constants';
 
 type SendMessagePayload =
   | {
@@ -66,25 +72,6 @@ type SendMessagePayload =
 const configuredSocketOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',')
   .map((value) => value.trim())
   .filter(Boolean);
-
-const SLEEP_HINTS = [
-  '对方已经睡着了，明天醒来会看到这条消息。',
-  '夜深了，对方暂时离线，明天再继续聊吧。',
-  '这条消息已经送达，只是对方现在还在休息。',
-];
-
-const BUSY_HINTS: Record<string, string[]> = {
-  working: [
-    '对方正在忙工作，稍后会回来。',
-    '消息已经送达，对方处理完手头的事会回复你。',
-    '对方这会儿有点忙，先把消息留在这里。',
-  ],
-  commuting: [
-    '对方正在路上，稍后会查看消息。',
-    '消息已经送达，对方安顿下来后会回复你。',
-    '对方现在可能在移动中，信号稳定后会回来。',
-  ],
-};
 
 @WebSocketGateway({
   cors: {
@@ -152,8 +139,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const activity = await this.chatService.getCharacterActivity(characterId);
       if (activity === 'sleeping') {
-        await this.emitSystemMessage(convId, SLEEP_HINTS);
-        const delay = 12_000 + Math.random() * 10_000;
+        await this.emitSystemMessage(convId, [...SLEEP_HINTS]);
+        const delay =
+          SLEEP_DELAY_RANGE_MS.min +
+          Math.random() *
+            (SLEEP_DELAY_RANGE_MS.max - SLEEP_DELAY_RANGE_MS.min);
         setTimeout(() => {
           void this.deliverConversationReply(
             convId,
@@ -168,9 +158,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (activity && ['working', 'commuting'].includes(activity)) {
         await this.emitSystemMessage(
           convId,
-          BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。'],
+          [...(BUSY_HINTS[activity] ?? ['对方现在有些忙，稍后会回复你。'])],
         );
-        const delay = 8_000 + Math.random() * 7_000;
+        const delay =
+          BUSY_DELAY_RANGE_MS.min +
+          Math.random() *
+            (BUSY_DELAY_RANGE_MS.max - BUSY_DELAY_RANGE_MS.min);
         setTimeout(() => {
           void this.deliverConversationReply(
             convId,

@@ -5,11 +5,15 @@ import {
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 import { CharacterEntity } from '../characters/character.entity';
+import { ReplyLogicAdminService } from './reply-logic-admin.service';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly replyLogicAdminService: ReplyLogicAdminService,
+  ) {}
 
   @Get('stats')
   getStats() {
@@ -49,5 +53,20 @@ export class AdminController {
   @Delete('characters/:id')
   deleteCharacter(@Param('id') id: string) {
     return this.adminService.deleteCharacter(id);
+  }
+
+  @Get('reply-logic/overview')
+  getReplyLogicOverview() {
+    return this.replyLogicAdminService.getOverview();
+  }
+
+  @Get('reply-logic/characters/:id')
+  getReplyLogicCharacter(@Param('id') id: string) {
+    return this.replyLogicAdminService.getCharacterSnapshot(id);
+  }
+
+  @Get('reply-logic/conversations/:id')
+  getReplyLogicConversation(@Param('id') id: string) {
+    return this.replyLogicAdminService.getConversationSnapshot(id);
   }
 }

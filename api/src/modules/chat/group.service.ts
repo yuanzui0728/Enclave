@@ -18,6 +18,10 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import {
+  GROUP_REPLY_CHANCE_BY_FREQUENCY,
+  GROUP_REPLY_DELAY_RANGE_MS,
+} from '../ai/reply-logic.constants';
 
 export interface CreateGroupDto {
   name: string;
@@ -378,17 +382,18 @@ export class GroupService {
       if (!char) continue;
 
       const replyChance =
-        char.activityFrequency === 'high'
-          ? 0.7
-          : char.activityFrequency === 'low'
-            ? 0.2
-            : 0.4;
+        GROUP_REPLY_CHANCE_BY_FREQUENCY[
+          (char.activityFrequency as 'high' | 'normal' | 'low') ?? 'normal'
+        ] ?? GROUP_REPLY_CHANCE_BY_FREQUENCY.normal;
       if (Math.random() > replyChance) continue;
 
       const profile = await this.characters.getProfile(member.memberId);
       if (!profile) continue;
 
-      const delay = 5000 + Math.random() * 25000;
+      const delay =
+        GROUP_REPLY_DELAY_RANGE_MS.min +
+        Math.random() *
+          (GROUP_REPLY_DELAY_RANGE_MS.max - GROUP_REPLY_DELAY_RANGE_MS.min);
       setTimeout(async () => {
         try {
           const reply = await this.ai.generateReply({

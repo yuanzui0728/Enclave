@@ -1,7 +1,5 @@
 import {
   PersonalityProfile,
-  GenerateReplyOptions,
-  GenerateMomentOptions,
 } from './ai.types';
 
 export interface ChatContext {
@@ -9,12 +7,29 @@ export interface ChatContext {
   lastChatAt?: Date;
 }
 
+export interface ChatSystemPromptSection {
+  key:
+    | 'identity'
+    | 'personality_and_tone'
+    | 'behavioral_patterns'
+    | 'cognitive_boundaries'
+    | 'internal_reasoning'
+    | 'collaboration_routing'
+    | 'memory'
+    | 'current_context'
+    | 'group_chat'
+    | 'rules';
+  label: string;
+  content: string;
+  active: boolean;
+}
+
 export class PromptBuilderService {
-  buildChatSystemPrompt(
+  buildChatSystemPromptSections(
     profile: PersonalityProfile,
     isGroupChat = false,
     context?: ChatContext,
-  ): string {
+  ): ChatSystemPromptSection[] {
     const { name, expertDomains, basePrompt } = profile;
 
     const domainMap: Record<string, string> = {
@@ -34,7 +49,6 @@ export class PromptBuilderService {
     const identityText =
       basePrompt ?? `你是${name}，用户的${profile.relationship}。`;
 
-    // 深度人格模块
     let identitySection = `<identity>\n${identityText}`;
     if (profile.identity) {
       const { occupation, background, motivation, worldview } =
@@ -46,7 +60,6 @@ export class PromptBuilderService {
     }
     identitySection += `\n</identity>`;
 
-    // 性格与语气
     const { traits } = profile;
     let personalitySection = `<personality_and_tone>`;
     personalitySection += `\n情感基调：${traits.emotionalTone || '自然真实'}`;
@@ -58,7 +71,6 @@ export class PromptBuilderService {
     personalitySection += `\nEmoji使用：${{ none: '不用', occasional: '偶尔', frequent: '频繁' }[traits.emojiUsage] ?? '偶尔'}`;
     personalitySection += `\n</personality_and_tone>`;
 
-    // 行为模式（有值才注入）
     let behaviorSection = '';
     if (profile.behavioralPatterns) {
       const { workStyle, socialStyle, taboos, quirks } =
@@ -72,7 +84,6 @@ export class PromptBuilderService {
         behaviorSection = `<behavioral_patterns>\n${parts.join('\n')}\n</behavioral_patterns>`;
     }
 
-    // 专长边界（有值才注入）
     let boundarySection = '';
     if (profile.cognitiveBoundaries) {
       const { expertiseDescription, knowledgeLimits, refusalStyle } =
@@ -88,7 +99,6 @@ export class PromptBuilderService {
       boundarySection = `<cognitive_boundaries>\n专业领域：${expertiseDesc}\n</cognitive_boundaries>`;
     }
 
-    // 推理机制
     const rc = profile.reasoningConfig ?? {
       enableCoT: true,
       enableReflection: true,
@@ -103,7 +113,6 @@ export class PromptBuilderService {
     }
     reasoningSection += `\n</internal_reasoning>`;
 
-    // 跨角色路由
     let routingSection = '';
     if (rc.enableRouting !== false) {
       routingSection = `<collaboration_routing>
@@ -115,7 +124,6 @@ export class PromptBuilderService {
 </collaboration_routing>`;
     }
 
-    // 记忆注入（兼容旧 memorySummary）
     const coreMemory = profile.memory?.coreMemory || '';
     const recentSummary =
       profile.memory?.recentSummary || profile.memorySummary || '';
@@ -131,7 +139,6 @@ export class PromptBuilderService {
     }
     memorySection += `\n</memory>`;
 
-    // Current context injection (AI's current state)
     let currentContextSection = '';
     if (context) {
       const now = new Date();
@@ -180,7 +187,6 @@ export class PromptBuilderService {
 </behavioral_guideline>`;
     }
 
-    // 群聊指令
     const groupInstruction = isGroupChat
       ? `\n<group_chat>\n你现在在一个群聊中，群里还有其他朋友。不要重复别人已经说过的内容，从你的专业角度补充观点。\n</group_chat>`
       : '';
@@ -193,18 +199,80 @@ export class PromptBuilderService {
 - 当前时间：${new Date().toLocaleString('zh-CN')}
 </rules>`;
 
+    return [
+      {
+        key: 'identity',
+        label: 'Identity',
+        content: identitySection,
+        active: true,
+      },
+      {
+        key: 'personality_and_tone',
+        label: 'Personality And Tone',
+        content: personalitySection,
+        active: true,
+      },
+      {
+        key: 'behavioral_patterns',
+        label: 'Behavioral Patterns',
+        content: behaviorSection,
+        active: Boolean(behaviorSection),
+      },
+      {
+        key: 'cognitive_boundaries',
+        label: 'Cognitive Boundaries',
+        content: boundarySection,
+        active: Boolean(boundarySection),
+      },
+      {
+        key: 'internal_reasoning',
+        label: 'Internal Reasoning',
+        content: reasoningSection,
+        active: true,
+      },
+      {
+        key: 'collaboration_routing',
+        label: 'Collaboration Routing',
+        content: routingSection,
+        active: Boolean(routingSection),
+      },
+      {
+        key: 'memory',
+        label: 'Memory',
+        content: memorySection,
+        active: true,
+      },
+      {
+        key: 'current_context',
+        label: 'Current Context',
+        content: currentContextSection,
+        active: Boolean(currentContextSection),
+      },
+      {
+        key: 'group_chat',
+        label: 'Group Chat',
+        content: groupInstruction,
+        active: Boolean(groupInstruction),
+      },
+      {
+        key: 'rules',
+        label: 'Rules',
+        content: rulesSection,
+        active: true,
+      },
+    ];
+  }
+
+  buildChatSystemPrompt(
+    profile: PersonalityProfile,
+    isGroupChat = false,
+    context?: ChatContext,
+  ): string {
     const parts = [
       '<system_prompt>',
-      identitySection,
-      personalitySection,
-      behaviorSection,
-      boundarySection,
-      reasoningSection,
-      routingSection,
-      memorySection,
-      currentContextSection,
-      groupInstruction,
-      rulesSection,
+      ...this.buildChatSystemPromptSections(profile, isGroupChat, context)
+        .filter((section) => section.active)
+        .map((section) => section.content),
       '</system_prompt>',
     ].filter(Boolean);
 
