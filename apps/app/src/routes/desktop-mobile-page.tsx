@@ -50,7 +50,9 @@ import {
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   readGroupInviteDeliveryRecord,
+  readGroupInviteReopenRecords,
   type GroupInviteDeliveryRecord,
+  type GroupInviteReopenRecord,
 } from "../lib/group-invite-delivery";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -166,6 +168,9 @@ export function DesktopMobilePage() {
   );
   const [currentGroupInviteDelivery, setCurrentGroupInviteDelivery] =
     useState<GroupInviteDeliveryRecord | null>(null);
+  const [currentGroupInviteReopens, setCurrentGroupInviteReopens] = useState<
+    GroupInviteReopenRecord[]
+  >([]);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -276,12 +281,16 @@ export function DesktopMobilePage() {
   useEffect(() => {
     if (!currentGroupInviteId) {
       setCurrentGroupInviteDelivery(null);
+      setCurrentGroupInviteReopens([]);
       return;
     }
 
     const syncDelivery = () => {
       setCurrentGroupInviteDelivery(
         readGroupInviteDeliveryRecord(currentGroupInviteId),
+      );
+      setCurrentGroupInviteReopens(
+        readGroupInviteReopenRecords(currentGroupInviteId),
       );
     };
 
@@ -396,32 +405,6 @@ export function DesktopMobilePage() {
                       </Link>
                     </div>
 
-                    <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
-                      {currentGroupInviteDelivery ? (
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                              最近投递到 {currentGroupInviteDelivery.conversationTitle}
-                            </div>
-                            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-                              {formatConversationTimestamp(
-                                currentGroupInviteDelivery.deliveredAt,
-                              )}
-                            </div>
-                          </div>
-                          <Link
-                            to={currentGroupInviteDelivery.conversationPath as never}
-                            className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                          >
-                            回到会话
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-                          这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。
-                        </div>
-                      )}
-                    </div>
                   </div>
                 ))}
               </div>
@@ -957,6 +940,70 @@ export function DesktopMobilePage() {
                       >
                         桌面打开
                       </Link>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
+                        {currentGroupInviteDelivery ? (
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                                最近投递到{" "}
+                                {currentGroupInviteDelivery.conversationTitle}
+                              </div>
+                              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                                {formatConversationTimestamp(
+                                  currentGroupInviteDelivery.deliveredAt,
+                                )}
+                              </div>
+                            </div>
+                            <Link
+                              to={currentGroupInviteDelivery.conversationPath as never}
+                              className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            >
+                              回到会话
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+                            这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。
+                          </div>
+                        )}
+                      </div>
+
+                      {currentGroupInviteReopens.length ? (
+                        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
+                          <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                            最近从这些会话回到邀请页
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            {currentGroupInviteReopens.slice(0, 2).map((record) => (
+                              <div
+                                key={`${record.conversationPath}:${record.reopenedAt}`}
+                                className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.72)] px-3 py-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
+                                    {record.conversationTitle}
+                                  </div>
+                                  <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
+                                    回流于{" "}
+                                    {formatConversationTimestamp(
+                                      record.reopenedAt,
+                                    )}
+                                  </div>
+                                </div>
+                                <Link
+                                  to={record.conversationPath as never}
+                                  className="inline-flex h-7 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                                >
+                                  回到会话
+                                </Link>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
