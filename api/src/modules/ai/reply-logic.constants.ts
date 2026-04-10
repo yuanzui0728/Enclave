@@ -109,6 +109,18 @@ export type ReplyLogicInspectorTemplates = {
   previewDefaultUserMessage: string;
 };
 
+export type ReplyLogicNarrativePresentationTemplates = {
+  relationshipArcSuffix: string;
+  milestoneLabels: {
+    connected: string;
+    first_breakthrough: string;
+    shared_context: string;
+    growing_trust: string;
+    inner_circle: string;
+    story_complete: string;
+  };
+};
+
 export type ReplyLogicProviderTemplates = {
   endpointPriorityNote: string;
   modelPriorityNote: string;
@@ -169,6 +181,7 @@ export type ReplyLogicSchedulerTextTemplates = {
   jobSummaryProactiveReminderSkipped: string;
   jobSummaryTriggerMemoryProactiveMessages: string;
   proactiveReminderCheckPrompt: string;
+  proactiveReminderNoActionToken: string;
 };
 
 export type ReplyLogicSchedulerNames = {
@@ -210,6 +223,8 @@ export type ReplyLogicRuntimeRules = {
   channelGenerateChance: number;
   sceneFriendRequestChance: number;
   sceneFriendRequestScenes: string[];
+  relationshipInitialType: string;
+  relationshipInitialStrength: number;
   activityBaseWeight: number;
   proactiveReminderHour: number;
   relationshipInitialBackstory: string;
@@ -229,6 +244,7 @@ export type ReplyLogicRuntimeRules = {
   observabilityTemplates: ReplyLogicObservabilityTemplates;
   worldContextRules: ReplyLogicWorldContextRules;
   inspectorTemplates: ReplyLogicInspectorTemplates;
+  narrativePresentationTemplates: ReplyLogicNarrativePresentationTemplates;
   providerTemplates: ReplyLogicProviderTemplates;
   runtimeNoteTemplates: ReplyLogicRuntimeNoteTemplates;
   schedulerDescriptions: ReplyLogicSchedulerDescriptions;
@@ -293,6 +309,8 @@ export const SCENE_FRIEND_REQUEST_SCENES = [
   'restaurant',
   'cafe',
 ] as const;
+export const RELATIONSHIP_INITIAL_TYPE = 'acquaintance';
+export const RELATIONSHIP_INITIAL_STRENGTH = 18;
 export const ACTIVITY_BASE_WEIGHT = 0.8;
 export const PROACTIVE_REMINDER_HOUR = 20;
 export const HISTORY_WINDOW_BASE = 8;
@@ -495,6 +513,19 @@ export const DEFAULT_REPLY_LOGIC_INSPECTOR_TEMPLATES: ReplyLogicInspectorTemplat
       '【预演】如果此刻用户发送一条新消息，请基于当前设定准备回复。',
   });
 
+export const DEFAULT_REPLY_LOGIC_NARRATIVE_PRESENTATION_TEMPLATES: ReplyLogicNarrativePresentationTemplates =
+  Object.freeze({
+    relationshipArcSuffix: '关系弧线',
+    milestoneLabels: {
+      connected: '已建立连接',
+      first_breakthrough: '首次突破',
+      shared_context: '共享语境',
+      growing_trust: '信任增长',
+      inner_circle: '进入内圈',
+      story_complete: '关系完成',
+    },
+  });
+
 export const DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES: ReplyLogicProviderTemplates =
   Object.freeze({
     endpointPriorityNote:
@@ -572,7 +603,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTe
 今天是{{today}}。判断是否有值得主动提醒用户的事项（如考试、面试、生日、重要约定等）。
 
 如果有，输出一条自然的提醒消息（以{{characterName}}的口吻，不超过50字）。
-如果没有，只输出：NO_ACTION`,
+如果没有，只输出：{{noActionToken}}`,
+    proactiveReminderNoActionToken: 'NO_ACTION',
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
@@ -617,6 +649,8 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     channelGenerateChance: CHANNEL_GENERATE_CHANCE,
     sceneFriendRequestChance: SCENE_FRIEND_REQUEST_CHANCE,
     sceneFriendRequestScenes: [...SCENE_FRIEND_REQUEST_SCENES],
+    relationshipInitialType: RELATIONSHIP_INITIAL_TYPE,
+    relationshipInitialStrength: RELATIONSHIP_INITIAL_STRENGTH,
     activityBaseWeight: ACTIVITY_BASE_WEIGHT,
     proactiveReminderHour: PROACTIVE_REMINDER_HOUR,
     relationshipInitialBackstory: RELATIONSHIP_INITIAL_BACKSTORY_TEMPLATE,
@@ -689,6 +723,13 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     },
     inspectorTemplates: {
       ...DEFAULT_REPLY_LOGIC_INSPECTOR_TEMPLATES,
+    },
+    narrativePresentationTemplates: {
+      relationshipArcSuffix:
+        DEFAULT_REPLY_LOGIC_NARRATIVE_PRESENTATION_TEMPLATES.relationshipArcSuffix,
+      milestoneLabels: {
+        ...DEFAULT_REPLY_LOGIC_NARRATIVE_PRESENTATION_TEMPLATES.milestoneLabels,
+      },
     },
     providerTemplates: {
       ...DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES,
@@ -1049,6 +1090,44 @@ function normalizeInspectorTemplates(
   };
 }
 
+function normalizeNarrativePresentationTemplates(
+  value: Partial<ReplyLogicNarrativePresentationTemplates> | undefined,
+): ReplyLogicNarrativePresentationTemplates {
+  const defaults = DEFAULT_REPLY_LOGIC_NARRATIVE_PRESENTATION_TEMPLATES;
+  return {
+    relationshipArcSuffix: sanitizeTemplate(
+      value?.relationshipArcSuffix,
+      defaults.relationshipArcSuffix,
+    ),
+    milestoneLabels: {
+      connected: sanitizeTemplate(
+        value?.milestoneLabels?.connected,
+        defaults.milestoneLabels.connected,
+      ),
+      first_breakthrough: sanitizeTemplate(
+        value?.milestoneLabels?.first_breakthrough,
+        defaults.milestoneLabels.first_breakthrough,
+      ),
+      shared_context: sanitizeTemplate(
+        value?.milestoneLabels?.shared_context,
+        defaults.milestoneLabels.shared_context,
+      ),
+      growing_trust: sanitizeTemplate(
+        value?.milestoneLabels?.growing_trust,
+        defaults.milestoneLabels.growing_trust,
+      ),
+      inner_circle: sanitizeTemplate(
+        value?.milestoneLabels?.inner_circle,
+        defaults.milestoneLabels.inner_circle,
+      ),
+      story_complete: sanitizeTemplate(
+        value?.milestoneLabels?.story_complete,
+        defaults.milestoneLabels.story_complete,
+      ),
+    },
+  };
+}
+
 function normalizeProviderTemplates(
   value: Partial<ReplyLogicProviderTemplates> | undefined,
 ): ReplyLogicProviderTemplates {
@@ -1277,6 +1356,10 @@ function normalizeSchedulerTextTemplates(
     proactiveReminderCheckPrompt: sanitizeTemplate(
       value?.proactiveReminderCheckPrompt,
       defaults.proactiveReminderCheckPrompt,
+    ),
+    proactiveReminderNoActionToken: sanitizeTemplate(
+      value?.proactiveReminderNoActionToken,
+      defaults.proactiveReminderNoActionToken,
     ),
   };
 }
@@ -1530,6 +1613,18 @@ export function normalizeReplyLogicRuntimeRules(
       input?.sceneFriendRequestScenes,
       defaults.sceneFriendRequestScenes,
     ),
+    relationshipInitialType: sanitizeTemplate(
+      input?.relationshipInitialType,
+      defaults.relationshipInitialType,
+    ),
+    relationshipInitialStrength: clamp(
+      Math.round(
+        input?.relationshipInitialStrength ??
+          defaults.relationshipInitialStrength,
+      ),
+      0,
+      100,
+    ),
     activityBaseWeight: clamp(
       Number(input?.activityBaseWeight ?? defaults.activityBaseWeight),
       0,
@@ -1562,6 +1657,9 @@ export function normalizeReplyLogicRuntimeRules(
     ),
     worldContextRules: normalizeWorldContextRules(input?.worldContextRules),
     inspectorTemplates: normalizeInspectorTemplates(input?.inspectorTemplates),
+    narrativePresentationTemplates: normalizeNarrativePresentationTemplates(
+      input?.narrativePresentationTemplates,
+    ),
     providerTemplates: normalizeProviderTemplates(input?.providerTemplates),
     runtimeNoteTemplates: normalizeRuntimeNoteTemplates(
       input?.runtimeNoteTemplates,

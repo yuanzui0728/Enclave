@@ -126,6 +126,74 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         ])
     }
 
+    @objc func showLocalNotification(_ call: CAPPluginCall) {
+        let title = call.getString("title")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = call.getString("body")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let route = normalize(call.getString("route"))
+        let conversationId = normalize(call.getString("conversationId"))
+        let groupId = normalize(call.getString("groupId"))
+        let source = normalize(call.getString("source")) ?? "local_reminder"
+        let identifier = normalize(call.getString("id")) ?? UUID().uuidString
+
+        guard let title, !title.isEmpty, let body, !body.isEmpty else {
+            call.reject("title and body are required")
+            return
+        }
+
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let state = self.mapAuthorizationStatus(settings.authorizationStatus)
+            guard state == "granted" else {
+                call.reject("notification permission is not granted")
+                return
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+
+            var userInfo: [String: Any] = [
+                "source": source
+            ]
+
+            if let route {
+                userInfo["route"] = route
+            }
+
+            if let conversationId {
+                userInfo["conversationId"] = conversationId
+                userInfo["kind"] = "conversation"
+            }
+
+            if let groupId {
+                userInfo["groupId"] = groupId
+                userInfo["kind"] = "group"
+            }
+
+            if userInfo["kind"] == nil {
+                userInfo["kind"] = "route"
+                if userInfo["route"] == nil {
+                    userInfo["route"] = "/tabs/chat"
+                }
+            }
+
+            content.userInfo = userInfo
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.3, repeats: false)
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [identifier])
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error {
+                    call.reject("failed to schedule local notification", nil, error)
+                    return
+                }
+
+                call.resolve()
+            }
+        }
+    }
+
     @objc func clearPendingLaunchTarget(_ call: CAPPluginCall) {
         UserDefaults.standard.removeObject(forKey: "YinjiePendingLaunchTarget")
         call.resolve()

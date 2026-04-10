@@ -61,6 +61,7 @@ Current Android-side implementation status:
   - `pickImages` opens Android document picker and returns URI assets
   - `getPushToken` reads the cached token slot used by `YinjieFirebaseMessagingService`
   - `getNotificationPermissionState` and `requestNotificationPermission` are wired
+  - `showLocalNotification` is wired for in-app reminder notifications
 - `YinjieFirebaseMessagingService`
   - persists the latest FCM registration token into the bridge cache
   - creates a basic notification channel and shows fallback notifications for incoming FCM messages
@@ -74,6 +75,7 @@ Expected `YinjieMobileBridge` methods:
 - `getPushToken()`
 - `getNotificationPermissionState()`
 - `requestNotificationPermission()`
+- `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
 - `getPendingLaunchTarget()`
 - `clearPendingLaunchTarget()`
 

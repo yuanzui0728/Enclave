@@ -704,6 +704,8 @@ export class SchedulerService {
             characterName: char.name,
             memoryText,
             today: now.toLocaleDateString('zh-CN'),
+            noActionToken:
+              runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
           },
         );
         const model = await this.ai['configService'].getAiModel();
@@ -715,9 +717,12 @@ export class SchedulerService {
           temperature: 0.7,
         });
         const result = sanitizeAiText(
-          resp.choices[0]?.message?.content ?? 'NO_ACTION',
+          resp.choices[0]?.message?.content ??
+            runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
         );
-        if (result === 'NO_ACTION' || result.startsWith('NO_ACTION')) {
+        const noActionToken =
+          runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken;
+        if (result === noActionToken || result.startsWith(noActionToken)) {
           continue;
         }
 
@@ -813,8 +818,8 @@ export class SchedulerService {
           this.aiRelationshipRepo.create({
             characterIdA,
             characterIdB,
-            relationshipType: 'acquaintance',
-            strength: 18,
+            relationshipType: runtimeRules.relationshipInitialType,
+            strength: runtimeRules.relationshipInitialStrength,
             backstory: renderTemplate(
               runtimeRules.relationshipInitialBackstory,
               {
@@ -825,7 +830,12 @@ export class SchedulerService {
           }),
         );
         updates += 1;
-        this.recordRelationshipEvent(left, right, 18, runtimeRules);
+        this.recordRelationshipEvent(
+          left,
+          right,
+          runtimeRules.relationshipInitialStrength,
+          runtimeRules,
+        );
       }
     }
 
