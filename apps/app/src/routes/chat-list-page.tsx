@@ -242,20 +242,11 @@ function MobileChatListPage() {
                 />
               ))}
             </section>
-          ) : (
+          ) : hasSearchResult ? (
             <div className="px-3 pt-8">
-              <EmptyState
-                title={
-                  hasSearchResult ? "没有找到匹配的会话" : "还没有任何会话"
-                }
-                description={
-                  hasSearchResult
-                    ? "换一个关键词试试"
-                    : "去通讯录认识角色，或从发现页触发第一次相遇"
-                }
-              />
+              <EmptyState title="没有找到匹配的会话" description="换一个关键词试试" />
             </div>
-          )
+          ) : null
         ) : null}
       </div>
     </AppPage>
