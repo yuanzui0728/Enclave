@@ -134,6 +134,15 @@ type ScreenshotCropResizeDraft = {
   crop: NormalizedCropRect;
 };
 
+type ScreenshotCropMoveDraft = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  boundsWidth: number;
+  boundsHeight: number;
+  crop: NormalizedCropRect;
+};
+
 type AttachmentDraft =
   | {
       kind: "images";
@@ -189,6 +198,8 @@ export function ChatComposer({
     useState<ScreenshotSelectionDraft | null>(null);
   const [desktopScreenshotCropResize, setDesktopScreenshotCropResize] =
     useState<ScreenshotCropResizeDraft | null>(null);
+  const [desktopScreenshotCropMove, setDesktopScreenshotCropMove] =
+    useState<ScreenshotCropMoveDraft | null>(null);
   const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
     string | null
   >(null);
@@ -910,6 +921,7 @@ export function ChatComposer({
       setDesktopScreenshotAnnotations([]);
       setDesktopScreenshotSelection(null);
       setDesktopScreenshotCropResize(null);
+      setDesktopScreenshotCropMove(null);
       setDesktopScreenshotNotice(null);
     } catch (captureError) {
       const name =
@@ -1163,6 +1175,7 @@ export function ChatComposer({
     setDesktopScreenshotAnnotations([]);
     setDesktopScreenshotSelection(null);
     setDesktopScreenshotCropResize(null);
+    setDesktopScreenshotCropMove(null);
     setDesktopScreenshotNotice(null);
   };
 
@@ -1256,6 +1269,51 @@ export function ChatComposer({
     });
   };
 
+  const handleDesktopScreenshotCropMoveStart = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!desktopScreenshotCrop || attachmentBusy) {
+      return;
+    }
+
+    const bounds = desktopScreenshotImageRef.current?.getBoundingClientRect();
+    if (!bounds || !bounds.width || !bounds.height) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setDesktopScreenshotCropMove({
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      boundsWidth: bounds.width,
+      boundsHeight: bounds.height,
+      crop: desktopScreenshotCrop,
+    });
+  };
+
+  const handleDesktopScreenshotCropMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    setDesktopScreenshotCropMove((current) => {
+      if (!current || current.pointerId !== event.pointerId) {
+        return current;
+      }
+
+      event.preventDefault();
+      const deltaX =
+        (event.clientX - current.startX) / Math.max(1, current.boundsWidth);
+      const deltaY =
+        (event.clientY - current.startY) / Math.max(1, current.boundsHeight);
+      setDesktopScreenshotCrop(
+        moveScreenshotCrop(current.crop, deltaX, deltaY),
+      );
+      return current;
+    });
+  };
+
   const finishDesktopScreenshotCropResize = (
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
@@ -1264,6 +1322,18 @@ export function ChatComposer({
     }
 
     setDesktopScreenshotCropResize((current) =>
+      current?.pointerId === event.pointerId ? null : current,
+    );
+  };
+
+  const finishDesktopScreenshotCropMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    setDesktopScreenshotCropMove((current) =>
       current?.pointerId === event.pointerId ? null : current,
     );
   };
@@ -1707,6 +1777,7 @@ export function ChatComposer({
             onClearCrop={() => {
               setDesktopScreenshotCrop(null);
               setDesktopScreenshotCropResize(null);
+              setDesktopScreenshotCropMove(null);
             }}
             onClearAnnotations={handleClearScreenshotAnnotations}
             onUndoAnnotation={handleUndoScreenshotAnnotation}
@@ -1714,6 +1785,9 @@ export function ChatComposer({
             onPointerMove={handleDesktopScreenshotPointerMove}
             onPointerUp={finalizeDesktopScreenshotSelection}
             onPointerCancel={finalizeDesktopScreenshotSelection}
+            onCropMoveStart={handleDesktopScreenshotCropMoveStart}
+            onCropMove={handleDesktopScreenshotCropMove}
+            onCropMoveEnd={finishDesktopScreenshotCropMove}
             onCropResizeStart={handleDesktopScreenshotCropResizeStart}
             onCropResizeMove={handleDesktopScreenshotCropResizeMove}
             onCropResizeEnd={finishDesktopScreenshotCropResize}
@@ -2456,6 +2530,9 @@ function DesktopScreenshotEditor({
   onClearCrop,
   onCopyCropped,
   onCopyOriginal,
+  onCropMove,
+  onCropMoveEnd,
+  onCropMoveStart,
   onCropResizeEnd,
   onCropResizeMove,
   onCropResizeStart,
@@ -2482,6 +2559,9 @@ function DesktopScreenshotEditor({
   onClearCrop: () => void;
   onCopyCropped: () => void;
   onCopyOriginal: () => void;
+  onCropMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onCropMoveEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onCropMoveStart: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onCropResizeEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onCropResizeMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onCropResizeStart: (
@@ -2623,6 +2703,15 @@ function DesktopScreenshotEditor({
                         height: `${cropRect.height * 100}%`,
                       }}
                     >
+                      <button
+                        type="button"
+                        onPointerDown={onCropMoveStart}
+                        onPointerMove={onCropMove}
+                        onPointerUp={onCropMoveEnd}
+                        onPointerCancel={onCropMoveEnd}
+                        className="absolute inset-2 cursor-move rounded-[10px] border border-white/14 bg-white/0 text-transparent"
+                        aria-label="移动裁剪区域"
+                      />
                       {(["nw", "ne", "sw", "se"] as const).map((handle) => (
                         <button
                           key={handle}
@@ -3131,6 +3220,22 @@ function resizeScreenshotCrop(
     y: top,
     width: right - left,
     height: bottom - top,
+  } satisfies NormalizedCropRect;
+}
+
+function moveScreenshotCrop(
+  crop: NormalizedCropRect,
+  deltaX: number,
+  deltaY: number,
+) {
+  const maxX = Math.max(0, 1 - crop.width);
+  const maxY = Math.max(0, 1 - crop.height);
+
+  return {
+    x: clamp(crop.x + deltaX, 0, maxX),
+    y: clamp(crop.y + deltaY, 0, maxY),
+    width: crop.width,
+    height: crop.height,
   } satisfies NormalizedCropRect;
 }
 
