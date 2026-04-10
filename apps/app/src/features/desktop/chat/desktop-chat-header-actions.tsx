@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Ellipsis, History, Phone, Video } from "lucide-react";
+import { Ellipsis, Phone, Video } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 export type DesktopChatSidePanelMode = "history" | "details" | null;
@@ -7,14 +7,12 @@ export type DesktopChatCallKind = "voice" | "video";
 
 type DesktopChatHeaderActionsProps = {
   activePanelMode: DesktopChatSidePanelMode;
-  onToggleHistory: () => void;
   onToggleDetails: () => void;
   onSelectCall: (kind: DesktopChatCallKind) => void;
 };
 
 export function DesktopChatHeaderActions({
   activePanelMode,
-  onToggleHistory,
   onToggleDetails,
   onSelectCall,
 }: DesktopChatHeaderActionsProps) {
@@ -38,14 +36,6 @@ export function DesktopChatHeaderActions({
 
   return (
     <div className="flex items-center gap-1.5">
-      <DesktopChatHeaderButton
-        active={activePanelMode === "history"}
-        label="聊天记录"
-        onClick={onToggleHistory}
-      >
-        <History size={16} />
-      </DesktopChatHeaderButton>
-
       <div ref={callMenuRef} className="relative">
         <DesktopChatHeaderButton
           active={callMenuOpen}

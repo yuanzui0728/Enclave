@@ -278,7 +278,6 @@ export function ConversationThreadPanel({
           <div className="hidden items-center xl:flex">
             <DesktopChatHeaderActions
               activePanelMode={desktopSidePanelMode}
-              onToggleHistory={() => onToggleDesktopHistory?.()}
               onToggleDetails={() => onToggleDesktopDetails?.()}
               onSelectCall={handleDesktopCallAction}
             />
@@ -445,6 +444,7 @@ export function ConversationThreadPanel({
             }
             await handleSendPresetText(presetText);
           }}
+          onOpenDesktopHistory={onToggleDesktopHistory}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
           onSubmit={() => void handleSubmit()}

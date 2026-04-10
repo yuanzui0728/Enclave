@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
   FileText,
+  History,
   ImageIcon,
   Keyboard,
   Mic,
@@ -75,6 +76,7 @@ type ChatComposerProps = {
     modeLabel?: string;
   } | null;
   onCancelReply?: () => void;
+  onOpenDesktopHistory?: () => void;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -113,6 +115,7 @@ export function ChatComposer({
   mentionCandidates,
   replyPreview = null,
   onCancelReply,
+  onOpenDesktopHistory,
   onChange,
   onSubmit,
 }: ChatComposerProps) {
@@ -656,23 +659,25 @@ export function ChatComposer({
     setPlusPanelOpen((current) => !current);
   };
 
-  const toggleDesktopPlusMenu = () => {
-    if (!onSendAttachment || !isDesktop) {
-      return;
-    }
-
-    if (speech.status === "listening") {
-      speech.stop();
-    }
-    setStickerPanelOpen(false);
-    setAttachmentError(null);
-    setMobilePlusNotice(null);
-    setDesktopPlusMenuOpen((current) => !current);
-  };
-
   const closeDesktopPlusMenu = () => {
     setDesktopPlusMenuOpen(false);
     setDesktopPlusMenuView("root");
+  };
+
+  const toggleDesktopFavoritePicker = () => {
+    if (desktopPlusMenuOpen && desktopPlusMenuView === "favorites") {
+      closeDesktopPlusMenu();
+      return;
+    }
+
+    setDesktopFavoriteRecords(
+      mergeDesktopFavoriteRecords(
+        favoritesQuery.data ?? [],
+        readDesktopFavorites(),
+      ),
+    );
+    setDesktopPlusMenuView("favorites");
+    setDesktopPlusMenuOpen(true);
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
@@ -1204,97 +1209,95 @@ export function ChatComposer({
         ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
-          className={`relative ${isDesktop ? "flex items-center gap-2 rounded-[10px] border border-black/6 bg-white px-2.5 py-2" : "space-y-1.5"}`}
+          className={`relative ${isDesktop ? "space-y-2.5 rounded-[10px] border border-black/6 bg-white px-2.5 py-2" : "space-y-1.5"}`}
         >
           {isDesktop ? (
             <>
-              <button
-                type="button"
-                onClick={toggleStickerPanel}
-                className={cn(
-                  "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
-                  stickerPanelOpen
-                    ? "bg-[#ededed] text-[color:var(--text-primary)]"
-                    : "",
-                )}
-                aria-label="表情"
-              >
-                <Smile size={17} />
-              </button>
-              {onSendAttachment ? (
-                <div ref={desktopPlusRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={toggleDesktopPlusMenu}
-                    className={cn(
-                      "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
-                      desktopPlusMenuOpen
-                        ? "bg-[#ededed] text-[color:var(--text-primary)]"
-                        : "",
-                    )}
-                    aria-label="更多功能"
-                  >
-                    <Plus size={17} />
-                  </button>
-
-                  {desktopPlusMenuOpen ? (
-                    <div
-                      className={cn(
-                        "absolute left-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]",
-                        desktopPlusMenuView === "favorites" ? "w-80" : "w-44",
-                      )}
-                    >
-                      {desktopPlusMenuView === "root" ? (
-                        <div className="py-1.5">
-                          <DesktopPlusMenuButton
-                            label="发送图片"
-                            icon={<ImageIcon size={15} />}
-                            onClick={() => {
+              <div className="flex flex-wrap items-center gap-1 border-b border-black/6 pb-2">
+                <DesktopToolbarButton
+                  label="表情"
+                  icon={<Smile size={16} />}
+                  active={stickerPanelOpen}
+                  onClick={toggleStickerPanel}
+                />
+                {onSendAttachment ? (
+                  <>
+                    <DesktopToolbarButton
+                      label="图片"
+                      icon={<ImageIcon size={16} />}
+                      onClick={pickAlbum}
+                    />
+                    <DesktopToolbarButton
+                      label="文件"
+                      icon={<FileText size={16} />}
+                      onClick={pickFile}
+                    />
+                    <div ref={desktopPlusRef} className="relative">
+                      <DesktopToolbarButton
+                        label="收藏"
+                        icon={<Star size={16} />}
+                        active={
+                          desktopPlusMenuOpen &&
+                          desktopPlusMenuView === "favorites"
+                        }
+                        onClick={toggleDesktopFavoritePicker}
+                      />
+                      {desktopPlusMenuOpen &&
+                      desktopPlusMenuView === "favorites" ? (
+                        <div className="absolute left-0 top-[calc(100%+0.4rem)] z-30 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+                          <DesktopFavoritePicker
+                            favorites={desktopFavoriteRecords}
+                            busy={composerPending}
+                            onBack={closeDesktopPlusMenu}
+                            onSelect={(item) => {
                               closeDesktopPlusMenu();
-                              pickAlbum();
-                            }}
-                          />
-                          <DesktopPlusMenuButton
-                            label="发送文件"
-                            icon={<FileText size={15} />}
-                            onClick={() => {
-                              closeDesktopPlusMenu();
-                              pickFile();
-                            }}
-                          />
-                          <DesktopPlusMenuButton
-                            label="发送收藏"
-                            icon={<Star size={15} />}
-                            onClick={() => {
-                              setDesktopFavoriteRecords(
-                                mergeDesktopFavoriteRecords(
-                                  favoritesQuery.data ?? [],
-                                  readDesktopFavorites(),
-                                ),
+                              void handleSendPresetText(
+                                buildFavoriteShareText(item),
                               );
-                              setDesktopPlusMenuView("favorites");
                             }}
                           />
                         </div>
-                      ) : (
-                        <DesktopFavoritePicker
-                          favorites={desktopFavoriteRecords}
-                          busy={composerPending}
-                          onBack={() => setDesktopPlusMenuView("root")}
-                          onSelect={(item) => {
-                            closeDesktopPlusMenu();
-                            void handleSendPresetText(
-                              buildFavoriteShareText(item),
-                            );
-                          }}
-                        />
-                      )}
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
-              ) : null}
+                  </>
+                ) : null}
+                {onOpenDesktopHistory ? (
+                  <DesktopToolbarButton
+                    label="聊天记录"
+                    icon={<History size={16} />}
+                    onClick={onOpenDesktopHistory}
+                  />
+                ) : null}
+                {showSpeechEntry ? (
+                  <DesktopToolbarButton
+                    label={speech.status === "listening" ? "停止语音" : "语音输入"}
+                    icon={
+                      speech.status === "listening" ? (
+                        <Square size={14} fill="currentColor" />
+                      ) : (
+                        <Mic size={16} />
+                      )
+                    }
+                    active={speech.status === "listening"}
+                    disabled={
+                      speechButtonDisabled && speech.status !== "listening"
+                    }
+                    title={speechDisabledReason ?? undefined}
+                    onClick={() => {
+                      if (speech.status === "listening") {
+                        speech.stop();
+                        return;
+                      }
 
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+                      setStickerPanelOpen(false);
+                      closeDesktopPlusMenu();
+                      void speech.start();
+                    }}
+                  />
+                ) : null}
+              </div>
+
+              <div className="flex min-w-0 items-center gap-2 rounded-[8px] bg-[#f7f7f7] px-3 py-2">
                 <input
                   ref={desktopInputRef}
                   value={value}
@@ -1308,8 +1311,8 @@ export function ChatComposer({
                     void handleDesktopPaste(event);
                   }}
                   onFocus={() => {
-                    setPlusPanelOpen(false);
                     setStickerPanelOpen(false);
+                    closeDesktopPlusMenu();
                     syncInputCursor();
                   }}
                   onClick={syncInputCursor}
@@ -1319,41 +1322,18 @@ export function ChatComposer({
                   placeholder={placeholder}
                   className="min-w-0 flex-1 bg-transparent py-1 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
                 />
-                {showSpeechEntry ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (speech.status === "listening") {
-                        speech.stop();
-                        return;
-                      }
-                      setStickerPanelOpen(false);
-                      void speech.start();
-                    }}
-                    disabled={
-                      speechButtonDisabled && speech.status !== "listening"
-                    }
-                    title={speechDisabledReason ?? undefined}
-                    className={cn(
-                      "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45",
-                      speech.status === "listening"
-                        ? "bg-[#ededed] text-[color:var(--text-primary)]"
-                        : "",
-                    )}
-                    aria-label={
-                      speechDisabledReason ??
-                      (speech.status === "listening"
-                        ? "停止语音输入"
-                        : "语音输入")
-                    }
+                {value.trim() ? (
+                  <Button
+                    onClick={onSubmit}
+                    disabled={composerPending}
+                    variant="primary"
+                    className="h-[34px] rounded-[8px] bg-[#07c160] px-4 text-[13px] font-medium text-white shadow-none hover:bg-[#06ad56]"
                   >
-                    {speech.status === "listening" ? (
-                      <Square size={15} fill="currentColor" />
-                    ) : (
-                      <Mic size={17} />
-                    )}
-                  </button>
-                ) : null}
+                    发送
+                  </Button>
+                ) : (
+                  <div className="h-[34px] w-[64px]" />
+                )}
               </div>
             </>
           ) : (
@@ -1483,19 +1463,6 @@ export function ChatComposer({
               )}
             </div>
           )}
-
-          {isDesktop && value.trim() ? (
-            <Button
-              onClick={onSubmit}
-              disabled={composerPending}
-              variant="primary"
-              className="h-[34px] rounded-[8px] bg-[#07c160] px-4 text-[13px] font-medium text-white shadow-none hover:bg-[#06ad56]"
-            >
-              发送
-            </Button>
-          ) : isDesktop ? (
-            <div className="h-[34px] w-[64px]" />
-          ) : null}
 
           {stickerPanelOpen && onSendSticker ? (
             <StickerPanel
@@ -1692,27 +1659,6 @@ export function ChatComposer({
   );
 }
 
-function DesktopPlusMenuButton({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[#f5f5f5]"
-    >
-      <span className="text-[color:var(--text-secondary)]">{icon}</span>
-      <span>{label}</span>
-    </button>
-  );
-}
-
 function DesktopFavoritePicker({
   favorites,
   busy,
@@ -1783,6 +1729,40 @@ function DesktopFavoritePicker({
         </div>
       )}
     </div>
+  );
+}
+
+function DesktopToolbarButton({
+  icon,
+  label,
+  active = false,
+  disabled = false,
+  title,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+  disabled?: boolean;
+  title?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={title ?? label}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-[30px] items-center gap-1 rounded-[7px] px-2 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-45",
+        active
+          ? "bg-[#ededed] text-[color:var(--text-primary)]"
+          : "text-[color:var(--text-secondary)] hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
+      )}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
+    </button>
   );
 }
 

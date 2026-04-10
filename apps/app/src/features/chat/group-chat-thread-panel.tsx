@@ -573,7 +573,6 @@ export function GroupChatThreadPanel({
           <div className="hidden items-center xl:flex">
             <DesktopChatHeaderActions
               activePanelMode={desktopSidePanelMode}
-              onToggleHistory={() => onToggleDesktopHistory?.()}
               onToggleDetails={() => onToggleDesktopDetails?.()}
               onSelectCall={handleDesktopCallAction}
             />
@@ -771,6 +770,7 @@ export function GroupChatThreadPanel({
           onSendAttachment={sendAttachmentMessage}
           onSendPresetText={handleSendPresetText}
           mentionCandidates={mentionCandidates}
+          onOpenDesktopHistory={onToggleDesktopHistory}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
           onSubmit={() => void handleSubmit()}
