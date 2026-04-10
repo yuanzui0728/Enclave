@@ -629,6 +629,38 @@ export function ChatComposer({
   }, [attachmentBusy, desktopScreenshotDraft, isDesktop]);
 
   useEffect(() => {
+    if (
+      !isDesktop ||
+      !onSendAttachment ||
+      attachmentBusy ||
+      desktopScreenshotDraft
+    ) {
+      return;
+    }
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || !event.shiftKey || event.altKey) {
+        return;
+      }
+
+      if (event.key.toLowerCase() !== "s") {
+        return;
+      }
+
+      event.preventDefault();
+      void captureDesktopScreenshot();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    attachmentBusy,
+    desktopScreenshotDraft,
+    isDesktop,
+    onSendAttachment,
+  ]);
+
+  useEffect(() => {
     if (isDesktop && onSendAttachment && !attachmentBusy) {
       return;
     }
@@ -1628,6 +1660,7 @@ export function ChatComposer({
                     <DesktopToolbarButton
                       label="截图"
                       icon={<Monitor size={16} />}
+                      title="截图（Ctrl/⌘ + Shift + S）"
                       onClick={() => {
                         void captureDesktopScreenshot();
                       }}
