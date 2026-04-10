@@ -17,6 +17,7 @@ import { EmptyState } from "../../../components/empty-state";
 import {
   buildOfficialAccountFavoriteRecord,
   buildOfficialArticleFavoriteRecord,
+  buildOfficialArticleSummaryFavoriteRecord,
 } from "../favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
@@ -207,6 +208,28 @@ export function DesktopOfficialAccountsWorkspace({
     setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
   }
 
+  function toggleArticleSummaryFavorite(articleId: string) {
+    if (!account) {
+      return;
+    }
+
+    const targetArticle = account.articles.find(
+      (item) => item.id === articleId,
+    );
+    if (!targetArticle) {
+      return;
+    }
+
+    const sourceId = `official-article-${targetArticle.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(
+          buildOfficialArticleSummaryFavoriteRecord(targetArticle, account),
+        );
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
+
   return (
     <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))]">
       <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
@@ -355,12 +378,16 @@ export function DesktopOfficialAccountsWorkspace({
               key={article.id}
               article={article}
               active={article.id === activeArticleId}
+              favorite={favoriteSourceIds.includes(
+                `official-article-${article.id}`,
+              )}
               onClick={() => {
                 void navigate({
                   to: "/official-accounts/articles/$articleId",
                   params: { articleId: article.id },
                 });
               }}
+              onToggleFavorite={() => toggleArticleSummaryFavorite(article.id)}
             />
           ))}
         </div>

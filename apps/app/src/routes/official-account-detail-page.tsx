@@ -19,6 +19,7 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { OfficialArticleCard } from "../components/official-article-card";
 import { buildOfficialAccountFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
+import { buildOfficialArticleSummaryFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -86,6 +87,28 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
     const nextFavorites = favoriteSourceIds.includes(sourceId)
       ? removeDesktopFavorite(sourceId)
       : upsertDesktopFavorite(buildOfficialAccountFavoriteRecord(account));
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
+
+  function toggleArticleFavorite(articleId: string) {
+    if (!account) {
+      return;
+    }
+
+    const targetArticle = account.articles.find(
+      (item) => item.id === articleId,
+    );
+    if (!targetArticle) {
+      return;
+    }
+
+    const sourceId = `official-article-${targetArticle.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(
+          buildOfficialArticleSummaryFavoriteRecord(targetArticle, account),
+        );
 
     setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
   }
@@ -228,12 +251,16 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 key={article.id}
                 article={article}
                 compact
+                favorite={favoriteSourceIds.includes(
+                  `official-article-${article.id}`,
+                )}
                 onClick={() => {
                   void navigate({
                     to: "/official-accounts/articles/$articleId",
                     params: { articleId: article.id },
                   });
                 }}
+                onToggleFavorite={() => toggleArticleFavorite(article.id)}
               />
             ))}
           </AppSection>
