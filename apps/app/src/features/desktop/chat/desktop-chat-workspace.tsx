@@ -82,7 +82,6 @@ import {
   getConversationVisibleLastMessage,
 } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
-import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -97,6 +96,7 @@ import {
 } from "./desktop-chat-header-actions";
 import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopConversationContextMenu } from "./desktop-conversation-context-menu";
+import { DesktopCreateGroupDialog } from "./desktop-create-group-dialog";
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
@@ -169,6 +169,10 @@ export function DesktopChatWorkspace({
   const [conversationDangerAction, setConversationDangerAction] = useState<{
     action: DesktopConversationDangerAction;
     conversation: ConversationListItem;
+  } | null>(null);
+  const [createGroupDialogState, setCreateGroupDialogState] = useState<{
+    conversationId?: string;
+    seedMemberIds: string[];
   } | null>(null);
 
   const conversationsQuery = useQuery({
@@ -565,23 +569,15 @@ export function DesktopChatWorkspace({
     setNotice(null);
 
     if (key === "create-group") {
-      const seedMemberIds =
-        activeConversation && !isPersistedGroupConversation(activeConversation)
-          ? activeConversation.participants.slice(0, 1)
-          : [];
-      void navigate({
-        to: "/group/new",
-        hash: buildCreateGroupRouteHash({
-          source:
-            activeConversation && !isPersistedGroupConversation(activeConversation)
-              ? "desktop-chat"
-              : undefined,
-          conversationId:
-            activeConversation && !isPersistedGroupConversation(activeConversation)
-              ? activeConversation.id
-              : undefined,
-          seedMemberIds,
-        }),
+      setCreateGroupDialogState({
+        conversationId:
+          activeConversation && !isPersistedGroupConversation(activeConversation)
+            ? activeConversation.id
+            : undefined,
+        seedMemberIds:
+          activeConversation && !isPersistedGroupConversation(activeConversation)
+            ? activeConversation.participants.slice(0, 1)
+            : [],
       });
       return;
     }
@@ -1057,10 +1053,19 @@ export function DesktopChatWorkspace({
             <DesktopChatDetailsPanel
               conversation={activeConversation}
               onOpenHistory={() => setRightPanelMode("history")}
+              onCreateGroup={(input) => {
+                setCreateGroupDialogState(input);
+              }}
             />
           )}
         </DesktopChatSidePanel>
       ) : null}
+
+      <DesktopCreateGroupDialog
+        open={Boolean(createGroupDialogState)}
+        seedMemberIds={createGroupDialogState?.seedMemberIds}
+        onClose={() => setCreateGroupDialogState(null)}
+      />
 
       {conversationContextMenu ? (
         <DesktopConversationContextMenu

@@ -58,6 +58,10 @@ import { useWorldOwnerStore } from "../../../store/world-owner-store";
 type DesktopChatDetailsPanelProps = {
   conversation: ConversationListItem;
   onOpenHistory: () => void;
+  onCreateGroup?: (input: {
+    conversationId: string;
+    seedMemberIds: string[];
+  }) => void;
 };
 
 type DesktopMemberGridItem = {
@@ -90,6 +94,7 @@ type DesktopGroupMemberBrowserFilter = "all" | "owner" | "admin" | "character";
 export function DesktopChatDetailsPanel({
   conversation,
   onOpenHistory,
+  onCreateGroup,
 }: DesktopChatDetailsPanelProps) {
   if (isPersistedGroupConversation(conversation)) {
     return (
@@ -104,6 +109,7 @@ export function DesktopChatDetailsPanel({
     <DirectChatDetailsPanel
       conversation={conversation}
       onOpenHistory={onOpenHistory}
+      onCreateGroup={onCreateGroup}
     />
   );
 }
@@ -111,6 +117,7 @@ export function DesktopChatDetailsPanel({
 function DirectChatDetailsPanel({
   conversation,
   onOpenHistory,
+  onCreateGroup,
 }: DesktopChatDetailsPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -338,6 +345,14 @@ function DirectChatDetailsPanel({
       label: "发起群聊",
       kind: "add",
       onClick: () => {
+        if (onCreateGroup) {
+          onCreateGroup({
+            conversationId: conversation.id,
+            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+          });
+          return;
+        }
+
         void navigate({
           to: "/group/new",
           hash: buildCreateGroupRouteHash({
