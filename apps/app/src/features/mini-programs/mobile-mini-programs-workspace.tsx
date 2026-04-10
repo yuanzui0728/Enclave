@@ -34,6 +34,7 @@ type MobileMiniProgramsWorkspaceProps = {
   searchText: string;
   selectedMiniProgramId: string;
   successNotice?: string;
+  noticeTone?: "success" | "info";
   visibleMiniPrograms: MiniProgramEntry[];
   onBack: () => void;
   onCategoryChange: (categoryId: MiniProgramCategoryId) => void;
@@ -56,6 +57,7 @@ export function MobileMiniProgramsWorkspace({
   searchText,
   selectedMiniProgramId,
   successNotice,
+  noticeTone = "success",
   visibleMiniPrograms,
   onBack,
   onCategoryChange,
@@ -149,7 +151,7 @@ export function MobileMiniProgramsWorkspace({
         </div>
       </TabPageTopBar>
 
-      {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+      {successNotice ? <InlineNotice tone={noticeTone}>{successNotice}</InlineNotice> : null}
 
       <section
         className={cn(

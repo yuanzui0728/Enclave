@@ -10,10 +10,28 @@ import {
 } from "../features/mini-programs/mini-programs-data";
 import { MobileMiniProgramsWorkspace } from "../features/mini-programs/mobile-mini-programs-workspace";
 import { useMiniProgramsState } from "../features/mini-programs/use-mini-programs-state";
+import {
+  pushMobileHandoffRecord,
+  resolveMobileHandoffLink,
+} from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
+}
+
+function resolveMiniProgramSelectionFromLocation() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const miniProgramId = new URLSearchParams(window.location.search).get(
+    "miniProgram",
+  );
+
+  return miniProgramId && getMiniProgramEntry(miniProgramId)
+    ? miniProgramId
+    : null;
 }
 
 export function MiniProgramsPage() {
@@ -35,9 +53,10 @@ export function MiniProgramsPage() {
     useState<MiniProgramCategoryId>("all");
   const [searchText, setSearchText] = useState("");
   const [selectedMiniProgramId, setSelectedMiniProgramId] = useState(
-    resolveDefaultMiniProgramId(),
+    resolveMiniProgramSelectionFromLocation() ?? resolveDefaultMiniProgramId(),
   );
   const [successNotice, setSuccessNotice] = useState("");
+  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
 
   const visibleMiniPrograms = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -97,8 +116,9 @@ export function MiniProgramsPage() {
     const miniProgram = getMiniProgramEntry(miniProgramId);
     openMiniProgram(miniProgramId);
     setSelectedMiniProgramId(miniProgramId);
+    setNoticeTone("success");
     setSuccessNotice(
-      `${miniProgram?.name ?? "该小程序"} 已加入最近使用，当前先由小程序面板承接。`,
+      `${miniProgram?.name ?? "该小程序"} 已加入最近使用，当前已进入小程序工作台。`,
     );
   }
 
@@ -106,6 +126,7 @@ export function MiniProgramsPage() {
     const miniProgram = getMiniProgramEntry(miniProgramId);
     const pinned = pinnedMiniProgramIds.includes(miniProgramId);
     togglePinned(miniProgramId);
+    setNoticeTone("success");
     setSuccessNotice(
       `${miniProgram?.name ?? "该小程序"} 已${pinned ? "移出" : "加入"}我的小程序。`,
     );
@@ -120,9 +141,41 @@ export function MiniProgramsPage() {
     const task = currentTasks.find((item) => item.id === taskId);
     const completed = Boolean(task?.completed);
     toggleTaskCompletion(miniProgramId, taskId);
+    setNoticeTone("success");
     setSuccessNotice(
       `${miniProgram?.name ?? "该小程序"} 已${completed ? "恢复" : "完成"}“${task?.title ?? "当前待办"}”。`,
     );
+  }
+
+  async function handleCopyMiniProgramToMobile(miniProgramId: string) {
+    const miniProgram = getMiniProgramEntry(miniProgramId);
+    const query = new URLSearchParams({ miniProgram: miniProgramId });
+    const path = `/discover/mini-programs?${query.toString()}`;
+    const link = resolveMobileHandoffLink(path);
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNoticeTone("info");
+      setSuccessNotice("当前环境暂不支持复制到手机。");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(link);
+      pushMobileHandoffRecord({
+        description: `把 ${miniProgram?.name ?? "小程序"} 的当前工作台发到手机继续，保留最近使用和本地待办上下文。`,
+        label: `${miniProgram?.name ?? "小程序"} 接力`,
+        path,
+      });
+      setNoticeTone("success");
+      setSuccessNotice(`${miniProgram?.name ?? "该小程序"} 已复制到手机接力链接。`);
+    } catch {
+      setNoticeTone("info");
+      setSuccessNotice("复制到手机失败，请稍后重试。");
+    }
   }
 
   function handleBack() {
@@ -147,8 +200,10 @@ export function MiniProgramsPage() {
         searchText={searchText}
         selectedMiniProgramId={selectedMiniProgramId}
         successNotice={successNotice}
+        noticeTone={noticeTone}
         visibleMiniPrograms={visibleMiniPrograms}
         onCategoryChange={setActiveCategory}
+        onCopyMiniProgramToMobile={handleCopyMiniProgramToMobile}
         onDismissActiveMiniProgram={dismissActiveMiniProgram}
         onOpenMiniProgram={handleOpenMiniProgram}
         onSearchTextChange={setSearchText}
@@ -171,6 +226,7 @@ export function MiniProgramsPage() {
       searchText={searchText}
       selectedMiniProgramId={selectedMiniProgramId}
       successNotice={successNotice}
+      noticeTone={noticeTone}
       visibleMiniPrograms={visibleMiniPrograms}
       onBack={handleBack}
       onCategoryChange={setActiveCategory}

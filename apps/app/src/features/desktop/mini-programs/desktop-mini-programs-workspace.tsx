@@ -28,8 +28,10 @@ type DesktopMiniProgramsWorkspaceProps = {
   searchText: string;
   selectedMiniProgramId: string;
   successNotice?: string;
+  noticeTone?: "success" | "info";
   visibleMiniPrograms: MiniProgramEntry[];
   onCategoryChange: (categoryId: MiniProgramCategoryId) => void;
+  onCopyMiniProgramToMobile: (miniProgramId: string) => void;
   onDismissActiveMiniProgram: () => void;
   onOpenMiniProgram: (miniProgramId: string) => void;
   onSearchTextChange: (value: string) => void;
@@ -49,8 +51,10 @@ export function DesktopMiniProgramsWorkspace({
   searchText,
   selectedMiniProgramId,
   successNotice,
+  noticeTone = "success",
   visibleMiniPrograms,
   onCategoryChange,
+  onCopyMiniProgramToMobile,
   onDismissActiveMiniProgram,
   onOpenMiniProgram,
   onSearchTextChange,
@@ -201,10 +205,10 @@ export function DesktopMiniProgramsWorkspace({
               <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
                 {searchText
                   ? `当前搜索“${searchText.trim()}”命中 ${visibleMiniPrograms.length} 个小程序。`
-                  : "首版先不做真实小程序容器，点击打开先由当前面板承接上下文。"}
+                  : "当前先以轻工作台承接最近任务，并支持把指定小程序接力到手机继续。"}
               </div>
             </div>
-            {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+            {successNotice ? <InlineNotice tone={noticeTone}>{successNotice}</InlineNotice> : null}
           </div>
         </div>
 
@@ -365,6 +369,7 @@ export function DesktopMiniProgramsWorkspace({
                 lastOpenedAt={lastOpenedAtById[panelMiniProgram.id]}
                 tasks={panelTasks}
                 onDismiss={activeMiniProgram ? onDismissActiveMiniProgram : undefined}
+                onCopyToMobile={onCopyMiniProgramToMobile}
                 onOpen={onOpenMiniProgram}
                 onToggleTask={onToggleMiniProgramTask}
                 onTogglePinned={onTogglePinnedMiniProgram}

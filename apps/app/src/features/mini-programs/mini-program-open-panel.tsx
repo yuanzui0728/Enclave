@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { Button, cn } from "@yinjie/ui";
-import { CheckCircle2, Clock3, Pin, Sparkles, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  Pin,
+  Smartphone,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { formatConversationTimestamp } from "../../lib/format";
 import {
   getMiniProgramToneStyle,
@@ -18,6 +25,7 @@ type MiniProgramOpenPanelProps = {
   tasks: ResolvedMiniProgramWorkspaceTask[];
   compact?: boolean;
   onDismiss?: () => void;
+  onCopyToMobile?: (miniProgramId: string) => void;
   onOpen: (miniProgramId: string) => void;
   onToggleTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinned: (miniProgramId: string) => void;
@@ -32,6 +40,7 @@ export function MiniProgramOpenPanel({
   tasks,
   compact = false,
   onDismiss,
+  onCopyToMobile,
   onOpen,
   onToggleTask,
   onTogglePinned,
@@ -172,6 +181,16 @@ export function MiniProgramOpenPanel({
         <Button variant="primary" onClick={() => onOpen(miniProgram.id)}>
           {isActive ? "继续使用" : "打开小程序"}
         </Button>
+        {onCopyToMobile ? (
+          <Button
+            variant="secondary"
+            onClick={() => onCopyToMobile(miniProgram.id)}
+            className="border-white/80 bg-white/88"
+          >
+            <Smartphone size={16} />
+            发到手机
+          </Button>
+        ) : null}
         <Button
           variant="secondary"
           onClick={() => onTogglePinned(miniProgram.id)}
@@ -181,7 +200,7 @@ export function MiniProgramOpenPanel({
         </Button>
         <div className="flex items-center text-xs leading-6 text-[color:var(--text-muted)]">
           {isActive
-            ? "首版先由面板承接上下文，不直接进入真实小程序容器。"
+            ? "当前先由轻工作台承接上下文，也可以直接发到手机继续处理。"
             : "打开后会同步更新最近使用、打开次数和当前承接面板。"}
         </div>
       </div>
