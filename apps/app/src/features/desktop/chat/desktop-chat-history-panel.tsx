@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -8,7 +8,11 @@ import {
   type GroupMessage,
   type Message,
 } from "@yinjie/contracts";
-import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import {
+  filterSearchableChatMessages,
+  useLocalChatMessageActionState,
+} from "../../chat/local-chat-message-actions";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
@@ -23,6 +27,7 @@ type HistoryRow = {
   senderName: string;
   createdAt: string;
   preview: string;
+  reminderAt?: string;
   type: Exclude<HistoryFilterType, "all">;
   typeLabel: string;
 };
@@ -40,6 +45,8 @@ type HistoryFilterType =
 type HistoryDateFilter = "all" | "today" | "7d" | "30d";
 
 const MAX_VISIBLE_ROWS = 60;
+const INITIAL_HISTORY_LIMIT = 80;
+const HISTORY_LIMIT_STEP = 80;
 
 const historyFilterLabels: Array<{
   id: HistoryFilterType;
@@ -72,10 +79,16 @@ export function DesktopChatHistoryPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isGroupConversation = isPersistedGroupConversation(conversation);
+  const localMessageActionState = useLocalChatMessageActionState();
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState<HistoryFilterType>("all");
   const [dateFilter, setDateFilter] = useState<HistoryDateFilter>("all");
   const [senderFilter, setSenderFilter] = useState("all");
+  const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
+
+  useEffect(() => {
+    setHistoryLimit(INITIAL_HISTORY_LIMIT);
+  }, [conversation.id]);
 
   const messagesQuery = useQuery({
     queryKey: [
@@ -83,25 +96,37 @@ export function DesktopChatHistoryPanel({
       baseUrl,
       conversation.id,
       conversation.type,
+      historyLimit,
     ],
     queryFn: async () => {
       if (isPersistedGroupConversation(conversation)) {
-        return getGroupMessages(conversation.id, baseUrl);
+        return getGroupMessages(conversation.id, baseUrl, {
+          limit: historyLimit,
+        });
       }
 
-      return getConversationMessages(conversation.id, baseUrl);
+      return getConversationMessages(conversation.id, baseUrl, {
+        limit: historyLimit,
+      });
     },
+    placeholderData: (previousData) => previousData ?? [],
   });
 
   const trimmedKeyword = keyword.trim().toLowerCase();
   const historyRows = useMemo(
     () =>
-      normalizeHistoryRows(messagesQuery.data ?? []).sort(
+      normalizeHistoryRows(
+        filterSearchableChatMessages(
+          (messagesQuery.data ?? []) as Array<Message | GroupMessage>,
+          localMessageActionState,
+        ),
+        localMessageActionState.reminders,
+      ).sort(
         (left, right) =>
           (parseTimestamp(right.createdAt) ?? 0) -
           (parseTimestamp(left.createdAt) ?? 0),
       ),
-    [messagesQuery.data],
+    [localMessageActionState, messagesQuery.data],
   );
   const senderOptions = useMemo(() => {
     if (!isGroupConversation) {
@@ -164,6 +189,8 @@ export function DesktopChatHistoryPanel({
 
     return rows.slice(0, MAX_VISIBLE_ROWS);
   }, [dateFilter, historyRows, senderFilter, trimmedKeyword, typeFilter]);
+  const mayHaveEarlierMessages =
+    historyRows.length > 0 && historyRows.length >= historyLimit;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -177,9 +204,14 @@ export function DesktopChatHistoryPanel({
         />
         <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
           {trimmedKeyword
-            ? `共命中 ${filteredRows.length} 条，按时间倒序展示`
-            : `最近 ${Math.min(historyRows.length, MAX_VISIBLE_ROWS)} 条聊天记录`}
+            ? `已在当前加载的 ${historyRows.length} 条里命中 ${filteredRows.length} 条`
+            : `已加载最近 ${historyRows.length} 条聊天记录`}
         </div>
+        {mayHaveEarlierMessages ? (
+          <div className="mt-1 text-[12px] text-[color:var(--text-dim)]">
+            继续加载可查看更早消息，当前筛选只覆盖已加载部分。
+          </div>
+        ) : null}
 
         <div className="mt-3 flex flex-wrap gap-2">
           {availableTypeFilters.map((item) => (
@@ -300,6 +332,11 @@ export function DesktopChatHistoryPanel({
                   <span className="shrink-0 rounded-full bg-[rgba(255,138,61,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                     {row.typeLabel}
                   </span>
+                  {row.reminderAt ? (
+                    <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.12)] px-2 py-0.5 text-[10px] text-[#2563eb]">
+                      提醒 · {formatMessageTimestamp(row.reminderAt)}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
                   {renderHighlightedText(
@@ -311,17 +348,46 @@ export function DesktopChatHistoryPanel({
             ))}
           </div>
         ) : null}
+
+        {!messagesQuery.isLoading && historyRows.length > 0 ? (
+          <div className="border-t border-black/6 bg-[#f7f7f7] px-4 py-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                setHistoryLimit((current) => current + HISTORY_LIMIT_STEP)
+              }
+              disabled={messagesQuery.isFetching || !mayHaveEarlierMessages}
+              className="w-full rounded-full"
+            >
+              {messagesQuery.isFetching
+                ? "正在加载更早消息..."
+                : mayHaveEarlierMessages
+                  ? `加载更早消息（当前 ${historyRows.length} 条）`
+                  : "已全部加载"}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function normalizeHistoryRows(messages: Array<Message | GroupMessage>): HistoryRow[] {
+function normalizeHistoryRows(
+  messages: Array<Message | GroupMessage>,
+  reminders: Array<{ messageId: string; remindAt: string }>,
+): HistoryRow[] {
+  const reminderMap = new Map(
+    reminders.map((item) => [item.messageId, item.remindAt]),
+  );
+
   return messages.map((message) => ({
     id: message.id,
     senderName: message.senderName,
     createdAt: message.createdAt,
     preview: resolveMessagePreview(message),
+    reminderAt: reminderMap.get(message.id),
     type: resolveHistoryFilterType(message.type),
     typeLabel: resolveMessageTypeLabel(message.type),
   }));

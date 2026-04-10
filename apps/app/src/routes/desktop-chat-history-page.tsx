@@ -13,8 +13,13 @@ import {
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import {
+  filterSearchableChatMessages,
+  useLocalChatMessageActionState,
+} from "../features/chat/local-chat-message-actions";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   formatConversationTimestamp,
@@ -23,28 +28,30 @@ import {
 } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
-const INITIAL_VISIBLE_HISTORY_COUNT = 24;
-const HISTORY_LOAD_STEP = 24;
+const INITIAL_HISTORY_LIMIT = 80;
+const HISTORY_LOAD_STEP = 80;
 
 export function DesktopChatHistoryPage() {
   const isDesktopLayout = useDesktopLayout();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const localMessageActionState = useLocalChatMessageActionState();
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
   >(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [visibleHistoryCount, setVisibleHistoryCount] = useState(
-    INITIAL_VISIBLE_HISTORY_COUNT,
-  );
+  const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
   });
 
-  const conversations = conversationsQuery.data ?? [];
+  const conversations = useMemo(
+    () => conversationsQuery.data ?? [],
+    [conversationsQuery.data],
+  );
 
   useEffect(() => {
     if (!conversations.length) {
@@ -71,6 +78,7 @@ export function DesktopChatHistoryPage() {
       baseUrl,
       selectedConversation?.id,
       selectedConversation?.type,
+      historyLimit,
     ],
     queryFn: async () => {
       if (!selectedConversation) {
@@ -78,12 +86,17 @@ export function DesktopChatHistoryPage() {
       }
 
       if (isPersistedGroupConversation(selectedConversation)) {
-        return getGroupMessages(selectedConversation.id, baseUrl);
+        return getGroupMessages(selectedConversation.id, baseUrl, {
+          limit: historyLimit,
+        });
       }
 
-      return getConversationMessages(selectedConversation.id, baseUrl);
+      return getConversationMessages(selectedConversation.id, baseUrl, {
+        limit: historyLimit,
+      });
     },
     enabled: Boolean(selectedConversation),
+    placeholderData: (previousData) => previousData ?? [],
   });
 
   const clearMutation = useMutation({
@@ -114,24 +127,24 @@ export function DesktopChatHistoryPage() {
 
   const historyRows = useMemo(
     () =>
-      normalizeHistoryRows(messagesQuery.data ?? []).sort(
+      normalizeHistoryRows(
+        filterSearchableChatMessages(
+          (messagesQuery.data ?? []) as Array<Message | GroupMessage>,
+          localMessageActionState,
+        ),
+        localMessageActionState.reminders,
+      ).sort(
         (left, right) =>
           (parseTimestamp(right.createdAt) ?? 0) -
           (parseTimestamp(left.createdAt) ?? 0),
       ),
-    [messagesQuery.data],
+    [localMessageActionState, messagesQuery.data],
   );
-  const visibleHistoryRows = useMemo(
-    () => historyRows.slice(0, visibleHistoryCount),
-    [historyRows, visibleHistoryCount],
-  );
-  const remainingHistoryCount = Math.max(
-    historyRows.length - visibleHistoryRows.length,
-    0,
-  );
+  const mayHaveEarlierMessages =
+    historyRows.length > 0 && historyRows.length >= historyLimit;
 
   useEffect(() => {
-    setVisibleHistoryCount(INITIAL_VISIBLE_HISTORY_COUNT);
+    setHistoryLimit(INITIAL_HISTORY_LIMIT);
   }, [selectedConversation?.id]);
 
   useEffect(() => {
@@ -155,7 +168,7 @@ export function DesktopChatHistoryPage() {
             聊天记录管理
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            先按会话查看和清理消息，后续再补批量管理与更老记录加载。
+            先按会话查看和清理消息，逐步往更像微信电脑端的历史翻阅工作流收口。
           </div>
         </div>
 
@@ -202,7 +215,7 @@ export function DesktopChatHistoryPage() {
           <DesktopEntryShell
             badge="History"
             title={selectedConversation.title}
-            description="这里先承接当前会话的聊天摘要、逐步加载更早消息和清理动作。即便服务端暂时没有分页接口，也先把桌面端历史扩展路径做实。"
+            description="这里先承接当前会话的聊天摘要、逐步加载更早消息和清理动作，让桌面端先具备微信式历史翻阅工作流。"
             aside={
               <div className="space-y-3">
                 <InfoCard
@@ -219,14 +232,20 @@ export function DesktopChatHistoryPage() {
                 />
                 <InfoCard
                   label="已加载"
-                  value={`${visibleHistoryRows.length} / ${historyRows.length} 条`}
+                  value={`${historyRows.length} 条`}
+                />
+                <InfoCard
+                  label="本机提醒"
+                  value={`${historyRows.filter((item) => item.reminderAt).length} 条`}
+                />
+                <InfoCard
+                  label="加载窗口"
+                  value={`最近 ${historyLimit} 条`}
                 />
                 <InfoCard
                   label="更早消息"
                   value={
-                    remainingHistoryCount
-                      ? `${remainingHistoryCount} 条`
-                      : "已全部展开"
+                    mayHaveEarlierMessages ? "继续展开" : "已全部加载"
                   }
                 />
               </div>
@@ -242,7 +261,7 @@ export function DesktopChatHistoryPage() {
                 size="sm"
                 onClick={() => {
                   void messagesQuery.refetch();
-                  setNotice("已刷新当前会话聊天记录。");
+                  setNotice(`已刷新当前会话最近 ${historyRows.length} 条记录。`);
                 }}
               >
                 刷新记录
@@ -251,25 +270,20 @@ export function DesktopChatHistoryPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  if (remainingHistoryCount <= 0) {
-                    setNotice("当前会话的聊天记录已经全部展开。");
+                  if (!mayHaveEarlierMessages) {
+                    setNotice("当前会话的聊天记录已经全部加载。");
                     return;
                   }
 
-                  const nextVisibleCount = Math.min(
-                    visibleHistoryCount + HISTORY_LOAD_STEP,
-                    historyRows.length,
-                  );
-                  const loadedCount = nextVisibleCount - visibleHistoryCount;
-
-                  setVisibleHistoryCount(nextVisibleCount);
-                  setNotice(`已继续加载 ${loadedCount} 条更早聊天记录。`);
+                  setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
                 }}
-                disabled={!historyRows.length}
+                disabled={!historyRows.length || messagesQuery.isFetching}
               >
-                {remainingHistoryCount > 0
-                  ? `加载更早消息（剩余 ${remainingHistoryCount} 条）`
-                  : "历史已全部展开"}
+                {messagesQuery.isFetching
+                  ? "正在加载更早消息..."
+                  : mayHaveEarlierMessages
+                    ? `加载更早消息（当前 ${historyRows.length} 条）`
+                    : "历史已全部加载"}
               </Button>
               <Button
                 variant="secondary"
@@ -293,7 +307,7 @@ export function DesktopChatHistoryPage() {
                 <ErrorBlock message={clearMutation.error.message} />
               ) : null}
 
-              {visibleHistoryRows.map((item) => (
+              {historyRows.map((item) => (
                 <div
                   key={item.id}
                   className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]"
@@ -310,6 +324,11 @@ export function DesktopChatHistoryPage() {
                     <span className="rounded-full bg-[rgba(255,138,61,0.10)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
                       {item.typeLabel}
                     </span>
+                    {item.reminderAt ? (
+                      <span className="rounded-full bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
+                        提醒 · {formatMessageTimestamp(item.reminderAt)}
+                      </span>
+                    ) : null}
                   </div>
                   <div className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
                     {item.preview}
@@ -326,25 +345,20 @@ export function DesktopChatHistoryPage() {
 
               {!messagesQuery.isLoading &&
               historyRows.length > 0 &&
-              remainingHistoryCount > 0 ? (
+              mayHaveEarlierMessages ? (
                 <div className="flex justify-center pt-2">
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => {
-                      const nextVisibleCount = Math.min(
-                        visibleHistoryCount + HISTORY_LOAD_STEP,
-                        historyRows.length,
-                      );
-                      const loadedCount =
-                        nextVisibleCount - visibleHistoryCount;
-
-                      setVisibleHistoryCount(nextVisibleCount);
-                      setNotice(`已继续加载 ${loadedCount} 条更早聊天记录。`);
-                    }}
+                    onClick={() =>
+                      setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
+                    }
+                    disabled={messagesQuery.isFetching}
                     className="rounded-full"
                   >
-                    继续加载更早消息
+                    {messagesQuery.isFetching
+                      ? "正在加载更早消息..."
+                      : "继续加载更早消息"}
                   </Button>
                 </div>
               ) : null}
@@ -363,12 +377,20 @@ export function DesktopChatHistoryPage() {
   );
 }
 
-function normalizeHistoryRows(messages: Message[] | GroupMessage[]) {
+function normalizeHistoryRows(
+  messages: Array<Message | GroupMessage>,
+  reminders: Array<{ messageId: string; remindAt: string }>,
+) {
+  const reminderMap = new Map(
+    reminders.map((item) => [item.messageId, item.remindAt]),
+  );
+
   return messages.map((item) => ({
     id: item.id,
     senderName: item.senderName,
     createdAt: item.createdAt,
     preview: resolveMessagePreview(item),
+    reminderAt: reminderMap.get(item.id),
     typeLabel: resolveMessageTypeLabel(item.type),
   }));
 }
@@ -390,7 +412,16 @@ function resolveMessagePreview(item: Message | GroupMessage) {
     return item.text.trim() || `位置 · ${item.attachment.title}`;
   }
 
-  return item.text.trim() || "这条消息没有文本内容。";
+  if (item.type === "sticker" && item.attachment?.kind === "sticker") {
+    return `表情 · ${item.attachment.label ?? item.attachment.stickerId}`;
+  }
+
+  const preview =
+    item.senderType === "user"
+      ? item.text.trim()
+      : sanitizeDisplayedChatText(item.text);
+
+  return preview || "这条消息没有文本内容。";
 }
 
 function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {
