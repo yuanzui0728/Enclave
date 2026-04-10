@@ -12,6 +12,23 @@ export type CharacterFactoryFieldSourceStatus =
   | "published_sync"
   | "runtime_drift";
 
+export interface CharacterBlueprintAiGenerationTrace {
+  requestedAt: string;
+  personName: string;
+  chatSample: string;
+  prompt: string;
+  extractedProfile: {
+    speechPatterns: string[];
+    catchphrases: string[];
+    topicsOfInterest: string[];
+    emotionalTone: string;
+    responseLength: "short" | "medium" | "long";
+    emojiUsage: "none" | "occasional" | "frequent";
+    memorySummary: string;
+  };
+  appliedFields: string[];
+}
+
 export interface CharacterBlueprintRecipe {
   identity: {
     name: string;
@@ -35,8 +52,8 @@ export interface CharacterBlueprintRecipe {
     catchphrases: string[];
     topicsOfInterest: string[];
     emotionalTone: string;
-    responseLength: string;
-    emojiUsage: string;
+    responseLength: "short" | "medium" | "long";
+    emojiUsage: "none" | "occasional" | "frequent";
     workStyle: string;
     socialStyle: string;
     taboos: string[];
@@ -49,6 +66,11 @@ export interface CharacterBlueprintRecipe {
     coreMemory: string;
     recentSummarySeed: string;
     forgettingCurve: number;
+  };
+  reasoning: {
+    enableCoT: boolean;
+    enableReflection: boolean;
+    enableRouting: boolean;
   };
   lifeStrategy: {
     activityFrequency: string;
@@ -76,6 +98,7 @@ export interface CharacterBlueprint {
   publishedRecipe?: CharacterBlueprintRecipe | null;
   publishedRevisionId?: string | null;
   publishedVersion: number;
+  lastAiGeneration?: CharacterBlueprintAiGenerationTrace | null;
   createdAt: string;
   updatedAt: string;
 }

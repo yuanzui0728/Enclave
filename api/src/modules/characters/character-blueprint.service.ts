@@ -1,7 +1,8 @@
 import { randomUUID } from 'crypto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type {
+  CharacterBlueprintAiGenerationTraceValue,
   CharacterBlueprintRecipeValue,
   CharacterBlueprintSourceTypeValue,
   CharacterFactoryFieldSourceContract,
@@ -13,6 +14,8 @@ import { DEFAULT_CHARACTER_IDS } from './default-characters';
 import { CharacterBlueprintEntity } from './character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './character-blueprint-revision.entity';
 import { CharacterEntity } from './character.entity';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { PromptBuilderService } from '../ai/prompt-builder.service';
 
 type RevisionChangeSource =
   | 'publish'
@@ -239,6 +242,30 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     readCharacter: (character) => character.profile?.memory?.forgettingCurve ?? 70,
   },
   {
+    label: '启用链路推理',
+    recipeField: 'reasoning.enableCoT',
+    targetField: 'profile.reasoningConfig.enableCoT',
+    readRecipe: (recipe) => recipe.reasoning.enableCoT,
+    readCharacter: (character) =>
+      character.profile?.reasoningConfig?.enableCoT ?? true,
+  },
+  {
+    label: '启用反思',
+    recipeField: 'reasoning.enableReflection',
+    targetField: 'profile.reasoningConfig.enableReflection',
+    readRecipe: (recipe) => recipe.reasoning.enableReflection,
+    readCharacter: (character) =>
+      character.profile?.reasoningConfig?.enableReflection ?? true,
+  },
+  {
+    label: '启用路由',
+    recipeField: 'reasoning.enableRouting',
+    targetField: 'profile.reasoningConfig.enableRouting',
+    readRecipe: (recipe) => recipe.reasoning.enableRouting,
+    readCharacter: (character) =>
+      character.profile?.reasoningConfig?.enableRouting ?? true,
+  },
+  {
     label: '活动频率',
     recipeField: 'lifeStrategy.activityFrequency',
     targetField: 'activityFrequency',
@@ -317,22 +344,48 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
   },
 ];
 
-function normalizeResponseLength(value: string) {
+function normalizeResponseLength(
+  value: string,
+): CharacterBlueprintRecipeValue['tone']['responseLength'] {
   return value === 'short' || value === 'long' || value === 'medium'
     ? value
     : 'medium';
 }
 
-function normalizeEmojiUsage(value: string) {
+function normalizeEmojiUsage(
+  value: string,
+): CharacterBlueprintRecipeValue['tone']['emojiUsage'] {
   return value === 'none' || value === 'frequent' || value === 'occasional'
     ? value
     : 'occasional';
 }
 
+function normalizeStringList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => String(item ?? '').trim())
+    .filter(Boolean);
+}
+
+function normalizeOptionalString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 function cloneRecipe(
   recipe: CharacterBlueprintRecipeValue,
 ): CharacterBlueprintRecipeValue {
-  return JSON.parse(JSON.stringify(recipe)) as CharacterBlueprintRecipeValue;
+  const cloned = JSON.parse(JSON.stringify(recipe)) as CharacterBlueprintRecipeValue;
+  return {
+    ...cloned,
+    reasoning: {
+      enableCoT: cloned.reasoning?.enableCoT ?? true,
+      enableReflection: cloned.reasoning?.enableReflection ?? true,
+      enableRouting: cloned.reasoning?.enableRouting ?? true,
+    },
+  };
 }
 
 function cloneCharacter(
@@ -452,6 +505,8 @@ export class CharacterBlueprintService {
     private readonly blueprintRepo: Repository<CharacterBlueprintEntity>,
     @InjectRepository(CharacterBlueprintRevisionEntity)
     private readonly revisionRepo: Repository<CharacterBlueprintRevisionEntity>,
+    private readonly ai: AiOrchestratorService,
+    private readonly promptBuilder: PromptBuilderService,
   ) {}
 
   async getFactorySnapshot(
@@ -504,6 +559,106 @@ export class CharacterBlueprintService {
     if (!blueprint.publishedRevisionId) {
       blueprint.status = 'draft';
     }
+    await this.blueprintRepo.save(blueprint);
+    return this.getFactorySnapshot(characterId);
+  }
+
+  async generateDraftFromSample(
+    characterId: string,
+    input: { chatSample?: string | null; personName?: string | null },
+  ): Promise<CharacterFactorySnapshotContract> {
+    const blueprint = await this.ensureBlueprint(characterId);
+    const character = await this.getCharacterOrThrow(characterId);
+    const chatSample = input.chatSample?.trim();
+    if (!chatSample) {
+      throw new BadRequestException('Chat sample is required');
+    }
+
+    const personName =
+      input.personName?.trim() ||
+      blueprint.draftRecipe.identity.name.trim() ||
+      character.name;
+    const prompt = this.promptBuilder.buildPersonalityExtractionPrompt(
+      chatSample,
+      personName,
+    );
+    const extractedRaw = await this.ai.extractPersonality(chatSample, personName);
+    const extracted = {
+      speechPatterns: normalizeStringList(extractedRaw.speechPatterns),
+      catchphrases: normalizeStringList(extractedRaw.catchphrases),
+      topicsOfInterest: normalizeStringList(extractedRaw.topicsOfInterest),
+      emotionalTone:
+        normalizeOptionalString(extractedRaw.emotionalTone) || 'grounded',
+      responseLength: normalizeResponseLength(
+        normalizeOptionalString(extractedRaw.responseLength),
+      ),
+      emojiUsage: normalizeEmojiUsage(
+        normalizeOptionalString(extractedRaw.emojiUsage),
+      ),
+      memorySummary: normalizeOptionalString(extractedRaw.memorySummary),
+    };
+
+    const patch: Partial<CharacterBlueprintRecipeValue> = {};
+    const appliedFields: string[] = [];
+
+    if (input.personName?.trim()) {
+      patch.identity = {
+        ...blueprint.draftRecipe.identity,
+        name: personName,
+      };
+      appliedFields.push('identity.name');
+    }
+
+    patch.tone = {
+      ...blueprint.draftRecipe.tone,
+      speechPatterns: extracted.speechPatterns.length
+        ? extracted.speechPatterns
+        : blueprint.draftRecipe.tone.speechPatterns,
+      catchphrases: extracted.catchphrases.length
+        ? extracted.catchphrases
+        : blueprint.draftRecipe.tone.catchphrases,
+      topicsOfInterest: extracted.topicsOfInterest.length
+        ? extracted.topicsOfInterest
+        : blueprint.draftRecipe.tone.topicsOfInterest,
+      emotionalTone: extracted.emotionalTone,
+      responseLength: extracted.responseLength,
+      emojiUsage: extracted.emojiUsage,
+    };
+
+    if (extracted.speechPatterns.length) {
+      appliedFields.push('tone.speechPatterns');
+    }
+    if (extracted.catchphrases.length) {
+      appliedFields.push('tone.catchphrases');
+    }
+    if (extracted.topicsOfInterest.length) {
+      appliedFields.push('tone.topicsOfInterest');
+    }
+    appliedFields.push('tone.emotionalTone');
+    appliedFields.push('tone.responseLength');
+    appliedFields.push('tone.emojiUsage');
+
+    if (extracted.memorySummary) {
+      patch.memorySeed = {
+        ...blueprint.draftRecipe.memorySeed,
+        memorySummary: extracted.memorySummary,
+      };
+      appliedFields.push('memorySeed.memorySummary');
+    }
+
+    blueprint.draftRecipe = deepMerge(blueprint.draftRecipe, patch);
+    blueprint.lastAiGeneration = {
+      requestedAt: new Date().toISOString(),
+      personName,
+      chatSample,
+      prompt,
+      extractedProfile: extracted,
+      appliedFields,
+    };
+    if (blueprint.sourceType === 'manual_admin') {
+      blueprint.sourceType = 'ai_generated';
+    }
+
     await this.blueprintRepo.save(blueprint);
     return this.getFactorySnapshot(characterId);
   }
@@ -662,6 +817,12 @@ export class CharacterBlueprintService {
         recentSummarySeed: character.profile?.memory?.recentSummary ?? '',
         forgettingCurve: character.profile?.memory?.forgettingCurve ?? 70,
       },
+      reasoning: {
+        enableCoT: character.profile?.reasoningConfig?.enableCoT ?? true,
+        enableReflection:
+          character.profile?.reasoningConfig?.enableReflection ?? true,
+        enableRouting: character.profile?.reasoningConfig?.enableRouting ?? true,
+      },
       lifeStrategy: {
         activityFrequency: character.activityFrequency ?? 'normal',
         momentsFrequency: character.momentsFrequency ?? 1,
@@ -746,12 +907,9 @@ export class CharacterBlueprintService {
         refusalStyle: recipe.expertise.refusalStyle.trim(),
       },
       reasoningConfig: {
-        enableCoT:
-          character.profile?.reasoningConfig?.enableCoT ?? true,
-        enableReflection:
-          character.profile?.reasoningConfig?.enableReflection ?? true,
-        enableRouting:
-          character.profile?.reasoningConfig?.enableRouting ?? true,
+        enableCoT: recipe.reasoning.enableCoT,
+        enableReflection: recipe.reasoning.enableReflection,
+        enableRouting: recipe.reasoning.enableRouting,
       },
       memory: {
         coreMemory: recipe.memorySeed.coreMemory.trim(),
@@ -875,6 +1033,9 @@ export class CharacterBlueprintService {
         : null,
       publishedRevisionId: blueprint.publishedRevisionId ?? null,
       publishedVersion: blueprint.publishedVersion ?? 0,
+      lastAiGeneration: blueprint.lastAiGeneration
+        ? ({ ...blueprint.lastAiGeneration } as CharacterBlueprintAiGenerationTraceValue)
+        : null,
       createdAt: blueprint.createdAt.toISOString(),
       updatedAt: blueprint.updatedAt.toISOString(),
     };

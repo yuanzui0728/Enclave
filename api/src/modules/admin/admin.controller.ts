@@ -73,6 +73,14 @@ export class AdminController {
     );
   }
 
+  @Post('characters/:id/factory/generate')
+  generateCharacterFactoryDraft(
+    @Param('id') id: string,
+    @Body() body: { chatSample?: string | null; personName?: string | null },
+  ) {
+    return this.characterBlueprintService.generateDraftFromSample(id, body);
+  }
+
   @Post('characters/:id/factory/publish')
   publishCharacterFactory(
     @Param('id') id: string,

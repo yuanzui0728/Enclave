@@ -124,6 +124,14 @@ export const adminApi = {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
+  generateCharacterFactoryDraft: (
+    id: string,
+    payload: { chatSample: string; personName?: string | null },
+  ) =>
+    adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory/generate`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   publishCharacterFactory: (id: string, summary?: string) =>
     adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory/publish`, {
       method: "POST",

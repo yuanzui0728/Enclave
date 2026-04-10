@@ -205,7 +205,18 @@
 - `GET /api/admin/reply-logic/rules`
 - `PATCH /api/admin/reply-logic/rules`
 - `GET /api/admin/reply-logic/characters/:id`
+- `POST /api/admin/reply-logic/characters/:id/preview`
 - `GET /api/admin/reply-logic/conversations/:id`
+- `POST /api/admin/reply-logic/conversations/:id/preview`
+
+## 管理后台角色工厂路由
+
+- `GET /api/admin/characters/:id/factory`
+- `PATCH /api/admin/characters/:id/factory`
+- `POST /api/admin/characters/:id/factory/generate`
+- `POST /api/admin/characters/:id/factory/publish`
+- `GET /api/admin/characters/:id/factory/revisions`
+- `POST /api/admin/characters/:id/factory/revisions/:revisionId/restore`
 
 ## 环境变量（`api/.env`）
 

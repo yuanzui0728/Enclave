@@ -6,9 +6,11 @@ import { CharacterEntity } from './character.entity';
 import { CharacterBlueprintEntity } from './character-blueprint.entity';
 import { CharacterBlueprintRevisionEntity } from './character-blueprint-revision.entity';
 import { CharacterBlueprintService } from './character-blueprint.service';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
+    AiModule,
     TypeOrmModule.forFeature([
       CharacterEntity,
       CharacterBlueprintEntity,

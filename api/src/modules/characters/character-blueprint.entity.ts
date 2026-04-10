@@ -5,7 +5,10 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import type { CharacterBlueprintRecipeValue } from './character-blueprint.types';
+import type {
+  CharacterBlueprintAiGenerationTraceValue,
+  CharacterBlueprintRecipeValue,
+} from './character-blueprint.types';
 
 @Entity('character_blueprints')
 export class CharacterBlueprintEntity {
@@ -32,6 +35,9 @@ export class CharacterBlueprintEntity {
 
   @Column({ default: 0 })
   publishedVersion: number;
+
+  @Column('simple-json', { nullable: true })
+  lastAiGeneration?: CharacterBlueprintAiGenerationTraceValue | null;
 
   @CreateDateColumn()
   createdAt: Date;

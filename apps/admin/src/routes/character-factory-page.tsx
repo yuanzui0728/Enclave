@@ -38,6 +38,8 @@ export function CharacterFactoryPage() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<CharacterBlueprintRecipe | null>(null);
   const [publishSummary, setPublishSummary] = useState("");
+  const [generationPersonName, setGenerationPersonName] = useState("");
+  const [generationSample, setGenerationSample] = useState("");
 
   const factoryQuery = useQuery({
     queryKey: ["admin-character-factory", characterId],
@@ -56,6 +58,17 @@ export function CharacterFactoryPage() {
   useEffect(() => {
     setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null);
   }, [seedSignature]);
+
+  useEffect(() => {
+    setGenerationPersonName(
+      factoryQuery.data?.blueprint.lastAiGeneration?.personName ??
+        factoryQuery.data?.blueprint.draftRecipe.identity.name ??
+        "",
+    );
+  }, [
+    factoryQuery.data?.blueprint.draftRecipe.identity.name,
+    factoryQuery.data?.blueprint.lastAiGeneration?.personName,
+  ]);
 
   const isDirty = useMemo(() => {
     if (!draft || !seedSignature) {
@@ -92,6 +105,17 @@ export function CharacterFactoryPage() {
   const restoreMutation = useMutation({
     mutationFn: async (revisionId: string) =>
       adminApi.restoreCharacterFactoryRevision(characterId, revisionId),
+    onSuccess: async () => {
+      await invalidateFactory();
+    },
+  });
+
+  const aiGenerateMutation = useMutation({
+    mutationFn: async () =>
+      adminApi.generateCharacterFactoryDraft(characterId, {
+        personName: generationPersonName.trim() || null,
+        chatSample: generationSample,
+      }),
     onSuccess: async () => {
       await invalidateFactory();
     },
@@ -166,6 +190,9 @@ export function CharacterFactoryPage() {
       {restoreMutation.isError && restoreMutation.error instanceof Error ? (
         <ErrorBlock message={restoreMutation.error.message} />
       ) : null}
+      {aiGenerateMutation.isError && aiGenerateMutation.error instanceof Error ? (
+        <ErrorBlock message={aiGenerateMutation.error.message} />
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="来源" value={formatSourceType(snapshot.blueprint.sourceType)} />
@@ -185,6 +212,43 @@ export function CharacterFactoryPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>AI 辅助制造</SectionHeading>
+            <InlineNotice className="mt-4" tone="muted">
+              输入一段角色聊天样本后，后台会走人格提取链，把可结构化的语气、口头禅、兴趣、情绪基调和记忆摘要写回工厂草稿。
+            </InlineNotice>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <FieldBlock
+                label="样本人名"
+                value={generationPersonName}
+                onChange={setGenerationPersonName}
+                placeholder="角色名字"
+              />
+            </div>
+            <TextAreaBlock
+              label="聊天样本"
+              value={generationSample}
+              onChange={setGenerationSample}
+              placeholder="贴一段足够体现说话风格的聊天样本。"
+            />
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setGenerationSample("")}
+                disabled={!generationSample.trim()}
+              >
+                清空样本
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => aiGenerateMutation.mutate()}
+                disabled={!generationSample.trim() || aiGenerateMutation.isPending}
+              >
+                {aiGenerateMutation.isPending ? "生成中..." : "生成并写入草稿"}
+              </Button>
+            </div>
+          </Card>
+
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>身份与关系</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -397,7 +461,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      tone: { ...current.tone, responseLength: value },
+                      tone: {
+                        ...current.tone,
+                        responseLength: value as CharacterBlueprintRecipe["tone"]["responseLength"],
+                      },
                     }))
                   }
                   options={[
@@ -412,7 +479,10 @@ export function CharacterFactoryPage() {
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      tone: { ...current.tone, emojiUsage: value },
+                      tone: {
+                        ...current.tone,
+                        emojiUsage: value as CharacterBlueprintRecipe["tone"]["emojiUsage"],
+                      },
                     }))
                   }
                   options={[
@@ -630,6 +700,54 @@ export function CharacterFactoryPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>推理与路由</SectionHeading>
+            <InlineNotice className="mt-4" tone="muted">
+              这里定义发布后角色默认带上的推理开关，而不是运行时临时覆盖值。
+            </InlineNotice>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <ToggleChip
+                label="启用链路推理"
+                checked={draft.reasoning.enableCoT}
+                onChange={(event) =>
+                  patchDraft((current) => ({
+                    ...current,
+                    reasoning: {
+                      ...current.reasoning,
+                      enableCoT: event.currentTarget.checked,
+                    },
+                  }))
+                }
+              />
+              <ToggleChip
+                label="启用反思"
+                checked={draft.reasoning.enableReflection}
+                onChange={(event) =>
+                  patchDraft((current) => ({
+                    ...current,
+                    reasoning: {
+                      ...current.reasoning,
+                      enableReflection: event.currentTarget.checked,
+                    },
+                  }))
+                }
+              />
+              <ToggleChip
+                label="启用路由"
+                checked={draft.reasoning.enableRouting}
+                onChange={(event) =>
+                  patchDraft((current) => ({
+                    ...current,
+                    reasoning: {
+                      ...current.reasoning,
+                      enableRouting: event.currentTarget.checked,
+                    },
+                  }))
+                }
+              />
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>发布映射</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <SelectFieldBlock
@@ -760,6 +878,39 @@ export function CharacterFactoryPage() {
               className="mt-4"
               value={JSON.stringify(snapshot.blueprint.publishedRecipe ?? {}, null, 2)}
             />
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>最近一次 AI 制造链路</SectionHeading>
+            {snapshot.blueprint.lastAiGeneration ? (
+              <div className="mt-4 space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <ValueSnapshot label="样本人名" value={snapshot.blueprint.lastAiGeneration.personName} />
+                  <ValueSnapshot label="生成时间" value={formatDateTime(snapshot.blueprint.lastAiGeneration.requestedAt)} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {snapshot.blueprint.lastAiGeneration.appliedFields.map((field) => (
+                    <StatusPill key={field} tone="warning">{field}</StatusPill>
+                  ))}
+                </div>
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">聊天样本</div>
+                  <CodeBlock value={snapshot.blueprint.lastAiGeneration.chatSample} />
+                </div>
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提取 Prompt</div>
+                  <CodeBlock value={snapshot.blueprint.lastAiGeneration.prompt} />
+                </div>
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">结构化结果</div>
+                  <CodeBlock value={JSON.stringify(snapshot.blueprint.lastAiGeneration.extractedProfile, null, 2)} />
+                </div>
+              </div>
+            ) : (
+              <InlineNotice className="mt-4" tone="muted">
+                当前还没有 AI 辅助制造记录。
+              </InlineNotice>
+            )}
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">

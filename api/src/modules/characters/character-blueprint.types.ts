@@ -11,6 +11,23 @@ export type CharacterBlueprintStatusValue =
   | 'published'
   | 'archived';
 
+export interface CharacterBlueprintAiGenerationTraceValue {
+  requestedAt: string;
+  personName: string;
+  chatSample: string;
+  prompt: string;
+  extractedProfile: {
+    speechPatterns: string[];
+    catchphrases: string[];
+    topicsOfInterest: string[];
+    emotionalTone: string;
+    responseLength: 'short' | 'medium' | 'long';
+    emojiUsage: 'none' | 'occasional' | 'frequent';
+    memorySummary: string;
+  };
+  appliedFields: string[];
+}
+
 export interface CharacterBlueprintRecipeValue {
   identity: {
     name: string;
@@ -34,8 +51,8 @@ export interface CharacterBlueprintRecipeValue {
     catchphrases: string[];
     topicsOfInterest: string[];
     emotionalTone: string;
-    responseLength: string;
-    emojiUsage: string;
+    responseLength: 'short' | 'medium' | 'long';
+    emojiUsage: 'none' | 'occasional' | 'frequent';
     workStyle: string;
     socialStyle: string;
     taboos: string[];
@@ -48,6 +65,11 @@ export interface CharacterBlueprintRecipeValue {
     coreMemory: string;
     recentSummarySeed: string;
     forgettingCurve: number;
+  };
+  reasoning: {
+    enableCoT: boolean;
+    enableReflection: boolean;
+    enableRouting: boolean;
   };
   lifeStrategy: {
     activityFrequency: string;
@@ -75,6 +97,7 @@ export interface CharacterBlueprintContract {
   publishedRecipe?: CharacterBlueprintRecipeValue | null;
   publishedRevisionId?: string | null;
   publishedVersion: number;
+  lastAiGeneration?: CharacterBlueprintAiGenerationTraceValue | null;
   createdAt: string;
   updatedAt: string;
 }
