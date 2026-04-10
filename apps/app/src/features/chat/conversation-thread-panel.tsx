@@ -23,6 +23,7 @@ import { DesktopDirectCallPanel } from "../desktop/chat/desktop-direct-call-pane
 import { buildDesktopMobileCallHandoffHash } from "../desktop/chat/desktop-mobile-call-handoff-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { ChatCallFallbackNotice } from "./chat-call-fallback-notice";
+import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
@@ -46,6 +47,8 @@ type ConversationThreadPanelProps = {
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
+  routeMobileShortcutAction?: ChatComposeShortcutAction | null;
+  onRouteMobileShortcutHandled?: () => void;
 };
 
 export type ChatRouteContextNotice = {
@@ -64,6 +67,8 @@ export function ConversationThreadPanel({
   onDesktopCallAction,
   highlightedMessageId,
   routeContextNotice,
+  routeMobileShortcutAction = null,
+  onRouteMobileShortcutHandled,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
@@ -72,7 +77,7 @@ export function ConversationThreadPanel({
   const [pendingCallFallback, setPendingCallFallback] =
     useState<DesktopChatCallKind | null>(null);
   const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
-    action: "voice-message" | "camera";
+    action: ChatComposeShortcutAction;
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
@@ -278,6 +283,18 @@ export function ConversationThreadPanel({
     setPendingCallFallback(null);
     setMobileShortcutRequest(null);
   }, [conversationId]);
+
+  useEffect(() => {
+    if (isDesktop || !routeMobileShortcutAction) {
+      return;
+    }
+
+    setMobileShortcutRequest({
+      action: routeMobileShortcutAction,
+      nonce: Date.now(),
+    });
+    onRouteMobileShortcutHandled?.();
+  }, [isDesktop, onRouteMobileShortcutHandled, routeMobileShortcutAction]);
 
   return (
     <div

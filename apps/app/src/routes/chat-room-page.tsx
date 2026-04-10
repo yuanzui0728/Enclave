@@ -1,9 +1,11 @@
-import {
-  useNavigate,
-  useParams,
-  useRouterState,
-} from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
+import {
+  buildChatComposeShortcutSearch,
+  parseChatComposeShortcutAction,
+  type ChatComposeShortcutAction,
+} from "../features/chat/chat-compose-shortcut-route";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
@@ -14,9 +16,37 @@ export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
   const routeContext = resolveRouteContext(conversationId);
+  const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
+    useState<ChatComposeShortcutAction | null>(null);
+
+  useEffect(() => {
+    const nextAction = parseChatComposeShortcutAction(search);
+    if (!nextAction) {
+      return;
+    }
+
+    setRouteMobileShortcutAction(nextAction);
+
+    const nextSearch = buildChatComposeShortcutSearch({
+      search,
+      action: null,
+    });
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId },
+      search: nextSearch || undefined,
+      hash,
+      replace: true,
+    });
+  }, [conversationId, hash, navigate, search]);
+
+  const handleRouteMobileShortcutHandled = useCallback(() => {
+    setRouteMobileShortcutAction(null);
+  }, []);
 
   if (isDesktopLayout) {
     return (
@@ -44,6 +74,8 @@ export function ChatRoomPage() {
         <ConversationThreadPanel
           conversationId={conversationId}
           highlightedMessageId={highlightedMessageId}
+          routeMobileShortcutAction={routeMobileShortcutAction}
+          onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeContextNotice={
             routeContext
               ? {

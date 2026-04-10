@@ -32,6 +32,7 @@ import { DesktopGroupCallPanel } from "../desktop/chat/desktop-group-call-panel"
 import { type ChatRenderableMessage } from "../../components/chat-message-list";
 import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { ChatCallFallbackNotice } from "./chat-call-fallback-notice";
+import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildGroupCallInviteMessage } from "./group-call-message";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
@@ -62,6 +63,8 @@ type GroupChatThreadPanelProps = {
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
+  routeMobileShortcutAction?: ChatComposeShortcutAction | null;
+  onRouteMobileShortcutHandled?: () => void;
 };
 
 export function GroupChatThreadPanel({
@@ -74,6 +77,8 @@ export function GroupChatThreadPanel({
   onDesktopCallAction,
   highlightedMessageId,
   routeContextNotice,
+  routeMobileShortcutAction = null,
+  onRouteMobileShortcutHandled,
 }: GroupChatThreadPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -87,7 +92,7 @@ export function GroupChatThreadPanel({
   const [pendingCallFallback, setPendingCallFallback] =
     useState<DesktopChatCallKind | null>(null);
   const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
-    action: "voice-message" | "camera";
+    action: ChatComposeShortcutAction;
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
@@ -146,6 +151,18 @@ export function GroupChatThreadPanel({
     unreadMarkerScrolledRef.current = false;
     loadMoreRequestRef.current = null;
   }, [baseUrl, groupId]);
+
+  useEffect(() => {
+    if (isDesktop || !routeMobileShortcutAction) {
+      return;
+    }
+
+    setMobileShortcutRequest({
+      action: routeMobileShortcutAction,
+      nonce: Date.now(),
+    });
+    onRouteMobileShortcutHandled?.();
+  }, [isDesktop, onRouteMobileShortcutHandled, routeMobileShortcutAction]);
 
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === groupId && item.type === "group",
