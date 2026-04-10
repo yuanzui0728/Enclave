@@ -6,6 +6,7 @@ import {
   ImageIcon,
   Keyboard,
   Mic,
+  Monitor,
   Plus,
   SendHorizontal,
   Smile,
@@ -721,6 +722,85 @@ export function ChatComposer({
     fileInputRef.current?.click();
   };
 
+  const captureDesktopScreenshot = async () => {
+    if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices?.getDisplayMedia
+    ) {
+      setAttachmentError("当前浏览器不支持桌面截图，请改用图片或文件发送。");
+      return;
+    }
+
+    let stream: MediaStream | null = null;
+
+    try {
+      setAttachmentError(null);
+      setMobilePlusNotice(null);
+      setStickerPanelOpen(false);
+      closeDesktopPlusMenu();
+
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      });
+      const track = stream.getVideoTracks()[0];
+      if (!track) {
+        throw new Error("没有拿到可用的屏幕画面。");
+      }
+
+      const video = document.createElement("video");
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+
+      await waitForCaptureVideo(video);
+
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      if (!width || !height) {
+        throw new Error("截图尺寸异常，请重试。");
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("截图画布初始化失败。");
+      }
+
+      context.drawImage(video, 0, 0, width, height);
+      const blob = await canvasToBlob(canvas);
+      const file = new File([blob], buildDesktopScreenshotFileName(), {
+        type: "image/png",
+      });
+
+      video.pause();
+      video.srcObject = null;
+
+      await applyImageDraftFiles([file]);
+    } catch (captureError) {
+      const name =
+        captureError instanceof DOMException ? captureError.name : undefined;
+
+      if (name === "AbortError" || name === "NotAllowedError") {
+        return;
+      }
+
+      setAttachmentError(
+        captureError instanceof Error
+          ? captureError.message
+          : "截图失败，请稍后再试。",
+      );
+    } finally {
+      stream?.getTracks().forEach((track) => track.stop());
+    }
+  };
+
   const activateMobileSpeechFallback = () => {
     if (isDesktop || !showSpeechEntry) {
       return;
@@ -1232,6 +1312,13 @@ export function ChatComposer({
                       icon={<FileText size={16} />}
                       onClick={pickFile}
                     />
+                    <DesktopToolbarButton
+                      label="截图"
+                      icon={<Monitor size={16} />}
+                      onClick={() => {
+                        void captureDesktopScreenshot();
+                      }}
+                    />
                     <div ref={desktopPlusRef} className="relative">
                       <DesktopToolbarButton
                         label="收藏"
@@ -1677,7 +1764,7 @@ function DesktopFavoritePicker({
           type="button"
           onClick={onBack}
           className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
-          aria-label="返回更多功能"
+          aria-label="关闭发送收藏"
         >
           <ChevronLeft size={16} />
         </button>
@@ -2006,6 +2093,55 @@ async function createImageDraft(file: File): Promise<ImageDraft> {
     URL.revokeObjectURL(previewUrl);
     throw error;
   }
+}
+
+function waitForCaptureVideo(video: HTMLVideoElement) {
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      video.onloadedmetadata = null;
+      video.onerror = null;
+    };
+
+    video.onloadedmetadata = () => {
+      cleanup();
+      void video
+        .play()
+        .then(() => resolve())
+        .catch((error) => reject(error));
+    };
+    video.onerror = () => {
+      cleanup();
+      reject(new Error("截图视频流初始化失败。"));
+    };
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+
+      reject(new Error("截图生成失败，请重试。"));
+    }, "image/png");
+  });
+}
+
+function buildDesktopScreenshotFileName() {
+  const now = new Date();
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+    "-",
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+  return `screenshot-${stamp}.png`;
 }
 
 function readImageDimensions(url: string) {
