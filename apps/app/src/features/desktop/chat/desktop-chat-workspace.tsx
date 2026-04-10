@@ -11,8 +11,10 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { OfficialServiceConversationCard } from "../../../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
+import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -23,6 +25,7 @@ import { createDesktopNote } from "./desktop-notes-storage";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
+  selectedServiceAccountId?: string;
   highlightedMessageId?: string;
   selectedSpecialView?: "subscription-inbox";
 };
@@ -53,6 +56,7 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 
 export function DesktopChatWorkspace({
   selectedConversationId,
+  selectedServiceAccountId,
   highlightedMessageId,
   selectedSpecialView,
 }: DesktopChatWorkspaceProps) {
@@ -114,7 +118,10 @@ export function DesktopChatWorkspace({
     });
   }, [conversations, searchTerm]);
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
+  const serviceConversations =
+    messageEntriesQuery.data?.serviceConversations ?? [];
   const subscriptionInboxActive = selectedSpecialView === "subscription-inbox";
+  const serviceConversationActive = Boolean(selectedServiceAccountId);
   const showSubscriptionInboxItem = useMemo(() => {
     if (!subscriptionInboxSummary) {
       return false;
@@ -130,9 +137,22 @@ export function DesktopChatWorkspace({
       (subscriptionInboxSummary.preview ?? "").toLowerCase().includes(keyword)
     );
   }, [searchTerm, subscriptionInboxSummary]);
+  const filteredServiceConversations = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) {
+      return serviceConversations;
+    }
+
+    return serviceConversations.filter((conversation) => {
+      return (
+        conversation.account.name.toLowerCase().includes(keyword) ||
+        (conversation.preview ?? "").toLowerCase().includes(keyword)
+      );
+    });
+  }, [searchTerm, serviceConversations]);
 
   const activeConversation = useMemo(() => {
-    if (subscriptionInboxActive) {
+    if (subscriptionInboxActive || serviceConversationActive) {
       return null;
     }
 
@@ -149,13 +169,22 @@ export function DesktopChatWorkspace({
     }
 
     return filteredConversations[0];
-  }, [filteredConversations, selectedConversationId, subscriptionInboxActive]);
+  }, [
+    filteredConversations,
+    selectedConversationId,
+    serviceConversationActive,
+    subscriptionInboxActive,
+  ]);
 
   useEffect(() => {
-    if (!activeConversation || subscriptionInboxActive) {
+    if (
+      !activeConversation ||
+      subscriptionInboxActive ||
+      serviceConversationActive
+    ) {
       setInspectorOpen(false);
     }
-  }, [activeConversation, subscriptionInboxActive]);
+  }, [activeConversation, serviceConversationActive, subscriptionInboxActive]);
 
   useEffect(() => {
     if (!notice) {
@@ -272,6 +301,21 @@ export function DesktopChatWorkspace({
               />
             ) : null}
 
+            {filteredServiceConversations.map((conversation) => (
+              <OfficialServiceConversationCard
+                key={conversation.accountId}
+                conversation={conversation}
+                variant="desktop"
+                active={conversation.accountId === selectedServiceAccountId}
+                onClick={() => {
+                  void navigate({
+                    to: "/official-accounts/service/$accountId",
+                    params: { accountId: conversation.accountId },
+                  });
+                }}
+              />
+            ))}
+
             {filteredConversations.map((conversation) => (
               <ConversationCard
                 key={conversation.id}
@@ -283,6 +327,8 @@ export function DesktopChatWorkspace({
 
           {!conversationsQuery.isLoading &&
           !filteredConversations.length &&
+          !filteredServiceConversations.length &&
+          !showSubscriptionInboxItem &&
           searchTerm.trim() ? (
             <div className="pt-4">
               <EmptyState
@@ -297,6 +343,11 @@ export function DesktopChatWorkspace({
       <section className="min-w-0 flex-1">
         {subscriptionInboxActive ? (
           <DesktopSubscriptionWorkspace />
+        ) : selectedServiceAccountId ? (
+          <OfficialAccountServiceThread
+            accountId={selectedServiceAccountId}
+            variant="desktop"
+          />
         ) : activeConversation ? (
           activeConversation.type === "group" ? (
             <GroupChatThreadPanel

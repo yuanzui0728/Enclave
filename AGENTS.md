@@ -49,6 +49,7 @@
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
 - `official-account-detail-page.tsx`：公众号主页，承载账号资料、关注状态与最近文章列表
 - `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端复用工作区阅读面板
+- `official-account-service-page.tsx`：服务号消息页，移动端承载服务号独立消息线程，桌面端复用消息工作区右侧服务号面板
 - `subscription-inbox-page.tsx`：订阅号消息页，移动端承载“消息 -> 订阅号消息”聚合流，桌面端承载消息工作区内的订阅号阅读面板
 - `profile/settings`：我的二级设置页，集中承载资料编辑与专属 API Key 配置
 - `desktop/mobile`：桌面端底部“手机”入口承接页，后续承接设备联动能力
@@ -67,7 +68,7 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（25个，物理表保持兼容）
+## 数据库实体（26个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -79,7 +80,7 @@
 
 **视频号**：FeedPost · FeedComment · UserFeedInteraction
 
-**公众号**：OfficialAccount · OfficialAccountArticle · OfficialAccountFollow · OfficialAccountDelivery
+**公众号**：OfficialAccount · OfficialAccountArticle · OfficialAccountFollow · OfficialAccountDelivery · OfficialAccountServiceMessage
 
 **世界**：WorldContext · NarrativeArc · AIBehaviorLog
 
@@ -145,7 +146,10 @@
 - 公众号消息路由：
   - `GET /api/official-accounts/message-entries`
   - `GET /api/official-accounts/subscription-inbox`
+  - `GET /api/official-accounts/service-conversations`
   - `POST /api/official-accounts/subscription-inbox/read`
+  - `GET /api/official-accounts/:id/service-messages`
+  - `POST /api/official-accounts/:id/service-messages/read`
   - `POST /api/official-accounts/deliveries/:deliveryId/read`
 
 ## 前端状态约束
