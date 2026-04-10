@@ -164,6 +164,10 @@ export function GroupQrPage() {
       (conversation) => conversation.id !== currentReturnSourceConversation.id,
     );
   }, [currentReturnSourceConversation, recentConversations]);
+  const reopenedPaths = useMemo(
+    () => new Set(reopenRecords.map((record) => record.conversationPath)),
+    [reopenRecords],
+  );
   const relatedReturnConversations = useMemo(() => {
     if (!currentReturnSourceConversation) {
       return [] as ConversationListItem[];
@@ -171,9 +175,6 @@ export function GroupQrPage() {
 
     const sourceIsGroup = isPersistedGroupConversation(
       currentReturnSourceConversation,
-    );
-    const reopenPaths = new Set(
-      reopenRecords.map((record) => record.conversationPath),
     );
 
     return [...(conversationsQuery.data ?? [])]
@@ -186,11 +187,11 @@ export function GroupQrPage() {
         (conversation) =>
           isPersistedGroupConversation(conversation) === sourceIsGroup,
       )
-      .sort((left, right) => {
-        const leftReopenWeight = reopenPaths.has(buildConversationPath(left))
+        .sort((left, right) => {
+        const leftReopenWeight = reopenedPaths.has(buildConversationPath(left))
           ? 1
           : 0;
-        const rightReopenWeight = reopenPaths.has(buildConversationPath(right))
+        const rightReopenWeight = reopenedPaths.has(buildConversationPath(right))
           ? 1
           : 0;
 
@@ -208,7 +209,7 @@ export function GroupQrPage() {
     conversationsQuery.data,
     currentReturnSourceConversation,
     groupId,
-    reopenRecords,
+    reopenedPaths,
   ]);
   const deliveredPaths = useMemo(
     () => new Set(deliveryTargets.map((record) => record.conversationPath)),
@@ -271,6 +272,44 @@ export function GroupQrPage() {
       }, {}),
     [deliveryTargetBatches],
   );
+  const pendingCurrentBatchConversations = useMemo(() => {
+    const currentBatch = deliveryTargetBatches[0];
+    if (!currentBatch) {
+      return [] as Array<{
+        conversation: ConversationListItem;
+        target: GroupInviteDeliveryTarget;
+      }>;
+    }
+
+    const conversationByPath = new Map(
+      (conversationsQuery.data ?? []).map((conversation) => [
+        buildConversationPath(conversation),
+        conversation,
+      ]),
+    );
+
+    return currentBatch.items
+      .filter((target) => !reopenedPaths.has(target.conversationPath))
+      .map((target) => {
+        const conversation = conversationByPath.get(target.conversationPath);
+        if (!conversation) {
+          return null;
+        }
+
+        return {
+          conversation,
+          target,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          conversation: ConversationListItem;
+          target: GroupInviteDeliveryTarget;
+        } => Boolean(item),
+      );
+  }, [conversationsQuery.data, deliveryTargetBatches, reopenedPaths]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -697,6 +736,44 @@ export function GroupQrPage() {
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
               <ErrorBlock message={conversationsQuery.error.message} />
+            ) : null}
+            {pendingCurrentBatchConversations.length ? (
+              <div className="space-y-2">
+                <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                  本轮待回流会话
+                </div>
+                <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，优先补发。
+                </div>
+                {pendingCurrentBatchConversations.map(({ conversation, target }) => (
+                  <button
+                    key={`${conversation.id}:${target.deliveredAt}`}
+                    type="button"
+                    onClick={() => {
+                      void sendToConversation(conversation);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.18)] bg-[rgba(255,248,240,0.92)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {conversation.title}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {isPersistedGroupConversation(conversation)
+                          ? "群聊"
+                          : "单聊"}{" "}
+                        · 本轮批次 · 尚未回流
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
+                        上次发送于 {formatConversationTimestamp(target.deliveredAt)}
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                      优先补发
+                    </span>
+                  </button>
+                ))}
+              </div>
             ) : null}
             {!conversationsQuery.isLoading && !recentConversations.length ? (
               <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/72 px-4 py-4 text-sm text-[color:var(--text-secondary)]">

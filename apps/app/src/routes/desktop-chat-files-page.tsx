@@ -9,7 +9,15 @@ import {
   type Message,
   type MessageAttachment,
 } from "@yinjie/contracts";
-import { FileText, ImageIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  ExternalLink,
+  FileText,
+  ImageIcon,
+  X,
+} from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
@@ -45,6 +53,10 @@ type AttachmentRow = {
   text: string;
 };
 
+type ImageAttachmentRow = AttachmentRow & {
+  attachment: Extract<MessageAttachment, { kind: "image" }>;
+};
+
 export function DesktopChatFilesPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
@@ -58,6 +70,9 @@ export function DesktopChatFilesPage() {
   const [searchText, setSearchText] = useState("");
   const [filter, setFilter] = useState<FileFilter>("all");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const [viewerAttachmentId, setViewerAttachmentId] = useState<string | null>(
+    null,
+  );
   const localMessageActionState = useLocalChatMessageActionState();
 
   useEffect(() => {
@@ -188,6 +203,15 @@ export function DesktopChatFilesPage() {
         ),
     [baseAttachmentRows, filter, searchText],
   );
+  const imageRows = useMemo(
+    () => attachmentRows.filter(isImageAttachmentRow),
+    [attachmentRows],
+  );
+  const activeImageIndex = viewerAttachmentId
+    ? imageRows.findIndex((item) => item.id === viewerAttachmentId)
+    : -1;
+  const activeImage: ImageAttachmentRow | null =
+    activeImageIndex >= 0 ? (imageRows[activeImageIndex] ?? null) : null;
   const visibleAttachmentRowCount = useMemo(
     () =>
       filterSearchableChatMessages(
@@ -196,6 +220,12 @@ export function DesktopChatFilesPage() {
       ).length,
     [allAttachmentsQuery.data, localMessageActionState],
   );
+
+  useEffect(() => {
+    setViewerAttachmentId((current) =>
+      current && imageRows.some((item) => item.id === current) ? current : null,
+    );
+  }, [imageRows]);
 
   if (!isDesktopLayout) {
     return null;
@@ -361,6 +391,7 @@ export function DesktopChatFilesPage() {
                 const favoriteRouteHash = buildDesktopChatFilesRouteHash(
                   item.conversationId,
                 );
+                const isImage = item.attachment.kind === "image";
 
                 return (
                   <div
@@ -368,13 +399,32 @@ export function DesktopChatFilesPage() {
                     className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)] transition hover:border-[rgba(249,115,22,0.18)]"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-[rgba(255,138,61,0.10)] text-[color:var(--brand-primary)]">
-                        {item.attachment.kind === "image" ? (
-                          <ImageIcon size={18} />
-                        ) : (
-                          <FileText size={18} />
-                        )}
-                      </div>
+                      {isImage ? (
+                        <button
+                          type="button"
+                          onClick={() => setViewerAttachmentId(item.id)}
+                          className="group relative block h-28 w-28 shrink-0 overflow-hidden rounded-[20px] border border-black/6 bg-[#f5f5f5]"
+                        >
+                          <img
+                            src={item.attachment.url}
+                            alt={item.attachment.fileName}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.65))] px-3 py-2 text-left text-[11px] text-white">
+                            点击预览
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-[20px] border border-black/6 bg-[rgba(255,138,61,0.08)] px-4 text-center">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white text-[color:var(--brand-primary)] shadow-[var(--shadow-soft)]">
+                            <FileText size={18} />
+                          </div>
+                          <div className="mt-3 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+                            {resolveAttachmentExtension(item.attachment.fileName)}
+                          </div>
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                           {item.attachment.fileName}
@@ -387,6 +437,16 @@ export function DesktopChatFilesPage() {
                           {item.text.trim() || "这条消息没有额外正文。"}
                         </div>
                         <div className="mt-4 flex items-center gap-3">
+                          {isImage ? (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setViewerAttachmentId(item.id)}
+                              className="rounded-full"
+                            >
+                              预览图片
+                            </Button>
+                          ) : null}
                           <a
                             href={item.attachment.url}
                             target="_blank"
@@ -395,6 +455,19 @@ export function DesktopChatFilesPage() {
                           >
                             打开附件
                           </a>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              saveUrlAsFile(
+                                item.attachment.url,
+                                item.attachment.fileName,
+                              )
+                            }
+                            className="rounded-full"
+                          >
+                            保存附件
+                          </Button>
                           <Button
                             variant="secondary"
                             size="sm"
@@ -481,6 +554,33 @@ export function DesktopChatFilesPage() {
           </div>
         )}
       </section>
+      {activeImage ? (
+        <DesktopChatFilesImageViewer
+          item={activeImage}
+          index={activeImageIndex}
+          total={imageRows.length}
+          onClose={() => setViewerAttachmentId(null)}
+          onPrevious={
+            activeImageIndex > 0
+              ? () => setViewerAttachmentId(imageRows[activeImageIndex - 1].id)
+              : undefined
+          }
+          onNext={
+            activeImageIndex < imageRows.length - 1
+              ? () => setViewerAttachmentId(imageRows[activeImageIndex + 1].id)
+              : undefined
+          }
+          onOpenInWindow={() => {
+            openUrlInNewWindow(activeImage.attachment.url);
+          }}
+          onSave={() =>
+            saveUrlAsFile(
+              activeImage.attachment.url,
+              activeImage.attachment.fileName,
+            )
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -541,6 +641,12 @@ function matchesAttachmentFilter(item: AttachmentRow, filter: FileFilter) {
   return item.attachment.kind === filter;
 }
 
+function isImageAttachmentRow(
+  item: AttachmentRow,
+): item is ImageAttachmentRow {
+  return item.attachment.kind === "image";
+}
+
 function matchesAttachmentSearch(item: AttachmentRow, searchText: string) {
   const normalized = searchText.trim().toLowerCase();
   if (!normalized) {
@@ -583,12 +689,175 @@ function formatBytes(size: number) {
   return `${Math.max(size / 1024, 0.1).toFixed(1)} KB`;
 }
 
+function resolveAttachmentExtension(fileName: string) {
+  const dotIndex = fileName.lastIndexOf(".");
+  if (dotIndex <= 0 || dotIndex === fileName.length - 1) {
+    return "文件";
+  }
+
+  return fileName.slice(dotIndex + 1).toUpperCase();
+}
+
+function saveUrlAsFile(url: string, fileName: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.rel = "noreferrer";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+function openUrlInNewWindow(url: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return Boolean(window.open(url, "_blank", "noopener,noreferrer"));
+}
+
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
+      </div>
+    </div>
+  );
+}
+
+function DesktopChatFilesImageViewer({
+  item,
+  index,
+  total,
+  onClose,
+  onPrevious,
+  onNext,
+  onOpenInWindow,
+  onSave,
+}: {
+  item: ImageAttachmentRow;
+  index: number;
+  total: number;
+  onClose: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  onOpenInWindow: () => void;
+  onSave: () => void;
+}) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && onPrevious) {
+        event.preventDefault();
+        onPrevious();
+        return;
+      }
+
+      if (event.key === "ArrowRight" && onNext) {
+        event.preventDefault();
+        onNext();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, onNext, onPrevious]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.82)] backdrop-blur-[3px]">
+      <button
+        type="button"
+        aria-label="关闭图片预览"
+        onClick={onClose}
+        className="absolute inset-0"
+      />
+
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-5 text-white">
+        <div className="min-w-0">
+          <div className="truncate text-[15px] font-medium">
+            {item.attachment.fileName}
+          </div>
+          <div className="mt-1 text-[12px] text-white/70">
+            {item.conversationTitle} · {item.senderName} ·{" "}
+            {formatMessageTimestamp(item.createdAt)}
+          </div>
+        </div>
+        <div className="ml-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenInWindow}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            aria-label="新窗口打开"
+          >
+            <ExternalLink size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            aria-label="保存图片"
+          >
+            <Download size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            aria-label="关闭"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {onPrevious ? (
+        <button
+          type="button"
+          onClick={onPrevious}
+          className="absolute left-6 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          aria-label="上一张"
+        >
+          <ChevronLeft size={20} />
+        </button>
+      ) : null}
+
+      {onNext ? (
+        <button
+          type="button"
+          onClick={onNext}
+          className="absolute right-6 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          aria-label="下一张"
+        >
+          <ChevronRight size={20} />
+        </button>
+      ) : null}
+
+      <div className="absolute inset-0 flex items-center justify-center px-24 pb-24 pt-24">
+        <img
+          src={item.attachment.url}
+          alt={item.attachment.fileName}
+          className="max-h-full max-w-full rounded-[24px] object-contain shadow-[0_30px_80px_rgba(15,23,42,0.45)]"
+        />
+      </div>
+
+      <div className="absolute bottom-0 inset-x-0 z-10 flex items-center justify-between px-6 py-5 text-white/76">
+        <div className="text-[12px]">
+          {formatAttachmentMeta(item.attachment)}
+        </div>
+        <div className="text-[12px]">
+          {index + 1} / {total}
+        </div>
       </div>
     </div>
   );
