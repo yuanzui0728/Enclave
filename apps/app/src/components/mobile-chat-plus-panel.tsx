@@ -22,6 +22,10 @@ import {
   CHAT_LOCATION_SCENES,
   buildLocationCardAttachment,
 } from "../features/chat/chat-location-scenes";
+import {
+  readDesktopFavorites,
+  type DesktopFavoriteRecord,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { AvatarChip } from "./avatar-chip";
 
@@ -31,6 +35,7 @@ type MobileChatPlusPanelProps = {
   onPickAlbum: () => void;
   onPickCamera: () => void;
   onPickFile: () => void;
+  onSelectFavoriteText: (text: string) => void | Promise<void>;
   onSelectContactCard: (
     attachment: ContactCardAttachment,
   ) => void | Promise<void>;
@@ -40,7 +45,7 @@ type MobileChatPlusPanelProps = {
   onUnavailableAction?: (message: string) => void;
 };
 
-type PanelView = "root" | "contacts" | "locations";
+type PanelView = "root" | "favorites" | "contacts" | "locations";
 const ROOT_ACTIONS_PER_PAGE = 8;
 
 type RootAction = {
@@ -113,8 +118,6 @@ const rootActions: RootAction[] = [
     label: "收藏",
     icon: Star,
     iconClassName: "bg-[#f3c64e]",
-    disabled: true,
-    disabledLabel: "待接入",
   },
   {
     key: "transfer",
@@ -132,6 +135,7 @@ export function MobileChatPlusPanel({
   onPickAlbum,
   onPickCamera,
   onPickFile,
+  onSelectFavoriteText,
   onSelectContactCard,
   onSelectLocationCard,
   onUnavailableAction,
@@ -140,6 +144,9 @@ export function MobileChatPlusPanel({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [activeView, setActiveView] = useState<PanelView>("root");
   const [activeRootPage, setActiveRootPage] = useState(0);
+  const [favoriteRecords, setFavoriteRecords] = useState<
+    DesktopFavoriteRecord[]
+  >([]);
   const rootPagerRef = useRef<HTMLDivElement | null>(null);
 
   const friendsQuery = useQuery({
@@ -154,6 +161,14 @@ export function MobileChatPlusPanel({
       setActiveRootPage(0);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || activeView !== "favorites") {
+      return;
+    }
+
+    setFavoriteRecords(readDesktopFavorites());
+  }, [activeView, open]);
 
   const rootActionPages = chunkRootActions(rootActions, ROOT_ACTIONS_PER_PAGE);
 
@@ -192,14 +207,16 @@ export function MobileChatPlusPanel({
                         ? onPickAlbum
                         : item.key === "camera"
                           ? onPickCamera
-                          : item.key === "contact"
-                            ? () => setActiveView("contacts")
-                            : item.key === "file"
-                              ? onPickFile
-                              : item.key === "location"
-                                ? () => setActiveView("locations")
-                                : () =>
-                                    onUnavailableAction?.("该入口暂未接入。");
+                          : item.key === "favorite"
+                            ? () => setActiveView("favorites")
+                            : item.key === "contact"
+                              ? () => setActiveView("contacts")
+                              : item.key === "file"
+                                ? onPickFile
+                                : item.key === "location"
+                                  ? () => setActiveView("locations")
+                                  : () =>
+                                      onUnavailableAction?.("该入口暂未接入。");
 
                     return (
                       <button
@@ -328,6 +345,58 @@ export function MobileChatPlusPanel({
         </div>
       ) : null}
 
+      {activeView === "favorites" ? (
+        <div className="pb-4">
+          <PanelHeader title="发送收藏" onBack={() => setActiveView("root")} />
+          {favoriteRecords.length ? (
+            <div className="max-h-72 overflow-auto px-2">
+              {favoriteRecords.map((item, index) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    void onSelectFavoriteText(buildFavoriteShareText(item))
+                  }
+                  disabled={busy}
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-[18px] px-3 py-3 text-left transition-colors hover:bg-white/72 disabled:opacity-60",
+                    index > 0
+                      ? "border-t border-[rgba(148,163,184,0.12)]"
+                      : undefined,
+                  )}
+                >
+                  <AvatarChip
+                    name={item.avatarName ?? item.title}
+                    src={item.avatarSrc}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="truncate text-sm text-[color:var(--text-primary)]">
+                        {item.title}
+                      </div>
+                      <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
+                        {item.badge}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                      {item.meta}
+                    </div>
+                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                      {item.description}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center text-sm text-[color:var(--text-muted)]">
+              还没有可发送的收藏内容，先在聊天或内容页里把消息加入收藏。
+            </div>
+          )}
+        </div>
+      ) : null}
+
       {activeView === "locations" ? (
         <div className="pb-4">
           <PanelHeader title="选择位置" onBack={() => setActiveView("root")} />
@@ -386,4 +455,20 @@ function chunkRootActions<T>(items: readonly T[], size: number) {
   }
 
   return result;
+}
+
+function buildFavoriteShareText(item: DesktopFavoriteRecord) {
+  const lines = [`[收藏] ${item.title}`];
+
+  if (item.description.trim()) {
+    lines.push(item.description.trim());
+  }
+
+  lines.push(`来自 ${item.badge}`);
+
+  if (item.meta.trim()) {
+    lines.push(item.meta.trim());
+  }
+
+  return lines.join("\n");
 }

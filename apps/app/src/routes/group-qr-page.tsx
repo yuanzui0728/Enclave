@@ -310,6 +310,19 @@ export function GroupQrPage() {
         } => Boolean(item),
       )
       .sort((left, right) => {
+        const leftCoolingDown = isPendingReturnCoolingDown(left.target.deliveredAt)
+          ? 1
+          : 0;
+        const rightCoolingDown = isPendingReturnCoolingDown(
+          right.target.deliveredAt,
+        )
+          ? 1
+          : 0;
+
+        if (leftCoolingDown !== rightCoolingDown) {
+          return leftCoolingDown - rightCoolingDown;
+        }
+
         const activityDelta =
           (parseTimestamp(right.conversation.lastActivityAt) ?? 0) -
           (parseTimestamp(left.conversation.lastActivityAt) ?? 0);
@@ -762,7 +775,7 @@ export function GroupQrPage() {
                   本轮待回流会话
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，会按最近活跃和发送先后优先补发。
+                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话，再按最近活跃和发送先后优先补发。
                 </div>
                 {pendingCurrentBatchConversations.map(({ conversation, target }) => (
                   <button
@@ -795,13 +808,20 @@ export function GroupQrPage() {
                         >
                           {resolvePendingReturnBadgeLabel(target.deliveredAt)}
                         </span>
+                        {isPendingReturnCoolingDown(target.deliveredAt) ? (
+                          <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 font-medium text-[color:var(--text-muted)]">
+                            刚补发过
+                          </span>
+                        ) : null}
                         <span className="text-[color:var(--text-muted)]">
                           待回流 {formatPendingReturnDuration(target.deliveredAt)}
                         </span>
                       </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      优先补发
+                      {isPendingReturnCoolingDown(target.deliveredAt)
+                        ? "稍后补发"
+                        : "优先补发"}
                     </span>
                   </button>
                 ))}
@@ -1099,15 +1119,11 @@ function resolveDeliveredBatchLabel(
 }
 
 function formatPendingReturnDuration(deliveredAt: string) {
-  const deliveredAtMs = parseTimestamp(deliveredAt);
-  if (!deliveredAtMs) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  if (elapsedMinutes === null) {
     return "一段时间";
   }
 
-  const elapsedMinutes = Math.max(
-    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
-    0,
-  );
   if (elapsedMinutes < 1) {
     return "不到 1 分钟";
   }
@@ -1127,15 +1143,10 @@ function formatPendingReturnDuration(deliveredAt: string) {
 }
 
 function resolvePendingReturnBadgeLabel(deliveredAt: string) {
-  const deliveredAtMs = parseTimestamp(deliveredAt);
-  if (!deliveredAtMs) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  if (elapsedMinutes === null) {
     return "待回流";
   }
-
-  const elapsedMinutes = Math.max(
-    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
-    0,
-  );
 
   if (elapsedMinutes >= 60) {
     return "长时间未回流";
@@ -1149,15 +1160,10 @@ function resolvePendingReturnBadgeLabel(deliveredAt: string) {
 }
 
 function resolvePendingReturnBadgeTone(deliveredAt: string) {
-  const deliveredAtMs = parseTimestamp(deliveredAt);
-  if (!deliveredAtMs) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  if (elapsedMinutes === null) {
     return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
   }
-
-  const elapsedMinutes = Math.max(
-    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
-    0,
-  );
 
   if (elapsedMinutes >= 60) {
     return "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]";
@@ -1168,6 +1174,20 @@ function resolvePendingReturnBadgeTone(deliveredAt: string) {
   }
 
   return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
+}
+
+function isPendingReturnCoolingDown(deliveredAt: string) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  return elapsedMinutes !== null && elapsedMinutes < 5;
+}
+
+function resolvePendingReturnElapsedMinutes(deliveredAt: string) {
+  const deliveredAtMs = parseTimestamp(deliveredAt);
+  if (!deliveredAtMs) {
+    return null;
+  }
+
+  return Math.max(Math.floor((Date.now() - deliveredAtMs) / 1000 / 60), 0);
 }
 
 function buildInviteMatrixSvg({

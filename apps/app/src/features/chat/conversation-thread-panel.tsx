@@ -145,6 +145,13 @@ export function ConversationThreadPanel({
     setReplyDraft(null);
   };
 
+  const handleSendPresetText = async (presetText: string) => {
+    await sendTextMessage(
+      replyDraft ? encodeChatReplyText(presetText, replyDraft) : presetText,
+    );
+    setReplyDraft(null);
+  };
+
   const handleSendSticker = async (sticker: StickerAttachment) => {
     await sendStickerMessage(
       sticker,
@@ -352,6 +359,12 @@ export function ConversationThreadPanel({
               setSocketError(null);
             }
             await handleSendAttachment(payload);
+          }}
+          onSendPresetText={async (presetText) => {
+            if (socketError) {
+              setSocketError(null);
+            }
+            await handleSendPresetText(presetText);
           }}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}

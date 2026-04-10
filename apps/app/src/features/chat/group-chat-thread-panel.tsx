@@ -219,6 +219,15 @@ export function GroupChatThreadPanel({
     });
   };
 
+  const handleSendPresetText = async (presetText: string) => {
+    await sendMutation.mutateAsync({
+      text: replyDraft
+        ? encodeChatReplyText(presetText, replyDraft)
+        : presetText.trim(),
+    });
+    setReplyDraft(null);
+  };
+
   const replyPreview = replyDraft
     ? {
         senderName: replyDraft.senderName,
@@ -470,6 +479,7 @@ export function GroupChatThreadPanel({
             setReplyDraft(null);
           }}
           onSendAttachment={sendAttachmentMessage}
+          onSendPresetText={handleSendPresetText}
           mentionCandidates={mentionCandidates}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}

@@ -52,6 +52,7 @@ type ChatComposerProps = {
   onSendAttachment?: (
     payload: ChatComposerAttachmentPayload,
   ) => void | Promise<void>;
+  onSendPresetText?: (text: string) => void | Promise<void>;
   mentionCandidates?: Array<{
     id: string;
     name: string;
@@ -98,6 +99,7 @@ export function ChatComposer({
   speechInput,
   onSendSticker,
   onSendAttachment,
+  onSendPresetText,
   mentionCandidates,
   replyPreview = null,
   onCancelReply,
@@ -273,7 +275,11 @@ export function ChatComposer({
   const handleMobileSpeechPressStart = async (
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
-    if (!mobileSpeechMode || !speechSupported || speech.status === "processing") {
+    if (
+      !mobileSpeechMode ||
+      !speechSupported ||
+      speech.status === "processing"
+    ) {
       return;
     }
 
@@ -946,6 +952,36 @@ export function ChatComposer({
     }
   };
 
+  const handleSendPresetText = async (text: string) => {
+    if (!onSendPresetText) {
+      return false;
+    }
+
+    const normalized = text.trim();
+    if (!normalized) {
+      return false;
+    }
+
+    setAttachmentBusy(true);
+    setAttachmentError(null);
+    setMobilePlusNotice(null);
+
+    try {
+      await onSendPresetText(normalized);
+      setPlusPanelOpen(false);
+      return true;
+    } catch (presetTextError) {
+      setAttachmentError(
+        presetTextError instanceof Error
+          ? presetTextError.message
+          : "发送失败，请稍后再试。",
+      );
+      return false;
+    } finally {
+      setAttachmentBusy(false);
+    }
+  };
+
   return (
     <>
       <div
@@ -1180,9 +1216,15 @@ export function ChatComposer({
                     speech.status === "processing" || mobileSpeechPressing
                   }
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45"
-                  aria-label={mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"}
+                  aria-label={
+                    mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"
+                  }
                 >
-                  {mobileSpeechMode ? <Keyboard size={20} /> : <Mic size={20} />}
+                  {mobileSpeechMode ? (
+                    <Keyboard size={20} />
+                  ) : (
+                    <Mic size={20} />
+                  )}
                 </button>
               ) : null}
 
@@ -1227,7 +1269,8 @@ export function ChatComposer({
                     onChange={(event) => {
                       onChange(event.target.value);
                       setInputCursor(
-                        event.target.selectionStart ?? event.target.value.length,
+                        event.target.selectionStart ??
+                          event.target.value.length,
                       );
                     }}
                     onFocus={() => {
@@ -1322,13 +1365,14 @@ export function ChatComposer({
             onPickAlbum={pickAlbum}
             onPickCamera={pickCamera}
             onPickFile={pickFile}
+            onSelectFavoriteText={(text) => void handleSendPresetText(text)}
             onSelectContactCard={(attachment) =>
               void handleSendAttachment({
                 type: "contact_card",
                 attachment,
               })
             }
-              onSelectLocationCard={(attachment) =>
+            onSelectLocationCard={(attachment) =>
               void handleSendAttachment({
                 type: "location_card",
                 attachment,
