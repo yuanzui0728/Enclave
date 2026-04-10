@@ -1,3 +1,30 @@
+export type ReplyLogicRuntimeRules = {
+  sleepHintMessages: string[];
+  busyHintMessages: {
+    working: string[];
+    commuting: string[];
+  };
+  sleepDelayMs: { min: number; max: number };
+  busyDelayMs: { min: number; max: number };
+  groupReplyChance: { high: number; normal: number; low: number };
+  groupReplyDelayMs: { min: number; max: number };
+  memoryCompressionEveryMessages: number;
+  historyWindow: {
+    base: number;
+    range: number;
+    min: number;
+    max: number;
+  };
+  narrativeMilestones: Array<{
+    threshold: number;
+    label: string;
+    progress: number;
+  }>;
+};
+
+export const REPLY_LOGIC_RUNTIME_RULES_CONFIG_KEY =
+  'reply_logic_runtime_rules';
+
 export const SLEEP_HINTS = [
   '对方已经睡着了，明天醒来会看到这条消息。',
   '夜深了，对方暂时离线，明天再继续聊吧。',
@@ -50,10 +77,151 @@ export const NARRATIVE_PROGRESS_STEPS = [
   { threshold: 24, label: 'story_complete', progress: 100 },
 ] as const;
 
-export function calculateHistoryWindow(forgettingCurve?: number) {
+export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
+  Object.freeze({
+    sleepHintMessages: [...SLEEP_HINTS],
+    busyHintMessages: {
+      working: [...BUSY_HINTS.working],
+      commuting: [...BUSY_HINTS.commuting],
+    },
+    sleepDelayMs: { ...SLEEP_DELAY_RANGE_MS },
+    busyDelayMs: { ...BUSY_DELAY_RANGE_MS },
+    groupReplyChance: { ...GROUP_REPLY_CHANCE_BY_FREQUENCY },
+    groupReplyDelayMs: { ...GROUP_REPLY_DELAY_RANGE_MS },
+    memoryCompressionEveryMessages: MEMORY_COMPRESSION_INTERVAL,
+    historyWindow: {
+      base: HISTORY_WINDOW_BASE,
+      range: HISTORY_WINDOW_RANGE,
+      min: HISTORY_WINDOW_BASE,
+      max: HISTORY_WINDOW_BASE + HISTORY_WINDOW_RANGE,
+    },
+    narrativeMilestones: NARRATIVE_PROGRESS_STEPS.map((step) => ({
+      threshold: step.threshold,
+      label: step.label,
+      progress: step.progress,
+    })),
+  });
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function sanitizeMessages(value: string[] | undefined, fallback: string[]) {
+  const normalized = value?.map((item) => item.trim()).filter(Boolean) ?? [];
+  return normalized.length ? normalized : fallback;
+}
+
+function normalizeDelayRange(
+  value: Partial<{ min: number; max: number }> | undefined,
+  fallback: { min: number; max: number },
+) {
+  const min = clamp(Math.round(value?.min ?? fallback.min), 0, 60_000);
+  const max = clamp(Math.round(value?.max ?? fallback.max), min, 60_000);
+  return { min, max };
+}
+
+function normalizeProbability(
+  value: Partial<{ high: number; normal: number; low: number }> | undefined,
+  fallback: { high: number; normal: number; low: number },
+) {
+  return {
+    high: clamp(Number(value?.high ?? fallback.high), 0, 1),
+    normal: clamp(Number(value?.normal ?? fallback.normal), 0, 1),
+    low: clamp(Number(value?.low ?? fallback.low), 0, 1),
+  };
+}
+
+function normalizeNarrativeMilestones(
+  value: ReplyLogicRuntimeRules['narrativeMilestones'] | undefined,
+) {
+  const normalized = (value ?? [])
+    .map((item) => ({
+      threshold: clamp(Math.round(item.threshold), 1, 10_000),
+      label: item.label.trim(),
+      progress: clamp(Math.round(item.progress), 0, 100),
+    }))
+    .filter((item) => item.label);
+
+  const next = normalized.length
+    ? normalized
+    : DEFAULT_REPLY_LOGIC_RUNTIME_RULES.narrativeMilestones;
+
+  return [...next].sort((left, right) => left.threshold - right.threshold);
+}
+
+export function normalizeReplyLogicRuntimeRules(
+  input?: Partial<ReplyLogicRuntimeRules> | null,
+): ReplyLogicRuntimeRules {
+  const defaults = DEFAULT_REPLY_LOGIC_RUNTIME_RULES;
+  const base = clamp(
+    Math.round(input?.historyWindow?.base ?? defaults.historyWindow.base),
+    1,
+    200,
+  );
+  const range = clamp(
+    Math.round(input?.historyWindow?.range ?? defaults.historyWindow.range),
+    0,
+    200,
+  );
+
+  return {
+    sleepHintMessages: sanitizeMessages(
+      input?.sleepHintMessages,
+      defaults.sleepHintMessages,
+    ),
+    busyHintMessages: {
+      working: sanitizeMessages(
+        input?.busyHintMessages?.working,
+        defaults.busyHintMessages.working,
+      ),
+      commuting: sanitizeMessages(
+        input?.busyHintMessages?.commuting,
+        defaults.busyHintMessages.commuting,
+      ),
+    },
+    sleepDelayMs: normalizeDelayRange(
+      input?.sleepDelayMs,
+      defaults.sleepDelayMs,
+    ),
+    busyDelayMs: normalizeDelayRange(input?.busyDelayMs, defaults.busyDelayMs),
+    groupReplyChance: normalizeProbability(
+      input?.groupReplyChance,
+      defaults.groupReplyChance,
+    ),
+    groupReplyDelayMs: normalizeDelayRange(
+      input?.groupReplyDelayMs,
+      defaults.groupReplyDelayMs,
+    ),
+    memoryCompressionEveryMessages: clamp(
+      Math.round(
+        input?.memoryCompressionEveryMessages ??
+          defaults.memoryCompressionEveryMessages,
+      ),
+      1,
+      500,
+    ),
+    historyWindow: {
+      base,
+      range,
+      min: base,
+      max: base + range,
+    },
+    narrativeMilestones: normalizeNarrativeMilestones(
+      input?.narrativeMilestones,
+    ),
+  };
+}
+
+export function calculateHistoryWindow(
+  forgettingCurve?: number,
+  rules: Pick<ReplyLogicRuntimeRules, 'historyWindow'> =
+    DEFAULT_REPLY_LOGIC_RUNTIME_RULES,
+) {
   const normalized = Math.min(
     100,
     Math.max(0, Math.round(forgettingCurve ?? 70)),
   );
-  return Math.round(HISTORY_WINDOW_BASE + (normalized / 100) * HISTORY_WINDOW_RANGE);
+  return Math.round(
+    rules.historyWindow.base + (normalized / 100) * rules.historyWindow.range,
+  );
 }

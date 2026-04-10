@@ -74,6 +74,7 @@ export interface Character {
   personality?: string;
   bio: string;
   isOnline: boolean;
+  onlineMode?: "auto" | "manual";
   isTemplate: boolean;
   expertDomains: string[];
   profile: PersonalityProfile;
@@ -88,6 +89,7 @@ export interface Character {
   aiRelationships?: CharacterAiRelationship[] | null;
   currentStatus?: string | null;
   currentActivity?: string | null;
+  activityMode?: "auto" | "manual";
 }
 
 export type CharacterDraft = Partial<Character>;

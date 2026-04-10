@@ -186,6 +186,7 @@ export type ReplyLogicCharacterContract = {
   personality?: string;
   bio: string;
   isOnline: boolean;
+  onlineMode?: 'auto' | 'manual' | null;
   isTemplate: boolean;
   expertDomains: string[];
   profile: CharacterEntity['profile'];
@@ -200,4 +201,5 @@ export type ReplyLogicCharacterContract = {
   aiRelationships?: CharacterEntity['aiRelationships'] | null;
   currentStatus?: string | null;
   currentActivity?: string | null;
+  activityMode?: 'auto' | 'manual' | null;
 };

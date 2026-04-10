@@ -20,7 +20,7 @@ import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
 import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
-import { calculateHistoryWindow } from './reply-logic.constants';
+import { ReplyLogicRulesService } from './reply-logic-rules.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
@@ -59,6 +59,7 @@ export class AiOrchestratorService {
     private readonly promptBuilder: PromptBuilderService,
     private readonly configService: SystemConfigService,
     private readonly worldService: WorldService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
@@ -325,7 +326,7 @@ export class AiOrchestratorService {
       isGroupChat,
       chatContext,
     );
-    const historyWindow = calculateHistoryWindow(
+    const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
     );
     const includedHistory = conversationHistory.slice(-historyWindow);
@@ -419,7 +420,7 @@ export class AiOrchestratorService {
       isGroupChat,
       chatContext,
     );
-    const historyWindow = calculateHistoryWindow(
+    const historyWindow = await this.replyLogicRules.calculateHistoryWindow(
       profile.memory?.forgettingCurve,
     );
     const sanitizedHistory = conversationHistory

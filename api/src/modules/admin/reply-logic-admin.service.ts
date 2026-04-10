@@ -12,21 +12,10 @@ import { GroupMessageEntity } from '../chat/group-message.entity';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { SystemConfigService } from '../config/config.service';
 import { PromptBuilderService } from '../ai/prompt-builder.service';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
-import {
-  BUSY_DELAY_RANGE_MS,
-  BUSY_HINTS,
-  GROUP_REPLY_CHANCE_BY_FREQUENCY,
-  GROUP_REPLY_DELAY_RANGE_MS,
-  HISTORY_WINDOW_BASE,
-  HISTORY_WINDOW_RANGE,
-  MEMORY_COMPRESSION_INTERVAL,
-  NARRATIVE_PROGRESS_STEPS,
-  SLEEP_DELAY_RANGE_MS,
-  SLEEP_HINTS,
-} from '../ai/reply-logic.constants';
 import type {
   ReplyLogicActorSnapshot,
   ReplyLogicCharacterSnapshot,
@@ -66,47 +55,35 @@ export class ReplyLogicAdminService {
     private readonly promptBuilder: PromptBuilderService,
     private readonly worldService: WorldService,
     private readonly ai: AiOrchestratorService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
 
   async getOverview(): Promise<ReplyLogicOverview> {
     const owner = await this.getOwnerOrThrow();
-    const [characters, conversations, provider, worldContext] =
+    const [characters, conversations, provider, worldContext, runtimeRules] =
       await Promise.all([
         this.characterRepo.find({ order: { name: 'ASC' } }),
         this.listConversationItems(owner.id),
         this.resolveProviderSummary(owner),
         this.resolveWorldContextSummary(),
+        this.replyLogicRules.getRules(),
       ]);
 
     return {
       provider,
       worldContext,
-      constants: {
-        sleepHintMessages: [...SLEEP_HINTS],
-        busyHintMessages: {
-          working: [...BUSY_HINTS.working],
-          commuting: [...BUSY_HINTS.commuting],
-        },
-        sleepDelayMs: { ...SLEEP_DELAY_RANGE_MS },
-        busyDelayMs: { ...BUSY_DELAY_RANGE_MS },
-        groupReplyChance: { ...GROUP_REPLY_CHANCE_BY_FREQUENCY },
-        groupReplyDelayMs: { ...GROUP_REPLY_DELAY_RANGE_MS },
-        memoryCompressionEveryMessages: MEMORY_COMPRESSION_INTERVAL,
-        historyWindow: {
-          base: HISTORY_WINDOW_BASE,
-          range: HISTORY_WINDOW_RANGE,
-          min: HISTORY_WINDOW_BASE,
-          max: HISTORY_WINDOW_BASE + HISTORY_WINDOW_RANGE,
-        },
-        narrativeMilestones: NARRATIVE_PROGRESS_STEPS.map((step) => ({
-          threshold: step.threshold,
-          label: step.label,
-          progress: step.progress,
-        })),
-      },
+      constants: runtimeRules,
       characters: characters.map((character) => this.toCharacterOverviewItem(character)),
       conversations,
     };
+  }
+
+  async getRuntimeRules() {
+    return this.replyLogicRules.getRules();
+  }
+
+  async setRuntimeRules(payload: Parameters<ReplyLogicRulesService['setRules']>[0]) {
+    return this.replyLogicRules.setRules(payload);
   }
 
   async getCharacterSnapshot(
@@ -521,7 +498,7 @@ export class ReplyLogicAdminService {
         }),
       );
     const stateGate = input.includeStateGate
-      ? this.describeDirectStateGate(character.currentActivity)
+      ? await this.describeDirectStateGate(character.currentActivity)
       : this.describeNonDirectStateGate();
 
     return {
@@ -549,16 +526,17 @@ export class ReplyLogicAdminService {
     };
   }
 
-  private describeDirectStateGate(
+  private async describeDirectStateGate(
     activity?: string | null,
-  ): ReplyLogicStateGateSummary {
+  ): Promise<ReplyLogicStateGateSummary> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     if (activity === 'sleeping') {
       return {
         mode: 'sleep_hint_delay',
         activity,
         reason: '当前活动为 sleeping，先发系统提示，再进入延迟回复。',
-        delayMs: { ...SLEEP_DELAY_RANGE_MS },
-        hintMessages: [...SLEEP_HINTS],
+        delayMs: { ...runtimeRules.sleepDelayMs },
+        hintMessages: [...runtimeRules.sleepHintMessages],
       };
     }
 
@@ -567,8 +545,8 @@ export class ReplyLogicAdminService {
         mode: 'busy_hint_delay',
         activity,
         reason: '当前活动为 working / commuting，先发忙碌提示，再进入延迟回复。',
-        delayMs: { ...BUSY_DELAY_RANGE_MS },
-        hintMessages: [...(BUSY_HINTS[activity] ?? [])],
+        delayMs: { ...runtimeRules.busyDelayMs },
+        hintMessages: [...(runtimeRules.busyHintMessages[activity] ?? [])],
       };
     }
 
@@ -779,6 +757,10 @@ export class ReplyLogicAdminService {
       personality: character.personality,
       bio: character.bio,
       isOnline: character.isOnline,
+      onlineMode:
+        character.onlineMode === 'manual'
+          ? ('manual' as const)
+          : ('auto' as const),
       isTemplate: character.isTemplate,
       expertDomains: character.expertDomains,
       profile: character.profile,
@@ -793,6 +775,10 @@ export class ReplyLogicAdminService {
       aiRelationships: character.aiRelationships ?? null,
       currentStatus: character.currentStatus ?? null,
       currentActivity: character.currentActivity ?? null,
+      activityMode:
+        character.activityMode === 'manual'
+          ? ('manual' as const)
+          : ('auto' as const),
     };
   }
 }
