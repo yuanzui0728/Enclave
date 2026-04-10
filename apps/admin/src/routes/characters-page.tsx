@@ -121,6 +121,13 @@ export function CharactersPage() {
               >
                 <Button variant="secondary" size="sm">工厂</Button>
               </Link>
+              <Link
+                to="/characters/$characterId/runtime"
+                params={{ characterId: character.id }}
+                className="inline-flex"
+              >
+                <Button variant="secondary" size="sm">运行</Button>
+              </Link>
               <Button
                 onClick={() => deleteMutation.mutate(character.id)}
                 disabled={deleteMutation.isPending}
