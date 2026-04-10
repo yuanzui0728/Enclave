@@ -81,6 +81,7 @@ type ChatComposerProps = {
   mobileShortcutRequest?: {
     action: "voice-message" | "camera" | "album";
     nonce: number;
+  onStartVoiceCall?: () => void;
   } | null;
   onMobileShortcutHandled?: () => void;
   onCancelReply?: () => void;
@@ -148,6 +149,7 @@ type AttachmentDraft =
 
 export function ChatComposer({
   value,
+  onStartVoiceCall,
   placeholder,
   variant = "mobile",
   pending = false,
@@ -1966,6 +1968,7 @@ export function ChatComposer({
                     ref={mobileTextareaRef}
                     rows={1}
                     value={value}
+            onStartVoiceCall={onStartVoiceCall}
                     onChange={(event) => {
                       onChange(event.target.value);
                       setInputCursor(

@@ -278,6 +278,15 @@ export function ConversationThreadPanel({
     if (isDesktop) {
       setDesktopCallPanelKind(kind);
       return;
+    if (kind === "voice") {
+      setPendingCallFallback(null);
+      void navigate({
+        to: "/chat/$conversationId/voice-call",
+        params: { conversationId },
+      });
+      return;
+    }
+
     }
 
     setPendingCallFallback(kind);
@@ -602,6 +611,13 @@ export function ConversationThreadPanel({
       ) : null}
     </div>
   );
+          onStartVoiceCall={() => {
+            setPendingCallFallback(null);
+            void navigate({
+              to: "/chat/$conversationId/voice-call",
+              params: { conversationId },
+            });
+          }}
 }
 
 function describeReplyPreview(message: ChatRenderableMessage) {
