@@ -45,6 +45,14 @@ export class ChatController {
     return this.chatService.getMessages(id);
   }
 
+  @Post(':conversationId/messages/:messageId/recall')
+  recallMessage(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.chatService.recallConversationMessage(conversationId, messageId);
+  }
+
   @Post(':id/read')
   markRead(@Param('id') id: string) {
     return this.chatService.markConversationRead(id);
@@ -176,6 +184,14 @@ export class GroupController {
   @Get(':id/messages')
   getMessages(@Param('id') id: string, @Query('limit') limit?: string) {
     return this.groupService.getMessages(id, Number(limit) || 100);
+  }
+
+  @Post(':groupId/messages/:messageId/recall')
+  recallGroupMessage(
+    @Param('groupId') groupId: string,
+    @Param('messageId') messageId: string,
+  ) {
+    return this.groupService.recallOwnerMessage(groupId, messageId);
   }
 
   @Post(':id/pin')

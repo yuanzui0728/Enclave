@@ -2,7 +2,11 @@ import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import path from 'path';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
@@ -262,6 +266,40 @@ export class ChatService {
     });
 
     return this._entityToConversation(updated);
+  }
+
+  async recallConversationMessage(
+    convId: string,
+    messageId: string,
+  ): Promise<Message> {
+    const entity = await this.requireOwnedConversation(convId);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const message = await this.msgRepo.findOneBy({
+      id: messageId,
+      conversationId: convId,
+    });
+
+    if (!message) {
+      throw new NotFoundException(`Message ${messageId} not found`);
+    }
+
+    if (message.senderType !== 'user' || message.senderId !== owner.id) {
+      throw new BadRequestException('只能撤回自己发送的消息。');
+    }
+
+    const recalled = await this.msgRepo.save({
+      ...message,
+      senderType: 'system',
+      senderId: 'system',
+      senderName: 'system',
+      type: 'system',
+      text: '你撤回了一条消息',
+      attachmentKind: null,
+      attachmentPayload: null,
+    });
+
+    this.conversationHistory.delete(entity.id);
+    return this._entityToMessage(recalled);
   }
 
   async setConversationPinned(

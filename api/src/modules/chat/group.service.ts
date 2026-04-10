@@ -345,6 +345,40 @@ export class GroupService {
     return this.toGroup(updated);
   }
 
+  async recallOwnerMessage(
+    groupId: string,
+    messageId: string,
+  ): Promise<GroupMessage> {
+    await this.requireAccessibleGroup(groupId);
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const message = await this.messageRepo.findOneBy({
+      id: messageId,
+      groupId,
+    });
+
+    if (!message) {
+      throw new NotFoundException(`Group message ${messageId} not found`);
+    }
+
+    if (message.senderType !== 'user' || message.senderId !== owner.id) {
+      throw new BadRequestException('只能撤回自己发送的消息。');
+    }
+
+    const recalled = await this.messageRepo.save({
+      ...message,
+      senderId: 'system',
+      senderType: 'system',
+      senderName: 'system',
+      senderAvatar: undefined,
+      text: '你撤回了一条消息',
+      type: 'system',
+      attachmentKind: null,
+      attachmentPayload: null,
+    });
+
+    return this.toGroupMessage(recalled);
+  }
+
   async hideGroup(groupId: string): Promise<Group> {
     const group = await this.requireOwnedGroup(groupId);
     const updated = await this.groupRepo.save({

@@ -135,8 +135,10 @@
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
 - 会话管理路由：
   - `POST /api/conversations/:id/pin`
+  - `POST /api/conversations/:id/unread`
   - `POST /api/conversations/:id/hide`
   - `POST /api/conversations/:id/clear`
+  - `POST /api/conversations/:id/messages/:messageId/recall`
   - `GET /api/conversations/:id/background`
   - `PATCH /api/conversations/:id/background`
   - `DELETE /api/conversations/:id/background`
@@ -149,7 +151,9 @@
   - `POST /api/groups/:id/pin`
   - `POST /api/groups/:id/clear`
   - `POST /api/groups/:id/read`
+  - `POST /api/groups/:id/unread`
   - `POST /api/groups/:id/hide`
+  - `POST /api/groups/:id/messages/:messageId/recall`
   - `PATCH /api/groups/:id/me`
   - `POST /api/groups/:id/leave`
   - `DELETE /api/groups/:id/members/:memberId`

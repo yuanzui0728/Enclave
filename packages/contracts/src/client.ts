@@ -804,6 +804,20 @@ export function getConversationMessages(id: string, baseUrl?: string) {
   );
 }
 
+export function recallConversationMessage(
+  conversationId: string,
+  messageId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<Message>(
+    `/conversations/${conversationId}/messages/${messageId}/recall`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function markConversationRead(id: string, baseUrl?: string) {
   return requestLegacyApi<void>(
     `/conversations/${id}/read`,
@@ -1076,6 +1090,20 @@ export function getGroupMessages(id: string, baseUrl?: string) {
   return requestLegacyApi<GroupMessage[]>(
     `/groups/${id}/messages`,
     undefined,
+    baseUrl,
+  );
+}
+
+export function recallGroupMessage(
+  groupId: string,
+  messageId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<GroupMessage>(
+    `/groups/${groupId}/messages/${messageId}/recall`,
+    {
+      method: "POST",
+    },
     baseUrl,
   );
 }
