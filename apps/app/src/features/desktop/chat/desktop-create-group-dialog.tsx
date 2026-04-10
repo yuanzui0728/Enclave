@@ -785,11 +785,12 @@ export function DesktopCreateGroupDialog({
                       >
                         <div className="space-y-3">
                           {shareableMessageSections.map((section) => (
-                            <div key={section.key}>
+                            <div key={section.key} className="rounded-[10px] bg-[#fcfcfc] px-2 py-2">
                               <div className="sticky top-0 z-10 -mx-1.5 mb-1 bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-dim)] backdrop-blur">
                                 {section.label}
                               </div>
-                              <div className="space-y-1">
+                              <div className="relative space-y-2 pl-12">
+                                <div className="absolute bottom-3 left-[33px] top-3 w-px bg-[rgba(15,23,42,0.08)]" />
                                 {section.items.map((message) => {
                                   const checked = selectedMessageIds.includes(message.id);
                                   const focused =
@@ -806,36 +807,55 @@ export function DesktopCreateGroupDialog({
                                         toggleMessageSelection(message.id)
                                       }
                                       className={cn(
-                                        "flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left transition",
+                                        "group relative flex w-full items-start gap-3 rounded-[12px] px-2 py-1.5 text-left transition",
                                         checked
-                                          ? "bg-[rgba(7,193,96,0.08)]"
+                                          ? "bg-[rgba(7,193,96,0.05)]"
                                           : "hover:bg-[#f7f7f7]",
                                         focused
                                           ? "ring-1 ring-[rgba(7,193,96,0.24)]"
                                           : "",
                                       )}
                                     >
+                                      <div className="absolute left-7 top-4 flex -translate-x-1/2 items-center justify-center">
+                                        <div
+                                          className={cn(
+                                            "h-3 w-3 rounded-full border-2 bg-white transition-colors",
+                                            checked
+                                              ? "border-[#07c160] bg-[#07c160]"
+                                              : focused
+                                                ? "border-[rgba(7,193,96,0.5)]"
+                                                : "border-[rgba(15,23,42,0.14)]",
+                                          )}
+                                        />
+                                      </div>
+                                      <div className="w-10 shrink-0 pt-1 text-[11px] text-[color:var(--text-dim)]">
+                                        {formatShareableMessageTime(message.createdAt)}
+                                      </div>
                                       <div
                                         className={cn(
-                                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                          "min-w-0 flex-1 rounded-[10px] border px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
                                           checked
-                                            ? "border-[#07c160] bg-[#07c160] text-white"
-                                            : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                            ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
+                                            : "border-black/6 bg-white group-hover:border-black/10",
                                         )}
                                       >
-                                        <Check size={12} strokeWidth={2.8} />
-                                      </div>
-                                      <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
                                           <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
                                             {message.senderName}
                                           </span>
-                                          <span className="text-[11px] text-[color:var(--text-dim)]">
+                                          <span className="rounded-full bg-[#f4f4f4] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
                                             {formatMessageTypeLabel(message)}
                                           </span>
-                                          <span className="ml-auto shrink-0 text-[11px] text-[color:var(--text-dim)]">
-                                            {formatShareableMessageTime(message.createdAt)}
-                                          </span>
+                                          <div
+                                            className={cn(
+                                              "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                              checked
+                                                ? "border-[#07c160] bg-[#07c160] text-white"
+                                                : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                            )}
+                                          >
+                                            <Check size={12} strokeWidth={2.8} />
+                                          </div>
                                         </div>
                                         <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
                                           {getMessagePreviewText(message)}
