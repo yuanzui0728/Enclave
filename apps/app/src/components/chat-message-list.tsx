@@ -179,15 +179,13 @@ export function ChatMessageList({
   }, []);
 
   useEffect(() => {
-    if (!isDesktop) {
-      setFavoriteSourceIds([]);
-      setSelectionMode(false);
-      setSelectedMessageIds([]);
-      setForwardMessages(null);
-      return;
-    }
-
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
+  }, []);
+
+  useEffect(() => {
+    setSelectionMode(false);
+    setSelectedMessageIds([]);
+    setForwardMessages(null);
   }, [isDesktop]);
 
   useEffect(() => {
@@ -201,7 +199,7 @@ export function ChatMessageList({
   const forwardConversationsQuery = useQuery({
     queryKey: ["desktop-message-forward-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
-    enabled: isDesktop && Boolean(forwardMessages?.length),
+    enabled: Boolean(forwardMessages?.length),
   });
 
   const forwardMutation = useMutation({
@@ -459,8 +457,13 @@ export function ChatMessageList({
   };
 
   const openAttachment = (message: ChatRenderableMessage) => {
+    if (message.type === "image" && message.attachment?.kind === "image") {
+      setViewerMessageId(message.id);
+      return;
+    }
+
     const attachment = getOpenableAttachment(message);
-    if (!attachment) {
+    if (!attachment || attachment.kind !== "file") {
       return;
     }
 
@@ -532,7 +535,7 @@ export function ChatMessageList({
           {actionNotice.message}
         </InlineNotice>
       ) : null}
-      {isDesktop && selectionMode ? (
+      {selectionMode ? (
         <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[20px] border border-black/6 bg-white/92 px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur">
           <div className="text-sm text-[color:var(--text-primary)]">
             已选择 {selectedMessageIds.length} 条消息
@@ -605,6 +608,13 @@ export function ChatMessageList({
             ) : null}
             <div
               id={`chat-message-${message.id}`}
+              onClick={
+                selectionMode
+                  ? () => {
+                      toggleSelectedMessage(message.id);
+                    }
+                  : undefined
+              }
               onContextMenu={(event) =>
                 handleMessageContextMenu(event, message)
               }
@@ -798,6 +808,23 @@ export function ChatMessageList({
               }
             : undefined
         }
+        onForward={
+          mobileActionMessage && canForwardMessage(mobileActionMessage)
+            ? () => {
+                setForwardMessages([mobileActionMessage]);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        onMultiSelect={
+          mobileActionMessage
+            ? () => {
+                setSelectionMode(true);
+                setSelectedMessageIds([mobileActionMessage.id]);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
         onToggleFavorite={
           mobileActionMessage
             ? () => {
@@ -847,7 +874,7 @@ export function ChatMessageList({
             : undefined
         }
         openAttachmentLabel={
-          mobileActionMessage?.type === "image" ? "打开图片" : "打开文件"
+          mobileActionMessage?.type === "image" ? "查看图片" : "打开文件"
         }
         onSaveAttachment={
           mobileActionMessage && getOpenableAttachment(mobileActionMessage)
@@ -1364,7 +1391,10 @@ function SelectionToggle({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick();
+      }}
       className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs transition ${
         checked
           ? "border-[rgba(7,193,96,0.22)] bg-[#07c160] text-white shadow-[0_8px_18px_rgba(7,193,96,0.20)]"
