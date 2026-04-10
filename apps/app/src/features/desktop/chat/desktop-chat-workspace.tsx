@@ -30,6 +30,7 @@ import {
   DesktopChatSidePanel,
   DesktopChatSidePanelPlaceholder,
 } from "./desktop-chat-side-panel";
+import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 import { createDesktopNote } from "./desktop-notes-storage";
 
 type DesktopChatWorkspaceProps = {
@@ -412,16 +413,14 @@ export function DesktopChatWorkspace({
           subtitle={activeConversation.title}
           onClose={() => setRightPanelMode(null)}
         >
-          <DesktopChatSidePanelPlaceholder
-            title={
-              rightPanelMode === "history" ? "聊天记录侧栏" : "聊天信息侧栏"
-            }
-            description={
-              rightPanelMode === "history"
-                ? "下一步接入当前会话搜索和结果定位，替换掉独立全页搜索。"
-                : "下一步接入单聊 / 群聊资料、设置项和危险操作。"
-            }
-          />
+          {rightPanelMode === "history" ? (
+            <DesktopChatHistoryPanel conversation={activeConversation} />
+          ) : (
+            <DesktopChatSidePanelPlaceholder
+              title="聊天信息侧栏"
+              description="下一步接入单聊 / 群聊资料、设置项和危险操作。"
+            />
+          )}
         </DesktopChatSidePanel>
       ) : null}
     </div>
