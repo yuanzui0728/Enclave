@@ -85,11 +85,13 @@ export function DesktopChatHistoryPanel({
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState<HistoryFilterType>("all");
   const [dateFilter, setDateFilter] = useState<HistoryDateFilter>("all");
+  const [specificDate, setSpecificDate] = useState("");
   const [senderFilter, setSenderFilter] = useState("all");
   const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
 
   useEffect(() => {
     setHistoryLimit(INITIAL_HISTORY_LIMIT);
+    setSpecificDate("");
   }, [conversation.id]);
 
   const messagesQuery = useQuery({
@@ -178,6 +180,10 @@ export function DesktopChatHistoryPanel({
         return false;
       }
 
+      if (specificDate && !matchesSpecificHistoryDate(row.createdAt, specificDate)) {
+        return false;
+      }
+
       if (!trimmedKeyword) {
         return true;
       }
@@ -193,7 +199,14 @@ export function DesktopChatHistoryPanel({
     });
 
     return rows.slice(0, MAX_VISIBLE_ROWS);
-  }, [dateFilter, historyRows, senderFilter, trimmedKeyword, typeFilter]);
+  }, [
+    dateFilter,
+    historyRows,
+    senderFilter,
+    specificDate,
+    trimmedKeyword,
+    typeFilter,
+  ]);
   const mayHaveEarlierMessages =
     historyRows.length > 0 && historyRows.length >= historyLimit;
 
@@ -241,7 +254,10 @@ export function DesktopChatHistoryPanel({
             <button
               key={item.id}
               type="button"
-              onClick={() => setDateFilter(item.id)}
+              onClick={() => {
+                setDateFilter(item.id);
+                setSpecificDate("");
+              }}
               className={cn(
                 "rounded-full px-3 py-1.5 text-[12px] transition",
                 dateFilter === item.id
@@ -253,6 +269,36 @@ export function DesktopChatHistoryPanel({
             </button>
           ))}
         </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="date"
+            value={specificDate}
+            onChange={(event) => {
+              setSpecificDate(event.target.value);
+              if (event.target.value) {
+                setDateFilter("all");
+              }
+            }}
+            className="h-10 min-w-0 flex-1 rounded-xl border border-black/8 bg-[#f5f5f5] px-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+          />
+          {specificDate ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setSpecificDate("")}
+              className="shrink-0 rounded-full"
+            >
+              清除日期
+            </Button>
+          ) : null}
+        </div>
+        {specificDate ? (
+          <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+            当前按 {specificDate} 精确筛选聊天记录。
+          </div>
+        ) : null}
 
         {isGroupConversation ? (
           <div className="mt-3">
@@ -569,4 +615,24 @@ function startOfToday() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today.getTime();
+}
+
+function matchesSpecificHistoryDate(createdAt: string, specificDate: string) {
+  if (!specificDate) {
+    return true;
+  }
+
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return false;
+  }
+
+  const date = new Date(`${specificDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const dayStart = date.getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+  return timestamp >= dayStart && timestamp < dayEnd;
 }
