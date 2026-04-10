@@ -53,6 +53,7 @@ import {
   formatReminderListTimestamp,
   type ChatReminderEntry,
 } from "../features/chat/chat-reminder-entries";
+import { useChatReminderNowTimestamp } from "../features/chat/use-chat-reminder-now-timestamp";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
@@ -136,7 +137,9 @@ function MobileChatListPage() {
   >(null);
   const [pendingHideConversation, setPendingHideConversation] =
     useState<PendingHideConversation | null>(null);
-  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  const nowTimestamp = useChatReminderNowTimestamp(
+    localMessageActionState.reminders.length,
+  );
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
 
@@ -328,18 +331,6 @@ function MobileChatListPage() {
       setOpenSwipeConversationId(null);
     }
   }, [openSwipeConversationId, visibleConversations]);
-
-  useEffect(() => {
-    if (!reminderEntries.length) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setNowTimestamp(Date.now());
-    }, 30_000);
-
-    return () => window.clearInterval(timer);
-  }, [reminderEntries.length]);
 
   useEffect(() => {
     return () => {

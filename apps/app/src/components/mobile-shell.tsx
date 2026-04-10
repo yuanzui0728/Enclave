@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { useMemo, type PropsWithChildren } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
@@ -11,6 +11,7 @@ import {
 import { cn } from "@yinjie/ui";
 import { buildDueChatReminderEntries } from "../features/chat/chat-reminder-entries";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
+import { useChatReminderNowTimestamp } from "../features/chat/use-chat-reminder-now-timestamp";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -28,7 +29,7 @@ export function MobileShell({ children }: PropsWithChildren) {
   const showTabs = pathname.startsWith("/tabs/") && pathname !== "/tabs/search";
   const runtimeConfig = useAppRuntimeConfig();
   const { reminders } = useLocalChatMessageActionState();
-  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  const nowTimestamp = useChatReminderNowTimestamp(reminders.length);
 
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
@@ -49,18 +50,6 @@ export function MobileShell({ children }: PropsWithChildren) {
         .length,
     [conversations, nowTimestamp, reminders],
   );
-
-  useEffect(() => {
-    if (!reminders.length) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setNowTimestamp(Date.now());
-    }, 30_000);
-
-    return () => window.clearInterval(timer);
-  }, [reminders.length]);
 
   return (
     <div className="relative h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">

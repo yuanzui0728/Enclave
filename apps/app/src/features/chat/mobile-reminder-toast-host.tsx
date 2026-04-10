@@ -16,6 +16,7 @@ import {
   markLocalChatMessageReminderNotified,
   useLocalChatMessageActionState,
 } from "./local-chat-message-actions";
+import { useChatReminderNowTimestamp } from "./use-chat-reminder-now-timestamp";
 import { formatMessageTimestamp } from "../../lib/format";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 
@@ -30,7 +31,7 @@ export function MobileReminderToastHost() {
     select: (state) => state.location.hash,
   });
   const { reminders } = useLocalChatMessageActionState();
-  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  const nowTimestamp = useChatReminderNowTimestamp(reminders.length);
   const [dismissedMessageIds, setDismissedMessageIds] = useState<string[]>([]);
 
   const conversationsQuery = useQuery({
@@ -55,18 +56,6 @@ export function MobileReminderToastHost() {
       ) ?? null,
     [dismissedMessageIds, dueReminders],
   );
-
-  useEffect(() => {
-    if (!reminders.length) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setNowTimestamp(Date.now());
-    }, 30_000);
-
-    return () => window.clearInterval(timer);
-  }, [reminders.length]);
 
   useEffect(() => {
     setDismissedMessageIds((current) =>
