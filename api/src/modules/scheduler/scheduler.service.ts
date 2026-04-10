@@ -571,14 +571,15 @@ export class SchedulerService {
     let manualLockedCount = 0;
 
     const getActivity = (): string => {
-      if (hour >= 0 && hour <= 6) return 'sleeping';
-      if (hour === 7 || hour === 8 || hour === 18 || hour === 19) {
+      const schedule = runtimeRules.activityScheduleHours;
+      if (schedule.sleeping.includes(hour)) return 'sleeping';
+      if (schedule.commuting.includes(hour)) {
         return 'commuting';
       }
-      if ((hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 17)) {
+      if (schedule.working.includes(hour)) {
         return 'working';
       }
-      if (hour === 12 || hour === 13 || hour === 20) return 'eating';
+      if (schedule.eating.includes(hour)) return 'eating';
       return 'free';
     };
 

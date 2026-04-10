@@ -94,6 +94,13 @@ export interface ReplyLogicSemanticLabels {
   };
 }
 
+export interface ReplyLogicActivityScheduleRules {
+  sleeping: number[];
+  commuting: number[];
+  working: number[];
+  eating: number[];
+}
+
 export interface ReplyLogicObservabilityTemplates {
   stateGateSleeping: string;
   stateGateBusy: string;
@@ -274,6 +281,7 @@ export interface ReplyLogicConstantSummary {
   relationshipUpdateChance: number;
   relationshipUpdateStep: number;
   relationshipStrengthMax: number;
+  activityScheduleHours: ReplyLogicActivityScheduleRules;
   activityBaseWeight: number;
   proactiveReminderHour: number;
   relationshipInitialBackstory: string;

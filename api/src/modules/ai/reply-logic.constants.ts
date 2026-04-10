@@ -45,6 +45,13 @@ export type ReplyLogicSemanticLabels = {
   };
 };
 
+export type ReplyLogicActivityScheduleRules = {
+  sleeping: number[];
+  commuting: number[];
+  working: number[];
+  eating: number[];
+};
+
 export type ReplyLogicObservabilityTemplates = {
   stateGateSleeping: string;
   stateGateBusy: string;
@@ -228,6 +235,7 @@ export type ReplyLogicRuntimeRules = {
   relationshipUpdateChance: number;
   relationshipUpdateStep: number;
   relationshipStrengthMax: number;
+  activityScheduleHours: ReplyLogicActivityScheduleRules;
   activityBaseWeight: number;
   proactiveReminderHour: number;
   relationshipInitialBackstory: string;
@@ -317,6 +325,13 @@ export const RELATIONSHIP_INITIAL_STRENGTH = 18;
 export const RELATIONSHIP_UPDATE_CHANCE = 0.08;
 export const RELATIONSHIP_UPDATE_STEP = 4;
 export const RELATIONSHIP_STRENGTH_MAX = 100;
+export const DEFAULT_ACTIVITY_SCHEDULE_HOURS: ReplyLogicActivityScheduleRules =
+  Object.freeze({
+    sleeping: [0, 1, 2, 3, 4, 5, 6],
+    commuting: [7, 8, 18, 19],
+    working: [9, 10, 11, 14, 15, 16, 17],
+    eating: [12, 13, 20],
+  });
 export const ACTIVITY_BASE_WEIGHT = 0.8;
 export const PROACTIVE_REMINDER_HOUR = 20;
 export const HISTORY_WINDOW_BASE = 8;
@@ -660,6 +675,12 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     relationshipUpdateChance: RELATIONSHIP_UPDATE_CHANCE,
     relationshipUpdateStep: RELATIONSHIP_UPDATE_STEP,
     relationshipStrengthMax: RELATIONSHIP_STRENGTH_MAX,
+    activityScheduleHours: {
+      sleeping: [...DEFAULT_ACTIVITY_SCHEDULE_HOURS.sleeping],
+      commuting: [...DEFAULT_ACTIVITY_SCHEDULE_HOURS.commuting],
+      working: [...DEFAULT_ACTIVITY_SCHEDULE_HOURS.working],
+      eating: [...DEFAULT_ACTIVITY_SCHEDULE_HOURS.eating],
+    },
     activityBaseWeight: ACTIVITY_BASE_WEIGHT,
     proactiveReminderHour: PROACTIVE_REMINDER_HOUR,
     relationshipInitialBackstory: RELATIONSHIP_INITIAL_BACKSTORY_TEMPLATE,
@@ -1532,6 +1553,15 @@ function normalizeProbability(
   };
 }
 
+function normalizeHourList(value: number[] | undefined, fallback: number[]) {
+  const next = (value ?? [])
+    .map((item) => clamp(Math.round(item), 0, 23))
+    .filter((item, index, list) => list.indexOf(item) === index)
+    .sort((left, right) => left - right);
+
+  return next.length ? next : fallback;
+}
+
 function normalizeNarrativeMilestones(
   value: ReplyLogicRuntimeRules['narrativeMilestones'] | undefined,
 ) {
@@ -1649,6 +1679,24 @@ export function normalizeReplyLogicRuntimeRules(
       1,
       100,
     ),
+    activityScheduleHours: {
+      sleeping: normalizeHourList(
+        input?.activityScheduleHours?.sleeping,
+        defaults.activityScheduleHours.sleeping,
+      ),
+      commuting: normalizeHourList(
+        input?.activityScheduleHours?.commuting,
+        defaults.activityScheduleHours.commuting,
+      ),
+      working: normalizeHourList(
+        input?.activityScheduleHours?.working,
+        defaults.activityScheduleHours.working,
+      ),
+      eating: normalizeHourList(
+        input?.activityScheduleHours?.eating,
+        defaults.activityScheduleHours.eating,
+      ),
+    },
     activityBaseWeight: clamp(
       Number(input?.activityBaseWeight ?? defaults.activityBaseWeight),
       0,
