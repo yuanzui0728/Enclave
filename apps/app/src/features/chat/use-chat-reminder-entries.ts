@@ -5,6 +5,7 @@ import {
   countChatReminderStatuses,
   formatChatReminderSummary,
   filterChatReminderEntries,
+  getChatReminderStatus,
 } from "./chat-reminder-entries";
 import type { LocalChatMessageReminderRecord } from "./local-chat-message-actions";
 import { useChatReminderNowTimestamp } from "./use-chat-reminder-now-timestamp";
@@ -31,7 +32,10 @@ export function useChatReminderEntries({
     [keyword, reminderEntries],
   );
   const dueReminderEntries = useMemo(
-    () => filteredReminderEntries.filter((entry) => entry.isDue),
+    () =>
+      filteredReminderEntries.filter(
+        (entry) => getChatReminderStatus(entry) === "due",
+      ),
     [filteredReminderEntries],
   );
   const filteredReminderStatusCounts = useMemo(

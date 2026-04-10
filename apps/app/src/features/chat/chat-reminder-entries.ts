@@ -58,16 +58,7 @@ export function buildChatReminderEntries(
         notifiedAt: item.notifiedAt,
       };
     })
-    .sort((left, right) => {
-      if (left.isDue !== right.isDue) {
-        return left.isDue ? -1 : 1;
-      }
-
-      return (
-        (parseTimestamp(left.remindAt) ?? 0) -
-        (parseTimestamp(right.remindAt) ?? 0)
-      );
-    });
+    .sort(compareChatReminderEntries);
 }
 
 export function filterChatReminderEntries(
@@ -191,4 +182,40 @@ export function formatChatReminderSummary(counts: ChatReminderStatusCounts) {
   ].filter((part): part is string => Boolean(part));
 
   return parts.length > 0 ? parts.join(" · ") : "暂无提醒";
+}
+
+function compareChatReminderEntries(
+  left: ChatReminderEntry,
+  right: ChatReminderEntry,
+) {
+  const leftStatus = getChatReminderStatus(left);
+  const rightStatus = getChatReminderStatus(right);
+  const statusDiff =
+    getChatReminderStatusPriority(leftStatus) -
+    getChatReminderStatusPriority(rightStatus);
+  if (statusDiff !== 0) {
+    return statusDiff;
+  }
+
+  if (leftStatus === "notified" && rightStatus === "notified") {
+    return (
+      (parseTimestamp(right.notifiedAt ?? right.remindAt) ?? 0) -
+      (parseTimestamp(left.notifiedAt ?? left.remindAt) ?? 0)
+    );
+  }
+
+  return (
+    (parseTimestamp(left.remindAt) ?? 0) - (parseTimestamp(right.remindAt) ?? 0)
+  );
+}
+
+function getChatReminderStatusPriority(status: ChatReminderStatus) {
+  switch (status) {
+    case "due":
+      return 0;
+    case "notified":
+      return 1;
+    case "pending":
+      return 2;
+  }
 }
