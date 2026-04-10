@@ -488,6 +488,24 @@ function DirectChatDetailsPanel({
         </DesktopContactProfileSection>
 
         <DesktopContactProfileSection title="内容与关系">
+          <DesktopContactProfileRow
+            label="共同群聊"
+            value={commonGroups.length ? `${commonGroups.length} 个共同群聊` : "暂时没有共同群聊"}
+            muted={!commonGroups.length}
+          />
+          {commonGroups.slice(0, 2).map((group) => (
+            <DesktopContactProfileActionRow
+              key={group.id}
+              label="群聊"
+              value={group.title}
+              onClick={() => {
+                void navigate({
+                  to: "/group/$groupId",
+                  params: { groupId: group.id },
+                });
+              }}
+            />
+          ))}
           <DesktopContactProfileActionRow
             label="查找记录"
             value="搜索这段聊天"
@@ -518,24 +536,6 @@ function DirectChatDetailsPanel({
             }}
             disabled={!targetCharacterId}
           />
-          <DesktopContactProfileRow
-            label="共同群聊"
-            value={commonGroups.length ? `${commonGroups.length} 个共同群聊` : "暂时没有共同群聊"}
-            muted={!commonGroups.length}
-          />
-          {commonGroups.slice(0, 2).map((group) => (
-            <DesktopContactProfileActionRow
-              key={group.id}
-              label="群聊"
-              value={group.title}
-              onClick={() => {
-                void navigate({
-                  to: "/group/$groupId",
-                  params: { groupId: group.id },
-                });
-              }}
-            />
-          ))}
         </DesktopContactProfileSection>
 
         <DesktopContactProfileSection title="聊天设置">
@@ -571,6 +571,13 @@ function DirectChatDetailsPanel({
 
         <DesktopContactProfileSection title="更多">
           <DesktopContactProfileActionRow
+            label="加入黑名单"
+            value={isBlocked ? "已加入" : "不再接收该角色互动"}
+            danger
+            disabled={busy || isBlocked || !targetCharacterId}
+            onClick={() => setConfirmAction("block")}
+          />
+          <DesktopContactProfileActionRow
             label="删除聊天"
             value="从消息列表移除"
             disabled={busy}
@@ -589,13 +596,6 @@ function DirectChatDetailsPanel({
             danger
             disabled={busy || !targetCharacterId}
             onClick={() => setConfirmAction("report")}
-          />
-          <DesktopContactProfileActionRow
-            label="加入黑名单"
-            value={isBlocked ? "已加入" : "不再接收该角色互动"}
-            danger
-            disabled={busy || isBlocked || !targetCharacterId}
-            onClick={() => setConfirmAction("block")}
           />
         </DesktopContactProfileSection>
       </section>

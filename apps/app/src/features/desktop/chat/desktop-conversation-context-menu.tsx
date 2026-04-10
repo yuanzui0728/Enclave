@@ -87,7 +87,7 @@ export function DesktopConversationContextMenu({
 
       <div
         style={{ left, top }}
-        className="absolute w-[196px] overflow-hidden rounded-[16px] border border-black/6 bg-white py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
+        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-black/8 bg-white py-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
         <ContextMenuButton
@@ -98,14 +98,14 @@ export function DesktopConversationContextMenu({
         />
         <ContextMenuButton
           icon={<BellOff size={15} />}
-          label={isMuted ? "关闭消息免打扰" : "消息免打扰"}
+          label={isMuted ? "关闭免打扰" : "消息免打扰"}
           onClick={onToggleMuted}
           disabled={busy}
         />
         {showMarkRead && onMarkRead ? (
           <ContextMenuButton
             icon={<CheckCheck size={15} />}
-            label="标记为已读"
+            label="标为已读"
             onClick={onMarkRead}
             disabled={busy}
           />
@@ -113,10 +113,13 @@ export function DesktopConversationContextMenu({
         {showMarkUnread && onMarkUnread ? (
           <ContextMenuButton
             icon={<Circle size={15} />}
-            label="标记为未读"
+            label="标为未读"
             onClick={onMarkUnread}
             disabled={busy}
           />
+        ) : null}
+        {(showMarkRead && onMarkRead) || (showMarkUnread && onMarkUnread) ? (
+          <MenuDivider />
         ) : null}
         {onHide ? (
           <ContextMenuButton
@@ -133,6 +136,7 @@ export function DesktopConversationContextMenu({
           disabled={busy}
           danger
         />
+        {onHide || onDelete ? <MenuDivider /> : null}
         {onDelete && deleteLabel ? (
           <ContextMenuButton
             icon={<Trash2 size={15} />}
@@ -183,4 +187,8 @@ function ContextMenuButton({
       <span>{label}</span>
     </button>
   );
+}
+
+function MenuDivider() {
+  return <div className="mx-3 my-1 border-t border-black/6" />;
 }

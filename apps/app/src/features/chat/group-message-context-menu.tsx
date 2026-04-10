@@ -39,7 +39,7 @@ type GroupMessageContextMenuProps = {
   deleteLabel?: string;
 };
 
-const MENU_WIDTH = 188;
+const MENU_WIDTH = 196;
 const VIEWPORT_PADDING = 12;
 
 export function GroupMessageContextMenu({
@@ -66,6 +66,10 @@ export function GroupMessageContextMenu({
   onDelete,
   deleteLabel = "删除",
 }: GroupMessageContextMenuProps) {
+  const normalizedReminderLabel =
+    reminderLabel === "提醒" ? "设为提醒" : reminderLabel;
+  const normalizedFavoriteLabel =
+    favoriteLabel === "收藏消息" ? "收藏" : favoriteLabel;
   const actionCount =
     1 +
     Number(Boolean(onReply)) +
@@ -107,12 +111,12 @@ export function GroupMessageContextMenu({
 
       <div
         style={{ left, top }}
-        className="absolute w-[188px] overflow-hidden rounded-[16px] border border-black/6 bg-white py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
+        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-black/8 bg-white py-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {onReply ? (
           <ContextMenuButton
-            label="回复消息"
+            label="回复"
             icon={<CornerUpLeft size={15} />}
             onClick={onReply}
           />
@@ -126,7 +130,7 @@ export function GroupMessageContextMenu({
         ) : null}
         {onForward ? (
           <ContextMenuButton
-            label="转发消息"
+            label="转发"
             icon={<Forward size={15} />}
             onClick={onForward}
           />
@@ -138,21 +142,31 @@ export function GroupMessageContextMenu({
             onClick={onMultiSelect}
           />
         ) : null}
+        <ContextMenuButton
+          label="复制"
+          icon={<Copy size={15} />}
+          onClick={onCopyText}
+        />
+        {onCopySender ? (
+          <ContextMenuButton
+            label="复制发送者"
+            icon={<UserRound size={15} />}
+            onClick={onCopySender}
+          />
+        ) : null}
+        {onReply || onQuoteSelection || onForward || onMultiSelect ? (
+          <MenuDivider />
+        ) : null}
         {onSetReminder ? (
           <ContextMenuButton
-            label={reminderLabel}
+            label={normalizedReminderLabel}
             icon={<BellRing size={15} />}
             onClick={onSetReminder}
           />
         ) : null}
-        <ContextMenuButton
-          label="复制消息"
-          icon={<Copy size={15} />}
-          onClick={onCopyText}
-        />
         {onToggleFavorite ? (
           <ContextMenuButton
-            label={favoriteLabel}
+            label={normalizedFavoriteLabel}
             icon={<Star size={15} />}
             onClick={onToggleFavorite}
           />
@@ -171,12 +185,11 @@ export function GroupMessageContextMenu({
             onClick={onSaveAttachment}
           />
         ) : null}
-        {onCopySender ? (
-          <ContextMenuButton
-            label="复制发送者"
-            icon={<UserRound size={15} />}
-            onClick={onCopySender}
-          />
+        {onSetReminder ||
+        onToggleFavorite ||
+        onOpenAttachment ||
+        onSaveAttachment ? (
+          <MenuDivider />
         ) : null}
         {onRecall ? (
           <ContextMenuButton
@@ -232,4 +245,8 @@ function ContextMenuButton({
       <span>{label}</span>
     </button>
   );
+}
+
+function MenuDivider() {
+  return <div className="mx-3 my-1 border-t border-black/6" />;
 }
