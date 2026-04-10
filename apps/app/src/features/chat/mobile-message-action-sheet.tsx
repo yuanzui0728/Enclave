@@ -5,6 +5,8 @@ type MobileMessageActionSheetProps = {
   onReply?: () => void;
   onForward?: () => void;
   onMultiSelect?: () => void;
+  onSetReminder?: () => void;
+  reminderLabel?: string;
   onToggleFavorite?: () => void;
   favoriteLabel?: string;
   onCopy: () => void;
@@ -13,6 +15,10 @@ type MobileMessageActionSheetProps = {
   openAttachmentLabel?: string;
   onSaveAttachment?: () => void;
   saveAttachmentLabel?: string;
+  onRecall?: () => void;
+  recallLabel?: string;
+  onDelete?: () => void;
+  deleteLabel?: string;
 };
 
 export function MobileMessageActionSheet({
@@ -22,6 +28,8 @@ export function MobileMessageActionSheet({
   onReply,
   onForward,
   onMultiSelect,
+  onSetReminder,
+  reminderLabel = "提醒",
   onToggleFavorite,
   favoriteLabel = "收藏",
   onCopy,
@@ -30,6 +38,10 @@ export function MobileMessageActionSheet({
   openAttachmentLabel = "打开附件",
   onSaveAttachment,
   saveAttachmentLabel = "保存附件",
+  onRecall,
+  recallLabel = "撤回",
+  onDelete,
+  deleteLabel = "删除",
 }: MobileMessageActionSheetProps) {
   if (!open) {
     return null;
@@ -53,6 +65,9 @@ export function MobileMessageActionSheet({
           {onMultiSelect ? (
             <ActionButton label="多选" onClick={onMultiSelect} />
           ) : null}
+          {onSetReminder ? (
+            <ActionButton label={reminderLabel} onClick={onSetReminder} />
+          ) : null}
           {onToggleFavorite ? (
             <ActionButton label={favoriteLabel} onClick={onToggleFavorite} />
           ) : null}
@@ -72,6 +87,12 @@ export function MobileMessageActionSheet({
           {onCopySender ? (
             <ActionButton label="复制发送者" onClick={onCopySender} />
           ) : null}
+          {onRecall ? (
+            <ActionButton label={recallLabel} onClick={onRecall} danger />
+          ) : null}
+          {onDelete ? (
+            <ActionButton label={deleteLabel} onClick={onDelete} danger />
+          ) : null}
         </div>
         <button
           type="button"
@@ -88,15 +109,19 @@ export function MobileMessageActionSheet({
 function ActionButton({
   label,
   onClick,
+  danger = false,
 }: {
   label: string;
   onClick: () => void;
+  danger?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex h-12 w-full items-center justify-center border-b border-black/6 text-[17px] text-[#111827] last:border-b-0"
+      className={`flex h-12 w-full items-center justify-center border-b border-black/6 text-[17px] last:border-b-0 ${
+        danger ? "text-[#d74b45]" : "text-[#111827]"
+      }`}
     >
       {label}
     </button>
