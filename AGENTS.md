@@ -66,6 +66,7 @@
 - `group/$groupId/details`：群聊右上角三个点详情页，对齐微信式群聊信息页
 - `group/$groupId/background`：群聊聊天背景设置路由，对齐微信式“群聊信息 -> 聊天背景”
 - `group/$groupId/announcement`：群公告独立页，承载群公告阅读与编辑
+- `group/$groupId/qr`：群二维码页，承载群邀请卡、群链接与邀请码分享
 - `group/$groupId/search`：群聊聊天记录检索页，由群聊信息页进入
 - `group/$groupId/members/add`：群成员添加页，承载群成员微信式多选添加
 - `group/$groupId/members/remove`：群成员移除页，承载群成员微信式减号选择移除

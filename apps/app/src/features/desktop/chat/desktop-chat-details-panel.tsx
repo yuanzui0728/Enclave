@@ -630,6 +630,16 @@ function GroupChatDetailsPanel({
             });
           }}
         />
+        <DesktopPanelRow
+          label="群二维码"
+          value="查看邀请卡"
+          onClick={() => {
+            void navigate({
+              to: "/group/$groupId/qr",
+              params: { groupId: conversation.id },
+            });
+          }}
+        />
       </DesktopPanelSection>
 
       <DesktopPanelSection title="常用">

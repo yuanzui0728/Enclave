@@ -50,6 +50,9 @@ export function GroupChatDetailsPage() {
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
@@ -64,6 +67,9 @@ export function GroupChatDetailsPage() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -156,6 +162,9 @@ export function GroupChatDetailsPage() {
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -303,9 +312,12 @@ export function GroupChatDetailsPage() {
               />
               <ChatSettingRow
                 label="群二维码"
-                value="暂未开放"
+                value="查看邀请卡"
                 onClick={() => {
-                  setNotice("群二维码能力下一步补。当前先打通群公告和成员管理。");
+                  void navigate({
+                    to: "/group/$groupId/qr",
+                    params: { groupId },
+                  });
                 }}
               />
             </div>
