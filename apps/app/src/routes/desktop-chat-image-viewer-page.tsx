@@ -1,22 +1,98 @@
-import { useEffect, useMemo, type ReactNode } from "react";
-import { useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Download, Printer, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Printer,
+  X,
+} from "lucide-react";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
-import { parseDesktopChatImageViewerRouteHash } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
+import {
+  buildDesktopChatImageViewerRouteHash,
+  parseDesktopChatImageViewerRouteHash,
+  readDesktopChatImageViewerSession,
+  type DesktopChatImageViewerSessionItem,
+} from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 
 export function DesktopChatImageViewerPage() {
+  const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(
     () => parseDesktopChatImageViewerRouteHash(hash),
     [hash],
   );
+  const sessionItems = useMemo(
+    () =>
+      routeState?.sessionId
+        ? readDesktopChatImageViewerSession(routeState.sessionId)
+        : [],
+    [routeState?.sessionId],
+  );
+  const viewerItems = useMemo(() => {
+    if (!routeState) {
+      return [] as DesktopChatImageViewerSessionItem[];
+    }
 
-  const fallbackPath = routeState?.returnTo ?? "/tabs/chat";
+    if (sessionItems.length) {
+      return sessionItems;
+    }
+
+    return [
+      {
+        id: routeState.activeId || "current-image",
+        imageUrl: routeState.imageUrl,
+        title: routeState.title,
+        meta: routeState.meta,
+        returnTo: routeState.returnTo,
+      },
+    ];
+  }, [routeState, sessionItems]);
+  const activeItemIndex = useMemo(() => {
+    if (!viewerItems.length) {
+      return -1;
+    }
+
+    if (!routeState?.activeId) {
+      return 0;
+    }
+
+    const matchedIndex = viewerItems.findIndex(
+      (item) => item.id === routeState.activeId,
+    );
+    return matchedIndex >= 0 ? matchedIndex : 0;
+  }, [routeState?.activeId, viewerItems]);
+  const activeItem =
+    activeItemIndex >= 0 ? viewerItems[activeItemIndex] : undefined;
+  const fallbackPath = activeItem?.returnTo ?? routeState?.returnTo ?? "/tabs/chat";
+
+  const navigateToItem = useCallback(
+    (item: DesktopChatImageViewerSessionItem) => {
+      if (!routeState) {
+        return;
+      }
+
+      void navigate({
+        to: "/desktop/chat-image-viewer",
+        hash: buildDesktopChatImageViewerRouteHash({
+          imageUrl: item.imageUrl,
+          title: item.title,
+          meta: item.meta,
+          returnTo: item.returnTo,
+          sessionId: routeState.sessionId,
+          activeId: item.id,
+        }),
+        replace: true,
+      });
+    },
+    [navigate, routeState],
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!routeState) {
+      if (!activeItem) {
         if (event.key === "Escape") {
           event.preventDefault();
           window.location.assign(fallbackPath);
@@ -26,16 +102,28 @@ export function DesktopChatImageViewerPage() {
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        saveUrlAsFile(routeState.imageUrl, routeState.title);
+        saveUrlAsFile(activeItem.imageUrl, activeItem.title);
         return;
       }
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "p") {
         event.preventDefault();
         openPrintWindow({
-          title: routeState.title,
-          imageUrl: routeState.imageUrl,
+          title: activeItem.title,
+          imageUrl: activeItem.imageUrl,
         });
+        return;
+      }
+
+      if (event.key === "ArrowLeft" && activeItemIndex > 0) {
+        event.preventDefault();
+        navigateToItem(viewerItems[activeItemIndex - 1]!);
+        return;
+      }
+
+      if (event.key === "ArrowRight" && activeItemIndex < viewerItems.length - 1) {
+        event.preventDefault();
+        navigateToItem(viewerItems[activeItemIndex + 1]!);
         return;
       }
 
@@ -47,9 +135,9 @@ export function DesktopChatImageViewerPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [fallbackPath, routeState]);
+  }, [activeItem, activeItemIndex, fallbackPath, navigateToItem, viewerItems]);
 
-  if (!routeState) {
+  if (!routeState || !activeItem) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.92),rgba(8,15,28,1))] p-6">
         <div className="w-full max-w-lg rounded-[30px] border border-white/10 bg-[rgba(15,23,42,0.72)] p-8 shadow-[0_32px_80px_rgba(2,6,23,0.38)] backdrop-blur-xl">
@@ -72,23 +160,26 @@ export function DesktopChatImageViewerPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.92),rgba(8,15,28,1))] text-white">
+    <div className="relative flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.92),rgba(8,15,28,1))] text-white">
       <header className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
         <div className="min-w-0">
           <div className="truncate text-[16px] font-medium">
-            {routeState.title}
+            {activeItem.title}
           </div>
-          {routeState.meta ? (
+          {activeItem.meta ? (
             <div className="mt-1 truncate text-[12px] text-white/68">
-              {routeState.meta}
+              {activeItem.meta}
             </div>
           ) : null}
+          <div className="mt-1 text-[12px] text-white/52">
+            {activeItemIndex + 1} / {viewerItems.length}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
           <StandaloneActionButton
             label="保存图片"
-            onClick={() => saveUrlAsFile(routeState.imageUrl, routeState.title)}
+            onClick={() => saveUrlAsFile(activeItem.imageUrl, activeItem.title)}
           >
             <Download size={16} />
           </StandaloneActionButton>
@@ -96,17 +187,17 @@ export function DesktopChatImageViewerPage() {
             label="打印图片"
             onClick={() =>
               openPrintWindow({
-                title: routeState.title,
-                imageUrl: routeState.imageUrl,
+                title: activeItem.title,
+                imageUrl: activeItem.imageUrl,
               })
             }
           >
             <Printer size={16} />
           </StandaloneActionButton>
-          {routeState.returnTo ? (
+          {activeItem.returnTo ? (
             <StandaloneActionButton
               label="定位到聊天位置"
-              onClick={() => window.location.assign(routeState.returnTo!)}
+              onClick={() => window.location.assign(activeItem.returnTo!)}
             >
               <ArrowLeft size={16} />
             </StandaloneActionButton>
@@ -120,14 +211,58 @@ export function DesktopChatImageViewerPage() {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-8 py-8">
+      {activeItemIndex > 0 ? (
+        <ViewerNavButton
+          label="上一张图片"
+          side="left"
+          onClick={() => navigateToItem(viewerItems[activeItemIndex - 1]!)}
+        >
+          <ChevronLeft size={22} />
+        </ViewerNavButton>
+      ) : null}
+      {activeItemIndex < viewerItems.length - 1 ? (
+        <ViewerNavButton
+          label="下一张图片"
+          side="right"
+          onClick={() => navigateToItem(viewerItems[activeItemIndex + 1]!)}
+        >
+          <ChevronRight size={22} />
+        </ViewerNavButton>
+      ) : null}
+
+      <div className="flex min-h-0 flex-1 items-center justify-center px-20 py-8">
         <img
-          src={routeState.imageUrl}
-          alt={routeState.title}
+          src={activeItem.imageUrl}
+          alt={activeItem.title}
           className="max-h-full max-w-full rounded-[24px] object-contain shadow-[0_32px_88px_rgba(2,6,23,0.46)]"
         />
       </div>
     </div>
+  );
+}
+
+function ViewerNavButton({
+  children,
+  label,
+  onClick,
+  side,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+  side: "left" | "right";
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={`absolute top-1/2 z-10 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/18 ${
+        side === "left" ? "left-6" : "right-6"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
