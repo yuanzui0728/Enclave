@@ -2048,6 +2048,56 @@ function RuntimeRulesEditorCard({
                     }))
                   }
                 />
+                <FieldBlock
+                  label="AI 关系增长概率"
+                  value={draft.relationshipUpdateChance}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      relationshipUpdateChance: parseProbability(
+                        value,
+                        current.relationshipUpdateChance,
+                      ),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="AI 关系增长步长"
+                  value={draft.relationshipUpdateStep}
+                  type="number"
+                  min={0}
+                  max={100}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      relationshipUpdateStep: clamp(
+                        parseNonNegativeInteger(value, current.relationshipUpdateStep),
+                        0,
+                        100,
+                      ),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="AI 关系强度上限"
+                  value={draft.relationshipStrengthMax}
+                  type="number"
+                  min={1}
+                  max={100}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      relationshipStrengthMax: clamp(
+                        parsePositiveInteger(value, current.relationshipStrengthMax),
+                        1,
+                        100,
+                      ),
+                    }))
+                  }
+                />
               </div>
               <TextAreaBlock
                 label="AI 关系初始背景模板（{{leftName}} / {{rightName}}）"
@@ -3507,6 +3557,9 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       场景加好友候选: [...constants.sceneFriendRequestScenes],
       AI关系初始类型: constants.relationshipInitialType,
       AI关系初始强度: constants.relationshipInitialStrength,
+      AI关系增长概率: constants.relationshipUpdateChance,
+      AI关系增长步长: constants.relationshipUpdateStep,
+      AI关系强度上限: constants.relationshipStrengthMax,
       基础活动权重: constants.activityBaseWeight,
       主动提醒小时: constants.proactiveReminderHour,
       AI关系初始背景模板: constants.relationshipInitialBackstory,
