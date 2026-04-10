@@ -43,31 +43,31 @@ const rootActions = [
     key: "album",
     label: "相册",
     icon: ImagePlus,
-    iconClassName: "bg-[linear-gradient(135deg,#7dd3fc,#38bdf8)]",
+    iconClassName: "bg-[#5bbd72]",
   },
   {
     key: "camera",
     label: "拍摄",
     icon: Camera,
-    iconClassName: "bg-[linear-gradient(135deg,#fbbf24,#f97316)]",
+    iconClassName: "bg-[#54a7ff]",
   },
   {
     key: "contact",
     label: "名片",
     icon: ContactRound,
-    iconClassName: "bg-[linear-gradient(135deg,#4ade80,#16a34a)]",
+    iconClassName: "bg-[#f6b14b]",
   },
   {
     key: "location",
     label: "位置",
     icon: MapPin,
-    iconClassName: "bg-[linear-gradient(135deg,#fda4af,#fb7185)]",
+    iconClassName: "bg-[#4cb5f5]",
   },
   {
     key: "file",
     label: "文件",
     icon: FileText,
-    iconClassName: "bg-[linear-gradient(135deg,#c4b5fd,#818cf8)]",
+    iconClassName: "bg-[#5cc8c9]",
   },
 ] as const;
 
@@ -106,25 +106,12 @@ export function MobileChatPlusPanel({
   }
 
   return (
-    <div className="mt-2 overflow-hidden rounded-[18px] border border-black/6 bg-[#f1f1f1] shadow-none">
-      <div className="flex justify-center py-2.5">
-        <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
-      </div>
-
+    <div className="mt-2 overflow-hidden border-t border-black/6 bg-[#f7f7f7] shadow-none">
       {activeView === "root" ? (
-        <div className="pb-5 pt-1">
-          <div className="px-4">
-            <div className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
-              更多功能
-            </div>
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              选择要发送的内容
-            </div>
-          </div>
-
+        <div className="pb-6 pt-4">
           <div
             ref={rootPagerRef}
-            className="relative mt-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="relative flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             onScroll={(event) => {
               const target = event.currentTarget;
               const nextPage = Math.round(
@@ -140,7 +127,7 @@ export function MobileChatPlusPanel({
               {rootActionPages.map((page, pageIndex) => (
                 <div
                   key={`page-${pageIndex}`}
-                  className="grid min-w-full shrink-0 snap-start grid-cols-4 gap-y-4 px-4"
+                  className="grid min-w-full shrink-0 snap-start grid-cols-4 gap-y-5 px-5"
                 >
                   {page.map((item) => {
                     const Icon = item.icon;
@@ -161,17 +148,17 @@ export function MobileChatPlusPanel({
                         type="button"
                         onClick={handleClick}
                         disabled={busy}
-                        className="flex flex-col items-center gap-2 text-center disabled:opacity-60"
+                        className="flex flex-col items-center gap-2.5 text-center disabled:opacity-60"
                       >
                         <div
                           className={cn(
-                            "flex h-14 w-14 items-center justify-center rounded-[18px] text-white shadow-[var(--shadow-soft)]",
+                            "flex h-14 w-14 items-center justify-center rounded-[16px] border border-black/6 text-white shadow-none",
                             item.iconClassName,
                           )}
                         >
                           <Icon size={22} />
                         </div>
-                        <span className="text-xs text-[color:var(--text-secondary)]">
+                        <span className="text-[12px] text-[#5f5f5f]">
                           {item.label}
                         </span>
                       </button>
@@ -198,7 +185,7 @@ export function MobileChatPlusPanel({
                   className={cn(
                     "h-1.5 rounded-full transition-all duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     activeRootPage === pageIndex
-                      ? "w-5 bg-[color:var(--brand-primary)]"
+                      ? "w-5 bg-[#07c160]"
                       : "w-1.5 bg-[rgba(148,163,184,0.42)]",
                   )}
                   aria-label={`切换到第 ${pageIndex + 1} 页`}
@@ -301,11 +288,11 @@ export function MobileChatPlusPanel({
 
 function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <div className="flex items-center gap-2 px-3 pb-2 pt-1">
+    <div className="flex items-center gap-2 px-3 pb-2 pt-2">
       <button
         type="button"
         onClick={onBack}
-        className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-white/72"
+        className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-white/72"
         aria-label="返回"
       >
         <ChevronLeft size={16} />
