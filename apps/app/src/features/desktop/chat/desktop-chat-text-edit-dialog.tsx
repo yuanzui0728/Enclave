@@ -69,7 +69,7 @@ export function DesktopChatTextEditDialog({
     normalizedDraft === normalizedInitialValue;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-6 backdrop-blur-[4px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
         aria-label={`关闭${title}弹层`}
@@ -82,7 +82,7 @@ export function DesktopChatTextEditDialog({
       />
 
       <form
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[30px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]"
         onSubmit={(event) => {
           event.preventDefault();
           if (confirmDisabled) {
@@ -92,7 +92,7 @@ export function DesktopChatTextEditDialog({
           onConfirm(normalizedDraft);
         }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div className="min-w-0">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               {title}
@@ -107,7 +107,7 @@ export function DesktopChatTextEditDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
@@ -123,7 +123,7 @@ export function DesktopChatTextEditDialog({
               placeholder={placeholder}
               rows={6}
               disabled={pending}
-              className="min-h-[180px] resize-none rounded-[24px]"
+              className="min-h-[180px] resize-none rounded-[12px] border-black/8 bg-white shadow-none"
             />
           ) : (
             <TextField
@@ -132,9 +132,14 @@ export function DesktopChatTextEditDialog({
               onChange={(event) => setDraft(event.target.value)}
               placeholder={placeholder}
               disabled={pending}
-              className="rounded-[24px]"
+              className="rounded-[10px] border-black/8 bg-white shadow-none"
             />
           )}
+
+          <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+            <span>{emptyAllowed ? "可留空保存" : "内容不能为空"}</span>
+            <span>{normalizedDraft.length} 字</span>
+          </div>
 
           <div className="flex items-center justify-end gap-3">
             <Button
@@ -142,7 +147,7 @@ export function DesktopChatTextEditDialog({
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-2xl px-6"
+              className="rounded-[10px] border-black/8 bg-white px-6 shadow-none hover:bg-[#efefef]"
             >
               取消
             </Button>
@@ -150,7 +155,7 @@ export function DesktopChatTextEditDialog({
               type="submit"
               variant="primary"
               disabled={confirmDisabled}
-              className="rounded-2xl px-6"
+              className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
             >
               {pending ? "正在保存..." : submitLabel}
             </Button>

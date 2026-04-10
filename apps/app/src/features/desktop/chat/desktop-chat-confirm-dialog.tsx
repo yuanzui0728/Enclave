@@ -48,7 +48,7 @@ export function DesktopChatConfirmDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-6 backdrop-blur-[4px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
         aria-label={`关闭${title}弹层`}
@@ -60,8 +60,8 @@ export function DesktopChatConfirmDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[520px] overflow-hidden rounded-[30px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)]">
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+      <div className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
+        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div className="min-w-0">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               {title}
@@ -74,20 +74,20 @@ export function DesktopChatConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-6 py-5">
+        <div className="flex items-center justify-end gap-3 bg-[#f7f7f7] px-6 py-4">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-2xl px-6"
+            className="rounded-[10px] border-black/8 bg-white px-6 shadow-none hover:bg-[#efefef]"
           >
             取消
           </Button>
@@ -96,7 +96,11 @@ export function DesktopChatConfirmDialog({
             variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
             disabled={pending}
-            className="rounded-2xl px-6"
+            className={
+              danger
+                ? "rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
+                : "rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
+            }
           >
             {pending ? pendingLabel : confirmLabel}
           </Button>
