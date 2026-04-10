@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ContactRound,
   FileText,
+  Gift,
   ImagePlus,
   MapPin,
   Phone,
@@ -54,12 +55,13 @@ type RootAction = {
     | "album"
     | "camera"
     | "video-call"
+    | "red-packet"
+    | "transfer"
     | "contact"
     | "location"
     | "voice-call"
     | "file"
-    | "favorite"
-    | "transfer";
+    | "favorite";
   label: string;
   icon: typeof ImagePlus;
   iconClassName: string;
@@ -67,20 +69,20 @@ type RootAction = {
   disabledLabel?: string;
 };
 
-const rootActions: RootAction[] = [
-  {
+const rootActions: Record<RootAction["key"], RootAction> = {
+  album: {
     key: "album",
     label: "相册",
     icon: ImagePlus,
     iconClassName: "bg-[#5bbd72]",
   },
-  {
+  camera: {
     key: "camera",
     label: "拍摄",
     icon: Camera,
     iconClassName: "bg-[#54a7ff]",
   },
-  {
+  "video-call": {
     key: "video-call",
     label: "视频通话",
     icon: Video,
@@ -88,39 +90,15 @@ const rootActions: RootAction[] = [
     disabled: true,
     disabledLabel: "待接入",
   },
-  {
-    key: "contact",
-    label: "名片",
-    icon: ContactRound,
-    iconClassName: "bg-[#f6b14b]",
-  },
-  {
-    key: "location",
-    label: "位置",
-    icon: MapPin,
-    iconClassName: "bg-[#4cb5f5]",
-  },
-  {
-    key: "voice-call",
-    label: "语音通话",
-    icon: Phone,
-    iconClassName: "bg-[#38b36b]",
+  "red-packet": {
+    key: "red-packet",
+    label: "红包",
+    icon: Gift,
+    iconClassName: "bg-[#ef6a62]",
     disabled: true,
     disabledLabel: "待接入",
   },
-  {
-    key: "file",
-    label: "文件",
-    icon: FileText,
-    iconClassName: "bg-[#5cc8c9]",
-  },
-  {
-    key: "favorite",
-    label: "收藏",
-    icon: Star,
-    iconClassName: "bg-[#f3c64e]",
-  },
-  {
+  transfer: {
     key: "transfer",
     label: "转账",
     icon: WalletCards,
@@ -128,7 +106,53 @@ const rootActions: RootAction[] = [
     disabled: true,
     disabledLabel: "待接入",
   },
-] as const;
+  contact: {
+    key: "contact",
+    label: "名片",
+    icon: ContactRound,
+    iconClassName: "bg-[#f6b14b]",
+  },
+  location: {
+    key: "location",
+    label: "位置",
+    icon: MapPin,
+    iconClassName: "bg-[#4cb5f5]",
+  },
+  "voice-call": {
+    key: "voice-call",
+    label: "语音通话",
+    icon: Phone,
+    iconClassName: "bg-[#38b36b]",
+    disabled: true,
+    disabledLabel: "待接入",
+  },
+  file: {
+    key: "file",
+    label: "文件",
+    icon: FileText,
+    iconClassName: "bg-[#5cc8c9]",
+  },
+  favorite: {
+    key: "favorite",
+    label: "收藏",
+    icon: Star,
+    iconClassName: "bg-[#f3c64e]",
+  },
+} as const;
+
+const ROOT_ACTION_PAGE_KEYS: RootAction["key"][][] = [
+  [
+    "album",
+    "camera",
+    "video-call",
+    "location",
+    "red-packet",
+    "transfer",
+    "favorite",
+    "contact",
+  ],
+  ["file", "voice-call"],
+];
 
 export function MobileChatPlusPanel({
   open,
@@ -171,7 +195,9 @@ export function MobileChatPlusPanel({
     setFavoriteRecords(readDesktopFavorites());
   }, [activeView, open]);
 
-  const rootActionPages = chunkRootActions(rootActions, ROOT_ACTIONS_PER_PAGE);
+  const rootActionPages = ROOT_ACTION_PAGE_KEYS.map((page) =>
+    buildRootActionPage(page),
+  );
 
   if (!open) {
     return null;
@@ -199,9 +225,22 @@ export function MobileChatPlusPanel({
               {rootActionPages.map((page, pageIndex) => (
                 <div
                   key={`page-${pageIndex}`}
-                  className="grid min-w-full shrink-0 snap-start grid-cols-4 gap-y-5 px-4"
+                  className="grid min-w-full shrink-0 snap-start grid-cols-4 grid-rows-2 gap-y-5 px-4"
                 >
-                  {page.map((item) => {
+                  {page.map((item, slotIndex) => {
+                    if (!item) {
+                      return (
+                        <div
+                          key={`placeholder-${pageIndex}-${slotIndex}`}
+                          aria-hidden="true"
+                          className="flex flex-col items-center gap-2 opacity-0 select-none"
+                        >
+                          <div className="h-14 w-14 rounded-[14px] border border-transparent" />
+                          <div className="min-h-[2.15rem] w-full" />
+                        </div>
+                      );
+                    }
+
                     const Icon = item.icon;
                     const handleClick =
                       item.key === "album"
@@ -316,9 +355,7 @@ export function MobileChatPlusPanel({
                   disabled={busy}
                   className={cn(
                     "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
-                    index > 0
-                      ? "border-t border-black/[0.06]"
-                      : undefined,
+                    index > 0 ? "border-t border-black/[0.06]" : undefined,
                   )}
                 >
                   <AvatarChip
@@ -361,9 +398,7 @@ export function MobileChatPlusPanel({
                   disabled={busy}
                   className={cn(
                     "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
-                    index > 0
-                      ? "border-t border-black/[0.06]"
-                      : undefined,
+                    index > 0 ? "border-t border-black/[0.06]" : undefined,
                   )}
                 >
                   <AvatarChip
@@ -441,19 +476,24 @@ function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
       >
         <ChevronLeft size={16} />
       </button>
-      <div className="text-sm font-medium text-[#111827]">
-        {title}
-      </div>
+      <div className="text-sm font-medium text-[#111827]">{title}</div>
     </div>
   );
 }
 
 function chunkRootActions<T>(items: readonly T[], size: number) {
-  const result: T[][] = [];
+  const result: Array<T | null> = [...items];
 
-  for (let index = 0; index < items.length; index += size) {
-    result.push([...items.slice(index, index + size)]);
+  while (result.length < size) {
+    result.push(null);
   }
 
-  return result;
+  return result.slice(0, size);
+}
+
+function buildRootActionPage(keys: readonly RootAction["key"][]) {
+  return chunkRootActions(
+    keys.map((key) => rootActions[key]),
+    ROOT_ACTIONS_PER_PAGE,
+  );
 }
