@@ -1,7 +1,15 @@
 import { useEffect, useRef } from "react";
 import { type Moment } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
-import { Bot, Heart, MapPin, MessageCircle, UserRound, X } from "lucide-react";
+import {
+  Bot,
+  Heart,
+  MapPin,
+  MessageCircle,
+  Star,
+  UserRound,
+  X,
+} from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { formatTimestamp } from "../../../lib/format";
 
@@ -11,10 +19,12 @@ type DesktopMomentDetailPanelProps = {
   likeLoading: boolean;
   moment: Moment;
   ownerId?: string | null;
+  favorite: boolean;
   onClose: () => void;
   onCommentChange: (value: string) => void;
   onCommentSubmit: () => void;
   onLike: () => void;
+  onToggleFavorite: () => void;
   onSelectAuthor: () => void;
 };
 
@@ -24,10 +34,12 @@ export function DesktopMomentDetailPanel({
   likeLoading,
   moment,
   ownerId,
+  favorite,
   onClose,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onToggleFavorite,
   onSelectAuthor,
 }: DesktopMomentDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -124,7 +136,9 @@ export function DesktopMomentDetailPanel({
             <span className="mx-2 text-[color:var(--text-dim)]">/</span>
             <span>{moment.commentCount} 评论</span>
             <span className="mx-2 text-[color:var(--text-dim)]">/</span>
-            <span>{moment.authorType === "character" ? "角色动态" : "我的动态"}</span>
+            <span>
+              {moment.authorType === "character" ? "角色动态" : "我的动态"}
+            </span>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -133,10 +147,27 @@ export function DesktopMomentDetailPanel({
               size="sm"
               disabled={likeLoading}
               onClick={onLike}
-              className={likedByOwner ? "bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)] shadow-none" : undefined}
+              className={
+                likedByOwner
+                  ? "bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)] shadow-none"
+                  : undefined
+              }
             >
               <Heart size={14} className={likedByOwner ? "fill-current" : ""} />
               {likeLoading ? "处理中..." : likedByOwner ? "已点赞" : "点赞"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onToggleFavorite}
+              className={
+                favorite
+                  ? "bg-[rgba(250,204,21,0.16)] text-amber-700 shadow-none"
+                  : undefined
+              }
+            >
+              <Star size={14} className={favorite ? "fill-current" : ""} />
+              {favorite ? "已收藏" : "收藏"}
             </Button>
             <Button variant="secondary" size="sm" onClick={onSelectAuthor}>
               查看 TA 的动态

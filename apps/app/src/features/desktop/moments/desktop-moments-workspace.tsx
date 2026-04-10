@@ -29,11 +29,13 @@ type DesktopMomentsWorkspaceProps = {
   showCompose: boolean;
   successNotice?: string;
   text: string;
+  isMomentFavorite: (momentId: string) => boolean;
   setShowCompose: (nextValue: boolean) => void;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
   onCreate: () => void;
   onLike: (momentId: string) => void;
+  onToggleFavorite: (momentId: string) => void;
   onRefresh: () => void;
   onTextChange: (value: string) => void;
 };
@@ -55,11 +57,13 @@ export function DesktopMomentsWorkspace({
   showCompose,
   successNotice,
   text,
+  isMomentFavorite,
   setShowCompose,
   onCommentChange,
   onCommentSubmit,
   onCreate,
   onLike,
+  onToggleFavorite,
   onRefresh,
   onTextChange,
 }: DesktopMomentsWorkspaceProps) {
@@ -71,10 +75,7 @@ export function DesktopMomentsWorkspace({
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const authorSummaries = useMemo(() => {
-    const map = new Map<
-      string,
-      Omit<DesktopMomentAuthorSummary, "authorId">
-    >();
+    const map = new Map<string, Omit<DesktopMomentAuthorSummary, "authorId">>();
 
     moments.forEach((moment) => {
       const current = map.get(moment.authorId);
@@ -141,7 +142,8 @@ export function DesktopMomentsWorkspace({
   }, [activeAuthorId, activeFilter, moments, searchText]);
 
   const activeAuthorSummary =
-    authorSummaries.find((author) => author.authorId === activeAuthorId) ?? null;
+    authorSummaries.find((author) => author.authorId === activeAuthorId) ??
+    null;
 
   const authorMoments = useMemo(() => {
     if (!activeAuthorId) {
@@ -239,9 +241,11 @@ export function DesktopMomentsWorkspace({
                 ownerId={ownerId}
                 selectedMomentId={selectedMomentId}
                 totalMomentsCount={moments.length}
+                isMomentFavorite={isMomentFavorite}
                 onCommentChange={onCommentChange}
                 onCommentSubmit={onCommentSubmit}
                 onLike={onLike}
+                onToggleFavorite={onToggleFavorite}
                 onOpenCompose={() => setShowCompose(true)}
                 onOpenDetail={(momentId) => setSelectedMomentId(momentId)}
                 onSelectAuthor={(authorId) => {
@@ -267,11 +271,13 @@ export function DesktopMomentsWorkspace({
         ownerId={ownerId}
         ownerUsername={ownerUsername}
         selectedMoment={selectedMoment}
+        isMomentFavorite={isMomentFavorite}
         onClearAuthor={() => setActiveAuthorId(null)}
         onCloseDetail={() => setSelectedMomentId(null)}
         onCommentChange={onCommentChange}
         onCommentSubmit={onCommentSubmit}
         onLike={onLike}
+        onToggleFavorite={onToggleFavorite}
         onOpenCompose={() => setShowCompose(true)}
         onSelectAuthor={focusAuthor}
         onSelectMoment={setSelectedMomentId}

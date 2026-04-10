@@ -12,9 +12,11 @@ type DesktopMomentsFeedProps = {
   ownerId?: string | null;
   selectedMomentId: string | null;
   totalMomentsCount: number;
+  isMomentFavorite: (momentId: string) => boolean;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
   onLike: (momentId: string) => void;
+  onToggleFavorite: (momentId: string) => void;
   onOpenCompose: () => void;
   onOpenDetail: (momentId: string) => void;
   onSelectAuthor: (authorId: string) => void;
@@ -29,9 +31,11 @@ export function DesktopMomentsFeed({
   ownerId,
   selectedMomentId,
   totalMomentsCount,
+  isMomentFavorite,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onToggleFavorite,
   onOpenCompose,
   onOpenDetail,
   onSelectAuthor,
@@ -51,9 +55,11 @@ export function DesktopMomentsFeed({
               likeLoading={likePendingMomentId === moment.id}
               moment={moment}
               ownerId={ownerId}
+              favorite={isMomentFavorite(moment.id)}
               onCommentChange={(value) => onCommentChange(moment.id, value)}
               onCommentSubmit={() => onCommentSubmit(moment.id)}
               onLike={() => onLike(moment.id)}
+              onToggleFavorite={() => onToggleFavorite(moment.id)}
               onOpenDetail={() => onOpenDetail(moment.id)}
               onSelectAuthor={() => onSelectAuthor(moment.authorId)}
             />

@@ -31,11 +31,13 @@ type DesktopMomentsSidebarProps = {
   ownerId?: string | null;
   ownerUsername?: string | null;
   selectedMoment: Moment | null;
+  isMomentFavorite: (momentId: string) => boolean;
   onClearAuthor: () => void;
   onCloseDetail: () => void;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
   onLike: (momentId: string) => void;
+  onToggleFavorite: (momentId: string) => void;
   onOpenCompose: () => void;
   onSelectAuthor: (authorId: string) => void;
   onSelectMoment: (momentId: string) => void;
@@ -55,11 +57,13 @@ export function DesktopMomentsSidebar({
   ownerId,
   ownerUsername,
   selectedMoment,
+  isMomentFavorite,
   onClearAuthor,
   onCloseDetail,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onToggleFavorite,
   onOpenCompose,
   onSelectAuthor,
   onSelectMoment,
@@ -81,10 +85,12 @@ export function DesktopMomentsSidebar({
           likeLoading={likePendingMomentId === selectedMoment.id}
           moment={selectedMoment}
           ownerId={ownerId}
+          favorite={isMomentFavorite(selectedMoment.id)}
           onClose={onCloseDetail}
           onCommentChange={(value) => onCommentChange(selectedMoment.id, value)}
           onCommentSubmit={() => onCommentSubmit(selectedMoment.id)}
           onLike={() => onLike(selectedMoment.id)}
+          onToggleFavorite={() => onToggleFavorite(selectedMoment.id)}
           onSelectAuthor={() => onSelectAuthor(selectedMoment.authorId)}
         />
       </aside>
@@ -136,28 +142,47 @@ export function DesktopMomentsSidebar({
                       ) : (
                         <UserRound size={11} />
                       )}
-                      {activeAuthorSummary.authorType === "character" ? "角色" : "我"}
+                      {activeAuthorSummary.authorType === "character"
+                        ? "角色"
+                        : "我"}
                     </span>
                   </div>
                   <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                    最近发布于 {formatTimestamp(activeAuthorSummary.latestPostedAt)}
+                    最近发布于{" "}
+                    {formatTimestamp(activeAuthorSummary.latestPostedAt)}
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <SidebarMetric label="动态" value={String(activeAuthorSummary.count)} />
+                <SidebarMetric
+                  label="动态"
+                  value={String(activeAuthorSummary.count)}
+                />
                 <SidebarMetric
                   label="评论"
-                  value={String(authorMoments.reduce((total, moment) => total + moment.commentCount, 0))}
+                  value={String(
+                    authorMoments.reduce(
+                      (total, moment) => total + moment.commentCount,
+                      0,
+                    ),
+                  )}
                 />
               </div>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={onClearAuthor}>
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={onClearAuthor}
+                >
                   查看全部
                 </Button>
-                <Button variant="primary" className="flex-1" onClick={onOpenCompose}>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={onOpenCompose}
+                >
                   <PenSquare size={15} />
                   发朋友圈
                 </Button>
@@ -180,7 +205,8 @@ export function DesktopMomentsSidebar({
                       {moment.text}
                     </div>
                     <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
-                      {formatTimestamp(moment.postedAt)} · {moment.likeCount} 赞 · {moment.commentCount} 评论
+                      {formatTimestamp(moment.postedAt)} · {moment.likeCount} 赞
+                      · {moment.commentCount} 评论
                     </div>
                   </button>
                 ))}
@@ -218,7 +244,11 @@ export function DesktopMomentsSidebar({
               </div>
             </div>
 
-            <Button variant="primary" className="mt-4 w-full" onClick={onOpenCompose}>
+            <Button
+              variant="primary"
+              className="mt-4 w-full"
+              onClick={onOpenCompose}
+            >
               <PenSquare size={15} />
               现在发一条
             </Button>
@@ -247,7 +277,11 @@ export function DesktopMomentsSidebar({
                       : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)] hover:border-[rgba(249,115,22,0.12)] hover:bg-white",
                   )}
                 >
-                  <AvatarChip name={author.authorName} src={author.authorAvatar} size="sm" />
+                  <AvatarChip
+                    name={author.authorName}
+                    src={author.authorAvatar}
+                    size="sm"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -264,7 +298,10 @@ export function DesktopMomentsSidebar({
                   {author.authorType === "character" ? (
                     <Bot size={14} className="shrink-0 text-sky-600" />
                   ) : (
-                    <UserRound size={14} className="shrink-0 text-[color:var(--brand-primary)]" />
+                    <UserRound
+                      size={14}
+                      className="shrink-0 text-[color:var(--brand-primary)]"
+                    />
                   )}
                 </button>
               ))}

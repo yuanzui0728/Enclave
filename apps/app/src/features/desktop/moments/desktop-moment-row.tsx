@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { type Moment } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
-import { Bot, Heart, MapPin, MessageCircle, UserRound } from "lucide-react";
+import {
+  Bot,
+  Heart,
+  MapPin,
+  MessageCircle,
+  Star,
+  UserRound,
+} from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { formatTimestamp } from "../../../lib/format";
 
@@ -12,9 +19,11 @@ type DesktopMomentRowProps = {
   likeLoading: boolean;
   moment: Moment;
   ownerId?: string | null;
+  favorite: boolean;
   onCommentChange: (value: string) => void;
   onCommentSubmit: () => void;
   onLike: () => void;
+  onToggleFavorite: () => void;
   onOpenDetail: () => void;
   onSelectAuthor: () => void;
 };
@@ -26,9 +35,11 @@ export function DesktopMomentRow({
   likeLoading,
   moment,
   ownerId,
+  favorite,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onToggleFavorite,
   onOpenDetail,
   onSelectAuthor,
 }: DesktopMomentRowProps) {
@@ -159,6 +170,22 @@ export function DesktopMomentRow({
                 <MessageCircle size={14} />
                 评论
               </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleFavorite();
+                }}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] transition-[background-color,color]",
+                  favorite
+                    ? "bg-[rgba(250,204,21,0.16)] text-amber-700"
+                    : "text-[color:var(--text-secondary)] hover:bg-[rgba(248,250,252,0.98)] hover:text-[color:var(--text-primary)]",
+                )}
+              >
+                <Star size={14} className={favorite ? "fill-current" : ""} />
+                {favorite ? "已收藏" : "收藏"}
+              </button>
             </div>
           </div>
 
@@ -176,14 +203,18 @@ export function DesktopMomentRow({
                     点赞
                   </span>
                   <span className="mx-2 text-[color:var(--text-dim)]">/</span>
-                  <span>{moment.likes.map((like) => like.authorName).join("、")}</span>
+                  <span>
+                    {moment.likes.map((like) => like.authorName).join("、")}
+                  </span>
                 </div>
               ) : null}
               {commentsPreview.length > 0 ? (
                 <div
                   className={cn(
                     "space-y-2 text-[13px] leading-6 text-[color:var(--text-secondary)]",
-                    moment.likes.length > 0 ? "mt-3 border-t border-[rgba(15,23,42,0.06)] pt-3" : "",
+                    moment.likes.length > 0
+                      ? "mt-3 border-t border-[rgba(15,23,42,0.06)] pt-3"
+                      : "",
                   )}
                 >
                   {commentsPreview.map((comment) => (
