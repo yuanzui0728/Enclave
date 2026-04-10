@@ -18,6 +18,9 @@ import { WorldModule } from '../world/world.module';
 import { SystemConfigModule } from '../config/config.module';
 import { CharactersModule } from '../characters/characters.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
+import { SchedulerModule } from '../scheduler/scheduler.module';
+import { MomentPostEntity } from '../moments/moment-post.entity';
+import { FeedPostEntity } from '../feed/feed-post.entity';
 
 @Module({
   imports: [
@@ -26,6 +29,7 @@ import { ReplyLogicAdminService } from './reply-logic-admin.service';
     CharactersModule,
     WorldModule,
     SystemConfigModule,
+    SchedulerModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,
@@ -36,6 +40,8 @@ import { ReplyLogicAdminService } from './reply-logic-admin.service';
       GroupMemberEntity,
       GroupMessageEntity,
       NarrativeArcEntity,
+      MomentPostEntity,
+      FeedPostEntity,
     ]),
   ],
   providers: [AdminService, ReplyLogicAdminService, AdminGuard],

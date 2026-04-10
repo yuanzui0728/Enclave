@@ -11,6 +11,8 @@ import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { SystemConfigService } from '../config/config.service';
 import { resolveDatabasePath, resolveRepoPath } from '../../database/database-path';
+import { SchedulerService } from '../scheduler/scheduler.service';
+import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
 
 type ProviderPayload = {
   endpoint: string;
@@ -49,6 +51,8 @@ export class SystemService {
     private readonly narrativeArcRepo: Repository<NarrativeArcEntity>,
     @InjectRepository(AIBehaviorLogEntity)
     private readonly behaviorLogRepo: Repository<AIBehaviorLogEntity>,
+    private readonly schedulerService: SchedulerService,
+    private readonly schedulerTelemetry: SchedulerTelemetryService,
   ) {}
 
   private resolveDatabasePath() {
@@ -101,6 +105,8 @@ export class SystemService {
     const databasePath = this.resolveDatabasePath();
     const publicBaseUrl = this.config.get<string>('PUBLIC_API_BASE_URL')?.trim();
 
+    const scheduler = this.getSchedulerPayload();
+
     return {
       coreApi: {
         name: 'core-api',
@@ -139,33 +145,29 @@ export class SystemService {
         narrativeArcsCount,
         behaviorLogsCount,
       },
-      scheduler: {
-        healthy: true,
-        mode: 'scaffolded',
-        coldStartEnabled: false,
-        worldSnapshots: 0,
-        jobs: [],
-        recentRuns: [],
-      },
+      scheduler,
       appMode: resolveAppMode(),
     };
   }
 
   async getSchedulerStatus() {
-    return {
-      healthy: true,
-      mode: 'scaffolded',
-      coldStartEnabled: false,
-      worldSnapshots: 0,
-      jobs: [],
-      recentRuns: [],
-    };
+    return this.getSchedulerPayload();
   }
 
   async runSchedulerJob(id: string) {
+    return this.schedulerService.runJobNow(id);
+  }
+
+  private getSchedulerPayload() {
     return {
-      success: true,
-      message: `Scheduler job ${id} is not wired yet in this remote-first build.`,
+      healthy: true,
+      mode: 'production' as const,
+      coldStartEnabled: false,
+      worldSnapshots: this.schedulerTelemetry.getWorldSnapshotCount(),
+      lastWorldSnapshotAt: this.schedulerTelemetry.getLastWorldSnapshotAt(),
+      jobs: this.schedulerTelemetry.listJobs(),
+      startedAt: this.schedulerTelemetry.getStartedAt(),
+      recentRuns: this.schedulerTelemetry.listRecentRuns({ limit: 12 }),
     };
   }
 

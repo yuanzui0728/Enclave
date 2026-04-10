@@ -8,11 +8,13 @@ import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { SystemConfigModule } from '../config/config.module';
 import { SystemController } from './system.controller';
 import { SystemService } from './system.service';
+import { SchedulerModule } from '../scheduler/scheduler.module';
 
 @Module({
   imports: [
     ConfigModule,
     SystemConfigModule,
+    SchedulerModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CharacterEntity,

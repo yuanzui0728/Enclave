@@ -1,4 +1,9 @@
 import type { CharacterEntity } from '../characters/character.entity';
+import type {
+  SchedulerCharacterEventValue,
+  SchedulerJobStatusValue,
+  SchedulerRunRecordValue,
+} from '../scheduler/scheduler-telemetry.types';
 
 export type ReplyLogicApiKeySource = 'owner_custom' | 'env_default' | 'missing';
 export type ReplyLogicEndpointSource =
@@ -147,12 +152,38 @@ export interface ReplyLogicActorSnapshot {
   notes: string[];
 }
 
+export interface ReplyLogicCharacterObservability {
+  activeWindow: {
+    startHour: number;
+    endHour: number;
+    currentHour: number;
+    label: string;
+    isWithinWindow: boolean;
+  };
+  contentCadence: {
+    todayMoments: number;
+    momentsTarget: number;
+    weeklyChannels: number;
+    channelsTarget: number;
+  };
+  triggerScenes: string[];
+  memoryProactive: {
+    enabled: boolean;
+    reason: string;
+  };
+  relevantJobs: SchedulerJobStatusValue[];
+  recentRuns: SchedulerRunRecordValue[];
+  lifeEvents: SchedulerCharacterEventValue[];
+  notes: string[];
+}
+
 export interface ReplyLogicCharacterSnapshot {
   provider: ReplyLogicProviderSummary;
   worldContext?: ReplyLogicWorldContextSummary | null;
   character: ReplyLogicCharacterContract;
   actor: ReplyLogicActorSnapshot;
   narrativeArc?: ReplyLogicNarrativeArcSummary | null;
+  observability: ReplyLogicCharacterObservability;
   relatedConversationIds: string[];
   notes: string[];
 }

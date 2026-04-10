@@ -13,6 +13,7 @@ import { FeedModule } from '../feed/feed.module';
 import { ChatModule } from '../chat/chat.module';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { AIRelationshipEntity } from '../social/ai-relationship.entity';
+import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { AIRelationshipEntity } from '../social/ai-relationship.entity';
     FeedModule,
     ChatModule,
   ],
-  providers: [SchedulerService],
-  exports: [SchedulerService],
+  providers: [SchedulerService, SchedulerTelemetryService],
+  exports: [SchedulerService, SchedulerTelemetryService],
 })
 export class SchedulerModule {}

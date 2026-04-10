@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { updateCharacter, type Character, type ReplyLogicHistoryItem } from "@yinjie/contracts";
+import {
+  updateCharacter,
+  type Character,
+  type ReplyLogicCharacterSnapshot,
+  type ReplyLogicHistoryItem,
+} from "@yinjie/contracts";
 import {
   AppHeader,
   Button,
@@ -91,6 +96,7 @@ export function CharacterRuntimePage() {
   }
 
   const snapshot = snapshotQuery.data;
+  const latestRun = snapshot.observability.recentRuns[0] ?? null;
 
   return (
     <div className="space-y-6">
@@ -133,6 +139,11 @@ export function CharacterRuntimePage() {
         <MetricCard label="在线模式" value={formatMode(draft.onlineMode)} />
         <MetricCard label="当前活动" value={formatActivity(draft.currentActivity)} />
         <MetricCard label="活动模式" value={formatMode(draft.activityMode)} />
+        <MetricCard label="活跃时间窗" value={snapshot.observability.activeWindow.label} />
+        <MetricCard
+          label="最近调度"
+          value={latestRun ? `${latestRun.jobName} · ${formatSchedulerRunStatus(latestRun.status)}` : "暂无"}
+        />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
@@ -350,6 +361,44 @@ export function CharacterRuntimePage() {
               <MetricCard label="世界上下文" value={snapshot.actor.worldContextText || "暂无"} />
             </div>
           </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>生活逻辑观测</SectionHeading>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+              <MetricCard
+                label="当前小时"
+                value={`${snapshot.observability.activeWindow.currentHour}:00`}
+              />
+              <MetricCard
+                label="是否在活跃窗"
+                value={snapshot.observability.activeWindow.isWithinWindow ? "是" : "否"}
+              />
+              <MetricCard
+                label="今日朋友圈"
+                value={`${snapshot.observability.contentCadence.todayMoments} / ${snapshot.observability.contentCadence.momentsTarget}`}
+              />
+              <MetricCard
+                label="近 7 天视频号"
+                value={`${snapshot.observability.contentCadence.weeklyChannels} / ${snapshot.observability.contentCadence.channelsTarget}`}
+              />
+              <MetricCard
+                label="触发场景"
+                value={snapshot.observability.triggerScenes.length || "无"}
+              />
+              <MetricCard
+                label="主动提醒"
+                value={snapshot.observability.memoryProactive.enabled ? "已启用" : "未启用"}
+              />
+            </div>
+            <div className="mt-4 space-y-2">
+              <InlineNotice tone={snapshot.observability.memoryProactive.enabled ? "muted" : "warning"}>
+                {snapshot.observability.memoryProactive.reason}
+              </InlineNotice>
+              {snapshot.observability.notes.map((note) => (
+                <InlineNotice key={note} tone="muted">{note}</InlineNotice>
+              ))}
+            </div>
+          </Card>
         </div>
 
         <div className="space-y-6">
@@ -366,6 +415,56 @@ export function CharacterRuntimePage() {
                 ))}
               </div>
             ) : null}
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>Scheduler 最近执行结果</SectionHeading>
+            <div className="mt-4 space-y-3">
+              {snapshot.observability.relevantJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">{job.name}</div>
+                    <StatusPill tone={job.running ? "warning" : "healthy"}>
+                      {job.running ? "运行中" : "空闲"}
+                    </StatusPill>
+                  </div>
+                  <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                    {job.cadence} / {job.nextRunHint}
+                  </div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    <ValueCard label="运行次数" value={job.runCount} />
+                    <ValueCard label="最近执行" value={formatDateTime(job.lastRunAt)} />
+                    <ValueCard label="耗时" value={job.lastDurationMs ? `${job.lastDurationMs} ms` : "暂无"} />
+                  </div>
+                  <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
+                    {job.lastResult || "当前还没有执行结果。"}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 space-y-3">
+              {snapshot.observability.recentRuns.map((run) => (
+                <SchedulerRunCard key={run.id} run={run} />
+              ))}
+              {snapshot.observability.recentRuns.length === 0 ? (
+                <InlineNotice tone="muted">当前还没有可展示的调度执行记录。</InlineNotice>
+              ) : null}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>最近生活事件</SectionHeading>
+            <div className="mt-4 space-y-3">
+              {snapshot.observability.lifeEvents.map((event) => (
+                <LifeEventCard key={event.id} event={event} />
+              ))}
+              {snapshot.observability.lifeEvents.length === 0 ? (
+                <InlineNotice tone="muted">当前还没有记录到该角色的生活事件。</InlineNotice>
+              ) : null}
+            </div>
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
@@ -435,6 +534,46 @@ export function CharacterRuntimePage() {
   );
 }
 
+function SchedulerRunCard({
+  run,
+}: {
+  run: ReplyLogicCharacterSnapshot["observability"]["recentRuns"][number];
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">{run.jobName}</div>
+        <StatusPill tone={run.status === "error" ? "warning" : "healthy"}>
+          {formatSchedulerRunStatus(run.status)}
+        </StatusPill>
+      </div>
+      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+        {formatDateTime(run.startedAt)}{run.durationMs ? ` · ${run.durationMs} ms` : ""}
+      </div>
+      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{run.summary}</div>
+    </div>
+  );
+}
+
+function LifeEventCard({
+  event,
+}: {
+  event: ReplyLogicCharacterSnapshot["observability"]["lifeEvents"][number];
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">{event.title}</div>
+        <StatusPill tone="muted">{formatLifeEventKind(event.kind)}</StatusPill>
+      </div>
+      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+        {event.jobName} / {formatDateTime(event.createdAt)}
+      </div>
+      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{event.summary}</div>
+    </div>
+  );
+}
+
 function HistoryItemCard({ item }: { item: ReplyLogicHistoryItem }) {
   return (
     <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
@@ -447,6 +586,21 @@ function HistoryItemCard({ item }: { item: ReplyLogicHistoryItem }) {
       </div>
       <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{item.text}</div>
       <div className="mt-2 text-xs text-[color:var(--text-muted)]">{formatDateTime(item.createdAt)}</div>
+    </div>
+  );
+}
+
+function ValueCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white/70 px-3 py-3">
+      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{value}</div>
     </div>
   );
 }
@@ -606,5 +760,32 @@ function formatDateTime(value?: string | null) {
     }).format(new Date(value));
   } catch {
     return value;
+  }
+}
+
+function formatSchedulerRunStatus(value: "success" | "error") {
+  return value === "error" ? "失败" : "成功";
+}
+
+function formatLifeEventKind(
+  value: ReplyLogicCharacterSnapshot["observability"]["lifeEvents"][number]["kind"],
+) {
+  switch (value) {
+    case "online_status_changed":
+      return "在线状态";
+    case "activity_changed":
+      return "活动状态";
+    case "moment_posted":
+      return "朋友圈";
+    case "channel_posted":
+      return "视频号";
+    case "scene_friend_request":
+      return "场景好友";
+    case "proactive_message":
+      return "主动提醒";
+    case "relationship_updated":
+      return "AI 关系";
+    default:
+      return value;
   }
 }

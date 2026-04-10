@@ -193,8 +193,8 @@
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
-- `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、已发布版本、字段映射与版本记录
-- `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、生活状态、记忆摘要与叙事进度，并直接修改运行时字段
+- `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、字段来源、发布映射 diff、已发布版本与版本记录
+- `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、scheduler 最近执行结果、生活状态、记忆摘要、叙事进度与生活逻辑可观测性，并直接修改运行时字段
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量

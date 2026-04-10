@@ -47,6 +47,19 @@ export interface SchedulerJobStatus {
   lastResult?: string;
 }
 
+export type SchedulerRunResult = "success" | "error";
+
+export interface SchedulerRunRecord {
+  id: string;
+  jobId: string;
+  jobName: string;
+  status: SchedulerRunResult;
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  summary: string;
+}
+
 export interface SchedulerStatus {
   healthy: boolean;
   mode: "scaffolded" | "parity" | "production";
@@ -55,7 +68,7 @@ export interface SchedulerStatus {
   lastWorldSnapshotAt?: string;
   jobs: SchedulerJobStatus[];
   startedAt?: string;
-  recentRuns: string[];
+  recentRuns: SchedulerRunRecord[];
 }
 
 export interface RealtimeRoomStatus {
