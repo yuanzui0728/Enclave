@@ -57,9 +57,14 @@ import {
   formatReminderListTimestamp,
   getChatReminderActionLabel,
   getChatReminderActionTone,
+  getChatReminderGroupClearErrorMessage,
+  getChatReminderGroupClearLabel,
+  getChatReminderGroupClearNotice,
   getChatReminderStatus,
   getChatReminderStatusLabel,
   isChatReminderGroupCollapsible,
+  isChatReminderGroupClearable,
+  type ChatReminderStatus,
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
 import { buildSearchRouteHash } from "../../search/search-route-state";
@@ -143,7 +148,7 @@ export function DesktopChatWorkspace({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
-  const { reminders, clearReminder } = useMessageReminders();
+  const { reminders, clearReminder, clearReminders } = useMessageReminders();
   const [searchTerm, setSearchTerm] = useState("");
   const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
     useState(false);
@@ -607,6 +612,26 @@ export function DesktopChatWorkspace({
     });
   }
 
+  async function handleClearReminderGroup(
+    status: ChatReminderStatus,
+    messageIds: string[],
+  ) {
+    if (!isChatReminderGroupClearable(status)) {
+      return;
+    }
+
+    try {
+      await clearReminders(messageIds);
+      setNotice(getChatReminderGroupClearNotice(status, messageIds.length));
+    } catch (error) {
+      setNotice(
+        error instanceof Error
+          ? error.message
+          : getChatReminderGroupClearErrorMessage(status),
+      );
+    }
+  }
+
   return (
     <div className="relative flex h-full min-h-0">
       {isQuickMenuOpen ? (
@@ -728,16 +753,7 @@ export function DesktopChatWorkspace({
                           className="rounded-[14px] border border-white/70 bg-white/78"
                         >
                           {collapsible ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setIsNotifiedReminderGroupExpanded(
-                                  (current) => !current,
-                                )
-                              }
-                              className="flex w-full items-center justify-between px-3 py-2 text-left"
-                              aria-expanded={!collapsed}
-                            >
+                            <div className="flex items-center justify-between px-3 py-2">
                               <span
                                 className={cn(
                                   "rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -750,16 +766,45 @@ export function DesktopChatWorkspace({
                               >
                                 {group.title}
                               </span>
-                              <span className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]">
-                                <span>{group.count} 条</span>
-                                <span>{collapsed ? "展开" : "收起"}</span>
-                                {collapsed ? (
-                                  <ChevronRight size={12} />
-                                ) : (
-                                  <ChevronDown size={12} />
-                                )}
+                              <span className="flex items-center gap-2">
+                                {isChatReminderGroupClearable(group.status) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      void handleClearReminderGroup(
+                                        group.status,
+                                        group.entries.map(
+                                          (entry) => entry.messageId,
+                                        ),
+                                      );
+                                    }}
+                                    className="rounded-full border border-transparent bg-[#f3f6f4] px-2.5 py-1 text-[10px] text-[#5f6b63] transition-colors hover:bg-[#e9eeeb]"
+                                  >
+                                    {getChatReminderGroupClearLabel(
+                                      group.status,
+                                    )}
+                                  </button>
+                                ) : null}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setIsNotifiedReminderGroupExpanded(
+                                      (current) => !current,
+                                    )
+                                  }
+                                  className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]"
+                                  aria-expanded={!collapsed}
+                                >
+                                  <span>{group.count} 条</span>
+                                  <span>{collapsed ? "展开" : "收起"}</span>
+                                  {collapsed ? (
+                                    <ChevronRight size={12} />
+                                  ) : (
+                                    <ChevronDown size={12} />
+                                  )}
+                                </button>
                               </span>
-                            </button>
+                            </div>
                           ) : (
                             <div className="flex items-center justify-between px-3 py-2">
                               <span

@@ -260,6 +260,31 @@ export function isChatReminderGroupCollapsible(status: ChatReminderStatus) {
   return status === "notified";
 }
 
+export function isChatReminderGroupClearable(status: ChatReminderStatus) {
+  return status === "notified";
+}
+
+export function getChatReminderGroupClearLabel(status: ChatReminderStatus) {
+  return status === "notified" ? "清理已通知" : "清理提醒";
+}
+
+export function getChatReminderGroupClearNotice(
+  status: ChatReminderStatus,
+  count: number,
+) {
+  return status === "notified"
+    ? `已清理 ${count} 条已通知提醒。`
+    : `已清理 ${count} 条提醒。`;
+}
+
+export function getChatReminderGroupClearErrorMessage(
+  status: ChatReminderStatus,
+) {
+  return status === "notified"
+    ? "清理已通知提醒失败，请稍后再试。"
+    : "清理提醒失败，请稍后再试。";
+}
+
 function compareChatReminderEntries(
   left: ChatReminderEntry,
   right: ChatReminderEntry,

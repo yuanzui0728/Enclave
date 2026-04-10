@@ -216,7 +216,13 @@ export function useMessageReminders() {
       );
       migrationInFlightRef.current = false;
     });
-  }, [baseUrl, localReminders, queryClient, remindersQuery.data, remindersQuery.isSuccess]);
+  }, [
+    baseUrl,
+    localReminders,
+    queryClient,
+    remindersQuery.data,
+    remindersQuery.isSuccess,
+  ]);
 
   const reminders = useMemo(
     () => mergeReminderRecords(remindersQuery.data ?? [], localReminders),
@@ -256,6 +262,25 @@ export function useMessageReminders() {
     await removeReminderMutation.mutateAsync(reminder.sourceId);
   }
 
+  async function clearReminders(messageIds: readonly string[]) {
+    const uniqueMessageIds = Array.from(
+      new Set(messageIds.filter((messageId) => messageId.trim())),
+    );
+    if (!uniqueMessageIds.length) {
+      return;
+    }
+
+    const results = await Promise.allSettled(
+      uniqueMessageIds.map((messageId) => clearReminder(messageId)),
+    );
+    const rejectedResult = results.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected",
+    );
+    if (rejectedResult) {
+      throw rejectedResult.reason;
+    }
+  }
+
   async function notifyReminder(messageId: string, notifiedAt?: string) {
     const reminder = reminderMap.get(messageId);
     if (!reminder) {
@@ -289,6 +314,7 @@ export function useMessageReminders() {
     isFetching: remindersQuery.isFetching,
     setReminder,
     clearReminder,
+    clearReminders,
     notifyReminder,
   };
 }
