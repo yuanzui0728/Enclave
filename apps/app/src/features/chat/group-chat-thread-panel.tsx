@@ -99,6 +99,11 @@ export function GroupChatThreadPanel({
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  const [lastPublishedCallCounts, setLastPublishedCallCounts] = useState<{
+    kind: DesktopChatCallKind;
+    activeCount: number;
+    totalCount: number;
+  } | null>(null);
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [initialUnreadCutoff, setInitialUnreadCutoff] = useState<string | null>(
     null,
@@ -146,6 +151,7 @@ export function GroupChatThreadPanel({
     setPendingCallFallback(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
+    setLastPublishedCallCounts(null);
     setInitialUnreadCount(0);
     setInitialUnreadCutoff(null);
     setUnreadSnapshotReady(false);
@@ -799,16 +805,32 @@ export function GroupChatThreadPanel({
               groupId={groupId}
               groupName={groupQuery.data?.name ?? "群聊"}
               members={membersQuery.data ?? []}
+              lastSyncedCounts={
+                lastPublishedCallCounts?.kind === desktopCallPanelKind
+                  ? {
+                      activeCount: lastPublishedCallCounts.activeCount,
+                      totalCount: lastPublishedCallCounts.totalCount,
+                    }
+                  : null
+              }
               inviteNoticePending={sendCallInviteMutation.isPending}
               endNoticePending={sendCallInviteMutation.isPending}
               onClose={() => setDesktopCallPanelKind(null)}
               onPanelOpened={(counts) => {
-                void sendCallInviteMutation.mutateAsync({
-                  kind: desktopCallPanelKind,
-                  status: "ongoing",
-                  activeCount: counts.activeCount,
-                  totalCount: counts.totalCount,
-                });
+                void sendCallInviteMutation
+                  .mutateAsync({
+                    kind: desktopCallPanelKind,
+                    status: "ongoing",
+                    activeCount: counts.activeCount,
+                    totalCount: counts.totalCount,
+                  })
+                  .then(() => {
+                    setLastPublishedCallCounts({
+                      kind: desktopCallPanelKind,
+                      activeCount: counts.activeCount,
+                      totalCount: counts.totalCount,
+                    });
+                  });
               }}
               onOpenMobileHandoff={() => {
                 void navigate({
@@ -822,12 +844,20 @@ export function GroupChatThreadPanel({
                 });
               }}
               onSendInviteNotice={(counts) => {
-                void sendCallInviteMutation.mutateAsync({
-                  kind: desktopCallPanelKind,
-                  status: "ongoing",
-                  activeCount: counts.activeCount,
-                  totalCount: counts.totalCount,
-                });
+                void sendCallInviteMutation
+                  .mutateAsync({
+                    kind: desktopCallPanelKind,
+                    status: "ongoing",
+                    activeCount: counts.activeCount,
+                    totalCount: counts.totalCount,
+                  })
+                  .then(() => {
+                    setLastPublishedCallCounts({
+                      kind: desktopCallPanelKind,
+                      activeCount: counts.activeCount,
+                      totalCount: counts.totalCount,
+                    });
+                  });
               }}
               onEndCall={(counts) => {
                 void sendCallInviteMutation
@@ -838,6 +868,7 @@ export function GroupChatThreadPanel({
                     totalCount: counts.totalCount,
                   })
                   .then(() => {
+                    setLastPublishedCallCounts(null);
                     setDesktopCallPanelKind(null);
                   });
               }}
