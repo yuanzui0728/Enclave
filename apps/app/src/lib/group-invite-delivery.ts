@@ -3,6 +3,15 @@ export type GroupInviteDeliveryRecord = {
   conversationPath: string;
   conversationTitle: string;
   deliveredAt: string;
+  groupName?: string;
+};
+
+export type GroupInviteRouteContext = {
+  actionLabel: string;
+  description: string;
+  groupId: string;
+  groupName?: string;
+  returnPath: string;
 };
 
 const GROUP_INVITE_DELIVERY_STORAGE_KEY = "yinjie-group-invite-delivery";
@@ -42,6 +51,7 @@ export function writeGroupInviteDeliveryRecord(
     conversationId: string;
     conversationPath: string;
     conversationTitle: string;
+    groupName?: string;
   },
 ) {
   if (typeof window === "undefined") {
@@ -53,6 +63,7 @@ export function writeGroupInviteDeliveryRecord(
     conversationPath: input.conversationPath,
     conversationTitle: input.conversationTitle,
     deliveredAt: new Date().toISOString(),
+    groupName: input.groupName?.trim() || undefined,
   };
 
   const nextState = readAllGroupInviteDeliveryRecords();
@@ -83,4 +94,30 @@ function readAllGroupInviteDeliveryRecords() {
   } catch {
     return {} as Record<string, GroupInviteDeliveryRecord>;
   }
+}
+
+export function resolveGroupInviteRouteContext(
+  conversationPath: string,
+): GroupInviteRouteContext | null {
+  const candidates = Object.entries(readAllGroupInviteDeliveryRecords())
+    .filter(([, record]) => record.conversationPath === conversationPath)
+    .sort(
+      (left, right) =>
+        Date.parse(right[1].deliveredAt) - Date.parse(left[1].deliveredAt),
+    );
+  const [groupId, record] = candidates[0] ?? [];
+
+  if (!groupId || !record) {
+    return null;
+  }
+
+  return {
+    actionLabel: "回到群邀请",
+    description: record.groupName
+      ? `这条会话最近收到过「${record.groupName}」的群邀请。`
+      : "这条会话最近收到过一个群邀请，可回到邀请页继续转发。",
+    groupId,
+    groupName: record.groupName,
+    returnPath: `/group/${groupId}/qr`,
+  };
 }

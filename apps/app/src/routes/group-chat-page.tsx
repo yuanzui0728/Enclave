@@ -6,7 +6,7 @@ import {
 import { AppPage } from "@yinjie/ui";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
-import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
+import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function GroupChatPage() {
@@ -15,7 +15,7 @@ export function GroupChatPage() {
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
-  const routeContext = resolveRouteContext();
+  const routeContext = resolveRouteContext(groupId);
 
   if (isDesktopLayout) {
     return (
@@ -38,7 +38,7 @@ export function GroupChatPage() {
   }
 
   return (
-    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)] px-0 py-0">
+    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[#ededed] px-0 py-0">
       <div className="h-full min-h-0 flex-1">
         <GroupChatThreadPanel
           groupId={groupId}
@@ -68,12 +68,12 @@ export function GroupChatPage() {
   );
 }
 
-function resolveRouteContext() {
+function resolveRouteContext(groupId: string) {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return resolveGameInviteRouteContext(window.location.search);
+  return resolveGroupInviteRouteContext(`/group/${groupId}`);
 }
 
 function parseHighlightedMessageId(hash: string) {

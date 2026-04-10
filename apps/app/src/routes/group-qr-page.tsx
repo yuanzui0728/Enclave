@@ -194,6 +194,7 @@ export function GroupQrPage() {
           conversationId: conversation.id,
           conversationPath,
           conversationTitle: conversation.title,
+          groupName: groupQuery.data?.name,
         }),
       );
       setNotice(`已把群邀请发到 ${conversation.title}。`);
@@ -225,6 +226,7 @@ export function GroupQrPage() {
         conversationId: conversation.id,
         conversationPath,
         conversationTitle: conversation.title,
+        groupName: groupQuery.data?.name,
       }),
     );
     setNotice(`已把群邀请发到 ${conversation.title}。`);

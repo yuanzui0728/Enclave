@@ -7,6 +7,7 @@ import { AppPage } from "@yinjie/ui";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
+import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function ChatRoomPage() {
@@ -15,7 +16,7 @@ export function ChatRoomPage() {
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
-  const routeContext = resolveRouteContext();
+  const routeContext = resolveRouteContext(conversationId);
 
   if (isDesktopLayout) {
     return (
@@ -68,12 +69,15 @@ export function ChatRoomPage() {
   );
 }
 
-function resolveRouteContext() {
+function resolveRouteContext(conversationId: string) {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return resolveGameInviteRouteContext(window.location.search);
+  return (
+    resolveGameInviteRouteContext(window.location.search) ??
+    resolveGroupInviteRouteContext(`/chat/${conversationId}`)
+  );
 }
 
 function parseHighlightedMessageId(hash: string) {
