@@ -24,7 +24,10 @@ import {
   buildDesktopChatFilesRouteHash,
   parseDesktopChatFilesRouteState,
 } from "../features/desktop/chat/desktop-chat-files-route-state";
-import { openDesktopChatImageViewerWindow } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
+import {
+  openDesktopChatImageViewerWindow,
+  type DesktopChatImageViewerSessionItem,
+} from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import {
   readDesktopFavorites,
@@ -212,6 +215,19 @@ export function DesktopChatFilesPage() {
     : -1;
   const activeImage: ImageAttachmentRow | null =
     activeImageIndex >= 0 ? (imageRows[activeImageIndex] ?? null) : null;
+  const standaloneViewerItems = useMemo(
+    () =>
+      imageRows.map(
+        (item): DesktopChatImageViewerSessionItem => ({
+          id: item.id,
+          imageUrl: item.attachment.url,
+          title: item.attachment.fileName,
+          meta: `${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`,
+          returnTo: buildAttachmentMessagePath(item),
+        }),
+      ),
+    [imageRows],
+  );
   const visibleAttachmentRowCount = useMemo(
     () =>
       filterSearchableChatMessages(
@@ -576,6 +592,8 @@ export function DesktopChatFilesPage() {
               title: activeImage.attachment.fileName,
               meta: `${activeImage.conversationTitle} · ${activeImage.senderName} · ${formatMessageTimestamp(activeImage.createdAt)}`,
               returnTo: buildAttachmentMessagePath(activeImage),
+              items: standaloneViewerItems,
+              activeId: activeImage.id,
             });
           }}
           onSave={() =>

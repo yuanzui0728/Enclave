@@ -60,7 +60,10 @@ import {
   DesktopMessageForwardDialog,
   type DesktopMessageForwardPreviewItem,
 } from "../features/desktop/chat/desktop-message-forward-dialog";
-import { openDesktopChatImageViewerWindow } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
+import {
+  openDesktopChatImageViewerWindow,
+  type DesktopChatImageViewerSessionItem,
+} from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -670,16 +673,43 @@ export function ChatMessageList({
         message.type === "image" &&
         message.attachment?.kind === "image",
     )
-    .map((message) => ({
-      id: message.id,
-      url: message.attachment.url,
-      label:
+    .map((message) => {
+      const label =
         message.attachment.fileName ||
         sanitizeDisplayedChatText(message.text) ||
-        "[图片]",
-      fileName: message.attachment.fileName,
-      createdAt: message.createdAt,
-    }));
+        "[图片]";
+      const returnTo = threadContext
+        ? threadContext.type === "group"
+          ? `/group/${threadContext.id}#chat-message-${message.id}`
+          : `/chat/${threadContext.id}#chat-message-${message.id}`
+        : undefined;
+      const meta = threadContext?.title?.trim()
+        ? `${threadContext.title} · ${formatMessageTimestamp(message.createdAt)}`
+        : formatMessageTimestamp(message.createdAt);
+
+      return {
+        id: message.id,
+        url: message.attachment.url,
+        label,
+        fileName: message.attachment.fileName,
+        createdAt: message.createdAt,
+        meta,
+        returnTo,
+      };
+    });
+  const standaloneViewerItems = useMemo(
+    () =>
+      imageMessages.map(
+        (image): DesktopChatImageViewerSessionItem => ({
+          id: image.id,
+          imageUrl: image.url,
+          title: image.fileName || image.label || "图片",
+          meta: image.meta,
+          returnTo: image.returnTo,
+        }),
+      ),
+    [imageMessages],
+  );
   const activeImageIndex = viewerMessageId
     ? imageMessages.findIndex((message) => message.id === viewerMessageId)
     : -1;
@@ -1842,22 +1872,15 @@ export function ChatMessageList({
           onOpenInWindow={
             isDesktop
               ? () => {
-                  const returnTo = threadContext
-                    ? threadContext.type === "group"
-                      ? `/group/${threadContext.id}#chat-message-${activeImage.id}`
-                      : `/chat/${threadContext.id}#chat-message-${activeImage.id}`
-                    : undefined;
-                  const meta = threadContext?.title?.trim()
-                    ? `${threadContext.title} · ${formatMessageTimestamp(activeImage.createdAt)}`
-                    : formatMessageTimestamp(activeImage.createdAt);
-
                   if (
                     openDesktopChatImageViewerWindow({
                       imageUrl: activeImage.url,
                       title:
                         activeImage.fileName || activeImage.label || "图片",
-                      meta,
-                      returnTo,
+                      meta: activeImage.meta,
+                      returnTo: activeImage.returnTo,
+                      items: standaloneViewerItems,
+                      activeId: activeImage.id,
                     })
                   ) {
                     setActionNotice({
