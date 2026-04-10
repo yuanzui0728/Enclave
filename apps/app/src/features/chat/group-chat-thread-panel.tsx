@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { Phone, Video } from "lucide-react";
 import {
   getConversations,
   getGroup,
@@ -14,9 +15,7 @@ import {
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
-import {
-  ChatMessageList,
-} from "../../components/chat-message-list";
+import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
 import {
   encodeChatReplyText,
@@ -80,6 +79,12 @@ export function GroupChatThreadPanel({
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
+  const [pendingCallFallback, setPendingCallFallback] =
+    useState<DesktopChatCallKind | null>(null);
+  const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
+    action: "voice-message" | "camera";
+    nonce: number;
+  } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
   const [initialUnreadCount, setInitialUnreadCount] = useState(0);
   const [initialUnreadCutoff, setInitialUnreadCutoff] = useState<string | null>(
@@ -124,6 +129,8 @@ export function GroupChatThreadPanel({
   useEffect(() => {
     setText("");
     setReplyDraft(null);
+    setPendingCallFallback(null);
+    setMobileShortcutRequest(null);
     setSelectionModeActive(false);
     setInitialUnreadCount(0);
     setInitialUnreadCutoff(null);
@@ -296,9 +303,15 @@ export function GroupChatThreadPanel({
       }
 
       element.scrollTop =
-        pendingLoad.scrollTop + (element.scrollHeight - pendingLoad.scrollHeight);
+        pendingLoad.scrollTop +
+        (element.scrollHeight - pendingLoad.scrollHeight);
     });
-  }, [messageLimit, messagesQuery.data, messagesQuery.isFetching, scrollAnchorRef]);
+  }, [
+    messageLimit,
+    messagesQuery.data,
+    messagesQuery.isFetching,
+    scrollAnchorRef,
+  ]);
 
   useEffect(() => {
     if (!highlightedMessageId || !hasHighlightedMessage) {
@@ -550,6 +563,7 @@ export function GroupChatThreadPanel({
       return;
     }
 
+    setPendingCallFallback(kind);
     onDesktopCallAction?.(kind);
   };
 
@@ -582,6 +596,20 @@ export function GroupChatThreadPanel({
         <MobileChatThreadHeader
           title={groupQuery.data?.name ?? "群聊"}
           onBack={onBack}
+          actions={[
+            {
+              key: "voice-call",
+              icon: Phone,
+              label: "语音通话",
+              onClick: () => handleDesktopCallAction("voice"),
+            },
+            {
+              key: "video-call",
+              icon: Video,
+              label: "视频通话",
+              onClick: () => handleDesktopCallAction("video"),
+            },
+          ]}
           onMore={() => {
             void navigate({
               to: "/group/$groupId/details",
@@ -590,6 +618,53 @@ export function GroupChatThreadPanel({
           }}
         />
       )}
+
+      {pendingCallFallback && !isDesktop ? (
+        <div className="border-b border-black/6 bg-white/82 px-3 py-2.5">
+          <InlineNotice tone="info" className="border-black/6 bg-white">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-xs font-medium leading-6 text-[color:var(--text-primary)]">
+                  {pendingCallFallback === "voice"
+                    ? "群语音通话暂未开放"
+                    : "群视频通话暂未开放"}
+                </div>
+                <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                  {pendingCallFallback === "voice"
+                    ? "先在群里发语音消息继续，后续再补群实时语音通话。"
+                    : "先用拍摄或图片消息继续，把当前内容先同步到群里。"}
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setMobileShortcutRequest({
+                      action:
+                        pendingCallFallback === "voice"
+                          ? "voice-message"
+                          : "camera",
+                      nonce: Date.now(),
+                    });
+                  }}
+                  className="rounded-full"
+                >
+                  {pendingCallFallback === "voice" ? "改发语音" : "改为拍摄"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPendingCallFallback(null)}
+                  className="rounded-full"
+                >
+                  收起
+                </Button>
+              </div>
+            </div>
+          </InlineNotice>
+        </div>
+      ) : null}
 
       {isDesktop ? (
         <div className="flex items-center gap-3 border-b border-black/5 bg-[#f7f7f7] px-6 py-3">
@@ -771,6 +846,11 @@ export function GroupChatThreadPanel({
           onSendPresetText={handleSendPresetText}
           mentionCandidates={mentionCandidates}
           onOpenDesktopHistory={onToggleDesktopHistory}
+          mobileShortcutRequest={mobileShortcutRequest}
+          onMobileShortcutHandled={() => {
+            setPendingCallFallback(null);
+            setMobileShortcutRequest(null);
+          }}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
           onSubmit={() => void handleSubmit()}
@@ -813,7 +893,6 @@ function describeReplyPreview(message: ChatRenderableMessage) {
   return "消息";
 }
 
-
 function upsertGroupMessage(
   current: GroupMessage[] | undefined,
   incoming: GroupMessage,
@@ -822,7 +901,9 @@ function upsertGroupMessage(
     return [incoming];
   }
 
-  const existingIndex = current.findIndex((message) => message.id === incoming.id);
+  const existingIndex = current.findIndex(
+    (message) => message.id === incoming.id,
+  );
   if (existingIndex < 0) {
     return [...current, incoming];
   }
