@@ -294,13 +294,13 @@ export function DesktopDirectCallPanel({
   };
 
   return (
-    <section className="flex h-full min-h-0 gap-5 rounded-[30px] border border-[rgba(15,23,42,0.08)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,249,252,0.96))] p-5 shadow-[var(--shadow-card)]">
+    <section className="flex h-full min-h-0 gap-4 rounded-[18px] border border-black/8 bg-[#f3f3f3] p-4 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
       <audio ref={activeCall.audioRef} preload="auto" />
 
-      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[26px] border border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(244,248,255,0.92),rgba(255,255,255,0.94))] p-5">
+      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[16px] border border-black/6 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(59,130,246,0.12)] px-3 py-1 text-[11px] font-medium tracking-[0.14em] text-[#2563eb]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#1f8f4f]">
               {kind === "video" ? <Video size={13} /> : <Mic size={13} />}
               {callLabel}
             </div>
@@ -321,7 +321,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="shrink-0 rounded-full"
+            className="shrink-0 rounded-[10px] border-black/8 bg-[#f7f7f7] shadow-none hover:bg-[#ededed]"
           >
             返回聊天
           </Button>
@@ -353,7 +353,7 @@ export function DesktopDirectCallPanel({
           />
         </div>
 
-        <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/88 p-4">
+        <div className="mt-5 rounded-[14px] border border-black/6 bg-[#fafafa] p-4">
           <div className="flex flex-wrap gap-3">
             <CallControlButton
               active={!micMuted}
@@ -494,7 +494,7 @@ export function DesktopDirectCallPanel({
                 }
               }}
               disabled={micMuted || activeCall.busy || !speech.supported}
-              className="rounded-full bg-[linear-gradient(180deg,#2563eb,#1d4ed8)] text-white hover:opacity-95 disabled:bg-[linear-gradient(180deg,#2563eb,#1d4ed8)] disabled:text-white"
+              className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56] disabled:bg-[#07c160] disabled:text-white"
             >
               <Mic size={16} />
               {recordButtonLabel}
@@ -507,7 +507,7 @@ export function DesktopDirectCallPanel({
               void activeCall.replayLastTurn();
             }}
             disabled={!latestTurn}
-            className="rounded-full"
+            className="rounded-[10px] border-black/8 bg-[#f7f7f7] shadow-none hover:bg-[#ededed]"
           >
             <RotateCcw size={16} />
             重播上一句
@@ -516,7 +516,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="rounded-full"
+            className="rounded-[10px] border-black/8 bg-[#f7f7f7] shadow-none hover:bg-[#ededed]"
           >
             切回聊天
           </Button>
@@ -525,7 +525,7 @@ export function DesktopDirectCallPanel({
             variant="secondary"
             onClick={handleEndCall}
             disabled={endCallPending}
-            className="rounded-full text-[#d74b45]"
+            className="rounded-[10px] border-[#e9c3c1] bg-[#fff5f5] text-[#d74b45] shadow-none hover:bg-[#fdeaea]"
           >
             <PhoneOff size={16} />
             {endCallPending ? "结束中..." : "结束通话"}
@@ -533,7 +533,7 @@ export function DesktopDirectCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[26px] border border-[rgba(15,23,42,0.06)] bg-white/90 p-5">
+      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[16px] border border-black/6 bg-white p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -549,8 +549,8 @@ export function DesktopDirectCallPanel({
             className={cn(
               "rounded-full px-3 py-1 text-[11px] font-medium",
               activeCall.playbackState === "playing"
-                ? "bg-[rgba(47,122,63,0.10)] text-[#2f7a3f]"
-                : "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
+                ? "bg-[rgba(7,193,96,0.10)] text-[#1f8f4f]"
+                : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
             )}
           >
             {activeCall.playbackState === "playing"
@@ -634,7 +634,7 @@ function RecordButton({
         }
       }}
       disabled={disabled}
-      className="flex h-[188px] w-[188px] items-center justify-center rounded-full border border-[#34d399]/28 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.72),rgba(5,150,105,0.96))] text-white shadow-[0_30px_80px_rgba(16,185,129,0.24)] transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex h-[184px] w-[184px] items-center justify-center rounded-full border border-[rgba(7,193,96,0.20)] bg-[radial-gradient(circle_at_top,rgba(46,213,115,0.92),rgba(7,193,96,1))] text-white shadow-[0_20px_56px_rgba(7,193,96,0.22)] transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span className="flex flex-col items-center gap-3">
         {turnPending ? (
@@ -665,8 +665,8 @@ function CallMetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-[rgba(15,23,42,0.06)] bg-white/88 px-4 py-4">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-[18px] font-semibold text-[color:var(--text-primary)]">
@@ -698,11 +698,11 @@ function CallControlButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
+        "inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-sm transition",
         active
-          ? "border-[rgba(37,99,235,0.18)] bg-[rgba(59,130,246,0.10)] text-[#2563eb]"
-          : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)]",
-        disabled ? "cursor-not-allowed opacity-45" : "hover:opacity-90",
+          ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
+          : "border-black/8 bg-white text-[color:var(--text-secondary)]",
+        disabled ? "cursor-not-allowed opacity-45" : "hover:bg-[#f5f5f5]",
       )}
     >
       {icon}
@@ -723,16 +723,16 @@ function CameraPreviewCard({
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   return (
-    <section className="overflow-hidden rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[#f8fafc]">
-      <div className="flex items-center justify-between border-b border-[rgba(15,23,42,0.06)] px-4 py-3">
-        <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+    <section className="overflow-hidden rounded-[12px] border border-black/6 bg-[#fafafa]">
+      <div className="flex items-center justify-between border-b border-black/6 bg-[#f7f7f7] px-4 py-3">
+        <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
           我的摄像头预览
         </div>
         <div className="text-xs text-[color:var(--text-muted)]">
           {cameraEnabled ? "预览中" : "已关闭"}
         </div>
       </div>
-      <div className="relative aspect-[4/3] bg-[linear-gradient(180deg,rgba(30,41,59,0.98),rgba(15,23,42,0.96))]">
+      <div className="relative aspect-[4/3] bg-[linear-gradient(180deg,rgba(55,65,81,0.98),rgba(17,24,39,0.98))]">
         {cameraEnabled && status === "ready" ? (
           <video
             ref={videoRef}
@@ -743,7 +743,7 @@ function CameraPreviewCard({
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center text-white/72">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/12">
               {cameraEnabled ? (
                 status === "requesting-permission" ? (
                   <LoaderCircle size={18} className="animate-spin" />
@@ -780,13 +780,13 @@ function TranscriptCard({
   return (
     <section
       className={cn(
-        "rounded-[22px] px-4 py-4",
+        "rounded-[12px] px-4 py-4",
         own
-          ? "bg-[rgba(59,130,246,0.08)]"
-          : "border border-[rgba(15,23,42,0.06)] bg-[#f8fafc]",
+          ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+          : "border border-black/6 bg-[#fafafa]",
       )}
     >
-      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-[15px] leading-7 text-[color:var(--text-primary)]">
