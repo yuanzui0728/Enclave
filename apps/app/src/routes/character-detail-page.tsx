@@ -54,6 +54,9 @@ export function CharacterDetailPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const [notice, setNotice] = useState<string | null>(null);
+  const [pendingCallFallback, setPendingCallFallback] = useState<
+    "voice" | "video" | null
+  >(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<FriendProfileFormState>({
     remarkName: "",
@@ -115,6 +118,7 @@ export function CharacterDetailPage() {
 
   useEffect(() => {
     setNotice(null);
+    setPendingCallFallback(null);
     setIsEditingProfile(false);
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
@@ -143,6 +147,7 @@ export function CharacterDetailPage() {
         return;
       }
 
+      setPendingCallFallback(null);
       void navigate({
         to: "/chat/$conversationId",
         params: { conversationId: conversation.id },
@@ -251,11 +256,13 @@ export function CharacterDetailPage() {
   };
 
   const handleVoiceCall = () => {
-    setNotice("语音通话能力暂未开放，先保留微信式入口。");
+    setNotice(null);
+    setPendingCallFallback("voice");
   };
 
   const handleVideoCall = () => {
-    setNotice("视频通话能力暂未开放，先保留微信式入口。");
+    setNotice(null);
+    setPendingCallFallback("video");
   };
 
   return (
@@ -425,6 +432,54 @@ export function CharacterDetailPage() {
               )}
             </div>
           </section>
+
+          {pendingCallFallback ? (
+            <section className="overflow-hidden rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white">
+              <div className="flex items-start gap-3 px-4 py-4">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.12)] text-[#07a35a]">
+                  {pendingCallFallback === "voice" ? (
+                    <Phone size={18} />
+                  ) : (
+                    <Video size={18} />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[#111827]">
+                    {pendingCallFallback === "voice"
+                      ? "语音通话暂未开放"
+                      : "视频通话暂未开放"}
+                  </div>
+                  <div className="mt-1 text-[13px] leading-6 text-[#6b7280]">
+                    {pendingCallFallback === "voice"
+                      ? "先进入聊天页继续，用按住说话发送语音消息会更接近现在可用的体验。"
+                      : "先进入聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      variant="primary"
+                      onClick={() => startChatMutation.mutate()}
+                      className="rounded-full"
+                      disabled={startChatMutation.isPending}
+                    >
+                      {startChatMutation.isPending
+                        ? "正在打开..."
+                        : pendingCallFallback === "voice"
+                          ? "去聊天发语音"
+                          : "去聊天发消息"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setPendingCallFallback(null)}
+                      className="rounded-full"
+                      disabled={startChatMutation.isPending}
+                    >
+                      知道了
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           <ProfileSection title={isFriend ? "资料设置" : "基本资料"}>
             {isFriend ? (
