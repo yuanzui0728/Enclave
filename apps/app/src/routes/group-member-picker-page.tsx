@@ -65,6 +65,7 @@ function GroupMemberPickerPage({
 
     if (mode === "add") {
       return (friendsQuery.data ?? [])
+        .filter((item) => item.friendship.status !== "removed")
         .filter((item) => !memberIds.has(item.character.id))
         .filter((item) => {
           if (!normalizedKeyword) {

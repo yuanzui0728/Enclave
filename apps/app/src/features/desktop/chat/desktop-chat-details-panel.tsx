@@ -13,11 +13,13 @@ import {
   getGroup,
   getGroupMembers,
   leaveGroup,
+  removeGroupMember,
   sendFriendRequest,
   setConversationPinned,
   setGroupPinned,
   updateGroup,
   updateGroupOwnerProfile,
+  updateGroupPreferences,
   type ConversationListItem,
 } from "@yinjie/contracts";
 import { ChevronRight, Search } from "lucide-react";
@@ -32,9 +34,7 @@ import {
 } from "../../chat/backgrounds/use-conversation-background";
 import {
   readDirectChatDetailPreferences,
-  readGroupChatDetailPreferences,
   writeDirectChatDetailPreferences,
-  writeGroupChatDetailPreferences,
 } from "../../chat-details/chat-detail-preferences";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -372,19 +372,15 @@ function GroupChatDetailsPanel({
   const ownerQuery = useDefaultChatBackground();
   const [notice, setNotice] = useState<string | null>(null);
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
-  const [preferences, setPreferences] = useState(() =>
-    readGroupChatDetailPreferences(conversation.id),
+  const [memberPickerMode, setMemberPickerMode] = useState<"add" | "remove">(
+    "add",
   );
 
   useEffect(() => {
-    setPreferences(readGroupChatDetailPreferences(conversation.id));
     setNotice(null);
     setMemberPickerOpen(false);
+    setMemberPickerMode("add");
   }, [conversation.id]);
-
-  useEffect(() => {
-    writeGroupChatDetailPreferences(conversation.id, preferences);
-  }, [conversation.id, preferences]);
 
   useEffect(() => {
     if (!notice) {
@@ -441,6 +437,49 @@ function GroupChatDetailsPanel({
     },
   });
 
+  const preferencesMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof updateGroupPreferences>[1]) =>
+      updateGroupPreferences(conversation.id, payload, baseUrl),
+    onSuccess: async (_, payload) => {
+      const nextNotice =
+        payload.isMuted !== undefined
+          ? payload.isMuted
+            ? "已开启群消息免打扰。"
+            : "已关闭群消息免打扰。"
+          : payload.savedToContacts !== undefined
+            ? payload.savedToContacts
+              ? "已保存到通讯录。"
+              : "已从通讯录移除。"
+            : payload.showMemberNicknames !== undefined
+              ? payload.showMemberNicknames
+                ? "已开启显示群成员昵称。"
+                : "已关闭显示群成员昵称。"
+              : payload.notifyOnAtMe !== undefined
+                ? payload.notifyOnAtMe
+                  ? "开启了 @我 通知。"
+                  : "关闭了 @我 通知。"
+                : payload.notifyOnAtAll !== undefined
+                  ? payload.notifyOnAtAll
+                    ? "开启了 @所有人 通知。"
+                    : "关闭了 @所有人 通知。"
+                  : payload.notifyOnAnnouncement !== undefined
+                    ? payload.notifyOnAnnouncement
+                      ? "开启了群公告通知。"
+                      : "关闭了群公告通知。"
+                    : "群聊设置已更新。";
+
+      setNotice(nextNotice);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+  });
+
   const updateNicknameMutation = useMutation({
     mutationFn: (nickname: string) =>
       updateGroupOwnerProfile(conversation.id, { nickname }, baseUrl),
@@ -470,6 +509,33 @@ function GroupChatDetailsPanel({
         memberIds.length === 1
           ? "已添加 1 位群成员。"
           : `已添加 ${memberIds.length} 位群成员。`,
+      );
+      setMemberPickerOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-members", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+  });
+
+  const removeMembersMutation = useMutation({
+    mutationFn: async (memberIds: string[]) => {
+      for (const memberId of memberIds) {
+        await removeGroupMember(conversation.id, memberId, baseUrl);
+      }
+    },
+    onSuccess: async (_, memberIds) => {
+      setNotice(
+        memberIds.length === 1
+          ? "已移除 1 位群成员。"
+          : `已移除 ${memberIds.length} 位群成员。`,
       );
       setMemberPickerOpen(false);
       await Promise.all([
@@ -544,6 +610,7 @@ function GroupChatDetailsPanel({
       label: "添加",
       kind: "add" as const,
       onClick: () => {
+        setMemberPickerMode("add");
         setMemberPickerOpen(true);
       },
     },
@@ -552,10 +619,24 @@ function GroupChatDetailsPanel({
       label: "移除",
       kind: "remove" as const,
       onClick: () => {
-        setNotice("移除群成员入口已保留，后端补接口后接通。");
+        setMemberPickerMode("remove");
+        setMemberPickerOpen(true);
       },
     },
   ];
+
+  const removableMembers = useMemo(
+    () =>
+      (membersQuery.data ?? [])
+        .filter((member) => member.memberType === "character")
+        .map((member) => ({
+          id: member.memberId,
+          name: member.memberName ?? member.memberId,
+          subtitle: member.role === "admin" ? "管理员" : "群成员",
+          avatar: member.memberAvatar,
+        })),
+    [membersQuery.data],
+  );
 
   return (
     <div className="space-y-3 p-3">
@@ -569,6 +650,14 @@ function GroupChatDetailsPanel({
       {addMembersMutation.isError &&
       addMembersMutation.error instanceof Error ? (
         <ErrorBlock message={addMembersMutation.error.message} />
+      ) : null}
+      {removeMembersMutation.isError &&
+      removeMembersMutation.error instanceof Error ? (
+        <ErrorBlock message={removeMembersMutation.error.message} />
+      ) : null}
+      {preferencesMutation.isError &&
+      preferencesMutation.error instanceof Error ? (
+        <ErrorBlock message={preferencesMutation.error.message} />
       ) : null}
 
       <DesktopPanelSection>
@@ -618,16 +707,17 @@ function GroupChatDetailsPanel({
           label="群公告"
           value={groupQuery.data?.announcement?.trim() || "未设置"}
           onClick={() => {
-            const nextAnnouncement = window.prompt(
-              "修改群公告",
-              groupQuery.data?.announcement ?? "",
-            );
-            if (nextAnnouncement === null) {
-              return;
-            }
-            updateGroupMutation.mutate({
-              announcement: nextAnnouncement.trim() || null,
+            void navigate({
+              to: "/group/$groupId/announcement",
+              params: { groupId: conversation.id },
             });
+          }}
+        />
+        <DesktopPanelRow
+          label="群二维码"
+          value="暂未开放"
+          onClick={() => {
+            setNotice("群二维码能力下一步补。当前先打通群公告和成员管理。");
           }}
         />
       </DesktopPanelSection>
@@ -649,15 +739,49 @@ function GroupChatDetailsPanel({
       <DesktopPanelSection title="设置">
         <DesktopPanelRow
           label="消息免打扰"
-          checked={preferences.muted}
+          checked={groupQuery.data?.isMuted ?? false}
           onToggle={(checked) => {
-            setPreferences((current) => ({ ...current, muted: checked }));
+            preferencesMutation.mutate({ isMuted: checked });
           }}
         />
+        {groupQuery.data?.isMuted ? (
+          <>
+            <DesktopPanelRow
+              label="@我仍通知"
+              checked={groupQuery.data.notifyOnAtMe}
+              onToggle={(checked) => {
+                preferencesMutation.mutate({ notifyOnAtMe: checked });
+              }}
+            />
+            <DesktopPanelRow
+              label="@所有人仍通知"
+              checked={groupQuery.data.notifyOnAtAll}
+              onToggle={(checked) => {
+                preferencesMutation.mutate({ notifyOnAtAll: checked });
+              }}
+            />
+            <DesktopPanelRow
+              label="群公告仍通知"
+              checked={groupQuery.data.notifyOnAnnouncement}
+              onToggle={(checked) => {
+                preferencesMutation.mutate({
+                  notifyOnAnnouncement: checked,
+                });
+              }}
+            />
+          </>
+        ) : null}
         <DesktopPanelRow
           label="置顶聊天"
           checked={groupQuery.data?.isPinned ?? conversation.isPinned}
           onToggle={(checked) => pinMutation.mutate(checked)}
+        />
+        <DesktopPanelRow
+          label="保存到通讯录"
+          checked={groupQuery.data?.savedToContacts ?? false}
+          onToggle={(checked) => {
+            preferencesMutation.mutate({ savedToContacts: checked });
+          }}
         />
         <DesktopPanelRow
           label="我在本群的昵称"
@@ -678,12 +802,11 @@ function GroupChatDetailsPanel({
         />
         <DesktopPanelRow
           label="显示群成员昵称"
-          checked={preferences.showMemberNicknames}
+          checked={groupQuery.data?.showMemberNicknames ?? true}
           onToggle={(checked) => {
-            setPreferences((current) => ({
-              ...current,
+            preferencesMutation.mutate({
               showMemberNicknames: checked,
-            }));
+            });
           }}
         />
         <DesktopPanelRow
@@ -710,13 +833,26 @@ function GroupChatDetailsPanel({
 
       <DesktopGroupMemberPicker
         open={memberPickerOpen}
+        mode={memberPickerMode}
         groupName={groupQuery.data?.name ?? conversation.title}
         existingMemberIds={(membersQuery.data ?? []).map(
           (item) => item.memberId,
         )}
-        pending={addMembersMutation.isPending}
+        removableMembers={removableMembers}
+        pending={
+          memberPickerMode === "add"
+            ? addMembersMutation.isPending
+            : removeMembersMutation.isPending
+        }
         onClose={() => setMemberPickerOpen(false)}
-        onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
+        onConfirm={(memberIds) => {
+          if (memberPickerMode === "add") {
+            addMembersMutation.mutate(memberIds);
+            return;
+          }
+
+          removeMembersMutation.mutate(memberIds);
+        }}
       />
     </div>
   );
