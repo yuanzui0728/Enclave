@@ -220,6 +220,14 @@ export function ChatDetailsPage() {
       key: targetCharacterId || conversation?.title || "character",
       label: targetCharacter?.name ?? conversation?.title ?? "对方",
       src: targetCharacter?.avatar,
+      onClick: targetCharacterId
+        ? () => {
+            void navigate({
+              to: "/character/$characterId",
+              params: { characterId: targetCharacterId },
+            });
+          }
+        : undefined,
     },
     {
       key: "add",
