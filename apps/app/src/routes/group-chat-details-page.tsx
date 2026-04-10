@@ -10,9 +10,10 @@ import {
   setGroupPinned,
   updateGroupPreferences,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
+import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
@@ -478,46 +479,29 @@ export function GroupChatDetailsPage() {
 
           {pendingCallFallback ? (
             <div className="px-3">
-              <InlineNotice tone="info">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium leading-6 text-[color:var(--text-primary)]">
-                      {pendingCallFallback === "voice"
-                        ? "群语音通话暂未开放"
-                        : "群视频通话暂未开放"}
-                    </div>
-                    <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {pendingCallFallback === "voice"
-                        ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
-                        : "先回到群聊继续，当前可以改用拍摄、图片或语音消息把内容发到群里。"}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        void navigate({
-                          to: "/group/$groupId",
-                          params: { groupId },
-                        });
-                      }}
-                      className="rounded-full"
-                    >
-                      {pendingCallFallback === "voice"
-                        ? "返回群聊发语音"
-                        : "返回群聊发消息"}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setPendingCallFallback(null)}
-                      className="rounded-full"
-                    >
-                      知道了
-                    </Button>
-                  </div>
-                </div>
-              </InlineNotice>
+              <ChatCallFallbackNotice
+                kind={pendingCallFallback}
+                scope="group"
+                description={
+                  pendingCallFallback === "voice"
+                    ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
+                    : "先回到群聊继续，当前可以改用拍摄、图片或语音消息把内容发到群里。"
+                }
+                primaryLabel={
+                  pendingCallFallback === "voice"
+                    ? "返回群聊发语音"
+                    : "返回群聊发消息"
+                }
+                secondaryLabel="知道了"
+                onPrimaryAction={() => {
+                  void navigate({
+                    to: "/group/$groupId",
+                    params: { groupId },
+                  });
+                }}
+                onSecondaryAction={() => setPendingCallFallback(null)}
+                primaryVariant="primary"
+              />
             </div>
           ) : null}
 

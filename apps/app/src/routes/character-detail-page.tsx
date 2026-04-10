@@ -33,6 +33,7 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -434,51 +435,27 @@ export function CharacterDetailPage() {
           </section>
 
           {pendingCallFallback ? (
-            <section className="overflow-hidden rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white">
-              <div className="flex items-start gap-3 px-4 py-4">
-                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.12)] text-[#07a35a]">
-                  {pendingCallFallback === "voice" ? (
-                    <Phone size={18} />
-                  ) : (
-                    <Video size={18} />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-[#111827]">
-                    {pendingCallFallback === "voice"
-                      ? "语音通话暂未开放"
-                      : "视频通话暂未开放"}
-                  </div>
-                  <div className="mt-1 text-[13px] leading-6 text-[#6b7280]">
-                    {pendingCallFallback === "voice"
-                      ? "先进入聊天页继续，用按住说话发送语音消息会更接近现在可用的体验。"
-                      : "先进入聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button
-                      variant="primary"
-                      onClick={() => startChatMutation.mutate()}
-                      className="rounded-full"
-                      disabled={startChatMutation.isPending}
-                    >
-                      {startChatMutation.isPending
-                        ? "正在打开..."
-                        : pendingCallFallback === "voice"
-                          ? "去聊天发语音"
-                          : "去聊天发消息"}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setPendingCallFallback(null)}
-                      className="rounded-full"
-                      disabled={startChatMutation.isPending}
-                    >
-                      知道了
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <ChatCallFallbackNotice
+              variant="card"
+              kind={pendingCallFallback}
+              description={
+                pendingCallFallback === "voice"
+                  ? "先进入聊天页继续，用按住说话发送语音消息会更接近现在可用的体验。"
+                  : "先进入聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
+              }
+              primaryLabel={
+                startChatMutation.isPending
+                  ? "正在打开..."
+                  : pendingCallFallback === "voice"
+                    ? "去聊天发语音"
+                    : "去聊天发消息"
+              }
+              secondaryLabel="知道了"
+              onPrimaryAction={() => startChatMutation.mutate()}
+              onSecondaryAction={() => setPendingCallFallback(null)}
+              primaryDisabled={startChatMutation.isPending}
+              secondaryDisabled={startChatMutation.isPending}
+            />
           ) : null}
 
           <ProfileSection title={isFriend ? "资料设置" : "基本资料"}>

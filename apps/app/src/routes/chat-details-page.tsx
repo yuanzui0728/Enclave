@@ -15,9 +15,10 @@ import {
   setConversationMuted,
   setConversationPinned,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
+import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
   CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
@@ -428,46 +429,28 @@ export function ChatDetailsPage() {
 
           {pendingCallFallback ? (
             <div className="px-3">
-              <InlineNotice tone="info">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium leading-6 text-[color:var(--text-primary)]">
-                      {pendingCallFallback === "voice"
-                        ? "语音通话暂未开放"
-                        : "视频通话暂未开放"}
-                    </div>
-                    <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {pendingCallFallback === "voice"
-                        ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
-                        : "先回到聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        void navigate({
-                          to: "/chat/$conversationId",
-                          params: { conversationId },
-                        });
-                      }}
-                      className="rounded-full"
-                    >
-                      {pendingCallFallback === "voice"
-                        ? "返回聊天发语音"
-                        : "返回聊天发消息"}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setPendingCallFallback(null)}
-                      className="rounded-full"
-                    >
-                      知道了
-                    </Button>
-                  </div>
-                </div>
-              </InlineNotice>
+              <ChatCallFallbackNotice
+                kind={pendingCallFallback}
+                description={
+                  pendingCallFallback === "voice"
+                    ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
+                    : "先回到聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
+                }
+                primaryLabel={
+                  pendingCallFallback === "voice"
+                    ? "返回聊天发语音"
+                    : "返回聊天发消息"
+                }
+                secondaryLabel="知道了"
+                onPrimaryAction={() => {
+                  void navigate({
+                    to: "/chat/$conversationId",
+                    params: { conversationId },
+                  });
+                }}
+                onSecondaryAction={() => setPendingCallFallback(null)}
+                primaryVariant="primary"
+              />
             </div>
           ) : null}
 
