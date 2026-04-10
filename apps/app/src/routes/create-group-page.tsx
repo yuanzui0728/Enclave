@@ -170,6 +170,14 @@ export function CreateGroupPage() {
       return;
     }
 
+    if (routeState.source === "desktop-chat" && routeState.conversationId) {
+      void navigate({
+        to: "/chat/$conversationId",
+        params: { conversationId: routeState.conversationId },
+      });
+      return;
+    }
+
     if (routeState.source === "group-contacts") {
       void navigate({ to: "/contacts/groups" });
       return;
@@ -494,7 +502,8 @@ export function CreateGroupPage() {
             )}
           </div>
 
-          {routeState.source === "chat-details" &&
+          {(routeState.source === "chat-details" ||
+            routeState.source === "desktop-chat") &&
           routeState.seedMemberIds.length ? (
             <div className="rounded-[12px] bg-[#f3fff8] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
               已按当前单聊默认勾选对方，你可以继续添加其他联系人。

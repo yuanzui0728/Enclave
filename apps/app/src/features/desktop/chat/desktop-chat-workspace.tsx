@@ -81,6 +81,7 @@ import {
   getConversationVisibleLastMessage,
 } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -563,7 +564,24 @@ export function DesktopChatWorkspace({
     setNotice(null);
 
     if (key === "create-group") {
-      void navigate({ to: "/group/new" });
+      const seedMemberIds =
+        activeConversation && !isPersistedGroupConversation(activeConversation)
+          ? activeConversation.participants.slice(0, 1)
+          : [];
+      void navigate({
+        to: "/group/new",
+        hash: buildCreateGroupRouteHash({
+          source:
+            activeConversation && !isPersistedGroupConversation(activeConversation)
+              ? "desktop-chat"
+              : undefined,
+          conversationId:
+            activeConversation && !isPersistedGroupConversation(activeConversation)
+              ? activeConversation.id
+              : undefined,
+          seedMemberIds,
+        }),
+      });
       return;
     }
 
