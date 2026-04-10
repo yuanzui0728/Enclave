@@ -44,13 +44,16 @@ import { OfficialServiceConversationCard } from "../components/official-service-
 import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import {
-  shouldHideSearchableChatMessage,
   removeLocalChatMessageReminder,
   useLocalChatMessageActionState,
 } from "../features/chat/local-chat-message-actions";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { sanitizeDisplayedChatText } from "../lib/chat-text";
+import {
+  getConversationPreviewParts,
+  getConversationVisibleLastMessage,
+} from "../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   formatConversationTimestamp,
@@ -64,7 +67,8 @@ type QuickActionItem = {
   label: string;
   icon: typeof Users;
   to?: "/group/new" | "/friend-requests";
-  unavailableNotice?: string;
+  disabled?: boolean;
+  disabledLabel?: string;
 };
 
 const quickActionItems: QuickActionItem[] = [
@@ -84,13 +88,15 @@ const quickActionItems: QuickActionItem[] = [
     key: "scan",
     label: "扫一扫",
     icon: QrCode,
-    unavailableNotice: "扫一扫功能暂未接入。",
+    disabled: true,
+    disabledLabel: "暂未开放",
   },
   {
     key: "pay",
     label: "收付款",
     icon: WalletCards,
-    unavailableNotice: "收付款功能暂未接入。",
+    disabled: true,
+    disabledLabel: "暂未开放",
   },
 ];
 
@@ -366,11 +372,6 @@ function MobileChatListPage() {
     };
   }, [baseUrl, queryClient]);
 
-  function handleUnavailableAction(message: string) {
-    setIsQuickMenuOpen(false);
-    setNotice(message);
-  }
-
   function handleNavigate(to: "/group/new" | "/friend-requests") {
     setIsQuickMenuOpen(false);
     setNotice(null);
@@ -472,7 +473,7 @@ function MobileChatListPage() {
                 {quickActionItems.map((item) => {
                   const Icon = item.icon;
 
-                  if (item.to) {
+                  if (item.to && !item.disabled) {
                     const to = item.to;
                     return (
                       <button
@@ -493,15 +494,30 @@ function MobileChatListPage() {
                     <button
                       key={item.key}
                       type="button"
-                      onClick={() =>
-                        handleUnavailableAction(item.unavailableNotice!)
-                      }
-                      className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10"
+                      disabled={item.disabled}
+                      className={cn(
+                        "flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                        item.disabled
+                          ? "cursor-not-allowed opacity-55"
+                          : "hover:bg-white/10",
+                      )}
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/10 text-white">
+                      <div
+                        className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-white",
+                          item.disabled ? "bg-white/6" : "bg-white/10",
+                        )}
+                      >
                         <Icon size={16} />
                       </div>
-                      <span>{item.label}</span>
+                      <div className="min-w-0 flex-1">
+                        <div>{item.label}</div>
+                        {item.disabledLabel ? (
+                          <div className="mt-0.5 text-[11px] text-white/65">
+                            {item.disabledLabel}
+                          </div>
+                        ) : null}
+                      </div>
                     </button>
                   );
                 })}
@@ -773,9 +789,16 @@ function ConversationListItemLink({
   const isPinned = conversation.isPinned;
   const isGroupConversation = isPersistedGroupConversation(conversation);
   const showMutedUnreadDot = conversation.isMuted && hasUnreadMessages;
-  const visibleLastMessage = resolveVisibleConversationLastMessage(
+  const visibleLastMessage = getConversationVisibleLastMessage(
     conversation,
     localMessageActionState,
+  );
+  const preview = getConversationPreviewParts(
+    conversation,
+    localMessageActionState,
+    {
+      emptyText: "从这里开始第一句问候",
+    },
   );
 
   useEffect(() => {
@@ -859,7 +882,8 @@ function ConversationListItemLink({
               {conversation.title}
             </div>
             <div className="mt-1 truncate text-[13px] text-[color:var(--text-muted)]">
-              {formatConversationPreview(conversation, localMessageActionState)}
+              {preview.prefix}
+              {preview.text}
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
@@ -1016,70 +1040,6 @@ function ConversationListItemLink({
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
-}
-
-function formatConversationPreview(
-  conversation: ConversationListEntry,
-  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>,
-) {
-  const lastMessage = resolveVisibleConversationLastMessage(
-    conversation,
-    localMessageActionState,
-  );
-  if (!lastMessage) {
-    return conversation.lastMessage
-      ? isPersistedGroupConversation(conversation)
-        ? "打开群聊查看最近消息。"
-        : "打开这个会话查看最近聊天记录。"
-      : "从这里开始第一句问候";
-  }
-
-  const prefix = isPersistedGroupConversation(conversation)
-    ? `${lastMessage.senderType === "user" ? "我" : lastMessage.senderName || "群成员"}：`
-    : "";
-
-  if (lastMessage.type === "image") {
-    return `${prefix}[图片]`;
-  }
-
-  if (lastMessage.type === "file") {
-    return `${prefix}[文件]`;
-  }
-
-  if (lastMessage.type === "contact_card") {
-    return `${prefix}[名片]`;
-  }
-
-  if (lastMessage.type === "location_card") {
-    return `${prefix}[位置]`;
-  }
-
-  if (lastMessage.type === "sticker") {
-    return lastMessage.attachment?.kind === "sticker" &&
-      lastMessage.attachment.label
-      ? `${prefix}[表情] ${lastMessage.attachment.label}`
-      : `${prefix}[表情]`;
-  }
-
-  const sanitizedText = sanitizeDisplayedChatText(lastMessage.text);
-  return sanitizedText ? `${prefix}${sanitizedText}` : "从这里开始第一句问候";
-}
-
-function resolveVisibleConversationLastMessage(
-  conversation: ConversationListEntry,
-  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>,
-) {
-  const lastMessage = conversation.lastMessage;
-  if (!lastMessage) {
-    return null;
-  }
-
-  return shouldHideSearchableChatMessage(
-    lastMessage.id,
-    localMessageActionState,
-  )
-    ? null
-    : lastMessage;
 }
 
 function canConversationBeMarkedUnread(conversation: ConversationListEntry) {
