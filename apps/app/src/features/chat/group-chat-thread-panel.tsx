@@ -7,6 +7,7 @@ import {
   getGroupMessages,
   markGroupRead,
   sendGroupMessage,
+  type StickerAttachment,
   uploadChatAttachment,
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -206,6 +207,14 @@ export function GroupChatThreadPanel({
       type: "location_card",
       text: replyText || undefined,
       attachment: payload.attachment,
+    });
+  };
+
+  const handleSendSticker = async (sticker: StickerAttachment) => {
+    await sendMutation.mutateAsync({
+      type: "sticker",
+      text: replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
+      attachment: sticker,
     });
   };
 
@@ -438,6 +447,10 @@ export function GroupChatThreadPanel({
             enabled: runtimeConfig.appPlatform === "web",
           }}
           onChange={setText}
+          onSendSticker={async (sticker) => {
+            await handleSendSticker(sticker);
+            setReplyDraft(null);
+          }}
           onSendAttachment={sendAttachmentMessage}
           mentionCandidates={mentionCandidates}
           replyPreview={replyPreview}

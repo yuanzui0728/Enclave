@@ -18,6 +18,7 @@ import {
   ImageAttachment,
   LocationCardAttachment,
   MessageAttachment,
+  StickerAttachment,
 } from './chat.types';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
@@ -75,6 +76,11 @@ type SendGroupMessageInput =
       type: 'location_card';
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      type: 'sticker';
+      text?: string;
+      attachment: StickerAttachment;
     };
 
 @Injectable()
@@ -598,7 +604,13 @@ export class GroupService {
   }
 
   private normalizeOutgoingMessageInput(input: SendGroupMessageInput): {
-    type: 'text' | 'image' | 'file' | 'contact_card' | 'location_card';
+    type:
+      | 'text'
+      | 'image'
+      | 'file'
+      | 'contact_card'
+      | 'location_card'
+      | 'sticker';
     text: string;
     promptText: string;
     aiParts: AiMessagePart[];
@@ -608,7 +620,8 @@ export class GroupService {
       input.type === 'image' ||
       input.type === 'file' ||
       input.type === 'contact_card' ||
-      input.type === 'location_card'
+      input.type === 'location_card' ||
+      input.type === 'sticker'
     ) {
       if (!input.attachment || input.attachment.kind !== input.type) {
         throw new Error('Attachment payload is invalid');
@@ -796,7 +809,7 @@ export class GroupService {
       return `[位置] ${attachment.title}`.trim();
     }
 
-    return '[附件]';
+    return `[表情] ${attachment.label ?? attachment.stickerId}`.trim();
   }
 
   private toGroupMessage(entity: GroupMessageEntity): GroupMessage {
