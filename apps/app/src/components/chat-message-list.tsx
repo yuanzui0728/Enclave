@@ -1,4 +1,5 @@
 import {
+  useMemo,
   useEffect,
   useRef,
   useState,
@@ -7,6 +8,7 @@ import {
   type ReactNode,
   type TouchEvent,
 } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,11 +19,22 @@ import {
   MapPin,
   X,
 } from "lucide-react";
-import { type MessageAttachment } from "@yinjie/contracts";
+import {
+  getConversations,
+  sendGroupMessage,
+  type ConversationListItem,
+  type MessageAttachment,
+  type SendGroupMessageRequest,
+  type SendMessagePayload,
+} from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
+import {
+  DesktopMessageForwardDialog,
+  type DesktopMessageForwardPreviewItem,
+} from "../features/desktop/chat/desktop-message-forward-dialog";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -32,7 +45,10 @@ import {
   sanitizeDisplayedChatText,
   splitChatTextSegments,
 } from "../lib/chat-text";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
+import { emitChatMessage, joinConversationRoom } from "../lib/socket";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export type ChatRenderableMessage = {
   id: string;
@@ -64,6 +80,9 @@ export function ChatMessageList({
   onReplyMessage,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
+  const queryClient = useQueryClient();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const [activeHighlightedMessageId, setActiveHighlightedMessageId] = useState<
     string | undefined
   >(highlightedMessageId);
@@ -79,6 +98,9 @@ export function ChatMessageList({
   const [mobileActionMessage, setMobileActionMessage] =
     useState<ChatRenderableMessage | null>(null);
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
+  const [forwardMessages, setForwardMessages] = useState<
+    ChatRenderableMessage[] | null
+  >(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop;
@@ -129,6 +151,13 @@ export function ChatMessageList({
   useEffect(() => {
     setContextMenuState(null);
     setMobileActionMessage(null);
+    setForwardMessages((current) =>
+      current?.length
+        ? current.filter((item) =>
+            messages.some((message) => message.id === item.id),
+          )
+        : null,
+    );
     setViewerMessageId((current) =>
       current && messages.some((message) => message.id === current)
         ? current
@@ -145,13 +174,66 @@ export function ChatMessageList({
   }, []);
 
   useEffect(() => {
-    if (!isDesktop) {
-      setFavoriteSourceIds([]);
-      return;
-    }
-
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
+
+    if (!isDesktop) {
+      setForwardMessages(null);
+    }
   }, [isDesktop]);
+
+  const forwardConversationsQuery = useQuery({
+    queryKey: ["desktop-message-forward-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: isDesktop && Boolean(forwardMessages?.length),
+  });
+
+  const forwardMutation = useMutation({
+    mutationFn: async (conversation: ConversationListItem) => {
+      const messageQueue = forwardMessages ?? [];
+      if (!messageQueue.length) {
+        return {
+          conversationTitle: conversation.title,
+          count: 0,
+        };
+      }
+
+      for (const message of messageQueue) {
+        await forwardMessageToConversation({
+          baseUrl,
+          conversation,
+          message,
+        });
+      }
+
+      return {
+        conversationTitle: conversation.title,
+        count: messageQueue.length,
+      };
+    },
+    onSuccess: async ({ conversationTitle, count }) => {
+      setForwardMessages(null);
+      setActionNotice({
+        message:
+          count <= 1
+            ? `已转发到 ${conversationTitle}。`
+            : `已转发 ${count} 条消息到 ${conversationTitle}。`,
+        tone: "success",
+      });
+
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }, 500);
+    },
+    onError: (error) => {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "转发失败，请稍后再试。",
+        tone: "danger",
+      });
+    },
+  });
 
   const copyToClipboard = async (text: string, successMessage: string) => {
     if (
@@ -387,6 +469,16 @@ export function ChatMessageList({
       tone: "success",
     });
   };
+  const forwardPreviewItems: DesktopMessageForwardPreviewItem[] = useMemo(
+    () =>
+      (forwardMessages ?? []).map((message) => ({
+        id: message.id,
+        senderName: buildClipboardSender(message),
+        previewText: buildForwardPreviewText(message),
+        typeLabel: resolveForwardTypeLabel(message),
+      })),
+    [forwardMessages],
+  );
 
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
@@ -538,6 +630,14 @@ export function ChatMessageList({
                 }
               : undefined
           }
+          onForward={
+            canForwardMessage(contextMenuState.message)
+              ? () => {
+                  setForwardMessages([contextMenuState.message]);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
           onCopyText={() => {
             void copyToClipboard(
               buildClipboardText(contextMenuState.message),
@@ -600,6 +700,22 @@ export function ChatMessageList({
                 setMobileActionMessage(null);
               }
             : undefined
+        }
+        onToggleFavorite={
+          mobileActionMessage
+            ? () => {
+                handleToggleFavorite(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        favoriteLabel={
+          mobileActionMessage &&
+          favoriteSourceIds.includes(
+            buildFavoriteSourceId(mobileActionMessage.id),
+          )
+            ? "取消收藏"
+            : "收藏"
         }
         onCopy={() => {
           if (!mobileActionMessage) {
@@ -677,6 +793,22 @@ export function ChatMessageList({
           }
         />
       ) : null}
+      <DesktopMessageForwardDialog
+        open={Boolean(forwardMessages?.length)}
+        messages={forwardPreviewItems}
+        conversations={forwardConversationsQuery.data ?? []}
+        loading={forwardConversationsQuery.isLoading}
+        pending={forwardMutation.isPending}
+        error={
+          forwardConversationsQuery.error instanceof Error
+            ? forwardConversationsQuery.error.message
+            : null
+        }
+        onClose={() => setForwardMessages(null)}
+        onForward={(conversation) => {
+          void forwardMutation.mutateAsync(conversation);
+        }}
+      />
     </div>
   );
 }
@@ -754,6 +886,49 @@ function buildClipboardText(message: ChatRenderableMessage) {
   return "消息";
 }
 
+function buildForwardPreviewText(message: ChatRenderableMessage) {
+  const forwardedText = getForwardMessageText(message);
+  if (forwardedText) {
+    return forwardedText;
+  }
+
+  return buildClipboardText(message);
+}
+
+function resolveForwardTypeLabel(message: ChatRenderableMessage) {
+  if (message.type === "image") {
+    return "图片";
+  }
+
+  if (message.type === "file") {
+    return "文件";
+  }
+
+  if (message.type === "contact_card") {
+    return "名片";
+  }
+
+  if (message.type === "location_card") {
+    return "位置";
+  }
+
+  if (message.type === "sticker") {
+    return "表情";
+  }
+
+  return "消息";
+}
+
+function getForwardMessageText(message: ChatRenderableMessage) {
+  const replyContent = extractChatReplyMetadata(message.text);
+  const displayedText =
+    message.senderType === "user"
+      ? replyContent.body.trim()
+      : sanitizeDisplayedChatText(message.text).trim();
+
+  return displayedText || undefined;
+}
+
 function buildFavoriteSourceId(messageId: string) {
   return `chat-message-${messageId}`;
 }
@@ -800,6 +975,154 @@ function getOpenableAttachment(message: ChatRenderableMessage) {
   }
 
   return null;
+}
+
+function canForwardMessage(message: ChatRenderableMessage) {
+  return message.type !== "sticker";
+}
+
+async function forwardMessageToConversation(input: {
+  baseUrl?: string;
+  conversation: ConversationListItem;
+  message: ChatRenderableMessage;
+}) {
+  if (isPersistedGroupConversation(input.conversation)) {
+    const payload = buildGroupForwardPayload(input.message);
+    if (!payload) {
+      throw new Error("当前消息暂不支持转发到群聊。");
+    }
+
+    await sendGroupMessage(input.conversation.id, payload, input.baseUrl);
+    return;
+  }
+
+  const payload = buildDirectForwardPayload(input.conversation, input.message);
+  if (!payload) {
+    throw new Error("这条单聊暂时没有可用的角色目标，无法完成转发。");
+  }
+
+  joinConversationRoom({ conversationId: input.conversation.id });
+  emitChatMessage(payload);
+}
+
+function buildGroupForwardPayload(
+  message: ChatRenderableMessage,
+): SendGroupMessageRequest | null {
+  const text = getForwardMessageText(message);
+
+  if (message.type === "image" && message.attachment?.kind === "image") {
+    return {
+      type: "image",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (message.type === "file" && message.attachment?.kind === "file") {
+    return {
+      type: "file",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (
+    message.type === "contact_card" &&
+    message.attachment?.kind === "contact_card"
+  ) {
+    return {
+      type: "contact_card",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (
+    message.type === "location_card" &&
+    message.attachment?.kind === "location_card"
+  ) {
+    return {
+      type: "location_card",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (message.type === "sticker") {
+    return null;
+  }
+
+  return {
+    text: text ?? buildClipboardText(message),
+  };
+}
+
+function buildDirectForwardPayload(
+  conversation: ConversationListItem,
+  message: ChatRenderableMessage,
+): SendMessagePayload | null {
+  const characterId = conversation.participants[0];
+  if (!characterId) {
+    return null;
+  }
+
+  const text = getForwardMessageText(message);
+
+  if (message.type === "image" && message.attachment?.kind === "image") {
+    return {
+      conversationId: conversation.id,
+      characterId,
+      type: "image",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (message.type === "file" && message.attachment?.kind === "file") {
+    return {
+      conversationId: conversation.id,
+      characterId,
+      type: "file",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (
+    message.type === "contact_card" &&
+    message.attachment?.kind === "contact_card"
+  ) {
+    return {
+      conversationId: conversation.id,
+      characterId,
+      type: "contact_card",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (
+    message.type === "location_card" &&
+    message.attachment?.kind === "location_card"
+  ) {
+    return {
+      conversationId: conversation.id,
+      characterId,
+      type: "location_card",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (message.type === "sticker") {
+    return null;
+  }
+
+  return {
+    conversationId: conversation.id,
+    characterId,
+    text: text ?? buildClipboardText(message),
+  };
 }
 
 function saveUrlAsFile(url: string, fileName: string) {

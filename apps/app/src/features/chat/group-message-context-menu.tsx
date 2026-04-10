@@ -4,6 +4,7 @@ import {
   CornerUpLeft,
   Download,
   ExternalLink,
+  Forward,
   Star,
   UserRound,
 } from "lucide-react";
@@ -13,6 +14,7 @@ type GroupMessageContextMenuProps = {
   y: number;
   onClose: () => void;
   onReply?: () => void;
+  onForward?: () => void;
   onCopyText: () => void;
   onCopySender?: () => void;
   onToggleFavorite?: () => void;
@@ -31,6 +33,7 @@ export function GroupMessageContextMenu({
   y,
   onClose,
   onReply,
+  onForward,
   onCopyText,
   onCopySender,
   onToggleFavorite,
@@ -43,6 +46,7 @@ export function GroupMessageContextMenu({
   const actionCount =
     1 +
     Number(Boolean(onReply)) +
+    Number(Boolean(onForward)) +
     Number(Boolean(onCopySender)) +
     Number(Boolean(onToggleFavorite)) +
     Number(Boolean(onOpenAttachment)) +
@@ -83,6 +87,13 @@ export function GroupMessageContextMenu({
             label="回复消息"
             icon={<CornerUpLeft size={15} />}
             onClick={onReply}
+          />
+        ) : null}
+        {onForward ? (
+          <ContextMenuButton
+            label="转发消息"
+            icon={<Forward size={15} />}
+            onClick={onForward}
           />
         ) : null}
         <ContextMenuButton
