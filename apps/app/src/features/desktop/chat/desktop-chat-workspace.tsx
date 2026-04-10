@@ -58,10 +58,8 @@ import {
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
 import { buildSearchRouteHash } from "../../search/search-route-state";
-import {
-  removeLocalChatMessageReminder,
-  useLocalChatMessageActionState,
-} from "../../chat/local-chat-message-actions";
+import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
+import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
 import {
   splitChatTextSegments,
@@ -207,6 +205,12 @@ export function DesktopChatWorkspace({
     reminders: localMessageActionState.reminders,
     conversations,
     keyword: searchTerm,
+  });
+  const { openReminder, completeReminder } = useChatReminderActions({
+    navigateToReminder: (entry) => {
+      void navigate(buildChatReminderNavigation(entry));
+    },
+    onNoticeChange: setNotice,
   });
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations = useMemo(
@@ -555,16 +559,6 @@ export function DesktopChatWorkspace({
     });
   }
 
-  function handleOpenReminder(entry: ChatReminderEntry) {
-    setNotice(null);
-    void navigate(buildChatReminderNavigation(entry));
-  }
-
-  function handleDismissReminder(messageId: string) {
-    removeLocalChatMessageReminder(messageId);
-    setNotice("已移除消息提醒。");
-  }
-
   return (
     <div className="relative flex h-full min-h-0">
       {isQuickMenuOpen ? (
@@ -679,8 +673,8 @@ export function DesktopChatWorkspace({
                         entry.threadId === selectedConversationId &&
                         entry.messageId === highlightedMessageId
                       }
-                      onOpen={handleOpenReminder}
-                      onDismiss={handleDismissReminder}
+                      onOpen={openReminder}
+                      onDismiss={completeReminder}
                     />
                   ))}
                 </div>

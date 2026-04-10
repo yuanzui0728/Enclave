@@ -43,17 +43,14 @@ import { EmptyState } from "../components/empty-state";
 import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import {
-  removeLocalChatMessageReminder,
-  useLocalChatMessageActionState,
-} from "../features/chat/local-chat-message-actions";
+import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import {
   buildChatReminderNavigation,
   getChatReminderStatus,
   getChatReminderStatusLabel,
-  type ChatReminderEntry,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
+import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -159,6 +156,12 @@ function MobileChatListPage() {
   const { reminderEntries, dueReminderCount } = useChatReminderEntries({
     reminders: localMessageActionState.reminders,
     conversations,
+  });
+  const { openReminder, completeReminder } = useChatReminderActions({
+    navigateToReminder: (entry) => {
+      void navigate(buildChatReminderNavigation(entry));
+    },
+    onNoticeChange: setNotice,
   });
   const visibleConversations = useMemo(
     () =>
@@ -386,16 +389,6 @@ function MobileChatListPage() {
     setNotice("已撤销删除。");
   }
 
-  function handleOpenReminder(entry: ChatReminderEntry) {
-    setNotice(null);
-    void navigate(buildChatReminderNavigation(entry));
-  }
-
-  function handleDismissReminder(messageId: string) {
-    removeLocalChatMessageReminder(messageId);
-    setNotice("已移除消息提醒。");
-  }
-
   return (
     <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
       {isQuickMenuOpen ? (
@@ -566,7 +559,7 @@ function MobileChatListPage() {
               >
                 <button
                   type="button"
-                  onClick={() => handleOpenReminder(entry)}
+                  onClick={() => openReminder(entry)}
                   className="min-w-0 flex-1 text-left"
                 >
                   <div className="flex items-center gap-2">
@@ -599,7 +592,7 @@ function MobileChatListPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDismissReminder(entry.messageId)}
+                  onClick={() => completeReminder(entry.messageId)}
                   className="shrink-0 rounded-full border border-black/8 px-3 py-1.5 text-[12px] text-[#5f6368]"
                 >
                   完成
