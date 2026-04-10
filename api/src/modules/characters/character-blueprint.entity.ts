@@ -27,7 +27,7 @@ export class CharacterBlueprintEntity {
   @Column('simple-json', { nullable: true })
   publishedRecipe?: CharacterBlueprintRecipeValue | null;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   publishedRevisionId?: string | null;
 
   @Column({ default: 0 })
