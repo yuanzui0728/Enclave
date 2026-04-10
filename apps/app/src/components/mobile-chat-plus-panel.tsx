@@ -177,9 +177,9 @@ export function MobileChatPlusPanel({
   }
 
   return (
-    <div className="mt-2 overflow-hidden border-t border-black/6 bg-[#f7f7f7] shadow-none">
+    <div className="mt-2 min-h-[248px] overflow-hidden border-t border-black/6 bg-[#f1f1f1] shadow-none">
       {activeView === "root" ? (
-        <div className="pb-6 pt-4">
+        <div className="pb-5 pt-4">
           <div
             ref={rootPagerRef}
             className="relative flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -198,7 +198,7 @@ export function MobileChatPlusPanel({
               {rootActionPages.map((page, pageIndex) => (
                 <div
                   key={`page-${pageIndex}`}
-                  className="grid min-w-full shrink-0 snap-start grid-cols-4 gap-y-5 px-5"
+                  className="grid min-w-full shrink-0 snap-start grid-cols-4 gap-y-5 px-4"
                 >
                   {page.map((item) => {
                     const Icon = item.icon;
@@ -225,7 +225,7 @@ export function MobileChatPlusPanel({
                         onClick={handleClick}
                         disabled={busy || item.disabled}
                         className={cn(
-                          "flex flex-col items-center gap-2.5 text-center",
+                          "flex flex-col items-center gap-2 text-center",
                           item.disabled
                             ? "cursor-not-allowed opacity-55"
                             : "disabled:opacity-60",
@@ -233,7 +233,7 @@ export function MobileChatPlusPanel({
                       >
                         <div
                           className={cn(
-                            "flex h-14 w-14 items-center justify-center rounded-[16px] border text-white shadow-none",
+                            "flex h-14 w-14 items-center justify-center rounded-[14px] border bg-white text-white shadow-none",
                             item.disabled
                               ? "border-black/5 bg-[#d7d7d7]"
                               : "border-black/6",
@@ -297,7 +297,7 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {friendsQuery.data?.length ? (
-            <div className="max-h-72 overflow-auto px-2">
+            <div className="mx-3 max-h-72 overflow-auto rounded-[10px] bg-white">
               {friendsQuery.data.map(({ character }, index) => (
                 <button
                   key={character.id}
@@ -314,9 +314,9 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left transition-colors hover:bg-white/72 disabled:opacity-60",
+                    "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
                     index > 0
-                      ? "border-t border-[rgba(148,163,184,0.12)]"
+                      ? "border-t border-black/[0.06]"
                       : undefined,
                   )}
                 >
@@ -349,7 +349,7 @@ export function MobileChatPlusPanel({
         <div className="pb-4">
           <PanelHeader title="发送收藏" onBack={() => setActiveView("root")} />
           {favoriteRecords.length ? (
-            <div className="max-h-72 overflow-auto px-2">
+            <div className="mx-3 max-h-72 overflow-auto rounded-[10px] bg-white">
               {favoriteRecords.map((item, index) => (
                 <button
                   key={item.id}
@@ -359,9 +359,9 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-[18px] px-3 py-3 text-left transition-colors hover:bg-white/72 disabled:opacity-60",
+                    "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
                     index > 0
-                      ? "border-t border-[rgba(148,163,184,0.12)]"
+                      ? "border-t border-black/[0.06]"
                       : undefined,
                   )}
                 >
@@ -400,7 +400,7 @@ export function MobileChatPlusPanel({
       {activeView === "locations" ? (
         <div className="pb-4">
           <PanelHeader title="选择位置" onBack={() => setActiveView("root")} />
-          <div className="grid gap-2 px-3">
+          <div className="mx-3 overflow-hidden rounded-[10px] bg-white">
             {CHAT_LOCATION_SCENES.map((scene) => (
               <button
                 key={scene.id}
@@ -412,7 +412,7 @@ export function MobileChatPlusPanel({
                   }
                 }}
                 disabled={busy}
-                className="rounded-[18px] border border-white/80 bg-white/72 px-4 py-3 text-left shadow-[var(--shadow-soft)] transition-colors hover:bg-white disabled:opacity-60"
+                className="block w-full px-4 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60"
               >
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {scene.title}
@@ -431,16 +431,16 @@ export function MobileChatPlusPanel({
 
 function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <div className="flex items-center gap-2 px-3 pb-2 pt-2">
+    <div className="relative flex items-center justify-center px-4 pb-2 pt-3">
       <button
         type="button"
         onClick={onBack}
-        className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-white/72"
+        className="absolute left-3 flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition active:bg-[#e5e5e5]"
         aria-label="返回"
       >
         <ChevronLeft size={16} />
       </button>
-      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+      <div className="text-sm font-medium text-[#111827]">
         {title}
       </div>
     </div>
