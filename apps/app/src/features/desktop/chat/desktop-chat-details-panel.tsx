@@ -866,9 +866,9 @@ function DesktopPanelSection({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[14px] border border-black/6 bg-white">
+    <section className="overflow-hidden rounded-[10px] border border-black/5 bg-white">
       {title ? (
-        <div className="border-b border-black/6 px-4 py-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+        <div className="border-b border-black/5 bg-[#fcfcfc] px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
           {title}
         </div>
       ) : null}
@@ -915,9 +915,9 @@ function DesktopPanelRow({
         onClick?.();
       }}
       className={cn(
-        "flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0",
+        "flex min-h-[50px] w-full items-center justify-between gap-3 border-b border-black/5 px-4 py-3 text-left last:border-b-0",
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
-        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#fafafa]",
+        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#f7f7f7]",
       )}
       role={isSwitch ? "switch" : undefined}
       aria-checked={isSwitch ? checked : undefined}
@@ -958,7 +958,7 @@ function DesktopPanelRow({
 
 function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
   return (
-    <div className="grid grid-cols-4 gap-x-3 gap-y-4 px-4 py-4">
+    <div className="grid grid-cols-4 gap-x-2.5 gap-y-3 px-4 py-3.5">
       {items.map((item) => {
         const isAction = item.kind === "add" || item.kind === "remove";
         return (
@@ -971,10 +971,10 @@ function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
             {isAction ? (
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-[14px] border text-2xl transition-colors",
+                  "flex h-12 w-12 items-center justify-center rounded-[10px] border text-2xl transition-colors",
                   item.kind === "remove"
-                    ? "border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.88)] text-red-500"
-                    : "border-black/8 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
+                    ? "border-[rgba(220,38,38,0.14)] bg-[#fff5f5] text-red-500"
+                    : "border-black/8 bg-[#f7f7f7] text-[color:var(--text-secondary)]",
                 )}
               >
                 {item.kind === "remove" ? "−" : "+"}
