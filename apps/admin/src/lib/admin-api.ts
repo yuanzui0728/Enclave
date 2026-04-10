@@ -41,6 +41,17 @@ export function getAdminSecret(): string {
   return stored || DEV_ADMIN_SECRET;
 }
 
+async function requestWithSecret(path: string, secret: string, options?: RequestInit) {
+  return fetch(`${resolveAdminApiBase()}/admin${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Admin-Secret": secret,
+      ...options?.headers,
+    },
+    ...options,
+  });
+}
+
 export function setAdminSecret(secret: string) {
   getStorage()?.setItem(ADMIN_SECRET_KEY, secret.trim());
 }
@@ -50,20 +61,27 @@ export function clearAdminSecret() {
 }
 
 async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const storedSecret = getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
   const secret = getAdminSecret();
   if (!secret) {
     throw new Error("请先配置 ADMIN_SECRET。");
   }
 
-  const res = await fetch(`${resolveAdminApiBase()}/admin${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-Secret": secret,
-      ...options?.headers,
-    },
-    ...options,
-  });
-  const rawBody = await res.text();
+  let res = await requestWithSecret(path, secret, options);
+  let rawBody = await res.text();
+  if (
+    res.status === 401 &&
+    storedSecret &&
+    DEV_ADMIN_SECRET &&
+    storedSecret !== DEV_ADMIN_SECRET &&
+    !rawBody.includes("not configured")
+  ) {
+    res = await requestWithSecret(path, DEV_ADMIN_SECRET, options);
+    rawBody = await res.text();
+    if (res.ok) {
+      setAdminSecret(DEV_ADMIN_SECRET);
+    }
+  }
   if (res.status === 401) {
     if (rawBody.includes("not configured")) {
       throw new Error("服务端尚未配置 ADMIN_SECRET。");
