@@ -3651,6 +3651,9 @@ function GroupCallInviteMessage({
         {invite.sourceLabel ? (
           <CallInviteMetric label="发起端" value={invite.sourceLabel} />
         ) : null}
+        {invite.snapshotLabel ? (
+          <CallInviteMetric label="人数快照" value={invite.snapshotLabel} />
+        ) : null}
         {invite.activeCount ? (
           <div className="grid grid-cols-2 gap-2">
             <CallInviteMetric

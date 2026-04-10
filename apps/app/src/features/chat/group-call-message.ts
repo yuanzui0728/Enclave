@@ -68,6 +68,7 @@ export function buildGroupCallInviteMessage(
   status: GroupCallInviteStatus = "ongoing",
   recordedAt = new Date().toISOString(),
   source?: GroupCallInviteSource,
+  snapshotRecordedAt = recordedAt,
 ) {
   const normalizedTotalCount = Math.max(counts?.totalCount ?? 0, 0);
   const normalizedActiveCount = Math.min(
@@ -91,6 +92,7 @@ export function buildGroupCallInviteMessage(
     `状态 ${formatGroupCallStatusLabel(kind, status)}`,
     `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
     sourceLabel ? `发起设备 ${sourceLabel}` : null,
+    `人数快照 ${snapshotRecordedAt}`,
     normalizedTotalCount
       ? `当前在线 ${normalizedActiveCount}/${normalizedTotalCount} 人`
       : "当前在线人数待同步",
@@ -157,7 +159,13 @@ export function parseGroupCallInviteMessage(text: string) {
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
   const sourceLabel = parseCallInviteSource(lines[timestampLabel ? 4 : 3]);
-  const metricOffset = Number(Boolean(timestampLabel)) + Number(Boolean(sourceLabel));
+  const snapshotLabel = parseGroupCallSnapshotLabel(
+    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(sourceLabel))],
+  );
+  const metricOffset =
+    Number(Boolean(timestampLabel)) +
+    Number(Boolean(sourceLabel)) +
+    Number(Boolean(snapshotLabel));
 
   return {
     kind: header === GROUP_VOICE_CALL_PREFIX ? "voice" : "video",
@@ -165,6 +173,7 @@ export function parseGroupCallInviteMessage(text: string) {
     status: parseGroupCallStatus(lines[2]),
     timestampLabel,
     sourceLabel,
+    snapshotLabel,
     activeCount: parseGroupCallMetric(
       lines[3 + metricOffset],
       /当前在线\s+(\d+)\/(\d+)\s+人/,
@@ -177,6 +186,7 @@ export function parseGroupCallInviteMessage(text: string) {
     status: GroupCallInviteStatus;
     timestampLabel: string | null;
     sourceLabel: string | null;
+    snapshotLabel: string | null;
     activeCount: { current: number; total: number } | null;
     waitingCount: number | null;
     summaryLines: string[];
@@ -272,6 +282,18 @@ function parseCallInviteSource(line: string | undefined) {
 
   if (line.startsWith("发起设备 ")) {
     return line.replace(/^发起设备\s+/, "").trim() || null;
+  }
+
+  return null;
+}
+
+function parseGroupCallSnapshotLabel(line: string | undefined) {
+  if (!line) {
+    return null;
+  }
+
+  if (line.startsWith("人数快照 ")) {
+    return line.replace(/^人数快照\s+/, "").trim() || null;
   }
 
   return null;
