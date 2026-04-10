@@ -101,7 +101,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { conversationId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    client.join(data.conversationId);
+    void client.join(data.conversationId);
     return { event: 'joined', data: data.conversationId };
   }
 
@@ -157,16 +157,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       if (activity && ['working', 'commuting'].includes(activity)) {
-        await this.emitSystemMessage(
-          convId,
-          [
-            ...(
-              runtimeRules.busyHintMessages[
-                activity as keyof typeof runtimeRules.busyHintMessages
-              ] ?? ['对方现在有些忙，稍后会回复你。']
-            ),
-          ],
-        );
+        await this.emitSystemMessage(convId, [
+          ...(runtimeRules.busyHintMessages[
+            activity as keyof typeof runtimeRules.busyHintMessages
+          ] ?? ['对方现在有些忙，稍后会回复你。']),
+        ]);
         const delay =
           runtimeRules.busyDelayMs.min +
           Math.random() *
@@ -262,15 +257,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server
         .to(convId)
         .emit('typing_stop', { conversationId: convId, characterId });
-      await this.emitConversationFailure(convId, error);
-      throw error;
+      await this.emitConversationFailure(convId);
+      this.emitConversationError(convId, error);
     }
   }
 
-  private async emitConversationFailure(
-    conversationId: string,
-    error: unknown,
-  ) {
+  private async emitConversationFailure(conversationId: string) {
     const messages = await this.chatService.getMessages(conversationId);
     const latestUserMessage = [...messages]
       .reverse()
@@ -279,12 +271,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (latestUserMessage) {
       this.server.to(conversationId).emit('new_message', latestUserMessage);
     }
+  }
 
-    const systemMessage = await this.chatService.saveSystemMessage(
-      conversationId,
-      this.describeReplyFailure(error),
-    );
-    this.server.to(conversationId).emit('new_message', systemMessage);
+  private emitConversationError(conversationId: string, error: unknown) {
+    this.server.to(conversationId).emit('error', {
+      message: this.describeReplyFailure(error),
+    });
   }
 
   private describeReplyFailure(error: unknown) {
