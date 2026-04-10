@@ -30,6 +30,7 @@ import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
+import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
@@ -337,7 +338,10 @@ function DirectChatDetailsPanel({
         <DesktopPanelRow
           label="聊天文件"
           onClick={() => {
-            void navigate({ to: "/desktop/chat-files" });
+            void navigate({
+              to: "/desktop/chat-files",
+              hash: buildDesktopChatFilesRouteHash(conversation.id),
+            });
           }}
         />
       </DesktopPanelSection>
@@ -895,7 +899,10 @@ function GroupChatDetailsPanel({
         <DesktopPanelRow
           label="聊天文件"
           onClick={() => {
-            void navigate({ to: "/desktop/chat-files" });
+            void navigate({
+              to: "/desktop/chat-files",
+              hash: buildDesktopChatFilesRouteHash(conversation.id),
+            });
           }}
         />
       </DesktopPanelSection>

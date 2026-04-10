@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getConversationMessages,
   getConversations,
@@ -12,6 +13,10 @@ import { FileText, ImageIcon } from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import {
+  buildDesktopChatFilesRouteHash,
+  parseDesktopChatFilesRouteState,
+} from "../features/desktop/chat/desktop-chat-files-route-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import {
   readDesktopFavorites,
@@ -39,11 +44,14 @@ type AttachmentRow = {
 
 export function DesktopChatFilesPage() {
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const routeState = parseDesktopChatFilesRouteState(hash);
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
-  >(null);
+  >(routeState.conversationId ?? null);
   const [searchText, setSearchText] = useState("");
   const [filter, setFilter] = useState<FileFilter>("all");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
@@ -57,11 +65,32 @@ export function DesktopChatFilesPage() {
     queryFn: () => getConversations(baseUrl),
   });
 
-  const conversations = conversationsQuery.data ?? [];
+  const conversations = useMemo(
+    () => conversationsQuery.data ?? [],
+    [conversationsQuery.data],
+  );
+
+  useEffect(() => {
+    if (routeState.conversationId === selectedConversationId) {
+      return;
+    }
+
+    setSelectedConversationId(routeState.conversationId ?? null);
+  }, [routeState.conversationId, selectedConversationId]);
 
   useEffect(() => {
     if (!conversations.length) {
       setSelectedConversationId(null);
+      return;
+    }
+
+    if (
+      routeState.conversationId &&
+      conversations.some((item) => item.id === routeState.conversationId)
+    ) {
+      if (selectedConversationId !== routeState.conversationId) {
+        setSelectedConversationId(routeState.conversationId);
+      }
       return;
     }
 
@@ -73,7 +102,22 @@ export function DesktopChatFilesPage() {
     }
 
     setSelectedConversationId(conversations[0].id);
-  }, [conversations, selectedConversationId]);
+  }, [conversations, routeState.conversationId, selectedConversationId]);
+
+  useEffect(() => {
+    const nextHash = buildDesktopChatFilesRouteHash(selectedConversationId);
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === (nextHash ?? "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/chat-files",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [hash, navigate, selectedConversationId]);
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
@@ -275,6 +319,35 @@ export function DesktopChatFilesPage() {
                           >
                             打开附件
                           </a>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => {
+                              if (
+                                isPersistedGroupConversation(
+                                  selectedConversation,
+                                )
+                              ) {
+                                void navigate({
+                                  to: "/group/$groupId",
+                                  params: { groupId: selectedConversation.id },
+                                  hash: `chat-message-${item.id}`,
+                                });
+                                return;
+                              }
+
+                              void navigate({
+                                to: "/chat/$conversationId",
+                                params: {
+                                  conversationId: selectedConversation.id,
+                                },
+                                hash: `chat-message-${item.id}`,
+                              });
+                            }}
+                            className="rounded-full"
+                          >
+                            定位到原消息
+                          </Button>
                           <Button
                             variant="secondary"
                             size="sm"
