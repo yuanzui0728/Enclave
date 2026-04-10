@@ -1053,6 +1053,12 @@ export function GroupQrPage() {
                             topPendingReturnConversation.target.deliveredAt,
                           )}
                         </div>
+                        <div className="mt-1 max-w-[12rem] text-[11px] leading-5 text-[color:var(--text-muted)]">
+                          {resolvePendingReturnActionRiskHint(
+                            topPendingReturnConversation.conversation,
+                            topPendingReturnConversation.target.deliveredAt,
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -1839,6 +1845,37 @@ function resolvePendingReturnActionHint(
   }
 
   return "按当前排序先做这条，主路径会更顺。";
+}
+
+function resolvePendingReturnActionRiskHint(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  if (isPendingReturnCoolingDown(deliveredAt)) {
+    return "现在继续追不会立刻改善结构，反而可能把这条会话重复压在前面。";
+  }
+
+  const primaryReason = resolvePendingReturnPrimaryReason(
+    conversation,
+    deliveredAt,
+  );
+
+  if (primaryReason.label === "超时且活跃") {
+    return "如果再拖，活跃窗口一过，这条最有价值的回流口可能就会变钝。";
+  }
+
+  if (primaryReason.label === "长时间未回流") {
+    return "如果继续后放，这条会进一步积压，后面补发的收益只会更差。";
+  }
+
+  if (
+    primaryReason.label === "活跃群聊扩散" ||
+    primaryReason.label === "活跃单聊触达"
+  ) {
+    return "如果错过当前活跃窗口，下一轮想再接住回流会更难。";
+  }
+
+  return `如果先不动 ${conversation.title}，当前主路径里的阻塞还会继续留在前面。`;
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
