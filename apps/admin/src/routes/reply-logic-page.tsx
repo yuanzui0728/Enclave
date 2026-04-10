@@ -2818,6 +2818,16 @@ function RuntimeRulesEditorCard({
                 这里改的是 Scheduler 任务列表里的描述文字，不改 cron 表达式和实际触发频率。
               </InlineNotice>
               <TextAreaBlock
+                label="任务名称（key=value）"
+                value={recordToLines(draft.schedulerNames)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    schedulerNames: parseKeyValueLines(value, current.schedulerNames),
+                  }))
+                }
+              />
+              <TextAreaBlock
                 label="任务说明（key=value）"
                 value={recordToLines(draft.schedulerDescriptions)}
                 onChange={(value) =>
@@ -2826,6 +2836,19 @@ function RuntimeRulesEditorCard({
                     schedulerDescriptions: parseKeyValueLines(
                       value,
                       current.schedulerDescriptions,
+                    ),
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="下一次执行提示（key=value）"
+                value={recordToLines(draft.schedulerNextRunHints)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    schedulerNextRunHints: parseKeyValueLines(
+                      value,
+                      current.schedulerNextRunHints,
                     ),
                   }))
                 }
@@ -3384,7 +3407,11 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       预演DirectConversation: constants.inspectorTemplates.previewDirectConversation,
       预演FormalGroup: constants.inspectorTemplates.previewFormalGroup,
     },
-    调度器任务说明: { ...constants.schedulerDescriptions },
+    调度器任务配置: {
+      任务名称: { ...constants.schedulerNames },
+      任务说明: { ...constants.schedulerDescriptions },
+      下一次执行提示: { ...constants.schedulerNextRunHints },
+    },
   } as Record<string, unknown>;
 }
 
