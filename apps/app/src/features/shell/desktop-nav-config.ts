@@ -64,6 +64,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     matches: [
       "/tabs/contacts",
       "/contacts/starred",
+      "/contacts/tags",
       "/contacts/official-accounts",
       "/official-accounts/",
       "/character/",

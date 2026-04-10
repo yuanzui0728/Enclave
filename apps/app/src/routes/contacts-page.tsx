@@ -1,10 +1,4 @@
-import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -62,6 +56,7 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ShortcutRoute =
   | "/contacts/groups"
+  | "/contacts/tags"
   | "/friend-requests"
   | "/contacts/starred"
   | "/contacts/official-accounts";
@@ -221,6 +216,15 @@ export function ContactsPage() {
     [friendsQuery.data],
   );
   const savedGroupCount = savedGroupsQuery.data?.length ?? 0;
+  const tagCount = useMemo(
+    () =>
+      new Set(
+        (friendsQuery.data ?? []).flatMap((item) =>
+          (item.friendship.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
+        ),
+      ).size,
+    [friendsQuery.data],
+  );
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -502,11 +506,7 @@ export function ContactsPage() {
     return () => {
       scrollContainer.removeEventListener("scroll", syncActiveMobileIndexKey);
     };
-  }, [
-    friendSections,
-    isDesktopLayout,
-    normalizedSearchText,
-  ]);
+  }, [friendSections, isDesktopLayout, normalizedSearchText]);
 
   useEffect(() => {
     if (!isDesktopLayout) {
@@ -627,7 +627,8 @@ export function ContactsPage() {
   ) {
     setActiveMobileIndexKey(anchorId);
     setMobileIndexIndicatorLabel(
-      mobileIndexItems.find((item) => item.key === anchorId)?.indexLabel ?? null,
+      mobileIndexItems.find((item) => item.key === anchorId)?.indexLabel ??
+        null,
     );
 
     if (mobileIndexIndicatorTimerRef.current !== null) {
@@ -699,7 +700,9 @@ export function ContactsPage() {
       key: "group-chat",
       label: "群聊",
       subtitle:
-        savedGroupCount > 0 ? `${savedGroupCount} 个已保存群聊` : "查看已保存群聊",
+        savedGroupCount > 0
+          ? `${savedGroupCount} 个已保存群聊`
+          : "查看已保存群聊",
       icon: Users,
       iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
       onClick: () => handleShortcutNavigate("/contacts/groups"),
@@ -707,12 +710,10 @@ export function ContactsPage() {
     {
       key: "tags",
       label: "标签",
-      subtitle: "待接入真实标签能力",
-      disabled: true,
-      disabledLabel: "暂未开放",
+      subtitle: tagCount > 0 ? `${tagCount} 个联系人标签` : "查看联系人标签",
       icon: Tag,
       iconClassName: "bg-[linear-gradient(135deg,#fb923c,#f97316)]",
-      onClick: () => {},
+      onClick: () => handleShortcutNavigate("/contacts/tags"),
     },
     {
       key: "official-accounts",

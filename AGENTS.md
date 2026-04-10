@@ -47,6 +47,7 @@
 - `mini-programs-page.tsx`：桌面端小程序面板一级入口；移动端复用为发现页内“小程序”二级页
 - `starred-friends-page.tsx`：星标朋友页，移动端承载通讯录内“星标朋友”入口，桌面端承载双栏星标好友工作区
 - `group-contacts-page.tsx`：群聊列表页，移动端承载通讯录内“群聊”入口，桌面端承载已保存群聊工作区
+- `tags-page.tsx`：联系人标签页，移动端承载通讯录内“标签”入口，桌面端承载标签分组与联系人详情工作区
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
 - `official-account-detail-page.tsx`：公众号主页，承载账号资料、关注状态与最近文章列表
 - `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端复用工作区阅读面板

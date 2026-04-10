@@ -103,6 +103,11 @@ const GroupContactsPage = lazy(async () => {
   return { default: mod.GroupContactsPage };
 });
 
+const TagsPage = lazy(async () => {
+  const mod = await import("./routes/tags-page");
+  return { default: mod.TagsPage };
+});
+
 const OfficialAccountDetailPage = lazy(async () => {
   const mod = await import("./routes/official-account-detail-page");
   return { default: mod.OfficialAccountDetailPage };
@@ -447,6 +452,13 @@ const groupContactsRoute = createRoute({
   component: GroupContactsPage,
 });
 
+const tagsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/contacts/tags",
+  beforeLoad: requireWorldReady,
+  component: TagsPage,
+});
+
 const officialAccountsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/contacts/official-accounts",
@@ -709,6 +721,7 @@ const routeTree = rootRoute.addChildren([
   friendRequestsRoute,
   starredFriendsRoute,
   groupContactsRoute,
+  tagsRoute,
   officialAccountsRoute,
   officialAccountDetailRoute,
   officialAccountArticleRoute,
