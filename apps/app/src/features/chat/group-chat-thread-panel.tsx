@@ -300,6 +300,7 @@ export function GroupChatThreadPanel({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      scrollToBottom("smooth");
     },
   });
 
@@ -801,6 +802,14 @@ export function GroupChatThreadPanel({
               inviteNoticePending={sendCallInviteMutation.isPending}
               endNoticePending={sendCallInviteMutation.isPending}
               onClose={() => setDesktopCallPanelKind(null)}
+              onPanelOpened={(counts) => {
+                void sendCallInviteMutation.mutateAsync({
+                  kind: desktopCallPanelKind,
+                  status: "ongoing",
+                  activeCount: counts.activeCount,
+                  totalCount: counts.totalCount,
+                });
+              }}
               onOpenMobileHandoff={() => {
                 void navigate({
                   to: "/desktop/mobile",

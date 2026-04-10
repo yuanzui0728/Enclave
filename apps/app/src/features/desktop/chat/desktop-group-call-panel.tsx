@@ -24,15 +24,16 @@ type DesktopGroupCallPanelProps = {
   inviteNoticePending?: boolean;
   endNoticePending?: boolean;
   onClose: () => void;
+  onPanelOpened?: (counts: {
+    activeCount: number;
+    totalCount: number;
+  }) => Promise<void> | void;
   onOpenMobileHandoff: () => void;
   onSendInviteNotice: (counts: {
     activeCount: number;
     totalCount: number;
   }) => void;
-  onEndCall: (counts: {
-    activeCount: number;
-    totalCount: number;
-  }) => void;
+  onEndCall: (counts: { activeCount: number; totalCount: number }) => void;
 };
 
 export function DesktopGroupCallPanel({
@@ -43,6 +44,7 @@ export function DesktopGroupCallPanel({
   inviteNoticePending = false,
   endNoticePending = false,
   onClose,
+  onPanelOpened,
   onOpenMobileHandoff,
   onSendInviteNotice,
   onEndCall,
@@ -51,6 +53,7 @@ export function DesktopGroupCallPanel({
   const [cameraEnabled, setCameraEnabled] = useState(kind === "video");
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
+  const [panelOpenedReported, setPanelOpenedReported] = useState(false);
   const [joinedMemberIds, setJoinedMemberIds] = useState<string[]>(() =>
     buildInitialJoinedMemberIds(members),
   );
@@ -60,6 +63,7 @@ export function DesktopGroupCallPanel({
     setCameraEnabled(kind === "video");
     setSpeakerEnabled(true);
     setStartedAt(new Date().toISOString());
+    setPanelOpenedReported(false);
     setJoinedMemberIds(buildInitialJoinedMemberIds(members));
   }, [groupId, kind, members]);
 
@@ -71,6 +75,18 @@ export function DesktopGroupCallPanel({
   const callKindLabel = kind === "voice" ? "群语音" : "群视频";
   const activeCount = activeMembers.length;
   const waitingCount = Math.max(members.length - activeCount, 0);
+
+  useEffect(() => {
+    if (panelOpenedReported) {
+      return;
+    }
+
+    setPanelOpenedReported(true);
+    void onPanelOpened?.({
+      activeCount,
+      totalCount: members.length,
+    });
+  }, [activeCount, members.length, onPanelOpened, panelOpenedReported]);
 
   function toggleJoinedState(member: GroupMember) {
     if (member.memberType === "user") {
@@ -104,7 +120,8 @@ export function DesktopGroupCallPanel({
                   {groupName}
                 </div>
                 <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-                  已在桌面端发起 {callKindLabel}，当前可直接管理成员状态和设备控制。
+                  已在桌面端发起 {callKindLabel}
+                  ，当前可直接管理成员状态和设备控制。
                 </div>
               </div>
             </div>
@@ -156,7 +173,9 @@ export function DesktopGroupCallPanel({
               <CallControlButton
                 active={cameraEnabled}
                 label={cameraEnabled ? "关闭摄像头" : "打开摄像头"}
-                icon={cameraEnabled ? <VideoOff size={16} /> : <Video size={16} />}
+                icon={
+                  cameraEnabled ? <VideoOff size={16} /> : <Video size={16} />
+                }
                 onClick={() => setCameraEnabled((current) => !current)}
               />
             ) : null}
@@ -183,7 +202,7 @@ export function DesktopGroupCallPanel({
             className="rounded-full"
           >
             <UserPlus size={16} />
-            {inviteNoticePending ? "通知中..." : "通知群成员"}
+            {inviteNoticePending ? "同步中..." : "同步群状态"}
           </Button>
           <Button
             type="button"
@@ -308,9 +327,7 @@ function buildInitialJoinedMemberIds(members: GroupMember[]) {
   const joinedMembers = members
     .filter(
       (member, index) =>
-        member.memberType === "user" ||
-        member.role === "owner" ||
-        index < 3,
+        member.memberType === "user" || member.role === "owner" || index < 3,
     )
     .map((member) => member.memberId);
 
