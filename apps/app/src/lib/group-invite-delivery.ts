@@ -14,7 +14,14 @@ export type GroupInviteRouteContext = {
   returnPath: string;
 };
 
+export type GroupInviteReopenRecord = {
+  conversationPath: string;
+  conversationTitle: string;
+  reopenedAt: string;
+};
+
 const GROUP_INVITE_DELIVERY_STORAGE_KEY = "yinjie-group-invite-delivery";
+const GROUP_INVITE_REOPEN_STORAGE_KEY = "yinjie-group-invite-reopen";
 
 export function readGroupInviteDeliveryRecord(groupId: string) {
   if (typeof window === "undefined") {
@@ -118,6 +125,114 @@ export function resolveGroupInviteRouteContext(
       : "这条会话最近收到过一个群邀请，可回到邀请页继续转发。",
     groupId,
     groupName: record.groupName,
-    returnPath: `/group/${groupId}/qr`,
+    returnPath: buildGroupInviteReturnPath(groupId, {
+      conversationPath,
+      conversationTitle: record.conversationTitle,
+    }),
   };
+}
+
+export function readGroupInviteReopenRecords(groupId: string) {
+  if (typeof window === "undefined") {
+    return [] as GroupInviteReopenRecord[];
+  }
+
+  const raw = window.localStorage.getItem(GROUP_INVITE_REOPEN_STORAGE_KEY);
+  if (!raw) {
+    return [] as GroupInviteReopenRecord[];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, GroupInviteReopenRecord[]>;
+    const records = parsed[groupId];
+    if (!Array.isArray(records)) {
+      return [] as GroupInviteReopenRecord[];
+    }
+
+    return records.filter(
+      (record): record is GroupInviteReopenRecord =>
+        Boolean(
+          record &&
+            typeof record.conversationPath === "string" &&
+            typeof record.conversationTitle === "string" &&
+            typeof record.reopenedAt === "string",
+        ),
+    );
+  } catch {
+    return [] as GroupInviteReopenRecord[];
+  }
+}
+
+export function writeGroupInviteReopenRecord(
+  groupId: string,
+  input: {
+    conversationPath: string;
+    conversationTitle: string;
+  },
+) {
+  if (typeof window === "undefined") {
+    return [] as GroupInviteReopenRecord[];
+  }
+
+  const nextRecord: GroupInviteReopenRecord = {
+    conversationPath: input.conversationPath,
+    conversationTitle: input.conversationTitle,
+    reopenedAt: new Date().toISOString(),
+  };
+  const nextState = readAllGroupInviteReopenRecords();
+  const currentRecords = nextState[groupId] ?? [];
+
+  nextState[groupId] = [
+    nextRecord,
+    ...currentRecords.filter(
+      (record) => record.conversationPath !== nextRecord.conversationPath,
+    ),
+  ].slice(0, 5);
+  window.localStorage.setItem(
+    GROUP_INVITE_REOPEN_STORAGE_KEY,
+    JSON.stringify(nextState),
+  );
+
+  return nextState[groupId];
+}
+
+function readAllGroupInviteReopenRecords() {
+  if (typeof window === "undefined") {
+    return {} as Record<string, GroupInviteReopenRecord[]>;
+  }
+
+  const raw = window.localStorage.getItem(GROUP_INVITE_REOPEN_STORAGE_KEY);
+  if (!raw) {
+    return {} as Record<string, GroupInviteReopenRecord[]>;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Record<string, GroupInviteReopenRecord[]>;
+    return parsed && typeof parsed === "object"
+      ? parsed
+      : ({} as Record<string, GroupInviteReopenRecord[]>);
+  } catch {
+    return {} as Record<string, GroupInviteReopenRecord[]>;
+  }
+}
+
+function buildGroupInviteReturnPath(
+  groupId: string,
+  input?: {
+    conversationPath?: string;
+    conversationTitle?: string;
+  },
+) {
+  const params = new URLSearchParams();
+
+  if (input?.conversationPath) {
+    params.set("from", input.conversationPath);
+  }
+
+  if (input?.conversationTitle) {
+    params.set("title", input.conversationTitle);
+  }
+
+  const search = params.toString();
+  return search ? `/group/${groupId}/qr?${search}` : `/group/${groupId}/qr`;
 }

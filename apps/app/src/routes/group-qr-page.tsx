@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Download, Link2, QrCode, Share2 } from "lucide-react";
 import {
   getConversations,
@@ -21,8 +21,11 @@ import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   readGroupInviteDeliveryRecord,
+  readGroupInviteReopenRecords,
+  writeGroupInviteReopenRecord,
   writeGroupInviteDeliveryRecord,
   type GroupInviteDeliveryRecord,
+  type GroupInviteReopenRecord,
 } from "../lib/group-invite-delivery";
 import {
   pushMobileHandoffRecord,
@@ -43,11 +46,15 @@ export function GroupQrPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
+  const search = useRouterState({ select: (state) => state.location.search });
   const [notice, setNotice] = useState<string | null>(null);
   const [deliveredConversation, setDeliveredConversation] =
     useState<GroupInviteDeliveryRecord | null>(() =>
       readGroupInviteDeliveryRecord(groupId),
     );
+  const [reopenRecords, setReopenRecords] = useState<GroupInviteReopenRecord[]>(
+    () => readGroupInviteReopenRecords(groupId),
+  );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -115,6 +122,31 @@ export function GroupQrPage() {
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
   }, [groupId]);
+
+  useEffect(() => {
+    setReopenRecords(readGroupInviteReopenRecords(groupId));
+  }, [groupId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(search);
+    const fromPath = params.get("from")?.trim();
+    const fromTitle = params.get("title")?.trim();
+
+    if (!fromPath || !fromTitle) {
+      return;
+    }
+
+    setReopenRecords(
+      writeGroupInviteReopenRecord(groupId, {
+        conversationPath: fromPath,
+        conversationTitle: fromTitle,
+      }),
+    );
+  }, [groupId, search]);
 
   async function copyText(value: string, successMessage: string) {
     if (
@@ -331,6 +363,47 @@ export function GroupQrPage() {
               >
                 回到会话
               </Button>
+            </section>
+          ) : null}
+
+          {reopenRecords.length ? (
+            <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.72)] px-4 py-4">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近从这些会话回到邀请页
+                </div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  从聊天线程点了“回到群邀请”后，会把最近回流入口记在这里，方便再次回到消息流。
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {reopenRecords.map((record) => (
+                  <div
+                    key={`${record.conversationPath}:${record.reopenedAt}`}
+                    className="flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {record.conversationTitle}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        回流于 {formatConversationTimestamp(record.reopenedAt)}
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        void navigate({ to: record.conversationPath });
+                      }}
+                      className="shrink-0 rounded-full"
+                    >
+                      回到会话
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </section>
           ) : null}
 
