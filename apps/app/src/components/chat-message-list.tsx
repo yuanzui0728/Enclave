@@ -1516,6 +1516,18 @@ export function ChatMessageList({
         title={
           mobileActionMessage?.senderType === "user" ? "我的消息" : "消息操作"
         }
+        preview={
+          mobileActionMessage
+            ? {
+                senderName:
+                  groupMode && mobileActionMessage.senderType !== "user"
+                    ? buildClipboardSender(mobileActionMessage)
+                    : undefined,
+                text: buildClipboardText(mobileActionMessage),
+                own: mobileActionMessage.senderType === "user",
+              }
+            : undefined
+        }
         onReply={
           mobileActionMessage && onReplyMessage
             ? () => {
