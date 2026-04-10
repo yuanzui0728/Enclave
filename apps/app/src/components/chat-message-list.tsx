@@ -754,6 +754,29 @@ export function ChatMessageList({
     () => messages.filter((message) => !hiddenMessageIdSet.has(message.id)),
     [hiddenMessageIdSet, messages],
   );
+  const importedSharedMessageIdSet = useMemo(() => {
+    const nextIds = new Set<string>();
+    let pendingImportCount = 0;
+
+    for (const message of visibleMessages) {
+      const isSystem =
+        message.type === "system" || message.senderType === "system";
+      if (isSystem) {
+        const summary = parseSharedHistorySummaryMessage(
+          sanitizeDisplayedChatText(message.text),
+        );
+        pendingImportCount = summary?.count ?? 0;
+        continue;
+      }
+
+      if (pendingImportCount > 0) {
+        nextIds.add(message.id);
+        pendingImportCount -= 1;
+      }
+    }
+
+    return nextIds;
+  }, [visibleMessages]);
 
   const imageMessages = visibleMessages
     .filter(
@@ -1613,6 +1636,7 @@ export function ChatMessageList({
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
+        const isSharedHistoryMessage = importedSharedMessageIdSet.has(message.id);
         const reminderRecord = messageReminderMap.get(message.id);
         const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
@@ -1739,6 +1763,18 @@ export function ChatMessageList({
                 <div
                   className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}
                 >
+                  {isSharedHistoryMessage ? (
+                    <div
+                      className={cn(
+                        "mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium",
+                        isUser
+                          ? "bg-[rgba(148,163,184,0.18)] text-[color:var(--text-secondary)]"
+                          : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+                      )}
+                    >
+                      聊天记录
+                    </div>
+                  ) : null}
                   {!isUser && groupMode && showGroupMemberNicknames ? (
                     <div className="mb-1 px-1 text-[10px] text-[color:var(--text-muted)]">
                       {message.senderName}
