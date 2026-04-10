@@ -50,6 +50,7 @@ import {
 } from "../../chat/backgrounds/use-conversation-background";
 import { useMessageReminders } from "../../chat/use-message-reminders";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -337,7 +338,14 @@ function DirectChatDetailsPanel({
       label: "发起群聊",
       kind: "add",
       onClick: () => {
-        void navigate({ to: "/group/new" });
+        void navigate({
+          to: "/group/new",
+          hash: buildCreateGroupRouteHash({
+            source: "desktop-chat",
+            conversationId: conversation.id,
+            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+          }),
+        });
       },
     },
   ];

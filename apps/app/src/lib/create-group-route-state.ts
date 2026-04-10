@@ -1,4 +1,7 @@
-export type CreateGroupRouteSource = "chat-details" | "group-contacts";
+export type CreateGroupRouteSource =
+  | "chat-details"
+  | "desktop-chat"
+  | "group-contacts";
 
 export type CreateGroupRouteState = {
   source?: CreateGroupRouteSource;
@@ -17,7 +20,10 @@ export function buildCreateGroupRouteHash(input?: {
     params.set("source", input.source);
   }
 
-  if (input?.source === "chat-details" && input.conversationId?.trim()) {
+  if (
+    (input?.source === "chat-details" || input?.source === "desktop-chat") &&
+    input.conversationId?.trim()
+  ) {
     params.set("conversation", input.conversationId.trim());
   }
 
@@ -39,11 +45,13 @@ export function parseCreateGroupRouteHash(hash: string): CreateGroupRouteState {
   const params = new URLSearchParams(normalizedHash);
   const rawSource = params.get("source");
   const source =
-    rawSource === "chat-details" || rawSource === "group-contacts"
+    rawSource === "chat-details" ||
+    rawSource === "desktop-chat" ||
+    rawSource === "group-contacts"
       ? rawSource
       : undefined;
   const conversationId =
-    source === "chat-details"
+    source === "chat-details" || source === "desktop-chat"
       ? params.get("conversation")?.trim() || undefined
       : undefined;
 
