@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -53,6 +53,43 @@ function extractErrorMessage(error: unknown) {
 
 function resolveAppMode() {
   return process.env.NODE_ENV === 'production' ? 'production' : 'development';
+}
+
+function createSpeechProbeAudioBuffer() {
+  const sampleRate = 16000;
+  const durationSeconds = 0.4;
+  const frameCount = Math.floor(sampleRate * durationSeconds);
+  const channelCount = 1;
+  const bitsPerSample = 16;
+  const blockAlign = (channelCount * bitsPerSample) / 8;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = frameCount * blockAlign;
+  const buffer = Buffer.alloc(44 + dataSize);
+
+  buffer.write('RIFF', 0);
+  buffer.writeUInt32LE(36 + dataSize, 4);
+  buffer.write('WAVE', 8);
+  buffer.write('fmt ', 12);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(channelCount, 22);
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(byteRate, 28);
+  buffer.writeUInt16LE(blockAlign, 32);
+  buffer.writeUInt16LE(bitsPerSample, 34);
+  buffer.write('data', 36);
+  buffer.writeUInt32LE(dataSize, 40);
+
+  for (let index = 0; index < frameCount; index += 1) {
+    const time = index / sampleRate;
+    const envelope = Math.min(1, index / 800, (frameCount - index) / 800);
+    const sample = Math.round(
+      Math.sin(2 * Math.PI * 440 * time) * 0.25 * envelope * 32767,
+    );
+    buffer.writeInt16LE(sample, 44 + index * 2);
+  }
+
+  return buffer;
 }
 
 @Injectable()
@@ -133,13 +170,21 @@ export class SystemService {
   private async testTranscriptionProviderConnection(payload: {
     endpoint: string;
     apiKey: string;
+    model: string;
   }) {
     const client = this.createProviderClient({
       endpoint: payload.endpoint,
-      model: 'transcription-probe',
+      model: payload.model,
       apiKey: payload.apiKey,
     });
-    await client.models.list();
+    await client.audio.transcriptions.create({
+      file: await toFile(createSpeechProbeAudioBuffer(), 'speech-probe.wav', {
+        type: 'audio/wav',
+      }),
+      model: payload.model,
+      language: 'zh',
+      prompt: '这是一段用于连通性探测的短音频。',
+    });
   }
 
   async getStatus() {
@@ -342,6 +387,7 @@ export class SystemService {
         await this.testTranscriptionProviderConnection({
           endpoint: normalizedTranscriptionEndpoint,
           apiKey: transcriptionApiKey,
+          model: payload.transcriptionModel?.trim() || DEFAULT_TRANSCRIPTION_MODEL,
         });
       } catch (error) {
         return {
