@@ -839,7 +839,13 @@ export function DesktopCreateGroupDialog({
                               </div>
                               <div className="relative space-y-2 pl-12">
                                 <div className="absolute bottom-3 left-[33px] top-3 w-px bg-[rgba(15,23,42,0.08)]" />
-                                {section.items.map((message) => {
+                                {section.items.map((message, index) => {
+                                  const previousMessage = section.items[index - 1];
+                                  const continuedFromPrevious =
+                                    isShareableMessageContinuation(
+                                      message,
+                                      previousMessage,
+                                    );
                                   const checked = selectedMessageIds.includes(message.id);
                                   const focused =
                                     shareableMessagePositionMap.get(message.id) ===
@@ -855,7 +861,8 @@ export function DesktopCreateGroupDialog({
                                         toggleMessageSelection(message.id)
                                       }
                                       className={cn(
-                                        "group relative flex w-full items-start gap-3 rounded-[12px] px-2 py-1.5 text-left transition",
+                                        "group relative flex w-full items-start gap-3 rounded-[12px] px-2 text-left transition",
+                                        continuedFromPrevious ? "py-0.5" : "py-1.5",
                                         checked
                                           ? "bg-[rgba(7,193,96,0.05)]"
                                           : "hover:bg-[#f7f7f7]",
@@ -864,7 +871,12 @@ export function DesktopCreateGroupDialog({
                                           : "",
                                       )}
                                     >
-                                      <div className="absolute left-7 top-4 flex -translate-x-1/2 items-center justify-center">
+                                      <div
+                                        className={cn(
+                                          "absolute left-7 flex -translate-x-1/2 items-center justify-center",
+                                          continuedFromPrevious ? "top-3" : "top-4",
+                                        )}
+                                      >
                                         <div
                                           className={cn(
                                             "h-3 w-3 rounded-full border-2 bg-white transition-colors",
@@ -876,24 +888,45 @@ export function DesktopCreateGroupDialog({
                                           )}
                                         />
                                       </div>
-                                      <div className="w-10 shrink-0 pt-1 text-[11px] text-[color:var(--text-dim)]">
-                                        {formatShareableMessageTime(message.createdAt)}
+                                      <div
+                                        className={cn(
+                                          "w-10 shrink-0 text-[11px] text-[color:var(--text-dim)]",
+                                          continuedFromPrevious ? "pt-0.5 text-transparent" : "pt-1",
+                                        )}
+                                      >
+                                        {continuedFromPrevious
+                                          ? "00:00"
+                                          : formatShareableMessageTime(message.createdAt)}
                                       </div>
                                       <div
                                         className={cn(
-                                          "min-w-0 flex-1 rounded-[10px] border px-3 py-2.5 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
+                                          "min-w-0 flex-1 rounded-[10px] border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
+                                          continuedFromPrevious ? "py-2" : "py-2.5",
                                           checked
                                             ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
                                             : "border-black/6 bg-white group-hover:border-black/10",
                                         )}
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
-                                            {message.senderName}
-                                          </span>
-                                          <span className="rounded-full bg-[#f4f4f4] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
-                                            {formatMessageTypeLabel(message)}
-                                          </span>
+                                        {!continuedFromPrevious ? (
+                                          <div className="flex items-center gap-2">
+                                            <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+                                              {message.senderName}
+                                            </span>
+                                            <span className="rounded-full bg-[#f4f4f4] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+                                              {formatMessageTypeLabel(message)}
+                                            </span>
+                                            <div
+                                              className={cn(
+                                                "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                                checked
+                                                  ? "border-[#07c160] bg-[#07c160] text-white"
+                                                  : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                              )}
+                                            >
+                                              <Check size={12} strokeWidth={2.8} />
+                                            </div>
+                                          </div>
+                                        ) : (
                                           <div
                                             className={cn(
                                               "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -904,8 +937,13 @@ export function DesktopCreateGroupDialog({
                                           >
                                             <Check size={12} strokeWidth={2.8} />
                                           </div>
-                                        </div>
-                                        <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                                        )}
+                                        <div
+                                          className={cn(
+                                            "line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]",
+                                            continuedFromPrevious ? "" : "mt-1",
+                                          )}
+                                        >
                                           {getMessagePreviewText(message)}
                                         </div>
                                       </div>
@@ -1305,6 +1343,31 @@ function formatShareableMessageTime(createdAt: string) {
 function parseTimestamp(value: string) {
   const timestamp = Date.parse(value);
   return Number.isNaN(timestamp) ? null : timestamp;
+}
+
+function isShareableMessageContinuation(
+  message: Message,
+  previousMessage?: Message,
+) {
+  if (!previousMessage) {
+    return false;
+  }
+
+  if (
+    previousMessage.senderId !== message.senderId ||
+    previousMessage.senderType !== message.senderType ||
+    previousMessage.senderName !== message.senderName
+  ) {
+    return false;
+  }
+
+  const previousTimestamp = parseTimestamp(previousMessage.createdAt);
+  const currentTimestamp = parseTimestamp(message.createdAt);
+  if (previousTimestamp === null || currentTimestamp === null) {
+    return false;
+  }
+
+  return currentTimestamp - previousTimestamp <= 5 * 60 * 1000;
 }
 
 function isSameCalendarDay(left: Date, right: Date) {
