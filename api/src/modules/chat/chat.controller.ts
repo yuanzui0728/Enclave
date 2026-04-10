@@ -20,6 +20,7 @@ import {
   type CreateMessageFavoriteInput,
 } from './favorites.service';
 import { GroupService } from './group.service';
+import { VoiceCallsService } from './voice-calls.service';
 import {
   MessageRemindersService,
   type CreateMessageReminderInput,
@@ -172,6 +173,38 @@ export class ChatAttachmentController {
         root: this.chatService.getAttachmentStorageDir(),
       },
     );
+  }
+}
+
+@Controller('chat/voice-calls')
+export class VoiceCallsController {
+  constructor(private readonly voiceCallsService: VoiceCallsService) {}
+
+  @Post('turns')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    }),
+  )
+  createTurn(
+    @UploadedFile() file: UploadedAttachmentFile | undefined,
+    @Body() body: { conversationId?: string; characterId?: string },
+  ) {
+    if (!file) {
+      throw new BadRequestException('请先录一段语音再试。');
+    }
+
+    const conversationId = body.conversationId?.trim();
+    if (!conversationId) {
+      throw new BadRequestException('缺少 conversationId。');
+    }
+
+    return this.voiceCallsService.createTurn(file, {
+      conversationId,
+      characterId: body.characterId?.trim() || undefined,
+    });
   }
 }
 
