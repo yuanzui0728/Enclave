@@ -10,7 +10,7 @@ export type AdminSectionNavItem = {
 
 export type AdminInfoRowItem = {
   label: string;
-  value: string;
+  value: ReactNode;
 };
 
 type AdminPageHeroProps = {
