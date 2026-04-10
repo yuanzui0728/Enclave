@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getCharacter, getConversations } from "@yinjie/contracts";
 import {
@@ -24,6 +24,8 @@ import {
   VolumeX,
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
+import { buildDirectCallInviteMessage } from "./group-call-message";
+import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
@@ -40,11 +42,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     conversationId?: string;
   };
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [recordButtonHolding, setRecordButtonHolding] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
+  const waitingNoticeSentRef = useRef(false);
+  const connectedNoticeSentRef = useRef(false);
+  const endedNoticeSentRef = useRef(false);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -61,11 +67,53 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     queryFn: () => getCharacter(characterId ?? "", baseUrl),
     enabled: Boolean(characterId),
   });
+  const sendCallStatusMessage = useCallback(
+    async (status: "waiting" | "connected" | "ended", durationMs?: number) => {
+      if (!characterId || !resolvedConversationId || !conversation) {
+        return;
+      }
+
+      emitChatMessage({
+        conversationId: resolvedConversationId,
+        characterId,
+        text: buildDirectCallInviteMessage(mode, conversation.title, {
+          status,
+          durationMs,
+          source: "mobile",
+        }),
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversation-messages", baseUrl, resolvedConversationId],
+        }),
+      ]);
+    },
+    [
+      baseUrl,
+      characterId,
+      conversation,
+      mode,
+      queryClient,
+      resolvedConversationId,
+    ],
+  );
   const voiceCall = useVoiceCallSession({
     baseUrl,
     conversationId: resolvedConversationId,
     characterId,
     enabled: !isDesktopLayout && Boolean(conversationId),
+    onTurnSuccess: async (result) => {
+      if (connectedNoticeSentRef.current) {
+        return;
+      }
+
+      connectedNoticeSentRef.current = true;
+      await sendCallStatusMessage("connected", result.totalDurationMs);
+    },
   });
   const cameraPreview = useSelfCameraPreview({
     enabled:
@@ -157,13 +205,36 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     voiceCall.stopRecordingTurn();
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     voiceCall.stopReplyPlayback();
+    if (
+      conversation?.type === "direct" &&
+      waitingNoticeSentRef.current &&
+      !endedNoticeSentRef.current
+    ) {
+      endedNoticeSentRef.current = true;
+      await sendCallStatusMessage("ended");
+    }
+
     void navigate({
       to: "/chat/$conversationId",
       params: { conversationId: resolvedConversationId },
     });
   };
+
+  useEffect(() => {
+    if (
+      !conversation ||
+      conversation.type !== "direct" ||
+      isDesktopLayout ||
+      waitingNoticeSentRef.current
+    ) {
+      return;
+    }
+
+    waitingNoticeSentRef.current = true;
+    void sendCallStatusMessage("waiting");
+  }, [conversation, isDesktopLayout, sendCallStatusMessage]);
 
   if (conversationsQuery.isLoading) {
     return (

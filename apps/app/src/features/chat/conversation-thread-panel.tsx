@@ -402,7 +402,10 @@ export function ConversationThreadPanel({
                   buildDirectCallInviteMessage(
                     desktopCallPanelKind,
                     conversationTitle,
-                    "waiting",
+                    {
+                      status: "waiting",
+                      source: "desktop",
+                    },
                   ),
                 );
                 scrollToBottom("smooth");
@@ -415,6 +418,7 @@ export function ConversationThreadPanel({
                     {
                       status: "connected",
                       durationMs: result.totalDurationMs,
+                      source: "desktop",
                     },
                   ),
                 );
@@ -425,7 +429,10 @@ export function ConversationThreadPanel({
                   buildDirectCallInviteMessage(
                     desktopCallPanelKind,
                     conversationTitle,
-                    "ended",
+                    {
+                      status: "ended",
+                      source: "desktop",
+                    },
                   ),
                 );
                 scrollToBottom("smooth");

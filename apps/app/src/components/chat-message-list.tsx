@@ -3751,7 +3751,11 @@ function DirectCallInviteMessage({
               : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
           )}
         >
-          {invite.connectionStatus === "ended" ? "已结束" : "桌面工作台"}
+          {invite.connectionStatus === "ended"
+            ? "已结束"
+            : invite.sourceLabel
+              ? `${invite.sourceLabel}发起`
+              : "桌面发起"}
         </div>
       </div>
 
@@ -3773,6 +3777,9 @@ function DirectCallInviteMessage({
         ) : null}
         {invite.durationLabel ? (
           <CallInviteMetric label="最近一轮" value={invite.durationLabel} />
+        ) : null}
+        {invite.sourceLabel ? (
+          <CallInviteMetric label="发起端" value={invite.sourceLabel} />
         ) : null}
         {invite.summaryLines.map((line) => (
           <div

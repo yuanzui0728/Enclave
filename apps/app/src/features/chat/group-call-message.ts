@@ -7,6 +7,7 @@ const GROUP_VIDEO_CALL_PREFIX = "[群视频通话]";
 
 export type GroupCallInviteStatus = "ongoing" | "ended";
 export type DirectCallInviteStatus = "waiting" | "connected" | "ended";
+export type DirectCallInviteSource = "desktop" | "mobile";
 
 export function buildDirectCallInviteMessage(
   kind: DesktopChatCallKind,
@@ -18,6 +19,7 @@ export function buildDirectCallInviteMessage(
         remoteJoined?: boolean;
         recordedAt?: string;
         durationMs?: number;
+        source?: DirectCallInviteSource;
       } = "waiting",
 ) {
   const normalizedStatus: DirectCallInviteStatus =
@@ -34,6 +36,8 @@ export function buildDirectCallInviteMessage(
     typeof status === "string"
       ? null
       : formatCallInviteDuration(status.durationMs ?? null);
+  const sourceLabel =
+    typeof status === "string" ? null : formatCallInviteSource(status.source);
   const statusLabel =
     normalizedStatus === "ended"
       ? "已结束"
@@ -47,6 +51,7 @@ export function buildDirectCallInviteMessage(
     `当前状态 ${statusLabel}`,
     `${normalizedStatus === "ended" ? "结束于" : "发起于"} ${recordedAt ?? new Date().toISOString()}`,
     durationLabel ? `最近一轮 ${durationLabel}` : null,
+    sourceLabel ? `发起设备 ${sourceLabel}` : null,
     normalizedStatus === "ended"
       ? "本轮单聊通话已在桌面端结束，可继续在聊天里跟进。"
       : "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
@@ -109,7 +114,14 @@ export function parseDirectCallInviteMessage(text: string) {
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
   const durationLabel = parseCallInviteDuration(lines[timestampLabel ? 4 : 3]);
-  const summaryOffset = 3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel));
+  const sourceLabel = parseCallInviteSource(
+    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
+  );
+  const summaryOffset =
+    3 +
+    Number(Boolean(timestampLabel)) +
+    Number(Boolean(durationLabel)) +
+    Number(Boolean(sourceLabel));
 
   return {
     kind: header === DIRECT_VOICE_CALL_PREFIX ? "voice" : "video",
@@ -117,6 +129,7 @@ export function parseDirectCallInviteMessage(text: string) {
     connectionStatus: parseDirectCallStatus(lines[2]),
     timestampLabel,
     durationLabel,
+    sourceLabel,
     summaryLines: lines.slice(summaryOffset),
   } satisfies {
     kind: DesktopChatCallKind;
@@ -124,6 +137,7 @@ export function parseDirectCallInviteMessage(text: string) {
     connectionStatus: DirectCallInviteStatus | null;
     timestampLabel: string | null;
     durationLabel: string | null;
+    sourceLabel: string | null;
     summaryLines: string[];
   };
 }
@@ -240,6 +254,18 @@ function parseCallInviteDuration(line: string | undefined) {
   return null;
 }
 
+function parseCallInviteSource(line: string | undefined) {
+  if (!line) {
+    return null;
+  }
+
+  if (line.startsWith("发起设备 ")) {
+    return line.replace(/^发起设备\s+/, "").trim() || null;
+  }
+
+  return null;
+}
+
 function formatCallInviteDuration(durationMs: number | null) {
   if (durationMs === null || Number.isNaN(durationMs)) {
     return null;
@@ -257,6 +283,18 @@ function formatCallInviteDuration(durationMs: number | null) {
   }
 
   return `${minutes} 分 ${seconds} 秒`;
+}
+
+function formatCallInviteSource(source: DirectCallInviteSource | undefined) {
+  if (source === "desktop") {
+    return "桌面端";
+  }
+
+  if (source === "mobile") {
+    return "手机端";
+  }
+
+  return null;
 }
 
 function parseGroupCallWaitingMetric(line: string | undefined) {
