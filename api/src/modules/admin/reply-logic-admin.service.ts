@@ -289,7 +289,10 @@ export class ReplyLogicAdminService {
   }
 
   private async getOwnerOrThrow() {
-    const owner = await this.userRepo.findOne({ order: { createdAt: 'ASC' } });
+    const owner = await this.userRepo.findOne({
+      where: {},
+      order: { createdAt: 'ASC' },
+    });
     if (!owner) {
       throw new NotFoundException('World owner not found');
     }
