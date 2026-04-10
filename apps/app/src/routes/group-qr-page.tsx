@@ -817,6 +817,25 @@ export function GroupQrPage() {
                           待回流 {formatPendingReturnDuration(target.deliveredAt)}
                         </span>
                       </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                        {resolvePendingReturnRecommendationTags(
+                          conversation,
+                          target.deliveredAt,
+                        ).map((tag) => (
+                          <span
+                            key={`${conversation.id}:${tag.label}`}
+                            className={`rounded-full px-2.5 py-1 font-medium ${tag.tone}`}
+                          >
+                            {tag.label}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                        {resolvePendingReturnRecommendationSummary(
+                          conversation,
+                          target.deliveredAt,
+                        )}
+                      </div>
                       {isPendingReturnCoolingDown(target.deliveredAt) ? (
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                           冷却剩余 {formatPendingReturnCooldownRemaining(target.deliveredAt)}
@@ -1182,6 +1201,83 @@ function resolvePendingReturnBadgeTone(deliveredAt: string) {
   return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
 }
 
+function resolvePendingReturnRecommendationTags(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  const recentActivityMinutes = resolveConversationRecentActivityMinutes(
+    conversation.lastActivityAt,
+  );
+  const tags: Array<{ label: string; tone: string }> = [];
+
+  if (!isPendingReturnCoolingDown(deliveredAt) && elapsedMinutes !== null) {
+    if (elapsedMinutes >= 60) {
+      tags.push({
+        label: "超时优先",
+        tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
+      });
+    } else if (elapsedMinutes >= 15) {
+      tags.push({
+        label: "可补一轮",
+        tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
+      });
+    }
+  }
+
+  if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
+    tags.push({
+      label: "近期活跃",
+      tone: "bg-[rgba(34,197,94,0.12)] text-[#15803d]",
+    });
+  }
+
+  tags.push({
+    label: isPersistedGroupConversation(conversation) ? "群聊扩散" : "单聊触达",
+    tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
+  });
+
+  return tags.slice(0, 3);
+}
+
+function resolvePendingReturnRecommendationSummary(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
+  const recentActivityMinutes = resolveConversationRecentActivityMinutes(
+    conversation.lastActivityAt,
+  );
+  const isGroupConversation = isPersistedGroupConversation(conversation);
+
+  if (isPendingReturnCoolingDown(deliveredAt)) {
+    return "刚补发过，先给这条会话一点回流时间。";
+  }
+
+  if (
+    elapsedMinutes !== null &&
+    elapsedMinutes >= 60 &&
+    recentActivityMinutes !== null &&
+    recentActivityMinutes <= 6 * 60
+  ) {
+    return "已经拖久且这条会话还在活跃，建议优先追一轮回流。";
+  }
+
+  if (elapsedMinutes !== null && elapsedMinutes >= 60) {
+    return "这条邀请已经长时间没有回流，适合优先补发。";
+  }
+
+  if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
+    return isGroupConversation
+      ? "这条群聊最近还在活跃，适合继续扩散。"
+      : "这条单聊最近仍在互动，适合趁热再触达一次。";
+  }
+
+  return isGroupConversation
+    ? "群聊触达面更大，可作为扩散补发目标。"
+    : "这条单聊更适合做定向补发。";
+}
+
 function isPendingReturnCoolingDown(deliveredAt: string) {
   const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
   return elapsedMinutes !== null && elapsedMinutes < 5;
@@ -1208,6 +1304,15 @@ function resolvePendingReturnElapsedMinutes(deliveredAt: string) {
   }
 
   return Math.max(Math.floor((Date.now() - deliveredAtMs) / 1000 / 60), 0);
+}
+
+function resolveConversationRecentActivityMinutes(lastActivityAt: string) {
+  const lastActivityMs = parseTimestamp(lastActivityAt);
+  if (!lastActivityMs) {
+    return null;
+  }
+
+  return Math.max(Math.floor((Date.now() - lastActivityMs) / 1000 / 60), 0);
 }
 
 function buildInviteMatrixSvg({
