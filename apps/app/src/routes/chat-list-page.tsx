@@ -59,6 +59,7 @@ import {
   isChatReminderGroupClearable,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
+import { ChatReminderSummaryText } from "../features/chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
@@ -587,7 +588,7 @@ function MobileChatListPage() {
                 <span>消息提醒</span>
               </div>
               <div className="text-[12px] text-[#8c8c8c]">
-                {filteredReminderSummary}
+                <ChatReminderSummaryText summary={filteredReminderSummary} />
               </div>
             </div>
             {filteredReminderGroups.map((group, groupIndex) => (

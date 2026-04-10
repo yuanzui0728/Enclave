@@ -71,6 +71,7 @@ import { buildSearchRouteHash } from "../../search/search-route-state";
 import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
+import { ChatReminderSummaryText } from "../../chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../../chat/use-message-reminders";
 import {
   splitChatTextSegments,
@@ -794,7 +795,9 @@ export function DesktopChatWorkspace({
                       <span>消息提醒</span>
                     </div>
                     <div className="text-[11px] text-[color:var(--text-dim)]">
-                      {filteredReminderSummary}
+                      <ChatReminderSummaryText
+                        summary={filteredReminderSummary}
+                      />
                     </div>
                   </div>
 
