@@ -5,6 +5,8 @@ export type GameCenterStoredState = {
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
   eventActionStatusById: Record<string, string>;
+  friendInviteStatusByActivityId: Record<string, string>;
+  friendInviteSentAtByActivityId: Record<string, string>;
 };
 
 const GAME_CENTER_STORAGE_KEY = "yinjie-game-center-state";
@@ -58,6 +60,12 @@ export function getDefaultGameCenterState(): GameCenterStoredState {
     eventActionStatusById: {
       "market-night": "reminder_set",
     },
+    friendInviteStatusByActivityId: {
+      "activity-lu": "invited",
+    },
+    friendInviteSentAtByActivityId: {
+      "activity-lu": "2026-04-10T11:40:00.000Z",
+    },
   };
 }
 
@@ -86,6 +94,12 @@ export function readGameCenterState() {
       ),
       lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
       eventActionStatusById: sanitizeTimestampRecord(parsed.eventActionStatusById),
+      friendInviteStatusByActivityId: sanitizeTimestampRecord(
+        parsed.friendInviteStatusByActivityId,
+      ),
+      friendInviteSentAtByActivityId: sanitizeTimestampRecord(
+        parsed.friendInviteSentAtByActivityId,
+      ),
     };
   } catch {
     return getDefaultGameCenterState();
@@ -122,6 +136,8 @@ export function markGameOpened(
       [gameId]: openedAt,
     },
     eventActionStatusById: state.eventActionStatusById,
+    friendInviteStatusByActivityId: state.friendInviteStatusByActivityId,
+    friendInviteSentAtByActivityId: state.friendInviteSentAtByActivityId,
   };
 }
 
@@ -157,6 +173,26 @@ export function markGameCenterEventAction(
     eventActionStatusById: {
       ...state.eventActionStatusById,
       [input.eventId]: input.status,
+    },
+  };
+}
+
+export function markGameCenterFriendInvite(
+  state: GameCenterStoredState,
+  input: {
+    activityId: string;
+    status: string;
+  },
+): GameCenterStoredState {
+  return {
+    ...state,
+    friendInviteStatusByActivityId: {
+      ...state.friendInviteStatusByActivityId,
+      [input.activityId]: input.status,
+    },
+    friendInviteSentAtByActivityId: {
+      ...state.friendInviteSentAtByActivityId,
+      [input.activityId]: new Date().toISOString(),
     },
   };
 }

@@ -39,6 +39,8 @@ type DesktopGamesWorkspaceProps = {
   activeCategory: GameCenterCategoryId;
   activeGameId: string | null;
   eventActionStatusById: Record<string, string>;
+  friendInviteSentAtByActivityId: Record<string, string>;
+  friendInviteStatusByActivityId: Record<string, string>;
   launchCountById: Record<string, number>;
   pinnedGameIds: string[];
   recentGameIds: string[];
@@ -48,6 +50,7 @@ type DesktopGamesWorkspaceProps = {
   noticeTone?: "success" | "info";
   onCategoryChange: (categoryId: GameCenterCategoryId) => void;
   onCompleteEventAction: (eventId: string) => void;
+  onInviteFriend: (activityId: string) => void;
   onCopyGameToMobile: (gameId: string) => void;
   onDismissActiveGame: () => void;
   onLaunchGame: (gameId: string) => void;
@@ -65,6 +68,8 @@ export function DesktopGamesWorkspace({
   activeCategory,
   activeGameId,
   eventActionStatusById,
+  friendInviteSentAtByActivityId,
+  friendInviteStatusByActivityId,
   launchCountById,
   pinnedGameIds,
   recentGameIds,
@@ -74,6 +79,7 @@ export function DesktopGamesWorkspace({
   noticeTone = "success",
   onCategoryChange,
   onCompleteEventAction,
+  onInviteFriend,
   onCopyGameToMobile,
   onDismissActiveGame,
   onLaunchGame,
@@ -452,30 +458,51 @@ export function DesktopGamesWorkspace({
                     }
 
                     return (
-                      <button
+                      <div
                         key={activity.id}
-                        type="button"
-                        onClick={() => onSelectGame(game.id)}
                         className="flex w-full items-start gap-3 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.9)] px-3 py-3 text-left transition hover:bg-white"
                       >
-                        <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-medium text-[color:var(--text-primary)]">
-                              {activity.friendName}
-                            </span>
-                            <span className="text-xs text-[color:var(--text-muted)]">
-                              正在玩 {game.name}
-                            </span>
+                        <button
+                          type="button"
+                          onClick={() => onSelectGame(game.id)}
+                          className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                        >
+                          <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                                {activity.friendName}
+                              </span>
+                              <span className="text-xs text-[color:var(--text-muted)]">
+                                正在玩 {game.name}
+                              </span>
+                              {friendInviteStatusByActivityId[activity.id] ? (
+                                <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-1 text-[10px] text-[#2f7a3f]">
+                                  已邀约
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                              {activity.status}
+                            </div>
+                            <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                              {friendInviteSentAtByActivityId[activity.id]
+                                ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
+                                : formatTimestamp(activity.updatedAt)}
+                            </div>
                           </div>
-                          <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                            {activity.status}
-                          </div>
-                          <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                            {formatTimestamp(activity.updatedAt)}
-                          </div>
-                        </div>
-                      </button>
+                        </button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onInviteFriend(activity.id)}
+                          className="shrink-0 rounded-full"
+                        >
+                          {friendInviteStatusByActivityId[activity.id]
+                            ? "再邀一次"
+                            : "邀请一起玩"}
+                        </Button>
+                      </div>
                     );
                   })}
                 </div>

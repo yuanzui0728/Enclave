@@ -57,12 +57,15 @@ export function GamesPage() {
   const {
     activeGameId,
     eventActionStatusById,
+    friendInviteSentAtByActivityId,
+    friendInviteStatusByActivityId,
     launchCountById,
     lastOpenedAtById,
     pinnedGameIds,
     recentGameIds,
     dismissActiveGame,
     applyEventAction,
+    applyFriendInvite,
     launchGame,
     togglePinned,
   } = useGameCenterState();
@@ -135,6 +138,24 @@ export function GamesPage() {
     );
   }
 
+  function handleInviteFriend(activityId: string) {
+    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    if (!activity) {
+      return;
+    }
+
+    const game = getGameCenterGame(activity.gameId);
+    const alreadyInvited = Boolean(friendInviteStatusByActivityId[activityId]);
+    applyFriendInvite(activityId, "invited");
+    setSelectedGameId(activity.gameId);
+    setNoticeTone("success");
+    setSuccessNotice(
+      alreadyInvited
+        ? `已再次邀请 ${activity.friendName} 一起玩${game?.name ?? "当前游戏"}。`
+        : `已向 ${activity.friendName} 发出一起玩${game?.name ?? "当前游戏"} 的邀约。`,
+    );
+  }
+
   async function handleCopyGameToMobile(gameId: string) {
     const game = getGameCenterGame(gameId);
     const path = "/games";
@@ -171,6 +192,8 @@ export function GamesPage() {
         activeCategory={activeCategory}
         activeGameId={activeGameId}
         eventActionStatusById={eventActionStatusById}
+        friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
+        friendInviteStatusByActivityId={friendInviteStatusByActivityId}
         launchCountById={launchCountById}
         pinnedGameIds={pinnedGameIds}
         recentGameIds={recentGameIds}
@@ -180,6 +203,7 @@ export function GamesPage() {
         noticeTone={noticeTone}
         onCategoryChange={setActiveCategory}
         onCompleteEventAction={handleCompleteEventAction}
+        onInviteFriend={handleInviteFriend}
         onCopyGameToMobile={handleCopyGameToMobile}
         onDismissActiveGame={dismissActiveGame}
         onLaunchGame={handleLaunchGame}
@@ -363,30 +387,51 @@ export function GamesPage() {
             }
 
             return (
-              <button
+              <div
                 key={activity.id}
-                type="button"
-                onClick={() => setSelectedGameId(game.id)}
                 className="flex w-full items-start gap-3 rounded-[24px] border border-white/80 bg-white/88 px-4 py-4 text-left shadow-[var(--shadow-soft)]"
               >
-                <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-[color:var(--text-primary)]">
-                      {activity.friendName}
-                    </span>
-                    <span className="text-xs text-[color:var(--text-muted)]">
-                      正在玩 {game.name}
-                    </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGameId(game.id)}
+                  className="flex min-w-0 flex-1 items-start gap-3 text-left"
+                >
+                  <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {activity.friendName}
+                      </span>
+                      <span className="text-xs text-[color:var(--text-muted)]">
+                        正在玩 {game.name}
+                      </span>
+                      {friendInviteStatusByActivityId[activity.id] ? (
+                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-1 text-[10px] text-[#2f7a3f]">
+                          已邀约
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {activity.status}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                      {friendInviteSentAtByActivityId[activity.id]
+                        ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
+                        : formatTimestamp(activity.updatedAt)}
+                    </div>
                   </div>
-                  <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                    {activity.status}
-                  </div>
-                  <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                    {formatTimestamp(activity.updatedAt)}
-                  </div>
-                </div>
-              </button>
+                </button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleInviteFriend(activity.id)}
+                  className="shrink-0 rounded-full"
+                >
+                  {friendInviteStatusByActivityId[activity.id]
+                    ? "再邀一次"
+                    : "邀请一起玩"}
+                </Button>
+              </div>
             );
           })}
         </div>
