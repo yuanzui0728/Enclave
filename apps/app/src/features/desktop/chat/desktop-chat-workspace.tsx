@@ -801,7 +801,7 @@ export function DesktopChatWorkspace({
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-1">
+                  <div className="space-y-1.5 pt-0.5">
                     {filteredReminderGroups.map((group) =>
                       (() => {
                         const collapsible = isChatReminderGroupCollapsible(
@@ -813,10 +813,10 @@ export function DesktopChatWorkspace({
                         return (
                           <section
                             key={group.status}
-                            className="rounded-[14px] border border-white/70 bg-white/78"
+                            className="rounded-[12px] border border-white/70 bg-white/78"
                           >
                             {collapsible ? (
-                              <div className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center justify-between px-3 py-1.5">
                                 <span
                                   className={cn(
                                     "rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -868,7 +868,7 @@ export function DesktopChatWorkspace({
                                 </span>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-between px-3 py-2">
+                              <div className="flex items-center justify-between px-3 py-1.5">
                                 <span
                                   className={cn(
                                     "rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -895,7 +895,7 @@ export function DesktopChatWorkspace({
                               )}
                             >
                               <div className="overflow-hidden">
-                                <div className="space-y-1 border-t border-white/80 p-1.5">
+                                <div className="space-y-0.5 border-t border-white/80 p-1">
                                   {group.entries.map((entry) => (
                                     <DesktopReminderCard
                                       key={entry.messageId}

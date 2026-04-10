@@ -614,7 +614,7 @@ function MobileChatListPage() {
                   return (
                     <>
                       {collapsible ? (
-                        <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-2">
+                        <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-1.5">
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
@@ -664,7 +664,7 @@ function MobileChatListPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-2">
+                        <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-1.5">
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
@@ -697,7 +697,7 @@ function MobileChatListPage() {
                             <div
                               key={entry.messageId}
                               className={cn(
-                                "flex items-center gap-2.5 px-4 py-2.5",
+                                "flex items-center gap-2.5 px-4 py-2",
                                 index > 0
                                   ? "border-t border-[color:var(--border-faint)]"
                                   : "",
