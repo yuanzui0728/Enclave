@@ -1346,6 +1346,16 @@ export function likeFeedPost(id: string, baseUrl?: string) {
   );
 }
 
+export function generateChannelPost(baseUrl?: string) {
+  return requestLegacyApi<FeedPost>(
+    "/feed/channels/generate",
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function listOfficialAccounts(baseUrl?: string) {
   return requestLegacyApi<OfficialAccountSummary[]>(
     "/official-accounts",

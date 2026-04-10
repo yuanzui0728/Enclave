@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { FeedPostEntity } from './feed-post.entity';
 import { FeedCommentEntity } from './feed-comment.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
@@ -38,6 +38,13 @@ const CHANNEL_DEMO_POSTS: Array<{
     mediaUrl:
       'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
   },
+];
+
+const CHANNEL_FALLBACK_OPENERS = [
+  'AI 镜头记录',
+  '今天的视频号片段',
+  '刚刚捕捉到的世界画面',
+  '这一帧想留给你看',
 ];
 
 @Injectable()
@@ -209,6 +216,72 @@ export class FeedService {
     }
   }
 
+  async generateChannelPost(
+    characterId?: string,
+  ): Promise<FeedPostEntity | null> {
+    const candidates = await this.characters.findAll();
+    const eligibleCharacters = candidates.filter((character) =>
+      characterId ? character.id === characterId : character.feedFrequency > 0,
+    );
+    const selectedCharacter = characterId
+      ? eligibleCharacters[0]
+      : eligibleCharacters[Math.floor(Math.random() * eligibleCharacters.length)];
+    if (!selectedCharacter) {
+      return null;
+    }
+
+    const profile = await this.characters.getProfile(selectedCharacter.id);
+    const media = this.pickChannelMedia(selectedCharacter.id);
+    if (!profile) {
+      return this.createPost({
+        authorAvatar: selectedCharacter.avatar,
+        authorId: selectedCharacter.id,
+        authorName: selectedCharacter.name,
+        authorType: 'character',
+        mediaType: 'video',
+        mediaUrl: media.mediaUrl,
+        surface: 'channels',
+        text: this.buildFallbackChannelText(selectedCharacter.name),
+      });
+    }
+
+    try {
+      const baseText = await this.ai.generateMoment({
+        profile,
+        currentTime: new Date(),
+      });
+      const text =
+        baseText.trim() || this.buildFallbackChannelText(selectedCharacter.name);
+
+      return this.createPost({
+        authorAvatar: selectedCharacter.avatar,
+        authorId: selectedCharacter.id,
+        authorName: selectedCharacter.name,
+        authorType: 'character',
+        mediaType: 'video',
+        mediaUrl: media.mediaUrl,
+        surface: 'channels',
+        text: `${text} #AI视频号`,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Failed to generate channels post for ${selectedCharacter.id}`,
+        err,
+      );
+
+      return this.createPost({
+        authorAvatar: selectedCharacter.avatar,
+        authorId: selectedCharacter.id,
+        authorName: selectedCharacter.name,
+        authorType: 'character',
+        mediaType: 'video',
+        mediaUrl: media.mediaUrl,
+        surface: 'channels',
+        text: this.buildFallbackChannelText(selectedCharacter.name),
+      });
+    }
+  }
+
   async getPendingAiReaction(sinceMinutes = 30): Promise<FeedPostEntity[]> {
     const since = new Date(Date.now() - sinceMinutes * 60 * 1000);
     return this.postRepo.find({
@@ -267,5 +340,43 @@ export class FeedService {
         text: demoPost.text,
       });
     }
+  }
+
+  async topUpChannelsIfNeeded(targetCount = 6) {
+    const recentCount = await this.postRepo.count({
+      where: {
+        createdAt: MoreThanOrEqual(new Date(Date.now() - 48 * 60 * 60 * 1000)),
+        surface: 'channels',
+      },
+    });
+
+    if (recentCount >= targetCount) {
+      return;
+    }
+
+    const missingCount = targetCount - recentCount;
+    for (let index = 0; index < missingCount; index += 1) {
+      await this.generateChannelPost();
+    }
+  }
+
+  private buildFallbackChannelText(authorName: string) {
+    const opener =
+      CHANNEL_FALLBACK_OPENERS[
+        Math.floor(Math.random() * CHANNEL_FALLBACK_OPENERS.length)
+      ] ?? CHANNEL_FALLBACK_OPENERS[0];
+    return `${opener}：${authorName} 刚刚发来一段 AI 生成的短片，适合停下来刷 10 秒。`;
+  }
+
+  private pickChannelMedia(seed: string) {
+    let hash = 0;
+    for (const character of seed) {
+      hash = (hash * 33 + (character.codePointAt(0) ?? 0)) >>> 0;
+    }
+
+    return (
+      CHANNEL_DEMO_POSTS[hash % CHANNEL_DEMO_POSTS.length] ??
+      CHANNEL_DEMO_POSTS[0]
+    );
   }
 }

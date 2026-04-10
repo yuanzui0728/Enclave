@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import {
   addFeedComment,
+  generateChannelPost,
   getBlockedCharacters,
   getFeed,
   likeFeedPost,
@@ -86,6 +87,13 @@ export function ChannelsPage() {
       await queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] });
     },
   });
+  const generateMutation = useMutation({
+    mutationFn: () => generateChannelPost(baseUrl),
+    onSuccess: async () => {
+      setSuccessNotice("已生成一条新的 AI 视频号内容。");
+      await queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] });
+    },
+  });
 
   const blockedCharacterIds = useMemo(
     () => new Set((blockedQuery.data ?? []).map((item) => item.characterId)),
@@ -109,6 +117,9 @@ export function ChannelsPage() {
       : null) ??
     (likeMutation.isError && likeMutation.error instanceof Error
       ? likeMutation.error.message
+      : null) ??
+    (generateMutation.isError && generateMutation.error instanceof Error
+      ? generateMutation.error.message
       : null) ??
     (commentMutation.isError && commentMutation.error instanceof Error
       ? commentMutation.error.message
@@ -180,7 +191,7 @@ export function ChannelsPage() {
         onCommentSubmit={(postId) => commentMutation.mutate(postId)}
         onLike={(postId) => likeMutation.mutate(postId)}
         onRefresh={() =>
-          void queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] })
+          generateMutation.mutate()
         }
         onToggleFavorite={toggleFavorite}
       />
@@ -205,14 +216,13 @@ export function ChannelsPage() {
         }
         rightActions={
           <Button
-            onClick={() =>
-              void queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] })
-            }
+            onClick={() => generateMutation.mutate()}
             variant="ghost"
             size="sm"
             className="border border-white/70 bg-white/82"
+            disabled={generateMutation.isPending}
           >
-            刷新
+            {generateMutation.isPending ? "生成中..." : "换一批"}
           </Button>
         }
       >
