@@ -1,6 +1,4 @@
-import {
-  useQuery,
-} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
   FileText,
@@ -229,7 +227,8 @@ export function ChatComposer({
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
     queryFn: () => getFavorites(baseUrl),
-    enabled: isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
+    enabled:
+      isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
   });
 
   const getActiveInput = () =>
@@ -546,11 +545,7 @@ export function ChatComposer({
         readDesktopFavorites(),
       ),
     );
-  }, [
-    desktopPlusMenuOpen,
-    desktopPlusMenuView,
-    favoritesQuery.data,
-  ]);
+  }, [desktopPlusMenuOpen, desktopPlusMenuView, favoritesQuery.data]);
 
   useEffect(() => {
     return () => {
@@ -719,6 +714,40 @@ export function ChatComposer({
     setAttachmentError(null);
     setMobilePlusNotice(null);
     fileInputRef.current?.click();
+  };
+
+  const activateMobileSpeechFallback = () => {
+    if (isDesktop || !showSpeechEntry) {
+      return;
+    }
+
+    blurActiveElement();
+    if (speech.status !== "idle") {
+      speech.cancel();
+    }
+    closeMobileSpeechSheet();
+    setStickerPanelOpen(false);
+    setAttachmentError(null);
+    setMobilePlusNotice(null);
+    setPlusPanelOpen(false);
+    setMobileInputMode("speech");
+  };
+
+  const handleUnavailableFallback = (
+    action: "voice-message" | "camera" | "album",
+  ) => {
+    if (action === "voice-message") {
+      activateMobileSpeechFallback();
+      return;
+    }
+
+    setPlusPanelOpen(false);
+    if (action === "camera") {
+      pickCamera();
+      return;
+    }
+
+    pickAlbum();
   };
 
   const handleImageSelection = async (fileList: FileList | null) => {
@@ -1507,6 +1536,7 @@ export function ChatComposer({
               setAttachmentError(null);
               setMobilePlusNotice(message);
             }}
+            onUnavailableFallback={handleUnavailableFallback}
           />
         ) : null}
         {mobilePlusNotice && !isDesktop && !plusPanelOpen ? (

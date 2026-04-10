@@ -47,6 +47,10 @@ type MobileChatPlusPanelProps = {
     attachment: LocationCardAttachment,
   ) => void | Promise<void>;
   onUnavailableAction?: (message: string) => void;
+  onUnavailableFallback?: (
+    action: RootActionFallbackAction,
+    source: RootAction["key"],
+  ) => void | Promise<void>;
 };
 
 type PanelView = "root" | "favorites" | "contacts" | "locations";
@@ -71,7 +75,11 @@ type RootAction = {
   disabledLabel?: string;
   unavailableTitle?: string;
   unavailableDescription?: string;
+  fallbackLabel?: string;
+  fallbackAction?: RootActionFallbackAction;
 };
+
+type RootActionFallbackAction = "voice-message" | "camera" | "album";
 
 const rootActions: Record<RootAction["key"], RootAction> = {
   album: {
@@ -96,6 +104,8 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     unavailableTitle: "视频通话暂未接入",
     unavailableDescription:
       "当前先保留微信式入口位，后续会接到设备联动和真视频通话链路。",
+    fallbackLabel: "改为拍摄",
+    fallbackAction: "camera",
   },
   "red-packet": {
     key: "red-packet",
@@ -141,6 +151,8 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     unavailableTitle: "语音通话暂未接入",
     unavailableDescription:
       "当前可以先用按住说话发送语音消息，实时语音通话会在后续单独接入。",
+    fallbackLabel: "改发语音消息",
+    fallbackAction: "voice-message",
   },
   file: {
     key: "file",
@@ -180,6 +192,7 @@ export function MobileChatPlusPanel({
   onSelectContactCard,
   onSelectLocationCard,
   onUnavailableAction,
+  onUnavailableFallback,
 }: MobileChatPlusPanelProps) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -240,6 +253,8 @@ export function MobileChatPlusPanel({
   }
 
   const UnavailableIcon = unavailableAction?.icon;
+  const unavailableFallbackAction = unavailableAction?.fallbackAction;
+  const unavailableFallbackLabel = unavailableAction?.fallbackLabel;
 
   return (
     <div className="mt-2 min-h-[248px] overflow-hidden border-t border-black/6 bg-[#f1f1f1] shadow-none">
@@ -406,6 +421,21 @@ export function MobileChatPlusPanel({
                 </div>
               </div>
               <div className="mt-3 flex justify-end">
+                {unavailableFallbackAction && unavailableFallbackLabel ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUnavailableAction(null);
+                      void onUnavailableFallback?.(
+                        unavailableFallbackAction,
+                        unavailableAction.key,
+                      );
+                    }}
+                    className="mr-2 rounded-full bg-[#07c160] px-3 py-1.5 text-[12px] font-medium text-white transition active:opacity-90"
+                  >
+                    {unavailableFallbackLabel}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setUnavailableAction(null)}
