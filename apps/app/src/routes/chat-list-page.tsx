@@ -726,15 +726,17 @@ function MobileChatListPage() {
                                     {entry.title}
                                   </span>
                                 </div>
-                                <div className="mt-0.5 truncate text-[12px] leading-[1.35] text-[#5f6368]">
-                                  {entry.previewText}
-                                </div>
-                                <div className="mt-0.5 text-[11px] text-[#8c8c8c]">
-                                  {formatReminderListTimestamp(
-                                    entry.remindAt,
-                                    entry.isDue,
-                                    entry.notifiedAt,
-                                  )}
+                                <div className="mt-0.5 flex items-center gap-2 text-[#8c8c8c]">
+                                  <span className="min-w-0 flex-1 truncate text-[11px] leading-[1.35] text-[#5f6368]">
+                                    {entry.previewText}
+                                  </span>
+                                  <span className="shrink-0 text-[10px]">
+                                    {formatReminderListTimestamp(
+                                      entry.remindAt,
+                                      entry.isDue,
+                                      entry.notifiedAt,
+                                    )}
+                                  </span>
                                 </div>
                               </button>
                               <button

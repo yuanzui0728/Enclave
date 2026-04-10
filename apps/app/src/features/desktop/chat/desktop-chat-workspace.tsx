@@ -1223,15 +1223,17 @@ function DesktopReminderCard({
               {entry.title}
             </span>
           </div>
-          <div className="mt-0.5 truncate text-[11px] leading-[1.35] text-[color:var(--text-secondary)]">
-            {entry.previewText}
-          </div>
-          <div className="mt-0.5 text-[10px] text-[color:var(--text-dim)]">
-            {formatReminderListTimestamp(
-              entry.remindAt,
-              entry.isDue,
-              entry.notifiedAt,
-            )}
+          <div className="mt-0.5 flex items-center gap-2 text-[color:var(--text-dim)]">
+            <span className="min-w-0 flex-1 truncate text-[10px] leading-[1.35] text-[color:var(--text-secondary)]">
+              {entry.previewText}
+            </span>
+            <span className="shrink-0 text-[9px]">
+              {formatReminderListTimestamp(
+                entry.remindAt,
+                entry.isDue,
+                entry.notifiedAt,
+              )}
+            </span>
           </div>
         </div>
       </button>
