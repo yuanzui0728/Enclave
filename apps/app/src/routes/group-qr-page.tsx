@@ -209,6 +209,17 @@ export function GroupQrPage() {
     () => new Set(deliveryTargets.map((record) => record.conversationPath)),
     [deliveryTargets],
   );
+  const deliveredTargetByPath = useMemo(
+    () =>
+      deliveryTargets.reduce<Record<string, GroupInviteDeliveryTarget>>(
+        (result, record) => {
+          result[record.conversationPath] = record;
+          return result;
+        },
+        {},
+      ),
+    [deliveryTargets],
+  );
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -619,6 +630,18 @@ export function GroupQrPage() {
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                     回流后可直接把当前群邀请再发回这条来源会话。
                   </div>
+                  {deliveredTargetByPath[
+                    buildConversationPath(currentReturnSourceConversation)
+                  ] ? (
+                    <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
+                      上次发送于{" "}
+                      {formatConversationTimestamp(
+                        deliveredTargetByPath[
+                          buildConversationPath(currentReturnSourceConversation)
+                        ].deliveredAt,
+                      )}
+                    </div>
+                  ) : null}
                 </div>
                 <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
                   立即回发
@@ -649,13 +672,22 @@ export function GroupQrPage() {
                           : "同类单聊"}{" "}
                         · 最近活跃{" "}
                         {formatConversationTimestamp(conversation.lastActivityAt)}
-                        {deliveredPaths.has(buildConversationPath(conversation))
-                          ? " · 已发过邀请"
-                          : ""}
                       </div>
+                      {deliveredTargetByPath[buildConversationPath(conversation)] ? (
+                        <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
+                          上次发送于{" "}
+                          {formatConversationTimestamp(
+                            deliveredTargetByPath[
+                              buildConversationPath(conversation)
+                            ].deliveredAt,
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      发到相关会话
+                      {deliveredPaths.has(buildConversationPath(conversation))
+                        ? "再次发送"
+                        : "发到相关会话"}
                     </span>
                   </button>
                 ))}
@@ -682,13 +714,22 @@ export function GroupQrPage() {
                           : "单聊"}{" "}
                         · 最近活跃{" "}
                         {formatConversationTimestamp(conversation.lastActivityAt)}
-                        {deliveredPaths.has(buildConversationPath(conversation))
-                          ? " · 已发过邀请"
-                          : ""}
                       </div>
+                      {deliveredTargetByPath[buildConversationPath(conversation)] ? (
+                        <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
+                          上次发送于{" "}
+                          {formatConversationTimestamp(
+                            deliveredTargetByPath[
+                              buildConversationPath(conversation)
+                            ].deliveredAt,
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      发到聊天
+                      {deliveredPaths.has(buildConversationPath(conversation))
+                        ? "再次发送"
+                        : "发到聊天"}
                     </span>
                   </button>
                 ))}
