@@ -59,7 +59,7 @@ export function CreateGroupPage() {
     createMutation.reset();
   }, [baseUrl, createMutation]);
 
-  const friendItems = friendsQuery.data ?? [];
+  const friendItems = useMemo(() => friendsQuery.data ?? [], [friendsQuery.data]);
   const filteredFriends = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     if (!keyword) {
