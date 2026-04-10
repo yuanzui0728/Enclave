@@ -11,6 +11,7 @@ import {
   getFriends,
   hideConversation,
   sendFriendRequest,
+  setConversationStrongReminder,
   setConversationMuted,
   setConversationPinned,
 } from "@yinjie/contracts";
@@ -18,11 +19,17 @@ import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
+import {
+  CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
+  formatConversationStrongReminderRemaining,
+  isConversationStrongReminderActive,
+} from "../features/chat/conversation-strong-reminder";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -37,6 +44,7 @@ export function ChatDetailsPage() {
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const [notice, setNotice] = useState<string | null>(null);
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
 
   useEffect(() => {
     setNotice(null);
@@ -76,6 +84,14 @@ export function ChatDetailsPage() {
 
   const targetCharacter = characterQuery.data;
   const isPinned = conversation?.isPinned ?? false;
+  const strongReminderActive = isConversationStrongReminderActive(
+    conversation?.strongReminderUntil,
+    nowTimestamp,
+  );
+  const strongReminderLabel = formatConversationStrongReminderRemaining(
+    conversation?.strongReminderUntil,
+    nowTimestamp,
+  );
   const isFriend = (friendsQuery.data ?? []).some(
     (item) => item.character.id === targetCharacterId,
   );
@@ -98,6 +114,37 @@ export function ChatDetailsPage() {
       setConversationMuted(conversationId, { muted }, baseUrl),
     onSuccess: async (_, muted) => {
       setNotice(muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+  });
+  const strongReminderMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const conversation = await setConversationStrongReminder(
+        conversationId,
+        {
+          enabled,
+          durationHours: CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
+        },
+        baseUrl,
+      );
+      const permission = enabled
+        ? await requestNotificationPermission()
+        : undefined;
+      return { conversation, enabled, permission };
+    },
+    onSuccess: async ({ enabled, permission }) => {
+      if (!enabled) {
+        setNotice("已关闭强提醒。");
+      } else if (permission === "granted") {
+        setNotice("已开启 3 小时强提醒，系统通知已开启。");
+      } else if (permission === "denied") {
+        setNotice("已开启 3 小时强提醒，但系统通知未开启。");
+      } else {
+        setNotice("已开启 3 小时强提醒。");
+      }
+
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -204,12 +251,25 @@ export function ChatDetailsPage() {
 
   const busy =
     muteMutation.isPending ||
+    strongReminderMutation.isPending ||
     pinMutation.isPending ||
     saveToContactsMutation.isPending ||
     hideMutation.isPending ||
     clearMutation.isPending ||
     reportMutation.isPending ||
     blockMutation.isPending;
+
+  useEffect(() => {
+    if (!strongReminderActive) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+  }, [strongReminderActive]);
 
   const memberItems = [
     {
@@ -331,10 +391,10 @@ export function ChatDetailsPage() {
               />
               <ChatSettingRow
                 label="强提醒"
-                value="待接入"
-                onClick={() => {
-                  setNotice("强提醒待接真实通知链路，当前先保留微信式入口。");
-                }}
+                value={strongReminderActive ? strongReminderLabel : undefined}
+                checked={strongReminderActive}
+                disabled={busy}
+                onToggle={(checked) => strongReminderMutation.mutate(checked)}
               />
             </div>
           </ChatDetailsSection>
