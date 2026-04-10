@@ -22,6 +22,7 @@ import {
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import {
   readLiveDraft,
   readLiveHistory,
@@ -36,6 +37,7 @@ import {
 import { readMiniProgramsState } from "../features/mini-programs/mini-programs-storage";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { getConversationPreviewParts } from "../lib/conversation-preview";
 import {
   pushMobileHandoffRecord,
   readMobileHandoffHistory,
@@ -171,6 +173,7 @@ export function DesktopMobilePage() {
   const [currentGroupInviteReopens, setCurrentGroupInviteReopens] = useState<
     GroupInviteReopenRecord[]
   >([]);
+  const localMessageActionState = useLocalChatMessageActionState();
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -404,7 +407,6 @@ export function DesktopMobilePage() {
                         桌面打开
                       </Link>
                     </div>
-
                   </div>
                 ))}
               </div>
@@ -495,26 +497,32 @@ export function DesktopMobilePage() {
                 {conversationsQuery.isLoading ? (
                   <LoadingBlock label="正在读取会话..." />
                 ) : recentConversations.length ? (
-                  recentConversations.map((item) => (
-                    <RecentConversationRow
-                      key={item.id}
-                      item={item}
-                      onCopy={() =>
-                        void handleCopyHandoff({
-                          description:
-                            item.lastMessage?.text ||
-                            "继续查看这段会话的最新消息。",
-                          label: item.title,
-                          path:
-                            isPersistedGroupConversation(item)
+                  recentConversations.map((item) => {
+                    const preview = getConversationPreviewParts(
+                      item,
+                      localMessageActionState,
+                    );
+                    const description = `${preview.prefix}${preview.text}`;
+
+                    return (
+                      <RecentConversationRow
+                        key={item.id}
+                        item={item}
+                        description={description}
+                        onCopy={() =>
+                          void handleCopyHandoff({
+                            description,
+                            label: item.title,
+                            path: isPersistedGroupConversation(item)
                               ? `/group/${item.id}`
                               : `/chat/${item.id}`,
-                          setHistory: setHandoffHistory,
-                          setNotice,
-                        })
-                      }
-                    />
-                  ))
+                            setHistory: setHandoffHistory,
+                            setNotice,
+                          })
+                        }
+                      />
+                    );
+                  })
                 ) : (
                   <EmptyState
                     title="还没有最近会话"
@@ -907,9 +915,7 @@ export function DesktopMobilePage() {
                             最近发送于{" "}
                             {formatTimestamp(currentGroupInviteHandoff.sentAt)}
                           </span>
-                          <span>
-                            已纳入手机接力固定入口
-                          </span>
+                          <span>已纳入手机接力固定入口</span>
                         </div>
                       </div>
                       <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
@@ -958,7 +964,9 @@ export function DesktopMobilePage() {
                               </div>
                             </div>
                             <Link
-                              to={currentGroupInviteDelivery.conversationPath as never}
+                              to={
+                                currentGroupInviteDelivery.conversationPath as never
+                              }
                               className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
                             >
                               回到会话
@@ -977,30 +985,32 @@ export function DesktopMobilePage() {
                             最近从这些会话回到邀请页
                           </div>
                           <div className="mt-3 space-y-2">
-                            {currentGroupInviteReopens.slice(0, 2).map((record) => (
-                              <div
-                                key={`${record.conversationPath}:${record.reopenedAt}`}
-                                className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.72)] px-3 py-2"
-                              >
-                                <div className="min-w-0 flex-1">
-                                  <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
-                                    {record.conversationTitle}
-                                  </div>
-                                  <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
-                                    回流于{" "}
-                                    {formatConversationTimestamp(
-                                      record.reopenedAt,
-                                    )}
-                                  </div>
-                                </div>
-                                <Link
-                                  to={record.conversationPath as never}
-                                  className="inline-flex h-7 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            {currentGroupInviteReopens
+                              .slice(0, 2)
+                              .map((record) => (
+                                <div
+                                  key={`${record.conversationPath}:${record.reopenedAt}`}
+                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.72)] px-3 py-2"
                                 >
-                                  回到会话
-                                </Link>
-                              </div>
-                            ))}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
+                                      {record.conversationTitle}
+                                    </div>
+                                    <div className="mt-1 text-[10px] text-[color:var(--text-muted)]">
+                                      回流于{" "}
+                                      {formatConversationTimestamp(
+                                        record.reopenedAt,
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Link
+                                    to={record.conversationPath as never}
+                                    className="inline-flex h-7 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                                  >
+                                    回到会话
+                                  </Link>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       ) : null}
@@ -1149,9 +1159,11 @@ export function DesktopMobilePage() {
 
 function RecentConversationRow({
   item,
+  description,
   onCopy,
 }: {
   item: ConversationListItem;
+  description: string;
   onCopy: () => void;
 }) {
   return (
@@ -1167,7 +1179,7 @@ function RecentConversationRow({
             {formatConversationTimestamp(item.lastActivityAt)}
           </div>
           <div className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-            {item.lastMessage?.text || "继续查看这段会话的最新消息。"}
+            {description}
           </div>
           <div className="mt-3">
             <Button size="sm" onClick={onCopy} className="rounded-full">
@@ -1370,7 +1382,10 @@ function resolveMobileHandoffCategory(
     return "games";
   }
 
-  if (item.path === "/tabs/channels" || item.path.startsWith("/desktop/channels")) {
+  if (
+    item.path === "/tabs/channels" ||
+    item.path.startsWith("/desktop/channels")
+  ) {
     return "channel";
   }
 

@@ -36,15 +36,16 @@ import { SubscriptionInboxCard } from "../../../components/subscription-inbox-ca
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import { buildSearchRouteHash } from "../../search/search-route-state";
-import {
-  shouldHideSearchableChatMessage,
-  useLocalChatMessageActionState,
-} from "../../chat/local-chat-message-actions";
+import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import {
   sanitizeDisplayedChatText,
   splitChatTextSegments,
   summarizeChatMentions,
 } from "../../../lib/chat-text";
+import {
+  getConversationPreviewParts,
+  getConversationVisibleLastMessage,
+} from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -162,7 +163,7 @@ export function DesktopChatWorkspace({
 
     return conversations.filter((conversation) => {
       const title = conversation.title.toLowerCase();
-      const preview = buildConversationPreview(
+      const preview = getConversationPreviewParts(
         conversation,
         localMessageActionState,
       ).text.toLowerCase();
@@ -737,11 +738,11 @@ function ConversationCardLink({
     : conversation.isPinned
       ? "flex items-center gap-3 rounded-[12px] border border-transparent bg-[#ededed] px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#e7e7e7]"
       : "flex items-center gap-3 rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white";
-  const preview = buildConversationPreview(
+  const preview = getConversationPreviewParts(
     conversation,
     localMessageActionState,
   );
-  const visibleLastMessage = resolveVisibleConversationLastMessage(
+  const visibleLastMessage = getConversationVisibleLastMessage(
     conversation,
     localMessageActionState,
   );
@@ -881,70 +882,6 @@ function canConversationBeMarkedUnread(conversation: ConversationListItem) {
     conversation.unreadCount === 0 &&
     conversation.lastMessage?.senderType === "character"
   );
-}
-
-function buildConversationPreview(
-  conversation: ConversationListItem,
-  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>,
-) {
-  const lastMessage = resolveVisibleConversationLastMessage(
-    conversation,
-    localMessageActionState,
-  );
-  if (!lastMessage) {
-    return {
-      prefix: "",
-      text: conversation.lastMessage
-        ? isPersistedGroupConversation(conversation)
-          ? "打开群聊查看最近消息。"
-          : "打开这个会话查看最近聊天记录。"
-        : isPersistedGroupConversation(conversation)
-          ? "打开群聊查看最近消息。"
-          : "打开这个会话查看最近聊天记录。",
-    };
-  }
-
-  const text = formatMessagePreviewText(lastMessage.type, lastMessage.text);
-  if (!isPersistedGroupConversation(conversation)) {
-    return {
-      prefix: "",
-      text,
-    };
-  }
-
-  if (lastMessage.senderType === "system") {
-    return {
-      prefix: "",
-      text,
-    };
-  }
-
-  const senderLabel =
-    lastMessage.senderType === "user"
-      ? "我："
-      : `${lastMessage.senderName || "群成员"}：`;
-
-  return {
-    prefix: senderLabel,
-    text,
-  };
-}
-
-function resolveVisibleConversationLastMessage(
-  conversation: ConversationListItem,
-  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>,
-) {
-  const lastMessage = conversation.lastMessage;
-  if (!lastMessage) {
-    return null;
-  }
-
-  return shouldHideSearchableChatMessage(
-    lastMessage.id,
-    localMessageActionState,
-  )
-    ? null
-    : lastMessage;
 }
 
 function formatMessagePreviewText(type: string | undefined, text: string) {

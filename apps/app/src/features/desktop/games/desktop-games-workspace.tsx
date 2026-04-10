@@ -1,11 +1,6 @@
 import type { ReactNode } from "react";
 import type { ConversationListItem } from "@yinjie/contracts";
-import {
-  Button,
-  InlineNotice,
-  LoadingBlock,
-  cn,
-} from "@yinjie/ui";
+import { Button, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import {
   Clock3,
   Flame,
@@ -18,10 +13,12 @@ import {
   UsersRound,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import {
   formatConversationTimestamp,
   formatTimestamp,
 } from "../../../lib/format";
+import { getConversationPreviewParts } from "../../../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { EmptyState } from "../../../components/empty-state";
 import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
@@ -111,11 +108,13 @@ export function DesktopGamesWorkspace({
   onSelectGame,
   onTogglePinnedGame,
 }: DesktopGamesWorkspaceProps) {
+  const localMessageActionState = useLocalChatMessageActionState();
   const selectedGame =
     getGameCenterGame(selectedGameId) ?? getGameCenterGame("signal-squad");
   const activeInviteActivity = activeInviteActivityId
-    ? gameCenterFriendActivities.find((item) => item.id === activeInviteActivityId) ??
-      null
+    ? (gameCenterFriendActivities.find(
+        (item) => item.id === activeInviteActivityId,
+      ) ?? null)
     : null;
   const activeInviteGame = activeInviteActivity
     ? getGameCenterGame(activeInviteActivity.gameId)
@@ -151,7 +150,9 @@ export function DesktopGamesWorkspace({
 
         <div className="min-h-0 space-y-4 overflow-auto px-4 py-4">
           <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-4 shadow-[var(--shadow-soft)]">
-            <div className="text-xs text-[color:var(--text-muted)]">浏览频道</div>
+            <div className="text-xs text-[color:var(--text-muted)]">
+              浏览频道
+            </div>
             <div className="mt-3 space-y-2">
               {gameCenterCategoryTabs.map((tab) => (
                 <button
@@ -228,7 +229,10 @@ export function DesktopGamesWorkspace({
 
           <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-4 shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              <Clock3 size={15} className="text-[color:var(--brand-secondary)]" />
+              <Clock3
+                size={15}
+                className="text-[color:var(--brand-secondary)]"
+              />
               最近玩过
             </div>
             <div className="mt-3 space-y-2">
@@ -273,7 +277,9 @@ export function DesktopGamesWorkspace({
                 首版先不做小游戏运行容器，点击开始游戏会先记录使用状态并回到内容工作区。
               </div>
             </div>
-            {successNotice ? <InlineNotice tone={noticeTone}>{successNotice}</InlineNotice> : null}
+            {successNotice ? (
+              <InlineNotice tone={noticeTone}>{successNotice}</InlineNotice>
+            ) : null}
           </div>
         </div>
 
@@ -317,8 +323,14 @@ export function DesktopGamesWorkspace({
                   </div>
 
                   <div className="mt-6 grid gap-3 md:grid-cols-3">
-                    <DesktopMetric label="玩家热度" value={selectedGame.playersLabel} />
-                    <DesktopMetric label="社交热度" value={selectedGame.friendsLabel} />
+                    <DesktopMetric
+                      label="玩家热度"
+                      value={selectedGame.playersLabel}
+                    />
+                    <DesktopMetric
+                      label="社交热度"
+                      value={selectedGame.friendsLabel}
+                    />
                     <DesktopMetric label="工作室" value={selectedGame.studio} />
                   </div>
 
@@ -453,13 +465,23 @@ export function DesktopGamesWorkspace({
               <div className="grid gap-4 lg:grid-cols-2">
                 <DesktopRankingPanel
                   title="热门榜"
-                  icon={<Flame size={16} className="text-[color:var(--brand-primary)]" />}
+                  icon={
+                    <Flame
+                      size={16}
+                      className="text-[color:var(--brand-primary)]"
+                    />
+                  }
                   entries={gameCenterHotRankings}
                   onSelectGame={onSelectGame}
                 />
                 <DesktopRankingPanel
                   title="新游榜"
-                  icon={<Sparkles size={16} className="text-[color:var(--brand-secondary)]" />}
+                  icon={
+                    <Sparkles
+                      size={16}
+                      className="text-[color:var(--brand-secondary)]"
+                    />
+                  }
                   entries={gameCenterNewRankings}
                   onSelectGame={onSelectGame}
                 />
@@ -473,13 +495,20 @@ export function DesktopGamesWorkspace({
                 launchCount={launchCountById[selectedGame.id] ?? 0}
                 lastOpenedAt={lastOpenedAtById[selectedGame.id]}
                 onCopyToMobile={onCopyGameToMobile}
-                onDismiss={activeGameId === selectedGame.id ? onDismissActiveGame : undefined}
+                onDismiss={
+                  activeGameId === selectedGame.id
+                    ? onDismissActiveGame
+                    : undefined
+                }
                 onLaunch={onLaunchGame}
               />
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <UsersRound size={16} className="text-[color:var(--brand-secondary)]" />
+                  <UsersRound
+                    size={16}
+                    className="text-[color:var(--brand-secondary)]"
+                  />
                   好友在玩
                 </div>
                 <div className="mt-4 space-y-3">
@@ -499,7 +528,10 @@ export function DesktopGamesWorkspace({
                           onClick={() => onSelectGame(game.id)}
                           className="flex min-w-0 flex-1 items-start gap-3 text-left"
                         >
-                          <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
+                          <AvatarChip
+                            name={activity.friendName}
+                            src={activity.friendAvatar}
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -522,9 +554,16 @@ export function DesktopGamesWorkspace({
                                 ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
                                 : formatTimestamp(activity.updatedAt)}
                             </div>
-                            {lastInviteConversationTitleByActivityId[activity.id] ? (
+                            {lastInviteConversationTitleByActivityId[
+                              activity.id
+                            ] ? (
                               <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                                最近投递到 {lastInviteConversationTitleByActivityId[activity.id]}
+                                最近投递到{" "}
+                                {
+                                  lastInviteConversationTitleByActivityId[
+                                    activity.id
+                                  ]
+                                }
                               </div>
                             ) : null}
                           </div>
@@ -559,7 +598,9 @@ export function DesktopGamesWorkspace({
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() => onOpenDeliveredConversation(activity.id)}
+                            onClick={() =>
+                              onOpenDeliveredConversation(activity.id)
+                            }
                             className="shrink-0 rounded-full"
                           >
                             回到会话
@@ -573,7 +614,10 @@ export function DesktopGamesWorkspace({
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <Gamepad2 size={16} className="text-[color:var(--brand-secondary)]" />
+                  <Gamepad2
+                    size={16}
+                    className="text-[color:var(--brand-secondary)]"
+                  />
                   投递到最近会话
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
@@ -600,53 +644,19 @@ export function DesktopGamesWorkspace({
                         当前邀约
                       </div>
                       <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                        {activeInviteActivity.friendName} 正在玩 {activeInviteGame?.name ?? "当前游戏"}，{activeInviteActivity.status}
+                        {activeInviteActivity.friendName} 正在玩{" "}
+                        {activeInviteGame?.name ?? "当前游戏"}，
+                        {activeInviteActivity.status}
                       </div>
                     </div>
                     {inviteConversationCandidates.map((conversation) => (
-                      <div
+                      <InviteConversationRow
                         key={conversation.id}
-                        className="flex w-full items-start justify-between gap-3 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] px-4 py-4 text-left transition hover:bg-white"
-                      >
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onSendInviteToConversation(
-                              activeInviteActivity.id,
-                              conversation.id,
-                            )
-                          }
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                              {conversation.title}
-                            </div>
-                            <span className="text-[11px] text-[color:var(--text-muted)]">
-                              {isPersistedGroupConversation(conversation) ? "群聊" : "单聊"}
-                            </span>
-                          </div>
-                          <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                            {conversation.lastMessage?.text || "把组局邀约投递到这条会话。"}
-                          </div>
-                          <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                            {formatConversationTimestamp(conversation.lastActivityAt)}
-                          </div>
-                        </button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() =>
-                            onSendInviteToConversation(
-                              activeInviteActivity.id,
-                              conversation.id,
-                            )
-                          }
-                          className="shrink-0 rounded-full"
-                        >
-                          发邀约
-                        </Button>
-                      </div>
+                        activeInviteActivityId={activeInviteActivity.id}
+                        conversation={conversation}
+                        localMessageActionState={localMessageActionState}
+                        onSendInviteToConversation={onSendInviteToConversation}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -661,7 +671,10 @@ export function DesktopGamesWorkspace({
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <Gift size={16} className="text-[color:var(--brand-primary)]" />
+                  <Gift
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
                   活动与福利
                 </div>
                 <div className="mt-4 space-y-3">
@@ -691,7 +704,12 @@ export function DesktopGamesWorkspace({
                             <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
                               {event.description}
                             </div>
-                            <div className={cn("mt-2 text-[11px]", tone.softTextClassName)}>
+                            <div
+                              className={cn(
+                                "mt-2 text-[11px]",
+                                tone.softTextClassName,
+                              )}
+                            >
                               {event.meta}
                             </div>
                           </div>
@@ -711,18 +729,83 @@ export function DesktopGamesWorkspace({
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(255,250,245,0.98),rgba(255,255,255,0.95))] p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  <Gamepad2 size={16} className="text-[color:var(--brand-secondary)]" />
+                  <Gamepad2
+                    size={16}
+                    className="text-[color:var(--brand-secondary)]"
+                  />
                   首版说明
                 </div>
                 <div className="mt-3 space-y-3 text-xs leading-6 text-[color:var(--text-secondary)]">
-                  <div>点击“开始游戏”会先写入最近玩过和固定常玩状态，确保桌面与移动端入口节奏先成立。</div>
-                  <div>后续再补小游戏运行容器、好友组局邀请和真实活动编排，避免这次直接把范围做成平台级工程。</div>
+                  <div>
+                    点击“开始游戏”会先写入最近玩过和固定常玩状态，确保桌面与移动端入口节奏先成立。
+                  </div>
+                  <div>
+                    后续再补小游戏运行容器、好友组局邀请和真实活动编排，避免这次直接把范围做成平台级工程。
+                  </div>
                 </div>
               </section>
             </div>
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function InviteConversationRow({
+  activeInviteActivityId,
+  conversation,
+  localMessageActionState,
+  onSendInviteToConversation,
+}: {
+  activeInviteActivityId: string;
+  conversation: ConversationListItem;
+  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
+  onSendInviteToConversation: (
+    activityId: string,
+    conversationId: string,
+  ) => void;
+}) {
+  const preview = getConversationPreviewParts(
+    conversation,
+    localMessageActionState,
+  );
+
+  return (
+    <div className="flex w-full items-start justify-between gap-3 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] px-4 py-4 text-left transition hover:bg-white">
+      <button
+        type="button"
+        onClick={() =>
+          onSendInviteToConversation(activeInviteActivityId, conversation.id)
+        }
+        className="min-w-0 flex-1 text-left"
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            {conversation.title}
+          </div>
+          <span className="text-[11px] text-[color:var(--text-muted)]">
+            {isPersistedGroupConversation(conversation) ? "群聊" : "单聊"}
+          </span>
+        </div>
+        <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+          {preview.prefix}
+          {preview.text}
+        </div>
+        <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+          {formatConversationTimestamp(conversation.lastActivityAt)}
+        </div>
+      </button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() =>
+          onSendInviteToConversation(activeInviteActivityId, conversation.id)
+        }
+        className="shrink-0 rounded-full"
+      >
+        发邀约
+      </Button>
     </div>
   );
 }
@@ -785,7 +868,10 @@ function DesktopRankingPanel({
                     {game.name}
                   </div>
                   {entry.rank === 1 ? (
-                    <Trophy size={14} className="text-[color:var(--brand-primary)]" />
+                    <Trophy
+                      size={14}
+                      className="text-[color:var(--brand-primary)]"
+                    />
                   ) : null}
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
