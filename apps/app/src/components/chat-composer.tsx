@@ -1103,7 +1103,7 @@ export function ChatComposer({
       <div
         className={
           isDesktop
-            ? "relative border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.98),rgba(255,248,239,0.98))] px-4 py-3"
+            ? "relative border-t border-black/6 bg-[#f3f3f3] px-4 py-3"
             : "border-t border-black/8 bg-[#f1f1f1] px-2 pb-2 pt-1"
         }
         style={{
@@ -1121,7 +1121,7 @@ export function ChatComposer({
         }}
       >
         {isDesktop && desktopDropActive ? (
-          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[24px] border border-dashed border-[rgba(249,115,22,0.38)] bg-[rgba(255,248,239,0.96)] text-sm font-medium text-[color:var(--brand-primary)] shadow-[0_18px_40px_rgba(160,90,10,0.14)]">
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[14px] border border-dashed border-[#07c160]/35 bg-[rgba(247,247,247,0.96)] text-sm font-medium text-[#07a35a]">
             松开鼠标发送图片或文件
           </div>
         ) : null}
@@ -1204,7 +1204,7 @@ export function ChatComposer({
         ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
-          className={`relative ${isDesktop ? "flex items-center gap-2 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : "space-y-1.5"}`}
+          className={`relative ${isDesktop ? "flex items-center gap-2 rounded-[10px] border border-black/6 bg-white px-2.5 py-2" : "space-y-1.5"}`}
         >
           {isDesktop ? (
             <>
@@ -1212,14 +1212,14 @@ export function ChatComposer({
                 type="button"
                 onClick={toggleStickerPanel}
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]",
+                  "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
                   stickerPanelOpen
-                    ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
+                    ? "bg-[#ededed] text-[color:var(--text-primary)]"
                     : "",
                 )}
                 aria-label="表情"
               >
-                <Smile size={18} />
+                <Smile size={17} />
               </button>
               {onSendAttachment ? (
                 <div ref={desktopPlusRef} className="relative">
@@ -1227,20 +1227,20 @@ export function ChatComposer({
                     type="button"
                     onClick={toggleDesktopPlusMenu}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]",
+                      "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
                       desktopPlusMenuOpen
-                        ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
+                        ? "bg-[#ededed] text-[color:var(--text-primary)]"
                         : "",
                     )}
                     aria-label="更多功能"
                   >
-                    <Plus size={18} />
+                    <Plus size={17} />
                   </button>
 
                   {desktopPlusMenuOpen ? (
                     <div
                       className={cn(
-                        "absolute left-0 top-[calc(100%+0.55rem)] z-30 overflow-hidden rounded-[16px] border border-black/6 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.12)]",
+                        "absolute left-0 top-[calc(100%+0.4rem)] z-30 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]",
                         desktopPlusMenuView === "favorites" ? "w-80" : "w-44",
                       )}
                     >
@@ -1317,7 +1317,7 @@ export function ChatComposer({
                   onSelect={syncInputCursor}
                   onKeyDown={handleDesktopInputKeyDown}
                   placeholder={placeholder}
-                  className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                  className="min-w-0 flex-1 bg-transparent py-1 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
                 />
                 {showSpeechEntry ? (
                   <button
@@ -1335,9 +1335,9 @@ export function ChatComposer({
                     }
                     title={speechDisabledReason ?? undefined}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)] disabled:cursor-not-allowed disabled:opacity-45",
+                      "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-45",
                       speech.status === "listening"
-                        ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
+                        ? "bg-[#ededed] text-[color:var(--text-primary)]"
                         : "",
                     )}
                     aria-label={
@@ -1350,7 +1350,7 @@ export function ChatComposer({
                     {speech.status === "listening" ? (
                       <Square size={15} fill="currentColor" />
                     ) : (
-                      <Mic size={18} />
+                      <Mic size={17} />
                     )}
                   </button>
                 ) : null}
@@ -1489,16 +1489,12 @@ export function ChatComposer({
               onClick={onSubmit}
               disabled={composerPending}
               variant="primary"
-              className={
-                isDesktop
-                  ? "h-10 rounded-[14px] bg-[var(--brand-gradient)] px-5 text-sm font-medium text-[color:var(--text-on-brand)] shadow-[0_6px_16px_rgba(160,90,10,0.18)] hover:opacity-95"
-                  : "h-10 rounded-[18px] bg-[linear-gradient(135deg,#fbbf24,#f97316)] px-4 text-sm font-medium shadow-[0_4px_12px_rgba(249,115,22,0.30)]"
-              }
+              className="h-[34px] rounded-[8px] bg-[#07c160] px-4 text-[13px] font-medium text-white shadow-none hover:bg-[#06ad56]"
             >
               发送
             </Button>
           ) : isDesktop ? (
-            <div className="h-10 w-[74px]" />
+            <div className="h-[34px] w-[64px]" />
           ) : null}
 
           {stickerPanelOpen && onSendSticker ? (
@@ -1569,7 +1565,7 @@ export function ChatComposer({
         ) : null}
         {isDesktop && (speech.status !== "idle" || speechDisplayText) ? (
           <InlineNotice
-            className="mt-2 flex flex-wrap items-center gap-2 text-xs"
+            className="mt-2 flex flex-wrap items-center gap-2 border-black/6 bg-white text-xs"
             tone={speech.error ? "danger" : "info"}
           >
             <span>
@@ -1804,7 +1800,7 @@ function DesktopAttachmentDraftBar({
   onSend: () => void;
 }) {
   return (
-    <div className="mb-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white/92 px-4 py-3 shadow-[var(--shadow-soft)]">
+    <div className="mb-3 rounded-[12px] border border-black/6 bg-white px-4 py-3">
       {draft.kind === "images" ? (
         <>
           <div className="flex flex-wrap gap-2">
@@ -1837,7 +1833,7 @@ function DesktopAttachmentDraftBar({
         </>
       ) : (
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
             <FileText size={20} />
           </div>
           <div className="min-w-0 flex-1">
@@ -1857,7 +1853,7 @@ function DesktopAttachmentDraftBar({
           variant="ghost"
           onClick={onCancel}
           disabled={pending}
-          className="rounded-[14px]"
+          className="rounded-[8px]"
         >
           取消
         </Button>
@@ -1866,7 +1862,7 @@ function DesktopAttachmentDraftBar({
           variant="primary"
           onClick={onSend}
           disabled={pending}
-          className="rounded-[14px]"
+          className="rounded-[8px] bg-[#07c160] text-white hover:bg-[#06ad56]"
         >
           {pending ? "正在发送..." : "发送附件"}
         </Button>
@@ -1893,7 +1889,7 @@ function ReplyPreviewBar({
     <div
       className={`mb-3 flex items-start justify-between gap-3 ${
         isDesktop
-          ? "rounded-[18px] border border-black/6 bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]"
+          ? "rounded-[10px] border border-black/6 bg-[#f7f7f7] px-4 py-2.5"
           : "rounded-[8px] border-l-[2px] border-l-[#07c160] bg-[#e9e9e9] px-3 py-2"
       }`}
     >
@@ -1902,7 +1898,7 @@ function ReplyPreviewBar({
           <div
             className={`text-[11px] font-medium ${
               isDesktop
-                ? "uppercase tracking-[0.14em] text-[color:var(--text-dim)]"
+                ? "text-[#07a35a]"
                 : "text-[#07c160]"
             }`}
           >
@@ -1912,7 +1908,7 @@ function ReplyPreviewBar({
             <div
               className={`rounded-full px-2 py-0.5 text-[10px] ${
                 isDesktop
-                  ? "bg-[rgba(160,90,10,0.08)] text-[color:var(--brand-primary)]"
+                  ? "bg-white text-[color:var(--text-dim)]"
                   : "bg-[rgba(7,193,96,0.12)] text-[#07c160]"
               }`}
             >
@@ -1937,7 +1933,7 @@ function ReplyPreviewBar({
           onClick={onClose}
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition ${
             isDesktop
-              ? "hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]"
+              ? "h-7 w-7 rounded-[7px] hover:bg-white hover:text-[color:var(--text-primary)]"
               : "h-7 w-7 active:bg-[#dcdcdc]"
           }`}
           aria-label="取消回复"
@@ -1969,8 +1965,8 @@ function DesktopMentionPicker({
   }) => void;
 }) {
   return (
-    <div className="mb-3 overflow-hidden rounded-[18px] border border-black/6 bg-white/94 py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
-      <div className="px-4 pb-1 pt-1 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+    <div className="mb-3 overflow-hidden rounded-[12px] border border-black/6 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]">
+      <div className="px-4 pb-1 pt-1 text-[11px] text-[color:var(--text-dim)]">
         选择要提到的成员
       </div>
       <div className="space-y-0.5">
