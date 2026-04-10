@@ -424,7 +424,7 @@ export function GroupChatThreadPanel({
         }}
         onChange={setText}
         onSendAttachment={sendAttachmentMessage}
-        mentionCandidates={isDesktop ? mentionCandidates : undefined}
+        mentionCandidates={mentionCandidates}
         replyPreview={replyPreview}
         onCancelReply={() => setReplyDraft(null)}
         onSubmit={() =>

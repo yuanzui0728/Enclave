@@ -28,6 +28,7 @@ import { AvatarChip } from "./avatar-chip";
 import { MobileSpeechInputSheet } from "./mobile-speech-input-sheet";
 import { MobileChatPlusPanel } from "./mobile-chat-plus-panel";
 import { MobileChatAttachmentPreview } from "./mobile-chat-attachment-preview";
+import { MobileMentionPickerSheet } from "../features/chat/mobile-mention-picker-sheet";
 import { useSpeechInput } from "../features/chat/use-speech-input";
 import {
   loadRecentStickers,
@@ -128,6 +129,7 @@ export function ChatComposer({
   const [inputCursor, setInputCursor] = useState(0);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<number | null>(null);
+  const [mobileMentionDismissed, setMobileMentionDismissed] = useState(false);
   const [mobileInputMode, setMobileInputMode] = useState<"text" | "speech">(
     "text",
   );
@@ -151,16 +153,17 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
-  const mobileSpeechMode = !isDesktop && showSpeechEntry && mobileInputMode === "speech";
+  const mobileSpeechMode =
+    !isDesktop && showSpeechEntry && mobileInputMode === "speech";
   const activeMention = useMemo(
     () =>
-      isDesktop
+      mentionCandidates?.length && !mobileSpeechMode
         ? findActiveMentionToken(value, inputCursor || value.length)
         : null,
-    [inputCursor, isDesktop, value],
+    [inputCursor, mentionCandidates, mobileSpeechMode, value],
   );
   const filteredMentionCandidates = useMemo(() => {
-    if (!isDesktop || !activeMention || !mentionCandidates?.length) {
+    if (!activeMention || !mentionCandidates?.length) {
       return [];
     }
 
@@ -186,7 +189,7 @@ export function ChatComposer({
         return leftStartsWith ? -1 : 1;
       })
       .slice(0, 6);
-  }, [activeMention, isDesktop, mentionCandidates]);
+  }, [activeMention, mentionCandidates]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
 
   const getActiveInput = () =>
@@ -334,6 +337,15 @@ export function ChatComposer({
       Math.min(current, filteredMentionCandidates.length - 1),
     );
   }, [filteredMentionCandidates.length, mentionPickerOpen]);
+
+  useEffect(() => {
+    if (!activeMention) {
+      setMobileMentionDismissed(false);
+      return;
+    }
+
+    setMobileMentionDismissed(false);
+  }, [activeMention?.query, activeMention?.start]);
 
   useEffect(() => {
     if (pendingSelection === null) {
@@ -608,6 +620,7 @@ export function ChatComposer({
     const nextValue = `${value.slice(0, activeMention.start)}${mentionText}${value.slice(activeMention.end)}`;
     onChange(nextValue);
     setMentionActiveIndex(0);
+    setMobileMentionDismissed(false);
     setPendingSelection(activeMention.start + mentionText.length);
   };
 
@@ -835,6 +848,20 @@ export function ChatComposer({
           <DesktopMentionPicker
             candidates={filteredMentionCandidates}
             activeIndex={mentionActiveIndex}
+            onSelect={applyMentionCandidate}
+          />
+        ) : null}
+        {!isDesktop && !mobileSpeechMode ? (
+          <MobileMentionPickerSheet
+            open={
+              mentionPickerOpen &&
+              !plusPanelOpen &&
+              !stickerPanelOpen &&
+              Boolean(activeMention) &&
+              !mobileMentionDismissed
+            }
+            candidates={filteredMentionCandidates}
+            onClose={() => setMobileMentionDismissed(true)}
             onSelect={applyMentionCandidate}
           />
         ) : null}
