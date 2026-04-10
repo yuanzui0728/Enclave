@@ -28,8 +28,8 @@ import {
 } from "./desktop-chat-header-actions";
 import {
   DesktopChatSidePanel,
-  DesktopChatSidePanelPlaceholder,
 } from "./desktop-chat-side-panel";
+import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 import { createDesktopNote } from "./desktop-notes-storage";
 
@@ -416,9 +416,9 @@ export function DesktopChatWorkspace({
           {rightPanelMode === "history" ? (
             <DesktopChatHistoryPanel conversation={activeConversation} />
           ) : (
-            <DesktopChatSidePanelPlaceholder
-              title="聊天信息侧栏"
-              description="下一步接入单聊 / 群聊资料、设置项和危险操作。"
+            <DesktopChatDetailsPanel
+              conversation={activeConversation}
+              onOpenHistory={() => setRightPanelMode("history")}
             />
           )}
         </DesktopChatSidePanel>
