@@ -46,6 +46,7 @@ type DesktopGamesWorkspaceProps = {
   eventActionStatusById: Record<string, string>;
   friendInviteSentAtByActivityId: Record<string, string>;
   friendInviteStatusByActivityId: Record<string, string>;
+  lastInviteConversationTitleByActivityId: Record<string, string>;
   inviteConversationCandidates: ConversationListItem[];
   inviteConversationCandidatesLoading: boolean;
   launchCountById: Record<string, number>;
@@ -84,6 +85,7 @@ export function DesktopGamesWorkspace({
   eventActionStatusById,
   friendInviteSentAtByActivityId,
   friendInviteStatusByActivityId,
+  lastInviteConversationTitleByActivityId,
   inviteConversationCandidates,
   inviteConversationCandidatesLoading,
   launchCountById,
@@ -516,6 +518,11 @@ export function DesktopGamesWorkspace({
                                 ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
                                 : formatTimestamp(activity.updatedAt)}
                             </div>
+                            {lastInviteConversationTitleByActivityId[activity.id] ? (
+                              <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                                最近投递到 {lastInviteConversationTitleByActivityId[activity.id]}
+                              </div>
+                            ) : null}
                           </div>
                         </button>
                         <Button

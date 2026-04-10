@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   dismissActiveGame,
   markGameCenterEventAction,
+  markGameCenterInviteDelivered,
   markGameCenterFriendInvite,
   markGameOpened,
   readGameCenterState,
@@ -40,6 +41,19 @@ export function useGameCenterState() {
         markGameCenterFriendInvite(current, {
           activityId,
           status,
+        }),
+      );
+    },
+    markInviteDelivered(
+      activityId: string,
+      conversationId: string,
+      conversationTitle: string,
+    ) {
+      setState((current) =>
+        markGameCenterInviteDelivered(current, {
+          activityId,
+          conversationId,
+          conversationTitle,
         }),
       );
     },

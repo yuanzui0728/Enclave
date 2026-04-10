@@ -5,6 +5,8 @@ export type GameCenterStoredState = {
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
   eventActionStatusById: Record<string, string>;
+  lastInviteConversationIdByActivityId: Record<string, string>;
+  lastInviteConversationTitleByActivityId: Record<string, string>;
   friendInviteStatusByActivityId: Record<string, string>;
   friendInviteSentAtByActivityId: Record<string, string>;
 };
@@ -60,6 +62,12 @@ export function getDefaultGameCenterState(): GameCenterStoredState {
     eventActionStatusById: {
       "market-night": "reminder_set",
     },
+    lastInviteConversationIdByActivityId: {
+      "activity-lu": "group-weekend",
+    },
+    lastInviteConversationTitleByActivityId: {
+      "activity-lu": "周末搭子群",
+    },
     friendInviteStatusByActivityId: {
       "activity-lu": "invited",
     },
@@ -94,6 +102,12 @@ export function readGameCenterState() {
       ),
       lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
       eventActionStatusById: sanitizeTimestampRecord(parsed.eventActionStatusById),
+      lastInviteConversationIdByActivityId: sanitizeTimestampRecord(
+        parsed.lastInviteConversationIdByActivityId,
+      ),
+      lastInviteConversationTitleByActivityId: sanitizeTimestampRecord(
+        parsed.lastInviteConversationTitleByActivityId,
+      ),
       friendInviteStatusByActivityId: sanitizeTimestampRecord(
         parsed.friendInviteStatusByActivityId,
       ),
@@ -136,6 +150,9 @@ export function markGameOpened(
       [gameId]: openedAt,
     },
     eventActionStatusById: state.eventActionStatusById,
+    lastInviteConversationIdByActivityId: state.lastInviteConversationIdByActivityId,
+    lastInviteConversationTitleByActivityId:
+      state.lastInviteConversationTitleByActivityId,
     friendInviteStatusByActivityId: state.friendInviteStatusByActivityId,
     friendInviteSentAtByActivityId: state.friendInviteSentAtByActivityId,
   };
@@ -189,6 +206,35 @@ export function markGameCenterFriendInvite(
     friendInviteStatusByActivityId: {
       ...state.friendInviteStatusByActivityId,
       [input.activityId]: input.status,
+    },
+    friendInviteSentAtByActivityId: {
+      ...state.friendInviteSentAtByActivityId,
+      [input.activityId]: new Date().toISOString(),
+    },
+  };
+}
+
+export function markGameCenterInviteDelivered(
+  state: GameCenterStoredState,
+  input: {
+    activityId: string;
+    conversationId: string;
+    conversationTitle: string;
+  },
+): GameCenterStoredState {
+  return {
+    ...state,
+    lastInviteConversationIdByActivityId: {
+      ...state.lastInviteConversationIdByActivityId,
+      [input.activityId]: input.conversationId,
+    },
+    lastInviteConversationTitleByActivityId: {
+      ...state.lastInviteConversationTitleByActivityId,
+      [input.activityId]: input.conversationTitle,
+    },
+    friendInviteStatusByActivityId: {
+      ...state.friendInviteStatusByActivityId,
+      [input.activityId]: "invited",
     },
     friendInviteSentAtByActivityId: {
       ...state.friendInviteSentAtByActivityId,
