@@ -11,13 +11,16 @@ import { ChatBackgroundsService } from './chat-backgrounds.service';
 import {
   ChatAttachmentController,
   ChatController,
+  FavoritesController,
   GroupController,
 } from './chat.controller';
+import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
 import { NarrativeModule } from '../narrative/narrative.module';
+import { SystemConfigModule } from '../config/config.module';
 import { ConversationEntity } from './conversation.entity';
 import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
@@ -30,6 +33,7 @@ import { GroupMessageEntity } from './group-message.entity';
     AuthModule,
     CharactersModule,
     NarrativeModule,
+    SystemConfigModule,
     TypeOrmModule.forFeature([
       ConversationEntity,
       MessageEntity,
@@ -38,10 +42,17 @@ import { GroupMessageEntity } from './group-message.entity';
       GroupMessageEntity,
     ]),
   ],
-  providers: [ChatGateway, ChatService, ChatBackgroundsService, GroupService],
+  providers: [
+    ChatGateway,
+    ChatService,
+    ChatBackgroundsService,
+    GroupService,
+    FavoritesService,
+  ],
   controllers: [
     ChatController,
     ChatAttachmentController,
+    FavoritesController,
     ConversationBackgroundController,
     GroupBackgroundController,
     ChatBackgroundAssetsController,

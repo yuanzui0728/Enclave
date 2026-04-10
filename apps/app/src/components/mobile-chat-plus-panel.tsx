@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  getFavorites,
   getFriends,
   type ContactCardAttachment,
   type LocationCardAttachment,
@@ -25,6 +26,7 @@ import {
 } from "../features/chat/chat-location-scenes";
 import {
   buildFavoriteShareText,
+  mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
@@ -196,6 +198,11 @@ export function MobileChatPlusPanel({
     queryFn: () => getFriends(baseUrl),
     enabled: open && activeView === "contacts",
   });
+  const favoritesQuery = useQuery({
+    queryKey: ["app-favorites", baseUrl],
+    queryFn: () => getFavorites(baseUrl),
+    enabled: open && activeView === "favorites",
+  });
 
   useEffect(() => {
     if (!open) {
@@ -210,8 +217,13 @@ export function MobileChatPlusPanel({
       return;
     }
 
-    setFavoriteRecords(readDesktopFavorites());
-  }, [activeView, open]);
+    setFavoriteRecords(
+      mergeDesktopFavoriteRecords(
+        favoritesQuery.data ?? [],
+        readDesktopFavorites(),
+      ),
+    );
+  }, [activeView, favoritesQuery.data, open]);
 
   useEffect(() => {
     if (activeView !== "root") {

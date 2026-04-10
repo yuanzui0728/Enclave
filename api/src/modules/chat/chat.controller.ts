@@ -15,6 +15,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ChatService } from './chat.service';
+import {
+  FavoritesService,
+  type CreateMessageFavoriteInput,
+} from './favorites.service';
 import { GroupService } from './group.service';
 import type {
   ContactCardAttachment,
@@ -151,6 +155,26 @@ export class ChatAttachmentController {
         root: this.chatService.getAttachmentStorageDir(),
       },
     );
+  }
+}
+
+@Controller('favorites')
+export class FavoritesController {
+  constructor(private readonly favoritesService: FavoritesService) {}
+
+  @Get()
+  getFavorites() {
+    return this.favoritesService.listFavorites();
+  }
+
+  @Post('messages')
+  createMessageFavorite(@Body() body: CreateMessageFavoriteInput) {
+    return this.favoritesService.createMessageFavorite(body);
+  }
+
+  @Delete(':sourceId')
+  removeFavorite(@Param('sourceId') sourceId: string) {
+    return this.favoritesService.removeFavorite(sourceId);
   }
 }
 

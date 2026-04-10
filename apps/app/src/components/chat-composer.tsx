@@ -1,4 +1,7 @@
 import {
+  useQuery,
+} from "@tanstack/react-query";
+import {
   ChevronLeft,
   FileText,
   ImageIcon,
@@ -12,7 +15,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
-import { type StickerAttachment } from "@yinjie/contracts";
+import { getFavorites, type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import {
@@ -35,6 +38,7 @@ import { MobileMentionPickerSheet } from "../features/chat/mobile-mention-picker
 import { useSpeechInput } from "../features/chat/use-speech-input";
 import {
   buildFavoriteShareText,
+  mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
@@ -43,6 +47,7 @@ import {
   pushRecentSticker,
 } from "../features/chat/stickers/recent-stickers";
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ChatComposerProps = {
   value: string;
@@ -113,6 +118,8 @@ export function ChatComposer({
   onChange,
   onSubmit,
 }: ChatComposerProps) {
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = speechInput?.baseUrl ?? runtimeConfig.apiBaseUrl;
   const { keyboardInset, keyboardOpen } = useKeyboardInset();
   const isDesktop = variant === "desktop";
   const [mobileSpeechSheetOpen, setMobileSpeechSheetOpen] = useState(false);
@@ -219,6 +226,11 @@ export function ChatComposer({
       .slice(0, 6);
   }, [activeMention, mentionCandidates]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
+  const favoritesQuery = useQuery({
+    queryKey: ["app-favorites", baseUrl],
+    queryFn: () => getFavorites(baseUrl),
+    enabled: isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
+  });
 
   const getActiveInput = () =>
     (isDesktop ? desktopInputRef.current : mobileTextareaRef.current) ??
@@ -528,8 +540,17 @@ export function ChatComposer({
       return;
     }
 
-    setDesktopFavoriteRecords(readDesktopFavorites());
-  }, [desktopPlusMenuOpen, desktopPlusMenuView]);
+    setDesktopFavoriteRecords(
+      mergeDesktopFavoriteRecords(
+        favoritesQuery.data ?? [],
+        readDesktopFavorites(),
+      ),
+    );
+  }, [
+    desktopPlusMenuOpen,
+    desktopPlusMenuView,
+    favoritesQuery.data,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -1216,7 +1237,12 @@ export function ChatComposer({
                             label="发送收藏"
                             icon={<Star size={15} />}
                             onClick={() => {
-                              setDesktopFavoriteRecords(readDesktopFavorites());
+                              setDesktopFavoriteRecords(
+                                mergeDesktopFavoriteRecords(
+                                  favoritesQuery.data ?? [],
+                                  readDesktopFavorites(),
+                                ),
+                              );
                               setDesktopPlusMenuView("favorites");
                             }}
                           />

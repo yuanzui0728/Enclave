@@ -1,24 +1,7 @@
-export type DesktopFavoriteCategory =
-  | "messages"
-  | "contacts"
-  | "officialAccounts"
-  | "moments"
-  | "feed"
-  | "channels";
+import type { FavoriteCategory, FavoriteRecord } from "@yinjie/contracts";
 
-export type DesktopFavoriteRecord = {
-  id: string;
-  sourceId: string;
-  category: DesktopFavoriteCategory;
-  title: string;
-  description: string;
-  meta: string;
-  to: string;
-  badge: string;
-  avatarName?: string;
-  avatarSrc?: string;
-  collectedAt: string;
-};
+export type DesktopFavoriteCategory = FavoriteCategory;
+export type DesktopFavoriteRecord = FavoriteRecord;
 
 const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
 
@@ -120,4 +103,17 @@ export function buildFavoriteShareText(item: DesktopFavoriteRecord) {
   }
 
   return lines.join("\n");
+}
+
+export function mergeDesktopFavoriteRecords(
+  remoteFavorites: DesktopFavoriteRecord[],
+  localFavorites = readDesktopFavorites(),
+) {
+  const remoteSourceIdSet = new Set(
+    remoteFavorites.map((favorite) => favorite.sourceId),
+  );
+
+  return [...remoteFavorites, ...localFavorites.filter((favorite) => !remoteSourceIdSet.has(favorite.sourceId))].sort(
+    (left, right) => right.collectedAt.localeCompare(left.collectedAt),
+  );
 }

@@ -29,11 +29,14 @@ import {
   X,
 } from "lucide-react";
 import {
+  createMessageFavorite,
   deleteConversationMessage,
   deleteGroupMessage,
+  getFavorites,
   getConversations,
   recallConversationMessage,
   recallGroupMessage,
+  removeFavorite,
   sendGroupMessage,
   type ConversationListItem,
   type GroupMessage,
@@ -67,6 +70,7 @@ import {
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import {
+  mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -325,10 +329,6 @@ export function ChatMessageList({
   }, []);
 
   useEffect(() => {
-    setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
-  }, []);
-
-  useEffect(() => {
     writeDetailedTimestampMode(detailedTimestampMode);
   }, [detailedTimestampMode]);
 
@@ -357,6 +357,14 @@ export function ChatMessageList({
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(forwardMessages?.length),
   });
+  const favoritesQuery = useQuery({
+    queryKey: ["app-favorites", baseUrl],
+    queryFn: () => getFavorites(baseUrl),
+  });
+
+  useEffect(() => {
+    syncFavoriteSourceIds(favoritesQuery.data ?? []);
+  }, [favoritesQuery.data]);
 
   const updateGroupMessageQueries = (
     groupId: string,
@@ -379,6 +387,15 @@ export function ChatMessageList({
         queryKey: ["app-conversation-messages", baseUrl, conversationId],
       },
       updater,
+    );
+  };
+
+  const syncFavoriteSourceIds = (remoteFavorites = favoritesQuery.data ?? []) => {
+    setFavoriteSourceIds(
+      mergeDesktopFavoriteRecords(
+        remoteFavorites,
+        readDesktopFavorites(),
+      ).map((item) => item.sourceId),
     );
   };
 
@@ -820,28 +837,72 @@ export function ChatMessageList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeImage, activeImageIndex, imageMessages, isDesktop]);
 
-  const handleToggleFavorite = (message: ChatRenderableMessage) => {
+  const handleToggleFavorite = async (message: ChatRenderableMessage) => {
     const sourceId = buildFavoriteSourceId(message.id);
     const collected = favoriteSourceIds.includes(sourceId);
 
-    if (collected) {
-      const nextFavorites = removeDesktopFavorite(sourceId);
+    try {
+      if (threadContext) {
+        if (collected) {
+          await removeFavorite(sourceId, baseUrl);
+          removeDesktopFavorite(sourceId);
+          const nextRemoteFavorites = await queryClient.fetchQuery({
+            queryKey: ["app-favorites", baseUrl],
+            queryFn: () => getFavorites(baseUrl),
+          });
+          syncFavoriteSourceIds(nextRemoteFavorites);
+          setActionNotice({
+            message: "已取消收藏消息。",
+            tone: "success",
+          });
+          return;
+        }
+
+        await createMessageFavorite(
+          {
+            threadId: threadContext.id,
+            threadType: threadContext.type,
+            messageId: message.id,
+          },
+          baseUrl,
+        );
+        const nextRemoteFavorites = await queryClient.fetchQuery({
+          queryKey: ["app-favorites", baseUrl],
+          queryFn: () => getFavorites(baseUrl),
+        });
+        syncFavoriteSourceIds(nextRemoteFavorites);
+        setActionNotice({
+          message: "消息已加入收藏。",
+          tone: "success",
+        });
+        return;
+      }
+
+      if (collected) {
+        const nextFavorites = removeDesktopFavorite(sourceId);
+        setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+        setActionNotice({
+          message: "已取消收藏消息。",
+          tone: "success",
+        });
+        return;
+      }
+
+      const nextFavorites = upsertDesktopFavorite(
+        buildMessageFavoriteRecord(message, groupMode),
+      );
       setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
       setActionNotice({
-        message: "已取消收藏消息。",
+        message: "消息已加入收藏。",
         tone: "success",
       });
-      return;
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "收藏失败，请稍后再试。",
+        tone: "danger",
+      });
     }
-
-    const nextFavorites = upsertDesktopFavorite(
-      buildMessageFavoriteRecord(message, groupMode),
-    );
-    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
-    setActionNotice({
-      message: "消息已加入收藏。",
-      tone: "success",
-    });
   };
 
   const openAttachment = (message: ChatRenderableMessage) => {
@@ -1144,7 +1205,7 @@ export function ChatMessageList({
     setSelectionAnchorMessageId(nextSelectedMessageIds[0] ?? null);
   };
 
-  const handleFavoriteSelectedMessages = () => {
+  const handleFavoriteSelectedMessages = async () => {
     const messagesToFavorite = [...selectedMessages];
     if (!messagesToFavorite.length) {
       return;
@@ -1152,14 +1213,34 @@ export function ChatMessageList({
 
     setSelectionActionPending("favorite");
     try {
-      let nextFavorites = readDesktopFavorites();
-      for (const message of messagesToFavorite) {
-        nextFavorites = upsertDesktopFavorite(
-          buildMessageFavoriteRecord(message, groupMode),
+      if (threadContext) {
+        await Promise.all(
+          messagesToFavorite.map((message) =>
+            createMessageFavorite(
+              {
+                threadId: threadContext.id,
+                threadType: threadContext.type,
+                messageId: message.id,
+              },
+              baseUrl,
+            ),
+          ),
         );
-      }
+        const nextRemoteFavorites = await queryClient.fetchQuery({
+          queryKey: ["app-favorites", baseUrl],
+          queryFn: () => getFavorites(baseUrl),
+        });
+        syncFavoriteSourceIds(nextRemoteFavorites);
+      } else {
+        let nextFavorites = readDesktopFavorites();
+        for (const message of messagesToFavorite) {
+          nextFavorites = upsertDesktopFavorite(
+            buildMessageFavoriteRecord(message, groupMode),
+          );
+        }
 
-      setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+        setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+      }
       resetSelectionMode();
       setActionNotice({
         message:
@@ -1167,6 +1248,12 @@ export function ChatMessageList({
             ? "已收藏 1 条消息。"
             : `已收藏 ${messagesToFavorite.length} 条消息。`,
         tone: "success",
+      });
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "收藏失败，请稍后再试。",
+        tone: "danger",
       });
     } finally {
       setSelectionActionPending(null);

@@ -167,6 +167,10 @@
   - `GET /api/chat/attachments/:fileName`
   - `POST /api/chat/backgrounds`
   - `GET /api/chat/backgrounds/:fileName`
+- 收藏路由：
+  - `GET /api/favorites`
+  - `POST /api/favorites/messages`
+  - `DELETE /api/favorites/:sourceId`
 - 公众号消息路由：
   - `GET /api/official-accounts/message-entries`
   - `GET /api/official-accounts/subscription-inbox`

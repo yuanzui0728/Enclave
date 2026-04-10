@@ -10,6 +10,7 @@ export * from "./client";
 export * from "./config";
 export * from "./evals";
 export * from "./feed";
+export * from "./favorites";
 export * from "./moments";
 export * from "./moderation";
 export * from "./official-accounts";

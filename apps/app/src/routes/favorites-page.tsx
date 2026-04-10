@@ -1,15 +1,20 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { getFavorites, removeFavorite } from "@yinjie/contracts";
 import { TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import {
+  mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   removeDesktopFavorite,
   type DesktopFavoriteCategory,
+  type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const categoryLabels: Array<{
   id: "all" | DesktopFavoriteCategory;
@@ -26,14 +31,56 @@ const categoryLabels: Array<{
 
 export function FavoritesPage() {
   const isDesktopLayout = useDesktopLayout();
-  const [favorites, setFavorites] = useState(() => readDesktopFavorites());
+  const queryClient = useQueryClient();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const [favorites, setFavorites] = useState(() =>
+    mergeDesktopFavoriteRecords([], readDesktopFavorites()),
+  );
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState<
     "all" | DesktopFavoriteCategory
   >("all");
   const deferredSearchText = useDeferredValue(searchText);
+  const favoritesQuery = useQuery({
+    queryKey: ["app-favorites", baseUrl],
+    queryFn: () => getFavorites(baseUrl),
+  });
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
+
+  useEffect(() => {
+    setFavorites(
+      mergeDesktopFavoriteRecords(
+        favoritesQuery.data ?? [],
+        readDesktopFavorites(),
+      ),
+    );
+  }, [favoritesQuery.data]);
+
+  const removeMutation = useMutation({
+    mutationFn: async (item: DesktopFavoriteRecord) => {
+      if (item.category === "messages") {
+        await removeFavorite(item.sourceId, baseUrl);
+      }
+
+      const nextLocalFavorites = removeDesktopFavorite(item.sourceId);
+      return { item, nextLocalFavorites };
+    },
+    onSuccess: async ({ item, nextLocalFavorites }) => {
+      const nextRemoteFavorites =
+        item.category === "messages"
+          ? await queryClient.fetchQuery({
+              queryKey: ["app-favorites", baseUrl],
+              queryFn: () => getFavorites(baseUrl),
+            })
+          : (favoritesQuery.data ?? []);
+
+      setFavorites(
+        mergeDesktopFavoriteRecords(nextRemoteFavorites, nextLocalFavorites),
+      );
+    },
+  });
 
   const filteredFavorites = useMemo(() => {
     return favorites.filter((item) => {
@@ -168,12 +215,8 @@ export function FavoritesPage() {
                           </Link>
                           <button
                             type="button"
-                            onClick={() => {
-                              const nextFavorites = removeDesktopFavorite(
-                                item.sourceId,
-                              );
-                              setFavorites(nextFavorites);
-                            }}
+                            onClick={() => removeMutation.mutate(item)}
+                            disabled={removeMutation.isPending}
                             className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
                           >
                             取消收藏

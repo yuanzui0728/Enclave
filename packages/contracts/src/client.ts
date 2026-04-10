@@ -49,6 +49,10 @@ import type {
   FeedSurface,
 } from "./feed";
 import type {
+  CreateMessageFavoriteRequest,
+  FavoriteRecord,
+} from "./favorites";
+import type {
   CreateMomentCommentRequest,
   CreateUserMomentRequest,
   Moment,
@@ -1248,6 +1252,34 @@ export function sendGroupMessage(
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getFavorites(baseUrl?: string) {
+  return requestLegacyApi<FavoriteRecord[]>("/favorites", undefined, baseUrl);
+}
+
+export function createMessageFavorite(
+  payload: CreateMessageFavoriteRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FavoriteRecord>(
+    "/favorites/messages",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function removeFavorite(sourceId: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/favorites/${encodeURIComponent(sourceId)}`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );
