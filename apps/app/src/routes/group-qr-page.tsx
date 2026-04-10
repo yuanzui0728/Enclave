@@ -1358,7 +1358,13 @@ export function GroupQrPage() {
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    回流后可直接把当前群邀请再发回这条来源会话。
+                    {resolveConversationActionDescription(
+                      currentReturnSourceConversation,
+                      deliveredTargetByPath[
+                        buildConversationPath(currentReturnSourceConversation)
+                      ],
+                      "来源会话",
+                    )}
                   </div>
                   {deliveredTargetByPath[
                     buildConversationPath(currentReturnSourceConversation)
@@ -1435,11 +1441,11 @@ export function GroupQrPage() {
                         {conversation.title}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {isPersistedGroupConversation(conversation)
-                          ? "同类群聊"
-                          : "同类单聊"}{" "}
-                        · 最近活跃{" "}
-                        {formatConversationTimestamp(conversation.lastActivityAt)}
+                        {resolveConversationActionDescription(
+                          conversation,
+                          deliveredTargetByPath[buildConversationPath(conversation)],
+                          "相关会话",
+                        )}
                       </div>
                       {deliveredTargetByPath[buildConversationPath(conversation)] ? (
                         <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
@@ -1511,11 +1517,11 @@ export function GroupQrPage() {
                         {conversation.title}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {isPersistedGroupConversation(conversation)
-                          ? "群聊"
-                          : "单聊"}{" "}
-                        · 最近活跃{" "}
-                        {formatConversationTimestamp(conversation.lastActivityAt)}
+                        {resolveConversationActionDescription(
+                          conversation,
+                          deliveredTargetByPath[buildConversationPath(conversation)],
+                          "最近会话",
+                        )}
                       </div>
                       {deliveredTargetByPath[buildConversationPath(conversation)] ? (
                         <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
@@ -2099,6 +2105,47 @@ function resolveConversationActionLabel(
   }
 
   return resolvePendingReturnActionLabel(conversation, deliveredTarget.deliveredAt);
+}
+
+function resolveConversationActionDescription(
+  conversation: ConversationListItem,
+  deliveredTarget: GroupInviteDeliveryTarget | undefined,
+  context: "来源会话" | "相关会话" | "最近会话",
+) {
+  const recentActivityLabel = formatConversationTimestamp(
+    conversation.lastActivityAt,
+  );
+  const conversationKind = isPersistedGroupConversation(conversation)
+    ? context === "相关会话"
+      ? "同类群聊"
+      : "群聊"
+    : context === "相关会话"
+      ? "同类单聊"
+      : "单聊";
+
+  if (!deliveredTarget) {
+    if (context === "来源会话") {
+      return "这条就是刚刚回流过来的来源会话，适合优先接着补发。";
+    }
+
+    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 还没发过这一轮邀请。`;
+  }
+
+  const actionStatus = resolveConversationActionStatus(
+    conversation,
+    deliveredTarget,
+    "优先处理",
+  );
+
+  if (actionStatus.label === "暂不建议") {
+    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 刚补发过，先等一轮回流。`;
+  }
+
+  if (actionStatus.label === "可以稍放") {
+    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 已经触达过，可作为后手继续补。`;
+  }
+
+  return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 当前值得继续跟进这一轮。`;
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
