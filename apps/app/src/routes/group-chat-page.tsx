@@ -1,9 +1,11 @@
-import {
-  useNavigate,
-  useParams,
-  useRouterState,
-} from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
+import {
+  buildChatComposeShortcutSearch,
+  parseChatComposeShortcutAction,
+  type ChatComposeShortcutAction,
+} from "../features/chat/chat-compose-shortcut-route";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
@@ -13,9 +15,37 @@ export function GroupChatPage() {
   const { groupId } = useParams({ from: "/group/$groupId" });
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
   const routeContext = resolveRouteContext(groupId);
+  const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
+    useState<ChatComposeShortcutAction | null>(null);
+
+  useEffect(() => {
+    const nextAction = parseChatComposeShortcutAction(search);
+    if (!nextAction) {
+      return;
+    }
+
+    setRouteMobileShortcutAction(nextAction);
+
+    const nextSearch = buildChatComposeShortcutSearch({
+      search,
+      action: null,
+    });
+    void navigate({
+      to: "/group/$groupId",
+      params: { groupId },
+      search: nextSearch || undefined,
+      hash,
+      replace: true,
+    });
+  }, [groupId, hash, navigate, search]);
+
+  const handleRouteMobileShortcutHandled = useCallback(() => {
+    setRouteMobileShortcutAction(null);
+  }, []);
 
   if (isDesktopLayout) {
     return (
@@ -43,6 +73,8 @@ export function GroupChatPage() {
         <GroupChatThreadPanel
           groupId={groupId}
           highlightedMessageId={highlightedMessageId}
+          routeMobileShortcutAction={routeMobileShortcutAction}
+          onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeContextNotice={
             routeContext
               ? {

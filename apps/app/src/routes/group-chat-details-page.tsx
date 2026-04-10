@@ -14,6 +14,7 @@ import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
+import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
@@ -497,6 +498,12 @@ export function GroupChatDetailsPage() {
                   void navigate({
                     to: "/group/$groupId",
                     params: { groupId },
+                    search:
+                      pendingCallFallback === "voice"
+                        ? buildChatComposeShortcutSearch({
+                            action: "voice-message",
+                          })
+                        : undefined,
                   });
                 }}
                 onSecondaryAction={() => setPendingCallFallback(null)}

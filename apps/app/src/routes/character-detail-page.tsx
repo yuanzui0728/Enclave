@@ -34,6 +34,7 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
+import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -148,10 +149,18 @@ export function CharacterDetailPage() {
         return;
       }
 
+      const nextSearch =
+        pendingCallFallback === "voice"
+          ? buildChatComposeShortcutSearch({
+              action: "voice-message",
+            })
+          : undefined;
+
       setPendingCallFallback(null);
       void navigate({
         to: "/chat/$conversationId",
         params: { conversationId: conversation.id },
+        search: nextSearch,
       });
     },
   });
