@@ -27,7 +27,6 @@ import {
   InlineNotice,
   LoadingBlock,
   MetricCard,
-  PanelEmpty,
   SectionHeading,
   SelectField,
   SnapshotPanel,
@@ -37,7 +36,13 @@ import {
   ToggleChip,
   useProviderSetup,
 } from "@yinjie/ui";
-import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
+import {
+  AdminCallout,
+  AdminEmptyState,
+  AdminInfoRows,
+  AdminPageHero,
+  AdminSectionNav,
+} from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
@@ -636,7 +641,15 @@ export function ReplyLogicPage() {
                   ) : scope === "conversation" && conversationSnapshotQuery.isLoading ? (
                     <LoadingBlock className="mt-4" label="正在加载会话角色配置..." />
                   ) : (
-                    <PanelEmpty message="当前没有可编辑的角色。" />
+                    <AdminEmptyState
+                      className="mt-4"
+                      title="当前没有可编辑角色"
+                      description={
+                        scope === "conversation"
+                          ? "先在会话内选择一个角色，再修改它的运行配置。"
+                          : "先在左侧选择一个角色，再开始编辑运行配置。"
+                      }
+                    />
                   )
                 ) : (
                   <>
@@ -1372,7 +1385,12 @@ function CharacterInspectorPanel({
   narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
 }) {
   if (!selectedCharacter) {
-    return <PanelEmpty message="当前没有可选角色。" />;
+    return (
+      <AdminEmptyState
+        title="当前没有可选角色"
+        description="先在左侧角色列表里选中一个角色，再查看真实回复快照。"
+      />
+    );
   }
 
   if (query.isLoading) {
@@ -1384,7 +1402,12 @@ function CharacterInspectorPanel({
   }
 
   if (!query.data) {
-    return <PanelEmpty message="角色回复快照暂不可用。" />;
+    return (
+      <AdminEmptyState
+        title="角色回复快照暂不可用"
+        description="刷新一次快照；如果仍不可用，先检查推理服务配置和角色运行状态。"
+      />
+    );
   }
 
   return (
@@ -1446,9 +1469,12 @@ function ReplyPreviewPanel({
         </StatusPill>
       </div>
 
-      <InlineNotice className="mt-4" tone="muted">
-        这里会按当前角色配置、当前可见历史、当前世界上下文和当前状态门，预演这条用户消息会如何进入模型。
-      </InlineNotice>
+      <AdminCallout
+        className="mt-4"
+        title="预演说明"
+        description="这里会按当前角色配置、当前可见历史、当前世界上下文和当前状态门，预演这条用户消息会如何进入模型。"
+        tone="muted"
+      />
 
       {scope === "conversation" ? (
         <SelectFieldBlock
@@ -1510,7 +1536,12 @@ function ConversationInspectorPanel({
   narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
 }) {
   if (!selectedConversation) {
-    return <PanelEmpty message="当前没有可选会话。" />;
+    return (
+      <AdminEmptyState
+        title="当前没有可选会话"
+        description="切换到按会话查看后，先在左侧会话列表里选中一个目标。"
+      />
+    );
   }
 
   if (query.isLoading) {
@@ -1522,7 +1553,12 @@ function ConversationInspectorPanel({
   }
 
   if (!query.data) {
-    return <PanelEmpty message="会话回复快照暂不可用。" />;
+    return (
+      <AdminEmptyState
+        title="会话回复快照暂不可用"
+        description="先刷新快照；如果仍不可用，检查该会话是否已有参与角色和可见历史。"
+      />
+    );
   }
 
   return (
@@ -1710,7 +1746,12 @@ function HistoryList({
   className?: string;
 }) {
   if (!items.length) {
-    return <PanelEmpty message="当前没有可见历史消息。" />;
+    return (
+      <AdminEmptyState
+        title="当前没有可见历史消息"
+        description="这通常表示上下文窗口还没形成，或者当前会话暂时没有纳入可见历史。"
+      />
+    );
   }
 
   return (
@@ -1755,7 +1796,12 @@ function RequestMessageList({
   className?: string;
 }) {
   if (!items.length) {
-    return <PanelEmpty message="当前没有可展示的模型请求消息。" />;
+    return (
+      <AdminEmptyState
+        title="当前没有模型请求消息"
+        description="先执行一次候选消息预演，或等待真实运行后再回来查看请求消息。"
+      />
+    );
   }
 
   return (
@@ -1790,7 +1836,11 @@ function NarrativeCard({
     <Card className="bg-[color:var(--surface-console)]">
       <SectionHeading>记忆与叙事</SectionHeading>
       {!arcs.length ? (
-        <PanelEmpty message="当前没有叙事弧线记录。" />
+        <AdminEmptyState
+          className="mt-4"
+          title="当前没有叙事弧线记录"
+          description="这说明该角色或会话还没有形成可观测的叙事推进，先查看运行历史或等待后续互动。"
+        />
       ) : (
         <div className="mt-4 space-y-4">
           {arcs.map((arc) => (
