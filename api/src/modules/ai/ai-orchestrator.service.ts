@@ -49,6 +49,13 @@ type ResolvedProviderConfig = {
   mode: 'cloud' | 'local-compatible';
 };
 
+type PreparedReplyRequest = {
+  systemPrompt: string;
+  conversationHistory: ChatMessage[];
+  currentUserMessage: ChatMessage;
+  isGroupChat?: boolean;
+};
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
@@ -196,6 +203,106 @@ export class AiOrchestratorService {
     }
   }
 
+  private extractErrorMessage(error: unknown) {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    return '';
+  }
+
+  private extractErrorStatus(error: unknown) {
+    if (typeof error !== 'object' || !error || !('status' in error)) {
+      return undefined;
+    }
+
+    const status = (error as { status?: unknown }).status;
+    return typeof status === 'number' ? status : undefined;
+  }
+
+  private isAuthenticationFailure(error: unknown) {
+    const message = this.extractErrorMessage(error);
+    const status = this.extractErrorStatus(error);
+    if (status === 401 || status === 403) {
+      return true;
+    }
+
+    return /invalid token|api key|authentication|unauthorized|incorrect api key|invalid api key/i.test(
+      message,
+    );
+  }
+
+  private async requestReplyFromProvider(
+    provider: ResolvedProviderConfig,
+    request: PreparedReplyRequest,
+  ): Promise<GenerateReplyResult> {
+    const client = this.createProviderClient(provider);
+    const {
+      systemPrompt,
+      conversationHistory,
+      currentUserMessage,
+      isGroupChat,
+    } = request;
+
+    if (provider.apiStyle === 'openai-responses') {
+      const response = await client.responses.create({
+        model: provider.model,
+        instructions: systemPrompt,
+        input: [
+          ...conversationHistory.map((message) =>
+            this.buildResponsesMessage(message, provider, isGroupChat),
+          ),
+          this.buildResponsesMessage(currentUserMessage, provider, isGroupChat),
+        ],
+        max_output_tokens: 500,
+        temperature: 0.85,
+      });
+
+      const rawText = response.output_text ?? '（无回复）';
+      const text = sanitizeAiText(rawText) || '（无回复）';
+      const tokensUsed = response.usage?.total_tokens ?? 0;
+      return { text, tokensUsed };
+    }
+
+    const response = await client.chat.completions.create({
+      model: provider.model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory.map((message) =>
+          this.buildChatCompletionMessage(message, provider, isGroupChat),
+        ),
+        this.buildChatCompletionMessage(
+          currentUserMessage,
+          provider,
+          isGroupChat,
+        ),
+      ],
+      max_tokens: 500,
+      temperature: 0.85,
+    });
+
+    const rawText = response.choices[0]?.message?.content ?? '（无回复）';
+    const text = sanitizeAiText(rawText) || '（无回复）';
+    const tokensUsed = response.usage?.total_tokens ?? 0;
+
+    return { text, tokensUsed };
+  }
+
+  private canRetryWithDefaultProvider(
+    currentProvider: ResolvedProviderConfig,
+    defaultProvider: ResolvedProviderConfig,
+  ) {
+    return (
+      Boolean(defaultProvider.apiKey) &&
+      (defaultProvider.apiKey !== currentProvider.apiKey ||
+        defaultProvider.endpoint !== currentProvider.endpoint)
+    );
+  }
+
   private buildMessageText(
     message: Pick<ChatMessage, 'content' | 'characterId'>,
     isGroupChat?: boolean,
@@ -229,7 +336,7 @@ export class AiOrchestratorService {
     const imageParts = this.collectUsableImageParts(message.parts, provider);
     if (!imageParts.length || message.role !== 'user') {
       return {
-        role: message.role as 'user' | 'assistant' | 'system',
+        role: message.role,
         content: textContent,
       };
     }
@@ -404,7 +511,6 @@ export class AiOrchestratorService {
       userMessage,
       userMessageParts,
       isGroupChat,
-      otherParticipants,
       chatContext,
       aiKeyOverride,
     } = options;
@@ -412,8 +518,6 @@ export class AiOrchestratorService {
     if (!provider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
-
-    const client = this.createProviderClient(provider);
 
     const systemPrompt = await this.buildSystemPrompt(
       profile,
@@ -434,55 +538,34 @@ export class AiOrchestratorService {
       content: userMessage,
       parts: userMessageParts,
     };
+    const request: PreparedReplyRequest = {
+      systemPrompt,
+      conversationHistory: sanitizedHistory,
+      currentUserMessage,
+      isGroupChat,
+    };
 
     try {
-      if (provider.apiStyle === 'openai-responses') {
-        const response = await client.responses.create({
-          model: provider.model,
-          instructions: systemPrompt,
-          input: [
-            ...sanitizedHistory.map((message) =>
-              this.buildResponsesMessage(message, provider, isGroupChat),
-            ),
-            this.buildResponsesMessage(
-              currentUserMessage,
-              provider,
-              isGroupChat,
-            ),
-          ],
-          max_output_tokens: 500,
-          temperature: 0.85,
-        });
-
-        const rawText = response.output_text ?? '（无回复）';
-        const text = sanitizeAiText(rawText) || '（无回复）';
-        const tokensUsed = response.usage?.total_tokens ?? 0;
-        return { text, tokensUsed };
+      return await this.requestReplyFromProvider(provider, request);
+    } catch (err) {
+      if (aiKeyOverride && this.isAuthenticationFailure(err)) {
+        const defaultProvider = await this.resolveProviderConfig();
+        if (this.canRetryWithDefaultProvider(provider, defaultProvider)) {
+          this.logger.warn(
+            `Owner-level AI key failed authentication for ${profile.characterId}; retrying with instance provider.`,
+          );
+          try {
+            return await this.requestReplyFromProvider(
+              defaultProvider,
+              request,
+            );
+          } catch (fallbackError) {
+            this.logger.error('AI provider fallback error', fallbackError);
+            throw fallbackError;
+          }
+        }
       }
 
-      const response = await client.chat.completions.create({
-        model: provider.model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...sanitizedHistory.map((message) =>
-            this.buildChatCompletionMessage(message, provider, isGroupChat),
-          ),
-          this.buildChatCompletionMessage(
-            currentUserMessage,
-            provider,
-            isGroupChat,
-          ),
-        ],
-        max_tokens: 500,
-        temperature: 0.85,
-      });
-
-      const rawText = response.choices[0]?.message?.content ?? '（无回复）';
-      const text = sanitizeAiText(rawText) || '（无回复）';
-      const tokensUsed = response.usage?.total_tokens ?? 0;
-
-      return { text, tokensUsed };
-    } catch (err) {
       this.logger.error('AI provider error', err);
       throw err;
     }
@@ -676,7 +759,7 @@ ${chatHistory}
         mode: options.mode,
         mimetype: file.mimetype,
         size: file.size,
-        error,
+        errorMessage: this.extractErrorMessage(error),
       });
       throw new BadGatewayException(
         '当前 Provider 不支持语音转写，或本次转写请求失败。',
