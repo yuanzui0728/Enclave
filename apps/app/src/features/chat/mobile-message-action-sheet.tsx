@@ -2,6 +2,11 @@ type MobileMessageActionSheetProps = {
   open: boolean;
   onClose: () => void;
   title?: string;
+  preview?: {
+    senderName?: string;
+    text: string;
+    own?: boolean;
+  };
   onReply?: () => void;
   onQuoteSelection?: () => void;
   quoteSelectionLabel?: string;
@@ -29,6 +34,7 @@ export function MobileMessageActionSheet({
   open,
   onClose,
   title = "消息操作",
+  preview,
   onReply,
   onQuoteSelection,
   quoteSelectionLabel = "部分引用",
@@ -67,6 +73,30 @@ export function MobileMessageActionSheet({
         <div className="pb-3 text-center text-[13px] text-[#8c8c8c]">
           {title}
         </div>
+        {preview ? (
+          <div className="mb-3 overflow-hidden rounded-[14px] bg-white px-3 py-3">
+            {preview.senderName ? (
+              <div className="pb-1 text-[11px] text-[#8c8c8c]">
+                {preview.senderName}
+              </div>
+            ) : null}
+            <div
+              className={`flex ${preview.own ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[88%] rounded-[16px] px-3 py-2 text-[14px] leading-6 ${
+                  preview.own
+                    ? "bg-[#95ec69] text-[#111827]"
+                    : "border border-black/5 bg-[#f8f8f8] text-[#111827]"
+                }`}
+              >
+                <div className="line-clamp-3 whitespace-pre-wrap break-words">
+                  {preview.text}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
           {onQuoteSelection ? (
