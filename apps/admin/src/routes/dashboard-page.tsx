@@ -659,7 +659,18 @@ export function DashboardPage() {
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">最近调度记录</div>
             <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
               {schedulerQuery.data?.recentRuns.map((event) => (
-                <ListItemCard key={event} className="py-3" title={event} />
+                <ListItemCard
+                  key={event.id}
+                  className="py-3"
+                  title={`${event.jobName} · ${event.status === "error" ? "失败" : "成功"}`}
+                  body={<div>{event.summary}</div>}
+                  footer={
+                    <div className="text-xs text-[color:var(--text-muted)]">
+                      {event.startedAt}
+                      {event.durationMs ? ` · ${event.durationMs} ms` : ""}
+                    </div>
+                  }
+                />
               ))}
               {schedulerQuery.data && schedulerQuery.data.recentRuns.length === 0 && (
                 <div>当前还没有调度任务执行记录。</div>

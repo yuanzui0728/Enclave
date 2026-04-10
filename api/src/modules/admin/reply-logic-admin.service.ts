@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThan, Repository } from 'typeorm';
+import { In, MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { UserEntity } from '../auth/user.entity';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
@@ -16,9 +16,14 @@ import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
+import { MomentPostEntity } from '../moments/moment-post.entity';
+import { FeedPostEntity } from '../feed/feed-post.entity';
+import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
+import type { SchedulerJobId } from '../scheduler/scheduler-telemetry.types';
 import type {
   ReplyLogicActorSnapshot,
   ReplyLogicCharacterSnapshot,
+  ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
   ReplyLogicHistoryItem,
   ReplyLogicNarrativeArcSummary,
@@ -50,12 +55,17 @@ export class ReplyLogicAdminService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(NarrativeArcEntity)
     private readonly narrativeArcRepo: Repository<NarrativeArcEntity>,
+    @InjectRepository(MomentPostEntity)
+    private readonly momentPostRepo: Repository<MomentPostEntity>,
+    @InjectRepository(FeedPostEntity)
+    private readonly feedPostRepo: Repository<FeedPostEntity>,
     private readonly config: ConfigService,
     private readonly systemConfig: SystemConfigService,
     private readonly promptBuilder: PromptBuilderService,
     private readonly worldService: WorldService,
     private readonly ai: AiOrchestratorService,
     private readonly replyLogicRules: ReplyLogicRulesService,
+    private readonly schedulerTelemetry: SchedulerTelemetryService,
   ) {}
 
   async getOverview(): Promise<ReplyLogicOverview> {
@@ -95,15 +105,17 @@ export class ReplyLogicAdminService {
       throw new NotFoundException(`Character ${characterId} not found`);
     }
 
-    const [provider, worldContext, conversations, narrativeArc] = await Promise.all([
-      this.resolveProviderSummary(owner),
-      this.resolveWorldContextSummary(),
-      this.conversationRepo.find({ where: { ownerId: owner.id } }),
-      this.narrativeArcRepo.findOne({
-        where: { ownerId: owner.id, characterId },
-        order: { createdAt: 'DESC' },
-      }),
-    ]);
+    const [provider, worldContext, conversations, narrativeArc, observability] =
+      await Promise.all([
+        this.resolveProviderSummary(owner),
+        this.resolveWorldContextSummary(),
+        this.conversationRepo.find({ where: { ownerId: owner.id } }),
+        this.narrativeArcRepo.findOne({
+          where: { ownerId: owner.id, characterId },
+          order: { createdAt: 'DESC' },
+        }),
+        this.buildCharacterObservability(character),
+      ]);
 
     const relatedConversationIds = conversations
       .filter((conversation) => conversation.participants.includes(characterId))
@@ -130,6 +142,7 @@ export class ReplyLogicAdminService {
       character: this.toCharacterContract(character),
       actor,
       narrativeArc: narrativeArc ? this.toNarrativeSummary(narrativeArc) : null,
+      observability,
       relatedConversationIds,
       notes: [
         '角色视图使用“单聊直回”逻辑展示 prompt 和状态门控。',
@@ -455,6 +468,101 @@ export class ReplyLogicAdminService {
       isOnline: character.isOnline,
       currentActivity: character.currentActivity ?? null,
       expertDomains: character.expertDomains ?? [],
+    };
+  }
+
+  private async buildCharacterObservability(
+    character: CharacterEntity,
+  ): Promise<ReplyLogicCharacterObservability> {
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const currentHour = now.getHours();
+    const startHour = character.activeHoursStart ?? 8;
+    const endHour = character.activeHoursEnd ?? 23;
+    const triggerScenes = [...(character.triggerScenes ?? [])];
+    const memoryText = [
+      character.profile?.memory?.coreMemory,
+      character.profile?.memory?.recentSummary,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    const memoryEnabled = Boolean(memoryText.trim());
+    const relevantJobIds: SchedulerJobId[] = [
+      'update_ai_active_status',
+      'update_character_status',
+      'check_moment_schedule',
+      'check_channels_schedule',
+      'trigger_scene_friend_requests',
+      'trigger_memory_proactive_messages',
+    ];
+    const [todayMoments, weeklyChannels] = await Promise.all([
+      this.momentPostRepo.count({
+        where: {
+          authorId: character.id,
+          postedAt: MoreThanOrEqual(todayStart),
+        },
+      }),
+      this.feedPostRepo.count({
+        where: {
+          authorId: character.id,
+          createdAt: MoreThanOrEqual(weekStart),
+          surface: 'channels',
+        },
+      }),
+    ]);
+    const notes: string[] = [];
+
+    if (character.onlineMode === 'manual') {
+      notes.push('在线状态处于人工锁定，在线状态调度不会覆盖后台手动值。');
+    }
+    if (character.activityMode === 'manual') {
+      notes.push('当前活动处于人工锁定，活动状态调度不会覆盖后台手动值。');
+    }
+    if ((character.momentsFrequency ?? 0) < 1) {
+      notes.push('朋友圈频率为 0，朋友圈调度会持续跳过该角色。');
+    }
+    if ((character.feedFrequency ?? 0) < 1) {
+      notes.push('视频号频率为 0，视频号调度会持续跳过该角色。');
+    }
+    if (!triggerScenes.length) {
+      notes.push('未配置触发场景，场景加好友调度不会命中该角色。');
+    }
+    if (!memoryEnabled) {
+      notes.push('缺少核心记忆或近期摘要，主动提醒调度不会为该角色生成消息。');
+    }
+
+    return {
+      activeWindow: {
+        startHour,
+        endHour,
+        currentHour,
+        label: `${startHour}:00 - ${endHour}:00`,
+        isWithinWindow: currentHour >= startHour && currentHour <= endHour,
+      },
+      contentCadence: {
+        todayMoments,
+        momentsTarget: character.momentsFrequency ?? 0,
+        weeklyChannels,
+        channelsTarget: character.feedFrequency ?? 0,
+      },
+      triggerScenes,
+      memoryProactive: {
+        enabled: memoryEnabled,
+        reason: memoryEnabled
+          ? '已具备记忆种子，晚间主动提醒调度会判断是否需要发消息。'
+          : '当前缺少足够的记忆种子，主动提醒不会触发。',
+      },
+      relevantJobs: this.schedulerTelemetry
+        .listJobs()
+        .filter((job) => relevantJobIds.includes(job.id)),
+      recentRuns: this.schedulerTelemetry.listRecentRuns({
+        limit: 12,
+        jobIds: relevantJobIds,
+      }),
+      lifeEvents: this.schedulerTelemetry.listCharacterEvents(character.id, 12),
+      notes,
     };
   }
 

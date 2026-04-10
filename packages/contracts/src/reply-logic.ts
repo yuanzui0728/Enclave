@@ -1,4 +1,5 @@
 import type { Character } from "./characters";
+import type { SchedulerJobStatus, SchedulerRunRecord } from "./system";
 
 export type ReplyLogicApiKeySource = "owner_custom" | "env_default" | "missing";
 export type ReplyLogicEndpointSource =
@@ -149,12 +150,57 @@ export interface ReplyLogicActorSnapshot {
   notes: string[];
 }
 
+export type ReplyLogicLifeEventKind =
+  | "online_status_changed"
+  | "activity_changed"
+  | "moment_posted"
+  | "channel_posted"
+  | "scene_friend_request"
+  | "proactive_message"
+  | "relationship_updated";
+
+export interface ReplyLogicCharacterLifeEvent {
+  id: string;
+  kind: ReplyLogicLifeEventKind;
+  title: string;
+  summary: string;
+  createdAt: string;
+  jobId: string;
+  jobName: string;
+}
+
+export interface ReplyLogicCharacterObservability {
+  activeWindow: {
+    startHour: number;
+    endHour: number;
+    currentHour: number;
+    label: string;
+    isWithinWindow: boolean;
+  };
+  contentCadence: {
+    todayMoments: number;
+    momentsTarget: number;
+    weeklyChannels: number;
+    channelsTarget: number;
+  };
+  triggerScenes: string[];
+  memoryProactive: {
+    enabled: boolean;
+    reason: string;
+  };
+  relevantJobs: SchedulerJobStatus[];
+  recentRuns: SchedulerRunRecord[];
+  lifeEvents: ReplyLogicCharacterLifeEvent[];
+  notes: string[];
+}
+
 export interface ReplyLogicCharacterSnapshot {
   provider: ReplyLogicProviderSummary;
   worldContext?: ReplyLogicWorldContextSummary | null;
   character: Character;
   actor: ReplyLogicActorSnapshot;
   narrativeArc?: ReplyLogicNarrativeArcSummary | null;
+  observability: ReplyLogicCharacterObservability;
   relatedConversationIds: string[];
   notes: string[];
 }
