@@ -1209,7 +1209,7 @@ function DesktopReminderCard({
           <div className="flex items-center gap-1.5">
             <span
               className={cn(
-                "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                "shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium",
                 getChatReminderStatus(entry) === "notified"
                   ? "bg-[#fff7e6] text-[#d48806]"
                   : entry.isDue
@@ -1242,10 +1242,10 @@ function DesktopReminderCard({
         type="button"
         onClick={() => onDismiss(entry)}
         className={cn(
-          "shrink-0 self-center rounded-full px-2.5 py-1 text-[10px] leading-none transition-colors",
+          "shrink-0 self-center rounded-full px-2 py-[3px] text-[9px] leading-none transition-colors",
           getChatReminderActionTone(entry) === "warning"
-            ? "border border-[#f1d5a6] bg-[#fff8ec] text-[#b76a08] hover:bg-[#fff1dc]"
-            : "border border-transparent bg-[#f3f6f4] text-[#5f6b63] hover:bg-[#e9eeeb]",
+            ? "border border-[#f3ddba] bg-[#fff9ef] text-[#ba740f] hover:bg-[#fff2df]"
+            : "border border-transparent bg-[#f5f7f5] text-[#6b736d] hover:bg-[#edf1ee]",
         )}
       >
         {getChatReminderActionLabel(entry)}
