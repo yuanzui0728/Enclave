@@ -34,7 +34,7 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
-import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
+import { buildChatCallFallbackShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -149,12 +149,11 @@ export function CharacterDetailPage() {
         return;
       }
 
-      const nextSearch =
-        pendingCallFallback === "voice"
-          ? buildChatComposeShortcutSearch({
-              action: "voice-message",
-            })
-          : undefined;
+      const nextSearch = pendingCallFallback
+        ? buildChatCallFallbackShortcutSearch({
+            kind: pendingCallFallback,
+          })
+        : undefined;
 
       setPendingCallFallback(null);
       void navigate({
@@ -450,14 +449,14 @@ export function CharacterDetailPage() {
               description={
                 pendingCallFallback === "voice"
                   ? "先进入聊天页继续，用按住说话发送语音消息会更接近现在可用的体验。"
-                  : "先进入聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
+                  : "先进入聊天页继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
               }
               primaryLabel={
                 startChatMutation.isPending
                   ? "正在打开..."
                   : pendingCallFallback === "voice"
                     ? "去聊天发语音"
-                    : "去聊天发消息"
+                    : "去聊天拍摄"
               }
               secondaryLabel="知道了"
               onPrimaryAction={() => startChatMutation.mutate()}

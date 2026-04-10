@@ -18,7 +18,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
+import { buildChatCallFallbackShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
   CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
@@ -417,12 +417,9 @@ export function ChatDetailsPage() {
               void navigate({
                 to: "/chat/$conversationId",
                 params: { conversationId },
-                search:
-                  kind === "voice"
-                    ? buildChatComposeShortcutSearch({
-                        action: "voice-message",
-                      })
-                    : undefined,
+                search: buildChatCallFallbackShortcutSearch({
+                  kind,
+                }),
               });
             }}
           />

@@ -1,4 +1,5 @@
 export type ChatComposeShortcutAction = "voice-message" | "camera" | "album";
+export type ChatCallFallbackKind = "voice" | "video";
 
 const CHAT_COMPOSE_SHORTCUT_QUERY_KEY = "composeShortcut";
 
@@ -34,6 +35,22 @@ export function buildChatComposeShortcutSearch(input?: {
 
   const nextSearch = params.toString();
   return nextSearch ? `?${nextSearch}` : "";
+}
+
+export function resolveChatCallFallbackShortcutAction(
+  kind: ChatCallFallbackKind,
+): ChatComposeShortcutAction {
+  return kind === "voice" ? "voice-message" : "camera";
+}
+
+export function buildChatCallFallbackShortcutSearch(input: {
+  kind: ChatCallFallbackKind;
+  search?: ChatComposeShortcutSearchInput;
+}) {
+  return buildChatComposeShortcutSearch({
+    search: input.search,
+    action: resolveChatCallFallbackShortcutAction(input.kind),
+  });
 }
 
 function toSearchParams(search: ChatComposeShortcutSearchInput) {

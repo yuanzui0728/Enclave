@@ -1,8 +1,9 @@
-import { ChatCallFallbackNotice } from "../chat/chat-call-fallback-notice";
+import {
+  type ChatCallFallbackKind,
+  ChatCallFallbackNotice,
+} from "../chat/chat-call-fallback-notice";
 import { ChatDetailsSection } from "./chat-details-section";
 import { ChatSettingRow } from "./chat-setting-row";
-
-type ChatCallFallbackKind = "voice" | "video";
 
 type ChatCallFallbackSectionProps = {
   activeKind: ChatCallFallbackKind | null;
@@ -55,19 +56,19 @@ export function ChatCallFallbackSection({
               isGroup
                 ? activeKind === "voice"
                   ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
-                  : "先回到群聊继续，当前可以改用拍摄、图片或语音消息把内容发到群里。"
+                  : "先回到群聊继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
                 : activeKind === "voice"
                   ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
-                  : "先回到聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
+                  : "先回到聊天页继续，先拍一张图或发送图片消息，会更接近当前能替代视频通话的体验。"
             }
             primaryLabel={
               isGroup
                 ? activeKind === "voice"
                   ? "返回群聊发语音"
-                  : "返回群聊发消息"
+                  : "返回群聊拍摄"
                 : activeKind === "voice"
                   ? "返回聊天发语音"
-                  : "返回聊天发消息"
+                  : "返回聊天拍摄"
             }
             secondaryLabel="知道了"
             onPrimaryAction={() => onPrimaryAction(activeKind)}

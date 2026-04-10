@@ -13,7 +13,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
+import { buildChatCallFallbackShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
@@ -468,12 +468,9 @@ export function GroupChatDetailsPage() {
               void navigate({
                 to: "/group/$groupId",
                 params: { groupId },
-                search:
-                  kind === "voice"
-                    ? buildChatComposeShortcutSearch({
-                        action: "voice-message",
-                      })
-                    : undefined,
+                search: buildChatCallFallbackShortcutSearch({
+                  kind,
+                }),
               });
             }}
           />
