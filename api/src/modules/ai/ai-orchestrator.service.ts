@@ -171,10 +171,18 @@ export class AiOrchestratorService {
     // Build messages array: system + history (dynamic window) + new user message
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-historyWindow).map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.characterId ? `[${m.characterId}]: ${m.content}` : m.content,
-      })),
+      ...conversationHistory.slice(-historyWindow).map((m) => {
+        const content =
+          m.role === 'assistant' ? sanitizeAiText(m.content) : m.content;
+
+        return {
+          role: m.role as 'user' | 'assistant',
+          content:
+            isGroupChat && m.characterId
+              ? `[${m.characterId}]: ${content}`
+              : content,
+        };
+      }),
       { role: 'user', content: userMessage },
     ];
 
@@ -214,7 +222,7 @@ export class AiOrchestratorService {
       temperature: 0.95,
     });
 
-    return response.choices[0]?.message?.content?.trim() ?? '';
+    return sanitizeAiText(response.choices[0]?.message?.content ?? '');
   }
 
   async extractPersonality(
@@ -271,7 +279,7 @@ ${chatHistory}
         max_tokens: 200,
         temperature: 0.3,
       });
-      return response.choices[0]?.message?.content?.trim() ?? '';
+      return sanitizeAiText(response.choices[0]?.message?.content ?? '');
     } catch (err) {
       this.logger.error('compressMemory error', err);
       return profile.memory?.recentSummary ?? profile.memorySummary;

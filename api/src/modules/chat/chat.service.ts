@@ -384,7 +384,11 @@ export class ChatService {
     );
 
     const history = await this.ensureConversationHistory(entity);
-    history.push({ role: 'assistant', content: text, characterId });
+    history.push({
+      role: 'assistant',
+      content: sanitizeAiText(text),
+      characterId,
+    });
     this.conversationHistory.set(conversationId, history);
 
     return this._entityToMessage(messageEntity);
@@ -735,7 +739,10 @@ export class ChatService {
       (message) =>
         ({
           role: message.senderType === 'user' ? 'user' : 'assistant',
-          content: sanitizeAiText(message.text),
+          content:
+            message.senderType === 'user'
+              ? message.text
+              : sanitizeAiText(message.text),
           characterId:
             message.senderType === 'character' ? message.senderId : undefined,
         }) satisfies ChatMessage,
@@ -848,7 +855,10 @@ export class ChatService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: sanitizeAiText(entity.text),
+      text:
+        entity.senderType === 'user'
+          ? entity.text
+          : sanitizeAiText(entity.text),
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
     };
@@ -905,7 +915,10 @@ export class ChatService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: sanitizeAiText(entity.text),
+      text:
+        entity.senderType === 'user'
+          ? entity.text
+          : sanitizeAiText(entity.text),
       attachment: this.parseGroupAttachment(entity),
       createdAt: entity.createdAt,
     };

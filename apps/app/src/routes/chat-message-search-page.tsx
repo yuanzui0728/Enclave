@@ -7,6 +7,7 @@ import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
+import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -127,7 +128,12 @@ export function ChatMessageSearchPage() {
                 </div>
                 <div className="mt-1 text-[14px] leading-6 text-[color:var(--text-secondary)]">
                   {renderHighlightedText(
-                    buildSearchPreview(message.text, trimmedKeyword),
+                    buildSearchPreview(
+                      message.senderType === "user"
+                        ? message.text
+                        : sanitizeDisplayedChatText(message.text),
+                      trimmedKeyword,
+                    ),
                     trimmedKeyword,
                   )}
                 </div>

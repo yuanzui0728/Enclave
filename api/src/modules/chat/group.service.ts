@@ -369,7 +369,11 @@ export class GroupService {
     });
     const history = recentMessages.reverse().map((message) => ({
       role: 'user' as const,
-      content: `[${message.senderName}]: ${sanitizeAiText(message.text)}`,
+      content: `[${message.senderName}]: ${
+        message.senderType === 'user'
+          ? message.text
+          : sanitizeAiText(message.text)
+      }`,
     }));
 
     for (const member of members) {
@@ -487,7 +491,10 @@ export class GroupService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: sanitizeAiText(entity.text),
+      text:
+        entity.senderType === 'user'
+          ? entity.text
+          : sanitizeAiText(entity.text),
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
     };

@@ -3,6 +3,7 @@ import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
+import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { formatMessageTimestamp } from "../lib/format";
 
 type ChatRenderableMessage = {
@@ -62,6 +63,10 @@ export function ChatMessageList({
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
+        const displayText =
+          isUser && !isSystem
+            ? message.text
+            : sanitizeDisplayedChatText(message.text);
 
         if (isSystem) {
           return (
@@ -75,7 +80,7 @@ export function ChatMessageList({
               } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
               tone="muted"
             >
-              {message.text}
+              {displayText}
             </InlineNotice>
           );
         }
@@ -111,14 +116,14 @@ export function ChatMessageList({
                 message.attachment?.kind === "sticker" ? (
                   <StickerMessage
                     url={message.attachment.url}
-                    label={message.attachment.label ?? message.text}
+                    label={message.attachment.label ?? displayText}
                     maxSize={isDesktop ? 160 : 132}
                   />
                 ) : message.type === "image" &&
                   message.attachment?.kind === "image" ? (
                   <ImageMessage
                     url={message.attachment.url}
-                    label={message.attachment.fileName || message.text}
+                    label={message.attachment.fileName || displayText}
                     maxSize={isDesktop ? 180 : 144}
                   />
                 ) : message.type === "file" &&
@@ -142,7 +147,7 @@ export function ChatMessageList({
                           : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
                     }`}
                   >
-                    {message.text}
+                    {displayText}
                   </div>
                 )}
               </div>

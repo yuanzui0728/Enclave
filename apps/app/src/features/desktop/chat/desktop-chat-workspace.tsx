@@ -13,6 +13,7 @@ import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
+import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -106,7 +107,9 @@ export function DesktopChatWorkspace({
 
     return conversations.filter((conversation) => {
       const title = conversation.title.toLowerCase();
-      const preview = conversation.lastMessage?.text?.toLowerCase() ?? "";
+      const preview = sanitizeDisplayedChatText(
+        conversation.lastMessage?.text ?? "",
+      ).toLowerCase();
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, searchTerm]);
@@ -457,7 +460,7 @@ function ConversationCardLink({
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
           <div className="truncate text-sm text-[color:var(--text-secondary)]">
-            {conversation.lastMessage?.text ?? ""}
+            {sanitizeDisplayedChatText(conversation.lastMessage?.text ?? "")}
           </div>
           {conversation.unreadCount > 0 ? (
             <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">

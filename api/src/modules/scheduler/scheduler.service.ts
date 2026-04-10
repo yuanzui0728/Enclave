@@ -10,6 +10,7 @@ import { UserEntity } from '../auth/user.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { WorldService } from '../world/world.service';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { SocialService } from '../social/social.service';
 import { FeedService } from '../feed/feed.service';
 import { ChatGateway } from '../chat/chat.gateway';
@@ -75,7 +76,11 @@ export class SchedulerService {
       const chars = await this.characterRepo.find();
       const hour = new Date().getHours();
       for (const char of chars) {
-        if (DEFAULT_CHARACTER_IDS.includes(char.id as (typeof DEFAULT_CHARACTER_IDS)[number])) {
+        if (
+          DEFAULT_CHARACTER_IDS.includes(
+            char.id as (typeof DEFAULT_CHARACTER_IDS)[number],
+          )
+        ) {
           char.isOnline = true;
           char.currentActivity = 'free';
           await this.characterRepo.save(char);
@@ -92,7 +97,9 @@ export class SchedulerService {
         }
       }
 
-      await this.maybeStrengthenAiRelationships(chars.filter((char) => char.isOnline));
+      await this.maybeStrengthenAiRelationships(
+        chars.filter((char) => char.isOnline),
+      );
     } catch (err) {
       this.logger.error('Failed to update AI active status', err);
     }
@@ -102,12 +109,16 @@ export class SchedulerService {
   @Cron('*/15 * * * *')
   async checkMomentSchedule() {
     try {
-      const friendCharacterIds = new Set(await this.socialService.getFriendCharacterIds());
+      const friendCharacterIds = new Set(
+        await this.socialService.getFriendCharacterIds(),
+      );
       if (!friendCharacterIds.size) {
         return;
       }
 
-      const chars = (await this.characterRepo.find()).filter((char) => friendCharacterIds.has(char.id));
+      const chars = (await this.characterRepo.find()).filter((char) =>
+        friendCharacterIds.has(char.id),
+      );
       const now = new Date();
       const hour = now.getHours();
 
@@ -141,7 +152,15 @@ export class SchedulerService {
       // Only trigger with 40% probability each run
       if (Math.random() > 0.4) return;
 
-      const scenes = ['coffee_shop', 'gym', 'library', 'bookstore', 'park', 'restaurant', 'cafe'];
+      const scenes = [
+        'coffee_shop',
+        'gym',
+        'library',
+        'bookstore',
+        'park',
+        'restaurant',
+        'cafe',
+      ];
       const scene = scenes[Math.floor(Math.random() * scenes.length)];
 
       const req = await this.socialService.triggerSceneFriendRequest(scene);
@@ -177,23 +196,42 @@ export class SchedulerService {
       // Time-based activity mapping
       const getActivity = (): string => {
         if (hour >= 0 && hour <= 6) return 'sleeping';
-        if (hour === 7 || hour === 8 || hour === 18 || hour === 19) return 'commuting';
-        if ((hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 17)) return 'working';
+        if (hour === 7 || hour === 8 || hour === 18 || hour === 19)
+          return 'commuting';
+        if ((hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 17))
+          return 'working';
         if (hour === 12 || hour === 13 || hour === 20) return 'eating';
         return 'free'; // 21-23
       };
 
       const baseActivity = getActivity();
       // Add some randomness: 20% chance to deviate
-      const activities = ['working', 'eating', 'resting', 'commuting', 'free', 'sleeping'];
+      const activities = [
+        'working',
+        'eating',
+        'resting',
+        'commuting',
+        'free',
+        'sleeping',
+      ];
 
       for (const char of chars) {
-        if (DEFAULT_CHARACTER_IDS.includes(char.id as (typeof DEFAULT_CHARACTER_IDS)[number])) {
-          await this.characterRepo.update(char.id, { currentActivity: 'free', isOnline: true });
+        if (
+          DEFAULT_CHARACTER_IDS.includes(
+            char.id as (typeof DEFAULT_CHARACTER_IDS)[number],
+          )
+        ) {
+          await this.characterRepo.update(char.id, {
+            currentActivity: 'free',
+            isOnline: true,
+          });
           continue;
         }
 
-        const activity = Math.random() < 0.8 ? baseActivity : activities[Math.floor(Math.random() * activities.length)];
+        const activity =
+          Math.random() < 0.8
+            ? baseActivity
+            : activities[Math.floor(Math.random() * activities.length)];
         await this.characterRepo.update(char.id, { currentActivity: activity });
         this.logger.debug(`Updated activity for ${char.name}: ${activity}`);
       }
@@ -210,7 +248,9 @@ export class SchedulerService {
       for (const char of chars) {
         try {
           const memory = char.profile?.memory;
-          const memoryText = [memory?.coreMemory, memory?.recentSummary].filter(Boolean).join('\n');
+          const memoryText = [memory?.coreMemory, memory?.recentSummary]
+            .filter(Boolean)
+            .join('\n');
           if (!memoryText) continue;
 
           // Ask LLM if there's something worth proactively reminding
@@ -223,15 +263,25 @@ export class SchedulerService {
             max_tokens: 100,
             temperature: 0.7,
           });
-          const result = resp.choices[0]?.message?.content?.trim() ?? 'NO_ACTION';
-          if (result === 'NO_ACTION' || result.startsWith('NO_ACTION')) continue;
+          const result = sanitizeAiText(
+            resp.choices[0]?.message?.content ?? 'NO_ACTION',
+          );
+          if (result === 'NO_ACTION' || result.startsWith('NO_ACTION'))
+            continue;
 
           // Find conversations for this character
           const convs = await this.convRepo.find();
           for (const conv of convs) {
             if (!conv.participants.includes(char.id)) continue;
-            await this.chatGateway.sendProactiveMessage(conv.id, char.id, char.name, result);
-            this.logger.debug(`Sent proactive message from ${char.name} to conv ${conv.id}`);
+            await this.chatGateway.sendProactiveMessage(
+              conv.id,
+              char.id,
+              char.name,
+              result,
+            );
+            this.logger.debug(
+              `Sent proactive message from ${char.name} to conv ${conv.id}`,
+            );
           }
         } catch {
           // ignore per-character errors
