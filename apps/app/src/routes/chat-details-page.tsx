@@ -22,6 +22,7 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
+import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -234,7 +235,14 @@ export function ChatDetailsPage() {
       label: "发起群聊",
       kind: "add" as const,
       onClick: () => {
-        void navigate({ to: "/group/new" });
+        void navigate({
+          to: "/group/new",
+          hash: buildCreateGroupRouteHash({
+            source: "chat-details",
+            conversationId,
+            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+          }),
+        });
       },
     },
   ];
@@ -325,9 +333,7 @@ export function ChatDetailsPage() {
                 label="强提醒"
                 value="待接入"
                 onClick={() => {
-                  setNotice(
-                    "强提醒待接真实通知链路，当前先保留微信式入口。",
-                  );
+                  setNotice("强提醒待接真实通知链路，当前先保留微信式入口。");
                 }}
               />
             </div>

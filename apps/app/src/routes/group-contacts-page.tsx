@@ -8,6 +8,7 @@ import { EmptyState } from "../components/empty-state";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -62,7 +63,10 @@ function MobileGroupContactsPage() {
             size="icon"
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
             onClick={() => {
-              void navigate({ to: "/group/new" });
+              void navigate({
+                to: "/group/new",
+                hash: buildCreateGroupRouteHash({ source: "group-contacts" }),
+              });
             }}
             aria-label="发起群聊"
           >
@@ -96,10 +100,16 @@ function MobileGroupContactsPage() {
           </div>
         ) : null}
 
-        {!groupsQuery.isLoading && !groupsQuery.isError && !filteredGroups.length ? (
+        {!groupsQuery.isLoading &&
+        !groupsQuery.isError &&
+        !filteredGroups.length ? (
           <div className="px-3 pt-6">
             <EmptyState
-              title={hasSearchText ? "没有找到匹配的群聊" : "还没有保存到通讯录的群聊"}
+              title={
+                hasSearchText
+                  ? "没有找到匹配的群聊"
+                  : "还没有保存到通讯录的群聊"
+              }
               description={
                 hasSearchText
                   ? "换个群名称或公告关键词试试。"
@@ -109,7 +119,12 @@ function MobileGroupContactsPage() {
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    void navigate({ to: "/group/new" });
+                    void navigate({
+                      to: "/group/new",
+                      hash: buildCreateGroupRouteHash({
+                        source: "group-contacts",
+                      }),
+                    });
                   }}
                 >
                   发起群聊
@@ -133,7 +148,9 @@ function MobileGroupContactsPage() {
                 }}
                 className={cn(
                   "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors hover:bg-[rgba(96,165,250,0.06)]",
-                  index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+                  index > 0
+                    ? "border-t border-[color:var(--border-faint)]"
+                    : undefined,
                 )}
               >
                 <GroupAvatarChip name={group.name} size="wechat" />
@@ -210,7 +227,12 @@ function DesktopGroupContactsPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  void navigate({ to: "/group/new" });
+                  void navigate({
+                    to: "/group/new",
+                    hash: buildCreateGroupRouteHash({
+                      source: "group-contacts",
+                    }),
+                  });
                 }}
               >
                 发起群聊
@@ -241,10 +263,16 @@ function DesktopGroupContactsPage() {
               </div>
             ) : null}
 
-            {!groupsQuery.isLoading && !groupsQuery.isError && !filteredGroups.length ? (
+            {!groupsQuery.isLoading &&
+            !groupsQuery.isError &&
+            !filteredGroups.length ? (
               <div className="px-3 pt-6">
                 <EmptyState
-                  title={hasSearchText ? "没有找到匹配的群聊" : "还没有保存到通讯录的群聊"}
+                  title={
+                    hasSearchText
+                      ? "没有找到匹配的群聊"
+                      : "还没有保存到通讯录的群聊"
+                  }
                   description={
                     hasSearchText
                       ? "换个关键词试试。"
@@ -254,7 +282,12 @@ function DesktopGroupContactsPage() {
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        void navigate({ to: "/group/new" });
+                        void navigate({
+                          to: "/group/new",
+                          hash: buildCreateGroupRouteHash({
+                            source: "group-contacts",
+                          }),
+                        });
                       }}
                     >
                       发起群聊
@@ -280,7 +313,9 @@ function DesktopGroupContactsPage() {
                           isSelected
                             ? "bg-[rgba(96,165,250,0.1)]"
                             : "bg-[color:var(--bg-canvas-elevated)] hover:bg-[rgba(96,165,250,0.04)]",
-                          index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+                          index > 0
+                            ? "border-t border-[color:var(--border-faint)]"
+                            : undefined,
                         )}
                       >
                         <GroupAvatarChip name={group.name} />
