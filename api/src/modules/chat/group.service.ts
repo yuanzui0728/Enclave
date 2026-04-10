@@ -19,6 +19,7 @@ import {
   LocationCardAttachment,
   MessageAttachment,
   StickerAttachment,
+  VoiceAttachment,
 } from './chat.types';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
@@ -66,6 +67,11 @@ type SendGroupMessageInput =
       type: 'file';
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      type: 'voice';
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       type: 'contact_card';
@@ -608,6 +614,7 @@ export class GroupService {
       | 'text'
       | 'image'
       | 'file'
+      | 'voice'
       | 'contact_card'
       | 'location_card'
       | 'sticker';
@@ -619,6 +626,7 @@ export class GroupService {
     if (
       input.type === 'image' ||
       input.type === 'file' ||
+      input.type === 'voice' ||
       input.type === 'contact_card' ||
       input.type === 'location_card' ||
       input.type === 'sticker'
@@ -717,6 +725,12 @@ export class GroupService {
       ];
     }
 
+    if (attachment.kind === 'voice') {
+      return this.buildTextAiParts(
+        this.buildMessagePromptText(text, attachment),
+      );
+    }
+
     if (attachment.kind === 'contact_card') {
       return [
         {
@@ -779,6 +793,15 @@ export class GroupService {
       return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();
     }
 
+    if (attachment.kind === 'voice') {
+      const durationText =
+        attachment.durationMs && attachment.durationMs > 0
+          ? `，时长：${formatGroupAttachmentDuration(attachment.durationMs)}`
+          : '';
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `发来一条语音消息${durationText}${captionText}`.trim();
+    }
+
     if (attachment.kind === 'contact_card') {
       return `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();
     }
@@ -799,6 +822,14 @@ export class GroupService {
 
     if (attachment.kind === 'file') {
       return `[文件] ${attachment.fileName}`.trim();
+    }
+
+    if (attachment.kind === 'voice') {
+      const durationText =
+        attachment.durationMs && attachment.durationMs > 0
+          ? ` ${formatGroupAttachmentDuration(attachment.durationMs)}`
+          : '';
+      return `[语音]${durationText}`.trim();
     }
 
     if (attachment.kind === 'contact_card') {
@@ -826,6 +857,7 @@ export class GroupService {
         | 'sticker'
         | 'image'
         | 'file'
+        | 'voice'
         | 'contact_card'
         | 'location_card',
       text:
@@ -1021,4 +1053,18 @@ function formatGroupAttachmentSize(size: number) {
   }
 
   return `${size} B`;
+}
+
+function formatGroupAttachmentDuration(durationMs: number) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return '';
+  }
+
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return minutes > 0
+    ? `${minutes}:${String(seconds).padStart(2, '0')}`
+    : `${seconds}"`;
 }

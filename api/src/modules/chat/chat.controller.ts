@@ -22,6 +22,7 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
   StickerAttachment,
+  VoiceAttachment,
 } from './chat.types';
 
 @Controller('conversations')
@@ -124,7 +125,7 @@ export class ChatAttachmentController {
   )
   async uploadAttachment(
     @UploadedFile() file: UploadedAttachmentFile | undefined,
-    @Body() body: { width?: string; height?: string },
+    @Body() body: { width?: string; height?: string; durationMs?: string },
   ) {
     if (!file) {
       throw new BadRequestException('请先选择一个附件。');
@@ -134,6 +135,7 @@ export class ChatAttachmentController {
       attachment: await this.chatService.saveUploadedAttachment(file, {
         width: body.width ? Number(body.width) : undefined,
         height: body.height ? Number(body.height) : undefined,
+        durationMs: body.durationMs ? Number(body.durationMs) : undefined,
       }),
     };
   }

@@ -6,6 +6,7 @@ import type {
   MessageAttachment,
   StickerAttachment,
   UploadableAttachment,
+  VoiceAttachment,
 } from "./attachments";
 
 export type MessageSenderType = "user" | "character" | "system";
@@ -17,6 +18,7 @@ export type MessageType =
   | "sticker"
   | "image"
   | "file"
+  | "voice"
   | "contact_card"
   | "location_card";
 export type GroupMemberType = "user" | "character";
@@ -173,6 +175,13 @@ export type SendGroupMessageRequest =
       type: "file";
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "voice";
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       senderId?: string;

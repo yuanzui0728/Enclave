@@ -3,6 +3,7 @@ import type {
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
+  VoiceAttachment,
 } from "./attachments";
 
 export const CHAT_NAMESPACE = "/chat";
@@ -53,6 +54,13 @@ export type SendMessagePayload =
       type: "file";
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "voice";
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       conversationId: string;

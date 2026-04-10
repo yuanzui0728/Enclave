@@ -30,6 +30,7 @@ import {
   Message,
   MessageAttachment,
   StickerAttachment,
+  VoiceAttachment,
 } from './chat.types';
 import { findStickerAttachment } from './sticker-catalog';
 
@@ -55,6 +56,11 @@ type SendConversationMessageInput =
       type: 'file';
       text?: string;
       attachment: FileAttachment;
+    }
+  | {
+      type: 'voice';
+      text?: string;
+      attachment: VoiceAttachment;
     }
   | {
       type: 'contact_card';
@@ -376,7 +382,10 @@ export class ChatService {
     return this._entityToConversation(updated);
   }
 
-  async getMessages(conversationId: string, limit?: number): Promise<Message[]> {
+  async getMessages(
+    conversationId: string,
+    limit?: number,
+  ): Promise<Message[]> {
     const conversation = await this.convRepo.findOneBy({ id: conversationId });
     if (!conversation) {
       throw new NotFoundException(`Conversation ${conversationId} not found`);
@@ -410,12 +419,13 @@ export class ChatService {
 
   async saveUploadedAttachment(
     file: UploadedAttachmentFile,
-    metadata: { width?: number; height?: number },
-  ): Promise<ImageAttachment | FileAttachment> {
+    metadata: { width?: number; height?: number; durationMs?: number },
+  ): Promise<ImageAttachment | FileAttachment | VoiceAttachment> {
     const isImage = file.mimetype.startsWith('image/');
+    const isVoice = file.mimetype.startsWith('audio/');
     const displayName = normalizeDisplayAttachmentName(
       file.originalname,
-      isImage ? 'image' : 'file',
+      isImage ? 'image' : isVoice ? 'voice' : 'file',
       file.mimetype,
     );
     const extension =
@@ -437,6 +447,17 @@ export class ChatService {
         size: file.size,
         width: normalizeOptionalDimension(metadata.width),
         height: normalizeOptionalDimension(metadata.height),
+      };
+    }
+
+    if (isVoice) {
+      return {
+        kind: 'voice',
+        url: `${this.resolvePublicApiBaseUrl()}/api/chat/attachments/${storedFileName}`,
+        mimeType: normalizedMimeType,
+        fileName: displayName,
+        size: file.size,
+        durationMs: normalizeOptionalDimension(metadata.durationMs),
       };
     }
 
@@ -1017,6 +1038,7 @@ export class ChatService {
         | 'sticker'
         | 'image'
         | 'file'
+        | 'voice'
         | 'contact_card'
         | 'location_card',
       text:
@@ -1077,6 +1099,7 @@ export class ChatService {
         | 'sticker'
         | 'image'
         | 'file'
+        | 'voice'
         | 'contact_card'
         | 'location_card',
       text:
@@ -1141,6 +1164,7 @@ export class ChatService {
       | 'sticker'
       | 'image'
       | 'file'
+      | 'voice'
       | 'contact_card'
       | 'location_card';
     text: string;
@@ -1172,6 +1196,7 @@ export class ChatService {
     if (
       input.type === 'image' ||
       input.type === 'file' ||
+      input.type === 'voice' ||
       input.type === 'contact_card' ||
       input.type === 'location_card'
     ) {
@@ -1240,6 +1265,12 @@ export class ChatService {
       ];
     }
 
+    if (attachment.kind === 'voice') {
+      return this.buildTextAiParts(
+        this.buildMessagePromptText(text, attachment),
+      );
+    }
+
     if (attachment.kind === 'contact_card') {
       return [
         {
@@ -1303,6 +1334,15 @@ export class ChatService {
       return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();
     }
 
+    if (attachment.kind === 'voice') {
+      const durationText =
+        attachment.durationMs && attachment.durationMs > 0
+          ? `，时长：${formatAttachmentDuration(attachment.durationMs)}`
+          : '';
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `发来一条语音消息${durationText}${captionText}`.trim();
+    }
+
     if (attachment.kind === 'contact_card') {
       return `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();
     }
@@ -1323,6 +1363,14 @@ export class ChatService {
 
     if (attachment.kind === 'file') {
       return `[文件] ${attachment.fileName}`.trim();
+    }
+
+    if (attachment.kind === 'voice') {
+      const durationText =
+        attachment.durationMs && attachment.durationMs > 0
+          ? ` ${formatAttachmentDuration(attachment.durationMs)}`
+          : '';
+      return `[语音]${durationText}`.trim();
     }
 
     if (attachment.kind === 'contact_card') {
@@ -1399,6 +1447,20 @@ function formatAttachmentSize(size: number) {
   return `${size} B`;
 }
 
+function formatAttachmentDuration(durationMs: number) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return '';
+  }
+
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return minutes > 0
+    ? `${minutes}:${String(seconds).padStart(2, '0')}`
+    : `${seconds}"`;
+}
+
 function guessAttachmentExtension(mimeType: string) {
   if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
     return '.jpg';
@@ -1418,6 +1480,26 @@ function guessAttachmentExtension(mimeType: string) {
 
   if (mimeType === 'application/pdf') {
     return '.pdf';
+  }
+
+  if (mimeType === 'audio/webm' || mimeType === 'audio/webm;codecs=opus') {
+    return '.webm';
+  }
+
+  if (mimeType === 'audio/ogg' || mimeType === 'audio/ogg;codecs=opus') {
+    return '.ogg';
+  }
+
+  if (mimeType === 'audio/mp4') {
+    return '.m4a';
+  }
+
+  if (mimeType === 'audio/mpeg') {
+    return '.mp3';
+  }
+
+  if (mimeType === 'audio/wav') {
+    return '.wav';
   }
 
   if (mimeType === 'text/plain') {

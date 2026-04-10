@@ -26,6 +26,15 @@ export interface FileAttachment {
   size: number;
 }
 
+export interface VoiceAttachment {
+  kind: "voice";
+  url: string;
+  mimeType: string;
+  fileName: string;
+  size: number;
+  durationMs?: number;
+}
+
 export interface ContactCardAttachment {
   kind: "contact_card";
   characterId: string;
@@ -46,7 +55,11 @@ export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
   | FileAttachment
+  | VoiceAttachment
   | ContactCardAttachment
   | LocationCardAttachment;
 
-export type UploadableAttachment = ImageAttachment | FileAttachment;
+export type UploadableAttachment =
+  | ImageAttachment
+  | FileAttachment
+  | VoiceAttachment;
