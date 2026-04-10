@@ -166,6 +166,61 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setIsMoreMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.closest(
+          "input, textarea, select, [contenteditable='true'], [role='textbox']",
+        )
+      ) {
+        return;
+      }
+
+      const withCommand = event.metaKey || event.ctrlKey;
+      if (!withCommand) {
+        if (event.key === "Escape") {
+          setIsMoreMenuOpen(false);
+        }
+        return;
+      }
+
+      if (event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        void navigate({ to: "/tabs/search" });
+        return;
+      }
+
+      if (event.key === ",") {
+        event.preventDefault();
+        void navigate({ to: "/desktop/settings" });
+        return;
+      }
+
+      if (event.key.toLowerCase() === "l") {
+        event.preventDefault();
+        setIsLocked(true);
+        setIsMoreMenuOpen(false);
+        return;
+      }
+
+      if (event.shiftKey && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        void navigate({ to: "/desktop/chat-files" });
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [navigate]);
+
   const shellInsetClass = nativeDesktopShell
     ? "rounded-none"
     : "m-2 rounded-[30px]";
@@ -356,6 +411,15 @@ export function DesktopShell({ children }: PropsWithChildren) {
                         }}
                       />
                     ))}
+                  </div>
+                  <div className="mt-2 rounded-[18px] bg-[rgba(255,248,240,0.88)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-dim)]">
+                    `Ctrl/⌘ + K` 搜一搜
+                    <br />
+                    `Ctrl/⌘ + ,` 设置
+                    <br />
+                    `Ctrl/⌘ + Shift + F` 聊天文件
+                    <br />
+                    `Ctrl/⌘ + L` 锁定
                   </div>
                 </div>
               ) : null}
