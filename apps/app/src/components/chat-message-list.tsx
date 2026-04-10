@@ -147,6 +147,20 @@ export function ChatMessageList({
     });
   };
 
+  const jumpToMessage = (messageId: string) => {
+    setActiveHighlightedMessageId(messageId);
+    window.setTimeout(() => {
+      setActiveHighlightedMessageId((current) =>
+        current === messageId ? undefined : current,
+      );
+    }, 2400);
+
+    window.requestAnimationFrame(() => {
+      const target = document.getElementById(`chat-message-${messageId}`);
+      target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
       {actionNotice ? (
@@ -213,10 +227,12 @@ export function ChatMessageList({
                 ) : null}
                 {replyPreview ? (
                   <ReplyQuoteCard
+                    messageId={replyPreview.messageId}
                     senderName={replyPreview.senderName}
                     previewText={replyPreview.previewText}
                     align={isUser ? "right" : "left"}
                     variant={variant}
+                    onJump={jumpToMessage}
                   />
                 ) : null}
                 {message.type === "sticker" &&
@@ -349,26 +365,32 @@ function buildClipboardText(message: ChatRenderableMessage) {
 }
 
 function ReplyQuoteCard({
+  messageId,
   senderName,
   previewText,
   align,
   variant,
+  onJump,
 }: {
+  messageId: string;
   senderName: string;
   previewText: string;
   align: "left" | "right";
   variant: "mobile" | "desktop";
+  onJump: (messageId: string) => void;
 }) {
   const isDesktop = variant === "desktop";
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onJump(messageId)}
       className={`mb-2 w-full overflow-hidden rounded-[14px] border px-3 py-2 ${
         align === "right"
           ? isDesktop
             ? "border-[rgba(160,90,10,0.14)] bg-[rgba(255,244,227,0.92)] text-[color:var(--text-primary)]"
             : "border-[rgba(22,163,74,0.16)] bg-[rgba(255,255,255,0.72)] text-[color:var(--text-primary)]"
           : "border-black/6 bg-[rgba(248,248,248,0.96)] text-[color:var(--text-primary)]"
-      }`}
+      } text-left transition hover:opacity-90`}
     >
       <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
         回复 {senderName}
@@ -376,7 +398,7 @@ function ReplyQuoteCard({
       <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
         {previewText}
       </div>
-    </div>
+    </button>
   );
 }
 
