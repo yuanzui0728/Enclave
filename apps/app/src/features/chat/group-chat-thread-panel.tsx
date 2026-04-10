@@ -9,7 +9,7 @@ import {
   sendGroupMessage,
   uploadChatAttachment,
 } from "@yinjie/contracts";
-import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
@@ -18,6 +18,7 @@ import {
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "../desktop/chat/desktop-chat-header-actions";
+import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
@@ -35,6 +36,7 @@ type GroupChatThreadPanelProps = {
   onToggleDesktopDetails?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
+  routeContextNotice?: ChatRouteContextNotice;
 };
 
 export function GroupChatThreadPanel({
@@ -46,6 +48,7 @@ export function GroupChatThreadPanel({
   onToggleDesktopDetails,
   onDesktopCallAction,
   highlightedMessageId,
+  routeContextNotice,
 }: GroupChatThreadPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -230,6 +233,32 @@ export function GroupChatThreadPanel({
           }}
         />
       )}
+
+      {routeContextNotice ? (
+        <div
+          className={
+            isDesktop
+              ? "border-b border-black/6 bg-white/70 px-5 py-3"
+              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+          }
+        >
+          <InlineNotice tone="info" className="border-white/70 bg-white/90">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                {routeContextNotice.description}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={routeContextNotice.onAction}
+                className="shrink-0 rounded-full"
+              >
+                {routeContextNotice.actionLabel}
+              </Button>
+            </div>
+          </InlineNotice>
+        </div>
+      ) : null}
 
       <div className="relative flex-1 overflow-hidden">
         <div

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Users } from "lucide-react";
-import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
@@ -25,6 +25,13 @@ type ConversationThreadPanelProps = {
   onToggleDesktopDetails?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
+  routeContextNotice?: ChatRouteContextNotice;
+};
+
+export type ChatRouteContextNotice = {
+  actionLabel: string;
+  description: string;
+  onAction: () => void;
 };
 
 export function ConversationThreadPanel({
@@ -36,6 +43,7 @@ export function ConversationThreadPanel({
   onToggleDesktopDetails,
   onDesktopCallAction,
   highlightedMessageId,
+  routeContextNotice,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
   const {
@@ -132,6 +140,32 @@ export function ConversationThreadPanel({
           }}
         />
       )}
+
+      {routeContextNotice ? (
+        <div
+          className={
+            isDesktop
+              ? "border-b border-black/6 bg-white/70 px-5 py-3"
+              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+          }
+        >
+          <InlineNotice tone="info" className="border-white/70 bg-white/90">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs leading-6 text-[color:var(--text-secondary)]">
+                {routeContextNotice.description}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={routeContextNotice.onAction}
+                className="shrink-0 rounded-full"
+              >
+                {routeContextNotice.actionLabel}
+              </Button>
+            </div>
+          </InlineNotice>
+        </div>
+      ) : null}
 
       <div
         className={`relative flex-1 overflow-hidden ${

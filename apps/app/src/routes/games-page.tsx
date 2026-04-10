@@ -49,6 +49,7 @@ import {
   pushMobileHandoffRecord,
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
+import { buildGameInvitePath } from "../features/games/game-invite-route";
 import { AvatarChip } from "../components/avatar-chip";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
@@ -287,7 +288,13 @@ export function GamesPage() {
 
     const game = getGameCenterGame(activity.gameId);
     const text = buildInviteMessage(activity, game);
-    const conversationPath = resolveConversationPath(conversation);
+    const conversationPath = buildGameInvitePath(
+      resolveConversationPath(conversation),
+      {
+        gameId: activity.gameId,
+        inviteId: activity.id,
+      },
+    );
 
     if (isPersistedGroupConversation(conversation)) {
       await sendGroupInviteMutation.mutateAsync({
@@ -337,10 +344,8 @@ export function GamesPage() {
     }
 
     void navigate({ to: path });
-    if (title) {
-      setNoticeTone("success");
-      setSuccessNotice(`正在回到 ${title}。`);
-    }
+    setNoticeTone("success");
+    setSuccessNotice(title ? `正在回到 ${title}。` : "正在回到最近投递的会话。");
   }
 
   async function handleCopyInviteToMobile(activityId: string) {

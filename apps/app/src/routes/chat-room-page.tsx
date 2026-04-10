@@ -6,6 +6,7 @@ import {
 import { AppPage } from "@yinjie/ui";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
+import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function ChatRoomPage() {
@@ -14,12 +15,24 @@ export function ChatRoomPage() {
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
+  const routeContext = resolveRouteContext();
 
   if (isDesktopLayout) {
     return (
       <DesktopChatWorkspace
         selectedConversationId={conversationId}
         highlightedMessageId={highlightedMessageId}
+        routeContextNotice={
+          routeContext
+            ? {
+                actionLabel: routeContext.actionLabel,
+                description: routeContext.description,
+                onAction: () => {
+                  void navigate({ to: routeContext.returnPath });
+                },
+              }
+            : undefined
+        }
       />
     );
   }
@@ -30,13 +43,37 @@ export function ChatRoomPage() {
         <ConversationThreadPanel
           conversationId={conversationId}
           highlightedMessageId={highlightedMessageId}
+          routeContextNotice={
+            routeContext
+              ? {
+                  actionLabel: routeContext.actionLabel,
+                  description: routeContext.description,
+                  onAction: () => {
+                    void navigate({ to: routeContext.returnPath });
+                  },
+                }
+              : undefined
+          }
           onBack={() => {
+            if (routeContext) {
+              void navigate({ to: routeContext.returnPath });
+              return;
+            }
+
             void navigate({ to: "/tabs/chat" });
           }}
         />
       </div>
     </AppPage>
   );
+}
+
+function resolveRouteContext() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return resolveGameInviteRouteContext(window.location.search);
 }
 
 function parseHighlightedMessageId(hash: string) {

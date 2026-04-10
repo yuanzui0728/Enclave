@@ -21,7 +21,10 @@ import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
-import { ConversationThreadPanel } from "../../chat/conversation-thread-panel";
+import {
+  ConversationThreadPanel,
+  type ChatRouteContextNotice,
+} from "../../chat/conversation-thread-panel";
 import GroupChatThreadPanel from "../../chat/group-chat-thread-panel-view";
 import {
   type DesktopChatCallKind,
@@ -36,6 +39,7 @@ type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
   selectedServiceAccountId?: string;
   highlightedMessageId?: string;
+  routeContextNotice?: ChatRouteContextNotice;
   selectedSpecialView?: "subscription-inbox";
 };
 
@@ -67,6 +71,7 @@ export function DesktopChatWorkspace({
   selectedConversationId,
   selectedServiceAccountId,
   highlightedMessageId,
+  routeContextNotice,
   selectedSpecialView,
 }: DesktopChatWorkspaceProps) {
   const navigate = useNavigate();
@@ -386,6 +391,11 @@ export function DesktopChatWorkspace({
                   ? highlightedMessageId
                   : undefined
               }
+              routeContextNotice={
+                activeConversation.id === selectedConversationId
+                  ? routeContextNotice
+                  : undefined
+              }
             />
           ) : (
             <ConversationThreadPanel
@@ -398,6 +408,11 @@ export function DesktopChatWorkspace({
               highlightedMessageId={
                 activeConversation.id === selectedConversationId
                   ? highlightedMessageId
+                  : undefined
+              }
+              routeContextNotice={
+                activeConversation.id === selectedConversationId
+                  ? routeContextNotice
                   : undefined
               }
             />

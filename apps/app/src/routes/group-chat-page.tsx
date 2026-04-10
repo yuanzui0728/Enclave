@@ -6,6 +6,7 @@ import {
 import { AppPage } from "@yinjie/ui";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
+import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function GroupChatPage() {
@@ -14,12 +15,24 @@ export function GroupChatPage() {
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
+  const routeContext = resolveRouteContext();
 
   if (isDesktopLayout) {
     return (
       <DesktopChatWorkspace
         selectedConversationId={groupId}
         highlightedMessageId={highlightedMessageId}
+        routeContextNotice={
+          routeContext
+            ? {
+                actionLabel: routeContext.actionLabel,
+                description: routeContext.description,
+                onAction: () => {
+                  void navigate({ to: routeContext.returnPath });
+                },
+              }
+            : undefined
+        }
       />
     );
   }
@@ -30,13 +43,37 @@ export function GroupChatPage() {
         <GroupChatThreadPanel
           groupId={groupId}
           highlightedMessageId={highlightedMessageId}
+          routeContextNotice={
+            routeContext
+              ? {
+                  actionLabel: routeContext.actionLabel,
+                  description: routeContext.description,
+                  onAction: () => {
+                    void navigate({ to: routeContext.returnPath });
+                  },
+                }
+              : undefined
+          }
           onBack={() => {
+            if (routeContext) {
+              void navigate({ to: routeContext.returnPath });
+              return;
+            }
+
             void navigate({ to: "/tabs/chat" });
           }}
         />
       </div>
     </AppPage>
   );
+}
+
+function resolveRouteContext() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return resolveGameInviteRouteContext(window.location.search);
 }
 
 function parseHighlightedMessageId(hash: string) {
