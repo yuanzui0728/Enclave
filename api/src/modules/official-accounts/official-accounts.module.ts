@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
+import { OfficialAccountDeliveryEntity } from './official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './official-account-follow.entity';
 import { OfficialAccountsController } from './official-accounts.controller';
 import { OfficialAccountsService } from './official-accounts.service';
@@ -12,6 +13,7 @@ import { OfficialAccountsService } from './official-accounts.service';
     TypeOrmModule.forFeature([
       OfficialAccountEntity,
       OfficialAccountArticleEntity,
+      OfficialAccountDeliveryEntity,
       OfficialAccountFollowEntity,
     ]),
     AuthModule,

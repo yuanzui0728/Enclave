@@ -17,6 +17,26 @@ export class OfficialAccountsController {
     return this.officialAccountsService.getArticle(articleId);
   }
 
+  @Get('message-entries')
+  getMessageEntries() {
+    return this.officialAccountsService.getMessageEntries();
+  }
+
+  @Get('subscription-inbox')
+  getSubscriptionInbox() {
+    return this.officialAccountsService.getSubscriptionInbox();
+  }
+
+  @Post('subscription-inbox/read')
+  markSubscriptionInboxRead() {
+    return this.officialAccountsService.markSubscriptionInboxRead();
+  }
+
+  @Post('deliveries/:deliveryId/read')
+  markDeliveryRead(@Param('deliveryId') deliveryId: string) {
+    return this.officialAccountsService.markDeliveryRead(deliveryId);
+  }
+
   @Post('articles/:articleId/read')
   markArticleRead(@Param('articleId') articleId: string) {
     return this.officialAccountsService.markArticleRead(articleId);

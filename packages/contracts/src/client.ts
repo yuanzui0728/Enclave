@@ -56,7 +56,9 @@ import type {
 import type {
   OfficialAccountArticleDetail,
   OfficialAccountArticleSummary,
+  OfficialAccountMessageEntries,
   OfficialAccountDetail,
+  OfficialAccountSubscriptionInbox,
   OfficialAccountSummary,
 } from "./official-accounts";
 import type {
@@ -1375,6 +1377,32 @@ export function getOfficialAccountArticle(articleId: string, baseUrl?: string) {
   return requestLegacyApi<OfficialAccountArticleDetail>(
     `/official-accounts/articles/${articleId}`,
     undefined,
+    baseUrl,
+  );
+}
+
+export function getOfficialAccountMessageEntries(baseUrl?: string) {
+  return requestLegacyApi<OfficialAccountMessageEntries>(
+    "/official-accounts/message-entries",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getOfficialAccountSubscriptionInbox(baseUrl?: string) {
+  return requestLegacyApi<OfficialAccountSubscriptionInbox>(
+    "/official-accounts/subscription-inbox",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function markOfficialAccountSubscriptionInboxRead(baseUrl?: string) {
+  return requestLegacyApi<OfficialAccountSubscriptionInbox>(
+    "/official-accounts/subscription-inbox/read",
+    {
+      method: "POST",
+    },
     baseUrl,
   );
 }

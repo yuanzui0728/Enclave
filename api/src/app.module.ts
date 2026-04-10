@@ -42,6 +42,7 @@ import { AIBehaviorLogEntity } from './modules/analytics/ai-behavior-log.entity'
 import { UserFeedInteractionEntity } from './modules/analytics/user-feed-interaction.entity';
 import { OfficialAccountEntity } from './modules/official-accounts/official-account.entity';
 import { OfficialAccountArticleEntity } from './modules/official-accounts/official-account-article.entity';
+import { OfficialAccountDeliveryEntity } from './modules/official-accounts/official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './modules/official-accounts/official-account-follow.entity';
 
 @Module({
@@ -59,7 +60,7 @@ import { OfficialAccountFollowEntity } from './modules/official-accounts/officia
         GroupEntity, GroupMemberEntity, GroupMessageEntity,
         FeedPostEntity, FeedCommentEntity, WorldContextEntity,
         NarrativeArcEntity, AIBehaviorLogEntity, UserFeedInteractionEntity,
-        OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountFollowEntity,
+        OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity,
       ],
       synchronize: true,
     }),
