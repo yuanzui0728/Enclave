@@ -18,7 +18,7 @@ export class CharacterBlueprintRevisionEntity {
   @Column('simple-json')
   recipe: CharacterBlueprintRecipeValue;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   summary?: string | null;
 
   @Column()
