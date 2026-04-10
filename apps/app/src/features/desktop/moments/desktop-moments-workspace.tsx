@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Moment } from "@yinjie/contracts";
-import {
-  Button,
-  ErrorBlock,
-  TextAreaField,
-  cn,
-} from "@yinjie/ui";
-import { Bot, PenSquare, UserRound, X } from "lucide-react";
+import { Button, ErrorBlock, TextAreaField } from "@yinjie/ui";
+import { X } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { parseTimestamp } from "../../../lib/format";
-import { DesktopMomentDetailPanel } from "./desktop-moment-detail-panel";
 import { DesktopMomentsFeed } from "./desktop-moments-feed";
+import {
+  DesktopMomentsSidebar,
+  type DesktopMomentAuthorSummary,
+} from "./desktop-moments-sidebar";
 import {
   DesktopMomentsToolbar,
   type DesktopMomentsFeedFilter,
@@ -70,21 +68,14 @@ export function DesktopMomentsWorkspace({
   const [activeFilter, setActiveFilter] =
     useState<DesktopMomentsFeedFilter>("all");
   const [searchText, setSearchText] = useState("");
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
+  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(null);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
-  const hasAutoSelectedMomentRef = useRef(false);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const authorSummaries = useMemo(() => {
     const map = new Map<
       string,
-      {
-        authorAvatar: string;
-        authorName: string;
-        authorType: "user" | "character";
-        count: number;
-        latestPostedAt: string;
-      }
+      Omit<DesktopMomentAuthorSummary, "authorId">
     >();
 
     moments.forEach((moment) => {
@@ -130,7 +121,7 @@ export function DesktopMomentsWorkspace({
         return false;
       }
 
-      if (selectedAuthorId && moment.authorId !== selectedAuthorId) {
+      if (activeAuthorId && moment.authorId !== activeAuthorId) {
         return false;
       }
 
@@ -149,15 +140,22 @@ export function DesktopMomentsWorkspace({
         commentText.includes(keyword)
       );
     });
-  }, [activeFilter, moments, searchText, selectedAuthorId]);
+  }, [activeAuthorId, activeFilter, moments, searchText]);
 
-  const selectedAuthorSummary =
-    authorSummaries.find((author) => author.authorId === selectedAuthorId) ??
-    null;
+  const activeAuthorSummary =
+    authorSummaries.find((author) => author.authorId === activeAuthorId) ?? null;
+
+  const authorMoments = useMemo(() => {
+    if (!activeAuthorId) {
+      return [];
+    }
+
+    return moments.filter((moment) => moment.authorId === activeAuthorId);
+  }, [activeAuthorId, moments]);
 
   const filteredCountLabel = useMemo(() => {
-    if (selectedAuthorSummary) {
-      return `${selectedAuthorSummary.authorName} · ${filteredMoments.length} 条`;
+    if (activeAuthorSummary) {
+      return `${activeAuthorSummary.authorName} · ${filteredMoments.length} 条`;
     }
 
     if (searchText.trim()) {
@@ -165,64 +163,42 @@ export function DesktopMomentsWorkspace({
     }
 
     return `当前展示 ${filteredMoments.length} 条`;
-  }, [filteredMoments.length, searchText, selectedAuthorSummary]);
+  }, [activeAuthorSummary, filteredMoments.length, searchText]);
 
   useEffect(() => {
-    if (!filteredMoments.length) {
-      setSelectedMomentId(null);
-      return;
-    }
-
     if (
       selectedMomentId &&
-      filteredMoments.some((moment) => moment.id === selectedMomentId)
+      !filteredMoments.some((moment) => moment.id === selectedMomentId)
     ) {
-      return;
-    }
-
-    if (!hasAutoSelectedMomentRef.current && !selectedMomentId) {
-      hasAutoSelectedMomentRef.current = true;
-      setSelectedMomentId(filteredMoments[0].id);
-      return;
-    }
-
-    if (selectedMomentId) {
-      setSelectedMomentId(filteredMoments[0].id);
+      setSelectedMomentId(null);
     }
   }, [filteredMoments, selectedMomentId]);
 
   useEffect(() => {
-    if (!selectedAuthorId) {
+    if (!activeAuthorId) {
       return;
     }
 
-    if (
-      !authorSummaries.some((author) => author.authorId === selectedAuthorId)
-    ) {
-      setSelectedAuthorId(null);
+    if (!authorSummaries.some((author) => author.authorId === activeAuthorId)) {
+      setActiveAuthorId(null);
     }
-  }, [authorSummaries, selectedAuthorId]);
+  }, [activeAuthorId, authorSummaries]);
 
   const selectedMoment = useMemo(
     () =>
       filteredMoments.find((moment) => moment.id === selectedMomentId) ?? null,
     [filteredMoments, selectedMomentId],
   );
-
-  const ownerMomentCount = moments.filter(
-    (moment) => moment.authorType === "user",
-  ).length;
-  const characterMomentCount = moments.filter(
-    (moment) => moment.authorType === "character",
-  ).length;
-  const totalCommentCount = moments.reduce(
-    (total, moment) => total + moment.commentCount,
-    0,
-  );
+  const sidebarMode = selectedMoment
+    ? "detail"
+    : activeAuthorSummary
+      ? "author"
+      : "summary";
 
   function focusAuthor(authorId: string) {
     setActiveFilter("all");
-    setSelectedAuthorId(authorId);
+    setActiveAuthorId(authorId);
+    setSelectedMomentId(null);
   }
 
   return (
@@ -236,7 +212,7 @@ export function DesktopMomentsWorkspace({
             filteredCountLabel={filteredCountLabel}
             likeErrorMessage={likeErrorMessage}
             searchText={searchText}
-            selectedAuthorName={selectedAuthorSummary?.authorName ?? null}
+            selectedAuthorName={activeAuthorSummary?.authorName ?? null}
             successNotice={successNotice}
             onBackToTop={() => {
               scrollViewportRef.current?.scrollTo({
@@ -244,7 +220,7 @@ export function DesktopMomentsWorkspace({
                 behavior: "smooth",
               });
             }}
-            onClearAuthor={() => setSelectedAuthorId(null)}
+            onClearAuthor={() => setActiveAuthorId(null)}
             onFilterChange={setActiveFilter}
             onOpenCompose={() => setShowCompose(true)}
             onRefresh={onRefresh}
@@ -268,147 +244,38 @@ export function DesktopMomentsWorkspace({
               onCommentSubmit={onCommentSubmit}
               onLike={onLike}
               onOpenCompose={() => setShowCompose(true)}
-              onOpenDetail={setSelectedMomentId}
-              onSelectAuthor={(authorId, momentId) => {
+              onOpenDetail={(momentId) => setSelectedMomentId(momentId)}
+              onSelectAuthor={(authorId) => {
                 focusAuthor(authorId);
-                setSelectedMomentId(momentId);
               }}
             />
           </div>
         </div>
       </section>
 
-      <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
-        {selectedMoment ? (
-          <DesktopMomentDetailPanel
-            commentDraft={commentDrafts[selectedMoment.id] ?? ""}
-            commentLoading={commentPendingMomentId === selectedMoment.id}
-            likeLoading={likePendingMomentId === selectedMoment.id}
-            moment={selectedMoment}
-            ownerId={ownerId}
-            onClose={() => setSelectedMomentId(null)}
-            onCommentChange={(value) =>
-              onCommentChange(selectedMoment.id, value)
-            }
-            onCommentSubmit={() => onCommentSubmit(selectedMoment.id)}
-            onLike={() => onLike(selectedMoment.id)}
-            onSelectAuthor={() => focusAuthor(selectedMoment.authorId)}
-          />
-        ) : (
-          <div className="flex h-full min-h-0 flex-col">
-            <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-                概览
-              </div>
-              <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
-                像微信电脑端一样，把常用入口留在侧边
-              </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-              <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
-                <div className="flex items-center gap-4">
-                  <AvatarChip
-                    name={ownerUsername}
-                    src={ownerAvatar}
-                    size="lg"
-                  />
-                  <div className="min-w-0">
-                    <div className="truncate text-base font-semibold text-[color:var(--text-primary)]">
-                      {ownerUsername ?? "我"}
-                    </div>
-                    <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                      发一条新的朋友圈，或者从作者列表里切到某个人的时间线。
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  variant="primary"
-                  className="mt-5 w-full"
-                  onClick={() => setShowCompose(true)}
-                >
-                  <PenSquare size={15} />
-                  现在发一条
-                </Button>
-              </div>
-
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <SidebarMetric
-                  label="动态总数"
-                  value={String(moments.length)}
-                />
-                <SidebarMetric
-                  label="我的动态"
-                  value={String(ownerMomentCount)}
-                />
-                <SidebarMetric
-                  label="角色动态"
-                  value={String(characterMomentCount)}
-                />
-                <SidebarMetric
-                  label="评论总数"
-                  value={String(totalCommentCount)}
-                />
-              </div>
-
-              <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]">
-                    <UserRound size={15} />
-                  </div>
-                  <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
-                    按作者查看
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {authorSummaries.slice(0, 8).map((author) => (
-                    <button
-                      key={author.authorId}
-                      type="button"
-                      onClick={() => focusAuthor(author.authorId)}
-                      className={cn(
-                        "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-[border-color,background-color]",
-                        selectedAuthorId === author.authorId
-                          ? "border-[rgba(16,185,129,0.16)] bg-[rgba(236,253,245,0.92)]"
-                          : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)] hover:border-[rgba(249,115,22,0.12)] hover:bg-white",
-                      )}
-                    >
-                      <AvatarChip
-                        name={author.authorName}
-                        src={author.authorAvatar}
-                        size="sm"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
-                            {author.authorName}
-                          </div>
-                          <span className="text-[10px] text-[color:var(--text-dim)]">
-                            {author.authorType === "character" ? "角色" : "我"}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
-                          {author.count} 条动态
-                        </div>
-                      </div>
-                      {author.authorType === "character" ? (
-                        <Bot size={14} className="shrink-0 text-sky-600" />
-                      ) : (
-                        <UserRound
-                          size={14}
-                          className="shrink-0 text-[color:var(--brand-primary)]"
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </aside>
+      <DesktopMomentsSidebar
+        activeAuthorId={activeAuthorId}
+        activeAuthorSummary={activeAuthorSummary}
+        authorMoments={authorMoments}
+        authorSummaries={authorSummaries}
+        commentDrafts={commentDrafts}
+        commentPendingMomentId={commentPendingMomentId}
+        likePendingMomentId={likePendingMomentId}
+        mode={sidebarMode}
+        moments={moments}
+        ownerAvatar={ownerAvatar}
+        ownerId={ownerId}
+        ownerUsername={ownerUsername}
+        selectedMoment={selectedMoment}
+        onClearAuthor={() => setActiveAuthorId(null)}
+        onCloseDetail={() => setSelectedMomentId(null)}
+        onCommentChange={onCommentChange}
+        onCommentSubmit={onCommentSubmit}
+        onLike={onLike}
+        onOpenCompose={() => setShowCompose(true)}
+        onSelectAuthor={focusAuthor}
+        onSelectMoment={setSelectedMomentId}
+      />
 
       {showCompose ? (
         <div className="absolute inset-0 z-20 flex justify-end bg-[rgba(15,23,42,0.16)] backdrop-blur-[2px]">
@@ -481,19 +348,6 @@ export function DesktopMomentsWorkspace({
           </div>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function SidebarMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]">
-      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
-        {label}
-      </div>
-      <div className="mt-2 text-[16px] font-semibold text-[color:var(--text-primary)]">
-        {value}
-      </div>
     </div>
   );
 }

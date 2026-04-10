@@ -17,7 +17,7 @@ type DesktopMomentsFeedProps = {
   onLike: (momentId: string) => void;
   onOpenCompose: () => void;
   onOpenDetail: (momentId: string) => void;
-  onSelectAuthor: (authorId: string, momentId: string) => void;
+  onSelectAuthor: (authorId: string) => void;
 };
 
 export function DesktopMomentsFeed({
@@ -55,7 +55,7 @@ export function DesktopMomentsFeed({
               onCommentSubmit={() => onCommentSubmit(moment.id)}
               onLike={() => onLike(moment.id)}
               onOpenDetail={() => onOpenDetail(moment.id)}
-              onSelectAuthor={() => onSelectAuthor(moment.authorId, moment.id)}
+              onSelectAuthor={() => onSelectAuthor(moment.authorId)}
             />
           ))}
         </div>
