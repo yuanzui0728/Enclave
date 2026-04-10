@@ -30,6 +30,7 @@ import {
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
 import { AvatarChip } from "./avatar-chip";
@@ -2577,6 +2578,13 @@ function DesktopScreenshotEditor({
   onToolChange: (tool: "crop" | "rect" | "arrow") => void;
   onUndoAnnotation: () => void;
 }) {
+  const previewViewportRef = useRef<HTMLDivElement | null>(null);
+  const [previewViewportSize, setPreviewViewportSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [previewZoom, setPreviewZoom] = useState(1);
+  const previewZoomLabel = `${Math.round(previewZoom * 100)}%`;
   const selectionRect = selection ? getSelectionPreviewRect(selection) : null;
   const cropRect = crop ? getNormalizedCropPreviewRect(crop) : null;
   const previewRect =
@@ -2599,6 +2607,82 @@ function DesktopScreenshotEditor({
           height: Math.max(1, Math.round(previewRect.height * draft.height)),
         }
       : null;
+  const zoomedViewportSize = previewViewportSize
+    ? {
+        width: previewViewportSize.width * previewZoom,
+        height: previewViewportSize.height * previewZoom,
+      }
+    : null;
+
+  useEffect(() => {
+    setPreviewZoom(1);
+    setPreviewViewportSize(null);
+  }, [draft.previewUrl]);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    if (!image) {
+      return;
+    }
+
+    const updateSize = () => {
+      if (!image.clientWidth || !image.clientHeight) {
+        return;
+      }
+
+      setPreviewViewportSize({
+        width: image.clientWidth,
+        height: image.clientHeight,
+      });
+    };
+
+    updateSize();
+    const observer = new ResizeObserver(() => {
+      if (previewZoom <= 1) {
+        updateSize();
+      }
+    });
+    observer.observe(image);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [imageRef, draft.previewUrl, previewZoom]);
+
+  const updatePreviewZoom = (nextZoom: number) => {
+    const viewport = previewViewportRef.current;
+    const clampedZoom = clamp(nextZoom, 1, 3);
+    if (!viewport || Math.abs(clampedZoom - previewZoom) < 0.001) {
+      setPreviewZoom(clampedZoom);
+      return;
+    }
+
+    const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
+    const centerY = viewport.scrollTop + viewport.clientHeight / 2;
+    const zoomRatio = clampedZoom / previewZoom;
+
+    setPreviewZoom(clampedZoom);
+    requestAnimationFrame(() => {
+      viewport.scrollLeft = Math.max(
+        0,
+        centerX * zoomRatio - viewport.clientWidth / 2,
+      );
+      viewport.scrollTop = Math.max(
+        0,
+        centerY * zoomRatio - viewport.clientHeight / 2,
+      );
+    });
+  };
+
+  const handlePreviewWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey && !event.metaKey) {
+      return;
+    }
+
+    event.preventDefault();
+    const step = event.deltaY < 0 ? 0.1 : -0.1;
+    updatePreviewZoom(previewZoom + step);
+  };
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(15,23,42,0.52)] p-6 backdrop-blur-sm">
@@ -2666,6 +2750,36 @@ function DesktopScreenshotEditor({
                 <Button
                   type="button"
                   variant="ghost"
+                  onClick={() => updatePreviewZoom(previewZoom - 0.25)}
+                  disabled={pending || previewZoom <= 1}
+                  className="rounded-[9px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                >
+                  -
+                </Button>
+                <span className="rounded-full bg-white/8 px-2.5 py-1 text-[12px] text-white/72">
+                  {previewZoomLabel}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => updatePreviewZoom(previewZoom + 0.25)}
+                  disabled={pending || previewZoom >= 3}
+                  className="rounded-[9px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                >
+                  +
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => updatePreviewZoom(1)}
+                  disabled={pending || previewZoom === 1}
+                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                >
+                  适应
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={onUndoAnnotation}
                   disabled={pending || !annotations.length}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
@@ -2681,35 +2795,58 @@ function DesktopScreenshotEditor({
                 >
                   清空标注
                 </Button>
+                <span className="text-[11px] text-white/42">
+                  Ctrl/Cmd + 滚轮缩放
+                </span>
               </div>
             </div>
 
-            <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[18px] border border-white/8 bg-[#111] p-5">
-              <div className="relative inline-block max-h-full max-w-full">
-                <img
-                  ref={imageRef}
-                  src={draft.previewUrl}
-                  alt={draft.fileName}
-                  draggable={false}
-                  className="block max-h-[calc(86vh-240px)] max-w-full rounded-[14px] object-contain shadow-[0_24px_64px_rgba(0,0,0,0.32)]"
-                />
+            <div
+              ref={previewViewportRef}
+              onWheel={handlePreviewWheel}
+              className="relative min-h-0 flex-1 overflow-auto rounded-[18px] border border-white/8 bg-[#111]"
+            >
+              <div className="flex min-h-full min-w-full items-center justify-center p-5">
                 <div
-                  className="absolute inset-0 cursor-crosshair"
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerCancel={onPointerCancel}
+                  className="relative shrink-0"
+                  style={
+                    zoomedViewportSize
+                      ? {
+                          width: `${zoomedViewportSize.width}px`,
+                          height: `${zoomedViewportSize.height}px`,
+                        }
+                      : undefined
+                  }
                 >
-                  {cropRect ? (
-                    <div
-                      className="absolute border-2 border-[#07c160] bg-[rgba(7,193,96,0.12)] shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
-                      style={{
-                        left: `${cropRect.x * 100}%`,
-                        top: `${cropRect.y * 100}%`,
-                        width: `${cropRect.width * 100}%`,
-                        height: `${cropRect.height * 100}%`,
-                      }}
-                    >
+                  <img
+                    ref={imageRef}
+                    src={draft.previewUrl}
+                    alt={draft.fileName}
+                    draggable={false}
+                    className={cn(
+                      "block rounded-[14px] shadow-[0_24px_64px_rgba(0,0,0,0.32)]",
+                      zoomedViewportSize
+                        ? "h-full w-full object-fill"
+                        : "max-h-[calc(86vh-240px)] max-w-full object-contain",
+                    )}
+                  />
+                  <div
+                    className="absolute inset-0 cursor-crosshair"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                  >
+                    {cropRect ? (
+                      <div
+                        className="absolute border-2 border-[#07c160] bg-[rgba(7,193,96,0.12)] shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
+                        style={{
+                          left: `${cropRect.x * 100}%`,
+                          top: `${cropRect.y * 100}%`,
+                          width: `${cropRect.width * 100}%`,
+                          height: `${cropRect.height * 100}%`,
+                        }}
+                      >
                       {cropPixelSize ? (
                         <div className="pointer-events-none absolute -top-10 left-0 rounded-full border border-[#0a7d45] bg-[rgba(6,48,27,0.9)] px-2.5 py-1 text-[11px] font-medium text-[#98f5ba] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
                           {cropPixelSize.width} × {cropPixelSize.height}
@@ -2766,93 +2903,94 @@ function DesktopScreenshotEditor({
                           aria-label="调整裁剪区域"
                         />
                       ))}
-                    </div>
-                  ) : null}
-                  {previewRect ? (
-                    <div
-                      className={cn(
-                        "absolute border-2 shadow-[0_0_0_1px_rgba(255,255,255,0.16)]",
-                        selection?.mode === "crop"
-                          ? "border-[#07c160] bg-[rgba(7,193,96,0.14)]"
-                          : "border-[#f59e0b] bg-[rgba(245,158,11,0.12)]",
-                      )}
-                      style={{
-                        left: `${previewRect.x * 100}%`,
-                        top: `${previewRect.y * 100}%`,
-                        width: `${previewRect.width * 100}%`,
-                        height: `${previewRect.height * 100}%`,
-                      }}
+                      </div>
+                    ) : null}
+                    {previewRect ? (
+                      <div
+                        className={cn(
+                          "absolute border-2 shadow-[0_0_0_1px_rgba(255,255,255,0.16)]",
+                          selection?.mode === "crop"
+                            ? "border-[#07c160] bg-[rgba(7,193,96,0.14)]"
+                            : "border-[#f59e0b] bg-[rgba(245,158,11,0.12)]",
+                        )}
+                        style={{
+                          left: `${previewRect.x * 100}%`,
+                          top: `${previewRect.y * 100}%`,
+                          width: `${previewRect.width * 100}%`,
+                          height: `${previewRect.height * 100}%`,
+                        }}
+                      >
+                        {selection?.mode === "crop" && previewPixelSize ? (
+                          <div className="pointer-events-none absolute -top-10 left-0 rounded-full border border-[#0a7d45] bg-[rgba(6,48,27,0.88)] px-2.5 py-1 text-[11px] font-medium text-[#98f5ba] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
+                            {previewPixelSize.width} × {previewPixelSize.height}
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <svg
+                      viewBox="0 0 1 1"
+                      preserveAspectRatio="none"
+                      className="pointer-events-none absolute inset-0 h-full w-full"
                     >
-                      {selection?.mode === "crop" && previewPixelSize ? (
-                        <div className="pointer-events-none absolute -top-10 left-0 rounded-full border border-[#0a7d45] bg-[rgba(6,48,27,0.88)] px-2.5 py-1 text-[11px] font-medium text-[#98f5ba] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
-                          {previewPixelSize.width} × {previewPixelSize.height}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <svg
-                    viewBox="0 0 1 1"
-                    preserveAspectRatio="none"
-                    className="pointer-events-none absolute inset-0 h-full w-full"
-                  >
-                    {annotations.map((annotation) =>
-                      annotation.kind === "rect" ? (
-                        <rect
-                          key={annotation.id}
-                          x={Math.min(annotation.x1, annotation.x2)}
-                          y={Math.min(annotation.y1, annotation.y2)}
-                          width={Math.abs(annotation.x2 - annotation.x1)}
-                          height={Math.abs(annotation.y2 - annotation.y1)}
-                          fill="rgba(245,158,11,0.10)"
-                          stroke="#f59e0b"
-                          strokeWidth="0.006"
-                        />
-                      ) : (
-                        <g key={annotation.id}>
+                      {annotations.map((annotation) =>
+                        annotation.kind === "rect" ? (
+                          <rect
+                            key={annotation.id}
+                            x={Math.min(annotation.x1, annotation.x2)}
+                            y={Math.min(annotation.y1, annotation.y2)}
+                            width={Math.abs(annotation.x2 - annotation.x1)}
+                            height={Math.abs(annotation.y2 - annotation.y1)}
+                            fill="rgba(245,158,11,0.10)"
+                            stroke="#f59e0b"
+                            strokeWidth="0.006"
+                          />
+                        ) : (
+                          <g key={annotation.id}>
+                            <line
+                              x1={annotation.x1}
+                              y1={annotation.y1}
+                              x2={annotation.x2}
+                              y2={annotation.y2}
+                              stroke="#38bdf8"
+                              strokeWidth="0.007"
+                              strokeLinecap="round"
+                            />
+                            <polygon
+                              points={buildArrowHeadPoints(
+                                annotation.x1,
+                                annotation.y1,
+                                annotation.x2,
+                                annotation.y2,
+                              )}
+                              fill="#38bdf8"
+                            />
+                          </g>
+                        ),
+                      )}
+                      {previewArrow ? (
+                        <g>
                           <line
-                            x1={annotation.x1}
-                            y1={annotation.y1}
-                            x2={annotation.x2}
-                            y2={annotation.y2}
-                            stroke="#38bdf8"
+                            x1={previewArrow.x1}
+                            y1={previewArrow.y1}
+                            x2={previewArrow.x2}
+                            y2={previewArrow.y2}
+                            stroke="#67e8f9"
                             strokeWidth="0.007"
                             strokeLinecap="round"
                           />
                           <polygon
                             points={buildArrowHeadPoints(
-                              annotation.x1,
-                              annotation.y1,
-                              annotation.x2,
-                              annotation.y2,
+                              previewArrow.x1,
+                              previewArrow.y1,
+                              previewArrow.x2,
+                              previewArrow.y2,
                             )}
-                            fill="#38bdf8"
+                            fill="#67e8f9"
                           />
                         </g>
-                      ),
-                    )}
-                    {previewArrow ? (
-                      <g>
-                        <line
-                          x1={previewArrow.x1}
-                          y1={previewArrow.y1}
-                          x2={previewArrow.x2}
-                          y2={previewArrow.y2}
-                          stroke="#67e8f9"
-                          strokeWidth="0.007"
-                          strokeLinecap="round"
-                        />
-                        <polygon
-                          points={buildArrowHeadPoints(
-                            previewArrow.x1,
-                            previewArrow.y1,
-                            previewArrow.x2,
-                            previewArrow.y2,
-                          )}
-                          fill="#67e8f9"
-                        />
-                      </g>
-                    ) : null}
-                  </svg>
+                      ) : null}
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
