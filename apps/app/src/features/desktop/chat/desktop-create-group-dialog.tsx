@@ -149,6 +149,19 @@ export function DesktopCreateGroupDialog({
       ),
     [shareableMessagesQuery.data],
   );
+  const shareableMessageSections = useMemo(
+    () => buildShareableMessageSections(shareableMessages),
+    [shareableMessages],
+  );
+  const shareableMessagePositionMap = useMemo(
+    () =>
+      new Map(
+        shareableMessages.map(
+          (message, index) => [message.id, index] satisfies [string, number],
+        ),
+      ),
+    [shareableMessages],
+  );
   const createMutation = useMutation({
     mutationFn: () =>
       createGroup(
@@ -1105,4 +1118,96 @@ function areSameIds(left: string[], right: string[]) {
   }
 
   return left.every((item, index) => item === right[index]);
+}
+
+function buildShareableMessageSections(messages: Message[]) {
+  const sections = new Map<
+    string,
+    { key: string; label: string; items: Message[] }
+  >();
+
+  for (const message of messages) {
+    const key = resolveShareableMessageSectionKey(message.createdAt);
+    const existingSection = sections.get(key);
+    if (existingSection) {
+      existingSection.items.push(message);
+      continue;
+    }
+
+    sections.set(key, {
+      key,
+      label: resolveShareableMessageSectionLabel(message.createdAt),
+      items: [message],
+    });
+  }
+
+  return [...sections.values()];
+}
+
+function resolveShareableMessageSectionKey(createdAt: string) {
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return "unknown";
+  }
+
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function resolveShareableMessageSectionLabel(createdAt: string) {
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return "未知时间";
+  }
+
+  const date = new Date(timestamp);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (isSameCalendarDay(date, now)) {
+    return "今天";
+  }
+
+  if (isSameCalendarDay(date, yesterday)) {
+    return "昨天";
+  }
+
+  if (date.getFullYear() === now.getFullYear()) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+    }).format(date);
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
+}
+
+function formatShareableMessageTime(createdAt: string) {
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return "--:--";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
+function isSameCalendarDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }
