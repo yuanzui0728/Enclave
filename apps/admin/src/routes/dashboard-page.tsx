@@ -25,7 +25,6 @@ import {
   runSchedulerJob,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   Button,
   Card,
   ErrorBlock,
@@ -239,18 +238,89 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <AppHeader
-        eyebrow="运行总览"
-        title="实例运行概览"
-        description="先判断系统是否健康，再决定进入设置、评测还是角色管理。"
-        actions={
-          <Link to={primaryActionHref}>
-            <Button variant="primary" size="lg" className="rounded-2xl">
-              {primaryActionLabel}
-            </Button>
-          </Link>
-        }
-      />
+      <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+        <Card className="overflow-hidden bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_45%,rgba(237,250,244,0.96))]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">今日重点</div>
+              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">先确认实例健康，再进入具体工作区。</h2>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{nextActionMessage}</p>
+            </div>
+            <div className="grid min-w-[240px] gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <MetricCard
+                label="核心接口"
+                value={systemHealthy ? "健康" : "待恢复"}
+                detail={statusQuery.data?.coreApi.version ?? "等待探测"}
+                meta={<StatusPill tone={systemHealthy ? "healthy" : "warning"}>{systemHealthy ? "在线" : "离线"}</StatusPill>}
+              />
+              <MetricCard
+                label="推理服务"
+                value={providerConfigured ? "已配置" : "待配置"}
+                detail={providerConfigQuery.data?.model ?? "进入设置页补齐"}
+                meta={
+                  <StatusPill tone={providerConfigured ? "healthy" : "warning"}>
+                    {providerConfigured ? "可用" : "缺失"}
+                  </StatusPill>
+                }
+              />
+              <MetricCard
+                label="角色在线"
+                value={`${previewCharacters.filter((item) => item.isOnline).length}/${charactersQuery.data?.length ?? 0}`}
+                detail="当前角色在线数 / 总角色数"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <QuickActionCard to={primaryActionHref} label={primaryActionLabel} detail="优先处理当前实例最关键的阻塞项。" tone="primary" />
+            <QuickActionCard to="/characters" label="进入角色中心" detail="查角色状态、打开工厂或运行逻辑台。" />
+            <QuickActionCard to="/reply-logic" label="查看回复逻辑" detail="排查真实回复链路和全局规则。" />
+            <QuickActionCard to="/evals" label="查看评测分析" detail="进入 runs、compare 和 trace 工作区。" />
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>运营提醒</SectionHeading>
+          <div className="mt-4 space-y-3">
+            <PriorityItem
+              tone={!desktopRuntimeReady ? "warning" : "healthy"}
+              title="运行时检查"
+              description={
+                !desktopRuntimeReady
+                  ? "运行时还没完全恢复，优先进入设置页确认远程 API、运行数据目录和桌面托管状态。"
+                  : "运行时已就绪，可以直接进入角色或评测工作区。"
+              }
+            />
+            <PriorityItem
+              tone={!providerConfigured ? "warning" : "healthy"}
+              title="推理服务配置"
+              description={
+                !providerConfigured
+                  ? "实例还没有可用模型，回复、评测和自动生成都会受影响。"
+                  : `当前默认模型为 ${providerConfigQuery.data?.model ?? "已配置"}。`
+              }
+            />
+            <PriorityItem
+              tone={systemHealthy ? "healthy" : "warning"}
+              title="实例健康"
+              description={
+                systemHealthy
+                  ? "核心接口已在线，下一步更适合进入评测或角色工作区做运营动作。"
+                  : "核心接口不健康，暂时不建议继续做角色与回复配置。"
+              }
+            />
+          </div>
+
+          <div className="mt-5 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+            <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">最近内容信号</div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="朋友圈" value={momentsQuery.data?.length ?? 0} detail="当前世界动态总数" />
+              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="广场动态" value={feedQuery.data?.total ?? 0} detail="公开内容总数" />
+              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="评测运行" value={evalOverviewQuery.data?.runCount ?? 0} detail={`Trace ${evalOverviewQuery.data?.traceCount ?? 0}`} />
+            </div>
+          </div>
+        </Card>
+      </div>
       {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
       {adminStatsQuery.isError && adminStatsQuery.error instanceof Error ? (
         <ErrorBlock message={adminStatsQuery.error.message} />
@@ -910,4 +980,50 @@ function formatCommandSource(source?: string, bundledExists?: boolean) {
   }
 
   return bundledExists ? "sidecar 已就绪" : "sidecar 缺失";
+}
+
+function QuickActionCard({
+  to,
+  label,
+  detail,
+  tone = "secondary",
+}: {
+  to: "/" | "/setup" | "/characters" | "/evals" | "/reply-logic";
+  label: string;
+  detail: string;
+  tone?: "primary" | "secondary";
+}) {
+  return (
+    <Link to={to} className="block">
+      <div className="h-full rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
+            <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
+          </div>
+          <StatusPill tone={tone === "primary" ? "healthy" : "muted"}>{tone === "primary" ? "优先" : "入口"}</StatusPill>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function PriorityItem({
+  tone,
+  title,
+  description,
+}: {
+  tone: "healthy" | "warning";
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+        <StatusPill tone={tone}>{tone === "healthy" ? "正常" : "关注"}</StatusPill>
+      </div>
+      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+    </div>
+  );
 }
