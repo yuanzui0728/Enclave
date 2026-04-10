@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+} from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
@@ -26,6 +32,25 @@ type ChatReminderCollapseIconProps = {
 type ChatReminderCollapseLabelProps = {
   collapsed: boolean;
   className?: string;
+};
+
+type ChatReminderMetaPillProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+type ChatReminderControlButtonProps = ComponentPropsWithoutRef<"button">;
+
+type ChatReminderToggleButtonProps = Omit<
+  ComponentPropsWithoutRef<"button">,
+  "children"
+> & {
+  collapsed: boolean;
+  count: number;
+  iconSize?: number;
+  countClassName?: string;
+  labelClassName?: string;
+  iconClassName?: string;
 };
 
 const SUMMARY_FADE_OUT_MS = 120;
@@ -107,5 +132,67 @@ export function ChatReminderCollapseLabel({
       text={collapsed ? "展开" : "收起"}
       className={cn("min-w-[2em] justify-end opacity-70", className)}
     />
+  );
+}
+
+export function ChatReminderMetaPill({
+  children,
+  className,
+}: ChatReminderMetaPillProps) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function ChatReminderControlButton({
+  type = "button",
+  className,
+  children,
+  ...props
+}: ChatReminderControlButtonProps) {
+  return (
+    <button
+      type={type}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit transition-[background-color,border-color,color] hover:border-white hover:bg-white",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function ChatReminderToggleButton({
+  collapsed,
+  count,
+  iconSize = 12,
+  className,
+  countClassName,
+  labelClassName,
+  iconClassName,
+  ...props
+}: ChatReminderToggleButtonProps) {
+  return (
+    <ChatReminderControlButton className={className} {...props}>
+      <ChatReminderCountText count={count} className={countClassName} />
+      <ChatReminderCollapseLabel
+        collapsed={collapsed}
+        className={labelClassName}
+      />
+      <ChatReminderCollapseIcon
+        collapsed={collapsed}
+        size={iconSize}
+        className={iconClassName}
+      />
+    </ChatReminderControlButton>
   );
 }
