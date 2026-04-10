@@ -48,6 +48,7 @@ import {
   useLocalChatMessageActionState,
 } from "../features/chat/local-chat-message-actions";
 import {
+  buildChatReminderNavigation,
   buildChatReminderEntries,
   formatReminderListTimestamp,
   type ChatReminderEntry,
@@ -407,21 +408,7 @@ function MobileChatListPage() {
 
   function handleOpenReminder(entry: ChatReminderEntry) {
     setNotice(null);
-
-    if (entry.threadType === "group") {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: entry.threadId },
-        hash: `chat-message-${entry.messageId}`,
-      });
-      return;
-    }
-
-    void navigate({
-      to: "/chat/$conversationId",
-      params: { conversationId: entry.threadId },
-      hash: `chat-message-${entry.messageId}`,
-    });
+    void navigate(buildChatReminderNavigation(entry));
   }
 
   function handleDismissReminder(messageId: string) {

@@ -51,6 +51,7 @@ import { SubscriptionInboxCard } from "../../../components/subscription-inbox-ca
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import {
+  buildChatReminderNavigation,
   buildChatReminderEntries,
   filterChatReminderEntries,
   formatReminderListTimestamp,
@@ -466,8 +467,7 @@ export function DesktopChatWorkspace({
     if (action === "hide") {
       return {
         title: "隐藏聊天",
-        description:
-          "确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。",
+        description: "确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。",
         confirmLabel: "隐藏聊天",
         pendingLabel: "正在隐藏...",
         danger: false,
@@ -489,8 +489,7 @@ export function DesktopChatWorkspace({
     if (action === "leave") {
       return {
         title: "删除并退出",
-        description:
-          "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
+        description: "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
         confirmLabel: "删除并退出",
         pendingLabel: "正在退出...",
         danger: true,
@@ -499,8 +498,7 @@ export function DesktopChatWorkspace({
 
     return {
       title: "删除聊天",
-      description:
-        "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。",
+      description: "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。",
       confirmLabel: "删除聊天",
       pendingLabel: "正在删除...",
       danger: true,
@@ -583,21 +581,7 @@ export function DesktopChatWorkspace({
 
   function handleOpenReminder(entry: ChatReminderEntry) {
     setNotice(null);
-
-    if (entry.threadType === "group") {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: entry.threadId },
-        hash: `chat-message-${entry.messageId}`,
-      });
-      return;
-    }
-
-    void navigate({
-      to: "/chat/$conversationId",
-      params: { conversationId: entry.threadId },
-      hash: `chat-message-${entry.messageId}`,
-    });
+    void navigate(buildChatReminderNavigation(entry));
   }
 
   function handleDismissReminder(messageId: string) {

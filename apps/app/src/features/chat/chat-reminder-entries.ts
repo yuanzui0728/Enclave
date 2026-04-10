@@ -14,6 +14,11 @@ export type ChatReminderEntry = {
   notifiedAt?: string;
 };
 
+export type ChatReminderTarget = Pick<
+  ChatReminderEntry,
+  "messageId" | "threadId" | "threadType"
+>;
+
 export function buildChatReminderEntries(
   reminders: readonly LocalChatMessageReminderRecord[],
   conversations: readonly ConversationListItem[],
@@ -86,6 +91,36 @@ export function buildDueChatReminderEntries(
     conversations,
     nowTimestamp,
   ).filter((entry) => entry.isDue);
+}
+
+export function buildChatReminderHashValue(messageId: string) {
+  return `chat-message-${messageId}`;
+}
+
+export function buildChatReminderPath(entry: ChatReminderTarget) {
+  return entry.threadType === "group"
+    ? `/group/${entry.threadId}`
+    : `/chat/${entry.threadId}`;
+}
+
+export function buildChatReminderHref(entry: ChatReminderTarget) {
+  return `${buildChatReminderPath(entry)}#${buildChatReminderHashValue(entry.messageId)}`;
+}
+
+export function buildChatReminderNavigation(entry: ChatReminderTarget) {
+  const hash = buildChatReminderHashValue(entry.messageId);
+
+  return entry.threadType === "group"
+    ? {
+        to: "/group/$groupId" as const,
+        params: { groupId: entry.threadId },
+        hash,
+      }
+    : {
+        to: "/chat/$conversationId" as const,
+        params: { conversationId: entry.threadId },
+        hash,
+      };
 }
 
 export function formatReminderListTimestamp(remindAt: string, isDue: boolean) {

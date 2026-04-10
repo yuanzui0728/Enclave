@@ -4,7 +4,13 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
 import { BellRing, ChevronRight, X } from "lucide-react";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
-import { buildDueChatReminderEntries } from "./chat-reminder-entries";
+import {
+  buildChatReminderHashValue,
+  buildChatReminderHref,
+  buildChatReminderNavigation,
+  buildChatReminderPath,
+  buildDueChatReminderEntries,
+} from "./chat-reminder-entries";
 import {
   removeLocalChatMessageReminder,
   markLocalChatMessageReminderNotified,
@@ -80,16 +86,11 @@ export function MobileReminderToastHost() {
       return;
     }
 
-    const targetRoute =
-      activeReminder.threadType === "group"
-        ? `/group/${activeReminder.threadId}#chat-message-${activeReminder.messageId}`
-        : `/chat/${activeReminder.threadId}#chat-message-${activeReminder.messageId}`;
-
     void showLocalNotification({
       id: `chat-reminder-${activeReminder.messageId}`,
       title: activeReminder.title,
       body: activeReminder.previewText,
-      route: targetRoute,
+      route: buildChatReminderHref(activeReminder),
       conversationId:
         activeReminder.threadType === "direct"
           ? activeReminder.threadId
@@ -112,11 +113,8 @@ export function MobileReminderToastHost() {
     return null;
   }
 
-  const activePath =
-    activeReminder.threadType === "group"
-      ? `/group/${activeReminder.threadId}`
-      : `/chat/${activeReminder.threadId}`;
-  const activeHash = `#chat-message-${activeReminder.messageId}`;
+  const activePath = buildChatReminderPath(activeReminder);
+  const activeHash = `#${buildChatReminderHashValue(activeReminder.messageId)}`;
   if (pathname === activePath && hash === activeHash) {
     return null;
   }
@@ -139,21 +137,7 @@ export function MobileReminderToastHost() {
 
   const handleOpen = () => {
     handleDismiss();
-
-    if (activeReminder.threadType === "group") {
-      void navigate({
-        to: "/group/$groupId",
-        params: { groupId: activeReminder.threadId },
-        hash: `chat-message-${activeReminder.messageId}`,
-      });
-      return;
-    }
-
-    void navigate({
-      to: "/chat/$conversationId",
-      params: { conversationId: activeReminder.threadId },
-      hash: `chat-message-${activeReminder.messageId}`,
-    });
+    void navigate(buildChatReminderNavigation(activeReminder));
   };
 
   return (
