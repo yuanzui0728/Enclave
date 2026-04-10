@@ -27,7 +27,7 @@ export function ChatMemberGrid({
       <div
         className={cn(
           "grid grid-cols-5 gap-x-3 gap-y-4",
-          isWechat && "gap-x-2.5 gap-y-4",
+          isWechat && "gap-x-2.5 gap-y-3.5",
         )}
       >
         {items.map((item) => {
@@ -42,12 +42,12 @@ export function ChatMemberGrid({
               {isAction ? (
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-[12px] border border-dashed text-2xl shadow-none transition-colors",
-                    isWechat && "h-10 w-10 rounded-[10px] text-[24px]",
+                    "flex h-11 w-11 items-center justify-center rounded-[12px] border text-2xl shadow-none transition-colors",
+                    isWechat && "h-10 w-10 rounded-[10px] text-[22px]",
                     item.kind === "remove"
                       ? "border-[rgba(220,38,38,0.25)] bg-[rgba(254,242,242,0.8)] text-red-500"
                       : isWechat
-                        ? "border-[#d9d9d9] bg-white text-[#8c8c8c]"
+                        ? "border-[#d9d9d9] bg-[#f7f7f7] text-[#8c8c8c]"
                         : "border-black/10 bg-[#f7f7f7] text-[color:var(--text-secondary)]",
                   )}
                 >
@@ -59,7 +59,7 @@ export function ChatMemberGrid({
               <span
                 className={cn(
                   "w-full truncate text-[11px] text-[color:var(--text-secondary)]",
-                  isWechat && "text-[#7a7a7a]",
+                  isWechat && "text-[10px] text-[#7a7a7a]",
                 )}
               >
                 {item.label}

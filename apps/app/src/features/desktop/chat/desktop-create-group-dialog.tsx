@@ -26,6 +26,7 @@ import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 
 const MAX_SHARED_MESSAGE_COUNT = 100;
 const DEFAULT_SHARED_MESSAGE_COUNT = 3;
+const SHARE_HISTORY_PRESET_COUNTS = [DEFAULT_SHARED_MESSAGE_COUNT, 5, 9] as const;
 
 type DesktopCreateGroupDialogProps = {
   open: boolean;
@@ -338,6 +339,12 @@ export function DesktopCreateGroupDialog({
     setSelectedMessageIds(dedupedIds.slice(0, MAX_SHARED_MESSAGE_COUNT));
   };
 
+  const selectRecentMessages = (count: number) => {
+    applyMessageSelection(
+      shareableMessages.slice(-Math.max(0, count)).map((message) => message.id),
+    );
+  };
+
   const handleCreate = () => {
     if (!selectedIds.length || createMutation.isPending) {
       return;
@@ -347,6 +354,18 @@ export function DesktopCreateGroupDialog({
   };
 
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (
+      shareHistory &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      event.altKey &&
+      /^[1-9]$/.test(event.key)
+    ) {
+      event.preventDefault();
+      selectRecentMessages(Number(event.key));
+      return;
+    }
+
     if (
       event.altKey &&
       !event.metaKey &&
@@ -433,6 +452,12 @@ export function DesktopCreateGroupDialog({
       return;
     }
 
+    if (event.altKey && /^[1-9]$/.test(event.key)) {
+      event.preventDefault();
+      selectRecentMessages(Number(event.key));
+      return;
+    }
+
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setFocusedMessageIndex((current) =>
@@ -463,6 +488,19 @@ export function DesktopCreateGroupDialog({
   if (!open) {
     return null;
   }
+
+  const allShareableMessagesSelected =
+    shareableMessages.length > 0 &&
+    selectedMessageIds.length === shareableMessages.length;
+  const recentPresetSelectionState = new Map(
+    SHARE_HISTORY_PRESET_COUNTS.map((count) => [
+      count,
+      areSameIds(
+        selectedMessageIds,
+        shareableMessages.slice(-count).map((message) => message.id),
+      ),
+    ]),
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.24)] p-6">
@@ -620,20 +658,22 @@ export function DesktopCreateGroupDialog({
                             shareableMessages.length,
                           )} 条
                         </div>
-                        <div className="flex items-center gap-2 text-[12px]">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyMessageSelection(
-                                shareableMessages
-                                  .slice(-DEFAULT_SHARED_MESSAGE_COUNT)
-                                  .map((message) => message.id),
-                              )
-                            }
-                            className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                          >
-                            最近{DEFAULT_SHARED_MESSAGE_COUNT}条
-                          </button>
+                        <div className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
+                          {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
+                            <button
+                              key={count}
+                              type="button"
+                              onClick={() => selectRecentMessages(count)}
+                              className={cn(
+                                "rounded-full border px-2.5 py-1 transition",
+                                recentPresetSelectionState.get(count)
+                                  ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
+                                  : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                              )}
+                            >
+                              最近{count}条
+                            </button>
+                          ))}
                           <button
                             type="button"
                             onClick={() =>
@@ -641,14 +681,24 @@ export function DesktopCreateGroupDialog({
                                 shareableMessages.map((message) => message.id),
                               )
                             }
-                            className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            className={cn(
+                              "rounded-full border px-2.5 py-1 transition",
+                              allShareableMessagesSelected
+                                ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
+                                : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                            )}
                           >
                             全选
                           </button>
                           <button
                             type="button"
                             onClick={() => setSelectedMessageIds([])}
-                            className="text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            className={cn(
+                              "rounded-full border px-2.5 py-1 transition",
+                              selectedMessageIds.length === 0
+                                ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
+                                : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                            )}
                           >
                             清空
                           </button>
@@ -816,7 +866,7 @@ export function DesktopCreateGroupDialog({
             {shareHistory && selectedMessageIds.length
               ? ` 会同步 ${selectedMessageIds.length} 条聊天记录。`
               : ""}
-            {" "}快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Ctrl/Cmd+Enter` 创建。
+            {" "}快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Alt+数字` 选择最近 N 条聊天记录，`Ctrl/Cmd+Enter` 创建。
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -960,4 +1010,12 @@ function findFriendIndexByJumpKey(
   return items.findIndex((item) =>
     getFriendDisplayName(item).trim().toUpperCase().startsWith(normalizedKey),
   );
+}
+
+function areSameIds(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => item === right[index]);
 }
