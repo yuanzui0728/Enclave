@@ -25,6 +25,7 @@ import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers"
 import { ChatCallFallbackNotice } from "./chat-call-fallback-notice";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
+import { buildDirectCallInviteMessage } from "./group-call-message";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import {
@@ -489,6 +490,11 @@ export function ConversationThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
+              onOpenDirectCallInvite={(kind) => {
+                if (isDesktop) {
+                  setDesktopCallPanelKind(kind);
+                }
+              }}
               onSelectionModeChange={setSelectionModeActive}
               emptyState={
                 !isDesktop &&
@@ -570,18 +576,6 @@ export function ConversationThreadPanel({
       ) : null}
     </div>
   );
-}
-
-function buildDirectCallInviteMessage(
-  kind: DesktopChatCallKind,
-  conversationTitle: string,
-) {
-  return [
-    kind === "voice" ? "[语音通话]" : "[视频通话]",
-    `${conversationTitle}`,
-    "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
-    "如需继续加入或转到手机，请在当前聊天顶部的通话面板里操作。",
-  ].join("\n");
 }
 
 function describeReplyPreview(message: ChatRenderableMessage) {

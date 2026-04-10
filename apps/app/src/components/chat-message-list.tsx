@@ -90,7 +90,10 @@ import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
-import { parseGroupCallInviteMessage } from "../features/chat/group-call-message";
+import {
+  parseDirectCallInviteMessage,
+  parseGroupCallInviteMessage,
+} from "../features/chat/group-call-message";
 import { parseGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 
 export type ChatRenderableMessage = {
@@ -137,6 +140,7 @@ type ChatMessageListProps = {
       quotedText?: string;
     },
   ) => void;
+  onOpenDirectCallInvite?: (kind: "voice" | "video") => void;
   onOpenGroupCallInvite?: (kind: "voice" | "video") => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
@@ -184,6 +188,7 @@ export function ChatMessageList({
   unreadMarkerCount = 0,
   unreadMarkerLabel,
   onReplyMessage,
+  onOpenDirectCallInvite,
   onOpenGroupCallInvite,
   onSelectionModeChange,
 }: ChatMessageListProps) {
@@ -235,8 +240,11 @@ export function ChatMessageList({
   const [recalledMessageIds, setRecalledMessageIds] = useState<string[]>(
     () => readLocalChatMessageActionState().recalledMessageIds,
   );
-  const { reminders: messageReminders, clearReminder, setReminder } =
-    useMessageReminders();
+  const {
+    reminders: messageReminders,
+    clearReminder,
+    setReminder,
+  } = useMessageReminders();
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
     readDetailedTimestampMode(),
   );
@@ -371,7 +379,9 @@ export function ChatMessageList({
 
   const updateGroupMessageQueries = (
     groupId: string,
-    updater: (messages: GroupMessage[] | undefined) => GroupMessage[] | undefined,
+    updater: (
+      messages: GroupMessage[] | undefined,
+    ) => GroupMessage[] | undefined,
   ) => {
     queryClient.setQueriesData<GroupMessage[] | undefined>(
       {
@@ -393,12 +403,13 @@ export function ChatMessageList({
     );
   };
 
-  const syncFavoriteSourceIds = (remoteFavorites = favoritesQuery.data ?? []) => {
+  const syncFavoriteSourceIds = (
+    remoteFavorites = favoritesQuery.data ?? [],
+  ) => {
     setFavoriteSourceIds(
-      mergeDesktopFavoriteRecords(
-        remoteFavorites,
-        readDesktopFavorites(),
-      ).map((item) => item.sourceId),
+      mergeDesktopFavoriteRecords(remoteFavorites, readDesktopFavorites()).map(
+        (item) => item.sourceId,
+      ),
     );
   };
 
@@ -1609,6 +1620,7 @@ export function ChatMessageList({
             ? replyContent.body.trim()
             : sanitizeDisplayedChatText(message.text);
         const replyPreview = replyContent.reply;
+        const directCallInvite = parseDirectCallInviteMessage(displayText);
         const groupCallInvite = parseGroupCallInviteMessage(displayText);
         const groupRelaySummary = parseGroupRelaySummaryMessage(displayText);
 
@@ -1791,6 +1803,18 @@ export function ChatMessageList({
                         selectionMode
                           ? undefined
                           : () => openAttachment(message)
+                      }
+                    />
+                  ) : directCallInvite ? (
+                    <DirectCallInviteMessage
+                      own={isUser}
+                      invite={directCallInvite}
+                      onOpen={
+                        selectionMode ||
+                        threadContext?.type !== "direct" ||
+                        !onOpenDirectCallInvite
+                          ? undefined
+                          : () => onOpenDirectCallInvite(directCallInvite.kind)
                       }
                     />
                   ) : groupCallInvite ? (
@@ -2355,7 +2379,6 @@ function UnreadMarkerDivider({
     </div>
   );
 }
-
 
 function shouldShowMessageTimestamp(
   createdAt?: string | null,
@@ -3496,6 +3519,18 @@ function GroupCallInviteMessage({
       </div>
 
       <div className="mt-3 space-y-2">
+        {invite.activeCount ? (
+          <div className="grid grid-cols-2 gap-2">
+            <CallInviteMetric
+              label="当前在线"
+              value={`${invite.activeCount.current}/${invite.activeCount.total}`}
+            />
+            <CallInviteMetric
+              label="待加入"
+              value={`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} 人`}
+            />
+          </div>
+        ) : null}
         {invite.summaryLines.map((line) => (
           <div
             key={line}
@@ -3535,6 +3570,107 @@ function GroupCallInviteMessage({
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
       aria-label={`回到 ${invite.groupName} 的群通话工作台`}
+    >
+      {card}
+    </button>
+  );
+}
+
+function CallInviteMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[14px] bg-white/72 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
+        {label}
+      </div>
+      <div className="mt-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function DirectCallInviteMessage({
+  own,
+  invite,
+  onOpen,
+}: {
+  own: boolean;
+  invite: ReturnType<typeof parseDirectCallInviteMessage>;
+  onOpen?: () => void;
+}) {
+  if (!invite) {
+    return null;
+  }
+
+  const card = (
+    <div
+      className={cn(
+        "w-[264px] rounded-[18px] border px-4 py-4 shadow-none",
+        own
+          ? "border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
+          : "border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+            {invite.kind === "voice" ? "语音通话" : "视频通话"}
+          </div>
+          <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+            {invite.title}
+          </div>
+        </div>
+        <div className="rounded-full bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#2563eb]">
+          桌面工作台
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {invite.summaryLines.map((line) => (
+          <div
+            key={line}
+            className="rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
+        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+          {onOpen
+            ? "点击可回到当前单聊通话工作台。"
+            : "当前消息已转成单聊通话卡片，方便快速识别状态。"}
+        </div>
+        <div className="text-[11px] font-medium text-[#2563eb]">
+          {onOpen
+            ? invite.kind === "voice"
+              ? "回到语音"
+              : "回到视频"
+            : invite.kind === "voice"
+              ? "语音中"
+              : "视频中"}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`回到 ${invite.title} 的单聊通话工作台`}
     >
       {card}
     </button>
