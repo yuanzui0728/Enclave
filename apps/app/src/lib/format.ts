@@ -95,6 +95,22 @@ export function formatMessageTimestamp(value?: string | null) {
   }).format(date);
 }
 
+export function formatDetailedMessageTimestamp(value?: string | null) {
+  const date = parseDateValue(value);
+  if (!date) {
+    return "刚刚";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function initials(name?: string | null) {
   return name?.trim().slice(0, 1) || "隐";
 }
