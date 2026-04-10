@@ -1,5 +1,6 @@
 import type {
   OfficialAccountArticleDetail,
+  OfficialAccountArticleSummary,
   OfficialAccountDetail,
   OfficialAccountSummary,
 } from "@yinjie/contracts";
@@ -31,16 +32,23 @@ export function buildOfficialAccountFavoriteRecord(
 export function buildOfficialArticleFavoriteRecord(
   article: OfficialAccountArticleDetail,
 ): Omit<DesktopFavoriteRecord, "collectedAt"> {
+  return buildOfficialArticleSummaryFavoriteRecord(article, article.account);
+}
+
+export function buildOfficialArticleSummaryFavoriteRecord(
+  article: OfficialAccountArticleSummary,
+  account: Pick<OfficialAccountSummary, "id" | "name" | "avatar">,
+): Omit<DesktopFavoriteRecord, "collectedAt"> {
   return {
     id: `favorite-official-article-${article.id}`,
     sourceId: `official-article-${article.id}`,
     category: "officialAccounts",
     title: article.title,
     description: article.summary,
-    meta: `${article.account.name} · ${formatTimestamp(article.publishedAt)}`,
+    meta: `${account.name} · ${formatTimestamp(article.publishedAt)}`,
     to: `/official-accounts/articles/${article.id}`,
     badge: "公众号文章",
-    avatarName: article.account.name,
-    avatarSrc: article.account.avatar,
+    avatarName: account.name,
+    avatarSrc: account.avatar,
   };
 }
