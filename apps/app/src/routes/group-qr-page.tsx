@@ -308,7 +308,26 @@ export function GroupQrPage() {
           conversation: ConversationListItem;
           target: GroupInviteDeliveryTarget;
         } => Boolean(item),
-      );
+      )
+      .sort((left, right) => {
+        const activityDelta =
+          (parseTimestamp(right.conversation.lastActivityAt) ?? 0) -
+          (parseTimestamp(left.conversation.lastActivityAt) ?? 0);
+
+        if (activityDelta !== 0) {
+          return activityDelta;
+        }
+
+        const deliveredDelta =
+          (parseTimestamp(left.target.deliveredAt) ?? 0) -
+          (parseTimestamp(right.target.deliveredAt) ?? 0);
+
+        if (deliveredDelta !== 0) {
+          return deliveredDelta;
+        }
+
+        return left.conversation.title.localeCompare(right.conversation.title);
+      });
   }, [conversationsQuery.data, deliveryTargetBatches, reopenedPaths]);
 
   useEffect(() => {
@@ -743,7 +762,7 @@ export function GroupQrPage() {
                   本轮待回流会话
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，优先补发。
+                  这一轮已经发出但还没有从聊天线程回到邀请页的目标，会按最近活跃和发送先后优先补发。
                 </div>
                 {pendingCurrentBatchConversations.map(({ conversation, target }) => (
                   <button
@@ -762,7 +781,8 @@ export function GroupQrPage() {
                         {isPersistedGroupConversation(conversation)
                           ? "群聊"
                           : "单聊"}{" "}
-                        · 本轮批次 · 尚未回流
+                        · 本轮批次 · 尚未回流 · 最近活跃{" "}
+                        {formatConversationTimestamp(conversation.lastActivityAt)}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
                         上次发送于 {formatConversationTimestamp(target.deliveredAt)}
