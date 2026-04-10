@@ -1223,6 +1223,21 @@ export function GroupQrPage() {
                     className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.18)] bg-[rgba(255,248,240,0.92)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
                   >
                     <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span
+                          className={`rounded-full px-2.5 py-1 font-medium ${resolvePendingReturnActionStatus(
+                            conversation,
+                            target.deliveredAt,
+                          ).tone}`}
+                        >
+                          {
+                            resolvePendingReturnActionStatus(
+                              conversation,
+                              target.deliveredAt,
+                            ).label
+                          }
+                        </span>
+                      </div>
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                         {conversation.title}
                       </div>
