@@ -14,9 +14,11 @@ import {
   ChevronRight,
   ContactRound,
   Download,
+  ExternalLink,
   FileText,
   LocateFixed,
   MapPin,
+  Printer,
   X,
 } from "lucide-react";
 import {
@@ -983,6 +985,53 @@ export function ChatMessageList({
               activeImage.fileName || activeImage.label || "image",
             )
           }
+          onOpenInWindow={
+            isDesktop
+              ? () => {
+                  if (
+                    openUrlInNewWindow(
+                      activeImage.url,
+                      "noopener,noreferrer",
+                    )
+                  ) {
+                    setActionNotice({
+                      message: "已在新窗口打开图片。",
+                      tone: "success",
+                    });
+                    return;
+                  }
+
+                  setActionNotice({
+                    message: "浏览器阻止了新窗口，请检查弹窗权限。",
+                    tone: "danger",
+                  });
+                }
+              : undefined
+          }
+          onPrint={
+            isDesktop
+              ? () => {
+                  if (
+                    openPrintWindow({
+                      title:
+                        activeImage.fileName || activeImage.label || "图片",
+                      imageUrl: activeImage.url,
+                    })
+                  ) {
+                    setActionNotice({
+                      message: "已打开图片打印窗口。",
+                      tone: "success",
+                    });
+                    return;
+                  }
+
+                  setActionNotice({
+                    message: "浏览器阻止了打印窗口，请检查弹窗权限。",
+                    tone: "danger",
+                  });
+                }
+              : undefined
+          }
         />
       ) : null}
       <DesktopMessageForwardDialog
@@ -1356,6 +1405,83 @@ function saveUrlAsFile(url: string, fileName: string) {
   anchor.remove();
 }
 
+function openUrlInNewWindow(url: string, features?: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return Boolean(window.open(url, "_blank", features));
+}
+
+function openPrintWindow(input: { title: string; imageUrl: string }) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!printWindow) {
+    return false;
+  }
+
+  const escapedTitle = escapeHtml(input.title);
+  const escapedImageUrl = escapeHtml(input.imageUrl);
+  printWindow.document.write(`<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapedTitle}</title>
+    <style>
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: #0f172a;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      img {
+        max-width: 100%;
+        max-height: calc(100vh - 48px);
+        object-fit: contain;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+      }
+    </style>
+  </head>
+  <body>
+    <img src="${escapedImageUrl}" alt="${escapedTitle}" />
+  </body>
+</html>`);
+  printWindow.document.close();
+
+  const printedImage = printWindow.document.querySelector(
+    "img",
+  ) as HTMLImageElement | null;
+  if (printedImage) {
+    printedImage.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  } else {
+    printWindow.focus();
+    printWindow.print();
+  }
+
+  return true;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 function renderTextWithMentions(text: string): ReactNode {
   const segments = splitChatTextSegments(text);
   if (!segments.length) {
@@ -1626,6 +1752,8 @@ function ImageViewerOverlay({
   onNext,
   onLocate,
   onSave,
+  onOpenInWindow,
+  onPrint,
 }: {
   variant: "mobile" | "desktop";
   activeImage: {
@@ -1641,6 +1769,8 @@ function ImageViewerOverlay({
   onNext?: () => void;
   onLocate: () => void;
   onSave: () => void;
+  onOpenInWindow?: () => void;
+  onPrint?: () => void;
 }) {
   const isDesktop = variant === "desktop";
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -1701,6 +1831,16 @@ function ImageViewerOverlay({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {onOpenInWindow ? (
+                <ViewerActionButton label="新窗口打开" onClick={onOpenInWindow}>
+                  <ExternalLink size={16} />
+                </ViewerActionButton>
+              ) : null}
+              {onPrint ? (
+                <ViewerActionButton label="打印图片" onClick={onPrint}>
+                  <Printer size={16} />
+                </ViewerActionButton>
+              ) : null}
               <ViewerActionButton label="保存图片" onClick={onSave}>
                 <Download size={16} />
               </ViewerActionButton>
