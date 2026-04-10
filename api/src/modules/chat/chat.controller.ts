@@ -241,6 +241,15 @@ export class DigitalHumanCallsController {
     return this.digitalHumanCallsService.getSession(sessionId);
   }
 
+  @Get('sessions/:sessionId/player')
+  renderPlayer(
+    @Param('sessionId') sessionId: string,
+    @Res() response: Response,
+  ) {
+    response.type('html');
+    return response.send(this.digitalHumanCallsService.renderPlayerPage(sessionId));
+  }
+
   @Delete('sessions/:sessionId')
   closeSession(@Param('sessionId') sessionId: string) {
     return this.digitalHumanCallsService.closeSession(sessionId);

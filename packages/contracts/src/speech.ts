@@ -45,6 +45,8 @@ export type DigitalHumanProvider = "mock_digital_human";
 
 export type DigitalHumanPresentationMode = "mock_stage" | "provider_stream";
 
+export type DigitalHumanTransport = "audio_poster" | "player_url" | "stream_url";
+
 export type DigitalHumanSessionStatus = "ready" | "playing" | "ended";
 
 export interface CreateDigitalHumanSessionRequest {
@@ -62,8 +64,15 @@ export interface DigitalHumanSession {
   mode: DigitalHumanCallMode;
   provider: DigitalHumanProvider;
   presentationMode: DigitalHumanPresentationMode;
+  transport?: DigitalHumanTransport;
+  playerUrl?: string;
   streamUrl?: string;
   posterUrl?: string;
+  capabilities?: {
+    supportsRealtimeStream: boolean;
+    supportsInterrupt: boolean;
+    supportsSubtitle: boolean;
+  };
   status: DigitalHumanSessionStatus;
   createdAt: string;
   updatedAt: string;
@@ -73,4 +82,5 @@ export interface DigitalHumanSession {
 export interface DigitalHumanTurnResult {
   session: DigitalHumanSession;
   turn: VoiceCallTurnResult;
+  renderStatus?: "queued" | "rendering" | "ready" | "failed";
 }

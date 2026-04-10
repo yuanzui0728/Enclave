@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { CharactersService } from '../characters/characters.service';
 import { ChatService } from './chat.service';
+import { MockDigitalHumanProviderAdapter } from './digital-human-provider';
 import { VoiceCallsService } from './voice-calls.service';
 
 type UploadedAudioFile = {
@@ -12,9 +13,6 @@ type UploadedAudioFile = {
 };
 
 type DigitalHumanCallMode = 'desktop_video_call' | 'mobile_video_call';
-type DigitalHumanProvider = 'mock_digital_human';
-type DigitalHumanPresentationMode = 'mock_stage' | 'provider_stream';
-type DigitalHumanCallTransport = 'audio_poster';
 type DigitalHumanSessionStatus = 'ready' | 'playing' | 'ended';
 type DigitalHumanRenderStatus = 'ready';
 
@@ -29,9 +27,10 @@ type DigitalHumanSessionRecord = {
   characterName: string;
   characterAvatar?: string;
   mode: DigitalHumanCallMode;
-  provider: DigitalHumanProvider;
-  presentationMode: DigitalHumanPresentationMode;
-  transport: DigitalHumanCallTransport;
+  provider: 'mock_digital_human';
+  presentationMode: 'provider_stream';
+  transport: 'player_url';
+  playerUrl: string;
   streamUrl?: string;
   posterUrl?: string;
   status: DigitalHumanSessionStatus;
@@ -48,6 +47,7 @@ export class DigitalHumanCallsService {
     private readonly chatService: ChatService,
     private readonly voiceCallsService: VoiceCallsService,
     private readonly charactersService: CharactersService,
+    private readonly digitalHumanProvider: MockDigitalHumanProviderAdapter,
   ) {}
 
   async createSession(input: {
@@ -79,18 +79,25 @@ export class DigitalHumanCallsService {
     }
 
     const now = new Date().toISOString();
+    const sessionId = randomUUID();
+    const providerSession = this.digitalHumanProvider.createSession({
+      sessionId,
+      characterName: character.name,
+      posterUrl: character.avatar || undefined,
+    });
     const session: DigitalHumanSessionRecord = {
-      id: randomUUID(),
+      id: sessionId,
       conversationId: conversation.id,
       characterId,
       characterName: character.name,
       characterAvatar: character.avatar || undefined,
       mode: input.mode ?? 'desktop_video_call',
-      provider: 'mock_digital_human',
-      presentationMode: 'mock_stage',
-      transport: 'audio_poster',
-      streamUrl: undefined,
-      posterUrl: character.avatar || undefined,
+      provider: providerSession.provider,
+      presentationMode: providerSession.presentationMode,
+      transport: providerSession.transport,
+      playerUrl: providerSession.playerUrl,
+      streamUrl: providerSession.streamUrl,
+      posterUrl: providerSession.posterUrl,
       status: 'ready',
       createdAt: now,
       updatedAt: now,
@@ -122,17 +129,37 @@ export class DigitalHumanCallsService {
       conversationId: session.conversationId,
       characterId: session.characterId,
     });
+    const providerTurn = this.digitalHumanProvider.prepareTurn({
+      sessionId: session.id,
+      assistantAudioUrl: turn.assistantAudioUrl,
+      assistantText: turn.assistantText,
+      assistantMessageId: turn.assistantMessageId,
+      posterUrl: session.posterUrl,
+    });
 
     session.lastTurn = turn;
     session.status = 'playing';
+    session.presentationMode = providerTurn.presentationMode;
+    session.transport = providerTurn.transport;
+    session.playerUrl = providerTurn.playerUrl;
+    session.streamUrl = providerTurn.streamUrl;
+    session.posterUrl = providerTurn.posterUrl;
     session.updatedAt = new Date().toISOString();
     this.sessions.set(session.id, session);
 
     return {
       session: this.serializeSession(session),
       turn,
-      renderStatus: 'ready' satisfies DigitalHumanRenderStatus,
+      renderStatus: providerTurn.renderStatus satisfies DigitalHumanRenderStatus,
     };
+  }
+
+  renderPlayerPage(sessionId: string) {
+    const session = this.requireSession(sessionId);
+    return this.digitalHumanProvider.renderPlayerPage({
+      sessionId: session.id,
+      characterName: session.characterName,
+    });
   }
 
   private requireSession(sessionId: string) {
@@ -155,6 +182,7 @@ export class DigitalHumanCallsService {
       provider: session.provider,
       presentationMode: session.presentationMode,
       transport: session.transport,
+      playerUrl: session.playerUrl,
       streamUrl: session.streamUrl,
       posterUrl: session.posterUrl,
       status: session.status,
