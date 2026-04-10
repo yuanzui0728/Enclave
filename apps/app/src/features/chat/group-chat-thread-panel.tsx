@@ -28,6 +28,7 @@ import {
   type DesktopChatSidePanelMode,
 } from "../desktop/chat/desktop-chat-header-actions";
 import { buildDesktopMobileCallHandoffHash } from "../desktop/chat/desktop-mobile-call-handoff-route-state";
+import { DesktopGroupCallPanel } from "../desktop/chat/desktop-group-call-panel";
 import { type ChatRenderableMessage } from "../../components/chat-message-list";
 import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
@@ -79,6 +80,8 @@ export function GroupChatThreadPanel({
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
+  const [desktopCallPanelKind, setDesktopCallPanelKind] =
+    useState<DesktopChatCallKind | null>(null);
   const [pendingCallFallback, setPendingCallFallback] =
     useState<DesktopChatCallKind | null>(null);
   const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
@@ -129,6 +132,7 @@ export function GroupChatThreadPanel({
   useEffect(() => {
     setText("");
     setReplyDraft(null);
+    setDesktopCallPanelKind(null);
     setPendingCallFallback(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
@@ -232,6 +236,30 @@ export function GroupChatThreadPanel({
     onSuccess: async () => {
       setText("");
       setReplyDraft(null);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-messages", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+  });
+
+  const sendCallInviteMutation = useMutation({
+    mutationFn: (kind: DesktopChatCallKind) =>
+      sendGroupMessage(
+        groupId,
+        {
+          text: buildGroupCallInviteMessage(
+            kind,
+            groupQuery.data?.name ?? "当前群聊",
+          ),
+        },
+        baseUrl,
+      ),
+    onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
@@ -551,15 +579,7 @@ export function GroupChatThreadPanel({
 
   const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
-      void navigate({
-        to: "/desktop/mobile",
-        hash: buildDesktopMobileCallHandoffHash({
-          kind,
-          conversationId: groupId,
-          conversationType: "group",
-          title: groupQuery.data?.name ?? "群聊",
-        }),
-      });
+      setDesktopCallPanelKind(kind);
       return;
     }
 
@@ -587,6 +607,7 @@ export function GroupChatThreadPanel({
           <div className="hidden items-center xl:flex">
             <DesktopChatHeaderActions
               activePanelMode={desktopSidePanelMode}
+              onToggleHistory={() => onToggleDesktopHistory?.()}
               onToggleDetails={() => onToggleDesktopDetails?.()}
               onSelectCall={handleDesktopCallAction}
             />
@@ -756,61 +777,91 @@ export function GroupChatThreadPanel({
           }`}
         />
 
-        <div
-          ref={scrollAnchorRef}
-          className={`relative flex h-full flex-col overflow-auto ${
-            isDesktop ? "px-7 py-5" : "px-3 py-4"
-          }`}
-        >
-          {groupQuery.isError && groupQuery.error instanceof Error ? (
-            <ErrorBlock className="mb-3" message={groupQuery.error.message} />
-          ) : null}
-          {membersQuery.isError && membersQuery.error instanceof Error ? (
-            <ErrorBlock className="mb-3" message={membersQuery.error.message} />
-          ) : null}
-          {messagesQuery.isLoading ? (
-            <LoadingBlock label="正在读取群消息..." />
-          ) : null}
-          {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-            <ErrorBlock message={messagesQuery.error.message} />
-          ) : null}
+        {isDesktop && desktopCallPanelKind ? (
+          <div className="relative h-full p-5">
+            <DesktopGroupCallPanel
+              kind={desktopCallPanelKind}
+              groupId={groupId}
+              groupName={groupQuery.data?.name ?? "群聊"}
+              members={membersQuery.data ?? []}
+              inviteNoticePending={sendCallInviteMutation.isPending}
+              onClose={() => setDesktopCallPanelKind(null)}
+              onOpenMobileHandoff={() => {
+                void navigate({
+                  to: "/desktop/mobile",
+                  hash: buildDesktopMobileCallHandoffHash({
+                    kind: desktopCallPanelKind,
+                    conversationId: groupId,
+                    conversationType: "group",
+                    title: groupQuery.data?.name ?? "群聊",
+                  }),
+                });
+              }}
+              onSendInviteNotice={() => {
+                void sendCallInviteMutation.mutateAsync(desktopCallPanelKind);
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            ref={scrollAnchorRef}
+            className={`relative flex h-full flex-col overflow-auto ${
+              isDesktop ? "px-7 py-5" : "px-3 py-4"
+            }`}
+          >
+            {groupQuery.isError && groupQuery.error instanceof Error ? (
+              <ErrorBlock className="mb-3" message={groupQuery.error.message} />
+            ) : null}
+            {membersQuery.isError && membersQuery.error instanceof Error ? (
+              <ErrorBlock
+                className="mb-3"
+                message={membersQuery.error.message}
+              />
+            ) : null}
+            {messagesQuery.isLoading ? (
+              <LoadingBlock label="正在读取群消息..." />
+            ) : null}
+            {messagesQuery.isError && messagesQuery.error instanceof Error ? (
+              <ErrorBlock message={messagesQuery.error.message} />
+            ) : null}
 
-          <ChatMessageList
-            messages={orderedMessages}
-            threadContext={{
-              id: groupId,
-              type: "group",
-              title: groupQuery.data?.name ?? "群聊",
-            }}
-            groupMode
-            showGroupMemberNicknames={
-              groupQuery.data?.showMemberNicknames ?? true
-            }
-            variant={isDesktop ? "desktop" : "mobile"}
-            highlightedMessageId={highlightedMessageId}
-            hasOlderMessages={hasOlderMessages}
-            loadingOlderMessages={
-              messagesQuery.isFetching && loadMoreRequestRef.current !== null
-            }
-            onLoadOlderMessages={() => {
-              void loadOlderMessages();
-            }}
-            unreadMarkerMessageId={unreadMarkerMessageId}
-            unreadMarkerCount={initialUnreadCount}
-            onReplyMessage={handleReplyMessage}
-            onSelectionModeChange={setSelectionModeActive}
-            emptyState={
-              !isDesktop &&
-              !messagesQuery.isLoading &&
-              !messagesQuery.isError ? (
-                <EmptyState
-                  title="群里还没有消息"
-                  description="发一条消息，让这个群先热起来。"
-                />
-              ) : null
-            }
-          />
-        </div>
+            <ChatMessageList
+              messages={orderedMessages}
+              threadContext={{
+                id: groupId,
+                type: "group",
+                title: groupQuery.data?.name ?? "群聊",
+              }}
+              groupMode
+              showGroupMemberNicknames={
+                groupQuery.data?.showMemberNicknames ?? true
+              }
+              variant={isDesktop ? "desktop" : "mobile"}
+              highlightedMessageId={highlightedMessageId}
+              hasOlderMessages={hasOlderMessages}
+              loadingOlderMessages={
+                messagesQuery.isFetching && loadMoreRequestRef.current !== null
+              }
+              onLoadOlderMessages={() => {
+                void loadOlderMessages();
+              }}
+              unreadMarkerMessageId={unreadMarkerMessageId}
+              unreadMarkerCount={initialUnreadCount}
+              onReplyMessage={handleReplyMessage}
+              onSelectionModeChange={setSelectionModeActive}
+              emptyState={
+                !isDesktop &&
+                !messagesQuery.isLoading &&
+                !messagesQuery.isError ? (
+                  <EmptyState
+                    title="群里还没有消息"
+                    description="发一条消息，让这个群先热起来。"
+                  />
+                ) : null
+              }
+            />
+          </div>
+        )}
         {!isDesktop &&
         !selectionModeActive &&
         (!isAtBottom || pendingCount > 0) ? (
@@ -825,7 +876,7 @@ export function GroupChatThreadPanel({
         ) : null}
       </div>
 
-      {!selectionModeActive ? (
+      {!selectionModeActive && !(isDesktop && desktopCallPanelKind) ? (
         <ChatComposer
           value={text}
           placeholder="输入消息"
@@ -915,3 +966,15 @@ function upsertGroupMessage(
 
 const INITIAL_MESSAGE_LIMIT = 60;
 const HISTORY_PAGE_SIZE = 40;
+
+function buildGroupCallInviteMessage(
+  kind: DesktopChatCallKind,
+  groupName: string,
+) {
+  return [
+    kind === "voice" ? "[群语音通话]" : "[群视频通话]",
+    `${groupName}`,
+    "已从桌面端打开群通话工作台，可直接在聊天页继续查看成员状态。",
+    "如需继续加入或转到手机，请在当前群聊顶部的通话面板里操作。",
+  ].join("\n");
+}
