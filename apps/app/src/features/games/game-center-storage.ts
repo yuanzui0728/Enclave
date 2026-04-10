@@ -1,6 +1,8 @@
 export type GameCenterStoredState = {
+  activeGameId: string | null;
   recentGameIds: string[];
   pinnedGameIds: string[];
+  launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
 };
 
@@ -37,8 +39,15 @@ function sanitizeTimestampRecord(value: unknown) {
 
 export function getDefaultGameCenterState(): GameCenterStoredState {
   return {
+    activeGameId: "signal-squad",
     recentGameIds: ["signal-squad", "night-market", "cat-inn"],
     pinnedGameIds: ["signal-squad", "cloud-farm"],
+    launchCountById: {
+      "signal-squad": 8,
+      "night-market": 5,
+      "cat-inn": 2,
+      "cloud-farm": 4,
+    },
     lastOpenedAtById: {
       "signal-squad": "2026-04-10T14:18:00.000Z",
       "night-market": "2026-04-10T12:36:00.000Z",
@@ -62,8 +71,15 @@ export function readGameCenterState() {
   try {
     const parsed = JSON.parse(raw) as Partial<GameCenterStoredState>;
     return {
+      activeGameId: typeof parsed.activeGameId === "string" ? parsed.activeGameId : null,
       recentGameIds: sanitizeIds(parsed.recentGameIds).slice(0, MAX_RECENT_GAMES),
       pinnedGameIds: sanitizeIds(parsed.pinnedGameIds),
+      launchCountById: Object.fromEntries(
+        Object.entries(parsed.launchCountById ?? {}).filter(
+          (entry): entry is [string, number] =>
+            typeof entry[0] === "string" && typeof entry[1] === "number",
+        ),
+      ),
       lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
     };
   } catch {
@@ -86,11 +102,16 @@ export function markGameOpened(
 ): GameCenterStoredState {
   const openedAt = new Date().toISOString();
   return {
+    activeGameId: gameId,
     recentGameIds: [gameId, ...state.recentGameIds.filter((id) => id !== gameId)].slice(
       0,
       MAX_RECENT_GAMES,
     ),
     pinnedGameIds: state.pinnedGameIds,
+    launchCountById: {
+      ...state.launchCountById,
+      [gameId]: (state.launchCountById[gameId] ?? 0) + 1,
+    },
     lastOpenedAtById: {
       ...state.lastOpenedAtById,
       [gameId]: openedAt,
@@ -111,3 +132,9 @@ export function togglePinnedGame(
   };
 }
 
+export function dismissActiveGame(state: GameCenterStoredState): GameCenterStoredState {
+  return {
+    ...state,
+    activeGameId: null,
+  };
+}

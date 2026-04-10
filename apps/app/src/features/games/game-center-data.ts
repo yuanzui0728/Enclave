@@ -27,6 +27,9 @@ export type GameCenterGame = {
   friendsLabel: string;
   updateNote: string;
   deckLabel: string;
+  estimatedDuration: string;
+  rewardLabel: string;
+  sessionObjective: string;
   tags: string[];
 };
 
@@ -117,6 +120,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "12 位好友常玩",
     updateNote: "赛季任务刚更新",
     deckLabel: "竞技热玩",
+    estimatedDuration: "3 分钟一局",
+    rewardLabel: "赛季徽章 + 团队积分",
+    sessionObjective: "本局目标是完成两次协同压制并稳住终点信号塔。",
     tags: ["组队", "3 分钟", "赛季"],
   },
   {
@@ -134,6 +140,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "6 位好友开摊中",
     updateNote: "周末夜市双倍客流",
     deckLabel: "经营精选",
+    estimatedDuration: "8 分钟一轮营业",
+    rewardLabel: "夜市券 + 新摊位许可",
+    sessionObjective: "这次营业优先把甜品摊升级到 5 级并拉满周末客流。",
     tags: ["摆摊", "经营", "互访"],
   },
   {
@@ -151,6 +160,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "9 位好友冲榜",
     updateNote: "极光赛道限时开放",
     deckLabel: "冲榜推荐",
+    estimatedDuration: "2 分钟冲线",
+    rewardLabel: "冲榜星章 + 极光喷漆",
+    sessionObjective: "利用极光赛道的两段加速门，争取把本周圈速压进前 10%。",
     tags: ["竞速", "榜单", "极光赛道"],
   },
   {
@@ -168,6 +180,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "4 位好友入住中",
     updateNote: "春季家具套装上线",
     deckLabel: "轻松治愈",
+    estimatedDuration: "6 分钟布置",
+    rewardLabel: "春季家具票 + 顾客好感",
+    sessionObjective: "把一楼休息区布置成春季主题，再接待今晚的第一批住客。",
     tags: ["猫咪", "布置", "剧情"],
   },
   {
@@ -185,6 +200,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "3 位好友刚上车",
     updateNote: "新增海边支线站点",
     deckLabel: "故事感推荐",
+    estimatedDuration: "10 分钟一段旅程",
+    rewardLabel: "乘客故事碎片 + 海边车票",
+    sessionObjective: "本次旅程优先跑完海边支线，把新乘客的故事碎片补齐。",
     tags: ["冒险", "收集", "剧情"],
   },
   {
@@ -202,6 +220,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "15 位好友组局",
     updateNote: "双人同屏模式上线",
     deckLabel: "社交热玩",
+    estimatedDuration: "4 分钟一场",
+    rewardLabel: "擂台连胜章 + 双人皮肤券",
+    sessionObjective: "先和好友打完一轮双人同屏，再冲一波 3 连胜奖励。",
     tags: ["对打", "同屏", "组局"],
   },
   {
@@ -219,6 +240,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "8 位好友互助",
     updateNote: "本周开放花圃联营",
     deckLabel: "稳定留存",
+    estimatedDuration: "5 分钟收菜",
+    rewardLabel: "花圃币 + 联营订单",
+    sessionObjective: "先收完成熟作物，再去邻居花圃里把本周联营订单补齐。",
     tags: ["农场", "互助", "长线"],
   },
   {
@@ -236,6 +260,9 @@ export const gameCenterGames: GameCenterGame[] = [
     friendsLabel: "11 位好友准备开场",
     updateNote: "海风主题舞台返场",
     deckLabel: "派对推荐",
+    estimatedDuration: "7 分钟一场演出",
+    rewardLabel: "舞台海报 + 合奏积分",
+    sessionObjective: "今晚先排一场海边合奏，把返场舞台的限定海报拿到手。",
     tags: ["派对", "装扮", "合奏"],
   },
 ];
@@ -435,4 +462,3 @@ export function getGameCenterGame(gameId: string) {
 export function getGameCenterToneStyle(tone: GameCenterTone) {
   return gameCenterToneStyles[tone];
 }
-
