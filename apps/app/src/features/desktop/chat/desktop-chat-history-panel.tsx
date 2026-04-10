@@ -37,6 +37,8 @@ type HistoryFilterType =
   | "contact_card"
   | "location_card";
 
+type HistoryDateFilter = "all" | "today" | "7d" | "30d";
+
 const MAX_VISIBLE_ROWS = 60;
 
 const historyFilterLabels: Array<{
@@ -53,6 +55,16 @@ const historyFilterLabels: Array<{
   { id: "system", label: "系统" },
 ];
 
+const historyDateFilterLabels: Array<{
+  id: HistoryDateFilter;
+  label: string;
+}> = [
+  { id: "all", label: "全部时间" },
+  { id: "today", label: "今天" },
+  { id: "7d", label: "7天内" },
+  { id: "30d", label: "30天内" },
+];
+
 export function DesktopChatHistoryPanel({
   conversation,
 }: DesktopChatHistoryPanelProps) {
@@ -62,6 +74,7 @@ export function DesktopChatHistoryPanel({
   const isGroupConversation = isPersistedGroupConversation(conversation);
   const [keyword, setKeyword] = useState("");
   const [typeFilter, setTypeFilter] = useState<HistoryFilterType>("all");
+  const [dateFilter, setDateFilter] = useState<HistoryDateFilter>("all");
   const [senderFilter, setSenderFilter] = useState("all");
 
   const messagesQuery = useQuery({
@@ -131,6 +144,10 @@ export function DesktopChatHistoryPanel({
         return false;
       }
 
+      if (!matchesHistoryDateFilter(row.createdAt, dateFilter)) {
+        return false;
+      }
+
       if (!trimmedKeyword) {
         return true;
       }
@@ -146,7 +163,7 @@ export function DesktopChatHistoryPanel({
     });
 
     return rows.slice(0, MAX_VISIBLE_ROWS);
-  }, [historyRows, senderFilter, trimmedKeyword, typeFilter]);
+  }, [dateFilter, historyRows, senderFilter, trimmedKeyword, typeFilter]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -174,6 +191,24 @@ export function DesktopChatHistoryPanel({
                 "rounded-full px-3 py-1.5 text-[12px] transition",
                 typeFilter === item.id
                   ? "bg-[rgba(255,138,61,0.16)] text-[color:var(--brand-primary)]"
+                  : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {historyDateFilterLabels.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setDateFilter(item.id)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-[12px] transition",
+                dateFilter === item.id
+                  ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
                   : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
               )}
             >
@@ -423,4 +458,36 @@ function buildSearchPreview(text: string, keyword: string) {
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
+}
+
+function matchesHistoryDateFilter(
+  createdAt: string,
+  filter: HistoryDateFilter,
+) {
+  if (filter === "all") {
+    return true;
+  }
+
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return false;
+  }
+
+  const now = Date.now();
+
+  if (filter === "today") {
+    return timestamp >= startOfToday();
+  }
+
+  if (filter === "7d") {
+    return timestamp >= now - 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return timestamp >= now - 30 * 24 * 60 * 60 * 1000;
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.getTime();
 }
