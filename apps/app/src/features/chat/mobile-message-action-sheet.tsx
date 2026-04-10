@@ -3,6 +3,8 @@ type MobileMessageActionSheetProps = {
   onClose: () => void;
   title?: string;
   onReply?: () => void;
+  onToggleFavorite?: () => void;
+  favoriteLabel?: string;
   onCopy: () => void;
   onCopySender?: () => void;
   onOpenAttachment?: () => void;
@@ -16,6 +18,8 @@ export function MobileMessageActionSheet({
   onClose,
   title = "消息操作",
   onReply,
+  onToggleFavorite,
+  favoriteLabel = "收藏",
   onCopy,
   onCopySender,
   onOpenAttachment,
@@ -41,12 +45,21 @@ export function MobileMessageActionSheet({
         </div>
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
+          {onToggleFavorite ? (
+            <ActionButton label={favoriteLabel} onClick={onToggleFavorite} />
+          ) : null}
           <ActionButton label="复制" onClick={onCopy} />
           {onOpenAttachment ? (
-            <ActionButton label={openAttachmentLabel} onClick={onOpenAttachment} />
+            <ActionButton
+              label={openAttachmentLabel}
+              onClick={onOpenAttachment}
+            />
           ) : null}
           {onSaveAttachment ? (
-            <ActionButton label={saveAttachmentLabel} onClick={onSaveAttachment} />
+            <ActionButton
+              label={saveAttachmentLabel}
+              onClick={onSaveAttachment}
+            />
           ) : null}
           {onCopySender ? (
             <ActionButton label="复制发送者" onClick={onCopySender} />
