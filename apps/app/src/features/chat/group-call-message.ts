@@ -88,7 +88,7 @@ export function buildGroupCallInviteMessage(
   return [
     kind === "voice" ? GROUP_VOICE_CALL_PREFIX : GROUP_VIDEO_CALL_PREFIX,
     groupName.trim() || "当前群聊",
-    status === "ended" ? "状态 已结束" : "状态 进行中",
+    `状态 ${formatGroupCallStatusLabel(kind, status)}`,
     `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
     sourceLabel ? `发起设备 ${sourceLabel}` : null,
     normalizedTotalCount
@@ -315,6 +315,8 @@ function buildGroupCallSummaryLines(input: {
 }) {
   const callLabel = input.kind === "video" ? "群视频通话" : "群语音通话";
   const panelLabel = input.kind === "video" ? "群视频通话面板" : "群语音通话面板";
+  const stateLabel =
+    input.kind === "video" ? "群成员画面与加入状态" : "群成员加入状态";
   const sourceLabel = input.sourceLabel ?? "当前设备";
 
   if (input.status === "ended") {
@@ -325,9 +327,20 @@ function buildGroupCallSummaryLines(input: {
   }
 
   return [
-    `已从${sourceLabel}打开${callLabel}工作台，可直接在聊天页继续查看成员状态。`,
+    `已从${sourceLabel}打开${callLabel}工作台，可直接在聊天页继续查看${stateLabel}。`,
     `如需继续加入或切回聊天，请在当前群聊顶部的${panelLabel}里操作。`,
   ];
+}
+
+function formatGroupCallStatusLabel(
+  kind: DesktopChatCallKind,
+  status: GroupCallInviteStatus,
+) {
+  if (status === "ended") {
+    return "已结束";
+  }
+
+  return kind === "video" ? "画面进行中" : "进行中";
 }
 
 function formatDirectCallStatusLabel(

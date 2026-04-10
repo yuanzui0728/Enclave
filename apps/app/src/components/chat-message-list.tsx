@@ -3637,7 +3637,13 @@ function GroupCallInviteMessage({
       <div className="mt-3 space-y-2">
         <CallInviteMetric
           label="当前状态"
-          value={invite.status === "ended" ? "已结束" : "进行中"}
+          value={
+            invite.status === "ended"
+              ? "已结束"
+              : invite.kind === "video"
+                ? "画面进行中"
+                : "进行中"
+          }
         />
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
@@ -3670,10 +3676,16 @@ function GroupCallInviteMessage({
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {invite.status === "ended"
-            ? "这轮群通话已经结束，当前保留为状态记录卡片。"
+            ? invite.kind === "video"
+              ? "这轮群视频通话已经结束，当前保留为状态记录卡片。"
+              : "这轮群语音通话已经结束，当前保留为状态记录卡片。"
             : onOpen
-              ? "点击可回到当前群通话工作台。"
-              : "当前消息已转成群通话卡片，便于群成员识别状态。"}
+              ? invite.kind === "video"
+                ? "点击可回到当前群视频通话工作台。"
+                : "点击可回到当前群语音通话工作台。"
+              : invite.kind === "video"
+                ? "当前消息已转成群视频通话卡片，便于群成员识别画面状态。"
+                : "当前消息已转成群语音通话卡片，便于群成员识别状态。"}
         </div>
         <div className="text-[11px] font-medium text-[#2563eb]">
           {invite.status === "ended"
