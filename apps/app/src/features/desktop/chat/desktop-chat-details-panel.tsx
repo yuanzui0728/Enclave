@@ -13,6 +13,7 @@ import {
   getGroup,
   getGroupMembers,
   leaveGroup,
+  removeGroupMember,
   sendFriendRequest,
   setConversationPinned,
   setGroupPinned,
@@ -25,6 +26,7 @@ import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
+import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
 import {
   useConversationBackground,
@@ -372,6 +374,9 @@ function GroupChatDetailsPanel({
   const ownerQuery = useDefaultChatBackground();
   const [notice, setNotice] = useState<string | null>(null);
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [memberPickerMode, setMemberPickerMode] = useState<"add" | "remove">(
+    "add",
+  );
   const [preferences, setPreferences] = useState(() =>
     readGroupChatDetailPreferences(conversation.id),
   );
@@ -380,6 +385,7 @@ function GroupChatDetailsPanel({
     setPreferences(readGroupChatDetailPreferences(conversation.id));
     setNotice(null);
     setMemberPickerOpen(false);
+    setMemberPickerMode("add");
   }, [conversation.id]);
 
   useEffect(() => {
@@ -504,6 +510,35 @@ function GroupChatDetailsPanel({
     },
   });
 
+  const removeMembersMutation = useMutation({
+    mutationFn: async (memberIds: string[]) => {
+      await Promise.all(
+        memberIds.map((memberId) =>
+          removeGroupMember(conversation.id, memberId, baseUrl),
+        ),
+      );
+    },
+    onSuccess: async (_, memberIds) => {
+      setNotice(
+        memberIds.length === 1
+          ? "已移除 1 位群成员。"
+          : `已移除 ${memberIds.length} 位群成员。`,
+      );
+      setMemberPickerOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-members", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+  });
+
   const leaveMutation = useMutation({
     mutationFn: () => leaveGroup(conversation.id, baseUrl),
     onSuccess: async () => {
@@ -533,6 +568,19 @@ function GroupChatDetailsPanel({
     [membersQuery.data],
   );
 
+  const removableMembers = useMemo(
+    () =>
+      (membersQuery.data ?? [])
+        .filter((item) => item.memberType === "character")
+        .map((item) => ({
+          id: item.memberId,
+          name: item.memberName ?? item.memberId,
+          subtitle: item.role === "admin" ? "管理员" : "群成员",
+          avatar: item.memberAvatar,
+        })),
+    [membersQuery.data],
+  );
+
   const memberItems: DesktopMemberGridItem[] = [
     ...(membersQuery.data ?? []).slice(0, 8).map((member) => ({
       key: member.id,
@@ -544,6 +592,7 @@ function GroupChatDetailsPanel({
       label: "添加",
       kind: "add" as const,
       onClick: () => {
+        setMemberPickerMode("add");
         setMemberPickerOpen(true);
       },
     },
@@ -552,7 +601,8 @@ function GroupChatDetailsPanel({
       label: "移除",
       kind: "remove" as const,
       onClick: () => {
-        setNotice("移除群成员入口已保留，后端补接口后接通。");
+        setMemberPickerMode("remove");
+        setMemberPickerOpen(true);
       },
     },
   ];
@@ -569,6 +619,10 @@ function GroupChatDetailsPanel({
       {addMembersMutation.isError &&
       addMembersMutation.error instanceof Error ? (
         <ErrorBlock message={addMembersMutation.error.message} />
+      ) : null}
+      {removeMembersMutation.isError &&
+      removeMembersMutation.error instanceof Error ? (
+        <ErrorBlock message={removeMembersMutation.error.message} />
       ) : null}
 
       <DesktopPanelSection>
@@ -722,7 +776,7 @@ function GroupChatDetailsPanel({
       </DesktopPanelSection>
 
       <DesktopGroupMemberPicker
-        open={memberPickerOpen}
+        open={memberPickerOpen && memberPickerMode === "add"}
         groupName={groupQuery.data?.name ?? conversation.title}
         existingMemberIds={(membersQuery.data ?? []).map(
           (item) => item.memberId,
@@ -730,6 +784,14 @@ function GroupChatDetailsPanel({
         pending={addMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
         onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
+      />
+      <DesktopGroupMemberRemovalPicker
+        open={memberPickerOpen && memberPickerMode === "remove"}
+        groupName={groupQuery.data?.name ?? conversation.title}
+        removableMembers={removableMembers}
+        pending={removeMembersMutation.isPending}
+        onClose={() => setMemberPickerOpen(false)}
+        onConfirm={(memberIds) => removeMembersMutation.mutate(memberIds)}
       />
     </div>
   );
