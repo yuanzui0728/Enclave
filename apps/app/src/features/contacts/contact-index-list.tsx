@@ -22,6 +22,23 @@ export function ContactIndexList({
   const indicatorTimerRef = useRef<number | null>(null);
   const [indicatorLabel, setIndicatorLabel] = useState<string | null>(null);
 
+  const showIndicator = (label: string, durationMs?: number) => {
+    if (indicatorTimerRef.current !== null) {
+      window.clearTimeout(indicatorTimerRef.current);
+      indicatorTimerRef.current = null;
+    }
+
+    setIndicatorLabel(label);
+    if (typeof durationMs !== "number") {
+      return;
+    }
+
+    indicatorTimerRef.current = window.setTimeout(() => {
+      setIndicatorLabel(null);
+      indicatorTimerRef.current = null;
+    }, durationMs);
+  };
+
   const resolveItemFromClientY = (clientY: number) => {
     let nearestItem: { key: string; indexLabel: string } | null = null;
     let nearestDistance = Number.POSITIVE_INFINITY;
@@ -54,11 +71,7 @@ export function ContactIndexList({
     }
 
     lastGestureKeyRef.current = nextItem.key;
-    if (indicatorTimerRef.current !== null) {
-      window.clearTimeout(indicatorTimerRef.current);
-      indicatorTimerRef.current = null;
-    }
-    setIndicatorLabel(nextItem.indexLabel);
+    showIndicator(nextItem.indexLabel);
     onSelect(nextItem.key, "auto");
   };
 
@@ -168,14 +181,15 @@ export function ContactIndexList({
               itemRefs.current[item.key] = node;
             }}
             onClick={(event) => {
-              if (suppressClickRef.current) {
-                suppressClickRef.current = false;
-                event.preventDefault();
-                return;
-              }
+            if (suppressClickRef.current) {
+              suppressClickRef.current = false;
+              event.preventDefault();
+              return;
+            }
 
-              onSelect(item.key, "smooth");
-            }}
+            showIndicator(item.indexLabel, 280);
+            onSelect(item.key, "smooth");
+          }}
             aria-label={`跳转到 ${item.indexLabel}`}
             className={cn(
               "flex h-4 w-4 items-center justify-center rounded-full text-[10px] leading-none transition-colors",

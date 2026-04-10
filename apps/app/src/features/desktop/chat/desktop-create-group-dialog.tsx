@@ -558,7 +558,6 @@ export function DesktopCreateGroupDialog({
       setFocusedFriendIndex(nextIndex);
     }
 
-    setFriendIndexIndicatorLabel(targetSection.title);
     friendSectionRefs.current[sectionKey]?.scrollIntoView({
       block: "start",
       behavior,
