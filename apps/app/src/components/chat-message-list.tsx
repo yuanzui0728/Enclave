@@ -1,9 +1,17 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
+import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   extractChatReplyMetadata,
   sanitizeDisplayedChatText,
@@ -53,7 +61,10 @@ export function ChatMessageList({
     x: number;
     y: number;
   } | null>(null);
-  const contextMenuEnabled = isDesktop && groupMode;
+  const [mobileActionMessage, setMobileActionMessage] =
+    useState<ChatRenderableMessage | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const contextMenuEnabled = isDesktop;
 
   useEffect(() => {
     if (!highlightedMessageId) {
@@ -99,7 +110,16 @@ export function ChatMessageList({
 
   useEffect(() => {
     setContextMenuState(null);
+    setMobileActionMessage(null);
   }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!messages.length) {
     return emptyState ?? null;
@@ -162,6 +182,30 @@ export function ChatMessageList({
     });
   };
 
+  const clearLongPressTimer = () => {
+    if (longPressTimerRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  };
+
+  const handleMobileMessagePointerDown = (
+    event: PointerEvent<HTMLDivElement>,
+    message: ChatRenderableMessage,
+  ) => {
+    if (isDesktop || event.pointerType === "mouse") {
+      return;
+    }
+
+    clearLongPressTimer();
+    longPressTimerRef.current = window.setTimeout(() => {
+      setMobileActionMessage(message);
+      clearLongPressTimer();
+    }, 380);
+  };
+
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
       {actionNotice ? (
@@ -215,6 +259,12 @@ export function ChatMessageList({
             <div
               id={`chat-message-${message.id}`}
               onContextMenu={(event) => handleMessageContextMenu(event, message)}
+              onPointerDown={(event) =>
+                handleMobileMessagePointerDown(event, message)
+              }
+              onPointerUp={clearLongPressTimer}
+              onPointerCancel={clearLongPressTimer}
+              onPointerMove={clearLongPressTimer}
               className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
@@ -319,6 +369,29 @@ export function ChatMessageList({
           }}
         />
       ) : null}
+      <MobileMessageActionSheet
+        open={Boolean(mobileActionMessage)}
+        onClose={() => setMobileActionMessage(null)}
+        onReply={
+          mobileActionMessage && onReplyMessage
+            ? () => {
+                onReplyMessage(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        onCopy={() => {
+          if (!mobileActionMessage) {
+            return;
+          }
+
+          void copyToClipboard(
+            buildClipboardText(mobileActionMessage),
+            "消息内容已复制。",
+          );
+          setMobileActionMessage(null);
+        }}
+      />
     </div>
   );
 }

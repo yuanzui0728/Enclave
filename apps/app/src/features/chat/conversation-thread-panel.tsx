@@ -1,20 +1,30 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
-import { ChatMessageList } from "../../components/chat-message-list";
+import {
+  ChatMessageList,
+  type ChatRenderableMessage,
+} from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
+import {
+  encodeChatReplyText,
+  sanitizeDisplayedChatText,
+  type ChatReplyMetadata,
+} from "../../lib/chat-text";
 import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "../desktop/chat/desktop-chat-header-actions";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
+import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
+import { type StickerAttachment } from "@yinjie/contracts";
 
 type ConversationThreadPanelProps = {
   conversationId: string;
@@ -46,6 +56,7 @@ export function ConversationThreadPanel({
   routeContextNotice,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
+  const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const {
     baseUrl,
     conversationTitle,
@@ -78,6 +89,12 @@ export function ConversationThreadPanel({
   const hasHighlightedMessage = renderedMessages.some(
     (message) => message.id === highlightedMessageId,
   );
+  const replyPreview = replyDraft
+    ? {
+        senderName: replyDraft.senderName,
+        text: replyDraft.previewText,
+      }
+    : null;
 
   useEffect(() => {
     if (!highlightedMessageId || !hasHighlightedMessage) {
@@ -93,6 +110,45 @@ export function ConversationThreadPanel({
 
     target.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [hasHighlightedMessage, highlightedMessageId]);
+
+  useEffect(() => {
+    setReplyDraft(null);
+  }, [conversationId]);
+
+  const handleReplyMessage = (message: ChatRenderableMessage) => {
+    const senderName =
+      message.senderType === "user"
+        ? "我"
+        : message.senderName?.trim() || "对方";
+    setReplyDraft({
+      messageId: message.id,
+      senderName,
+      previewText: describeReplyPreview(message),
+    });
+  };
+
+  const handleSubmit = async () => {
+    await sendTextMessage(
+      replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
+    );
+    setReplyDraft(null);
+  };
+
+  const handleSendSticker = async (sticker: StickerAttachment) => {
+    await sendStickerMessage(
+      sticker,
+      replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
+    );
+    setReplyDraft(null);
+  };
+
+  const handleSendAttachment = async (payload: ChatComposerAttachmentPayload) => {
+    await sendAttachmentMessage(
+      payload,
+      replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
+    );
+    setReplyDraft(null);
+  };
 
   return (
     <div
@@ -212,6 +268,7 @@ export function ConversationThreadPanel({
             groupMode={conversationType === "group"}
             variant={isDesktop ? "desktop" : "mobile"}
             highlightedMessageId={highlightedMessageId}
+            onReplyMessage={handleReplyMessage}
             emptyState={
               !isDesktop && !messagesQuery.isLoading && !messagesQuery.isError ? (
                 <EmptyState
@@ -258,16 +315,47 @@ export function ConversationThreadPanel({
           if (socketError) {
             setSocketError(null);
           }
-          await sendStickerMessage(sticker);
+          await handleSendSticker(sticker);
         }}
         onSendAttachment={async (payload) => {
           if (socketError) {
             setSocketError(null);
           }
-          await sendAttachmentMessage(payload);
+          await handleSendAttachment(payload);
         }}
-        onSubmit={() => void sendTextMessage()}
+        replyPreview={replyPreview}
+        onCancelReply={() => setReplyDraft(null)}
+        onSubmit={() => void handleSubmit()}
       />
     </div>
   );
+}
+
+function describeReplyPreview(message: ChatRenderableMessage) {
+  const text = sanitizeDisplayedChatText(message.text);
+  if (text) {
+    return text;
+  }
+
+  if (message.type === "image") {
+    return "[图片]";
+  }
+
+  if (message.type === "file") {
+    return "[文件]";
+  }
+
+  if (message.type === "contact_card") {
+    return "[名片]";
+  }
+
+  if (message.type === "location_card") {
+    return "[位置]";
+  }
+
+  if (message.type === "sticker") {
+    return "[表情]";
+  }
+
+  return "消息";
 }

@@ -20,6 +20,7 @@ import {
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
+import { sanitizeDisplayedChatText } from "../../lib/chat-text";
 import { parseTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
@@ -182,8 +183,8 @@ export function useConversationThread(conversationId: string) {
     },
   });
 
-  const sendTextMessage = async () => {
-    const trimmed = text.trim();
+  const sendTextMessage = async (overrideText?: string) => {
+    const trimmed = (overrideText ?? text).trim();
     if (!trimmed || !ownerId) {
       return;
     }
@@ -206,7 +207,10 @@ export function useConversationThread(conversationId: string) {
     });
   };
 
-  const sendStickerMessage = async (sticker: StickerAttachment) => {
+  const sendStickerMessage = async (
+    sticker: StickerAttachment,
+    overrideText?: string,
+  ) => {
     if (!ownerId) {
       return;
     }
@@ -226,7 +230,8 @@ export function useConversationThread(conversationId: string) {
       conversationId,
       characterId: targetCharacterId,
       type: "sticker",
-      text: `[表情包] ${sticker.label ?? sticker.stickerId}`,
+      text:
+        overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
       sticker: {
         packId: sticker.packId,
         stickerId: sticker.stickerId,
@@ -236,6 +241,7 @@ export function useConversationThread(conversationId: string) {
 
   const sendAttachmentMessage = async (
     payload: ChatComposerAttachmentPayload,
+    overrideText?: string,
   ) => {
     if (!ownerId) {
       return;
@@ -267,6 +273,7 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "image",
+        text: overrideText,
         attachment: result.attachment,
       });
       return;
@@ -285,6 +292,7 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "file",
+        text: overrideText,
         attachment: result.attachment,
       });
       return;
@@ -295,6 +303,7 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "contact_card",
+        text: overrideText,
         attachment: payload.attachment,
       });
       return;
@@ -304,6 +313,7 @@ export function useConversationThread(conversationId: string) {
       conversationId,
       characterId: targetCharacterId,
       type: "location_card",
+      text: overrideText,
       attachment: payload.attachment,
     });
   };
@@ -404,6 +414,11 @@ function buildOptimisticMessage(
   const createdAt = String(Date.now());
 
   if (payload.type === "sticker") {
+    const stickerLabel = sanitizeDisplayedChatText(payload.text ?? "").replace(
+      /^\[表情包\]\s*/,
+      "",
+    );
+
     return {
       id: `local_${createdAt}`,
       conversationId: payload.conversationId,
@@ -419,9 +434,7 @@ function buildOptimisticMessage(
         url: `/stickers/${payload.sticker.packId}/${payload.sticker.stickerId}.svg`,
         width: 160,
         height: 160,
-        label:
-          payload.text?.replace(/^\[表情包\]\s*/, "") ||
-          payload.sticker.stickerId,
+        label: stickerLabel || payload.sticker.stickerId,
       },
       createdAt,
     };
