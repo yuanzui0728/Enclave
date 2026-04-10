@@ -8,7 +8,15 @@ import {
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BellOff, FileText, Plus, Search, UserPlus, Users } from "lucide-react";
+import {
+  BellOff,
+  BellRing,
+  FileText,
+  Plus,
+  Search,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import {
   clearConversationHistory,
   clearGroupMessages,
@@ -27,7 +35,13 @@ import {
   updateGroupPreferences,
   type ConversationListItem,
 } from "@yinjie/contracts";
-import { ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
+import {
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+  TextField,
+  cn,
+} from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
@@ -35,10 +49,18 @@ import { OfficialServiceConversationCard } from "../../../components/official-se
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
-import { buildSearchRouteHash } from "../../search/search-route-state";
-import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import {
-  sanitizeDisplayedChatText,
+  buildChatReminderEntries,
+  filterChatReminderEntries,
+  formatReminderListTimestamp,
+  type ChatReminderEntry,
+} from "../../chat/chat-reminder-entries";
+import { buildSearchRouteHash } from "../../search/search-route-state";
+import {
+  removeLocalChatMessageReminder,
+  useLocalChatMessageActionState,
+} from "../../chat/local-chat-message-actions";
+import {
   splitChatTextSegments,
   summarizeChatMentions,
 } from "../../../lib/chat-text";
@@ -111,6 +133,7 @@ export function DesktopChatWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
   const [searchTerm, setSearchTerm] = useState("");
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
@@ -170,6 +193,23 @@ export function DesktopChatWorkspace({
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, localMessageActionState, searchTerm]);
+  const reminderEntries = useMemo(
+    () =>
+      buildChatReminderEntries(
+        localMessageActionState.reminders,
+        conversations,
+        nowTimestamp,
+      ),
+    [conversations, localMessageActionState.reminders, nowTimestamp],
+  );
+  const filteredReminderEntries = useMemo(
+    () => filterChatReminderEntries(reminderEntries, searchTerm),
+    [reminderEntries, searchTerm],
+  );
+  const dueReminderCount = useMemo(
+    () => filteredReminderEntries.filter((item) => item.isDue).length,
+    [filteredReminderEntries],
+  );
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations = useMemo(
     () => messageEntriesQuery.data?.serviceConversations ?? [],
@@ -249,6 +289,18 @@ export function DesktopChatWorkspace({
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!reminderEntries.length) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, [reminderEntries.length]);
 
   useEffect(() => {
     if (!conversationContextMenu) {
@@ -429,6 +481,30 @@ export function DesktopChatWorkspace({
     });
   }
 
+  function handleOpenReminder(entry: ChatReminderEntry) {
+    setNotice(null);
+
+    if (entry.threadType === "group") {
+      void navigate({
+        to: "/group/$groupId",
+        params: { groupId: entry.threadId },
+        hash: `chat-message-${entry.messageId}`,
+      });
+      return;
+    }
+
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId: entry.threadId },
+      hash: `chat-message-${entry.messageId}`,
+    });
+  }
+
+  function handleDismissReminder(messageId: string) {
+    removeLocalChatMessageReminder(messageId);
+    setNotice("已移除消息提醒。");
+  }
+
   return (
     <div className="relative flex h-full min-h-0">
       {isQuickMenuOpen ? (
@@ -518,6 +594,39 @@ export function DesktopChatWorkspace({
           ) : null}
 
           <div className="space-y-1.5">
+            {filteredReminderEntries.length ? (
+              <section className="overflow-hidden rounded-[18px] border border-[#dcefe3] bg-[linear-gradient(145deg,rgba(238,248,241,0.96),rgba(255,255,255,0.98))] p-2 shadow-[0_10px_24px_rgba(7,193,96,0.08)]">
+                <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
+                      <BellRing size={14} />
+                    </div>
+                    <span>消息提醒</span>
+                  </div>
+                  <div className="text-[11px] text-[color:var(--text-dim)]">
+                    {dueReminderCount > 0
+                      ? `${dueReminderCount} 条已到时间`
+                      : `${filteredReminderEntries.length} 条待提醒`}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  {filteredReminderEntries.map((entry) => (
+                    <DesktopReminderCard
+                      key={entry.messageId}
+                      entry={entry}
+                      active={
+                        entry.threadId === selectedConversationId &&
+                        entry.messageId === highlightedMessageId
+                      }
+                      onOpen={handleOpenReminder}
+                      onDismiss={handleDismissReminder}
+                    />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {showSubscriptionInboxItem && subscriptionInboxSummary ? (
               <SubscriptionInboxCard
                 summary={subscriptionInboxSummary}
@@ -556,6 +665,7 @@ export function DesktopChatWorkspace({
           </div>
 
           {!conversationsQuery.isLoading &&
+          !filteredReminderEntries.length &&
           !filteredConversations.length &&
           !filteredServiceConversations.length &&
           !showSubscriptionInboxItem &&
@@ -691,6 +801,77 @@ export function DesktopChatWorkspace({
           }
         />
       ) : null}
+    </div>
+  );
+}
+
+function DesktopReminderCard({
+  active,
+  entry,
+  onOpen,
+  onDismiss,
+}: {
+  active: boolean;
+  entry: ChatReminderEntry;
+  onOpen: (entry: ChatReminderEntry) => void;
+  onDismiss: (messageId: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-[16px] border px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        active
+          ? "border-[#07c160]/30 bg-white shadow-[0_8px_18px_rgba(7,193,96,0.08)]"
+          : "border-white/70 bg-white/88 hover:bg-white",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => onOpen(entry)}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        {entry.threadType === "group" ? (
+          <GroupAvatarChip
+            name={entry.title}
+            members={entry.participants}
+            size="sm"
+          />
+        ) : (
+          <AvatarChip name={entry.title} size="sm" />
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                entry.isDue
+                  ? "bg-[#fff1f0] text-[#d74b45]"
+                  : "bg-[#eaf8ef] text-[#07c160]",
+              )}
+            >
+              {entry.isDue ? "已到时间" : "待提醒"}
+            </span>
+            <span className="min-w-0 truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+              {entry.title}
+            </span>
+          </div>
+          <div className="mt-1 truncate text-[12px] text-[color:var(--text-secondary)]">
+            {entry.previewText}
+          </div>
+          <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+            {formatReminderListTimestamp(entry.remindAt, entry.isDue)}
+          </div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onDismiss(entry.messageId)}
+        className="shrink-0 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[11px] text-[color:var(--text-secondary)] transition hover:border-[#07c160]/30 hover:text-[#07c160]"
+      >
+        完成
+      </button>
     </div>
   );
 }
@@ -882,35 +1063,6 @@ function canConversationBeMarkedUnread(conversation: ConversationListItem) {
     conversation.unreadCount === 0 &&
     conversation.lastMessage?.senderType === "character"
   );
-}
-
-function formatMessagePreviewText(type: string | undefined, text: string) {
-  const displayedText = sanitizeDisplayedChatText(text);
-  if (displayedText) {
-    return displayedText;
-  }
-
-  if (type === "image") {
-    return "[图片]";
-  }
-
-  if (type === "file") {
-    return "[文件]";
-  }
-
-  if (type === "contact_card") {
-    return "[名片]";
-  }
-
-  if (type === "location_card") {
-    return "[位置]";
-  }
-
-  if (type === "sticker") {
-    return "[表情]";
-  }
-
-  return "打开会话查看最新消息。";
 }
 
 function renderConversationPreviewText(text: string): ReactNode {

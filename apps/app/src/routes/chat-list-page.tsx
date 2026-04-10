@@ -47,19 +47,19 @@ import {
   removeLocalChatMessageReminder,
   useLocalChatMessageActionState,
 } from "../features/chat/local-chat-message-actions";
+import {
+  buildChatReminderEntries,
+  formatReminderListTimestamp,
+  type ChatReminderEntry,
+} from "../features/chat/chat-reminder-entries";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import {
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
 } from "../lib/conversation-preview";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
-import {
-  formatConversationTimestamp,
-  formatMessageTimestamp,
-  parseTimestamp,
-} from "../lib/format";
+import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type QuickActionItem = {
@@ -107,16 +107,6 @@ type PendingHideConversation = {
   conversationId: string;
   isGroup: boolean;
   title: string;
-};
-
-type ChatReminderEntry = {
-  messageId: string;
-  threadId: string;
-  threadType: "direct" | "group";
-  title: string;
-  previewText: string;
-  remindAt: string;
-  isDue: boolean;
 };
 
 const SWIPE_ACTION_BUTTON_WIDTH = 72;
@@ -1047,49 +1037,4 @@ function canConversationBeMarkedUnread(conversation: ConversationListEntry) {
     conversation.unreadCount === 0 &&
     conversation.lastMessage?.senderType === "character"
   );
-}
-
-function buildChatReminderEntries(
-  reminders: ReturnType<typeof useLocalChatMessageActionState>["reminders"],
-  conversations: ConversationListEntry[],
-  nowTimestamp: number,
-): ChatReminderEntry[] {
-  const conversationMap = new Map(
-    conversations.map((conversation) => [conversation.id, conversation]),
-  );
-
-  return [...reminders]
-    .filter((item) => item.threadId.trim())
-    .map((item) => {
-      const conversation = conversationMap.get(item.threadId);
-      const remindTimestamp = parseTimestamp(item.remindAt) ?? 0;
-
-      return {
-        messageId: item.messageId,
-        threadId: item.threadId,
-        threadType: item.threadType,
-        title:
-          conversation?.title ||
-          item.threadTitle?.trim() ||
-          (item.threadType === "group" ? "群聊" : "聊天"),
-        previewText: item.previewText?.trim() || "聊天消息",
-        remindAt: item.remindAt,
-        isDue: remindTimestamp <= nowTimestamp,
-      };
-    })
-    .sort((left, right) => {
-      if (left.isDue !== right.isDue) {
-        return left.isDue ? -1 : 1;
-      }
-
-      return (
-        (parseTimestamp(left.remindAt) ?? 0) -
-        (parseTimestamp(right.remindAt) ?? 0)
-      );
-    });
-}
-
-function formatReminderListTimestamp(remindAt: string, isDue: boolean) {
-  const label = formatMessageTimestamp(remindAt);
-  return isDue ? `提醒时间 ${label}` : `将在 ${label} 提醒`;
 }
