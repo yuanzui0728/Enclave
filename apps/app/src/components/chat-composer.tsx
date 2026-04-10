@@ -126,7 +126,7 @@ type ScreenshotAnnotation = {
 
 type ScreenshotCropResizeDraft = {
   pointerId: number;
-  handle: "nw" | "ne" | "sw" | "se";
+  handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
   startX: number;
   startY: number;
   boundsWidth: number;
@@ -1223,7 +1223,7 @@ export function ChatComposer({
   };
 
   const handleDesktopScreenshotCropResizeStart = (
-    handle: "nw" | "ne" | "sw" | "se",
+    handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w",
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
     if (!desktopScreenshotCrop || attachmentBusy) {
@@ -2565,7 +2565,7 @@ function DesktopScreenshotEditor({
   onCropResizeEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onCropResizeMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onCropResizeStart: (
-    handle: "nw" | "ne" | "sw" | "se",
+    handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w",
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => void;
   onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -2712,7 +2712,9 @@ function DesktopScreenshotEditor({
                         className="absolute inset-2 cursor-move rounded-[10px] border border-white/14 bg-white/0 text-transparent"
                         aria-label="移动裁剪区域"
                       />
-                      {(["nw", "ne", "sw", "se"] as const).map((handle) => (
+                      {(
+                        ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const
+                      ).map((handle) => (
                         <button
                           key={handle}
                           type="button"
@@ -2723,18 +2725,30 @@ function DesktopScreenshotEditor({
                           onPointerUp={onCropResizeEnd}
                           onPointerCancel={onCropResizeEnd}
                           className={cn(
-                            "absolute h-3.5 w-3.5 rounded-full border-2 border-white bg-[#07c160] shadow-[0_6px_14px_rgba(7,193,96,0.28)]",
+                            "absolute border-2 border-white bg-[#07c160] shadow-[0_6px_14px_rgba(7,193,96,0.28)]",
                             handle === "nw"
-                              ? "-left-2 -top-2 cursor-nwse-resize"
+                              ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
+                              : "",
+                            handle === "n"
+                              ? "left-1/2 -top-2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
                               : "",
                             handle === "ne"
-                              ? "-right-2 -top-2 cursor-nesw-resize"
+                              ? "-right-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
+                              : "",
+                            handle === "e"
+                              ? "right-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
                               : "",
                             handle === "sw"
-                              ? "-bottom-2 -left-2 cursor-nesw-resize"
+                              ? "-bottom-2 -left-2 h-3.5 w-3.5 rounded-full cursor-nesw-resize"
+                              : "",
+                            handle === "s"
+                              ? "bottom-[-8px] left-1/2 h-3.5 w-8 -translate-x-1/2 rounded-full cursor-ns-resize"
                               : "",
                             handle === "se"
-                              ? "-bottom-2 -right-2 cursor-nwse-resize"
+                              ? "-bottom-2 -right-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
+                              : "",
+                            handle === "w"
+                              ? "left-[-8px] top-1/2 h-8 w-3.5 -translate-y-1/2 rounded-full cursor-ew-resize"
                               : "",
                           )}
                           aria-label="调整裁剪区域"
@@ -3189,7 +3203,7 @@ function getNormalizedCropPreviewRect(crop: NormalizedCropRect) {
 
 function resizeScreenshotCrop(
   crop: NormalizedCropRect,
-  handle: "nw" | "ne" | "sw" | "se",
+  handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w",
   deltaX: number,
   deltaY: number,
 ) {
@@ -3199,19 +3213,19 @@ function resizeScreenshotCrop(
   let right = crop.x + crop.width;
   let bottom = crop.y + crop.height;
 
-  if (handle === "nw" || handle === "sw") {
+  if (handle === "nw" || handle === "w" || handle === "sw") {
     left = clamp(left + deltaX, 0, right - minSize);
   }
 
-  if (handle === "ne" || handle === "se") {
+  if (handle === "ne" || handle === "e" || handle === "se") {
     right = clamp(right + deltaX, left + minSize, 1);
   }
 
-  if (handle === "nw" || handle === "ne") {
+  if (handle === "nw" || handle === "n" || handle === "ne") {
     top = clamp(top + deltaY, 0, bottom - minSize);
   }
 
-  if (handle === "sw" || handle === "se") {
+  if (handle === "sw" || handle === "s" || handle === "se") {
     bottom = clamp(bottom + deltaY, top + minSize, 1);
   }
 
