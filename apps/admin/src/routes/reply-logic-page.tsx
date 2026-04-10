@@ -38,12 +38,13 @@ import {
   AdminCallout,
   AdminCodeBlock,
   AdminEmptyState,
+  AdminFormSection as ConfigSection,
   AdminInfoRows,
   AdminPageHero,
-  AdminSelectField,
+  AdminSelectField as SelectFieldBlock,
   AdminSectionNav,
-  AdminTextArea,
-  AdminTextField,
+  AdminTextArea as TextAreaBlock,
+  AdminTextField as FieldBlock,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -3408,100 +3409,6 @@ function RuntimeRulesEditorCard({
         </>
       )}
     </Card>
-  );
-}
-
-function ConfigSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4 border-t border-[color:var(--border-faint)] pt-5 first:border-t-0 first:pt-0">
-      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{title}</div>
-      {children}
-    </section>
-  );
-}
-
-function FieldBlock({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  min,
-  max,
-  list,
-}: {
-  label: string;
-  value: string | number;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-  min?: number;
-  max?: number;
-  list?: string;
-}) {
-  return (
-    <AdminTextField
-      label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      type={type}
-      min={min}
-      max={max}
-      list={list}
-    />
-  );
-}
-
-function TextAreaBlock({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <AdminTextArea
-      label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      textareaClassName="min-h-28"
-    />
-  );
-}
-
-function SelectFieldBlock({
-  label,
-  value,
-  onChange,
-  options,
-  className,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-  className?: string;
-}) {
-  return (
-    <AdminSelectField
-      label={label}
-      value={value}
-      onChange={onChange}
-      options={options}
-      className={className}
-    />
   );
 }
 
