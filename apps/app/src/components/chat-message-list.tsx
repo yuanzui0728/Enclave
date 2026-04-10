@@ -1623,6 +1623,8 @@ export function ChatMessageList({
         const directCallInvite = parseDirectCallInviteMessage(displayText);
         const groupCallInvite = parseGroupCallInviteMessage(displayText);
         const groupRelaySummary = parseGroupRelaySummaryMessage(displayText);
+        const sharedHistorySummary =
+          parseSharedHistorySummaryMessage(displayText);
 
         if (isSystem || isRecalled) {
           return (
@@ -1634,17 +1636,26 @@ export function ChatMessageList({
                   variant={variant}
                 />
               ) : null}
-              <InlineNotice
-                id={`chat-message-${message.id}`}
-                className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
-                  isDesktop
-                    ? "border border-black/6 bg-[#f7f7f7]"
-                    : "border border-black/5 bg-[rgba(255,255,255,0.82)] shadow-none"
-                } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
-                tone="muted"
-              >
-                {isRecalled ? buildRecalledMessageNotice(message) : displayText}
-              </InlineNotice>
+              {sharedHistorySummary && !isRecalled ? (
+                <SharedHistorySummaryNotice
+                  id={`chat-message-${message.id}`}
+                  summary={sharedHistorySummary}
+                  isDesktop={isDesktop}
+                  highlighted={isHighlighted}
+                />
+              ) : (
+                <InlineNotice
+                  id={`chat-message-${message.id}`}
+                  className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
+                    isDesktop
+                      ? "border border-black/6 bg-[#f7f7f7]"
+                      : "border border-black/5 bg-[rgba(255,255,255,0.82)] shadow-none"
+                  } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
+                  tone="muted"
+                >
+                  {isRecalled ? buildRecalledMessageNotice(message) : displayText}
+                </InlineNotice>
+              )}
             </div>
           );
         }
@@ -2422,6 +2433,59 @@ function writeDetailedTimestampMode(enabled: boolean) {
   window.localStorage.setItem(
     DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
     enabled ? "1" : "0",
+  );
+}
+
+function parseSharedHistorySummaryMessage(text: string) {
+  const normalized = text.trim();
+  const match = normalized.match(/^已分享你和(.+?)的(\d+)条聊天记录$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    participantName: match[1]?.trim() || "对方",
+    count: Number(match[2]) || 0,
+  };
+}
+
+function SharedHistorySummaryNotice({
+  id,
+  summary,
+  isDesktop,
+  highlighted,
+}: {
+  id: string;
+  summary: {
+    participantName: string;
+    count: number;
+  };
+  isDesktop: boolean;
+  highlighted: boolean;
+}) {
+  return (
+    <div
+      id={id}
+      className={cn(
+        "mx-auto max-w-[84%] rounded-[16px] border px-4 py-3 text-center",
+        isDesktop
+          ? "border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)]"
+          : "border-black/5 bg-[rgba(255,255,255,0.92)]",
+        highlighted
+          ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
+          : "",
+      )}
+    >
+      <div className="flex items-center justify-center gap-2 text-[12px] font-medium text-[color:var(--text-primary)]">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-[color:var(--text-secondary)]">
+          <FileText size={13} />
+        </span>
+        <span>聊天记录已导入当前群聊</span>
+      </div>
+      <div className="mt-1.5 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        来自你和 {summary.participantName} 的 {summary.count} 条消息
+      </div>
+    </div>
   );
 }
 
