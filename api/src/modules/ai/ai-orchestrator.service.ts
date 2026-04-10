@@ -23,6 +23,8 @@ import { WorldService } from '../world/world.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
+const DEFAULT_TTS_MODEL = 'gpt-4o-mini-tts';
+const DEFAULT_TTS_VOICE = 'alloy';
 const ACCEPTED_AUDIO_MIME_TYPES = new Set([
   'audio/mp4',
   'audio/mpeg',
@@ -45,8 +47,27 @@ type ResolvedProviderConfig = {
   model: string;
   apiKey: string;
   transcriptionModel: string;
+  ttsModel: string;
+  ttsVoice: string;
   apiStyle: 'openai-chat-completions' | 'openai-responses';
   mode: 'cloud' | 'local-compatible';
+};
+
+type SpeechSynthesisOptions = {
+  text: string;
+  voice?: string;
+  conversationId?: string;
+  characterId?: string;
+  instructions?: string;
+};
+
+type SpeechSynthesisResult = {
+  buffer: Buffer;
+  mimeType: string;
+  fileExtension: string;
+  durationMs: number;
+  provider: string;
+  voice: string;
 };
 
 type PreparedReplyRequest = {
@@ -104,6 +125,12 @@ export class AiOrchestratorService {
     const transcriptionModel =
       (await this.configService.getConfig('provider_transcription_model')) ??
       DEFAULT_TRANSCRIPTION_MODEL;
+    const ttsModel =
+      (await this.configService.getConfig('provider_tts_model')) ??
+      DEFAULT_TTS_MODEL;
+    const ttsVoice =
+      (await this.configService.getConfig('provider_tts_voice')) ??
+      DEFAULT_TTS_VOICE;
     const apiStyle =
       (await this.configService.getConfig('provider_api_style')) ??
       'openai-chat-completions';
@@ -115,6 +142,8 @@ export class AiOrchestratorService {
       model,
       apiKey: apiKey.trim(),
       transcriptionModel,
+      ttsModel,
+      ttsVoice,
       apiStyle:
         apiStyle === 'openai-responses'
           ? 'openai-responses'
@@ -136,6 +165,8 @@ export class AiOrchestratorService {
       apiKey: override?.apiKey?.trim() || provider.apiKey,
       model: provider.model,
       transcriptionModel: provider.transcriptionModel,
+      ttsModel: provider.ttsModel,
+      ttsVoice: provider.ttsVoice,
       apiStyle: provider.apiStyle,
       mode: provider.mode,
     };
@@ -764,6 +795,67 @@ export class AiOrchestratorService {
       });
       throw new BadGatewayException(
         '当前 Provider 不支持语音转写，或本次转写请求失败。',
+      );
+    }
+  }
+
+  async synthesizeSpeech(
+    options: SpeechSynthesisOptions,
+  ): Promise<SpeechSynthesisResult> {
+    const provider = await this.resolveProviderConfig();
+    if (!provider.apiKey.trim()) {
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法生成语音。',
+      );
+    }
+
+    const text = options.text.trim();
+    if (!text) {
+      throw new BadRequestException('请先提供要播报的文本。');
+    }
+
+    const voice =
+      options.voice?.trim() || provider.ttsVoice || DEFAULT_TTS_VOICE;
+    const client = this.createProviderClient(provider);
+    const startedAt = Date.now();
+
+    try {
+      const response = await client.audio.speech.create({
+        model: provider.ttsModel,
+        voice,
+        input: text,
+        response_format: 'mp3',
+        instructions: options.instructions?.trim() || undefined,
+      });
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      if (!buffer.length) {
+        throw new BadGatewayException('语音生成结果为空，请稍后再试。');
+      }
+
+      return {
+        buffer,
+        mimeType: 'audio/mpeg',
+        fileExtension: 'mp3',
+        durationMs: Date.now() - startedAt,
+        provider: provider.ttsModel,
+        voice,
+      };
+    } catch (error) {
+      if (error instanceof BadGatewayException) {
+        throw error;
+      }
+
+      this.logger.error('speech synthesis failed', {
+        conversationId: options.conversationId,
+        characterId: options.characterId,
+        voice,
+        textLength: text.length,
+        errorMessage: this.extractErrorMessage(error),
+      });
+      throw new BadGatewayException(
+        '当前 Provider 不支持语音合成，或本次语音生成请求失败。',
       );
     }
   }

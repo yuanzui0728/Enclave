@@ -14,10 +14,12 @@ import {
   FavoritesController,
   GroupController,
   MessageRemindersController,
+  VoiceCallsController,
 } from './chat.controller';
 import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
 import { MessageRemindersService } from './message-reminders.service';
+import { VoiceCallsService } from './voice-calls.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
@@ -51,10 +53,12 @@ import { GroupMessageEntity } from './group-message.entity';
     GroupService,
     FavoritesService,
     MessageRemindersService,
+    VoiceCallsService,
   ],
   controllers: [
     ChatController,
     ChatAttachmentController,
+    VoiceCallsController,
     FavoritesController,
     MessageRemindersController,
     ConversationBackgroundController,
