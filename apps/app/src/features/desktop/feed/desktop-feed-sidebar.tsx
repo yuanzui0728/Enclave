@@ -22,17 +22,22 @@ export type DesktopFeedSidebarMode = "summary" | "author" | "detail";
 type DesktopFeedSidebarProps = {
   activeAuthorId: string | null;
   activeAuthorSummary: DesktopFeedAuthorSummary | null;
+  activeResidentSummary: DesktopFeedAuthorSummary | null;
+  aiReactedPostsCount: number;
   authorPosts: FeedPostListItem[];
   authorSummaries: DesktopFeedAuthorSummary[];
   commentDrafts: Record<string, string>;
   commentPendingPostId: string | null;
   currentFilterLabel: string;
+  currentSortLabel: string;
   detailErrorMessage?: string | null;
   detailLoading: boolean;
   likePendingPostId: string | null;
   mode: DesktopFeedSidebarMode;
   ownerAvatar?: string | null;
+  ownerPostsCount: number;
   ownerUsername?: string | null;
+  recentPostsCount: number;
   residentPostsCount: number;
   selectedPost: FeedPostWithComments | null;
   selectedPostId: string | null;
@@ -53,17 +58,22 @@ type DesktopFeedSidebarProps = {
 export function DesktopFeedSidebar({
   activeAuthorId,
   activeAuthorSummary,
+  activeResidentSummary,
+  aiReactedPostsCount,
   authorPosts,
   authorSummaries,
   commentDrafts,
   commentPendingPostId,
   currentFilterLabel,
+  currentSortLabel,
   detailErrorMessage,
   detailLoading,
   likePendingPostId,
   mode,
   ownerAvatar,
+  ownerPostsCount,
   ownerUsername,
+  recentPostsCount,
   residentPostsCount,
   selectedPost,
   selectedPostId,
@@ -252,9 +262,10 @@ export function DesktopFeedSidebar({
           </div>
 
           <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <SidebarMetric label="公开流" value={String(totalPostsCount)} />
               <SidebarMetric label="居民动态" value={String(residentPostsCount)} />
+              <SidebarMetric label="我的发言" value={String(ownerPostsCount)} />
               <SidebarMetric label="当前可见" value={String(visiblePostsCount)} />
             </div>
             <div className="mt-4 rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3">
@@ -265,6 +276,51 @@ export function DesktopFeedSidebar({
                 {currentFilterLabel}
               </div>
             </div>
+            <div className="mt-3 rounded-[14px] bg-[rgba(247,250,252,0.98)] px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                当前排序
+              </div>
+              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                {currentSortLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
+            <div className="grid grid-cols-2 gap-3">
+              <SidebarMetric label="AI 在场" value={String(aiReactedPostsCount)} />
+              <SidebarMetric label="24h 内" value={String(recentPostsCount)} />
+            </div>
+
+            {activeResidentSummary ? (
+              <button
+                type="button"
+                onClick={() => onSelectAuthor(activeResidentSummary.authorId)}
+                className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)] px-4 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(93,103,201,0.12)] hover:bg-white"
+              >
+                <AvatarChip
+                  name={activeResidentSummary.authorName}
+                  src={activeResidentSummary.authorAvatar}
+                  size="sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                    当前最活跃居民
+                  </div>
+                  <div className="mt-1 truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                    {activeResidentSummary.authorName}
+                  </div>
+                  <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
+                    {activeResidentSummary.count} 条动态 · {activeResidentSummary.commentCount} 条评论
+                  </div>
+                </div>
+                <Bot size={15} className="shrink-0 text-sky-600" />
+              </button>
+            ) : (
+              <div className="mt-4 rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+                目前还没有足够活跃的居民公开流样本。
+              </div>
+            )}
           </div>
 
           <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">

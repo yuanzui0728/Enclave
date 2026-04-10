@@ -2,9 +2,11 @@ import { Button, ErrorBlock, InlineNotice, TextField, cn } from "@yinjie/ui";
 import { ArrowUp, PenSquare, RefreshCcw, Search, X } from "lucide-react";
 
 export type DesktopFeedFilter = "all" | "owner" | "resident";
+export type DesktopFeedSort = "latest" | "discussion" | "ai-active";
 
 type DesktopFeedToolbarProps = {
   activeFilter: DesktopFeedFilter;
+  activeSort: DesktopFeedSort;
   commentErrorMessage?: string | null;
   errors?: string[];
   filteredCountLabel: string;
@@ -18,6 +20,7 @@ type DesktopFeedToolbarProps = {
   onOpenCompose: () => void;
   onRefresh: () => void;
   onSearchChange: (value: string) => void;
+  onSortChange: (nextValue: DesktopFeedSort) => void;
 };
 
 const filterOptions: Array<{ key: DesktopFeedFilter; label: string }> = [
@@ -26,8 +29,15 @@ const filterOptions: Array<{ key: DesktopFeedFilter; label: string }> = [
   { key: "resident", label: "只看居民" },
 ];
 
+const sortOptions: Array<{ key: DesktopFeedSort; label: string }> = [
+  { key: "latest", label: "最新" },
+  { key: "discussion", label: "讨论度" },
+  { key: "ai-active", label: "AI 在场" },
+];
+
 export function DesktopFeedToolbar({
   activeFilter,
+  activeSort,
   commentErrorMessage,
   errors = [],
   filteredCountLabel,
@@ -41,6 +51,7 @@ export function DesktopFeedToolbar({
   onOpenCompose,
   onRefresh,
   onSearchChange,
+  onSortChange,
 }: DesktopFeedToolbarProps) {
   return (
     <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-4">
@@ -101,6 +112,27 @@ export function DesktopFeedToolbar({
               <X size={13} />
             </button>
           ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+            排序
+          </div>
+          {sortOptions.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => onSortChange(option.key)}
+              className={cn(
+                "rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-[border-color,background-color,color]",
+                activeSort === option.key
+                  ? "border-[rgba(16,185,129,0.18)] bg-[rgba(16,185,129,0.10)] text-emerald-700"
+                  : "border-[rgba(15,23,42,0.08)] bg-white/86 text-[color:var(--text-secondary)] hover:border-[rgba(16,185,129,0.14)] hover:text-[color:var(--text-primary)]",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

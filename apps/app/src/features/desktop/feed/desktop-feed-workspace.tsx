@@ -11,6 +11,7 @@ import {
 import {
   DesktopFeedToolbar,
   type DesktopFeedFilter,
+  type DesktopFeedSort,
 } from "./desktop-feed-toolbar";
 
 type DesktopFeedWorkspaceProps = {
@@ -69,6 +70,7 @@ export function DesktopFeedWorkspace({
   onToggleFavorite,
 }: DesktopFeedWorkspaceProps) {
   const [activeFilter, setActiveFilter] = useState<DesktopFeedFilter>("all");
+  const [activeSort, setActiveSort] = useState<DesktopFeedSort>("latest");
   const [searchText, setSearchText] = useState("");
   const [activeAuthorId, setActiveAuthorId] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -156,6 +158,10 @@ export function DesktopFeedWorkspace({
       );
     });
   }, [activeAuthorId, activeFilter, posts, searchText]);
+  const sortedPosts = useMemo(
+    () => [...filteredPosts].sort(createFeedPostSorter(activeSort)),
+    [activeSort, filteredPosts],
+  );
 
   const activeAuthorSummary =
     authorSummaries.find((author) => author.authorId === activeAuthorId) ?? null;
@@ -164,35 +170,47 @@ export function DesktopFeedWorkspace({
       return [];
     }
 
-    return posts.filter((post) => post.authorId === activeAuthorId);
-  }, [activeAuthorId, posts]);
+    return posts
+      .filter((post) => post.authorId === activeAuthorId)
+      .sort(createFeedPostSorter(activeSort));
+  }, [activeAuthorId, activeSort, posts]);
 
   const filteredCountLabel = useMemo(() => {
     if (activeAuthorSummary) {
-      return `${activeAuthorSummary.authorName} · ${filteredPosts.length} 条`;
+      return `${activeAuthorSummary.authorName} · ${sortedPosts.length} 条`;
     }
 
     if (searchText.trim()) {
-      return `搜索结果 ${filteredPosts.length} 条`;
+      return `搜索结果 ${sortedPosts.length} 条`;
     }
 
     switch (activeFilter) {
       case "owner":
-        return `只看我 · ${filteredPosts.length} 条`;
+        return `只看我 · ${sortedPosts.length} 条`;
       case "resident":
-        return `只看居民 · ${filteredPosts.length} 条`;
+        return `只看居民 · ${sortedPosts.length} 条`;
       default:
-        return `当前展示 ${filteredPosts.length} 条`;
+        return `当前展示 ${sortedPosts.length} 条`;
     }
-  }, [activeAuthorSummary, activeFilter, filteredPosts.length, searchText]);
+  }, [activeAuthorSummary, activeFilter, searchText, sortedPosts.length]);
+  const currentSortLabel = useMemo(() => {
+    switch (activeSort) {
+      case "discussion":
+        return "按讨论度排序，优先展示评论和互动更密集的动态。";
+      case "ai-active":
+        return "按 AI 在场排序，优先展示已经进入居民回应链的动态。";
+      default:
+        return "按最新发布排序，优先展示刚刚出现在公开流里的发言。";
+    }
+  }, [activeSort]);
 
   const currentFilterLabel = useMemo(() => {
     if (activeAuthorSummary) {
-      return `当前正在看 ${activeAuthorSummary.authorName} 的公开动态，共 ${filteredPosts.length} 条。`;
+      return `当前正在看 ${activeAuthorSummary.authorName} 的公开动态，共 ${sortedPosts.length} 条。`;
     }
 
     if (searchText.trim()) {
-      return `搜索词“${searchText.trim()}”匹配到 ${filteredPosts.length} 条公开动态。`;
+      return `搜索词“${searchText.trim()}”匹配到 ${sortedPosts.length} 条公开动态。`;
     }
 
     if (activeFilter === "owner") {
@@ -204,16 +222,16 @@ export function DesktopFeedWorkspace({
     }
 
     return `当前展示整个世界的公开流，包括世界主人与居民的发言。`;
-  }, [activeAuthorSummary, activeFilter, filteredPosts.length, searchText]);
+  }, [activeAuthorSummary, activeFilter, searchText, sortedPosts.length]);
 
   useEffect(() => {
     if (
       selectedPostId &&
-      !filteredPosts.some((post) => post.id === selectedPostId)
+      !sortedPosts.some((post) => post.id === selectedPostId)
     ) {
       setSelectedPostId(null);
     }
-  }, [filteredPosts, selectedPostId]);
+  }, [sortedPosts, selectedPostId]);
 
   useEffect(() => {
     if (!activeAuthorId) {
@@ -234,6 +252,36 @@ export function DesktopFeedWorkspace({
     () => posts.filter((post) => post.authorType === "character").length,
     [posts],
   );
+  const ownerPostsCount = useMemo(
+    () => posts.filter((post) => post.authorType === "user").length,
+    [posts],
+  );
+  const aiReactedPostsCount = useMemo(
+    () => posts.filter((post) => post.aiReacted).length,
+    [posts],
+  );
+  const recentPostsCount = useMemo(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return posts.filter((post) => (parseTimestamp(post.createdAt) ?? 0) >= cutoff).length;
+  }, [posts]);
+  const activeResidentSummary = useMemo(() => {
+    const residents = authorSummaries.filter((author) => author.authorType === "character");
+    if (!residents.length) {
+      return null;
+    }
+
+    return [...residents].sort((left, right) => {
+      if (right.count !== left.count) {
+        return right.count - left.count;
+      }
+
+      if (right.commentCount !== left.commentCount) {
+        return right.commentCount - left.commentCount;
+      }
+
+      return (parseTimestamp(right.latestCreatedAt) ?? 0) - (parseTimestamp(left.latestCreatedAt) ?? 0);
+    })[0] ?? null;
+  }, [authorSummaries]);
 
   function focusAuthor(authorId: string) {
     setActiveFilter("all");
@@ -247,6 +295,7 @@ export function DesktopFeedWorkspace({
         <div className="flex h-full min-h-0 flex-col">
           <DesktopFeedToolbar
             activeFilter={activeFilter}
+            activeSort={activeSort}
             commentErrorMessage={commentErrorMessage}
             errors={errors}
             filteredCountLabel={filteredCountLabel}
@@ -265,6 +314,7 @@ export function DesktopFeedWorkspace({
             onOpenCompose={() => setShowCompose(true)}
             onRefresh={onRefresh}
             onSearchChange={setSearchText}
+            onSortChange={setActiveSort}
           />
 
           <div
@@ -277,7 +327,7 @@ export function DesktopFeedWorkspace({
                 commentPendingPostId={commentPendingPostId}
                 isLoading={isLoading}
                 likePendingPostId={likePendingPostId}
-                posts={filteredPosts}
+                posts={sortedPosts}
                 selectedPostId={selectedPostId}
                 totalPostsCount={posts.length}
                 isPostFavorite={isPostFavorite}
@@ -302,6 +352,7 @@ export function DesktopFeedWorkspace({
         commentDrafts={commentDrafts}
         commentPendingPostId={commentPendingPostId}
         currentFilterLabel={currentFilterLabel}
+        currentSortLabel={currentSortLabel}
         detailErrorMessage={
           selectedPostQuery.isError && selectedPostQuery.error instanceof Error
             ? selectedPostQuery.error.message
@@ -312,11 +363,15 @@ export function DesktopFeedWorkspace({
         mode={sidebarMode}
         ownerAvatar={ownerAvatar}
         ownerUsername={ownerUsername}
+        activeResidentSummary={activeResidentSummary}
+        aiReactedPostsCount={aiReactedPostsCount}
+        ownerPostsCount={ownerPostsCount}
+        recentPostsCount={recentPostsCount}
         residentPostsCount={residentPostsCount}
         selectedPost={selectedPostQuery.data ?? null}
         selectedPostId={selectedPostId}
         totalPostsCount={posts.length}
-        visiblePostsCount={filteredPosts.length}
+        visiblePostsCount={sortedPosts.length}
         isPostFavorite={isPostFavorite}
         onClearAuthor={() => setActiveAuthorId(null)}
         onCloseDetail={() => setSelectedPostId(null)}
@@ -343,4 +398,35 @@ export function DesktopFeedWorkspace({
       ) : null}
     </div>
   );
+}
+
+function createFeedPostSorter(activeSort: DesktopFeedSort) {
+  return (left: FeedPostListItem, right: FeedPostListItem) => {
+    switch (activeSort) {
+      case "discussion": {
+        if (right.commentCount !== left.commentCount) {
+          return right.commentCount - left.commentCount;
+        }
+
+        if (right.likeCount !== left.likeCount) {
+          return right.likeCount - left.likeCount;
+        }
+
+        return (parseTimestamp(right.createdAt) ?? 0) - (parseTimestamp(left.createdAt) ?? 0);
+      }
+      case "ai-active": {
+        if (Number(right.aiReacted) !== Number(left.aiReacted)) {
+          return Number(right.aiReacted) - Number(left.aiReacted);
+        }
+
+        if (right.commentCount !== left.commentCount) {
+          return right.commentCount - left.commentCount;
+        }
+
+        return (parseTimestamp(right.createdAt) ?? 0) - (parseTimestamp(left.createdAt) ?? 0);
+      }
+      default:
+        return (parseTimestamp(right.createdAt) ?? 0) - (parseTimestamp(left.createdAt) ?? 0);
+    }
+  };
 }
