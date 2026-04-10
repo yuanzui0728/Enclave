@@ -34,7 +34,10 @@ import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { ChatCallFallbackNotice } from "./chat-call-fallback-notice";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
-import { buildGroupCallInviteMessage } from "./group-call-message";
+import {
+  buildGroupCallInviteMessage,
+  type GroupCallInviteStatus,
+} from "./group-call-message";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import {
   buildChatUnreadMarkerDomId,
@@ -269,6 +272,7 @@ export function GroupChatThreadPanel({
   const sendCallInviteMutation = useMutation({
     mutationFn: (input: {
       kind: DesktopChatCallKind;
+      status: GroupCallInviteStatus;
       activeCount: number;
       totalCount: number;
     }) =>
@@ -282,6 +286,7 @@ export function GroupChatThreadPanel({
               activeCount: input.activeCount,
               totalCount: input.totalCount,
             },
+            input.status,
           ),
         },
         baseUrl,
@@ -794,6 +799,7 @@ export function GroupChatThreadPanel({
               groupName={groupQuery.data?.name ?? "群聊"}
               members={membersQuery.data ?? []}
               inviteNoticePending={sendCallInviteMutation.isPending}
+              endNoticePending={sendCallInviteMutation.isPending}
               onClose={() => setDesktopCallPanelKind(null)}
               onOpenMobileHandoff={() => {
                 void navigate({
@@ -809,9 +815,22 @@ export function GroupChatThreadPanel({
               onSendInviteNotice={(counts) => {
                 void sendCallInviteMutation.mutateAsync({
                   kind: desktopCallPanelKind,
+                  status: "ongoing",
                   activeCount: counts.activeCount,
                   totalCount: counts.totalCount,
                 });
+              }}
+              onEndCall={(counts) => {
+                void sendCallInviteMutation
+                  .mutateAsync({
+                    kind: desktopCallPanelKind,
+                    status: "ended",
+                    activeCount: counts.activeCount,
+                    totalCount: counts.totalCount,
+                  })
+                  .then(() => {
+                    setDesktopCallPanelKind(null);
+                  });
               }}
             />
           </div>
