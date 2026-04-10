@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Copy, Download, Link2, QrCode, Share2 } from "lucide-react";
@@ -20,6 +20,11 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
+  readGroupInviteDeliveryRecord,
+  writeGroupInviteDeliveryRecord,
+  type GroupInviteDeliveryRecord,
+} from "../lib/group-invite-delivery";
+import {
   pushMobileHandoffRecord,
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
@@ -39,6 +44,10 @@ export function GroupQrPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
   const [notice, setNotice] = useState<string | null>(null);
+  const [deliveredConversation, setDeliveredConversation] =
+    useState<GroupInviteDeliveryRecord | null>(() =>
+      readGroupInviteDeliveryRecord(groupId),
+    );
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -103,6 +112,10 @@ export function GroupQrPage() {
     [groupQuery.data?.name, inviteCode, inviteLink],
   );
 
+  useEffect(() => {
+    setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
+  }, [groupId]);
+
   async function copyText(value: string, successMessage: string) {
     if (
       typeof navigator === "undefined" ||
@@ -164,6 +177,10 @@ export function GroupQrPage() {
   }
 
   async function sendToConversation(conversation: ConversationListItem) {
+    const conversationPath = isPersistedGroupConversation(conversation)
+      ? `/group/${conversation.id}`
+      : `/chat/${conversation.id}`;
+
     if (isPersistedGroupConversation(conversation)) {
       await sendGroupMessage(
         conversation.id,
@@ -171,6 +188,13 @@ export function GroupQrPage() {
           text: inviteMessage,
         },
         baseUrl,
+      );
+      setDeliveredConversation(
+        writeGroupInviteDeliveryRecord(groupId, {
+          conversationId: conversation.id,
+          conversationPath,
+          conversationTitle: conversation.title,
+        }),
       );
       setNotice(`已把群邀请发到 ${conversation.title}。`);
       await queryClient.invalidateQueries({
@@ -196,6 +220,13 @@ export function GroupQrPage() {
         queryKey: ["app-conversations", baseUrl],
       });
     }, 500);
+    setDeliveredConversation(
+      writeGroupInviteDeliveryRecord(groupId, {
+        conversationId: conversation.id,
+        conversationPath,
+        conversationTitle: conversation.title,
+      }),
+    );
     setNotice(`已把群邀请发到 ${conversation.title}。`);
   }
 
@@ -277,6 +308,29 @@ export function GroupQrPage() {
             当前邀请卡会承载群聊链接和邀请码。
             在同一世界实例内打开链接，可直接回到这个群聊。
           </div>
+
+          {deliveredConversation ? (
+            <section className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近投递到 {deliveredConversation.conversationTitle}
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {formatConversationTimestamp(deliveredConversation.deliveredAt)}
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void navigate({ to: deliveredConversation.conversationPath });
+                }}
+                className="shrink-0 rounded-full"
+              >
+                回到会话
+              </Button>
+            </section>
+          ) : null}
 
           <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,249,238,0.62)] px-4 py-4">
             <div>
