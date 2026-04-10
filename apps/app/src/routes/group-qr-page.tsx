@@ -21,10 +21,12 @@ import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   readGroupInviteDeliveryRecord,
+  readGroupInviteDeliveryTargets,
   readGroupInviteReopenRecords,
   writeGroupInviteReopenRecord,
   writeGroupInviteDeliveryRecord,
   type GroupInviteDeliveryRecord,
+  type GroupInviteDeliveryTarget,
   type GroupInviteReopenRecord,
 } from "../lib/group-invite-delivery";
 import {
@@ -52,6 +54,9 @@ export function GroupQrPage() {
     useState<GroupInviteDeliveryRecord | null>(() =>
       readGroupInviteDeliveryRecord(groupId),
     );
+  const [deliveryTargets, setDeliveryTargets] = useState<
+    GroupInviteDeliveryTarget[]
+  >(() => readGroupInviteDeliveryTargets(groupId));
   const [reopenRecords, setReopenRecords] = useState<GroupInviteReopenRecord[]>(
     () => readGroupInviteReopenRecords(groupId),
   );
@@ -200,9 +205,14 @@ export function GroupQrPage() {
     groupId,
     reopenRecords,
   ]);
+  const deliveredPaths = useMemo(
+    () => new Set(deliveryTargets.map((record) => record.conversationPath)),
+    [deliveryTargets],
+  );
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
+    setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
   }, [groupId]);
 
   useEffect(() => {
@@ -311,6 +321,7 @@ export function GroupQrPage() {
           groupName: groupQuery.data?.name,
         }),
       );
+      setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
       setNotice(`已把群邀请发到 ${conversation.title}。`);
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
@@ -343,6 +354,7 @@ export function GroupQrPage() {
         groupName: groupQuery.data?.name,
       }),
     );
+    setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
     setNotice(`已把群邀请发到 ${conversation.title}。`);
   }
 
@@ -485,6 +497,47 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
+          {deliveryTargets.length ? (
+            <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,248,240,0.78)] px-4 py-4">
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近已发邀请会话
+                </div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  这些会话已经收到过这张群邀请，方便继续回跳或再次投递。
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {deliveryTargets.map((record) => (
+                  <div
+                    key={`${record.conversationPath}:${record.deliveredAt}`}
+                    className="flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {record.conversationTitle}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        发送于 {formatConversationTimestamp(record.deliveredAt)}
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        void navigate({ to: record.conversationPath });
+                      }}
+                      className="shrink-0 rounded-full"
+                    >
+                      回到会话
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {reopenRecords.length ? (
             <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.72)] px-4 py-4">
               <div>
@@ -596,6 +649,9 @@ export function GroupQrPage() {
                           : "同类单聊"}{" "}
                         · 最近活跃{" "}
                         {formatConversationTimestamp(conversation.lastActivityAt)}
+                        {deliveredPaths.has(buildConversationPath(conversation))
+                          ? " · 已发过邀请"
+                          : ""}
                       </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
@@ -626,6 +682,9 @@ export function GroupQrPage() {
                           : "单聊"}{" "}
                         · 最近活跃{" "}
                         {formatConversationTimestamp(conversation.lastActivityAt)}
+                        {deliveredPaths.has(buildConversationPath(conversation))
+                          ? " · 已发过邀请"
+                          : ""}
                       </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
