@@ -9,6 +9,11 @@ export type ReplyLogicRuntimeRules = {
   groupReplyChance: { high: number; normal: number; low: number };
   groupReplyDelayMs: { min: number; max: number };
   memoryCompressionEveryMessages: number;
+  momentGenerateChance: number;
+  channelGenerateChance: number;
+  sceneFriendRequestChance: number;
+  activityBaseWeight: number;
+  proactiveReminderHour: number;
   historyWindow: {
     base: number;
     range: number;
@@ -66,6 +71,11 @@ export const GROUP_REPLY_DELAY_RANGE_MS = {
 } as const;
 
 export const MEMORY_COMPRESSION_INTERVAL = 10;
+export const MOMENT_GENERATE_CHANCE = 0.15;
+export const CHANNEL_GENERATE_CHANCE = 0.22;
+export const SCENE_FRIEND_REQUEST_CHANCE = 0.4;
+export const ACTIVITY_BASE_WEIGHT = 0.8;
+export const PROACTIVE_REMINDER_HOUR = 20;
 export const HISTORY_WINDOW_BASE = 8;
 export const HISTORY_WINDOW_RANGE = 22;
 
@@ -89,6 +99,11 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     groupReplyChance: { ...GROUP_REPLY_CHANCE_BY_FREQUENCY },
     groupReplyDelayMs: { ...GROUP_REPLY_DELAY_RANGE_MS },
     memoryCompressionEveryMessages: MEMORY_COMPRESSION_INTERVAL,
+    momentGenerateChance: MOMENT_GENERATE_CHANCE,
+    channelGenerateChance: CHANNEL_GENERATE_CHANCE,
+    sceneFriendRequestChance: SCENE_FRIEND_REQUEST_CHANCE,
+    activityBaseWeight: ACTIVITY_BASE_WEIGHT,
+    proactiveReminderHour: PROACTIVE_REMINDER_HOUR,
     historyWindow: {
       base: HISTORY_WINDOW_BASE,
       range: HISTORY_WINDOW_RANGE,
@@ -199,6 +214,35 @@ export function normalizeReplyLogicRuntimeRules(
       ),
       1,
       500,
+    ),
+    momentGenerateChance: clamp(
+      Number(input?.momentGenerateChance ?? defaults.momentGenerateChance),
+      0,
+      1,
+    ),
+    channelGenerateChance: clamp(
+      Number(input?.channelGenerateChance ?? defaults.channelGenerateChance),
+      0,
+      1,
+    ),
+    sceneFriendRequestChance: clamp(
+      Number(
+        input?.sceneFriendRequestChance ?? defaults.sceneFriendRequestChance,
+      ),
+      0,
+      1,
+    ),
+    activityBaseWeight: clamp(
+      Number(input?.activityBaseWeight ?? defaults.activityBaseWeight),
+      0,
+      1,
+    ),
+    proactiveReminderHour: clamp(
+      Math.round(
+        input?.proactiveReminderHour ?? defaults.proactiveReminderHour,
+      ),
+      0,
+      23,
     ),
     historyWindow: {
       base,

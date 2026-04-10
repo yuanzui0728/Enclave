@@ -29,6 +29,7 @@ import type {
   ReplyLogicNarrativeArcSummary,
   ReplyLogicOverview,
   ReplyLogicOverviewConversationItem,
+  ReplyLogicPreviewResult,
   ReplyLogicOverviewCharacterItem,
   ReplyLogicProviderSummary,
   ReplyLogicPromptSection,
@@ -298,6 +299,170 @@ export class ReplyLogicAdminService {
           '角色是否回复取决于 activityFrequency，对应不同的随机回复概率和延迟。',
         ],
       },
+    };
+  }
+
+  async previewCharacterReply(
+    characterId: string,
+    userMessage: string,
+  ): Promise<ReplyLogicPreviewResult> {
+    const owner = await this.getOwnerOrThrow();
+    const character = await this.characterRepo.findOneBy({ id: characterId });
+    if (!character) {
+      throw new NotFoundException(`Character ${characterId} not found`);
+    }
+
+    const conversations = await this.conversationRepo.find({
+      where: { ownerId: owner.id },
+    });
+    const primaryConversation = conversations.find(
+      (conversation) =>
+        conversation.type === 'direct' &&
+        conversation.participants.includes(characterId),
+    );
+    const visibleMessages = primaryConversation
+      ? await this.loadConversationMessages(primaryConversation)
+      : [];
+    const actor = await this.buildActorSnapshot({
+      character,
+      isGroupChat: false,
+      visibleMessages,
+      lastChatAt: this.findLastUserMessageAt(visibleMessages),
+      includeStateGate: true,
+      previewUserMessage: userMessage,
+    });
+
+    return {
+      scope: 'character',
+      targetId: characterId,
+      actorCharacterId: character.id,
+      userMessage,
+      actor,
+      notes: [
+        '这是基于当前角色配置和当前可见历史，对这条候选消息做的即时预演。',
+        primaryConversation
+          ? '预演使用了该角色当前单聊的真实可见历史。'
+          : '该角色还没有现成单聊，预演基于空历史进行。',
+      ],
+    };
+  }
+
+  async previewConversationReply(
+    conversationId: string,
+    userMessage: string,
+    actorCharacterId?: string,
+  ): Promise<ReplyLogicPreviewResult> {
+    const owner = await this.getOwnerOrThrow();
+    const storedConversation = await this.conversationRepo.findOneBy({
+      id: conversationId,
+      ownerId: owner.id,
+    });
+
+    if (storedConversation) {
+      const visibleMessages = await this.loadConversationMessages(
+        storedConversation,
+      );
+      const characters = (
+        await this.characterRepo.find({
+          where: { id: In(storedConversation.participants) },
+        })
+      ).sort(
+        (left, right) =>
+          storedConversation.participants.indexOf(left.id) -
+          storedConversation.participants.indexOf(right.id),
+      );
+      const selectedCharacter =
+        characters.find((character) => character.id === actorCharacterId) ??
+        characters[0];
+      if (!selectedCharacter) {
+        throw new NotFoundException(
+          `Conversation ${conversationId} has no character participants`,
+        );
+      }
+
+      const actor = await this.buildActorSnapshot({
+        character: selectedCharacter,
+        isGroupChat: storedConversation.type === 'group',
+        visibleMessages,
+        lastChatAt:
+          storedConversation.type === 'direct'
+            ? this.findLastUserMessageAt(visibleMessages)
+            : undefined,
+        includeStateGate: storedConversation.type === 'direct',
+        previewUserMessage: userMessage,
+      });
+
+      return {
+        scope: 'conversation',
+        targetId: conversationId,
+        actorCharacterId: selectedCharacter.id,
+        userMessage,
+        actor,
+        notes:
+          storedConversation.type === 'group'
+            ? [
+                '这是 stored conversation 群聊分支下，按当前选中角色进行的候选消息预演。',
+              ]
+            : ['这是单聊分支下，按当前选中角色进行的候选消息预演。'],
+      };
+    }
+
+    const group = await this.groupRepo.findOneBy({ id: conversationId });
+    if (!group) {
+      throw new NotFoundException(`Conversation ${conversationId} not found`);
+    }
+
+    const membership = await this.groupMemberRepo.findOneBy({
+      groupId: group.id,
+      memberId: owner.id,
+      memberType: 'user',
+    });
+    if (!membership) {
+      throw new NotFoundException(`Conversation ${conversationId} not found`);
+    }
+
+    const [members, messages] = await Promise.all([
+      this.groupMemberRepo.find({
+        where: { groupId: group.id },
+        order: { joinedAt: 'ASC' },
+      }),
+      this.loadGroupMessages(group),
+    ]);
+    const characterIds = members
+      .filter((member) => member.memberType === 'character')
+      .map((member) => member.memberId);
+    const characters = (
+      await this.characterRepo.find({
+        where: { id: In(characterIds) },
+      })
+    ).sort(
+      (left, right) =>
+        characterIds.indexOf(left.id) - characterIds.indexOf(right.id),
+    );
+    const selectedCharacter =
+      characters.find((character) => character.id === actorCharacterId) ??
+      characters[0];
+    if (!selectedCharacter) {
+      throw new NotFoundException(
+        `Conversation ${conversationId} has no character participants`,
+      );
+    }
+
+    const actor = await this.buildActorSnapshot({
+      character: selectedCharacter,
+      isGroupChat: true,
+      visibleMessages: messages,
+      includeStateGate: false,
+      previewUserMessage: userMessage,
+    });
+
+    return {
+      scope: 'conversation',
+      targetId: conversationId,
+      actorCharacterId: selectedCharacter.id,
+      userMessage,
+      actor,
+      notes: ['这是正式群聊异步回复分支下，按当前选中角色进行的候选消息预演。'],
     };
   }
 
@@ -572,6 +737,7 @@ export class ReplyLogicAdminService {
     visibleMessages: Array<MessageEntity | GroupMessageEntity>;
     lastChatAt?: Date;
     includeStateGate: boolean;
+    previewUserMessage?: string;
   }): Promise<ReplyLogicActorSnapshot> {
     const character = input.character;
     const history = input.visibleMessages.map((message) =>
@@ -580,7 +746,9 @@ export class ReplyLogicAdminService {
     const inspection = await this.ai.inspectReplyPreparation({
       profile: character.profile,
       conversationHistory: history,
-      userMessage: '【预览】如果此刻用户发送一条新消息，请基于当前设定准备回复。',
+      userMessage:
+        input.previewUserMessage?.trim() ||
+        '【预览】如果此刻用户发送一条新消息，请基于当前设定准备回复。',
       isGroupChat: input.isGroupChat,
       chatContext: input.isGroupChat
         ? undefined
@@ -616,6 +784,8 @@ export class ReplyLogicAdminService {
       character: this.toCharacterContract(character),
       isGroupChat: input.isGroupChat,
       stateGate,
+      model: inspection.model,
+      apiAvailable: inspection.apiAvailable,
       lastChatAt: input.lastChatAt?.toISOString() ?? null,
       forgettingCurve: character.profile.memory?.forgettingCurve ?? 70,
       historyWindow: inspection.historyWindow,
@@ -623,6 +793,7 @@ export class ReplyLogicAdminService {
       windowMessages: input.visibleMessages
         .slice(-inspection.historyWindow)
         .map((message) => this.toHistoryItem(message, true)),
+      requestMessages: inspection.requestMessages,
       promptSections,
       effectivePrompt: inspection.systemPrompt,
       worldContextText: inspection.worldContextText ?? null,

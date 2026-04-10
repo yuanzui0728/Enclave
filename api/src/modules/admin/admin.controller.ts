@@ -117,8 +117,31 @@ export class AdminController {
     return this.replyLogicAdminService.getCharacterSnapshot(id);
   }
 
+  @Post('reply-logic/characters/:id/preview')
+  previewReplyLogicCharacter(
+    @Param('id') id: string,
+    @Body() body: { userMessage?: string | null },
+  ) {
+    return this.replyLogicAdminService.previewCharacterReply(
+      id,
+      body.userMessage?.trim() ?? '',
+    );
+  }
+
   @Get('reply-logic/conversations/:id')
   getReplyLogicConversation(@Param('id') id: string) {
     return this.replyLogicAdminService.getConversationSnapshot(id);
+  }
+
+  @Post('reply-logic/conversations/:id/preview')
+  previewReplyLogicConversation(
+    @Param('id') id: string,
+    @Body() body: { userMessage?: string | null; actorCharacterId?: string | null },
+  ) {
+    return this.replyLogicAdminService.previewConversationReply(
+      id,
+      body.userMessage?.trim() ?? '',
+      body.actorCharacterId?.trim() || undefined,
+    );
   }
 }
