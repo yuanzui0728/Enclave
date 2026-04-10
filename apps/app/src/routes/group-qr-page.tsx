@@ -1032,6 +1032,21 @@ export function GroupQrPage() {
                         </div>
                       </div>
                       <div className="shrink-0 text-right">
+                        <div className="mb-2 flex justify-end">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
+                              topPendingReturnConversation.conversation,
+                              topPendingReturnConversation.target.deliveredAt,
+                            ).tone}`}
+                          >
+                            {
+                              resolvePendingReturnActionStatus(
+                                topPendingReturnConversation.conversation,
+                                topPendingReturnConversation.target.deliveredAt,
+                              ).label
+                            }
+                          </span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
@@ -1876,6 +1891,48 @@ function resolvePendingReturnActionRiskHint(
   }
 
   return `如果先不动 ${conversation.title}，当前主路径里的阻塞还会继续留在前面。`;
+}
+
+function resolvePendingReturnActionStatus(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  if (isPendingReturnCoolingDown(deliveredAt)) {
+    return {
+      label: "暂不建议",
+      tone: "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
+    };
+  }
+
+  const primaryReason = resolvePendingReturnPrimaryReason(
+    conversation,
+    deliveredAt,
+  );
+
+  if (
+    primaryReason.label === "超时且活跃" ||
+    primaryReason.label === "长时间未回流"
+  ) {
+    return {
+      label: "现在补最值",
+      tone: "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]",
+    };
+  }
+
+  if (
+    primaryReason.label === "活跃群聊扩散" ||
+    primaryReason.label === "活跃单聊触达"
+  ) {
+    return {
+      label: "优先处理",
+      tone: "bg-[rgba(34,197,94,0.12)] text-[#15803d]",
+    };
+  }
+
+  return {
+    label: "可以稍放",
+    tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
+  };
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
