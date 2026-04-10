@@ -26,7 +26,6 @@ import {
   InlineNotice,
   ListItemCard,
   MetricCard,
-  PanelEmpty,
   SelectField as UiSelectField,
   SectionHeading,
   SnapshotPanel,
@@ -34,7 +33,12 @@ import {
   TagBadge,
   TextField,
 } from "@yinjie/ui";
-import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
+import {
+  AdminEmptyState,
+  AdminInfoRows,
+  AdminPageHero,
+  AdminSectionNav,
+} from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const EVALS_STATE_KEY = "yinjie-admin-evals-state";
@@ -1136,7 +1140,12 @@ export function EvalsPage() {
                   </div>
                 </button>
               ))}
-              {savedPresets.length === 0 ? <PanelEmpty message="还没有保存的视图预设。" /> : null}
+              {savedPresets.length === 0 ? (
+                <AdminEmptyState
+                  title="还没有保存的视图预设"
+                  description="先在评测概览里保存一组筛选状态，后面就能反复复用。"
+                />
+              ) : null}
             </div>
           </Card>
         </div>
@@ -1305,7 +1314,10 @@ export function EvalsPage() {
             </div>
           ))}
           {savedPresets.length === 0 ? (
-            <PanelEmpty message="当前还没有保存的视图。可以先把当前筛选状态保存为预设。" />
+            <AdminEmptyState
+              title="当前还没有保存的视图"
+              description="先把当前筛选状态保存为预设，后面切换视图会更快。"
+            />
           ) : null}
         </div>
       </Card>
@@ -1454,7 +1466,10 @@ export function EvalsPage() {
               );
             })}
             {experimentPresets.length === 0 ? (
-              <PanelEmpty message="当前还没有实验预设。" />
+              <AdminEmptyState
+                title="当前还没有实验预设"
+                description="先沉淀一组基线和候选组合，后续重复实验时会更高效。"
+              />
             ) : null}
           </div>
         </Card>
@@ -1537,7 +1552,10 @@ export function EvalsPage() {
                 />
               ))
             ) : (
-              <PanelEmpty message="当前还没有评测运行记录。先运行一个数据集开始。" />
+              <AdminEmptyState
+                title="当前还没有评测运行记录"
+                description="先运行一个数据集，后面才能查看运行详情、报告和对比历史。"
+              />
             )}
           </div>
         </Card>
@@ -1570,7 +1588,10 @@ export function EvalsPage() {
               />
             ))}
             {(comparisonsQuery.data ?? []).length === 0 ? (
-              <PanelEmpty message="当前还没有保存的对比记录。先运行成对评测来积累实验历史。" />
+              <AdminEmptyState
+                title="当前还没有对比记录"
+                description="先运行一次成对评测，才能开始查看基线与候选的差异。"
+              />
             ) : null}
           </div>
         </Card>
@@ -1671,7 +1692,10 @@ export function EvalsPage() {
               />
             ))}
             {experimentReports.length === 0 ? (
-              <PanelEmpty message="当前还没有实验报告。先运行一次实验预设。" />
+              <AdminEmptyState
+                title="当前还没有实验报告"
+                description="先运行一次实验预设，系统才会生成建议、回退点和决策依据。"
+              />
             ) : null}
             </div>
             <div>
@@ -1839,7 +1863,10 @@ export function EvalsPage() {
                   ) : null}
                 </div>
               ) : (
-                <PanelEmpty message="选择一份实验报告后，可查看它的汇总、备注和差异。" />
+                <AdminEmptyState
+                  title="先选择一份实验报告"
+                  description="选中左侧报告后，这里会展示它的汇总、建议、差异和决策信息。"
+                />
               )}
             </div>
           </div>
@@ -1915,7 +1942,10 @@ export function EvalsPage() {
               </div>
             </div>
           ) : (
-            <PanelEmpty message="选择一个数据集卡片后，可查看用例输入、硬规则、禁止结果和裁判规则。" />
+            <AdminEmptyState
+              title="先选择一个数据集"
+              description="点选上方数据集卡片后，这里会展示用例输入、硬规则和裁判标准。"
+            />
           )}
         </div>
       </Card>
@@ -2056,7 +2086,10 @@ export function EvalsPage() {
               </div>
             </div>
           ) : (
-            <PanelEmpty message="选择最近一次运行后，可查看用例级输出、规则违背和链路关联。" />
+            <AdminEmptyState
+              title="先选择一次运行"
+              description="选中最近运行后，这里会展开用例级输出、规则违背和链路关联。"
+            />
           )}
         </div>
       </Card>
@@ -2292,7 +2325,10 @@ export function EvalsPage() {
               </div>
             </div>
           ) : (
-            <PanelEmpty message="至少运行两次评测后，才能解锁成对比较。" />
+            <AdminEmptyState
+              title="至少需要两次运行"
+              description="先积累两次可比较的运行记录，才能锁定基线和候选做成对分析。"
+            />
           )}
         </div>
       </Card>
@@ -2460,7 +2496,10 @@ export function EvalsPage() {
                 </button>
               ))
             ) : (
-              <PanelEmpty message="当前还没有生成链路。先运行数据集或触发一次运行时生成。" />
+              <AdminEmptyState
+                title="当前还没有生成链路"
+                description="先运行数据集或触发一次真实生成，后面才能沿链路下钻到 prompt 和上下文。"
+              />
             )}
           </div>
           <div>
@@ -2548,7 +2587,10 @@ export function EvalsPage() {
                 </div>
               </div>
             ) : (
-              <PanelEmpty message="选择一条链路后，可查看提示词消息、筛选命中和标准化输出。" />
+              <AdminEmptyState
+                title="先选择一条链路"
+                description="选中左侧链路后，这里会展示提示词消息、筛选命中和标准化输出。"
+              />
             )}
           </div>
           <div>
@@ -2618,7 +2660,10 @@ export function EvalsPage() {
                 ) : null}
               </div>
             ) : (
-              <PanelEmpty message="选择一条链路后，可查看快照、评测汇总和关联用例。" />
+              <AdminEmptyState
+                title="先选择一条链路"
+                description="选中后，这里会展示请求配置、世界快照、评测汇总和关联用例。"
+              />
             )}
           </div>
         </div>
