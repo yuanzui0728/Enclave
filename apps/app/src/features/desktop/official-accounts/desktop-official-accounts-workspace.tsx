@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  followOfficialAccount,
   getOfficialAccount,
   getOfficialAccountArticle,
   listOfficialAccounts,
   markOfficialAccountArticleRead,
+  unfollowOfficialAccount,
 } from "@yinjie/contracts";
-import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../../../components/official-account-list-item";
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
@@ -26,11 +28,33 @@ export function DesktopOfficialAccountsWorkspace({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedArticleIdRef = useRef<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [accountFilter, setAccountFilter] = useState<"all" | "following">("all");
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
     queryFn: () => listOfficialAccounts(baseUrl),
   });
+
+  const filteredAccounts = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+
+    return (accountsQuery.data ?? []).filter((account) => {
+      if (accountFilter === "following" && !account.isFollowing) {
+        return false;
+      }
+
+      if (!keyword) {
+        return true;
+      }
+
+      return (
+        account.name.toLowerCase().includes(keyword) ||
+        account.description.toLowerCase().includes(keyword) ||
+        account.handle.toLowerCase().includes(keyword)
+      );
+    });
+  }, [accountFilter, accountsQuery.data, searchTerm]);
 
   const pinnedArticleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, selectedArticleId],
@@ -47,8 +71,13 @@ export function DesktopOfficialAccountsWorkspace({
       return pinnedArticleQuery.data.account.id;
     }
 
-    return accountsQuery.data?.[0]?.id;
-  }, [accountsQuery.data, pinnedArticleQuery.data?.account.id, selectedAccountId]);
+    return filteredAccounts[0]?.id ?? accountsQuery.data?.[0]?.id;
+  }, [
+    accountsQuery.data,
+    filteredAccounts,
+    pinnedArticleQuery.data?.account.id,
+    selectedAccountId,
+  ]);
 
   const accountDetailQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, effectiveAccountId],
@@ -69,6 +98,23 @@ export function DesktopOfficialAccountsWorkspace({
     ? pinnedArticleQuery.data ?? articleDetailQuery.data
     : articleDetailQuery.data;
   const account = accountDetailQuery.data;
+
+  const followMutation = useMutation({
+    mutationFn: () =>
+      account?.isFollowing
+        ? unfollowOfficialAccount(account.id, baseUrl)
+        : followOfficialAccount(account.id, baseUrl),
+    onSuccess: async (updatedAccount) => {
+      queryClient.setQueryData(
+        ["app-official-account", baseUrl, updatedAccount.id],
+        updatedAccount,
+      );
+
+      await queryClient.invalidateQueries({
+        queryKey: ["app-official-accounts", baseUrl],
+      });
+    },
+  });
 
   const markReadMutation = useMutation({
     mutationFn: (targetArticleId: string) =>
@@ -113,6 +159,32 @@ export function DesktopOfficialAccountsWorkspace({
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
             从通讯录进入，按微信式阅读路径浏览账号与文章。
           </div>
+          <TextField
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="搜索公众号"
+            className="mt-3 rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
+          />
+          <div className="mt-3 flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={accountFilter === "all" ? "primary" : "secondary"}
+              onClick={() => setAccountFilter("all")}
+              className="rounded-full"
+            >
+              全部
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={accountFilter === "following" ? "primary" : "secondary"}
+              onClick={() => setAccountFilter("following")}
+              className="rounded-full"
+            >
+              已关注
+            </Button>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
@@ -121,7 +193,7 @@ export function DesktopOfficialAccountsWorkspace({
             <ErrorBlock message={accountsQuery.error.message} />
           ) : null}
 
-          {accountsQuery.data?.map((entry) => (
+          {filteredAccounts.map((entry) => (
             <OfficialAccountListItem
               key={entry.id}
               account={entry}
@@ -134,6 +206,19 @@ export function DesktopOfficialAccountsWorkspace({
               }}
             />
           ))}
+
+          {!accountsQuery.isLoading && !filteredAccounts.length ? (
+            <div className="p-3">
+              <EmptyState
+                title="没有匹配的公众号"
+                description={
+                  accountFilter === "following"
+                    ? "当前筛选下还没有已关注账号。"
+                    : "换个关键词试试。"
+                }
+              />
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -164,6 +249,23 @@ export function DesktopOfficialAccountsWorkspace({
               ) : null}
             </div>
           ) : null}
+          {account ? (
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant={account.isFollowing ? "secondary" : "primary"}
+                onClick={() => followMutation.mutate()}
+                disabled={followMutation.isPending}
+                className="rounded-full"
+              >
+                {followMutation.isPending
+                  ? "处理中..."
+                  : account.isFollowing
+                    ? "取消关注"
+                    : "关注公众号"}
+              </Button>
+            </div>
+          ) : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
@@ -172,6 +274,9 @@ export function DesktopOfficialAccountsWorkspace({
           ) : null}
           {accountDetailQuery.isError && accountDetailQuery.error instanceof Error ? (
             <ErrorBlock message={accountDetailQuery.error.message} />
+          ) : null}
+          {followMutation.isError && followMutation.error instanceof Error ? (
+            <ErrorBlock message={followMutation.error.message} />
           ) : null}
 
           {account?.articles?.map((article) => (
