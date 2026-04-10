@@ -15,22 +15,29 @@ export type DesktopMessageForwardPreviewItem = {
   typeLabel: string;
 };
 
+export type DesktopMessageForwardMode = "separate" | "merged";
+
 type DesktopMessageForwardDialogProps = {
   open: boolean;
   messages: DesktopMessageForwardPreviewItem[];
   conversations: ConversationListItem[];
+  supportsSeparateMode?: boolean;
   variant?: "mobile" | "desktop";
   loading?: boolean;
   pending?: boolean;
   error?: string | null;
   onClose: () => void;
-  onForward: (conversation: ConversationListItem) => void;
+  onForward: (
+    conversation: ConversationListItem,
+    mode: DesktopMessageForwardMode,
+  ) => void;
 };
 
 export function DesktopMessageForwardDialog({
   open,
   messages,
   conversations,
+  supportsSeparateMode = true,
   variant,
   loading = false,
   pending = false,
@@ -39,6 +46,8 @@ export function DesktopMessageForwardDialog({
   onForward,
 }: DesktopMessageForwardDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [forwardMode, setForwardMode] =
+    useState<DesktopMessageForwardMode>("separate");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const isMobile = variant ? variant === "mobile" : isCompactViewport;
 
@@ -48,7 +57,16 @@ export function DesktopMessageForwardDialog({
     }
 
     setSearchTerm("");
-  }, [open]);
+    setForwardMode(supportsSeparateMode ? "separate" : "merged");
+  }, [open, supportsSeparateMode]);
+
+  useEffect(() => {
+    if (supportsSeparateMode || forwardMode !== "separate") {
+      return;
+    }
+
+    setForwardMode("merged");
+  }, [forwardMode, supportsSeparateMode]);
 
   useEffect(() => {
     if (variant || typeof window === "undefined") {
@@ -202,6 +220,34 @@ export function DesktopMessageForwardDialog({
           <div
             className={cn(
               "border-b border-black/6",
+              isMobile ? "border-black/5 px-3 py-2.5" : "px-4 py-3 lg:px-6",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <ForwardModeButton
+                active={forwardMode === "separate"}
+                disabled={pending || !supportsSeparateMode}
+                label={isMobile ? "逐条" : "逐条转发"}
+                description={
+                  supportsSeparateMode
+                    ? "保持原消息结构依次投递"
+                    : "当前选择里包含仅支持合并转发的消息"
+                }
+                onClick={() => setForwardMode("separate")}
+              />
+              <ForwardModeButton
+                active={forwardMode === "merged"}
+                disabled={pending}
+                label={isMobile ? "合并" : "合并转发"}
+                description="汇总为一条聊天记录摘要"
+                onClick={() => setForwardMode("merged")}
+              />
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "border-b border-black/6",
               isMobile ? "border-black/5 px-3 py-2" : "px-4 py-4 lg:px-6",
             )}
           >
@@ -269,7 +315,7 @@ export function DesktopMessageForwardDialog({
                     key={conversation.id}
                     type="button"
                     disabled={pending}
-                    onClick={() => onForward(conversation)}
+                    onClick={() => onForward(conversation, forwardMode)}
                     className={cn(
                       "flex w-full items-center justify-between gap-3 text-left disabled:cursor-not-allowed disabled:opacity-60",
                       isMobile
@@ -305,7 +351,15 @@ export function DesktopMessageForwardDialog({
                           : "rounded-full bg-[rgba(249,115,22,0.10)] px-3 py-1 text-[color:var(--brand-secondary)]",
                       )}
                     >
-                      {pending ? "正在转发" : isMobile ? "发送" : "转发"}
+                      {pending
+                        ? "正在转发"
+                        : forwardMode === "merged"
+                          ? isMobile
+                            ? "合并"
+                            : "合并转发"
+                          : isMobile
+                            ? "发送"
+                            : "转发"}
                     </span>
                   </button>
                 );
@@ -321,7 +375,11 @@ export function DesktopMessageForwardDialog({
                 : "flex flex-col items-stretch gap-3 border-black/6 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6",
             )}
           >
-            <div>会按照原消息顺序依次投递到目标会话。</div>
+            <div>
+              {forwardMode === "merged"
+                ? "会把选中的消息汇总成一条聊天摘要，再发送到目标会话。"
+                : "会按照原消息顺序依次投递到目标会话。"}
+            </div>
             {!isMobile ? (
               <Button
                 type="button"
@@ -337,6 +395,46 @@ export function DesktopMessageForwardDialog({
         </section>
       </div>
     </div>
+  );
+}
+
+function ForwardModeButton({
+  active,
+  disabled,
+  label,
+  description,
+  onClick,
+}: {
+  active: boolean;
+  disabled: boolean;
+  label: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex min-w-0 flex-1 flex-col items-start rounded-[14px] border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-60",
+        active
+          ? "border-[#07c160]/20 bg-[rgba(7,193,96,0.08)]"
+          : "border-black/6 bg-white hover:bg-[#fafafa]",
+      )}
+    >
+      <span
+        className={cn(
+          "text-[13px] font-medium",
+          active ? "text-[#07a35a]" : "text-[color:var(--text-primary)]",
+        )}
+      >
+        {label}
+      </span>
+      <span className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        {description}
+      </span>
+    </button>
   );
 }
 

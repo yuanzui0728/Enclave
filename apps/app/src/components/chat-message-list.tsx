@@ -11,6 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
   ContactRound,
@@ -60,6 +61,7 @@ import { MessageQuoteSelectionSheet } from "../features/chat/message-quote-selec
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   DesktopMessageForwardDialog,
+  type DesktopMessageForwardMode,
   type DesktopMessageForwardPreviewItem,
 } from "../features/desktop/chat/desktop-message-forward-dialog";
 import {
@@ -215,7 +217,7 @@ export function ChatMessageList({
     string | null
   >(null);
   const [selectionActionPending, setSelectionActionPending] = useState<
-    "favorite" | "delete" | null
+    "favorite" | "delete" | "recall" | null
   >(null);
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
@@ -398,12 +400,31 @@ export function ChatMessageList({
   };
 
   const forwardMutation = useMutation({
-    mutationFn: async (conversation: ConversationListItem) => {
+    mutationFn: async (input: {
+      conversation: ConversationListItem;
+      mode: DesktopMessageForwardMode;
+    }) => {
+      const { conversation, mode } = input;
       const messageQueue = forwardMessages ?? [];
       if (!messageQueue.length) {
         return {
           conversationTitle: conversation.title,
           count: 0,
+          mode,
+        };
+      }
+
+      if (mode === "merged") {
+        await forwardMergedMessagesToConversation({
+          baseUrl,
+          conversation,
+          messages: messageQueue,
+        });
+
+        return {
+          conversationTitle: conversation.title,
+          count: messageQueue.length,
+          mode,
         };
       }
 
@@ -418,17 +439,22 @@ export function ChatMessageList({
       return {
         conversationTitle: conversation.title,
         count: messageQueue.length,
+        mode,
       };
     },
-    onSuccess: async ({ conversationTitle, count }) => {
+    onSuccess: async ({ conversationTitle, count, mode }) => {
       setForwardMessages(null);
       setSelectionMode(false);
       setSelectedMessageIds([]);
       setActionNotice({
         message:
-          count <= 1
-            ? `已转发到 ${conversationTitle}。`
-            : `已转发 ${count} 条消息到 ${conversationTitle}。`,
+          mode === "merged"
+            ? count <= 1
+              ? `已合并转发到 ${conversationTitle}。`
+              : `已合并转发 ${count} 条消息到 ${conversationTitle}。`
+            : count <= 1
+              ? `已转发到 ${conversationTitle}。`
+              : `已转发 ${count} 条消息到 ${conversationTitle}。`,
         tone: "success",
       });
 
@@ -1121,6 +1147,13 @@ export function ChatMessageList({
       visibleMessages.filter((message) => selectedMessageIdSet.has(message.id)),
     [selectedMessageIdSet, visibleMessages],
   );
+  const recallableSelectedMessages = useMemo(
+    () =>
+      selectedMessages.filter((message) =>
+        canRecallMessage(message, threadContext),
+      ),
+    [selectedMessages, threadContext],
+  );
   const allVisibleSelected =
     visibleMessages.length > 0 &&
     visibleMessages.every((message) => selectedMessageIdSet.has(message.id));
@@ -1356,6 +1389,79 @@ export function ChatMessageList({
     }
   };
 
+  const handleRecallSelectedMessages = async () => {
+    const messagesToRecall = [...recallableSelectedMessages];
+    if (!messagesToRecall.length || !threadContext) {
+      return;
+    }
+
+    const skippedCount = selectedMessages.length - messagesToRecall.length;
+    setSelectionActionPending("recall");
+
+    try {
+      if (threadContext.type === "group") {
+        const recalledMessageMap = new Map<string, GroupMessage>();
+        for (const message of messagesToRecall) {
+          const recalledMessage = await recallGroupMessage(
+            threadContext.id,
+            message.id,
+            baseUrl,
+          );
+          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+        }
+
+        updateGroupMessageQueries(
+          threadContext.id,
+          (current): GroupMessage[] | undefined =>
+            current?.map(
+              (item): GroupMessage => recalledMessageMap.get(item.id) ?? item,
+            ) ?? current,
+        );
+      } else {
+        const recalledMessageMap = new Map<string, Message>();
+        for (const message of messagesToRecall) {
+          const recalledMessage = await recallConversationMessage(
+            threadContext.id,
+            message.id,
+            baseUrl,
+          );
+          recalledMessageMap.set(recalledMessage.id, recalledMessage);
+        }
+
+        updateConversationMessageQueries(
+          threadContext.id,
+          (current): Message[] | undefined =>
+            current?.map(
+              (item): Message => recalledMessageMap.get(item.id) ?? item,
+            ) ?? current,
+        );
+      }
+
+      resetSelectionMode();
+      setActionNotice({
+        message:
+          skippedCount > 0
+            ? `已撤回 ${messagesToRecall.length} 条消息，另有 ${skippedCount} 条不支持撤回。`
+            : messagesToRecall.length === 1
+              ? "已撤回 1 条消息。"
+              : `已撤回 ${messagesToRecall.length} 条消息。`,
+        tone: "success",
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "批量撤回失败，请稍后再试。",
+        tone: "danger",
+      });
+    } finally {
+      setSelectionActionPending(null);
+    }
+  };
+
   return (
     <div className={isDesktop ? "space-y-4" : "space-y-4"}>
       {actionNotice ? (
@@ -1421,7 +1527,22 @@ export function ChatMessageList({
                 onClick={() => setForwardMessages(selectedMessages)}
                 className="rounded-full"
               >
-                逐条转发
+                转发
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={
+                  !recallableSelectedMessages.length ||
+                  selectionActionPending !== null
+                }
+                onClick={() => {
+                  void handleRecallSelectedMessages();
+                }}
+                className="rounded-full"
+              >
+                {selectionActionPending === "recall" ? "撤回中..." : "撤回"}
               </Button>
               <Button
                 type="button"
@@ -1728,7 +1849,7 @@ export function ChatMessageList({
       })}
       {selectionMode && !isDesktop ? (
         <div className="sticky bottom-0 z-20 border-t border-black/6 bg-[rgba(247,247,247,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2.5 backdrop-blur-xl">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <SelectionModeActionButton
               icon={<Star size={17} />}
               label={selectionActionPending === "favorite" ? "收藏中" : "收藏"}
@@ -1744,6 +1865,17 @@ export function ChatMessageList({
                 !selectedMessageIds.length || selectionActionPending !== null
               }
               onClick={() => setForwardMessages(selectedMessages)}
+            />
+            <SelectionModeActionButton
+              icon={<RotateCcw size={17} />}
+              label={selectionActionPending === "recall" ? "撤回中" : "撤回"}
+              disabled={
+                !recallableSelectedMessages.length ||
+                selectionActionPending !== null
+              }
+              onClick={() => {
+                void handleRecallSelectedMessages();
+              }}
             />
             <SelectionModeActionButton
               icon={<Trash2 size={17} />}
@@ -2154,6 +2286,7 @@ export function ChatMessageList({
         open={Boolean(forwardMessages?.length)}
         messages={forwardPreviewItems}
         conversations={forwardConversationsQuery.data ?? []}
+        supportsSeparateMode={(forwardMessages ?? []).every(canForwardMessage)}
         variant={variant}
         loading={forwardConversationsQuery.isLoading}
         pending={forwardMutation.isPending}
@@ -2163,8 +2296,8 @@ export function ChatMessageList({
             : null
         }
         onClose={() => setForwardMessages(null)}
-        onForward={(conversation) => {
-          void forwardMutation.mutateAsync(conversation);
+        onForward={(conversation, mode) => {
+          void forwardMutation.mutateAsync({ conversation, mode });
         }}
       />
     </div>
@@ -2588,6 +2721,40 @@ async function forwardMessageToConversation(input: {
   emitChatMessage(payload);
 }
 
+async function forwardMergedMessagesToConversation(input: {
+  baseUrl?: string;
+  conversation: ConversationListItem;
+  messages: ChatRenderableMessage[];
+}) {
+  const mergedText = buildMergedForwardText(input.messages);
+  if (!mergedText) {
+    throw new Error("当前没有可合并转发的消息内容。");
+  }
+
+  if (isPersistedGroupConversation(input.conversation)) {
+    await sendGroupMessage(
+      input.conversation.id,
+      {
+        text: mergedText,
+      },
+      input.baseUrl,
+    );
+    return;
+  }
+
+  const characterId = input.conversation.participants[0];
+  if (!characterId) {
+    throw new Error("这条单聊暂时没有可用的角色目标，无法完成转发。");
+  }
+
+  joinConversationRoom({ conversationId: input.conversation.id });
+  emitChatMessage({
+    conversationId: input.conversation.id,
+    characterId,
+    text: mergedText,
+  });
+}
+
 function buildGroupForwardPayload(
   message: ChatRenderableMessage,
 ): SendGroupMessageRequest | null {
@@ -2724,6 +2891,26 @@ function buildDirectForwardPayload(
     characterId,
     text: text ?? buildClipboardText(message),
   };
+}
+
+function buildMergedForwardText(messages: ChatRenderableMessage[]) {
+  const sections = messages
+    .map((message) => {
+      const sender = buildClipboardSender(message);
+      const body = buildClipboardText(message).trim();
+      if (!body) {
+        return null;
+      }
+
+      return `${sender}: ${body}`;
+    })
+    .filter((item): item is string => Boolean(item));
+
+  if (!sections.length) {
+    return "";
+  }
+
+  return ["[聊天记录]", ...sections].join("\n");
 }
 
 function saveUrlAsFile(url: string, fileName: string) {
