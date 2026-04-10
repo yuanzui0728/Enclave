@@ -19,9 +19,10 @@ import {
   updateGroupOwnerProfile,
   type ConversationListItem,
 } from "@yinjie/contracts";
-import { ChevronRight, Info, Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
 import {
   useConversationBackground,
@@ -530,9 +531,9 @@ function GroupChatDetailsPanel({
 
       <DesktopPanelSection>
         <div className="flex items-center gap-3 px-4 py-4">
-          <AvatarChip
+          <GroupAvatarChip
             name={groupQuery.data?.name ?? conversation.title}
-            src={groupQuery.data?.avatar}
+            members={conversation.participants}
             size="wechat"
           />
           <div className="min-w-0 flex-1">
@@ -624,7 +625,10 @@ function GroupChatDetailsPanel({
               "修改我在本群的昵称",
               ownerMember?.memberName ?? "",
             );
-            if (!nextNickname || nextNickname.trim() === ownerMember?.memberName) {
+            if (
+              !nextNickname ||
+              nextNickname.trim() === ownerMember?.memberName
+            ) {
               return;
             }
             updateNicknameMutation.mutate(nextNickname.trim());
@@ -730,7 +734,9 @@ function DesktopPanelRow({
       aria-checked={isSwitch ? checked : undefined}
     >
       <span className="flex min-w-0 items-center gap-2 text-[14px]">
-        {icon ? <span className="text-[color:var(--text-muted)]">{icon}</span> : null}
+        {icon ? (
+          <span className="text-[color:var(--text-muted)]">{icon}</span>
+        ) : null}
         <span>{label}</span>
       </span>
       <span className="flex shrink-0 items-center gap-2">

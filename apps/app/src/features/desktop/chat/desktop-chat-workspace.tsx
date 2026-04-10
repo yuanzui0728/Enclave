@@ -11,6 +11,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import { OfficialServiceConversationCard } from "../../../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
@@ -26,9 +27,7 @@ import {
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "./desktop-chat-header-actions";
-import {
-  DesktopChatSidePanel,
-} from "./desktop-chat-side-panel";
+import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 import { createDesktopNote } from "./desktop-notes-storage";
@@ -224,7 +223,9 @@ export function DesktopChatWorkspace({
     void navigate({ to: "/notes", hash: note.id });
   }
 
-  function handleToggleSidePanel(mode: Exclude<DesktopChatSidePanelMode, null>) {
+  function handleToggleSidePanel(
+    mode: Exclude<DesktopChatSidePanelMode, null>,
+  ) {
     setRightPanelMode((current) => (current === mode ? null : mode));
   }
 
@@ -447,14 +448,30 @@ function ConversationCardLink({
   const className = active
     ? "flex items-center gap-3 rounded-[18px] border border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] px-4 py-3 shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
     : "flex items-center gap-3 rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]";
+  const preview = buildConversationPreview(conversation);
+  const isGroupConversation = isPersistedGroupConversation(conversation);
 
   const content = (
     <>
-      <AvatarChip name={conversation.title} />
+      {isGroupConversation ? (
+        <GroupAvatarChip
+          name={conversation.title}
+          members={conversation.participants}
+        />
+      ) : (
+        <AvatarChip name={conversation.title} />
+      )}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
-          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-            {conversation.title}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {conversation.title}
+            </div>
+            {isGroupConversation ? (
+              <span className="shrink-0 rounded-full bg-[#ededed] px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+                群聊
+              </span>
+            ) : null}
           </div>
           <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
             {formatTimestamp(
@@ -464,7 +481,12 @@ function ConversationCardLink({
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
           <div className="truncate text-sm text-[color:var(--text-secondary)]">
-            {sanitizeDisplayedChatText(conversation.lastMessage?.text ?? "")}
+            {preview.prefix ? (
+              <span className="text-[color:var(--text-muted)]">
+                {preview.prefix}
+              </span>
+            ) : null}
+            <span>{preview.text}</span>
           </div>
           {conversation.unreadCount > 0 ? (
             <div className="min-w-6 rounded-full bg-[#fa5151] px-2 py-0.5 text-center text-[11px] text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
@@ -497,4 +519,70 @@ function ConversationCardLink({
       {content}
     </Link>
   );
+}
+
+function buildConversationPreview(conversation: ConversationListItem) {
+  const lastMessage = conversation.lastMessage;
+  if (!lastMessage) {
+    return {
+      prefix: "",
+      text: isPersistedGroupConversation(conversation)
+        ? "打开群聊查看最近消息。"
+        : "打开这个会话查看最近聊天记录。",
+    };
+  }
+
+  const text = formatMessagePreviewText(lastMessage.type, lastMessage.text);
+  if (!isPersistedGroupConversation(conversation)) {
+    return {
+      prefix: "",
+      text,
+    };
+  }
+
+  if (lastMessage.senderType === "system") {
+    return {
+      prefix: "",
+      text,
+    };
+  }
+
+  const senderLabel =
+    lastMessage.senderType === "user"
+      ? "我："
+      : `${lastMessage.senderName || "群成员"}：`;
+
+  return {
+    prefix: senderLabel,
+    text,
+  };
+}
+
+function formatMessagePreviewText(type: string | undefined, text: string) {
+  const displayedText = sanitizeDisplayedChatText(text);
+  if (displayedText) {
+    return displayedText;
+  }
+
+  if (type === "image") {
+    return "[图片]";
+  }
+
+  if (type === "file") {
+    return "[文件]";
+  }
+
+  if (type === "contact_card") {
+    return "[名片]";
+  }
+
+  if (type === "location_card") {
+    return "[位置]";
+  }
+
+  if (type === "sticker") {
+    return "[表情]";
+  }
+
+  return "打开会话查看最新消息。";
 }
