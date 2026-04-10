@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
@@ -7,6 +7,7 @@ import { GroupMessageContextMenu } from "../features/chat/group-message-context-
 import {
   extractChatReplyMetadata,
   sanitizeDisplayedChatText,
+  splitChatTextSegments,
 } from "../lib/chat-text";
 import { formatMessageTimestamp } from "../lib/format";
 
@@ -268,9 +269,9 @@ export function ChatMessageList({
                         : isDesktop
                           ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                           : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
-                    }`}
+                    } whitespace-pre-wrap break-words`}
                   >
-                    {displayText}
+                    {renderTextWithMentions(displayText)}
                   </div>
                 )}
               </div>
@@ -364,6 +365,32 @@ function buildClipboardText(message: ChatRenderableMessage) {
   return "消息";
 }
 
+function renderTextWithMentions(text: string): ReactNode {
+  const segments = splitChatTextSegments(text);
+  if (!segments.length) {
+    return text;
+  }
+
+  return segments.map((segment, index) => {
+    if (segment.kind === "text") {
+      return <span key={`text-${index}`}>{segment.text}</span>;
+    }
+
+    return (
+      <span
+        key={`mention-${index}-${segment.text}`}
+        className={
+          segment.tone === "all"
+            ? "rounded-[8px] bg-[rgba(249,115,22,0.14)] px-1 py-0.5 text-[#c2410c]"
+            : "rounded-[8px] bg-[rgba(59,130,246,0.12)] px-1 py-0.5 text-[#2563eb]"
+        }
+      >
+        {segment.text}
+      </span>
+    );
+  });
+}
+
 function ReplyQuoteCard({
   messageId,
   senderName,
@@ -396,7 +423,7 @@ function ReplyQuoteCard({
         回复 {senderName}
       </div>
       <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
-        {previewText}
+        {renderTextWithMentions(previewText)}
       </div>
     </button>
   );

@@ -5,12 +5,25 @@ const thoughtTagPattern = /<\/?thought\b[^>]*>/gi;
 const internalReasoningTagPattern = /<\/?internal_reasoning\b[^>]*>/gi;
 const internalSpeakerPrefixPattern = /^\[[^\]\n]{1,120}\]:\s*/gm;
 const chatReplyPrefixPattern = /^\[\[chat_reply:([^\]]+)\]\]\n?/;
+const mentionTokenPattern = /@[\p{L}\p{N}_-]{1,40}/gu;
+const mentionBoundaryPattern = /[\s([{'"“‘，。！？、：；,.!?/\\-]/u;
 
 export type ChatReplyMetadata = {
   messageId: string;
   senderName: string;
   previewText: string;
 };
+
+export type ChatTextSegment =
+  | {
+      kind: "text";
+      text: string;
+    }
+  | {
+      kind: "mention";
+      text: string;
+      tone: "member" | "all";
+    };
 
 export function sanitizeDisplayedChatText(text: string): string {
   const { body } = extractChatReplyMetadata(text);
@@ -60,6 +73,59 @@ export function encodeChatReplyText(
   const payload = encodeURIComponent(JSON.stringify(reply));
   const trimmedBody = body.trim();
   return `[[chat_reply:${payload}]]${trimmedBody ? `\n${trimmedBody}` : ""}`;
+}
+
+export function splitChatTextSegments(text: string): ChatTextSegment[] {
+  const sanitized = sanitizeDisplayedChatText(text);
+  if (!sanitized) {
+    return [];
+  }
+
+  const segments: ChatTextSegment[] = [];
+  let lastIndex = 0;
+
+  for (const match of sanitized.matchAll(mentionTokenPattern)) {
+    const rawIndex = match.index ?? -1;
+    const token = match[0];
+    if (rawIndex < 0 || !token) {
+      continue;
+    }
+
+    const beforeCharacter = rawIndex > 0 ? sanitized[rawIndex - 1] : undefined;
+    if (beforeCharacter && !mentionBoundaryPattern.test(beforeCharacter)) {
+      continue;
+    }
+
+    if (rawIndex > lastIndex) {
+      segments.push({
+        kind: "text",
+        text: sanitized.slice(lastIndex, rawIndex),
+      });
+    }
+
+    segments.push({
+      kind: "mention",
+      text: token,
+      tone: token === "@所有人" ? "all" : "member",
+    });
+    lastIndex = rawIndex + token.length;
+  }
+
+  if (lastIndex < sanitized.length) {
+    segments.push({
+      kind: "text",
+      text: sanitized.slice(lastIndex),
+    });
+  }
+
+  return segments.length
+    ? segments
+    : [
+        {
+          kind: "text",
+          text: sanitized,
+        },
+      ];
 }
 
 function sanitizeAssistantText(text: string): string {
