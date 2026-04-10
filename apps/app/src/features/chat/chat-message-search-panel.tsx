@@ -26,10 +26,21 @@ import {
 type SearchableChatMessage = Message | GroupMessage;
 type SearchCategoryId = "all" | "media" | "files" | "links";
 type SearchDateFilter = "all" | "today" | "7d" | "30d";
+type SearchMessageTypeFilter =
+  | "all"
+  | "text"
+  | "system"
+  | "sticker"
+  | "image"
+  | "file"
+  | "voice"
+  | "contact_card"
+  | "location_card";
 
 type IndexedSearchMessage = {
   message: SearchableChatMessage;
   categories: SearchCategoryId[];
+  messageType: Exclude<SearchMessageTypeFilter, "all">;
   searchableText: string;
   previewText: string;
   supportText: string;
@@ -54,6 +65,21 @@ const SEARCH_DATE_FILTERS: Array<{
   { id: "today", label: "今天" },
   { id: "7d", label: "7天内" },
   { id: "30d", label: "30天内" },
+];
+
+const SEARCH_MESSAGE_TYPE_FILTERS: Array<{
+  id: SearchMessageTypeFilter;
+  label: string;
+}> = [
+  { id: "all", label: "全部类型" },
+  { id: "text", label: "文本" },
+  { id: "image", label: "图片" },
+  { id: "file", label: "文件" },
+  { id: "voice", label: "语音" },
+  { id: "sticker", label: "表情" },
+  { id: "contact_card", label: "名片" },
+  { id: "location_card", label: "位置" },
+  { id: "system", label: "系统" },
 ];
 
 type ChatMessageSearchPanelProps = {
@@ -124,6 +150,8 @@ export function ChatMessageSearchPanel({
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
   const [senderFilter, setSenderFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<SearchDateFilter>("all");
+  const [messageTypeFilter, setMessageTypeFilter] =
+    useState<SearchMessageTypeFilter>("all");
   const [specificDate, setSpecificDate] = useState("");
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
@@ -157,6 +185,13 @@ export function ChatMessageSearchPanel({
         return false;
       }
 
+      if (
+        messageTypeFilter !== "all" &&
+        item.messageType !== messageTypeFilter
+      ) {
+        return false;
+      }
+
       if (!matchesSearchDateFilter(item.message.createdAt, dateFilter)) {
         return false;
       }
@@ -178,6 +213,7 @@ export function ChatMessageSearchPanel({
     dateFilter,
     enableSenderFilter,
     indexedMessages,
+    messageTypeFilter,
     senderFilter,
     specificDate,
     trimmedKeyword,
@@ -191,6 +227,30 @@ export function ChatMessageSearchPanel({
       new Set(indexedMessages.map((item) => item.message.senderName || "消息")),
     ).sort((left, right) => left.localeCompare(right, "zh-CN"));
   }, [enableSenderFilter, indexedMessages]);
+  const availableMessageTypeFilters = useMemo(() => {
+    const counts = indexedMessages.reduce<
+      Record<Exclude<SearchMessageTypeFilter, "all">, number>
+    >(
+      (result, item) => {
+        result[item.messageType] += 1;
+        return result;
+      },
+      {
+        text: 0,
+        image: 0,
+        file: 0,
+        voice: 0,
+        sticker: 0,
+        contact_card: 0,
+        location_card: 0,
+        system: 0,
+      },
+    );
+
+    return SEARCH_MESSAGE_TYPE_FILTERS.filter(
+      (item) => item.id === "all" || counts[item.id as keyof typeof counts] > 0,
+    );
+  }, [indexedMessages]);
 
   const categoryCounts = useMemo(() => {
     return SEARCH_CATEGORIES.reduce<Record<SearchCategoryId, number>>(
@@ -230,6 +290,7 @@ export function ChatMessageSearchPanel({
   const activeFilterCount =
     (trimmedKeyword ? 1 : 0) +
     (senderFilter !== "all" ? 1 : 0) +
+    (messageTypeFilter !== "all" ? 1 : 0) +
     (dateFilter !== "all" ? 1 : 0) +
     (specificDate ? 1 : 0);
 
@@ -270,6 +331,15 @@ export function ChatMessageSearchPanel({
             {senderFilter !== "all" ? (
               <SearchStatPill label={`成员 ${senderFilter}`} />
             ) : null}
+            {messageTypeFilter !== "all" ? (
+              <SearchStatPill
+                label={`类型 ${
+                  SEARCH_MESSAGE_TYPE_FILTERS.find(
+                    (item) => item.id === messageTypeFilter,
+                  )?.label ?? "消息"
+                }`}
+              />
+            ) : null}
             {specificDate ? (
               <SearchStatPill label={`日期 ${specificDate}`} />
             ) : dateFilter !== "all" ? (
@@ -294,6 +364,23 @@ export function ChatMessageSearchPanel({
                   "rounded-full px-3 py-1.5 text-[12px] transition",
                   dateFilter === item.id && !specificDate
                     ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
+                    : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {availableMessageTypeFilters.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setMessageTypeFilter(item.id)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-[12px] transition",
+                  messageTypeFilter === item.id
+                    ? "bg-[rgba(255,138,61,0.16)] text-[color:var(--brand-primary)]"
                     : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
                 )}
               >
@@ -337,6 +424,7 @@ export function ChatMessageSearchPanel({
                 onClick={() => {
                   setKeyword("");
                   setSenderFilter("all");
+                  setMessageTypeFilter("all");
                   setDateFilter("all");
                   setSpecificDate("");
                 }}
@@ -423,6 +511,7 @@ export function ChatMessageSearchPanel({
           {!trimmedKeyword &&
           indexedMessages.length > 0 &&
           senderFilter === "all" &&
+          messageTypeFilter === "all" &&
           activeCategory !== "all" &&
           categoryCounts[activeCategory] === 0 ? (
             <div className="px-3">
@@ -451,6 +540,24 @@ export function ChatMessageSearchPanel({
               <EmptyState
                 title={`没有来自 ${senderFilter} 的${activeCategoryMeta.shortLabel}`}
                 description="换个成员试试，或者切回全部成员继续浏览。"
+              />
+            </div>
+          ) : null}
+
+          {!trimmedKeyword &&
+          !specificDate &&
+          dateFilter === "all" &&
+          senderFilter === "all" &&
+          messageTypeFilter !== "all" &&
+          !results.length ? (
+            <div className="px-3">
+              <EmptyState
+                title={`没有匹配的${
+                  SEARCH_MESSAGE_TYPE_FILTERS.find(
+                    (item) => item.id === messageTypeFilter,
+                  )?.label ?? "消息"
+                }`}
+                description="换个消息类型试试，或者切回全部类型继续浏览。"
               />
             </div>
           ) : null}
@@ -564,6 +671,7 @@ function buildIndexedSearchMessage(
   const supportText = resolveSupportText(message);
   const linkText = extractFirstLink(normalizedText);
   const typeLabel = resolveMessageTypeLabel(message);
+  const messageType = resolveMessageTypeFilter(message);
   const categories: SearchCategoryId[] = ["all"];
 
   if (message.type === "image") {
@@ -596,6 +704,7 @@ function buildIndexedSearchMessage(
   return {
     message,
     categories,
+    messageType,
     searchableText,
     previewText,
     supportText,
@@ -603,6 +712,44 @@ function buildIndexedSearchMessage(
     typeLabel,
     reminderAt: reminder?.remindAt,
   };
+}
+
+function resolveMessageTypeFilter(
+  message: SearchableChatMessage,
+): Exclude<SearchMessageTypeFilter, "all"> {
+  if (message.type === "proactive") {
+    return "text";
+  }
+
+  if (message.type === "system") {
+    return "system";
+  }
+
+  if (message.type === "sticker") {
+    return "sticker";
+  }
+
+  if (message.type === "image") {
+    return "image";
+  }
+
+  if (message.type === "file") {
+    return "file";
+  }
+
+  if (message.type === "voice") {
+    return "voice";
+  }
+
+  if (message.type === "contact_card") {
+    return "contact_card";
+  }
+
+  if (message.type === "location_card") {
+    return "location_card";
+  }
+
+  return "text";
 }
 
 function resolveSupportText(message: SearchableChatMessage) {
