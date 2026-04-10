@@ -25,6 +25,14 @@ export class SocialController {
     return this.socialService.getFriends();
   }
 
+  @Post('friends/:characterId/star')
+  setFriendStarred(
+    @Param('characterId') characterId: string,
+    @Body() body: { starred: boolean },
+  ) {
+    return this.socialService.setFriendStarred(characterId, body.starred);
+  }
+
   @Get('blocks')
   getBlockedCharacters() {
     return this.socialService.getBlockedCharacters();

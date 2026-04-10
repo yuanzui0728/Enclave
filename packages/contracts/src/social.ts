@@ -17,6 +17,8 @@ export interface Friendship {
   characterId: string;
   intimacyLevel: number;
   status: string;
+  isStarred: boolean;
+  starredAt?: string;
   createdAt: string;
   lastInteractedAt?: string;
 }
@@ -36,6 +38,10 @@ export interface BlockedCharacter {
 export interface SendFriendRequestRequest {
   characterId: string;
   greeting: string;
+}
+
+export interface SetFriendStarredRequest {
+  starred: boolean;
 }
 
 export interface TriggerSceneRequest {
@@ -63,4 +69,3 @@ export interface BlockCharacterRequest {
 export interface UnblockCharacterRequest {
   characterId: string;
 }
-

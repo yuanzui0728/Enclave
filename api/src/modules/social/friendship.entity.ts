@@ -17,6 +17,12 @@ export class FriendshipEntity {
   @Column({ default: 'friend' })
   status: string; // 'friend' | 'close' | 'best'
 
+  @Column({ default: false })
+  isStarred: boolean;
+
+  @Column({ nullable: true })
+  starredAt?: Date | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
