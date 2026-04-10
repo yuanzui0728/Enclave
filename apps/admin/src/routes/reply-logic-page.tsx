@@ -366,7 +366,7 @@ export function ReplyLogicPage() {
       />
 
       <InlineNotice tone="muted">
-        这一版已经支持同页修改现有可编辑项。右侧配置抽屉保存后会刷新运行时快照；候选消息预演和硬编码常量改写还没并进来。
+        这一版已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。右侧保存后会刷新运行时快照。
       </InlineNotice>
 
       {overviewQuery.isLoading ? <LoadingBlock label="正在读取回复逻辑总览..." /> : null}
@@ -2039,6 +2039,188 @@ function RuntimeRulesEditorCard({
               />
             </ConfigSection>
 
+            <ConfigSection title="System Prompt 模板">
+              <InlineNotice tone="muted">
+                这里改的是结构化 system prompt 的母版。支持的占位符会直接在标签里标出来，例如{" "}
+                <code>{"{{name}}"}</code>、<code>{"{{relationship}}"}</code>、<code>{"{{currentTime}}"}</code>。
+              </InlineNotice>
+              <TextAreaBlock
+                label="身份兜底模板（{{name}} / {{relationship}}）"
+                value={draft.promptTemplates.identityFallback}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      identityFallback: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="链路推理提示"
+                value={draft.promptTemplates.chainOfThoughtInstruction}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      chainOfThoughtInstruction: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="反思提示"
+                value={draft.promptTemplates.reflectionInstruction}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      reflectionInstruction: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="协作路由提示"
+                value={draft.promptTemplates.collaborationRouting}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      collaborationRouting: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="空记忆提示"
+                value={draft.promptTemplates.emptyMemory}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      emptyMemory: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="行为指导提示"
+                value={draft.promptTemplates.behavioralGuideline}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      behavioralGuideline: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="群聊提示"
+                value={draft.promptTemplates.groupChatInstruction}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      groupChatInstruction: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="基础规则列表（{{name}} / {{relationship}} / {{currentTime}}）"
+                value={listToLines(draft.promptTemplates.baseRules)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      baseRules: linesToList(value),
+                    },
+                  }))
+                }
+              />
+            </ConfigSection>
+
+            <ConfigSection title="生成器 Prompt 模板">
+              <InlineNotice tone="muted">
+                这部分会直接影响朋友圈生成、人格提取、意图分类、记忆压缩等 AI 子链路。
+              </InlineNotice>
+              <TextAreaBlock
+                label="朋友圈生成模板（{{name}} / {{relationship}} / {{dayOfWeek}} / {{timeOfDay}} / {{clockTime}} / {{emotionalTone}} / {{topicsHint}}）"
+                value={draft.promptTemplates.momentPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      momentPrompt: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="人格提取模板（{{personName}} / {{chatSample}}）"
+                value={draft.promptTemplates.personalityExtractionPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      personalityExtractionPrompt: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="意图分类模板（{{userMessage}} / {{characterName}} / {{characterDomains}}）"
+                value={draft.promptTemplates.intentClassificationPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      intentClassificationPrompt: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="记忆压缩模板（{{name}} / {{chatHistory}}）"
+                value={draft.promptTemplates.memoryCompressionPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      memoryCompressionPrompt: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="拉群说明模板（{{triggerCharName}} / {{invitedCharNames}} / {{topic}}）"
+                value={draft.promptTemplates.groupCoordinatorPrompt}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    promptTemplates: {
+                      ...current.promptTemplates,
+                      groupCoordinatorPrompt: value,
+                    },
+                  }))
+                }
+              />
+            </ConfigSection>
+
             <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
               <Button variant="secondary" onClick={onReset}>
                 重置运行规则
@@ -2533,6 +2715,21 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       标签: formatNarrativeMilestoneLabel(item.label),
       进度: item.progress,
     })),
+    Prompt模板: {
+      身份兜底: constants.promptTemplates.identityFallback,
+      链路推理提示: constants.promptTemplates.chainOfThoughtInstruction,
+      反思提示: constants.promptTemplates.reflectionInstruction,
+      协作路由提示: constants.promptTemplates.collaborationRouting,
+      空记忆提示: constants.promptTemplates.emptyMemory,
+      行为指导提示: constants.promptTemplates.behavioralGuideline,
+      群聊提示: constants.promptTemplates.groupChatInstruction,
+      基础规则: [...constants.promptTemplates.baseRules],
+      朋友圈生成模板: constants.promptTemplates.momentPrompt,
+      人格提取模板: constants.promptTemplates.personalityExtractionPrompt,
+      意图分类模板: constants.promptTemplates.intentClassificationPrompt,
+      记忆压缩模板: constants.promptTemplates.memoryCompressionPrompt,
+      拉群说明模板: constants.promptTemplates.groupCoordinatorPrompt,
+    },
   } as Record<string, unknown>;
 }
 
