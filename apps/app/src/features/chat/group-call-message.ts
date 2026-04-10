@@ -6,22 +6,40 @@ const GROUP_VOICE_CALL_PREFIX = "[群语音通话]";
 const GROUP_VIDEO_CALL_PREFIX = "[群视频通话]";
 
 export type GroupCallInviteStatus = "ongoing" | "ended";
+export type DirectCallInviteStatus = "waiting" | "connected" | "ended";
 
 export function buildDirectCallInviteMessage(
   kind: DesktopChatCallKind,
   conversationTitle: string,
-  status?: {
-    remoteJoined: boolean;
-  },
+  status:
+    | DirectCallInviteStatus
+    | {
+        remoteJoined?: boolean;
+      } = "waiting",
 ) {
-  const statusLabel = status?.remoteJoined ? "已接通" : "等待接听";
+  const normalizedStatus: DirectCallInviteStatus =
+    typeof status === "string"
+      ? status
+      : status.remoteJoined
+        ? "connected"
+        : "waiting";
+  const statusLabel =
+    normalizedStatus === "ended"
+      ? "已结束"
+      : normalizedStatus === "connected"
+        ? "已接通"
+        : "等待接听";
 
   return [
     kind === "voice" ? DIRECT_VOICE_CALL_PREFIX : DIRECT_VIDEO_CALL_PREFIX,
     conversationTitle.trim() || "当前聊天",
     `当前状态 ${statusLabel}`,
-    "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
-    "如需继续加入或转到手机，请在当前聊天顶部的通话面板里操作。",
+    normalizedStatus === "ended"
+      ? "本轮单聊通话已在桌面端结束，可继续在聊天里跟进。"
+      : "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
+    normalizedStatus === "ended"
+      ? "如需再次发起，请重新打开当前聊天顶部的通话面板。"
+      : "如需继续加入或转到手机，请在当前聊天顶部的通话面板里操作。",
   ].join("\n");
 }
 
@@ -82,7 +100,7 @@ export function parseDirectCallInviteMessage(text: string) {
   } satisfies {
     kind: DesktopChatCallKind;
     title: string;
-    connectionStatus: "connected" | "waiting" | null;
+    connectionStatus: DirectCallInviteStatus | null;
     summaryLines: string[];
   };
 }
@@ -150,6 +168,10 @@ function parseGroupCallMetric(line: string | undefined, pattern: RegExp) {
 function parseDirectCallStatus(line: string | undefined) {
   if (!line) {
     return null;
+  }
+
+  if (line.includes("已结束")) {
+    return "ended";
   }
 
   if (line.includes("已接通")) {

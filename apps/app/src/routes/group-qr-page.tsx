@@ -1307,9 +1307,10 @@ export function GroupQrPage() {
                       ) : null}
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      {isPendingReturnCoolingDown(target.deliveredAt)
-                        ? "稍后补发"
-                        : "优先补发"}
+                      {resolvePendingReturnActionLabel(
+                        conversation,
+                        target.deliveredAt,
+                      )}
                     </span>
                   </button>
                 ))}
@@ -1978,6 +1979,27 @@ function resolvePendingReturnActionStatus(
     label: "可以稍放",
     tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
   };
+}
+
+function resolvePendingReturnActionLabel(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  const status = resolvePendingReturnActionStatus(conversation, deliveredAt);
+
+  if (status.label === "现在补最值") {
+    return "现在就补";
+  }
+
+  if (status.label === "优先处理") {
+    return "优先处理";
+  }
+
+  if (status.label === "可以稍放") {
+    return "稍后再补";
+  }
+
+  return "暂不建议";
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
