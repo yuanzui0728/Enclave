@@ -1478,13 +1478,12 @@ export function ChatComposer({
               })
             }
             onUnavailableAction={(message) => {
-              setPlusPanelOpen(false);
               setAttachmentError(null);
               setMobilePlusNotice(message);
             }}
           />
         ) : null}
-        {mobilePlusNotice && !isDesktop ? (
+        {mobilePlusNotice && !isDesktop && !plusPanelOpen ? (
           <InlineNotice className="mt-2 text-xs" tone="info">
             {mobilePlusNotice}
           </InlineNotice>

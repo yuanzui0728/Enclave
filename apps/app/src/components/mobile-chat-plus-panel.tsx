@@ -67,6 +67,8 @@ type RootAction = {
   iconClassName: string;
   disabled?: boolean;
   disabledLabel?: string;
+  unavailableTitle?: string;
+  unavailableDescription?: string;
 };
 
 const rootActions: Record<RootAction["key"], RootAction> = {
@@ -89,6 +91,9 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     iconClassName: "bg-[#60a5fa]",
     disabled: true,
     disabledLabel: "待接入",
+    unavailableTitle: "视频通话暂未接入",
+    unavailableDescription:
+      "当前先保留微信式入口位，后续会接到设备联动和真视频通话链路。",
   },
   "red-packet": {
     key: "red-packet",
@@ -97,6 +102,9 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     iconClassName: "bg-[#ef6a62]",
     disabled: true,
     disabledLabel: "待接入",
+    unavailableTitle: "红包暂未接入",
+    unavailableDescription:
+      "支付与到账链路还没接入，这里先保留和微信一致的能力入口。",
   },
   transfer: {
     key: "transfer",
@@ -105,6 +113,9 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     iconClassName: "bg-[#f59e0b]",
     disabled: true,
     disabledLabel: "待接入",
+    unavailableTitle: "转账暂未接入",
+    unavailableDescription:
+      "后续会补金额确认、到账反馈和会话内转账记录，这一版先保留入口。",
   },
   contact: {
     key: "contact",
@@ -125,6 +136,9 @@ const rootActions: Record<RootAction["key"], RootAction> = {
     iconClassName: "bg-[#38b36b]",
     disabled: true,
     disabledLabel: "待接入",
+    unavailableTitle: "语音通话暂未接入",
+    unavailableDescription:
+      "当前可以先用按住说话发送语音消息，实时语音通话会在后续单独接入。",
   },
   file: {
     key: "file",
@@ -172,6 +186,9 @@ export function MobileChatPlusPanel({
   const [favoriteRecords, setFavoriteRecords] = useState<
     DesktopFavoriteRecord[]
   >([]);
+  const [unavailableAction, setUnavailableAction] = useState<RootAction | null>(
+    null,
+  );
   const rootPagerRef = useRef<HTMLDivElement | null>(null);
 
   const friendsQuery = useQuery({
@@ -184,6 +201,7 @@ export function MobileChatPlusPanel({
     if (!open) {
       setActiveView("root");
       setActiveRootPage(0);
+      setUnavailableAction(null);
     }
   }, [open]);
 
@@ -195,6 +213,12 @@ export function MobileChatPlusPanel({
     setFavoriteRecords(readDesktopFavorites());
   }, [activeView, open]);
 
+  useEffect(() => {
+    if (activeView !== "root") {
+      setUnavailableAction(null);
+    }
+  }, [activeView]);
+
   const rootActionPages = ROOT_ACTION_PAGE_KEYS.map((page) =>
     buildRootActionPage(page),
   );
@@ -202,6 +226,8 @@ export function MobileChatPlusPanel({
   if (!open) {
     return null;
   }
+
+  const UnavailableIcon = unavailableAction?.icon;
 
   return (
     <div className="mt-2 min-h-[248px] overflow-hidden border-t border-black/6 bg-[#f1f1f1] shadow-none">
@@ -242,42 +268,62 @@ export function MobileChatPlusPanel({
                     }
 
                     const Icon = item.icon;
-                    const handleClick =
-                      item.key === "album"
-                        ? onPickAlbum
+                    const handleClick = item.disabled
+                      ? () => {
+                          setUnavailableAction(item);
+                          onUnavailableAction?.(
+                            item.unavailableDescription ??
+                              `${item.label} 暂未接入。`,
+                          );
+                        }
+                      : item.key === "album"
+                        ? () => {
+                            setUnavailableAction(null);
+                            onPickAlbum();
+                          }
                         : item.key === "camera"
-                          ? onPickCamera
+                          ? () => {
+                              setUnavailableAction(null);
+                              onPickCamera();
+                            }
                           : item.key === "favorite"
-                            ? () => setActiveView("favorites")
+                            ? () => {
+                                setUnavailableAction(null);
+                                setActiveView("favorites");
+                              }
                             : item.key === "contact"
-                              ? () => setActiveView("contacts")
+                              ? () => {
+                                  setUnavailableAction(null);
+                                  setActiveView("contacts");
+                                }
                               : item.key === "file"
-                                ? onPickFile
-                                : item.key === "location"
-                                  ? () => setActiveView("locations")
-                                  : () =>
-                                      onUnavailableAction?.("该入口暂未接入。");
+                                ? () => {
+                                    setUnavailableAction(null);
+                                    onPickFile();
+                                  }
+                                : () => {
+                                    setUnavailableAction(null);
+                                    setActiveView("locations");
+                                  };
 
                     return (
                       <button
                         key={item.key}
                         type="button"
                         onClick={handleClick}
-                        disabled={busy || item.disabled}
+                        disabled={busy}
+                        aria-disabled={item.disabled ? "true" : undefined}
                         className={cn(
                           "flex flex-col items-center gap-2 text-center",
-                          item.disabled
-                            ? "cursor-not-allowed opacity-55"
-                            : "disabled:opacity-60",
+                          item.disabled ? "opacity-80" : "disabled:opacity-60",
                         )}
                       >
                         <div
                           className={cn(
                             "flex h-14 w-14 items-center justify-center rounded-[14px] border bg-white text-white shadow-none",
-                            item.disabled
-                              ? "border-black/5 bg-[#d7d7d7]"
-                              : "border-black/6",
+                            item.disabled ? "border-black/6" : "border-black/6",
                             item.disabled ? null : item.iconClassName,
+                            item.disabled ? "bg-[#cfcfcf]" : null,
                           )}
                         >
                           <Icon size={22} />
@@ -322,6 +368,40 @@ export function MobileChatPlusPanel({
                   aria-label={`切换到第 ${pageIndex + 1} 页`}
                 />
               ))}
+            </div>
+          ) : null}
+
+          {unavailableAction ? (
+            <div className="mx-3 mt-4 rounded-[18px] border border-black/6 bg-white px-4 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white",
+                    unavailableAction.iconClassName,
+                  )}
+                >
+                  {UnavailableIcon ? <UnavailableIcon size={18} /> : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium text-[#111827]">
+                    {unavailableAction.unavailableTitle ??
+                      `${unavailableAction.label} 暂未接入`}
+                  </div>
+                  <div className="mt-1 text-[12px] leading-5 text-[#7a7a7a]">
+                    {unavailableAction.unavailableDescription ??
+                      "当前版本先保留这个入口位，后续再补完整链路。"}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setUnavailableAction(null)}
+                  className="rounded-full bg-[#f5f5f5] px-3 py-1.5 text-[12px] font-medium text-[#5f5f5f] transition active:bg-[#ebebeb]"
+                >
+                  知道了
+                </button>
+              </div>
             </div>
           ) : null}
         </div>
