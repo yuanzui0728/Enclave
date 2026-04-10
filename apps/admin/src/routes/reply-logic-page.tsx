@@ -1988,6 +1988,26 @@ function RuntimeRulesEditorCard({
                   }
                 />
               </div>
+              <TextAreaBlock
+                label="场景加好友候选（每行一个）"
+                value={listToLines(draft.sceneFriendRequestScenes)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    sceneFriendRequestScenes: linesToList(value),
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="AI 关系初始背景模板（{{leftName}} / {{rightName}}）"
+                value={draft.relationshipInitialBackstory}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    relationshipInitialBackstory: value,
+                  }))
+                }
+              />
             </ConfigSection>
 
             <ConfigSection title="窗口与叙事">
@@ -2811,6 +2831,19 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
+              <TextAreaBlock
+                label="预演-默认用户消息"
+                value={draft.inspectorTemplates.previewDefaultUserMessage}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    inspectorTemplates: {
+                      ...current.inspectorTemplates,
+                      previewDefaultUserMessage: value,
+                    },
+                  }))
+                }
+              />
             </ConfigSection>
 
             <ConfigSection title="Provider 备注模板">
@@ -3391,8 +3424,10 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       朋友圈生成概率: constants.momentGenerateChance,
       视频号生成概率: constants.channelGenerateChance,
       场景加好友概率: constants.sceneFriendRequestChance,
+      场景加好友候选: [...constants.sceneFriendRequestScenes],
       基础活动权重: constants.activityBaseWeight,
       主动提醒小时: constants.proactiveReminderHour,
+      AI关系初始背景模板: constants.relationshipInitialBackstory,
     },
     历史窗口: {
       基础值: constants.historyWindow.base,
@@ -3474,6 +3509,7 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       预演StoredGroup: constants.inspectorTemplates.previewStoredGroup,
       预演DirectConversation: constants.inspectorTemplates.previewDirectConversation,
       预演FormalGroup: constants.inspectorTemplates.previewFormalGroup,
+      预演默认用户消息: constants.inspectorTemplates.previewDefaultUserMessage,
     },
     Provider备注模板: { ...constants.providerTemplates },
     角色运行备注模板: { ...constants.runtimeNoteTemplates },
