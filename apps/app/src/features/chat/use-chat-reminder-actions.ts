@@ -9,12 +9,14 @@ type UseChatReminderActionsOptions = {
   navigateToReminder: (entry: ChatReminderEntry) => void;
   onNoticeChange?: (notice: string | null) => void;
   autoClearLocalNoticeMs?: number | null;
+  onCompleteReminder?: (messageId: string) => Promise<void> | void;
 };
 
 export function useChatReminderActions({
   navigateToReminder,
   onNoticeChange,
   autoClearLocalNoticeMs = null,
+  onCompleteReminder,
 }: UseChatReminderActionsOptions) {
   const [localNotice, setLocalNotice] = useState<string | null>(null);
 
@@ -36,10 +38,18 @@ export function useChatReminderActions({
     navigateToReminder(entry);
   }
 
-  function completeReminder(messageId: string) {
-    removeLocalChatMessageReminder(messageId);
-    onNoticeChange?.(CHAT_REMINDER_COMPLETION_NOTICE);
-    setLocalNotice(CHAT_REMINDER_COMPLETION_NOTICE);
+  async function completeReminder(messageId: string) {
+    try {
+      await (onCompleteReminder?.(messageId) ??
+        Promise.resolve(removeLocalChatMessageReminder(messageId)));
+      onNoticeChange?.(CHAT_REMINDER_COMPLETION_NOTICE);
+      setLocalNotice(CHAT_REMINDER_COMPLETION_NOTICE);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "完成提醒失败，请稍后再试。";
+      onNoticeChange?.(message);
+      setLocalNotice(message);
+    }
   }
 
   function clearLocalNotice() {

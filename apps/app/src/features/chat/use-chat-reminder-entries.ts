@@ -1,5 +1,8 @@
 import { useMemo } from "react";
-import type { ConversationListItem } from "@yinjie/contracts";
+import type {
+  ConversationListItem,
+  MessageReminderRecord,
+} from "@yinjie/contracts";
 import {
   buildChatReminderEntries,
   countChatReminderStatuses,
@@ -8,11 +11,10 @@ import {
   getChatReminderStatus,
   groupChatReminderEntries,
 } from "./chat-reminder-entries";
-import type { LocalChatMessageReminderRecord } from "./local-chat-message-actions";
 import { useChatReminderNowTimestamp } from "./use-chat-reminder-now-timestamp";
 
 type UseChatReminderEntriesOptions = {
-  reminders: readonly LocalChatMessageReminderRecord[];
+  reminders: readonly MessageReminderRecord[];
   conversations: readonly ConversationListItem[];
   keyword?: string;
 };

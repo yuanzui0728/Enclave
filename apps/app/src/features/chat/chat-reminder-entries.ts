@@ -1,6 +1,8 @@
-import type { ConversationListItem } from "@yinjie/contracts";
+import type {
+  ConversationListItem,
+  MessageReminderRecord,
+} from "@yinjie/contracts";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
-import type { LocalChatMessageReminderRecord } from "./local-chat-message-actions";
 
 export type ChatReminderEntry = {
   messageId: string;
@@ -36,7 +38,7 @@ export type ChatReminderGroup = {
 };
 
 export function buildChatReminderEntries(
-  reminders: readonly LocalChatMessageReminderRecord[],
+  reminders: readonly MessageReminderRecord[],
   conversations: readonly ConversationListItem[],
   nowTimestamp: number,
 ): ChatReminderEntry[] {

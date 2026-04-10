@@ -13,13 +13,10 @@ import {
   getChatReminderStatusLabel,
 } from "./chat-reminder-entries";
 import {
-  markLocalChatMessageReminderNotified,
-  useLocalChatMessageActionState,
-} from "./local-chat-message-actions";
-import {
   CHAT_REMINDER_ACTION_NOTICE_DURATION_MS,
   useChatReminderActions,
 } from "./use-chat-reminder-actions";
+import { useMessageReminders } from "./use-message-reminders";
 import { useChatReminderEntries } from "./use-chat-reminder-entries";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 
@@ -33,7 +30,7 @@ export function MobileReminderToastHost() {
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
-  const { reminders } = useLocalChatMessageActionState();
+  const { reminders, clearReminder, notifyReminder } = useMessageReminders();
   const [dismissedMessageIds, setDismissedMessageIds] = useState<string[]>([]);
 
   const conversationsQuery = useQuery({
@@ -69,6 +66,7 @@ export function MobileReminderToastHost() {
       void navigate(buildChatReminderNavigation(entry));
     },
     autoClearLocalNoticeMs: CHAT_REMINDER_ACTION_NOTICE_DURATION_MS,
+    onCompleteReminder: clearReminder,
   });
 
   useEffect(() => {
@@ -108,7 +106,7 @@ export function MobileReminderToastHost() {
         return;
       }
 
-      markLocalChatMessageReminderNotified(activeReminder.messageId);
+      void notifyReminder(activeReminder.messageId);
     });
   }, [activeReminder]);
 
@@ -147,7 +145,7 @@ export function MobileReminderToastHost() {
     }
 
     dismissReminder(activeReminder.messageId);
-    completeReminder(activeReminder.messageId);
+    void completeReminder(activeReminder.messageId);
   };
 
   const handleOpen = () => {
