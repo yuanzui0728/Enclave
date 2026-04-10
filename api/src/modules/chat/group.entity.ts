@@ -56,6 +56,12 @@ export class GroupEntity {
   @Column({ default: true })
   notifyOnAnnouncement: boolean;
 
+  @Column({ default: 'inherit' })
+  chatBackgroundMode: string;
+
+  @Column('text', { nullable: true })
+  chatBackgroundPayload?: string | null;
+
   @Column({ type: 'datetime', nullable: true })
   lastClearedAt?: Date | null;
 

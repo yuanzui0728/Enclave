@@ -50,6 +50,33 @@ export class ConversationBackgroundController {
   }
 }
 
+@Controller('groups')
+export class GroupBackgroundController {
+  constructor(private readonly chatBackgroundsService: ChatBackgroundsService) {}
+
+  @Get(':id/background')
+  getGroupBackground(@Param('id') id: string) {
+    return this.chatBackgroundsService.getGroupBackgroundSettings(id);
+  }
+
+  @Patch(':id/background')
+  setGroupBackground(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      mode: 'inherit' | 'custom';
+      background?: ChatBackgroundAsset | null;
+    },
+  ) {
+    return this.chatBackgroundsService.updateGroupBackground(id, body);
+  }
+
+  @Delete(':id/background')
+  clearGroupBackground(@Param('id') id: string) {
+    return this.chatBackgroundsService.clearGroupBackground(id);
+  }
+}
+
 @Controller('chat')
 export class ChatBackgroundAssetsController {
   constructor(private readonly chatBackgroundsService: ChatBackgroundsService) {}

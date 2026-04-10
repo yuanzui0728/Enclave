@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { ConversationEntity } from './conversation.entity';
+import { GroupEntity } from './group.entity';
 import type {
   ChatBackgroundAsset,
   ConversationBackgroundSettings,
@@ -33,6 +34,8 @@ export class ChatBackgroundsService {
     private readonly worldOwnerService: WorldOwnerService,
     @InjectRepository(ConversationEntity)
     private readonly conversationRepo: Repository<ConversationEntity>,
+    @InjectRepository(GroupEntity)
+    private readonly groupRepo: Repository<GroupEntity>,
   ) {}
 
   async getConversationBackgroundSettings(
@@ -88,6 +91,61 @@ export class ChatBackgroundsService {
     conversation.chatBackgroundPayload = null;
     await this.conversationRepo.save(conversation);
     return this.getConversationBackgroundSettings(conversationId);
+  }
+
+  async getGroupBackgroundSettings(
+    groupId: string,
+  ): Promise<ConversationBackgroundSettings> {
+    const group = await this.requireOwnedGroup(groupId);
+    const defaultBackground =
+      (await this.worldOwnerService.getDefaultChatBackground()) ?? null;
+    const conversationBackground =
+      parseChatBackgroundAsset(group.chatBackgroundPayload) ?? null;
+    const mode =
+      group.chatBackgroundMode === 'custom' && conversationBackground
+        ? 'custom'
+        : 'inherit';
+
+    return {
+      mode,
+      conversationBackground,
+      defaultBackground,
+      effectiveBackground:
+        mode === 'custom' ? conversationBackground : defaultBackground,
+    };
+  }
+
+  async updateGroupBackground(
+    groupId: string,
+    input: {
+      mode: 'inherit' | 'custom';
+      background?: ChatBackgroundAsset | null;
+    },
+  ): Promise<ConversationBackgroundSettings> {
+    const group = await this.requireOwnedGroup(groupId);
+
+    if (input.mode === 'custom' && !input.background) {
+      throw new BadRequestException('请先选择当前聊天的背景图。');
+    }
+
+    group.chatBackgroundMode = input.mode;
+    group.chatBackgroundPayload =
+      input.mode === 'custom' && input.background
+        ? JSON.stringify(normalizeChatBackgroundAsset(input.background))
+        : null;
+
+    await this.groupRepo.save(group);
+    return this.getGroupBackgroundSettings(groupId);
+  }
+
+  async clearGroupBackground(
+    groupId: string,
+  ): Promise<ConversationBackgroundSettings> {
+    const group = await this.requireOwnedGroup(groupId);
+    group.chatBackgroundMode = 'inherit';
+    group.chatBackgroundPayload = null;
+    await this.groupRepo.save(group);
+    return this.getGroupBackgroundSettings(groupId);
   }
 
   async saveUploadedChatBackground(
@@ -149,6 +207,21 @@ export class ChatBackgroundsService {
     }
 
     return conversation;
+  }
+
+  private async requireOwnedGroup(groupId: string) {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const group = await this.groupRepo.findOneBy({
+      id: groupId,
+      creatorId: owner.id,
+      creatorType: 'user',
+    });
+
+    if (!group) {
+      throw new NotFoundException(`Group ${groupId} not found`);
+    }
+
+    return group;
   }
 
   private resolveBackgroundStorageDir() {
