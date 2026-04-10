@@ -137,6 +137,7 @@ type ChatMessageListProps = {
       quotedText?: string;
     },
   ) => void;
+  onOpenGroupCallInvite?: (kind: "voice" | "video") => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
 
@@ -183,6 +184,7 @@ export function ChatMessageList({
   unreadMarkerCount = 0,
   unreadMarkerLabel,
   onReplyMessage,
+  onOpenGroupCallInvite,
   onSelectionModeChange,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
@@ -1795,6 +1797,13 @@ export function ChatMessageList({
                     <GroupCallInviteMessage
                       own={isUser}
                       invite={groupCallInvite}
+                      onOpen={
+                        selectionMode ||
+                        threadContext?.type !== "group" ||
+                        !onOpenGroupCallInvite
+                          ? undefined
+                          : () => onOpenGroupCallInvite(groupCallInvite.kind)
+                      }
                     />
                   ) : groupRelaySummary ? (
                     <GroupRelaySummaryMessage
@@ -3453,15 +3462,17 @@ function GroupRelaySummaryMessage({
 function GroupCallInviteMessage({
   own,
   invite,
+  onOpen,
 }: {
   own: boolean;
   invite: ReturnType<typeof parseGroupCallInviteMessage>;
+  onOpen?: () => void;
 }) {
   if (!invite) {
     return null;
   }
 
-  return (
+  const card = (
     <div
       className={cn(
         "w-[264px] rounded-[18px] border px-4 py-4 shadow-none",
@@ -3497,13 +3508,36 @@ function GroupCallInviteMessage({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-          当前消息已转成群通话卡片，便于群成员识别状态。
+          {onOpen
+            ? "点击可回到当前群通话工作台。"
+            : "当前消息已转成群通话卡片，便于群成员识别状态。"}
         </div>
         <div className="text-[11px] font-medium text-[#2563eb]">
-          {invite.kind === "voice" ? "语音中" : "视频中"}
+          {onOpen
+            ? invite.kind === "voice"
+              ? "回到语音"
+              : "回到视频"
+            : invite.kind === "voice"
+              ? "语音中"
+              : "视频中"}
         </div>
       </div>
     </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`回到 ${invite.groupName} 的群通话工作台`}
+    >
+      {card}
+    </button>
   );
 }
 

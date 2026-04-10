@@ -849,6 +849,11 @@ export function GroupChatThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
+              onOpenGroupCallInvite={(kind) => {
+                if (isDesktop) {
+                  setDesktopCallPanelKind(kind);
+                }
+              }}
               onSelectionModeChange={setSelectionModeActive}
               emptyState={
                 !isDesktop &&
