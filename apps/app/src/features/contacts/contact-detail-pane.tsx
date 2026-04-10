@@ -1,11 +1,21 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronRight, MessageCircleMore } from "lucide-react";
-import { updateFriendProfile, type Character, type FriendListItem, type UpdateFriendProfileRequest } from "@yinjie/contracts";
+import { MessageCircleMore } from "lucide-react";
+import {
+  updateFriendProfile,
+  type Character,
+  type FriendListItem,
+  type UpdateFriendProfileRequest,
+} from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
-import { AvatarChip } from "../../components/avatar-chip";
-import { formatTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import {
+  DesktopContactProfileActionRow,
+  DesktopContactProfileCard,
+  DesktopContactProfileInfoRow,
+  DesktopContactProfileSection,
+  DesktopContactProfileToggleRow,
+} from "./desktop-contact-profile-components";
 
 type ContactDetailPaneProps = {
   character?: Character | null;
@@ -85,7 +95,14 @@ export function ContactDetailPane({
       source: friendship?.source ?? "",
       tags: friendship?.tags?.join("，") ?? "",
     });
-  }, [character?.id, friendship?.id, friendship?.region, friendship?.remarkName, friendship?.source, friendship?.tags]);
+  }, [
+    character?.id,
+    friendship?.id,
+    friendship?.region,
+    friendship?.remarkName,
+    friendship?.source,
+    friendship?.tags,
+  ]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: UpdateFriendProfileRequest) => {
@@ -97,7 +114,9 @@ export function ContactDetailPane({
     },
     onSuccess: async () => {
       setProfileNotice("联系人资料已更新。");
-      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-friends", baseUrl],
+      });
     },
   });
 
@@ -105,12 +124,14 @@ export function ContactDetailPane({
     return (
       <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
         <div className="flex max-w-sm flex-col items-center text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full border border-[rgba(15,23,42,0.08)] bg-white text-3xl text-[color:var(--text-dim)] shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+          <div className="flex h-20 w-20 items-center justify-center rounded-[22px] border border-black/6 bg-white text-3xl text-[color:var(--text-dim)] shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             ···
           </div>
-          <div className="mt-6 text-[17px] font-medium text-[color:var(--text-primary)]">选择联系人</div>
+          <div className="mt-5 text-[17px] font-medium text-[color:var(--text-primary)]">
+            选择联系人
+          </div>
           <p className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-            从左侧通讯录选择一位好友后，这里会显示更接近微信电脑端的联系人资料与常用操作。
+            从左侧通讯录选择一位联系人后，这里会显示联系人资料、内容入口和常用管理操作。
           </p>
         </div>
       </div>
@@ -120,24 +141,36 @@ export function ContactDetailPane({
   const isFriend = Boolean(friendship);
   const remarkName = friendship?.remarkName?.trim() || "";
   const displayName = remarkName || character.name;
-  const relationshipSummary = isFriend ? character.relationship || "联系人" : character.relationship || "世界角色";
-  const description = character.bio?.trim() || (isFriend ? "这个联系人还没有补充更多资料。" : "可以先查看资料，了解这个角色。");
+  const relationshipSummary = isFriend
+    ? character.relationship || "联系人"
+    : character.relationship || "世界角色";
+  const tagsLabel = friendship?.tags?.length
+    ? friendship.tags.join(" / ")
+    : "未设置";
+  const groupsSummary = commonGroups.length
+    ? `${commonGroups.length} 个共同群聊`
+    : "暂时没有共同群聊";
   const profileRows = isFriend
     ? [
         { label: "备注", value: remarkName || "未设置" },
         { label: "昵称", value: character.name },
         { label: "地区", value: friendship?.region?.trim() || "未设置" },
         { label: "来源", value: friendship?.source?.trim() || "未设置" },
-        { label: "标签", value: friendship?.tags?.length ? friendship.tags.join(" / ") : "未设置" },
+        { label: "标签", value: tagsLabel },
         { label: "隐界号", value: `yinjie_${character.id.slice(0, 8)}` },
-        { label: "个性签名", value: character.currentStatus?.trim() || "这个联系人还没有签名。" },
-        { label: "最近互动", value: formatTimestamp(friendship?.lastInteractedAt ?? character.lastActiveAt ?? null) },
+        {
+          label: "个性签名",
+          value: character.currentStatus?.trim() || "这个联系人还没有签名。",
+        },
       ]
     : [
         { label: "昵称", value: character.name },
         { label: "身份", value: character.relationship || "世界角色" },
         { label: "隐界号", value: `yinjie_${character.id.slice(0, 8)}` },
-        { label: "个性签名", value: character.currentStatus?.trim() || "这个角色还没有签名。" },
+        {
+          label: "个性签名",
+          value: character.currentStatus?.trim() || "这个角色还没有签名。",
+        },
       ];
 
   async function handleProfileSave() {
@@ -154,246 +187,271 @@ export function ContactDetailPane({
 
   return (
     <div className="flex h-full overflow-auto bg-[#f5f5f5]">
-      <div className="mx-auto flex w-full max-w-[720px] flex-col px-10 py-10">
-        <section className="overflow-hidden rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
-          <div className="flex items-start justify-between gap-6 px-8 py-8">
-            <div className="flex min-w-0 flex-1 items-start gap-5">
-              <AvatarChip name={character.name} src={character.avatar} size="xl" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-[30px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">{displayName}</h2>
-                  <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-3 py-1 text-xs text-[color:var(--text-secondary)]">
-                    {isFriend ? "联系人" : "世界角色"}
-                  </span>
-                </div>
-                <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
-                  {remarkName ? `昵称：${character.name}` : "备注：未设置"}
-                  <span className="mx-2 text-[color:var(--border-faint)]">|</span>
-                  {relationshipSummary}
-                </div>
-                <div className="mt-1 text-sm text-[color:var(--text-dim)]">隐界号：yinjie_{character.id.slice(0, 8)}</div>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)]">{description}</p>
-              </div>
-            </div>
-
-            <div className="shrink-0">
+      <div className="mx-auto flex w-full max-w-[720px] flex-col gap-3 px-8 py-8">
+        <DesktopContactProfileCard
+          avatarName={character.name}
+          avatarSrc={character.avatar}
+          title={displayName}
+          badgeLabel={isFriend ? "联系人" : "世界角色"}
+          subtitle={
+            remarkName ? `昵称：${character.name}` : relationshipSummary
+          }
+          meta={`隐界号：yinjie_${character.id.slice(0, 8)}`}
+          description={
+            character.currentStatus?.trim() ||
+            (isFriend
+              ? "这个联系人还没有补充签名。"
+              : "可以先查看资料，了解这个角色。")
+          }
+          aside={
+            <div className="flex flex-col items-end gap-2">
               {isFriend && onStartChat ? (
-                <Button variant="primary" size="lg" className="min-w-32 rounded-2xl" onClick={onStartChat} disabled={chatPending}>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="min-w-28 rounded-[14px]"
+                  onClick={onStartChat}
+                  disabled={chatPending}
+                >
                   <MessageCircleMore size={16} />
-                  {chatPending ? "正在打开会话..." : "发消息"}
+                  {chatPending ? "打开中..." : "发消息"}
                 </Button>
-              ) : (
-                <Button variant="primary" size="lg" className="min-w-32 rounded-2xl" onClick={onOpenProfile}>
-                  查看资料
-                </Button>
-              )}
+              ) : null}
+              <Button
+                variant={isFriend ? "secondary" : "primary"}
+                size="lg"
+                className="min-w-28 rounded-[14px]"
+                onClick={onOpenProfile}
+              >
+                查看资料
+              </Button>
             </div>
-          </div>
+          }
+        />
 
-          <DetailSection
-            title="基础资料"
-            action={
-              isFriend ? (
-                isEditingProfile ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded-full px-3 py-1 text-xs text-[color:var(--text-dim)] transition-colors hover:bg-[rgba(15,23,42,0.05)]"
-                      onClick={() => {
-                        setIsEditingProfile(false);
-                        setProfileForm({
-                          remarkName: friendship?.remarkName ?? "",
-                          region: friendship?.region ?? "",
-                          source: friendship?.source ?? "",
-                          tags: friendship?.tags?.join("，") ?? "",
-                        });
-                      }}
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      取消
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-full bg-[#07c160] px-3 py-1 text-xs text-white transition-colors hover:brightness-105 disabled:opacity-60"
-                      onClick={async () => {
-                        await handleProfileSave();
-                        setIsEditingProfile(false);
-                      }}
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      {updateProfileMutation.isPending ? "保存中..." : "保存"}
-                    </button>
-                  </div>
-                ) : (
+        <DesktopContactProfileSection
+          title="基础资料"
+          action={
+            isFriend ? (
+              isEditingProfile ? (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="rounded-full px-3 py-1 text-xs text-[color:var(--text-secondary)] transition-colors hover:bg-[rgba(15,23,42,0.05)]"
-                    onClick={() => setIsEditingProfile(true)}
+                    className="rounded-full px-3 py-1 text-xs text-[color:var(--text-dim)] transition-colors hover:bg-[rgba(15,23,42,0.05)]"
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setProfileForm({
+                        remarkName: friendship?.remarkName ?? "",
+                        region: friendship?.region ?? "",
+                        source: friendship?.source ?? "",
+                        tags: friendship?.tags?.join("，") ?? "",
+                      });
+                    }}
+                    disabled={updateProfileMutation.isPending}
                   >
-                    编辑
+                    取消
                   </button>
-                )
-              ) : null
-            }
-          >
-            {profileNotice ? (
-              <div className="px-8 pb-2">
-                <InlineNotice tone="success">{profileNotice}</InlineNotice>
-              </div>
-            ) : null}
-            {updateProfileMutation.isError && updateProfileMutation.error instanceof Error ? (
-              <div className="px-8 pb-2">
-                <ErrorBlock message={updateProfileMutation.error.message} />
-              </div>
-            ) : null}
-            {isFriend && isEditingProfile ? (
-              <div className="px-8 pb-6">
-                <div className="grid gap-4">
-                  <EditableDetailField
-                    label="备注"
-                    value={profileForm.remarkName}
-                    placeholder="给联系人添加备注名"
-                    onChange={(value) => setProfileForm((current) => ({ ...current, remarkName: value }))}
-                  />
-                  <StaticDetailRow label="昵称" value={character.name} />
-                  <EditableDetailField
-                    label="地区"
-                    value={profileForm.region}
-                    placeholder="例如：上海 / 东京 / 线上"
-                    onChange={(value) => setProfileForm((current) => ({ ...current, region: value }))}
-                  />
-                  <EditableDetailField
-                    label="来源"
-                    value={profileForm.source}
-                    placeholder="例如：摇一摇 / 场景相遇 / 朋友圈"
-                    onChange={(value) => setProfileForm((current) => ({ ...current, source: value }))}
-                  />
-                  <EditableDetailField
-                    label="标签"
-                    value={profileForm.tags}
-                    placeholder="用逗号分隔，例如：同事，插画，策展"
-                    onChange={(value) => setProfileForm((current) => ({ ...current, tags: value }))}
-                  />
-                  <StaticDetailRow label="隐界号" value={`yinjie_${character.id.slice(0, 8)}`} />
-                  <StaticDetailRow label="个性签名" value={character.currentStatus?.trim() || "这个联系人还没有签名。"} />
-                  <StaticDetailRow label="最近互动" value={formatTimestamp(friendship?.lastInteractedAt ?? character.lastActiveAt ?? null)} />
+                  <button
+                    type="button"
+                    className="rounded-full bg-[#07c160] px-3 py-1 text-xs text-white transition-colors hover:brightness-105 disabled:opacity-60"
+                    onClick={async () => {
+                      await handleProfileSave();
+                      setIsEditingProfile(false);
+                    }}
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    {updateProfileMutation.isPending ? "保存中..." : "保存"}
+                  </button>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  className="rounded-full px-3 py-1 text-xs text-[color:var(--text-secondary)] transition-colors hover:bg-black/5"
+                  onClick={() => setIsEditingProfile(true)}
+                >
+                  编辑
+                </button>
+              )
+            ) : null
+          }
+        >
+          {profileNotice ? (
+            <div className="px-4 pt-3">
+              <InlineNotice tone="success">{profileNotice}</InlineNotice>
+            </div>
+          ) : null}
+          {updateProfileMutation.isError &&
+          updateProfileMutation.error instanceof Error ? (
+            <div className="px-4 pt-3">
+              <ErrorBlock message={updateProfileMutation.error.message} />
+            </div>
+          ) : null}
+          {isFriend && isEditingProfile ? (
+            <div className="px-4 py-4">
+              <div className="grid gap-4">
+                <EditableDetailField
+                  label="备注"
+                  value={profileForm.remarkName}
+                  placeholder="给联系人添加备注名"
+                  onChange={(value) =>
+                    setProfileForm((current) => ({
+                      ...current,
+                      remarkName: value,
+                    }))
+                  }
+                />
+                <EditableStaticRow label="昵称" value={character.name} />
+                <EditableDetailField
+                  label="地区"
+                  value={profileForm.region}
+                  placeholder="例如：上海 / 东京 / 线上"
+                  onChange={(value) =>
+                    setProfileForm((current) => ({
+                      ...current,
+                      region: value,
+                    }))
+                  }
+                />
+                <EditableDetailField
+                  label="来源"
+                  value={profileForm.source}
+                  placeholder="例如：摇一摇 / 场景相遇 / 朋友圈"
+                  onChange={(value) =>
+                    setProfileForm((current) => ({
+                      ...current,
+                      source: value,
+                    }))
+                  }
+                />
+                <EditableDetailField
+                  label="标签"
+                  value={profileForm.tags}
+                  placeholder="用逗号分隔，例如：同事，插画，策展"
+                  onChange={(value) =>
+                    setProfileForm((current) => ({
+                      ...current,
+                      tags: value,
+                    }))
+                  }
+                />
+                <EditableStaticRow
+                  label="隐界号"
+                  value={`yinjie_${character.id.slice(0, 8)}`}
+                />
+                <EditableStaticRow
+                  label="个性签名"
+                  value={
+                    character.currentStatus?.trim() || "这个联系人还没有签名。"
+                  }
+                />
               </div>
-            ) : (
-              profileRows.map((item) => <StaticDetailRow key={item.label} label={item.label} value={item.value} />)
-            )}
-          </DetailSection>
+            </div>
+          ) : (
+            profileRows.map((item) => (
+              <DesktopContactProfileInfoRow
+                key={item.label}
+                label={item.label}
+                value={item.value}
+              />
+            ))
+          )}
+        </DesktopContactProfileSection>
 
-          <DetailSection title="内容与关系">
-            <ActionDetailRow
-              label="更多资料"
-              value={isFriend ? "查看角色档案与更多介绍" : "查看完整角色资料"}
-              onClick={onOpenProfile}
-            />
-            <StaticDetailRow label="朋友圈" value="后续接入" muted />
-            <StaticDetailRow
-              label="共同群聊"
-              value={
-                commonGroups.length
-                  ? `${commonGroups.length} 个共同群聊`
-                  : "暂时没有共同群聊"
-              }
-              muted={!commonGroups.length}
-            />
-            {commonGroups.length && onOpenGroup
-              ? commonGroups.slice(0, 3).map((group) => (
-                  <ActionDetailRow
+        <DesktopContactProfileSection title="内容与关系">
+          <DesktopContactProfileActionRow
+            label="更多"
+            value={isFriend ? "查看角色档案与更多介绍" : "查看完整角色资料"}
+            onClick={onOpenProfile}
+          />
+          <DesktopContactProfileActionRow
+            label="朋友圈"
+            value={isFriend ? "最近动态入口待接入" : "添加联系人后查看"}
+            onClick={onOpenProfile}
+          />
+          <DesktopContactProfileInfoRow
+            label="群聊"
+            value={groupsSummary}
+            muted={!commonGroups.length}
+          />
+          {commonGroups.length && onOpenGroup
+            ? commonGroups
+                .slice(0, 3)
+                .map((group) => (
+                  <DesktopContactProfileActionRow
                     key={group.id}
-                    label="群聊"
+                    label="共同群聊"
                     value={group.name}
                     onClick={() => onOpenGroup(group.id)}
                   />
                 ))
-              : null}
-          </DetailSection>
+            : null}
+        </DesktopContactProfileSection>
 
-          {isFriend ? (
-            <DetailSection title="聊天与管理">
-              <ToggleDetailRow
-                label="置顶聊天"
-                checked={isPinned}
-                disabled={pinPending}
-                onToggle={onTogglePinned}
+        {isFriend ? (
+          <DesktopContactProfileSection title="聊天与管理">
+            <DesktopContactProfileToggleRow
+              label="置顶"
+              checked={isPinned}
+              disabled={pinPending}
+              onToggle={onTogglePinned}
+            />
+            <DesktopContactProfileToggleRow
+              label="免打扰"
+              checked={isMuted}
+              disabled={mutePending}
+              onToggle={onToggleMuted}
+            />
+            <DesktopContactProfileToggleRow
+              label="星标"
+              checked={isStarred}
+              disabled={starPending}
+              onToggle={onToggleStarred}
+            />
+            <DesktopContactProfileActionRow
+              label="资料"
+              value="进入角色资料详情页"
+              onClick={onOpenProfile}
+            />
+            {onToggleBlock ? (
+              <DesktopContactProfileActionRow
+                label={isBlocked ? "黑名单" : "联系人"}
+                value={
+                  blockPending
+                    ? "正在更新..."
+                    : isBlocked
+                      ? "移出黑名单"
+                      : "加入黑名单"
+                }
+                onClick={onToggleBlock}
+                danger
+                disabled={blockPending}
               />
-              <ToggleDetailRow
-                label="消息免打扰"
-                checked={isMuted}
-                disabled={mutePending}
-                onToggle={onToggleMuted}
+            ) : null}
+            {onDeleteFriend ? (
+              <DesktopContactProfileActionRow
+                label="删除"
+                value={deletePending ? "正在删除..." : "从通讯录移除"}
+                onClick={onDeleteFriend}
+                danger
+                disabled={deletePending}
               />
-              <ToggleDetailRow
-                label="星标朋友"
-                checked={isStarred}
-                disabled={starPending}
-                onToggle={onToggleStarred}
-              />
-              <ActionDetailRow label="查看资料" value="进入角色资料详情页" onClick={onOpenProfile} />
-              {onToggleBlock ? (
-                <ActionDetailRow
-                  label={isBlocked ? "黑名单" : "联系人管理"}
-                  value={blockPending ? "正在更新..." : isBlocked ? "移出黑名单" : "加入黑名单"}
-                  onClick={onToggleBlock}
-                  danger
-                  disabled={blockPending}
-                />
-              ) : null}
-              {onDeleteFriend ? (
-                <ActionDetailRow
-                  label="删除联系人"
-                  value={deletePending ? "正在删除..." : "从通讯录移除"}
-                  onClick={onDeleteFriend}
-                  danger
-                  disabled={deletePending}
-                />
-              ) : (
-                <StaticDetailRow label="删除联系人" value="后续接入" muted />
-              )}
-            </DetailSection>
-          ) : null}
-        </section>
+            ) : null}
+          </DesktopContactProfileSection>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function DetailSection({
-  title,
-  children,
-  action,
-}: {
-  title: string;
-  children: ReactNode;
-  action?: ReactNode;
-}) {
+function EditableStaticRow({ label, value }: { label: string; value: string }) {
   return (
-    <section className="border-t border-[rgba(15,23,42,0.08)]">
-      <div className="flex items-center justify-between gap-3 px-8 pt-6 pb-3">
-        <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
-        {action}
+    <div className="flex items-center gap-4">
+      <div className="w-20 shrink-0 text-sm text-[color:var(--text-muted)]">
+        {label}
       </div>
-      <div>{children}</div>
-    </section>
-  );
-}
-
-function StaticDetailRow({
-  label,
-  value,
-  muted = false,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-4 px-8 py-4 text-sm">
-      <div className="w-24 shrink-0 text-[color:var(--text-muted)]">{label}</div>
-      <div className={muted ? "text-[color:var(--text-dim)]" : "text-[color:var(--text-primary)]"}>{value}</div>
+      <div className="min-w-0 flex-1 rounded-[14px] border border-[color:var(--border-faint)] bg-[#f7f7f7] px-4 py-3 text-sm text-[color:var(--text-primary)]">
+        {value}
+      </div>
     </div>
   );
 }
@@ -411,92 +469,15 @@ function EditableDetailField({
 }) {
   return (
     <label className="flex items-center gap-4">
-      <div className="w-24 shrink-0 text-sm text-[color:var(--text-muted)]">{label}</div>
+      <div className="w-20 shrink-0 text-sm text-[color:var(--text-muted)]">
+        {label}
+      </div>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-w-0 flex-1 rounded-2xl border border-[color:var(--border-faint)] bg-[rgba(245,245,245,0.9)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[#07c160]"
+        className="min-w-0 flex-1 rounded-[14px] border border-[color:var(--border-faint)] bg-[#fafafa] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[#07c160] focus:bg-white"
       />
     </label>
-  );
-}
-
-function ToggleDetailRow({
-  label,
-  checked,
-  disabled = false,
-  onToggle,
-}: {
-  label: string;
-  checked: boolean;
-  disabled?: boolean;
-  onToggle?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={disabled || !onToggle}
-      className="flex w-full items-center gap-4 px-8 py-4 text-left text-sm transition-colors hover:bg-[rgba(15,23,42,0.03)] disabled:opacity-60"
-      role="switch"
-      aria-checked={checked}
-    >
-      <div className="w-24 shrink-0 text-[color:var(--text-muted)]">{label}</div>
-      <div className="flex flex-1 justify-end">
-        <span
-          className={`relative h-7 w-12 rounded-full transition-colors ${
-            checked ? "bg-[#07c160]" : "bg-[rgba(15,23,42,0.14)]"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-              checked ? "left-5" : "left-0.5"
-            }`}
-          />
-        </span>
-      </div>
-    </button>
-  );
-}
-
-function ActionDetailRow({
-  label,
-  value,
-  onClick,
-  danger = false,
-  disabled = false,
-}: {
-  label: string;
-  value: string;
-  onClick: () => void;
-  danger?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`flex w-full items-center gap-4 px-8 py-4 text-left text-sm transition-colors ${
-        danger
-          ? "text-[color:var(--state-danger-text)] hover:bg-[rgba(239,68,68,0.05)] disabled:text-[color:var(--text-dim)]"
-          : "hover:bg-[rgba(15,23,42,0.03)]"
-      }`}
-    >
-      <div className="w-24 shrink-0 text-[color:var(--text-muted)]">{label}</div>
-      <div
-        className={`min-w-0 flex-1 truncate ${
-          danger
-            ? disabled
-              ? "text-[color:var(--text-dim)]"
-              : "text-[color:var(--state-danger-text)]"
-            : "text-[color:var(--text-primary)]"
-        }`}
-      >
-        {value}
-      </div>
-      <ChevronRight size={16} className="shrink-0 text-[color:var(--text-dim)]" />
-    </button>
   );
 }
