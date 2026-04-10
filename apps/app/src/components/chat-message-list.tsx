@@ -4,10 +4,13 @@ import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
-import { sanitizeDisplayedChatText } from "../lib/chat-text";
+import {
+  extractChatReplyMetadata,
+  sanitizeDisplayedChatText,
+} from "../lib/chat-text";
 import { formatMessageTimestamp } from "../lib/format";
 
-type ChatRenderableMessage = {
+export type ChatRenderableMessage = {
   id: string;
   senderType: string;
   senderName?: string | null;
@@ -24,6 +27,7 @@ type ChatMessageListProps = {
   variant?: "mobile" | "desktop";
   highlightedMessageId?: string;
   emptyState?: React.ReactNode;
+  onReplyMessage?: (message: ChatRenderableMessage) => void;
 };
 
 export function ChatMessageList({
@@ -33,6 +37,7 @@ export function ChatMessageList({
   variant = "mobile",
   highlightedMessageId,
   emptyState,
+  onReplyMessage,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
   const [activeHighlightedMessageId, setActiveHighlightedMessageId] = useState<
@@ -154,10 +159,12 @@ export function ChatMessageList({
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
+        const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
           isUser && !isSystem
-            ? message.text
+            ? replyContent.body.trim()
             : sanitizeDisplayedChatText(message.text);
+        const replyPreview = replyContent.reply;
 
         if (isSystem) {
           return (
@@ -203,6 +210,14 @@ export function ChatMessageList({
                   <div className="mb-1 px-1 text-[11px] text-[color:var(--text-muted)]">
                     {message.senderName}
                   </div>
+                ) : null}
+                {replyPreview ? (
+                  <ReplyQuoteCard
+                    senderName={replyPreview.senderName}
+                    previewText={replyPreview.previewText}
+                    align={isUser ? "right" : "left"}
+                    variant={variant}
+                  />
                 ) : null}
                 {message.type === "sticker" &&
                 message.attachment?.kind === "sticker" ? (
@@ -253,6 +268,14 @@ export function ChatMessageList({
           x={contextMenuState.x}
           y={contextMenuState.y}
           onClose={() => setContextMenuState(null)}
+          onReply={
+            onReplyMessage
+              ? () => {
+                  onReplyMessage(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
           onCopyText={() => {
             void copyToClipboard(
               buildClipboardText(contextMenuState.message),
@@ -282,9 +305,10 @@ function buildClipboardSender(message: ChatRenderableMessage) {
 }
 
 function buildClipboardText(message: ChatRenderableMessage) {
+  const replyContent = extractChatReplyMetadata(message.text);
   const displayedText =
     message.senderType === "user"
-      ? message.text.trim()
+      ? replyContent.body.trim()
       : sanitizeDisplayedChatText(message.text).trim();
 
   if (displayedText) {
@@ -322,6 +346,38 @@ function buildClipboardText(message: ChatRenderableMessage) {
   }
 
   return "消息";
+}
+
+function ReplyQuoteCard({
+  senderName,
+  previewText,
+  align,
+  variant,
+}: {
+  senderName: string;
+  previewText: string;
+  align: "left" | "right";
+  variant: "mobile" | "desktop";
+}) {
+  const isDesktop = variant === "desktop";
+  return (
+    <div
+      className={`mb-2 w-full overflow-hidden rounded-[14px] border px-3 py-2 ${
+        align === "right"
+          ? isDesktop
+            ? "border-[rgba(160,90,10,0.14)] bg-[rgba(255,244,227,0.92)] text-[color:var(--text-primary)]"
+            : "border-[rgba(22,163,74,0.16)] bg-[rgba(255,255,255,0.72)] text-[color:var(--text-primary)]"
+          : "border-black/6 bg-[rgba(248,248,248,0.96)] text-[color:var(--text-primary)]"
+      }`}
+    >
+      <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
+        回复 {senderName}
+      </div>
+      <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
+        {previewText}
+      </div>
+    </div>
+  );
 }
 
 function ImageMessage({

@@ -45,6 +45,11 @@ type ChatComposerProps = {
   onSendAttachment?: (
     payload: ChatComposerAttachmentPayload,
   ) => void | Promise<void>;
+  replyPreview?: {
+    senderName: string;
+    text: string;
+  } | null;
+  onCancelReply?: () => void;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -79,6 +84,8 @@ export function ChatComposer({
   speechInput,
   onSendSticker,
   onSendAttachment,
+  replyPreview = null,
+  onCancelReply,
   onChange,
   onSubmit,
 }: ChatComposerProps) {
@@ -538,6 +545,13 @@ export function ChatComposer({
                 : undefined
             }
             onSend={handleSendDraftAttachment}
+          />
+        ) : null}
+        {replyPreview ? (
+          <ReplyPreviewBar
+            senderName={replyPreview.senderName}
+            text={replyPreview.text}
+            onClose={onCancelReply}
           />
         ) : null}
         <div
@@ -1004,6 +1018,39 @@ function DesktopAttachmentDraftBar({
           {pending ? "正在发送..." : "发送附件"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function ReplyPreviewBar({
+  senderName,
+  text,
+  onClose,
+}: {
+  senderName: string;
+  text: string;
+  onClose?: () => void;
+}) {
+  return (
+    <div className="mb-3 flex items-start justify-between gap-3 rounded-[18px] border border-black/6 bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]">
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+          回复 {senderName}
+        </div>
+        <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
+          {text}
+        </div>
+      </div>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]"
+          aria-label="取消回复"
+        >
+          <X size={15} />
+        </button>
+      ) : null}
     </div>
   );
 }

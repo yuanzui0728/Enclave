@@ -1,36 +1,40 @@
 import { type ReactNode } from "react";
-import { Copy, UserRound } from "lucide-react";
+import { Copy, CornerUpLeft, UserRound } from "lucide-react";
 
 type GroupMessageContextMenuProps = {
   x: number;
   y: number;
   onClose: () => void;
+  onReply?: () => void;
   onCopyText: () => void;
   onCopySender?: () => void;
 };
 
 const MENU_WIDTH = 188;
-const MENU_HEIGHT = 108;
+const MENU_HEIGHT_WITH_REPLY = 156;
+const MENU_HEIGHT_DEFAULT = 108;
 const VIEWPORT_PADDING = 12;
 
 export function GroupMessageContextMenu({
   x,
   y,
   onClose,
+  onReply,
   onCopyText,
   onCopySender,
 }: GroupMessageContextMenuProps) {
+  const menuHeight = onReply ? MENU_HEIGHT_WITH_REPLY : MENU_HEIGHT_DEFAULT;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
   const viewportHeight =
-    typeof window === "undefined" ? MENU_HEIGHT : window.innerHeight;
+    typeof window === "undefined" ? menuHeight : window.innerHeight;
   const left = Math.min(
     Math.max(VIEWPORT_PADDING, x),
     Math.max(VIEWPORT_PADDING, viewportWidth - MENU_WIDTH - VIEWPORT_PADDING),
   );
   const top = Math.min(
     Math.max(VIEWPORT_PADDING, y),
-    Math.max(VIEWPORT_PADDING, viewportHeight - MENU_HEIGHT - VIEWPORT_PADDING),
+    Math.max(VIEWPORT_PADDING, viewportHeight - menuHeight - VIEWPORT_PADDING),
   );
 
   return (
@@ -50,6 +54,13 @@ export function GroupMessageContextMenu({
         className="absolute w-[188px] overflow-hidden rounded-[16px] border border-black/6 bg-white py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
+        {onReply ? (
+          <ContextMenuButton
+            label="回复消息"
+            icon={<CornerUpLeft size={15} />}
+            onClick={onReply}
+          />
+        ) : null}
         <ContextMenuButton
           label="复制消息"
           icon={<Copy size={15} />}

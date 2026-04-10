@@ -14,10 +14,16 @@ import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
 import {
+  encodeChatReplyText,
+  sanitizeDisplayedChatText,
+  type ChatReplyMetadata,
+} from "../../lib/chat-text";
+import {
   DesktopChatHeaderActions,
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "../desktop/chat/desktop-chat-header-actions";
+import { type ChatRenderableMessage } from "../../components/chat-message-list";
 import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
@@ -56,6 +62,7 @@ export function GroupChatThreadPanel({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
+  const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
   const isDesktop = variant === "desktop";
 
   const groupQuery = useQuery({
@@ -79,6 +86,7 @@ export function GroupChatThreadPanel({
 
   useEffect(() => {
     setText("");
+    setReplyDraft(null);
   }, [baseUrl, groupId]);
 
   useEffect(() => {
@@ -98,6 +106,7 @@ export function GroupChatThreadPanel({
       sendGroupMessage(groupId, payload, baseUrl),
     onSuccess: async () => {
       setText("");
+      setReplyDraft(null);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
@@ -145,6 +154,8 @@ export function GroupChatThreadPanel({
   const sendAttachmentMessage = async (
     payload: ChatComposerAttachmentPayload,
   ) => {
+    const replyText = replyDraft ? encodeChatReplyText("", replyDraft) : "";
+
     if (payload.type === "image") {
       const formData = new FormData();
       formData.set("file", payload.file);
@@ -158,6 +169,7 @@ export function GroupChatThreadPanel({
 
       await sendMutation.mutateAsync({
         type: "image",
+        text: replyText || undefined,
         attachment: result.attachment,
       });
       return;
@@ -174,6 +186,7 @@ export function GroupChatThreadPanel({
 
       await sendMutation.mutateAsync({
         type: "file",
+        text: replyText || undefined,
         attachment: result.attachment,
       });
       return;
@@ -182,6 +195,7 @@ export function GroupChatThreadPanel({
     if (payload.type === "contact_card") {
       await sendMutation.mutateAsync({
         type: "contact_card",
+        text: replyText || undefined,
         attachment: payload.attachment,
       });
       return;
@@ -189,7 +203,28 @@ export function GroupChatThreadPanel({
 
     await sendMutation.mutateAsync({
       type: "location_card",
+      text: replyText || undefined,
       attachment: payload.attachment,
+    });
+  };
+
+  const replyPreview = replyDraft
+    ? {
+        senderName: replyDraft.senderName,
+        text: replyDraft.previewText,
+      }
+    : null;
+
+  const handleReplyMessage = (message: ChatRenderableMessage) => {
+    const senderName =
+      message.senderType === "user"
+        ? "我"
+        : message.senderName?.trim() || "群成员";
+    const previewText = describeReplyPreview(message);
+    setReplyDraft({
+      messageId: message.id,
+      senderName,
+      previewText,
     });
   };
 
@@ -325,6 +360,7 @@ export function GroupChatThreadPanel({
             }
             variant={isDesktop ? "desktop" : "mobile"}
             highlightedMessageId={highlightedMessageId}
+            onReplyMessage={handleReplyMessage}
             emptyState={
               !isDesktop &&
               !messagesQuery.isLoading &&
@@ -352,12 +388,45 @@ export function GroupChatThreadPanel({
         }}
         onChange={setText}
         onSendAttachment={sendAttachmentMessage}
+        replyPreview={replyPreview}
+        onCancelReply={() => setReplyDraft(null)}
         onSubmit={() =>
           sendMutation.mutate({
-            text: text.trim(),
+            text: replyDraft
+              ? encodeChatReplyText(text, replyDraft)
+              : text.trim(),
           })
         }
       />
     </div>
   );
+}
+
+function describeReplyPreview(message: ChatRenderableMessage) {
+  const text = sanitizeDisplayedChatText(message.text);
+  if (text) {
+    return text;
+  }
+
+  if (message.type === "image") {
+    return "[图片]";
+  }
+
+  if (message.type === "file") {
+    return "[文件]";
+  }
+
+  if (message.type === "contact_card") {
+    return "[名片]";
+  }
+
+  if (message.type === "location_card") {
+    return "[位置]";
+  }
+
+  if (message.type === "sticker") {
+    return "[表情]";
+  }
+
+  return "消息";
 }
