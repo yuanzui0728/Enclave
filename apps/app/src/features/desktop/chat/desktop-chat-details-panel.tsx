@@ -304,11 +304,11 @@ function DirectChatDetailsPanel({
   const activeConfirm =
     confirmAction === "hide"
       ? {
-          title: "隐藏聊天",
+          title: "删除聊天",
           description:
-            "确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。",
-          confirmLabel: "隐藏聊天",
-          pendingLabel: "正在隐藏...",
+            "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。",
+          confirmLabel: "删除聊天",
+          pendingLabel: "正在删除...",
           onConfirm: () => {
             setConfirmAction(null);
             hideMutation.mutate();
@@ -439,7 +439,7 @@ function DirectChatDetailsPanel({
 
       <DesktopPanelSection title="更多">
         <DesktopPanelRow
-          label="隐藏聊天"
+          label="删除聊天"
           disabled={busy}
           onClick={() => setConfirmAction("hide")}
         />
