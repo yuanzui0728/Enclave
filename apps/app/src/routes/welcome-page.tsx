@@ -19,6 +19,8 @@ import { setAppRuntimeConfig, useAppRuntimeConfig } from "../runtime/runtime-con
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 type WorldAccessMode = "cloud" | "local";
+const LOCAL_APP_DEV_PORT = "5180";
+const LOCAL_CORE_API_PORT = "3000";
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, "");
@@ -41,6 +43,24 @@ function isLoopbackBaseUrl(value: string) {
   }
 }
 
+function resolveLocalWorldApiBaseUrl(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+    if (isLoopbackBaseUrl(value) && url.port === LOCAL_APP_DEV_PORT) {
+      url.port = LOCAL_CORE_API_PORT;
+      return url.toString().replace(/\/+$/, "");
+    }
+
+    return value;
+  } catch {
+    return value;
+  }
+}
+
 function resolveDefaultLocalApiBaseUrl(configuredApiBaseUrl?: string) {
   const browserBaseUrl = resolveBrowserBaseUrl();
   if (configuredApiBaseUrl) {
@@ -48,11 +68,11 @@ function resolveDefaultLocalApiBaseUrl(configuredApiBaseUrl?: string) {
       return browserBaseUrl;
     }
 
-    return configuredApiBaseUrl;
+    return resolveLocalWorldApiBaseUrl(configuredApiBaseUrl);
   }
 
   if (browserBaseUrl) {
-    return browserBaseUrl;
+    return resolveLocalWorldApiBaseUrl(browserBaseUrl);
   }
 
   return DEFAULT_CORE_API_BASE_URL;
@@ -87,7 +107,7 @@ export function WelcomePage() {
     runtimeConfig.worldAccessMode ?? (runtimeConfig.apiBaseUrl ? "local" : "cloud"),
   );
   const [localApiBaseUrl, setLocalApiBaseUrl] = useState(
-    resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl),
+    resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl) ?? "",
   );
   const [phone, setPhone] = useState(runtimeConfig.cloudPhone ?? "");
   const [code, setCode] = useState("");
@@ -101,12 +121,17 @@ export function WelcomePage() {
   const [ownerError, setOwnerError] = useState("");
   const [isContinuing, setIsContinuing] = useState(false);
 
-  const normalizedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
+  const normalizedTypedLocalApiBaseUrl = normalizeBaseUrl(localApiBaseUrl);
+  const normalizedLocalApiBaseUrl =
+    resolveLocalWorldApiBaseUrl(normalizedTypedLocalApiBaseUrl) ?? normalizedTypedLocalApiBaseUrl;
+  const localApiBaseUrlAdjusted =
+    Boolean(normalizedTypedLocalApiBaseUrl) &&
+    normalizedLocalApiBaseUrl !== normalizedTypedLocalApiBaseUrl;
   const normalizedCloudApiBaseUrl = normalizeBaseUrl(runtimeConfig.cloudApiBaseUrl ?? "");
   const showOwnerStep = Boolean(readyBaseUrl) && !onboardingCompleted;
 
   useEffect(() => {
-    setLocalApiBaseUrl(resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl));
+    setLocalApiBaseUrl(resolveDefaultLocalApiBaseUrl(runtimeConfig.apiBaseUrl) ?? "");
     setPhone(runtimeConfig.cloudPhone ?? "");
     if (runtimeConfig.worldAccessMode) {
       setMode(runtimeConfig.worldAccessMode);
@@ -244,6 +269,9 @@ export function WelcomePage() {
     setIsContinuing(true);
     setEntryError("");
     setOwnerError("");
+    if (localApiBaseUrlAdjusted) {
+      setLocalApiBaseUrl(normalizedLocalApiBaseUrl);
+    }
 
     setAppRuntimeConfig({
       apiBaseUrl: normalizedLocalApiBaseUrl,
@@ -496,6 +524,12 @@ export function WelcomePage() {
             placeholder="例如 http://127.0.0.1:3000"
           />
         </label>
+
+        {localApiBaseUrlAdjusted ? (
+          <InlineNotice tone="muted">
+            检测到前端开发地址，进入时会自动改用 Core API：{normalizedLocalApiBaseUrl}
+          </InlineNotice>
+        ) : null}
 
         <Button
           onClick={() => void continueWithLocalWorld()}
