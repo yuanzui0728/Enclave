@@ -16,9 +16,12 @@ import {
   Download,
   ExternalLink,
   FileText,
+  Forward,
   LocateFixed,
   MapPin,
   Printer,
+  Star,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -147,6 +150,9 @@ export function ChatMessageList({
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [selectionAnchorMessageId, setSelectionAnchorMessageId] = useState<
     string | null
+  >(null);
+  const [selectionActionPending, setSelectionActionPending] = useState<
+    "favorite" | "delete" | null
   >(null);
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
@@ -867,6 +873,9 @@ export function ChatMessageList({
       visibleMessages.filter((message) => selectedMessageIdSet.has(message.id)),
     [selectedMessageIdSet, visibleMessages],
   );
+  const allVisibleSelected =
+    visibleMessages.length > 0 &&
+    visibleMessages.every((message) => selectedMessageIdSet.has(message.id));
   const forwardPreviewItems: DesktopMessageForwardPreviewItem[] = useMemo(
     () =>
       (forwardMessages ?? []).map((message) => ({
@@ -881,6 +890,12 @@ export function ChatMessageList({
   if (!visibleMessages.length) {
     return emptyState ?? null;
   }
+
+  const resetSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedMessageIds([]);
+    setSelectionAnchorMessageId(null);
+  };
 
   const enterSelectionMode = (messageId: string) => {
     setSelectionMode(true);
@@ -943,6 +958,123 @@ export function ChatMessageList({
     });
   };
 
+  const handleToggleSelectAllMessages = () => {
+    if (allVisibleSelected) {
+      setSelectedMessageIds([]);
+      setSelectionAnchorMessageId(null);
+      return;
+    }
+
+    const nextSelectedMessageIds = visibleMessages.map((message) => message.id);
+    setSelectedMessageIds(nextSelectedMessageIds);
+    setSelectionAnchorMessageId(nextSelectedMessageIds[0] ?? null);
+  };
+
+  const handleFavoriteSelectedMessages = () => {
+    const messagesToFavorite = [...selectedMessages];
+    if (!messagesToFavorite.length) {
+      return;
+    }
+
+    setSelectionActionPending("favorite");
+    try {
+      let nextFavorites = readDesktopFavorites();
+      for (const message of messagesToFavorite) {
+        nextFavorites = upsertDesktopFavorite(
+          buildMessageFavoriteRecord(message, groupMode),
+        );
+      }
+
+      setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+      resetSelectionMode();
+      setActionNotice({
+        message:
+          messagesToFavorite.length === 1
+            ? "已收藏 1 条消息。"
+            : `已收藏 ${messagesToFavorite.length} 条消息。`,
+        tone: "success",
+      });
+    } finally {
+      setSelectionActionPending(null);
+    }
+  };
+
+  const handleDeleteSelectedMessages = async () => {
+    const messagesToDelete = [...selectedMessages];
+    if (!messagesToDelete.length) {
+      return;
+    }
+
+    const deletedMessageIdSet = new Set(messagesToDelete.map((message) => message.id));
+    setSelectionActionPending("delete");
+
+    try {
+      if (threadContext) {
+        for (const message of messagesToDelete) {
+          if (threadContext.type === "group") {
+            await deleteGroupMessage(threadContext.id, message.id, baseUrl);
+          } else {
+            await deleteConversationMessage(threadContext.id, message.id, baseUrl);
+          }
+          clearTransientMessageState(message.id);
+        }
+
+        if (threadContext.type === "group") {
+          queryClient.setQueryData<GroupMessage[] | undefined>(
+            ["app-group-messages", baseUrl, threadContext.id],
+            (current) =>
+              current?.filter((item) => !deletedMessageIdSet.has(item.id)) ?? current,
+          );
+          await queryClient.invalidateQueries({
+            queryKey: ["app-group-messages", baseUrl, threadContext.id],
+          });
+        } else {
+          queryClient.setQueryData<Message[] | undefined>(
+            ["app-conversation-messages", baseUrl, threadContext.id],
+            (current) =>
+              current?.filter((item) => !deletedMessageIdSet.has(item.id)) ?? current,
+          );
+          await queryClient.invalidateQueries({
+            queryKey: ["app-conversation-messages", baseUrl, threadContext.id],
+          });
+        }
+
+        await queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      } else {
+        let nextState = readLocalChatMessageActionState();
+        for (const message of messagesToDelete) {
+          nextState = hideLocalChatMessage(message.id);
+        }
+
+        setHiddenMessageIds(nextState.hiddenMessageIds);
+        setRecalledMessageIds(nextState.recalledMessageIds);
+        setMessageReminders(nextState.reminders);
+        setViewerMessageId((current) =>
+          current && deletedMessageIdSet.has(current) ? null : current,
+        );
+      }
+
+      resetSelectionMode();
+      setActionNotice({
+        message:
+          messagesToDelete.length === 1
+            ? "已删除 1 条消息。"
+            : `已删除 ${messagesToDelete.length} 条消息。`,
+        tone: "success",
+      });
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "批量删除失败，请稍后再试。",
+        tone: "danger",
+      });
+    } finally {
+      setSelectionActionPending(null);
+    }
+  };
+
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
       {actionNotice ? (
@@ -966,19 +1098,41 @@ export function ChatMessageList({
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => setSelectionMode(false)}
+                onClick={resetSelectionMode}
                 className="rounded-full"
               >
                 取消
               </Button>
               <Button
                 type="button"
+                variant="secondary"
                 size="sm"
-                disabled={!selectedMessageIds.length}
+                disabled={!selectedMessageIds.length || selectionActionPending !== null}
+                onClick={handleFavoriteSelectedMessages}
+                className="rounded-full"
+              >
+                {selectionActionPending === "favorite" ? "收藏中..." : "收藏"}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={!selectedMessageIds.length || selectionActionPending !== null}
                 onClick={() => setForwardMessages(selectedMessages)}
                 className="rounded-full"
               >
                 逐条转发
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={!selectedMessageIds.length || selectionActionPending !== null}
+                onClick={() => {
+                  void handleDeleteSelectedMessages();
+                }}
+                className="rounded-full text-[#d74b45]"
+              >
+                {selectionActionPending === "delete" ? "删除中..." : "删除"}
               </Button>
             </div>
           </div>
@@ -986,7 +1140,7 @@ export function ChatMessageList({
           <div className="sticky top-0 z-20 flex items-center justify-between border-b border-black/6 bg-[rgba(247,247,247,0.96)] px-1 py-2.5 backdrop-blur-xl">
             <button
               type="button"
-              onClick={() => setSelectionMode(false)}
+              onClick={resetSelectionMode}
               className="flex h-10 min-w-12 items-center justify-start rounded-[10px] px-2 text-[16px] text-[#111827]"
             >
               取消
@@ -996,11 +1150,11 @@ export function ChatMessageList({
             </div>
             <button
               type="button"
-              disabled={!selectedMessageIds.length}
-              onClick={() => setForwardMessages(selectedMessages)}
-              className="flex h-10 min-w-12 items-center justify-end rounded-[10px] px-2 text-[16px] font-medium text-[#07c160] disabled:text-[#b8b8b8]"
+              disabled={!visibleMessages.length || selectionActionPending !== null}
+              onClick={handleToggleSelectAllMessages}
+              className="flex h-10 min-w-16 items-center justify-end rounded-[10px] px-2 text-[16px] font-medium text-[#07c160] disabled:text-[#b8b8b8]"
             >
-              转发
+              {allVisibleSelected ? "全不选" : "全选"}
             </button>
           </div>
         )
@@ -1196,6 +1350,33 @@ export function ChatMessageList({
           </div>
         );
       })}
+      {selectionMode && !isDesktop ? (
+        <div className="sticky bottom-0 z-20 border-t border-black/6 bg-[rgba(247,247,247,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2.5 backdrop-blur-xl">
+          <div className="grid grid-cols-3 gap-2">
+            <SelectionModeActionButton
+              icon={<Star size={17} />}
+              label={selectionActionPending === "favorite" ? "收藏中" : "收藏"}
+              disabled={!selectedMessageIds.length || selectionActionPending !== null}
+              onClick={handleFavoriteSelectedMessages}
+            />
+            <SelectionModeActionButton
+              icon={<Forward size={17} />}
+              label="转发"
+              disabled={!selectedMessageIds.length || selectionActionPending !== null}
+              onClick={() => setForwardMessages(selectedMessages)}
+            />
+            <SelectionModeActionButton
+              icon={<Trash2 size={17} />}
+              label={selectionActionPending === "delete" ? "删除中" : "删除"}
+              danger
+              disabled={!selectedMessageIds.length || selectionActionPending !== null}
+              onClick={() => {
+                void handleDeleteSelectedMessages();
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
       {contextMenuState ? (
         <GroupMessageContextMenu
           x={contextMenuState.x}
@@ -2242,6 +2423,34 @@ function SelectionToggle({
       aria-label={checked ? "取消选择消息" : "选择消息"}
     >
       ✓
+    </button>
+  );
+}
+
+function SelectionModeActionButton({
+  icon,
+  label,
+  onClick,
+  disabled = false,
+  danger = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-[14px] border border-black/6 bg-white text-[12px] transition active:bg-[#f5f5f5] disabled:bg-[#f8f8f8] disabled:text-[#b8b8b8] ${
+        danger ? "text-[#d74b45]" : "text-[#111827]"
+      }`}
+    >
+      <span>{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }
