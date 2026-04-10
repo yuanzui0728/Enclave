@@ -371,7 +371,7 @@ function ConversationListItemLink({
             {conversation.unreadCount > 0 ? (
               <div
                 className={cn(
-                  "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-1.5 text-[11px] leading-none text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]",
+                  "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
                   conversation.unreadCount > 9 ? "min-w-6" : undefined,
                 )}
               >
