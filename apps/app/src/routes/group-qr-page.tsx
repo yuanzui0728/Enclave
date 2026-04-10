@@ -1,8 +1,14 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Copy, Download, Link2, QrCode, Share2 } from "lucide-react";
-import { getGroup, getGroupMembers } from "@yinjie/contracts";
+import {
+  getConversations,
+  getGroup,
+  getGroupMembers,
+  sendGroupMessage,
+  type ConversationListItem,
+} from "@yinjie/contracts";
 import {
   AppPage,
   Button,
@@ -12,17 +18,23 @@ import {
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   pushMobileHandoffRecord,
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { formatConversationTimestamp } from "../lib/format";
+import {
+  formatConversationTimestamp,
+  parseTimestamp,
+} from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 
 export function GroupQrPage() {
   const { groupId } = useParams({ from: "/group/$groupId/qr" });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
@@ -35,6 +47,10 @@ export function GroupQrPage() {
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+  });
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
   });
 
   const inviteLink = useMemo(() => {
@@ -63,6 +79,28 @@ export function GroupQrPage() {
   const mobileLink = useMemo(
     () => resolveMobileHandoffLink(`/group/${groupId}`),
     [groupId],
+  );
+  const recentConversations = useMemo(
+    () =>
+      [...(conversationsQuery.data ?? [])]
+        .filter((item) => item.id !== groupId)
+        .sort(
+          (left, right) =>
+            (parseTimestamp(right.lastActivityAt) ?? 0) -
+            (parseTimestamp(left.lastActivityAt) ?? 0),
+        )
+        .slice(0, 5),
+    [conversationsQuery.data, groupId],
+  );
+  const inviteMessage = useMemo(
+    () =>
+      [
+        "【群邀请】",
+        `邀请你加入「${groupQuery.data?.name ?? "隐界群聊"}」`,
+        `群链接：${inviteLink}`,
+        `邀请码：${inviteCode}`,
+      ].join(" "),
+    [groupQuery.data?.name, inviteCode, inviteLink],
   );
 
   async function copyText(value: string, successMessage: string) {
@@ -123,6 +161,42 @@ export function GroupQrPage() {
     } catch {
       setNotice("复制到手机失败，请稍后重试。");
     }
+  }
+
+  async function sendToConversation(conversation: ConversationListItem) {
+    if (isPersistedGroupConversation(conversation)) {
+      await sendGroupMessage(
+        conversation.id,
+        {
+          text: inviteMessage,
+        },
+        baseUrl,
+      );
+      setNotice(`已把群邀请发到 ${conversation.title}。`);
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+      return;
+    }
+
+    const characterId = conversation.participants[0];
+    if (!characterId) {
+      setNotice("这条单聊暂时没有可用的角色目标，无法发送群邀请。");
+      return;
+    }
+
+    joinConversationRoom({ conversationId: conversation.id });
+    emitChatMessage({
+      conversationId: conversation.id,
+      characterId,
+      text: inviteMessage,
+    });
+    window.setTimeout(() => {
+      void queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    }, 500);
+    setNotice(`已把群邀请发到 ${conversation.title}。`);
   }
 
   const content = (
@@ -203,6 +277,60 @@ export function GroupQrPage() {
             当前邀请卡会承载群聊链接和邀请码。
             在同一世界实例内打开链接，可直接回到这个群聊。
           </div>
+
+          <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,249,238,0.62)] px-4 py-4">
+            <div>
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                发到最近会话
+              </div>
+              <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                直接把当前群邀请投递到最近会话，回到消息流里继续转发。
+              </div>
+            </div>
+
+            {conversationsQuery.isLoading ? (
+              <LoadingBlock label="正在读取最近会话..." />
+            ) : null}
+            {conversationsQuery.isError &&
+            conversationsQuery.error instanceof Error ? (
+              <ErrorBlock message={conversationsQuery.error.message} />
+            ) : null}
+            {!conversationsQuery.isLoading && !recentConversations.length ? (
+              <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/72 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+                还没有可投递的最近会话。
+              </div>
+            ) : null}
+            {recentConversations.length ? (
+              <div className="space-y-2">
+                {recentConversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    type="button"
+                    onClick={() => {
+                      void sendToConversation(conversation);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {conversation.title}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {isPersistedGroupConversation(conversation)
+                          ? "群聊"
+                          : "单聊"}{" "}
+                        · 最近活跃{" "}
+                        {formatConversationTimestamp(conversation.lastActivityAt)}
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                      发到聊天
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </section>
         </section>
       ) : null}
     </>
