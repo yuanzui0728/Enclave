@@ -1031,21 +1031,29 @@ export function GroupQrPage() {
                           )}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void sendToConversation(
+                      <div className="shrink-0 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void sendToConversation(
+                              topPendingReturnConversation.conversation,
+                            );
+                          }}
+                          className="rounded-full bg-[rgba(249,115,22,0.12)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-secondary)] transition hover:bg-[rgba(249,115,22,0.18)]"
+                        >
+                          {isPendingReturnCoolingDown(
+                            topPendingReturnConversation.target.deliveredAt,
+                          )
+                            ? "稍后补发"
+                            : "现在补发"}
+                        </button>
+                        <div className="mt-2 max-w-[12rem] text-[11px] leading-5 text-[color:var(--text-secondary)]">
+                          {resolvePendingReturnActionHint(
                             topPendingReturnConversation.conversation,
-                          );
-                        }}
-                        className="shrink-0 rounded-full bg-[rgba(249,115,22,0.12)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-secondary)] transition hover:bg-[rgba(249,115,22,0.18)]"
-                      >
-                        {isPendingReturnCoolingDown(
-                          topPendingReturnConversation.target.deliveredAt,
-                        )
-                          ? "稍后补发"
-                          : "现在补发"}
-                      </button>
+                            topPendingReturnConversation.target.deliveredAt,
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                       <span
@@ -1800,6 +1808,37 @@ function resolvePendingReturnOutcomeConclusion(
   }
 
   return `主推荐更顺，因为先处理 ${topPendingReturnConversation.conversation.title} 后，前排阻塞会先被拿掉；如果改做 ${fallbackPendingReturnConversation.conversation.title}，主推荐仍会继续留在最前面等待处理。`;
+}
+
+function resolvePendingReturnActionHint(
+  conversation: ConversationListItem,
+  deliveredAt: string,
+) {
+  if (isPendingReturnCoolingDown(deliveredAt)) {
+    return `这条现在还在冷却，先等一轮回流，再回到 ${conversation.title}。`;
+  }
+
+  const primaryReason = resolvePendingReturnPrimaryReason(
+    conversation,
+    deliveredAt,
+  );
+
+  if (primaryReason.label === "超时且活跃") {
+    return "这条既拖得久又还活跃，按当前排序先处理最划算。";
+  }
+
+  if (primaryReason.label === "长时间未回流") {
+    return "这条等待时间已经明显偏长，建议现在先补这一轮。";
+  }
+
+  if (
+    primaryReason.label === "活跃群聊扩散" ||
+    primaryReason.label === "活跃单聊触达"
+  ) {
+    return "这条还在活跃窗口里，趁现在补发更容易接住回流。";
+  }
+
+  return "按当前排序先做这条，主路径会更顺。";
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
