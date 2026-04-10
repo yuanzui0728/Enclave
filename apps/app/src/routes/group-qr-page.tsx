@@ -12,6 +12,10 @@ import {
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
+import {
+  pushMobileHandoffRecord,
+  resolveMobileHandoffLink,
+} from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -56,6 +60,10 @@ export function GroupQrPage() {
       }),
     [groupQuery.data?.name, inviteCode, membersQuery.data?.length],
   );
+  const mobileLink = useMemo(
+    () => resolveMobileHandoffLink(`/group/${groupId}`),
+    [groupId],
+  );
 
   async function copyText(value: string, successMessage: string) {
     if (
@@ -92,6 +100,29 @@ export function GroupQrPage() {
     anchor.remove();
     URL.revokeObjectURL(url);
     setNotice("群邀请卡已开始保存。");
+  }
+
+  async function sendToMobile() {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNotice("当前环境暂不支持复制到手机。");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(mobileLink);
+      pushMobileHandoffRecord({
+        label: `${groupQuery.data?.name ?? "群聊"} 邀请`,
+        description: `把 ${groupQuery.data?.name ?? "当前群聊"} 的邀请入口发到手机继续查看和转发。`,
+        path: `/group/${groupId}`,
+      });
+      setNotice("群邀请入口已复制到手机。");
+    } catch {
+      setNotice("复制到手机失败，请稍后重试。");
+    }
   }
 
   const content = (
@@ -135,7 +166,7 @@ export function GroupQrPage() {
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-4">
             <ActionCard
               icon={<Link2 size={16} />}
               title="复制群链接"
@@ -150,6 +181,14 @@ export function GroupQrPage() {
               description="带上群链接和邀请码，一次性发给对方。"
               onClick={() => {
                 void copyText(inviteText, "群邀请文案已复制。");
+              }}
+            />
+            <ActionCard
+              icon={<Copy size={16} />}
+              title="发到手机"
+              description="把当前群邀请入口复制到手机，并进入接力历史。"
+              onClick={() => {
+                void sendToMobile();
               }}
             />
             <ActionCard
