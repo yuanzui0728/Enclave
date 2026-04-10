@@ -1,23 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { getConversations } from "@yinjie/contracts";
 import { BellRing, ChevronRight, X } from "lucide-react";
+import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import { buildDueChatReminderEntries } from "./chat-reminder-entries";
 import {
   removeLocalChatMessageReminder,
   useLocalChatMessageActionState,
 } from "./local-chat-message-actions";
-import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
-
-type DueReminderEntry = {
-  messageId: string;
-  threadId: string;
-  threadType: "direct" | "group";
-  threadTitle: string;
-  previewText: string;
-  remindAt: string;
-};
+import { formatMessageTimestamp } from "../../lib/format";
 
 export function MobileReminderToastHost() {
   const navigate = useNavigate();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
@@ -28,9 +25,20 @@ export function MobileReminderToastHost() {
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
   const [dismissedMessageIds, setDismissedMessageIds] = useState<string[]>([]);
 
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: Boolean(baseUrl),
+  });
+
   const dueReminders = useMemo(
-    () => buildDueReminders(reminders, nowTimestamp),
-    [nowTimestamp, reminders],
+    () =>
+      buildDueChatReminderEntries(
+        reminders,
+        conversationsQuery.data ?? [],
+        nowTimestamp,
+      ),
+    [conversationsQuery.data, nowTimestamp, reminders],
   );
   const activeReminder = useMemo(
     () =>
@@ -137,7 +145,7 @@ export function MobileReminderToastHost() {
               </button>
             </div>
             <div className="mt-1 truncate text-[13px] font-medium text-[#3f3f46]">
-              {activeReminder.threadTitle}
+              {activeReminder.title}
             </div>
             <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[#5f6368]">
               {activeReminder.previewText}
@@ -169,31 +177,4 @@ export function MobileReminderToastHost() {
       </div>
     </div>
   );
-}
-
-function buildDueReminders(
-  reminders: ReturnType<typeof useLocalChatMessageActionState>["reminders"],
-  nowTimestamp: number,
-): DueReminderEntry[] {
-  return reminders
-    .filter(
-      (item) =>
-        (parseTimestamp(item.remindAt) ?? Number.MAX_SAFE_INTEGER) <=
-        nowTimestamp,
-    )
-    .map((item) => ({
-      messageId: item.messageId,
-      threadId: item.threadId,
-      threadType: item.threadType,
-      threadTitle:
-        item.threadTitle?.trim() ||
-        (item.threadType === "group" ? "群聊" : "聊天"),
-      previewText: item.previewText?.trim() || "聊天消息",
-      remindAt: item.remindAt,
-    }))
-    .sort(
-      (left, right) =>
-        (parseTimestamp(left.remindAt) ?? 0) -
-        (parseTimestamp(right.remindAt) ?? 0),
-    );
 }

@@ -74,6 +74,18 @@ export function filterChatReminderEntries(
   });
 }
 
+export function buildDueChatReminderEntries(
+  reminders: readonly LocalChatMessageReminderRecord[],
+  conversations: readonly ConversationListItem[],
+  nowTimestamp: number,
+) {
+  return buildChatReminderEntries(
+    reminders,
+    conversations,
+    nowTimestamp,
+  ).filter((entry) => entry.isDue);
+}
+
 export function formatReminderListTimestamp(remindAt: string, isDue: boolean) {
   const label = formatMessageTimestamp(remindAt);
   return isDue ? `提醒时间 ${label}` : `将在 ${label} 提醒`;
