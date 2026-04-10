@@ -127,6 +127,12 @@ export function DesktopChannelsWorkspace({
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
               推荐流 {posts.length} 条
             </div>
+            {selectedPost ? (
+              <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
+                当前播放：{selectedPost.authorName} ·{" "}
+                {formatTimestamp(selectedPost.createdAt)}
+              </div>
+            ) : null}
             <div className="mt-3 flex gap-2">
               <Button variant="secondary" size="sm" onClick={onRefresh}>
                 <RefreshCcw size={14} />
@@ -178,6 +184,41 @@ export function DesktopChannelsWorkspace({
                       {author.count} 条内容 · 最近更新于{" "}
                       {formatTimestamp(author.latestCreatedAt)}
                     </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                内容队列
+              </div>
+              <div className="text-xs text-[color:var(--text-muted)]">
+                最近更新
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              {posts.map((post) => (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => setSelectedPostId(post.id)}
+                  className={cn(
+                    "w-full rounded-[18px] border px-3 py-3 text-left transition",
+                    selectedPost?.id === post.id
+                      ? "border-[rgba(255,138,61,0.18)] bg-[rgba(255,244,235,0.92)]"
+                      : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] hover:bg-white",
+                  )}
+                >
+                  <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
+                    {post.text}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
+                    <span>{post.authorName}</span>
+                    <span>·</span>
+                    <span>{formatTimestamp(post.createdAt)}</span>
                   </div>
                 </button>
               ))}
