@@ -873,7 +873,7 @@ export function CharacterFactoryPage() {
           </Card>
         </div>
 
-        <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>草稿差异</SectionHeading>
             {snapshot.diffSummary.changedFields.length ? (

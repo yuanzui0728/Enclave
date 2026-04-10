@@ -569,7 +569,7 @@ export function ReplyLogicPage() {
               )}
             </div>
 
-            <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
               <div id="reply-logic-preview">
                 <ReplyPreviewPanel
                   scope={scope}
