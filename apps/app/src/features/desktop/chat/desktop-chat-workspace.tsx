@@ -52,8 +52,6 @@ import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subsc
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import {
   buildChatReminderNavigation,
-  buildChatReminderEntries,
-  filterChatReminderEntries,
   formatReminderListTimestamp,
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
@@ -62,7 +60,7 @@ import {
   removeLocalChatMessageReminder,
   useLocalChatMessageActionState,
 } from "../../chat/local-chat-message-actions";
-import { useChatReminderNowTimestamp } from "../../chat/use-chat-reminder-now-timestamp";
+import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
 import {
   splitChatTextSegments,
   summarizeChatMentions,
@@ -140,9 +138,6 @@ export function DesktopChatWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
   const [searchTerm, setSearchTerm] = useState("");
-  const reminderNowTimestamp = useChatReminderNowTimestamp(
-    localMessageActionState.reminders.length,
-  );
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
@@ -206,23 +201,11 @@ export function DesktopChatWorkspace({
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, localMessageActionState, searchTerm]);
-  const reminderEntries = useMemo(
-    () =>
-      buildChatReminderEntries(
-        localMessageActionState.reminders,
-        conversations,
-        reminderNowTimestamp,
-      ),
-    [conversations, localMessageActionState.reminders, reminderNowTimestamp],
-  );
-  const filteredReminderEntries = useMemo(
-    () => filterChatReminderEntries(reminderEntries, searchTerm),
-    [reminderEntries, searchTerm],
-  );
-  const dueReminderCount = useMemo(
-    () => filteredReminderEntries.filter((item) => item.isDue).length,
-    [filteredReminderEntries],
-  );
+  const { filteredReminderEntries, dueReminderCount } = useChatReminderEntries({
+    reminders: localMessageActionState.reminders,
+    conversations,
+    keyword: searchTerm,
+  });
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations = useMemo(
     () => messageEntriesQuery.data?.serviceConversations ?? [],
