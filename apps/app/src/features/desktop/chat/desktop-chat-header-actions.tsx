@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Ellipsis, Phone, Video } from "lucide-react";
+import { Info, Phone, Search, Video } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 export type DesktopChatSidePanelMode = "history" | "details" | null;
@@ -7,12 +7,14 @@ export type DesktopChatCallKind = "voice" | "video";
 
 type DesktopChatHeaderActionsProps = {
   activePanelMode: DesktopChatSidePanelMode;
-  onToggleDetails: () => void;
+  onToggleHistory?: () => void;
+  onToggleDetails?: () => void;
   onSelectCall: (kind: DesktopChatCallKind) => void;
 };
 
 export function DesktopChatHeaderActions({
   activePanelMode,
+  onToggleHistory,
   onToggleDetails,
   onSelectCall,
 }: DesktopChatHeaderActionsProps) {
@@ -36,6 +38,14 @@ export function DesktopChatHeaderActions({
 
   return (
     <div className="flex items-center gap-1.5">
+      <DesktopChatHeaderButton
+        active={activePanelMode === "history"}
+        label="查找聊天记录"
+        onClick={() => onToggleHistory?.()}
+      >
+        <Search size={16} />
+      </DesktopChatHeaderButton>
+
       <div ref={callMenuRef} className="relative">
         <DesktopChatHeaderButton
           active={callMenuOpen}
@@ -69,10 +79,10 @@ export function DesktopChatHeaderActions({
 
       <DesktopChatHeaderButton
         active={activePanelMode === "details"}
-        label="更多"
-        onClick={onToggleDetails}
+        label="聊天信息"
+        onClick={() => onToggleDetails?.()}
       >
-        <Ellipsis size={16} />
+        <Info size={16} />
       </DesktopChatHeaderButton>
     </div>
   );

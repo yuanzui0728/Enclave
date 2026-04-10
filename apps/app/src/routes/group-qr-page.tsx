@@ -996,9 +996,12 @@ export function GroupQrPage() {
                       </div>
                     </div>
                     <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {fallbackPendingReturnExpectedOutcome
-                        ? "主推荐先处理后，主路径会更顺；如果改做备选，主推荐仍会保留在前面等待你回头处理。"
-                        : pendingReturnExpectedOutcome.summary}
+                      {resolvePendingReturnOutcomeConclusion(
+                        topPendingReturnConversation,
+                        fallbackPendingReturnConversation,
+                        fallbackPendingReturnExpectedOutcome,
+                        pendingReturnExpectedOutcome,
+                      )}
                     </div>
                   </div>
                 ) : null}
@@ -1746,6 +1749,57 @@ function resolvePendingReturnFallbackReason(
   }
 
   return "这条也值得补发，但综合活跃度和回流时长后仍排在主推荐后面。";
+}
+
+function resolvePendingReturnOutcomeConclusion(
+  topPendingReturnConversation:
+    | {
+        conversation: ConversationListItem;
+        target: GroupInviteDeliveryTarget;
+      }
+    | null,
+  fallbackPendingReturnConversation:
+    | {
+        conversation: ConversationListItem;
+        target: GroupInviteDeliveryTarget;
+      }
+    | null,
+  fallbackPendingReturnExpectedOutcome:
+    | {
+        nextReadyCount: number;
+        nextCoolingDownCount: number;
+        summary: string;
+      }
+    | null,
+  pendingReturnExpectedOutcome:
+    | {
+        nextReadyCount: number;
+        nextCoolingDownCount: number;
+        summary: string;
+      }
+    | null,
+) {
+  if (!pendingReturnExpectedOutcome) {
+    return "当前没有可预测的处理结果。";
+  }
+
+  if (!topPendingReturnConversation) {
+    return pendingReturnExpectedOutcome.summary;
+  }
+
+  if (!fallbackPendingReturnConversation || !fallbackPendingReturnExpectedOutcome) {
+    return `先处理 ${topPendingReturnConversation.conversation.title} 就是当前最顺的路径。`;
+  }
+
+  if (
+    isPendingReturnCoolingDown(
+      fallbackPendingReturnConversation.target.deliveredAt,
+    )
+  ) {
+    return `主推荐更顺，因为备选 ${fallbackPendingReturnConversation.conversation.title} 还在冷却里，先动它不会立刻改善这一轮结构。`;
+  }
+
+  return `主推荐更顺，因为先处理 ${topPendingReturnConversation.conversation.title} 后，前排阻塞会先被拿掉；如果改做 ${fallbackPendingReturnConversation.conversation.title}，主推荐仍会继续留在最前面等待处理。`;
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
