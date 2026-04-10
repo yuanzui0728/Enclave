@@ -20,6 +20,7 @@ import {
   type CreateMessageFavoriteInput,
 } from './favorites.service';
 import { GroupService } from './group.service';
+import { DigitalHumanCallsService } from './digital-human-calls.service';
 import { VoiceCallsService } from './voice-calls.service';
 import {
   MessageRemindersService,
@@ -205,6 +206,63 @@ export class VoiceCallsController {
       conversationId,
       characterId: body.characterId?.trim() || undefined,
     });
+  }
+}
+
+@Controller('chat/digital-human-calls')
+export class DigitalHumanCallsController {
+  constructor(
+    private readonly digitalHumanCallsService: DigitalHumanCallsService,
+  ) {}
+
+  @Post('sessions')
+  createSession(
+    @Body()
+    body: {
+      conversationId?: string;
+      characterId?: string;
+      mode?: 'desktop_video_call' | 'mobile_video_call';
+    },
+  ) {
+    const conversationId = body.conversationId?.trim();
+    if (!conversationId) {
+      throw new BadRequestException('缺少 conversationId。');
+    }
+
+    return this.digitalHumanCallsService.createSession({
+      conversationId,
+      characterId: body.characterId?.trim() || undefined,
+      mode: body.mode,
+    });
+  }
+
+  @Get('sessions/:sessionId')
+  getSession(@Param('sessionId') sessionId: string) {
+    return this.digitalHumanCallsService.getSession(sessionId);
+  }
+
+  @Delete('sessions/:sessionId')
+  closeSession(@Param('sessionId') sessionId: string) {
+    return this.digitalHumanCallsService.closeSession(sessionId);
+  }
+
+  @Post('sessions/:sessionId/turns')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+    }),
+  )
+  createTurn(
+    @Param('sessionId') sessionId: string,
+    @UploadedFile() file: UploadedAttachmentFile | undefined,
+  ) {
+    if (!file) {
+      throw new BadRequestException('请先录一段语音再试。');
+    }
+
+    return this.digitalHumanCallsService.createTurn(sessionId, file);
   }
 }
 

@@ -173,6 +173,10 @@
   - `GET /api/chat/attachments/:fileName`
   - `POST /api/chat/backgrounds`
   - `GET /api/chat/backgrounds/:fileName`
+  - `POST /api/chat/digital-human-calls/sessions`
+  - `GET /api/chat/digital-human-calls/sessions/:sessionId`
+  - `DELETE /api/chat/digital-human-calls/sessions/:sessionId`
+  - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
 - 收藏路由：
   - `GET /api/favorites`
   - `POST /api/favorites/messages`
@@ -297,6 +301,16 @@
   - `GET /api/ai/speech/:fileName`
 - AI 语言通话路由已提供：
   - `POST /api/chat/voice-calls/turns`
+- AI 数字人视频通话会话路由已提供：
+  - `POST /api/chat/digital-human-calls/sessions`
+  - `GET /api/chat/digital-human-calls/sessions/:sessionId`
+  - `DELETE /api/chat/digital-human-calls/sessions/:sessionId`
+  - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
+- AI 数字人视频通话路由已提供：
+  - `POST /api/chat/digital-human-calls/sessions`
+  - `GET /api/chat/digital-human-calls/sessions/:sessionId`
+  - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
+  - `DELETE /api/chat/digital-human-calls/sessions/:sessionId`
 - 社交屏蔽路由已提供：
   - `GET /api/social/blocks`
   - `POST /api/social/block`

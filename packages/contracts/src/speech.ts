@@ -38,3 +38,39 @@ export interface VoiceCallTurnResult {
   userMessageId: string;
   assistantMessageId: string;
 }
+
+export type DigitalHumanCallMode = "desktop_video_call" | "mobile_video_call";
+
+export type DigitalHumanProvider = "mock_digital_human";
+
+export type DigitalHumanPresentationMode = "mock_stage" | "provider_stream";
+
+export type DigitalHumanSessionStatus = "ready" | "playing" | "ended";
+
+export interface CreateDigitalHumanSessionRequest {
+  conversationId: string;
+  characterId?: string;
+  mode?: DigitalHumanCallMode;
+}
+
+export interface DigitalHumanSession {
+  id: string;
+  conversationId: string;
+  characterId: string;
+  characterName: string;
+  characterAvatar?: string;
+  mode: DigitalHumanCallMode;
+  provider: DigitalHumanProvider;
+  presentationMode: DigitalHumanPresentationMode;
+  streamUrl?: string;
+  posterUrl?: string;
+  status: DigitalHumanSessionStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastTurn?: VoiceCallTurnResult;
+}
+
+export interface DigitalHumanTurnResult {
+  session: DigitalHumanSession;
+  turn: VoiceCallTurnResult;
+}

@@ -11,11 +11,13 @@ import { ChatBackgroundsService } from './chat-backgrounds.service';
 import {
   ChatAttachmentController,
   ChatController,
+  DigitalHumanCallsController,
   FavoritesController,
   GroupController,
   MessageRemindersController,
   VoiceCallsController,
 } from './chat.controller';
+import { DigitalHumanCallsService } from './digital-human-calls.service';
 import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
 import { MessageRemindersService } from './message-reminders.service';
@@ -53,12 +55,14 @@ import { GroupMessageEntity } from './group-message.entity';
     GroupService,
     FavoritesService,
     MessageRemindersService,
+    DigitalHumanCallsService,
     VoiceCallsService,
   ],
   controllers: [
     ChatController,
     ChatAttachmentController,
     VoiceCallsController,
+    DigitalHumanCallsController,
     FavoritesController,
     MessageRemindersController,
     ConversationBackgroundController,

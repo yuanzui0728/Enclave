@@ -92,6 +92,9 @@ import type {
   UpdateFriendProfileRequest,
 } from "./social";
 import type {
+  CreateDigitalHumanSessionRequest,
+  DigitalHumanSession,
+  DigitalHumanTurnResult,
   SpeechSynthesisRequest,
   SpeechSynthesisResult,
   SpeechTranscriptionResult,
@@ -273,6 +276,53 @@ export function createSpeechSynthesis(
 export function createVoiceCallTurn(payload: FormData, baseUrl?: string) {
   return requestLegacyApi<VoiceCallTurnResult>(
     "/chat/voice-calls/turns",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function createDigitalHumanSession(
+  payload: CreateDigitalHumanSessionRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<DigitalHumanSession>(
+    "/chat/digital-human-calls/sessions",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getDigitalHumanSession(sessionId: string, baseUrl?: string) {
+  return requestLegacyApi<DigitalHumanSession>(
+    `/chat/digital-human-calls/sessions/${sessionId}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function closeDigitalHumanSession(sessionId: string, baseUrl?: string) {
+  return requestLegacyApi<DigitalHumanSession>(
+    `/chat/digital-human-calls/sessions/${sessionId}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function createDigitalHumanTurn(
+  sessionId: string,
+  payload: FormData,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<DigitalHumanTurnResult>(
+    `/chat/digital-human-calls/sessions/${sessionId}/turns`,
     {
       method: "POST",
       body: payload,
