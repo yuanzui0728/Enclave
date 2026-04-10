@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -9,10 +9,16 @@ import {
   listCharacters,
   listOfficialAccounts,
 } from "@yinjie/contracts";
-import { ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
+import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import {
+  readDesktopFavorites,
+  removeDesktopFavorite,
+  upsertDesktopFavorite,
+  type DesktopFavoriteCategory,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatConversationTimestamp, formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -27,7 +33,7 @@ type SearchCategory =
 
 type SearchResultItem = {
   id: string;
-  category: Exclude<SearchCategory, "all">;
+  category: DesktopFavoriteCategory;
   title: string;
   description: string;
   meta: string;
@@ -53,7 +59,12 @@ export function SearchPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
+  const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const deferredSearchText = useDeferredValue(searchText);
+
+  useEffect(() => {
+    setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
+  }, []);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -391,10 +402,9 @@ export function SearchPage() {
                 filteredResults.length ? (
                   <div className="space-y-3">
                     {filteredResults.map((item) => (
-                      <Link
+                      <div
                         key={item.id}
-                        to={item.to as never}
-                        className="block rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,252,247,0.82)] p-4 transition hover:border-[rgba(249,115,22,0.16)] hover:bg-white"
+                        className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,252,247,0.82)] p-4 transition hover:border-[rgba(249,115,22,0.16)] hover:bg-white"
                       >
                         <div className="flex items-start gap-4">
                           <AvatarChip
@@ -417,9 +427,51 @@ export function SearchPage() {
                             <div className="mt-3 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
                               {item.description}
                             </div>
+                            <div className="mt-4 flex items-center gap-3">
+                              <Link
+                                to={item.to as never}
+                                className="inline-flex h-9 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-4 text-xs font-medium text-white"
+                              >
+                                打开
+                              </Link>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  const collected = favoriteSourceIds.includes(
+                                    item.id,
+                                  );
+                                  const nextFavorites = collected
+                                    ? removeDesktopFavorite(item.id)
+                                    : upsertDesktopFavorite({
+                                        id: `favorite-${item.id}`,
+                                        sourceId: item.id,
+                                        category: item.category,
+                                        title: item.title,
+                                        description: item.description,
+                                        meta: item.meta,
+                                        to: item.to,
+                                        badge: item.badge,
+                                        avatarName: item.avatarName,
+                                        avatarSrc: item.avatarSrc,
+                                      });
+
+                                  setFavoriteSourceIds(
+                                    nextFavorites.map(
+                                      (favorite) => favorite.sourceId,
+                                    ),
+                                  );
+                                }}
+                                className="rounded-full"
+                              >
+                                {favoriteSourceIds.includes(item.id)
+                                  ? "取消收藏"
+                                  : "收藏"}
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 ) : (
