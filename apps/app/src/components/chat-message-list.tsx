@@ -425,10 +425,6 @@ export function ChatMessageList({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activeImage, activeImageIndex, imageMessages, isDesktop]);
 
-  if (!messages.length) {
-    return emptyState ?? null;
-  }
-
   const handleToggleFavorite = (message: ChatRenderableMessage) => {
     const sourceId = buildFavoriteSourceId(message.id);
     const collected = favoriteSourceIds.includes(sourceId);
@@ -507,6 +503,11 @@ export function ChatMessageList({
       })),
     [forwardMessages],
   );
+
+  if (!messages.length) {
+    return emptyState ?? null;
+  }
+
   const toggleSelectedMessage = (messageId: string) => {
     setSelectedMessageIds((current) =>
       current.includes(messageId)
