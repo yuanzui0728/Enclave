@@ -92,6 +92,10 @@ export function ContactsPage() {
   const [activeMobileIndexKey, setActiveMobileIndexKey] = useState<
     string | null
   >(null);
+  const [mobileIndexIndicatorLabel, setMobileIndexIndicatorLabel] = useState<
+    string | null
+  >(null);
+  const mobileIndexIndicatorTimerRef = useRef<number | null>(null);
   const previousBaseUrlRef = useRef(baseUrl);
   const startChatResetRef = useRef<() => void>(() => {});
   const effectiveSearchText = isDesktopLayout ? searchText : "";
@@ -194,6 +198,14 @@ export function ContactsPage() {
     () => buildContactSections(filteredFriendItems),
     [filteredFriendItems],
   );
+  const mobileIndexItems = useMemo(
+    () =>
+      friendSections.map((section) => ({
+        key: section.anchorId,
+        indexLabel: section.indexLabel,
+      })),
+    [friendSections],
+  );
 
   const pendingRequestCount = useMemo(
     () =>
@@ -295,6 +307,14 @@ export function ContactsPage() {
   useEffect(() => {
     startChatResetRef.current = startChatMutation.reset;
   }, [startChatMutation.reset]);
+
+  useEffect(() => {
+    return () => {
+      if (mobileIndexIndicatorTimerRef.current !== null) {
+        window.clearTimeout(mobileIndexIndicatorTimerRef.current);
+      }
+    };
+  }, []);
 
   const blockMutation = useMutation({
     mutationFn: async ({
@@ -602,16 +622,57 @@ export function ContactsPage() {
   }
 
   function handleIndexJump(anchorId: string) {
+    handleIndexJumpWithBehavior(anchorId, "smooth");
+  }
+
+  function handleIndexJumpWithBehavior(
+    anchorId: string,
+    behavior: ScrollBehavior = "smooth",
+  ) {
     setActiveMobileIndexKey(anchorId);
+    setMobileIndexIndicatorLabel(
+      mobileIndexItems.find((item) => item.key === anchorId)?.indexLabel ?? null,
+    );
+
+    if (mobileIndexIndicatorTimerRef.current !== null) {
+      window.clearTimeout(mobileIndexIndicatorTimerRef.current);
+      mobileIndexIndicatorTimerRef.current = null;
+    }
+
+    if (behavior !== "auto") {
+      mobileIndexIndicatorTimerRef.current = window.setTimeout(() => {
+        setMobileIndexIndicatorLabel(null);
+        mobileIndexIndicatorTimerRef.current = null;
+      }, 280);
+    }
 
     if (typeof document === "undefined") {
       return;
     }
 
     document.getElementById(anchorId)?.scrollIntoView({
-      behavior: "smooth",
+      behavior,
       block: "start",
     });
+  }
+
+  function handleMobileIndexGestureActiveChange(active: boolean) {
+    if (active) {
+      if (mobileIndexIndicatorTimerRef.current !== null) {
+        window.clearTimeout(mobileIndexIndicatorTimerRef.current);
+        mobileIndexIndicatorTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (!mobileIndexIndicatorLabel) {
+      return;
+    }
+
+    mobileIndexIndicatorTimerRef.current = window.setTimeout(() => {
+      setMobileIndexIndicatorLabel(null);
+      mobileIndexIndicatorTimerRef.current = null;
+    }, 180);
   }
 
   const shortcutItems: ContactShortcutListItem[] = [
@@ -1152,14 +1213,22 @@ export function ContactsPage() {
         </div>
 
         {!normalizedSearchText && friendSections.length ? (
+          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center">
+            {mobileIndexIndicatorLabel ? (
+              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-[rgba(22,22,22,0.72)] text-[34px] font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] backdrop-blur">
+                {mobileIndexIndicatorLabel}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!normalizedSearchText && friendSections.length ? (
           <ContactIndexList
-            items={friendSections.map((section) => ({
-              key: section.anchorId,
-              indexLabel: section.indexLabel,
-            }))}
+            items={mobileIndexItems}
             activeKey={activeMobileIndexKey}
             className="fixed right-1 top-[55%] z-30 -translate-y-1/2"
-            onSelect={handleIndexJump}
+            onSelect={handleIndexJumpWithBehavior}
+            onGestureActiveChange={handleMobileIndexGestureActiveChange}
           />
         ) : null}
       </AppPage>
