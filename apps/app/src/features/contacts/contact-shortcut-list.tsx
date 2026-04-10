@@ -22,7 +22,7 @@ export function ContactShortcutList({
   className?: string;
 }) {
   return (
-    <section className={cn("overflow-hidden border border-[rgba(15,23,42,0.08)] bg-white", compact ? "rounded-[24px]" : "rounded-none", className)}>
+    <section className={cn("overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]", compact ? "rounded-[24px]" : "rounded-none", className)}>
       {items.map((item, index) => {
         const Icon = item.icon;
 
@@ -32,14 +32,14 @@ export function ContactShortcutList({
             type="button"
             onClick={item.onClick}
             className={cn(
-              "flex w-full items-center gap-3 bg-white text-left transition-colors hover:bg-[rgba(15,23,42,0.03)]",
+              "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors hover:bg-[rgba(249,115,22,0.05)]",
               compact ? "px-4 py-3.5" : "px-4 py-3",
-              index > 0 ? "border-t border-[rgba(15,23,42,0.06)]" : undefined,
+              index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
             )}
           >
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-[11px] text-white shadow-[0_8px_18px_rgba(15,23,42,0.08)]",
+                "flex shrink-0 items-center justify-center rounded-[11px] text-white shadow-[0_8px_18px_rgba(180,100,20,0.10)]",
                 compact ? "h-10 w-10" : "h-10 w-10",
                 item.iconClassName,
               )}

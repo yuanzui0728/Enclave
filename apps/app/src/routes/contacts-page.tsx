@@ -334,10 +334,10 @@ export function ContactsPage() {
   if (isDesktopLayout) {
     return (
       <div ref={pageRef} className="h-full min-h-0">
-        <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(248,249,251,0.96),rgba(243,245,247,0.98))] px-0 py-0">
+        <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))] px-0 py-0">
           <div className="flex h-full min-h-0">
-            <section className="flex w-[340px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(246,247,249,0.98),rgba(240,243,246,0.98))]">
-              <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
+            <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
+              <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
                 <div className="flex items-center justify-between">
                   <div className="text-base font-medium text-[color:var(--text-primary)]">通讯录</div>
                   <div className="text-xs text-[color:var(--text-muted)]">
@@ -346,7 +346,7 @@ export function ContactsPage() {
                   </div>
                 </div>
 
-                <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+                <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
                   <Search size={15} className="shrink-0" />
                   <input
                     type="search"
@@ -362,7 +362,7 @@ export function ContactsPage() {
                 <ContactShortcutList items={shortcutItems} compact className="shadow-[0_10px_32px_rgba(15,23,42,0.05)]" />
               </div>
 
-              <div className="min-h-0 flex-1 overflow-auto bg-[rgba(244,246,248,0.82)] pb-4">
+              <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,249,238,0.72)] pb-4">
                 {notice ? (
                   <div className="px-3 pb-3">
                     <InlineNotice tone="info">{notice}</InlineNotice>
@@ -392,7 +392,7 @@ export function ContactsPage() {
                 {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
 
                 {!friendsQuery.isLoading && friendSections.length ? (
-                  <div className="border-y border-[rgba(15,23,42,0.06)] bg-white">
+                  <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
                     {friendSections.map((section) => (
                       <div key={section.key} id={section.anchorId}>
                         <SectionHeader title={section.title} desktop />
@@ -438,7 +438,7 @@ export function ContactsPage() {
                 ) : null}
 
                 {filteredWorldCharacterItems.length ? (
-                  <div id="world-character-directory" className="mt-3 border-y border-[rgba(15,23,42,0.06)] bg-white">
+                  <div id="world-character-directory" className="mt-3 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
                     <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} desktop />
                     {filteredWorldCharacterItems.map((item, index) => (
                       <WorldCharacterRow
@@ -479,14 +479,14 @@ export function ContactsPage() {
 
   return (
     <div ref={pageRef}>
-      <AppPage className="relative min-h-full space-y-0 bg-[#ededed] px-0 py-0">
+      <AppPage className="relative min-h-full space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
         <TabPageTopBar
           title="通讯录"
           titleAlign="center"
-          className="mx-0 mt-0 mb-0 border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,248,239,0.94))] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         >
           <div className="pt-3">
-            <label className="flex items-center gap-2 rounded-[10px] border border-[rgba(15,23,42,0.06)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+            <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
               <Search size={15} className="shrink-0" />
               <input
                 type="search"
@@ -528,7 +528,7 @@ export function ContactsPage() {
 
           <ContactShortcutList items={shortcutItems} className="mt-2 border-x-0 shadow-none" />
 
-          <section className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {friendsQuery.isLoading ? <LoadingBlock className="px-4 py-6 text-left" label="正在读取联系人..." /> : null}
 
             {!friendsQuery.isLoading && !friendSections.length ? (
@@ -572,7 +572,7 @@ export function ContactsPage() {
           </section>
 
           {filteredWorldCharacterItems.length ? (
-            <section id="world-character-directory" className="mt-2 overflow-hidden border-y border-[rgba(15,23,42,0.06)] bg-white">
+            <section id="world-character-directory" className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <SectionHeader title={normalizedSearchText ? "世界角色结果" : "世界角色"} />
               {filteredWorldCharacterItems.map((item, index) => (
                 <WorldCharacterRow
@@ -622,9 +622,9 @@ function FriendListRow({
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "flex w-full items-center gap-3 bg-white text-left transition-colors",
-        desktop ? "px-4 py-3.5 hover:bg-[rgba(15,23,42,0.04)]" : "px-4 py-3 hover:bg-[rgba(15,23,42,0.03)]",
-        index > 0 ? "border-t border-[rgba(15,23,42,0.06)]" : undefined,
+        "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
+        desktop ? "px-4 py-3.5 hover:bg-[rgba(249,115,22,0.06)]" : "px-4 py-3 hover:bg-[rgba(249,115,22,0.05)]",
+        index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active ? "bg-[rgba(22,163,74,0.10)] shadow-[inset_3px_0_0_0_#16a34a]" : undefined,
       )}
     >
@@ -660,10 +660,10 @@ function WorldCharacterRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 bg-white text-left transition-colors",
-        desktop ? "px-4 py-3.5 hover:bg-[rgba(15,23,42,0.04)]" : "px-4 py-3 hover:bg-[rgba(15,23,42,0.03)]",
-        index > 0 ? "border-t border-[rgba(15,23,42,0.06)]" : undefined,
-        active ? "bg-[rgba(15,23,42,0.04)] shadow-[inset_3px_0_0_0_rgba(15,23,42,0.18)]" : undefined,
+        "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
+        desktop ? "px-4 py-3.5 hover:bg-[rgba(249,115,22,0.06)]" : "px-4 py-3 hover:bg-[rgba(249,115,22,0.05)]",
+        index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+        active ? "bg-[rgba(249,115,22,0.08)] shadow-[inset_3px_0_0_0_rgba(249,115,22,0.40)]" : undefined,
       )}
     >
       <AvatarChip name={item.character.name} src={item.character.avatar} size="wechat" />
@@ -687,8 +687,8 @@ function SectionHeader({
   return (
     <div
       className={cn(
-        "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[#8c8c8c]",
-        desktop ? "sticky top-0 bg-[rgba(244,246,248,0.96)] backdrop-blur" : "sticky top-[88px] bg-[#f5f5f5]",
+        "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
+        desktop ? "sticky top-0 bg-[rgba(255,250,240,0.96)] backdrop-blur" : "sticky top-[88px] bg-[rgba(255,249,238,0.92)]",
       )}
     >
       {title}

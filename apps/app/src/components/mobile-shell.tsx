@@ -2,13 +2,14 @@ import { useMemo, type PropsWithChildren } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
-import { Compass, MessageCircleMore, UserRound, UsersRound } from "lucide-react";
+import { Compass, ImageIcon, MessageCircleMore, UserRound, UsersRound } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const tabs = [
   { to: "/tabs/chat", label: "消息", icon: MessageCircleMore },
   { to: "/tabs/contacts", label: "通讯录", icon: UsersRound },
+  { to: "/tabs/moments", label: "朋友圈", icon: ImageIcon },
   { to: "/tabs/discover", label: "发现", icon: Compass },
   { to: "/tabs/profile", label: "我", icon: UserRound },
 ];
@@ -53,7 +54,7 @@ export function MobileShell({ children }: PropsWithChildren) {
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
           {showTabs ? (
             <nav
-              className="shrink-0 grid grid-cols-4 border-t border-white/70 bg-[linear-gradient(180deg,rgba(255,254,250,0.90),rgba(255,249,238,0.96))] px-2 pt-2 backdrop-blur-xl"
+              className="shrink-0 grid grid-cols-5 border-t border-white/70 bg-[linear-gradient(180deg,rgba(255,254,250,0.90),rgba(255,249,238,0.96))] px-2 pt-2 backdrop-blur-xl"
               style={{ paddingBottom: "max(0.5rem, var(--safe-area-inset-bottom))" }}
             >
               {tabs.map(({ to, label, icon: Icon }) => {

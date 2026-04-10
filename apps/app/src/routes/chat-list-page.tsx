@@ -122,7 +122,7 @@ function MobileChatListPage() {
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       {isQuickMenuOpen ? (
         <button
           type="button"
@@ -134,7 +134,7 @@ function MobileChatListPage() {
 
       <TabPageTopBar
         title="消息"
-        className="z-40 space-y-3 overflow-visible border-b border-black/5 bg-[rgba(247,247,247,0.96)] px-4 pb-3 pt-3 text-[color:var(--text-primary)] shadow-none"
+        className="z-40 space-y-3 overflow-visible border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,248,239,0.94))] px-4 pb-3 pt-3 text-[color:var(--text-primary)] shadow-none"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
@@ -203,7 +203,7 @@ function MobileChatListPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="搜索"
-            className="h-9 w-full rounded-[10px] border border-transparent bg-[#f2f2f2] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:border-black/5 focus:bg-white"
+            className="h-9 w-full rounded-[10px] border border-transparent bg-[rgba(255,249,238,0.85)] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white/92"
           />
         </label>
       </TabPageTopBar>
@@ -228,7 +228,7 @@ function MobileChatListPage() {
 
         {!conversationsQuery.isLoading && !conversationsQuery.isError ? (
           hasConversations ? (
-            <section className="mt-2 overflow-hidden border-y border-black/5 bg-white">
+            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {filteredConversations.map((conversation, index) => (
                 <ConversationListItemLink
                   key={conversation.id}
@@ -274,7 +274,7 @@ function ConversationListItemLink({
     <div
       className={cn(
         "flex items-center gap-3 px-4 py-3.5",
-        isPinned ? "bg-[#f7f7f7]" : "bg-white",
+        isPinned ? "bg-[rgba(255,246,228,0.72)]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       <AvatarChip name={conversation.title} size="wechat" />
