@@ -25,7 +25,6 @@ import {
 } from "../features/desktop/favorites/desktop-favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
-  formatConversationTimestamp,
   formatMessageTimestamp,
   parseTimestamp,
 } from "../lib/format";
@@ -36,6 +35,9 @@ type FileFilter = "all" | "image" | "file";
 
 type AttachmentRow = {
   id: string;
+  conversationId: string;
+  conversationTitle: string;
+  conversationType: "direct" | "group";
   attachment: Extract<MessageAttachment, { kind: "image" | "file" }>;
   createdAt: string;
   senderName: string;
@@ -46,7 +48,7 @@ export function DesktopChatFilesPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl;
+  const baseUrl = runtimeConfig.apiBaseUrl ?? "";
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseDesktopChatFilesRouteState(hash);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -100,8 +102,6 @@ export function DesktopChatFilesPage() {
     ) {
       return;
     }
-
-    setSelectedConversationId(conversations[0].id);
   }, [conversations, routeState.conversationId, selectedConversationId]);
 
   useEffect(() => {
@@ -121,31 +121,53 @@ export function DesktopChatFilesPage() {
 
   const selectedConversation =
     conversations.find((item) => item.id === selectedConversationId) ?? null;
-
-  const messagesQuery = useQuery({
+  const allAttachmentsQuery = useQuery({
     queryKey: [
       "desktop-chat-files",
       baseUrl,
-      selectedConversation?.id,
-      selectedConversation?.type,
+      conversations.map((item) => `${item.id}:${item.type}`),
     ],
     queryFn: async () => {
-      if (!selectedConversation) {
+      if (!baseUrl) {
         return [];
       }
 
-      if (isPersistedGroupConversation(selectedConversation)) {
-        return getGroupMessages(selectedConversation.id, baseUrl);
-      }
+      const rows = await Promise.all(
+        conversations.map((conversation) =>
+          fetchConversationAttachmentRows(conversation, baseUrl),
+        ),
+      );
 
-      return getConversationMessages(selectedConversation.id, baseUrl);
+      return rows.flat();
     },
-    enabled: Boolean(selectedConversation),
+    enabled: Boolean(baseUrl) && conversations.length > 0,
   });
+
+  const baseAttachmentRows = useMemo(() => {
+    const rows = allAttachmentsQuery.data ?? [];
+
+    if (!selectedConversationId) {
+      return rows;
+    }
+
+    return rows.filter((item) => item.conversationId === selectedConversationId);
+  }, [allAttachmentsQuery.data, selectedConversationId]);
+
+  const attachmentCounts = useMemo(
+    () =>
+      (allAttachmentsQuery.data ?? []).reduce<Record<string, number>>(
+        (result, item) => {
+          result[item.conversationId] = (result[item.conversationId] ?? 0) + 1;
+          return result;
+        },
+        {},
+      ),
+    [allAttachmentsQuery.data],
+  );
 
   const attachmentRows = useMemo(
     () =>
-      normalizeAttachmentRows(messagesQuery.data ?? [])
+      baseAttachmentRows
         .filter((item) => matchesAttachmentFilter(item, filter))
         .filter((item) => matchesAttachmentSearch(item, searchText))
         .sort(
@@ -153,7 +175,7 @@ export function DesktopChatFilesPage() {
             (parseTimestamp(right.createdAt) ?? 0) -
             (parseTimestamp(left.createdAt) ?? 0),
         ),
-    [filter, messagesQuery.data, searchText],
+    [baseAttachmentRows, filter, searchText],
   );
 
   if (!isDesktopLayout) {
@@ -168,7 +190,7 @@ export function DesktopChatFilesPage() {
             聊天文件
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            先按会话聚合图片和文件附件，后续再补跨会话筛选与搜索。
+            现在支持跨会话聚合浏览，也能从当前聊天直接带着上下文跳进来。
           </div>
           <TextField
             value={searchText}
@@ -206,6 +228,29 @@ export function DesktopChatFilesPage() {
           ) : null}
 
           <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedConversationId(null)}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition",
+                !selectedConversationId
+                  ? "border-[rgba(249,115,22,0.20)] bg-white/94 shadow-[var(--shadow-soft)]"
+                  : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/82",
+              )}
+            >
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(255,138,61,0.12)] text-sm font-medium text-[color:var(--brand-primary)]">
+                全部
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                  全部会话
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {(allAttachmentsQuery.data ?? []).length} 项附件
+                </div>
+              </div>
+            </button>
+
             {conversations.map((conversation) => (
               <button
                 key={conversation.id}
@@ -225,7 +270,7 @@ export function DesktopChatFilesPage() {
                   </div>
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                     {conversation.type === "group" ? "群聊" : "单聊"} ·{" "}
-                    {formatConversationTimestamp(conversation.lastActivityAt)}
+                    {attachmentCounts[conversation.id] ?? 0} 项附件
                   </div>
                 </div>
               </button>
@@ -244,17 +289,25 @@ export function DesktopChatFilesPage() {
       </section>
 
       <section className="min-w-0 flex-1 overflow-auto p-6">
-        {selectedConversation ? (
+        {conversations.length ? (
           <DesktopEntryShell
             badge="Files"
-            title={selectedConversation.title}
-            description="当前先聚合这一会话内的图片和文件附件，后续再补跨会话总览、批量操作和回跳原消息。"
+            title={selectedConversation?.title ?? "全部会话聊天文件"}
+            description={
+              selectedConversation
+                ? "当前会话内的图片和文件已经集中到这里，也支持回跳原消息继续处理。"
+                : "桌面端聊天文件现在支持跨会话聚合，方便像微信一样统一翻最近发过的图片和文件。"
+            }
             aside={
               <div className="space-y-3">
                 <InfoCard
                   label="会话类型"
                   value={
-                    selectedConversation.type === "group" ? "群聊" : "单聊"
+                    selectedConversation
+                      ? selectedConversation.type === "group"
+                        ? "群聊"
+                        : "单聊"
+                      : "全部会话"
                   }
                 />
                 <InfoCard
@@ -275,11 +328,12 @@ export function DesktopChatFilesPage() {
             }
           >
             <div className="space-y-4">
-              {messagesQuery.isLoading ? (
+              {allAttachmentsQuery.isLoading ? (
                 <LoadingBlock label="正在读取附件..." />
               ) : null}
-              {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-                <ErrorBlock message={messagesQuery.error.message} />
+              {allAttachmentsQuery.isError &&
+              allAttachmentsQuery.error instanceof Error ? (
+                <ErrorBlock message={allAttachmentsQuery.error.message} />
               ) : null}
 
               {attachmentRows.map((item) => {
@@ -304,7 +358,7 @@ export function DesktopChatFilesPage() {
                           {item.attachment.fileName}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {item.senderName} ·{" "}
+                          {item.senderName} · {item.conversationTitle} ·{" "}
                           {formatMessageTimestamp(item.createdAt)}
                         </div>
                         <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
@@ -323,14 +377,10 @@ export function DesktopChatFilesPage() {
                             variant="secondary"
                             size="sm"
                             onClick={() => {
-                              if (
-                                isPersistedGroupConversation(
-                                  selectedConversation,
-                                )
-                              ) {
+                              if (item.conversationType === "group") {
                                 void navigate({
                                   to: "/group/$groupId",
-                                  params: { groupId: selectedConversation.id },
+                                  params: { groupId: item.conversationId },
                                   hash: `chat-message-${item.id}`,
                                 });
                                 return;
@@ -339,7 +389,7 @@ export function DesktopChatFilesPage() {
                               void navigate({
                                 to: "/chat/$conversationId",
                                 params: {
-                                  conversationId: selectedConversation.id,
+                                  conversationId: item.conversationId,
                                 },
                                 hash: `chat-message-${item.id}`,
                               });
@@ -362,10 +412,10 @@ export function DesktopChatFilesPage() {
                                     description:
                                       item.text.trim() ||
                                       `${item.senderName} 分享的聊天附件`,
-                                    meta: `${selectedConversation.title} · ${formatMessageTimestamp(item.createdAt)}`,
+                                    meta: `${item.conversationTitle} · ${formatMessageTimestamp(item.createdAt)}`,
                                     to: "/desktop/chat-files",
                                     badge: "聊天文件",
-                                    avatarName: selectedConversation.title,
+                                    avatarName: item.conversationTitle,
                                   });
 
                               setFavoriteSourceIds(
@@ -388,10 +438,14 @@ export function DesktopChatFilesPage() {
                 );
               })}
 
-              {!messagesQuery.isLoading && !attachmentRows.length ? (
+              {!allAttachmentsQuery.isLoading && !attachmentRows.length ? (
                 <EmptyState
                   title="当前筛选下没有附件"
-                  description="换一个会话、筛选类型，或者先在聊天里发一张图片或文件。"
+                  description={
+                    selectedConversation
+                      ? "换一个会话、筛选类型，或者先在聊天里发一张图片或文件。"
+                      : "试试筛选图片或文件，或者先在聊天里发一张图片或文件。"
+                  }
                 />
               ) : null}
             </div>
@@ -399,8 +453,8 @@ export function DesktopChatFilesPage() {
         ) : (
           <div className="flex h-full items-center justify-center">
             <EmptyState
-              title="先从左侧选择一个会话"
-              description="聊天文件会按会话聚合展示，方便从桌面直接整理最近发过的附件。"
+              title="还没有聊天文件"
+              description="先在消息里发一张图片或文件，这里就会开始按会话和跨会话聚合。"
             />
           </div>
         )}
@@ -410,6 +464,11 @@ export function DesktopChatFilesPage() {
 }
 
 function normalizeAttachmentRows(
+  conversation: {
+    id: string;
+    title: string;
+    type: "direct" | "group";
+  },
   messages: Message[] | GroupMessage[],
 ): AttachmentRow[] {
   return messages.flatMap((item) => {
@@ -425,6 +484,9 @@ function normalizeAttachmentRows(
     return [
       {
         id: item.id,
+        conversationId: conversation.id,
+        conversationTitle: conversation.title,
+        conversationType: conversation.type,
         attachment,
         createdAt: item.createdAt,
         senderName: item.senderName,
@@ -432,6 +494,21 @@ function normalizeAttachmentRows(
       },
     ];
   });
+}
+
+async function fetchConversationAttachmentRows(
+  conversation: {
+    id: string;
+    title: string;
+    type: "direct" | "group";
+  },
+  baseUrl: string,
+) {
+  const messages = isPersistedGroupConversation(conversation)
+    ? await getGroupMessages(conversation.id, baseUrl)
+    : await getConversationMessages(conversation.id, baseUrl);
+
+  return normalizeAttachmentRows(conversation, messages);
 }
 
 function matchesAttachmentFilter(item: AttachmentRow, filter: FileFilter) {
@@ -450,6 +527,7 @@ function matchesAttachmentSearch(item: AttachmentRow, searchText: string) {
 
   return (
     item.attachment.fileName.toLowerCase().includes(normalized) ||
+    item.conversationTitle.toLowerCase().includes(normalized) ||
     item.senderName.toLowerCase().includes(normalized) ||
     item.text.toLowerCase().includes(normalized)
   );

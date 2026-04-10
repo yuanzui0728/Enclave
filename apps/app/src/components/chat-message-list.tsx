@@ -46,7 +46,11 @@ import {
   splitChatTextSegments,
 } from "../lib/chat-text";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
-import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
+import {
+  formatDetailedMessageTimestamp,
+  formatMessageTimestamp,
+  parseTimestamp,
+} from "../lib/format";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -107,6 +111,9 @@ export function ChatMessageList({
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop && !selectionMode;
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
+    readDetailedTimestampMode(),
+  );
 
   useEffect(() => {
     if (!highlightedMessageId) {
@@ -181,6 +188,10 @@ export function ChatMessageList({
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, []);
+
+  useEffect(() => {
+    writeDetailedTimestampMode(detailedTimestampMode);
+  }, [detailedTimestampMode]);
 
   useEffect(() => {
     setSelectionMode(false);
@@ -469,7 +480,7 @@ export function ChatMessageList({
 
     window.open(attachment.url, "_blank", "noopener,noreferrer");
     setActionNotice({
-      message: attachment.kind === "image" ? "已打开图片。" : "已打开文件。",
+      message: "已打开文件。",
       tone: "success",
     });
   };
@@ -601,9 +612,22 @@ export function ChatMessageList({
           <div key={message.id}>
             {showTimestamp ? (
               <div className="pb-2 pt-1 text-center">
-                <span className="inline-flex rounded-full bg-[rgba(0,0,0,0.08)] px-3 py-1 text-[11px] text-[#7d7d7d]">
-                  {formatMessageTimestamp(message.createdAt)}
-                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDetailedTimestampMode((current) => !current)
+                  }
+                  className="inline-flex rounded-full bg-[rgba(0,0,0,0.08)] px-3 py-1 text-[11px] text-[#7d7d7d] transition active:bg-[rgba(0,0,0,0.12)]"
+                  aria-label={
+                    detailedTimestampMode
+                      ? "切换为简略时间显示"
+                      : "切换为完整日期显示"
+                  }
+                >
+                  {detailedTimestampMode
+                    ? formatDetailedMessageTimestamp(message.createdAt)
+                    : formatMessageTimestamp(message.createdAt)}
+                </button>
               </div>
             ) : null}
             <div
@@ -956,6 +980,29 @@ function shouldShowMessageTimestamp(
   }
 
   return currentTimestamp - previousTimestamp >= 5 * 60 * 1000;
+}
+
+const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
+
+function readDetailedTimestampMode() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.localStorage.getItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY) === "1"
+  );
+}
+
+function writeDetailedTimestampMode(enabled: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
+    enabled ? "1" : "0",
+  );
 }
 
 function buildClipboardSender(message: ChatRenderableMessage) {
