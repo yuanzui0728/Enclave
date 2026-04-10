@@ -36,6 +36,7 @@ import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import {
   buildGroupCallInviteMessage,
+  type CallInviteSource,
   type GroupCallInviteStatus,
 } from "./group-call-message";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
@@ -90,8 +91,10 @@ export function GroupChatThreadPanel({
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
-  const [desktopCallPanelKind, setDesktopCallPanelKind] =
-    useState<DesktopChatCallKind | null>(null);
+  const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
+    kind: DesktopChatCallKind;
+    source: CallInviteSource | null;
+  } | null>(null);
   const [pendingCallFallback, setPendingCallFallback] =
     useState<DesktopChatCallKind | null>(null);
   const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
@@ -147,7 +150,7 @@ export function GroupChatThreadPanel({
   useEffect(() => {
     setText("");
     setReplyDraft(null);
-    setDesktopCallPanelKind(null);
+      setDesktopCallPanelState(null);
     setPendingCallFallback(null);
     setMobileShortcutRequest(null);
     setSelectionModeActive(false);
@@ -281,6 +284,7 @@ export function GroupChatThreadPanel({
       status: GroupCallInviteStatus;
       activeCount: number;
       totalCount: number;
+      source: CallInviteSource;
     }) =>
       sendGroupMessage(
         groupId,
@@ -294,7 +298,7 @@ export function GroupChatThreadPanel({
             },
             input.status,
             undefined,
-            "desktop",
+            input.source,
           ),
         },
         baseUrl,
@@ -620,7 +624,10 @@ export function GroupChatThreadPanel({
 
   const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
-      setDesktopCallPanelKind(kind);
+      setDesktopCallPanelState({
+        kind,
+        source: "desktop",
+      });
       return;
     }
 
@@ -800,15 +807,15 @@ export function GroupChatThreadPanel({
           }`}
         />
 
-        {isDesktop && desktopCallPanelKind ? (
+        {isDesktop && desktopCallPanelState ? (
           <div className="relative h-full p-5">
             <DesktopGroupCallPanel
-              kind={desktopCallPanelKind}
+              kind={desktopCallPanelState.kind}
               groupId={groupId}
               groupName={groupQuery.data?.name ?? "群聊"}
               members={membersQuery.data ?? []}
               lastSyncedCounts={
-                lastPublishedCallCounts?.kind === desktopCallPanelKind
+                lastPublishedCallCounts?.kind === desktopCallPanelState.kind
                   ? {
                       activeCount: lastPublishedCallCounts.activeCount,
                       totalCount: lastPublishedCallCounts.totalCount,
@@ -817,18 +824,19 @@ export function GroupChatThreadPanel({
               }
               inviteNoticePending={sendCallInviteMutation.isPending}
               endNoticePending={sendCallInviteMutation.isPending}
-              onClose={() => setDesktopCallPanelKind(null)}
+              onClose={() => setDesktopCallPanelState(null)}
               onPanelOpened={(counts) => {
                 void sendCallInviteMutation
                   .mutateAsync({
-                    kind: desktopCallPanelKind,
+                    kind: desktopCallPanelState.kind,
                     status: "ongoing",
                     activeCount: counts.activeCount,
                     totalCount: counts.totalCount,
+                    source: desktopCallPanelState.source ?? "desktop",
                   })
                   .then(() => {
                     setLastPublishedCallCounts({
-                      kind: desktopCallPanelKind,
+                      kind: desktopCallPanelState.kind,
                       activeCount: counts.activeCount,
                       totalCount: counts.totalCount,
                     });
@@ -838,7 +846,7 @@ export function GroupChatThreadPanel({
                 void navigate({
                   to: "/desktop/mobile",
                   hash: buildDesktopMobileCallHandoffHash({
-                    kind: desktopCallPanelKind,
+                    kind: desktopCallPanelState.kind,
                     conversationId: groupId,
                     conversationType: "group",
                     title: groupQuery.data?.name ?? "群聊",
@@ -848,14 +856,15 @@ export function GroupChatThreadPanel({
               onSendInviteNotice={(counts) => {
                 void sendCallInviteMutation
                   .mutateAsync({
-                    kind: desktopCallPanelKind,
+                    kind: desktopCallPanelState.kind,
                     status: "ongoing",
                     activeCount: counts.activeCount,
                     totalCount: counts.totalCount,
+                    source: desktopCallPanelState.source ?? "desktop",
                   })
                   .then(() => {
                     setLastPublishedCallCounts({
-                      kind: desktopCallPanelKind,
+                      kind: desktopCallPanelState.kind,
                       activeCount: counts.activeCount,
                       totalCount: counts.totalCount,
                     });
@@ -864,14 +873,15 @@ export function GroupChatThreadPanel({
               onEndCall={(counts) => {
                 void sendCallInviteMutation
                   .mutateAsync({
-                    kind: desktopCallPanelKind,
+                    kind: desktopCallPanelState.kind,
                     status: "ended",
                     activeCount: counts.activeCount,
                     totalCount: counts.totalCount,
+                    source: desktopCallPanelState.source ?? "desktop",
                   })
                   .then(() => {
                     setLastPublishedCallCounts(null);
-                    setDesktopCallPanelKind(null);
+                    setDesktopCallPanelState(null);
                   });
               }}
             />
@@ -922,9 +932,9 @@ export function GroupChatThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
-              onOpenGroupCallInvite={(kind) => {
+              onOpenGroupCallInvite={(input) => {
                 if (isDesktop) {
-                  setDesktopCallPanelKind(kind);
+                  setDesktopCallPanelState(input);
                 }
               }}
               onSelectionModeChange={setSelectionModeActive}
@@ -955,7 +965,7 @@ export function GroupChatThreadPanel({
         ) : null}
       </div>
 
-      {!selectionModeActive && !(isDesktop && desktopCallPanelKind) ? (
+      {!selectionModeActive && !(isDesktop && desktopCallPanelState) ? (
         <ChatComposer
           value={text}
           placeholder="输入消息"

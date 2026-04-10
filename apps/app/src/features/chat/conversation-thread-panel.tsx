@@ -22,7 +22,10 @@ import { DesktopDirectCallPanel } from "../desktop/chat/desktop-direct-call-pane
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
-import { buildDirectCallInviteMessage } from "./group-call-message";
+import {
+  buildDirectCallInviteMessage,
+  type CallInviteSource,
+} from "./group-call-message";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import {
@@ -70,8 +73,10 @@ export function ConversationThreadPanel({
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
-  const [desktopCallPanelKind, setDesktopCallPanelKind] =
-    useState<DesktopChatCallKind | null>(null);
+  const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
+    kind: DesktopChatCallKind;
+    source: CallInviteSource | null;
+  } | null>(null);
   const [mobileShortcutRequest, setMobileShortcutRequest] = useState<{
     action: ChatComposeShortcutAction;
     nonce: number;
@@ -252,7 +257,10 @@ export function ConversationThreadPanel({
 
   const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
-      setDesktopCallPanelKind(kind);
+      setDesktopCallPanelState({
+        kind,
+        source: "desktop",
+      });
       return;
     }
 
@@ -267,7 +275,7 @@ export function ConversationThreadPanel({
   };
 
   useEffect(() => {
-    setDesktopCallPanelKind(null);
+    setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
   }, [conversationId]);
 
@@ -389,22 +397,22 @@ export function ConversationThreadPanel({
           }`}
         />
 
-        {isDesktop && desktopCallPanelKind ? (
+        {isDesktop && desktopCallPanelState ? (
           <div className="relative h-full p-5">
             <DesktopDirectCallPanel
-              kind={desktopCallPanelKind}
+              kind={desktopCallPanelState.kind}
               conversationId={conversationId}
               characterId={participants[0]}
               conversationTitle={conversationTitle}
-              onClose={() => setDesktopCallPanelKind(null)}
+              onClose={() => setDesktopCallPanelState(null)}
               onPanelOpened={async () => {
                 await sendTextMessage(
                   buildDirectCallInviteMessage(
-                    desktopCallPanelKind,
+                    desktopCallPanelState.kind,
                     conversationTitle,
                     {
                       status: "waiting",
-                      source: "desktop",
+                      source: desktopCallPanelState.source ?? "desktop",
                     },
                   ),
                 );
@@ -413,12 +421,12 @@ export function ConversationThreadPanel({
               onSessionConnected={async (result) => {
                 await sendTextMessage(
                   buildDirectCallInviteMessage(
-                    desktopCallPanelKind,
+                    desktopCallPanelState.kind,
                     conversationTitle,
                     {
                       status: "connected",
                       durationMs: result.totalDurationMs,
-                      source: "desktop",
+                      source: desktopCallPanelState.source ?? "desktop",
                     },
                   ),
                 );
@@ -427,11 +435,11 @@ export function ConversationThreadPanel({
               onEndCall={async () => {
                 await sendTextMessage(
                   buildDirectCallInviteMessage(
-                    desktopCallPanelKind,
+                    desktopCallPanelState.kind,
                     conversationTitle,
                     {
                       status: "ended",
-                      source: "desktop",
+                      source: desktopCallPanelState.source ?? "desktop",
                     },
                   ),
                 );
@@ -477,9 +485,9 @@ export function ConversationThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
-              onOpenDirectCallInvite={(kind) => {
+              onOpenDirectCallInvite={(input) => {
                 if (isDesktop) {
-                  setDesktopCallPanelKind(kind);
+                  setDesktopCallPanelState(input);
                 }
               }}
               onSelectionModeChange={setSelectionModeActive}

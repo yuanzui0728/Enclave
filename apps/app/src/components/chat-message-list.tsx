@@ -93,6 +93,7 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import {
   parseDirectCallInviteMessage,
   parseGroupCallInviteMessage,
+  type CallInviteSource,
 } from "../features/chat/group-call-message";
 import { parseGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 
@@ -140,8 +141,14 @@ type ChatMessageListProps = {
       quotedText?: string;
     },
   ) => void;
-  onOpenDirectCallInvite?: (kind: "voice" | "video") => void;
-  onOpenGroupCallInvite?: (kind: "voice" | "video") => void;
+  onOpenDirectCallInvite?: (input: {
+    kind: "voice" | "video";
+    source: CallInviteSource | null;
+  }) => void;
+  onOpenGroupCallInvite?: (input: {
+    kind: "voice" | "video";
+    source: CallInviteSource | null;
+  }) => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
 
@@ -1865,7 +1872,11 @@ export function ChatMessageList({
                         threadContext?.type !== "direct" ||
                         !onOpenDirectCallInvite
                           ? undefined
-                          : () => onOpenDirectCallInvite(directCallInvite.kind)
+                          : () =>
+                              onOpenDirectCallInvite({
+                                kind: directCallInvite.kind,
+                                source: directCallInvite.source,
+                              })
                       }
                     />
                   ) : groupCallInvite ? (
@@ -1875,10 +1886,14 @@ export function ChatMessageList({
                       onOpen={
                         selectionMode ||
                         threadContext?.type !== "group" ||
-                        groupCallInvite.status !== "ongoing" ||
-                        !onOpenGroupCallInvite
+                          groupCallInvite.status !== "ongoing" ||
+                          !onOpenGroupCallInvite
                           ? undefined
-                          : () => onOpenGroupCallInvite(groupCallInvite.kind)
+                          : () =>
+                              onOpenGroupCallInvite({
+                                kind: groupCallInvite.kind,
+                                source: groupCallInvite.source,
+                              })
                       }
                     />
                   ) : groupRelaySummary ? (
