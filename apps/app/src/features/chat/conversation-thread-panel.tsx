@@ -286,14 +286,6 @@ export function ConversationThreadPanel({
             }
           />
 
-          {typingCharacterId && !isDesktop ? (
-            <InlineNotice
-              tone="muted"
-              className="mt-3 border-white/70 bg-white/82 text-[color:var(--text-muted)]"
-            >
-              对方正在输入...
-            </InlineNotice>
-          ) : null}
         </div>
       </div>
 
