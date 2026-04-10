@@ -133,11 +133,11 @@ export function DesktopGroupCallPanel({
   }
 
   return (
-    <section className="flex h-full min-h-0 gap-5 rounded-[30px] border border-[rgba(15,23,42,0.08)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,249,252,0.96))] p-5 shadow-[var(--shadow-card)]">
-      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[26px] border border-[rgba(15,23,42,0.06)] bg-[linear-gradient(180deg,rgba(255,248,240,0.92),rgba(255,255,255,0.92))] p-5">
+    <section className="flex h-full min-h-0 gap-4 rounded-[18px] border border-black/8 bg-[#f3f3f3] p-4 shadow-[0_20px_48px_rgba(15,23,42,0.10)]">
+      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[16px] border border-black/6 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(249,115,22,0.12)] px-3 py-1 text-[11px] font-medium tracking-[0.14em] text-[#c2410c]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#1f8f4f]">
               {kind === "voice" ? <Mic size={13} /> : <Video size={13} />}
               {callKindLabel}
             </div>
@@ -163,7 +163,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="shrink-0 rounded-full"
+            className="shrink-0 rounded-[10px] border-black/8 bg-[#f7f7f7] shadow-none hover:bg-[#ededed]"
           >
             返回聊天
           </Button>
@@ -187,7 +187,7 @@ export function DesktopGroupCallPanel({
           />
         </div>
 
-        <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/88 p-4">
+        <div className="mt-5 rounded-[14px] border border-black/6 bg-[#fafafa] p-4">
           <div className="flex flex-wrap gap-3">
             <CallControlButton
               active={!muted}
@@ -240,7 +240,7 @@ export function DesktopGroupCallPanel({
               })
             }
             disabled={inviteNoticePending}
-            className="rounded-full"
+            className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
           >
             <UserPlus size={16} />
             {inviteNoticePending
@@ -253,7 +253,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={onOpenMobileHandoff}
-            className="rounded-full"
+            className="rounded-[10px] border-black/8 bg-[#f7f7f7] shadow-none hover:bg-[#ededed]"
           >
             <Smartphone size={16} />
             到手机继续
@@ -268,7 +268,7 @@ export function DesktopGroupCallPanel({
               })
             }
             disabled={endNoticePending}
-            className="rounded-full text-[#d74b45]"
+            className="rounded-[10px] border-[#e9c3c1] bg-[#fff5f5] text-[#d74b45] shadow-none hover:bg-[#fdeaea]"
           >
             <PhoneOff size={16} />
             {endNoticePending ? "结束中..." : "结束通话"}
@@ -276,7 +276,7 @@ export function DesktopGroupCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[26px] border border-[rgba(15,23,42,0.06)] bg-white/90 p-5">
+      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[16px] border border-black/6 bg-white p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -286,7 +286,7 @@ export function DesktopGroupCallPanel({
               点击角色成员可切换为已加入或待加入，快速模拟群通话调度。
             </div>
           </div>
-          <div className="rounded-full bg-[rgba(47,122,63,0.10)] px-3 py-1 text-[11px] font-medium text-[#2f7a3f]">
+          <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium text-[#1f8f4f]">
             {activeCount}/{members.length} 已加入
           </div>
         </div>
@@ -308,13 +308,13 @@ export function DesktopGroupCallPanel({
                 onClick={() => toggleJoinedState(member)}
                 disabled={member.memberType === "user"}
                 className={cn(
-                  "rounded-[22px] border px-4 py-4 text-left transition",
+                  "rounded-[12px] border px-4 py-4 text-left transition",
                   joined
-                    ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.92)]"
-                    : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.92)]",
+                    ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.07)]"
+                    : "border-black/6 bg-[#fafafa]",
                   member.memberType === "user"
                     ? "cursor-default"
-                    : "hover:-translate-y-0.5 hover:bg-white hover:shadow-[var(--shadow-soft)]",
+                    : "hover:bg-white",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -328,7 +328,7 @@ export function DesktopGroupCallPanel({
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                         {member.memberName ?? member.memberId}
                       </div>
-                      <span className="rounded-full bg-black/[0.05] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+                      <span className="rounded-full bg-black/[0.04] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                         {roleLabel}
                       </span>
                     </div>
@@ -347,8 +347,8 @@ export function DesktopGroupCallPanel({
                     className={cn(
                       "rounded-full px-2.5 py-1 text-[10px] font-medium",
                       joined
-                        ? "bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]"
-                        : "bg-[rgba(245,158,11,0.12)] text-[#b45309]",
+                        ? "bg-[rgba(7,193,96,0.12)] text-[#1f8f4f]"
+                        : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
                     )}
                   >
                     {joined ? "已加入" : "待加入"}
@@ -389,8 +389,8 @@ function CallMetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-[rgba(15,23,42,0.06)] bg-white/88 px-4 py-4">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
@@ -419,10 +419,10 @@ function CallControlButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition",
+        "inline-flex h-10 items-center gap-2 rounded-[10px] border px-4 text-sm transition",
         active
-          ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]"
-          : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[#fafafa]",
+          ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
+          : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:bg-[#f5f5f5]",
       )}
     >
       {icon}
