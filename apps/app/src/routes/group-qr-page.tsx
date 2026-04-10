@@ -366,6 +366,32 @@ export function GroupQrPage() {
         pendingCurrentBatchConversations.length - coolingDownCount,
     };
   }, [pendingCurrentBatchConversations]);
+  const pendingReturnExpectedOutcome = useMemo(() => {
+    if (!topPendingReturnConversation) {
+      return null;
+    }
+
+    const topIsCoolingDown = isPendingReturnCoolingDown(
+      topPendingReturnConversation.target.deliveredAt,
+    );
+    const nextReadyCount = topIsCoolingDown
+      ? pendingReturnOverview.readyCount
+      : Math.max(pendingReturnOverview.readyCount - 1, 0);
+    const nextCoolingDownCount = topIsCoolingDown
+      ? pendingReturnOverview.coolingDownCount
+      : Math.min(
+          pendingReturnOverview.coolingDownCount + 1,
+          pendingReturnOverview.total,
+        );
+
+    return {
+      nextReadyCount,
+      nextCoolingDownCount,
+      summary: topIsCoolingDown
+        ? "当前主推荐本身就在冷却中，结构不会立刻变化，先等它恢复优先位。"
+        : `处理完 ${topPendingReturnConversation.conversation.title} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。`,
+    };
+  }, [pendingReturnOverview, topPendingReturnConversation]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -869,6 +895,34 @@ export function GroupQrPage() {
                       : "当前没有可执行的补发顺序。"}
                   </div>
                 </div>
+                {pendingReturnExpectedOutcome ? (
+                  <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-3">
+                    <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                      预计处理后
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-[12px] bg-[rgba(240,253,244,0.72)] px-3 py-3">
+                        <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
+                          可立即补发
+                        </div>
+                        <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                          {pendingReturnExpectedOutcome.nextReadyCount}
+                        </div>
+                      </div>
+                      <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
+                        <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                          冷却暂缓
+                        </div>
+                        <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                          {pendingReturnExpectedOutcome.nextCoolingDownCount}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {pendingReturnExpectedOutcome.summary}
+                    </div>
+                  </div>
+                ) : null}
                 {topPendingReturnConversation ? (
                   <div className="rounded-[18px] border border-[rgba(249,115,22,0.22)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,244,232,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
