@@ -18,6 +18,7 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
+import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupChatDetailsPage() {
@@ -28,6 +29,10 @@ export function GroupChatDetailsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [notice, setNotice] = useState<string | null>(null);
   const [memberGridExpanded, setMemberGridExpanded] = useState(false);
+  const [managementSheetOpen, setManagementSheetOpen] = useState(false);
+  const [dangerSheetAction, setDangerSheetAction] = useState<
+    "hide" | "clear" | "leave" | null
+  >(null);
   const ownerQuery = useDefaultChatBackground();
 
   const groupQuery = useQuery({
@@ -42,6 +47,8 @@ export function GroupChatDetailsPage() {
 
   useEffect(() => {
     setMemberGridExpanded(false);
+    setManagementSheetOpen(false);
+    setDangerSheetAction(null);
   }, [groupId]);
 
   const pinMutation = useMutation({
@@ -163,7 +170,9 @@ export function GroupChatDetailsPage() {
     },
   });
 
-  const visibleMemberCount = memberGridExpanded ? undefined : 13;
+  const visibleMemberCount = memberGridExpanded
+    ? undefined
+    : COLLAPSED_MEMBER_PREVIEW_COUNT;
   const ownerMember = useMemo(
     () =>
       (membersQuery.data ?? []).find(
@@ -171,6 +180,8 @@ export function GroupChatDetailsPage() {
       ),
     [membersQuery.data],
   );
+  const totalMemberCount = membersQuery.data?.length ?? 0;
+  const ownerDisplayName = ownerMember?.memberName?.trim() || "我";
 
   const memberItems = useMemo(() => {
     const members = (membersQuery.data ?? []).slice(
@@ -210,7 +221,37 @@ export function GroupChatDetailsPage() {
   }, [groupId, membersQuery.data, navigate, visibleMemberCount]);
 
   const hasCollapsedMembers =
-    (membersQuery.data?.length ?? 0) > (visibleMemberCount ?? 0);
+    totalMemberCount > COLLAPSED_MEMBER_PREVIEW_COUNT;
+  const dangerSheetConfig =
+    dangerSheetAction === "hide"
+      ? {
+          title: "隐藏聊天",
+          description: "该群聊会先从消息列表中隐藏，收到新消息后会再次出现。",
+          confirmLabel: "隐藏聊天",
+          confirmDescription: "不删除聊天记录",
+          confirmDanger: false,
+          onConfirm: () => hideMutation.mutate(),
+        }
+      : dangerSheetAction === "clear"
+        ? {
+            title: "清空聊天记录",
+            description: "仅清空当前群聊历史消息，群成员和群资料会继续保留。",
+            confirmLabel: "清空聊天记录",
+            confirmDescription: "此操作不可恢复",
+            confirmDanger: true,
+            onConfirm: () => clearMutation.mutate(),
+          }
+        : dangerSheetAction === "leave"
+          ? {
+              title: "删除并退出",
+              description:
+                "删除并退出后，该群聊会从当前世界中移除，后续需要重新建群才能继续使用。",
+              confirmLabel: "删除并退出",
+              confirmDescription: "该群聊会被移除",
+              confirmDanger: true,
+              onConfirm: () => leaveMutation.mutate(),
+            }
+          : null;
 
   const busy =
     pinMutation.isPending ||
@@ -270,6 +311,35 @@ export function GroupChatDetailsPage() {
                 {memberGridExpanded ? "收起群成员" : "查看更多群成员"}
               </button>
             ) : null}
+          </ChatDetailsSection>
+
+          <ChatDetailsSection title="群管理" variant="wechat">
+            <div className="divide-y divide-black/5">
+              <ChatSettingRow
+                label="群主"
+                value={ownerDisplayName}
+                variant="wechat"
+              />
+              <ChatSettingRow
+                label="全部群成员"
+                value={`${totalMemberCount} 人`}
+                variant="wechat"
+                onClick={() => {
+                  if (!hasCollapsedMembers) {
+                    setNotice(`当前群聊共有 ${totalMemberCount} 位成员。`);
+                    return;
+                  }
+                  setMemberGridExpanded(true);
+                  setNotice(`已展开全部 ${totalMemberCount} 位群成员。`);
+                }}
+              />
+              <ChatSettingRow
+                label="群管理"
+                value="成员与资料"
+                variant="wechat"
+                onClick={() => setManagementSheetOpen(true)}
+              />
+            </div>
           </ChatDetailsSection>
 
           <ChatDetailsSection title="群聊资料" variant="wechat">
@@ -432,44 +502,21 @@ export function GroupChatDetailsPage() {
                 label="隐藏聊天"
                 disabled={busy}
                 variant="wechat"
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
-                    )
-                  ) {
-                    return;
-                  }
-                  hideMutation.mutate();
-                }}
+                onClick={() => setDangerSheetAction("hide")}
               />
               <ChatSettingRow
                 label="清空聊天记录"
                 danger
                 disabled={busy}
                 variant="wechat"
-                onClick={() => {
-                  if (!window.confirm("确认清空这个群聊的聊天记录吗？")) {
-                    return;
-                  }
-                  clearMutation.mutate();
-                }}
+                onClick={() => setDangerSheetAction("clear")}
               />
               <ChatSettingRow
                 label="删除并退出"
                 danger
                 disabled={busy}
                 variant="wechat"
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
-                    )
-                  ) {
-                    return;
-                  }
-                  leaveMutation.mutate();
-                }}
+                onClick={() => setDangerSheetAction("leave")}
               />
             </div>
           </ChatDetailsSection>
@@ -500,8 +547,110 @@ export function GroupChatDetailsPage() {
               <ErrorBlock message={hideMutation.error.message} />
             </div>
           ) : null}
+
+          <MobileDetailsActionSheet
+            open={managementSheetOpen}
+            title="群管理"
+            description={`${ownerDisplayName} 可快速管理成员、公告和群资料。`}
+            onClose={() => setManagementSheetOpen(false)}
+            actions={[
+              {
+                key: "expand-members",
+                label: memberGridExpanded
+                  ? "收起成员列表"
+                  : hasCollapsedMembers
+                    ? "查看全部群成员"
+                    : "已显示全部群成员",
+                description: memberGridExpanded
+                  ? "回到紧凑预览状态"
+                  : `当前共 ${totalMemberCount} 人`,
+                disabled: !memberGridExpanded && !hasCollapsedMembers,
+                onClick: () => {
+                  setManagementSheetOpen(false);
+                  if (!memberGridExpanded && !hasCollapsedMembers) {
+                    return;
+                  }
+                  setMemberGridExpanded((current) => !current);
+                },
+              },
+              {
+                key: "add-member",
+                label: "添加成员",
+                description: "继续把联系人拉进当前群聊",
+                onClick: () => {
+                  setManagementSheetOpen(false);
+                  void navigate({
+                    to: "/group/$groupId/members/add",
+                    params: { groupId },
+                  });
+                },
+              },
+              {
+                key: "remove-member",
+                label: "移除成员",
+                description: "选择需要移出群聊的成员",
+                onClick: () => {
+                  setManagementSheetOpen(false);
+                  void navigate({
+                    to: "/group/$groupId/members/remove",
+                    params: { groupId },
+                  });
+                },
+              },
+              {
+                key: "announcement",
+                label: "编辑群公告",
+                description: "发布或修改群内置顶公告",
+                onClick: () => {
+                  setManagementSheetOpen(false);
+                  void navigate({
+                    to: "/group/$groupId/announcement",
+                    params: { groupId },
+                  });
+                },
+              },
+              {
+                key: "qr",
+                label: "查看群二维码",
+                description: "打开邀请卡与分享入口",
+                onClick: () => {
+                  setManagementSheetOpen(false);
+                  void navigate({
+                    to: "/group/$groupId/qr",
+                    params: { groupId },
+                  });
+                },
+              },
+            ]}
+          />
+
+          <MobileDetailsActionSheet
+            open={dangerSheetConfig !== null}
+            title={dangerSheetConfig?.title ?? ""}
+            description={dangerSheetConfig?.description}
+            onClose={() => setDangerSheetAction(null)}
+            actions={
+              dangerSheetConfig
+                ? [
+                    {
+                      key: "confirm",
+                      label: dangerSheetConfig.confirmLabel,
+                      description: dangerSheetConfig.confirmDescription,
+                      danger: dangerSheetConfig.confirmDanger,
+                      disabled: busy,
+                      onClick: () => {
+                        setDangerSheetAction(null);
+                        dangerSheetConfig.onConfirm();
+                      },
+                    },
+                  ]
+                : []
+            }
+          />
         </>
       ) : null}
     </ChatDetailsShell>
   );
 }
+
+const COLLAPSED_MEMBER_PREVIEW_COUNT = 13;

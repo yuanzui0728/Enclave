@@ -25,6 +25,7 @@ export function ChatSettingRow({
   variant = "default",
 }: ChatSettingRowProps) {
   const isSwitch = typeof checked === "boolean" && Boolean(onToggle);
+  const interactive = isSwitch || Boolean(onClick);
   const isWechat = variant === "wechat";
 
   return (
@@ -38,7 +39,9 @@ export function ChatSettingRow({
           onToggle?.(!checked);
           return;
         }
-        onClick?.();
+        if (interactive) {
+          onClick?.();
+        }
       }}
       className={cn(
         "flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left",
@@ -79,7 +82,7 @@ export function ChatSettingRow({
               )}
             />
           </span>
-        ) : danger ? null : (
+        ) : danger || !interactive ? null : (
           <ChevronRight
             size={18}
             className={cn(
