@@ -16,6 +16,7 @@ import { SubscriptionInboxCard } from "../../../components/subscription-inbox-ca
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
+import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -97,7 +98,7 @@ export function DesktopChatWorkspace({
     () =>
       (conversationsQuery.data ?? []).filter(
         (conversation) =>
-          conversation.type !== "direct" ||
+          isPersistedGroupConversation(conversation) ||
           !conversation.participants.some((id) => blockedCharacterIds.has(id)),
       ),
     [blockedCharacterIds, conversationsQuery.data],
@@ -349,7 +350,7 @@ export function DesktopChatWorkspace({
             variant="desktop"
           />
         ) : activeConversation ? (
-          activeConversation.type === "group" ? (
+          isPersistedGroupConversation(activeConversation) ? (
             <GroupChatThreadPanel
               groupId={activeConversation.id}
               variant="desktop"
@@ -433,12 +434,12 @@ export function DesktopChatWorkspace({
               <div className="space-y-2">
                 <Link
                   to={
-                    activeConversation.type === "group"
+                    isPersistedGroupConversation(activeConversation)
                       ? "/group/$groupId/details"
                       : "/chat/$conversationId/details"
                   }
                   params={
-                    activeConversation.type === "group"
+                    isPersistedGroupConversation(activeConversation)
                       ? { groupId: activeConversation.id }
                       : { conversationId: activeConversation.id }
                   }
@@ -523,7 +524,7 @@ function ConversationCardLink({
     </>
   );
 
-  if (conversation.type === "group") {
+  if (isPersistedGroupConversation(conversation)) {
     return (
       <Link
         to="/group/$groupId"

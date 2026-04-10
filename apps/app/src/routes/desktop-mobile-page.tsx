@@ -47,6 +47,7 @@ import {
   formatTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -387,7 +388,7 @@ export function DesktopMobilePage() {
                             "继续查看这段会话的最新消息。",
                           label: item.title,
                           path:
-                            item.type === "group"
+                            isPersistedGroupConversation(item)
                               ? `/group/${item.id}`
                               : `/chat/${item.id}`,
                           setHistory: setHandoffHistory,

@@ -24,6 +24,7 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type FileFilter = "all" | "image" | "file";
@@ -89,7 +90,7 @@ export function DesktopChatFilesPage() {
         return [];
       }
 
-      if (selectedConversation.type === "group") {
+      if (isPersistedGroupConversation(selectedConversation)) {
         return getGroupMessages(selectedConversation.id, baseUrl);
       }
 

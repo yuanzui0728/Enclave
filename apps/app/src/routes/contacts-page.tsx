@@ -57,6 +57,7 @@ import {
   type WorldCharacterDirectoryItem,
 } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ShortcutRoute =
@@ -256,7 +257,7 @@ export function ContactsPage() {
       selectedFriendItem
         ? ((conversationsQuery.data ?? []).find(
             (conversation) =>
-              conversation.type === "direct" &&
+              !isPersistedGroupConversation(conversation) &&
               conversation.participants.includes(
                 selectedFriendItem.character.id,
               ),
@@ -270,7 +271,7 @@ export function ContactsPage() {
         ? (conversationsQuery.data ?? [])
             .filter(
               (conversation) =>
-                conversation.type === "group" &&
+                isPersistedGroupConversation(conversation) &&
                 conversation.participants.includes(
                   selectedFriendItem.character.id,
                 ),
@@ -350,7 +351,7 @@ export function ContactsPage() {
     }) => {
       const conversationId =
         selectedConversation?.participants.includes(characterId) &&
-        selectedConversation.type === "direct"
+        !isPersistedGroupConversation(selectedConversation)
           ? selectedConversation.id
           : (await getOrCreateConversation({ characterId }, baseUrl)).id;
 
@@ -373,7 +374,7 @@ export function ContactsPage() {
     }) => {
       const conversationId =
         selectedConversation?.participants.includes(characterId) &&
-        selectedConversation.type === "direct"
+        !isPersistedGroupConversation(selectedConversation)
           ? selectedConversation.id
           : (await getOrCreateConversation({ characterId }, baseUrl)).id;
 

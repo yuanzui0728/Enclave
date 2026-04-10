@@ -29,6 +29,7 @@ import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -344,7 +345,7 @@ function ConversationListItemLink({
     </div>
   );
 
-  if (conversation.type === "group") {
+  if (isPersistedGroupConversation(conversation)) {
     return (
       <Link
         to="/group/$groupId"
