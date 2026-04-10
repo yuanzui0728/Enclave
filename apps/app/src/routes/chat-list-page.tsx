@@ -6,6 +6,10 @@ import {
   getOfficialAccountMessageEntries,
   hideConversation,
   hideGroup,
+  markConversationRead,
+  markConversationUnread,
+  markGroupRead,
+  markGroupUnread,
   setConversationMuted,
   setConversationPinned,
   setGroupPinned,
@@ -13,6 +17,8 @@ import {
 } from "@yinjie/contracts";
 import {
   BellOff,
+  CheckCheck,
+  Circle,
   Plus,
   Pin,
   QrCode,
@@ -79,7 +85,7 @@ const quickActionItems: QuickActionItem[] = [
 ];
 
 type ConversationListEntry = Awaited<ReturnType<typeof getConversations>>[number];
-const SWIPE_ACTION_WIDTH = 216;
+const SWIPE_ACTION_BUTTON_WIDTH = 72;
 
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -193,6 +199,37 @@ function MobileChatListPage() {
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+    },
+  });
+  const readStateMutation = useMutation({
+    mutationFn: async ({
+      conversationId,
+      action,
+      isGroup,
+    }: {
+      conversationId: string;
+      action: "read" | "unread";
+      isGroup: boolean;
+    }) =>
+      isGroup
+        ? action === "read"
+          ? markGroupRead(conversationId, baseUrl)
+          : markGroupUnread(conversationId, baseUrl)
+        : action === "read"
+          ? markConversationRead(conversationId, baseUrl)
+          : markConversationUnread(conversationId, baseUrl),
+    onSuccess: async (_, variables) => {
+      setNotice(
+        variables.action === "read" ? "已标记为已读。" : "已标记为未读。",
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, variables.conversationId],
+        }),
+      ]);
     },
   });
 
@@ -365,6 +402,9 @@ function MobileChatListPage() {
                       pinMutation.variables?.conversationId === conversation.id) ||
                     (muteMutation.isPending &&
                       muteMutation.variables?.conversationId === conversation.id) ||
+                    (readStateMutation.isPending &&
+                      readStateMutation.variables?.conversationId ===
+                        conversation.id) ||
                     (hideMutation.isPending &&
                       hideMutation.variables?.conversationId === conversation.id)
                   }
@@ -389,6 +429,20 @@ function MobileChatListPage() {
                       isGroup: isPersistedGroupConversation(conversation),
                     });
                   }}
+                  onToggleReadState={
+                    conversation.unreadCount > 0 ||
+                    canConversationBeMarkedUnread(conversation)
+                      ? () => {
+                          setOpenSwipeConversationId(null);
+                          readStateMutation.mutate({
+                            conversationId: conversation.id,
+                            action:
+                              conversation.unreadCount > 0 ? "read" : "unread",
+                            isGroup: isPersistedGroupConversation(conversation),
+                          });
+                        }
+                      : undefined
+                  }
                   onHide={() => {
                     setOpenSwipeConversationId(null);
                     hideMutation.mutate({
@@ -428,6 +482,7 @@ function ConversationListItemLink({
   onOpenChange,
   onTogglePinned,
   onToggleMuted,
+  onToggleReadState,
   onHide,
   className,
 }: {
@@ -437,6 +492,7 @@ function ConversationListItemLink({
   onOpenChange: (open: boolean) => void;
   onTogglePinned: () => void;
   onToggleMuted: () => void;
+  onToggleReadState?: () => void;
   onHide: () => void;
   className?: string;
 }) {
@@ -446,15 +502,20 @@ function ConversationListItemLink({
     initialOffset: number;
     dragging: boolean;
   } | null>(null);
-  const [swipeOffset, setSwipeOffset] = useState(open ? -SWIPE_ACTION_WIDTH : 0);
+  const showReadAction =
+    conversation.unreadCount > 0 || canConversationBeMarkedUnread(conversation);
+  const swipeActionWidth =
+    (showReadAction ? 4 : 3) * SWIPE_ACTION_BUTTON_WIDTH;
+  const readActionLabel = conversation.unreadCount > 0 ? "标已读" : "标未读";
+  const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
   const isPinned = conversation.isPinned;
   const isGroupConversation = isPersistedGroupConversation(conversation);
 
   useEffect(() => {
     if (!gestureRef.current?.dragging) {
-      setSwipeOffset(open ? -SWIPE_ACTION_WIDTH : 0);
+      setSwipeOffset(open ? -swipeActionWidth : 0);
     }
-  }, [open]);
+  }, [open, swipeActionWidth]);
 
   const handleTouchStart = (event: TouchEvent<HTMLAnchorElement>) => {
     if (pending) {
@@ -469,7 +530,7 @@ function ConversationListItemLink({
     gestureRef.current = {
       startX: touch.clientX,
       startY: touch.clientY,
-      initialOffset: open ? -SWIPE_ACTION_WIDTH : 0,
+      initialOffset: open ? -swipeActionWidth : 0,
       dragging: true,
     };
   };
@@ -489,13 +550,13 @@ function ConversationListItemLink({
     const deltaY = touch.clientY - gesture.startY;
     if (Math.abs(deltaY) > 14 && Math.abs(deltaY) > Math.abs(deltaX)) {
       gestureRef.current = null;
-      setSwipeOffset(open ? -SWIPE_ACTION_WIDTH : 0);
+      setSwipeOffset(open ? -swipeActionWidth : 0);
       return;
     }
 
     const nextOffset = clamp(
       gesture.initialOffset + deltaX,
-      -SWIPE_ACTION_WIDTH,
+      -swipeActionWidth,
       0,
     );
     if (Math.abs(deltaX) > 6) {
@@ -511,8 +572,8 @@ function ConversationListItemLink({
     }
 
     gestureRef.current = null;
-    const shouldOpen = swipeOffset <= -SWIPE_ACTION_WIDTH / 2;
-    setSwipeOffset(shouldOpen ? -SWIPE_ACTION_WIDTH : 0);
+    const shouldOpen = swipeOffset <= -swipeActionWidth / 2;
+    setSwipeOffset(shouldOpen ? -swipeActionWidth : 0);
     onOpenChange(shouldOpen);
   };
 
@@ -645,6 +706,22 @@ function ConversationListItemLink({
             <span>{conversation.isMuted ? "取消免打扰" : "免打扰"}</span>
           </div>
         </button>
+        {showReadAction ? (
+          <button
+            type="button"
+            onClick={onToggleReadState}
+            className="flex w-[72px] items-center justify-center bg-[#5b8efc] text-white"
+          >
+            <div className="flex flex-col items-center gap-1 text-[11px]">
+              {conversation.unreadCount > 0 ? (
+                <CheckCheck size={15} />
+              ) : (
+                <Circle size={15} />
+              )}
+              <span>{readActionLabel}</span>
+            </div>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onHide}
@@ -701,4 +778,11 @@ function formatConversationPreview(conversation: ConversationListEntry) {
 
   const sanitizedText = sanitizeDisplayedChatText(lastMessage.text);
   return sanitizedText ? `${prefix}${sanitizedText}` : "从这里开始第一句问候";
+}
+
+function canConversationBeMarkedUnread(conversation: ConversationListEntry) {
+  return (
+    conversation.unreadCount === 0 &&
+    conversation.lastMessage?.senderType === "character"
+  );
 }
