@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 type ChatReminderFadeTextProps = {
@@ -13,6 +14,12 @@ type ChatReminderSummaryTextProps = {
 
 type ChatReminderCountTextProps = {
   count: number;
+  className?: string;
+};
+
+type ChatReminderCollapseIconProps = {
+  collapsed: boolean;
+  size?: number;
   className?: string;
 };
 
@@ -67,4 +74,21 @@ export function ChatReminderCountText({
   className,
 }: ChatReminderCountTextProps) {
   return <ChatReminderFadeText text={`${count} 条`} className={className} />;
+}
+
+export function ChatReminderCollapseIcon({
+  collapsed,
+  size = 12,
+  className,
+}: ChatReminderCollapseIconProps) {
+  return (
+    <ChevronRight
+      size={size}
+      className={cn(
+        "transition-transform duration-200 ease-out",
+        collapsed ? "rotate-0" : "rotate-90",
+        className,
+      )}
+    />
+  );
 }

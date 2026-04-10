@@ -19,8 +19,6 @@ import {
   BellOff,
   BellRing,
   CheckCheck,
-  ChevronDown,
-  ChevronRight,
   Circle,
   Plus,
   Pin,
@@ -60,6 +58,7 @@ import {
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
 import {
+  ChatReminderCollapseIcon,
   ChatReminderCountText,
   ChatReminderSummaryText,
 } from "../features/chat/chat-reminder-summary-text";
@@ -657,11 +656,10 @@ function MobileChatListPage() {
                             >
                               <ChatReminderCountText count={group.count} />
                               <span>{collapsed ? "展开" : "收起"}</span>
-                              {collapsed ? (
-                                <ChevronRight size={13} />
-                              ) : (
-                                <ChevronDown size={13} />
-                              )}
+                              <ChatReminderCollapseIcon
+                                collapsed={collapsed}
+                                size={13}
+                              />
                             </button>
                           </div>
                         </div>

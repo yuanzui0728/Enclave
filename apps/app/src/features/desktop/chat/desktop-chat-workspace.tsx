@@ -11,8 +11,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BellOff,
   BellRing,
-  ChevronDown,
-  ChevronRight,
   FileText,
   Plus,
   Search,
@@ -72,6 +70,7 @@ import { useLocalChatMessageActionState } from "../../chat/local-chat-message-ac
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
 import {
+  ChatReminderCollapseIcon,
   ChatReminderCountText,
   ChatReminderSummaryText,
 } from "../../chat/chat-reminder-summary-text";
@@ -861,11 +860,10 @@ export function DesktopChatWorkspace({
                                   >
                                     <ChatReminderCountText count={group.count} />
                                     <span>{collapsed ? "展开" : "收起"}</span>
-                                    {collapsed ? (
-                                      <ChevronRight size={12} />
-                                    ) : (
-                                      <ChevronDown size={12} />
-                                    )}
+                                    <ChatReminderCollapseIcon
+                                      collapsed={collapsed}
+                                      size={12}
+                                    />
                                   </button>
                                 </span>
                               </div>
