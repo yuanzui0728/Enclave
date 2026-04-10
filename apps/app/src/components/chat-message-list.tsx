@@ -90,6 +90,7 @@ import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
+import { parseGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 
 export type ChatRenderableMessage = {
   id: string;
@@ -1473,6 +1474,7 @@ export function ChatMessageList({
             ? replyContent.body.trim()
             : sanitizeDisplayedChatText(message.text);
         const replyPreview = replyContent.reply;
+        const groupRelaySummary = parseGroupRelaySummaryMessage(displayText);
 
         if (isSystem || isRecalled) {
           return (
@@ -1653,6 +1655,30 @@ export function ChatMessageList({
                         selectionMode
                           ? undefined
                           : () => openAttachment(message)
+                      }
+                    />
+                  ) : groupRelaySummary ? (
+                    <GroupRelaySummaryMessage
+                      own={isUser}
+                      summary={groupRelaySummary}
+                      onOpen={
+                        selectionMode ||
+                        threadContext?.type !== "group" ||
+                        !threadContext.id
+                          ? undefined
+                          : () => {
+                              const query = new URLSearchParams({
+                                miniProgram: "group-relay",
+                                sourceGroupId: threadContext.id,
+                                sourceGroupName:
+                                  threadContext.title ??
+                                  groupRelaySummary.sourceGroupName,
+                              });
+                              void navigate({
+                                to: "/tabs/mini-programs",
+                                search: `?${query.toString()}`,
+                              });
+                            }
                       }
                     />
                   ) : (
@@ -3143,6 +3169,79 @@ function VoiceMessage({
       </span>
       <audio ref={audioRef} src={attachment.url} preload="none" />
     </div>
+  );
+}
+
+function GroupRelaySummaryMessage({
+  own,
+  summary,
+  onOpen,
+}: {
+  own: boolean;
+  summary: ReturnType<typeof parseGroupRelaySummaryMessage>;
+  onOpen?: () => void;
+}) {
+  if (!summary) {
+    return null;
+  }
+
+  const card = (
+    <div
+      className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
+        own
+          ? "border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
+          : "border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+            群接龙
+          </div>
+          <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+            {summary.sourceGroupName}
+          </div>
+        </div>
+        <div className="rounded-full bg-[rgba(245,158,11,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#b45309]">
+          结果回填
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        {summary.summaryLines.map((line) => (
+          <div
+            key={line}
+            className="rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+          >
+            {line}
+          </div>
+        ))}
+      </div>
+
+      {onOpen ? (
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
+          <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+            点击继续查看和回填接龙
+          </div>
+          <div className="text-[11px] font-medium text-[#b45309]">继续接龙</div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`继续查看 ${summary.sourceGroupName} 的群接龙`}
+    >
+      {card}
+    </button>
   );
 }
 

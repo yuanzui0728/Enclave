@@ -17,6 +17,7 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 function resolveDefaultMiniProgramId() {
@@ -54,15 +55,6 @@ function resolveMiniProgramLaunchContextFromLocation() {
     sourceGroupId,
     sourceGroupName: sourceGroupName || "当前群聊",
   };
-}
-
-function buildGroupRelaySummaryMessage(sourceGroupName: string) {
-  return [
-    `[群接龙] ${sourceGroupName}`,
-    "1. 已从桌面端群聊打开群接龙工作台。",
-    "2. 当前正在整理接龙名单和未确认成员。",
-    "3. 请按顺序继续接龙，或直接在群里补充结果。",
-  ].join("\n");
 }
 
 export function MiniProgramsPage() {
