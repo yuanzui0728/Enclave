@@ -1,7 +1,6 @@
 import {
   useDeferredValue,
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -92,6 +91,8 @@ export function ContactsPage() {
   const [activeMobileIndexKey, setActiveMobileIndexKey] = useState<
     string | null
   >(null);
+  const previousBaseUrlRef = useRef(baseUrl);
+  const startChatResetRef = useRef<() => void>(() => {});
   const effectiveSearchText = isDesktopLayout ? searchText : "";
   const deferredSearchText = useDeferredValue(effectiveSearchText);
 
@@ -284,9 +285,9 @@ export function ContactsPage() {
     [conversationsQuery.data, selectedFriendItem],
   );
 
-  const resetStartChatMutation = useEffectEvent(() => {
-    startChatMutation.reset();
-  });
+  useEffect(() => {
+    startChatResetRef.current = startChatMutation.reset;
+  }, [startChatMutation.reset]);
 
   const blockMutation = useMutation({
     mutationFn: async ({
@@ -401,8 +402,13 @@ export function ContactsPage() {
   });
 
   useEffect(() => {
-    resetStartChatMutation();
-  }, [baseUrl, resetStartChatMutation]);
+    if (previousBaseUrlRef.current === baseUrl) {
+      return;
+    }
+
+    previousBaseUrlRef.current = baseUrl;
+    startChatResetRef.current();
+  }, [baseUrl]);
 
   useEffect(() => {
     if (normalizedSearchText || !friendSections.length) {
@@ -422,43 +428,6 @@ export function ContactsPage() {
     });
   }, [friendSections, normalizedSearchText]);
 
-  const syncActiveMobileIndexKey = useEffectEvent(() => {
-    if (
-      isDesktopLayout ||
-      normalizedSearchText ||
-      !friendSections.length ||
-      typeof document === "undefined"
-    ) {
-      return;
-    }
-
-    const scrollContainer = pageRef.current?.parentElement;
-    if (!scrollContainer) {
-      return;
-    }
-
-    const containerRect = scrollContainer.getBoundingClientRect();
-    const stickyOffset = 104;
-    let nextActiveKey = friendSections[0]?.anchorId ?? null;
-
-    for (const section of friendSections) {
-      const sectionElement = document.getElementById(section.anchorId);
-      if (!sectionElement) {
-        continue;
-      }
-
-      const topOffset =
-        sectionElement.getBoundingClientRect().top - containerRect.top;
-      if (topOffset <= stickyOffset) {
-        nextActiveKey = section.anchorId;
-      } else {
-        break;
-      }
-    }
-
-    setActiveMobileIndexKey(nextActiveKey);
-  });
-
   useEffect(() => {
     if (isDesktopLayout || normalizedSearchText || !friendSections.length) {
       return;
@@ -468,6 +437,35 @@ export function ContactsPage() {
     if (!scrollContainer) {
       return;
     }
+
+    const syncActiveMobileIndexKey = () => {
+      if (typeof document === "undefined") {
+        return;
+      }
+
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const stickyOffset = 104;
+      let nextActiveKey = friendSections[0]?.anchorId ?? null;
+
+      for (const section of friendSections) {
+        const sectionElement = document.getElementById(section.anchorId);
+        if (!sectionElement) {
+          continue;
+        }
+
+        const topOffset =
+          sectionElement.getBoundingClientRect().top - containerRect.top;
+        if (topOffset <= stickyOffset) {
+          nextActiveKey = section.anchorId;
+        } else {
+          break;
+        }
+      }
+
+      setActiveMobileIndexKey((current) =>
+        current === nextActiveKey ? current : nextActiveKey,
+      );
+    };
 
     syncActiveMobileIndexKey();
     scrollContainer.addEventListener("scroll", syncActiveMobileIndexKey, {
@@ -481,7 +479,6 @@ export function ContactsPage() {
     friendSections,
     isDesktopLayout,
     normalizedSearchText,
-    syncActiveMobileIndexKey,
   ]);
 
   useEffect(() => {
