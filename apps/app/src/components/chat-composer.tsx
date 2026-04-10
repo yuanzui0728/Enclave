@@ -233,6 +233,18 @@ export function ChatComposer({
     useState<ScreenshotAnnotationColor>("amber");
   const [desktopScreenshotAnnotations, setDesktopScreenshotAnnotations] =
     useState<ScreenshotAnnotation[]>([]);
+  const [
+    desktopScreenshotSelectedAnnotationId,
+    setDesktopScreenshotSelectedAnnotationId,
+  ] = useState<string | null>(null);
+  const [
+    desktopScreenshotAnnotationHistory,
+    setDesktopScreenshotAnnotationHistory,
+  ] = useState<ScreenshotAnnotation[][]>([]);
+  const [
+    desktopScreenshotAnnotationFuture,
+    setDesktopScreenshotAnnotationFuture,
+  ] = useState<ScreenshotAnnotation[][]>([]);
   const [desktopScreenshotSelection, setDesktopScreenshotSelection] =
     useState<ScreenshotSelectionDraft | null>(null);
   const [desktopScreenshotCropResize, setDesktopScreenshotCropResize] =
@@ -959,6 +971,9 @@ export function ChatComposer({
       setDesktopScreenshotTool("crop");
       setDesktopScreenshotAnnotationColor("amber");
       setDesktopScreenshotAnnotations([]);
+      setDesktopScreenshotSelectedAnnotationId(null);
+      setDesktopScreenshotAnnotationHistory([]);
+      setDesktopScreenshotAnnotationFuture([]);
       setDesktopScreenshotSelection(null);
       setDesktopScreenshotCropResize(null);
       setDesktopScreenshotCropMove(null);
@@ -1214,6 +1229,9 @@ export function ChatComposer({
     setDesktopScreenshotTool("crop");
     setDesktopScreenshotAnnotationColor("amber");
     setDesktopScreenshotAnnotations([]);
+    setDesktopScreenshotSelectedAnnotationId(null);
+    setDesktopScreenshotAnnotationHistory([]);
+    setDesktopScreenshotAnnotationFuture([]);
     setDesktopScreenshotSelection(null);
     setDesktopScreenshotCropResize(null);
     setDesktopScreenshotCropMove(null);
@@ -1226,6 +1244,8 @@ export function ChatComposer({
     if (!desktopScreenshotDraft || attachmentBusy) {
       return;
     }
+
+    setDesktopScreenshotSelectedAnnotationId(null);
 
     const bounds = desktopScreenshotImageRef.current?.getBoundingClientRect();
     if (!bounds || !bounds.width || !bounds.height) {
@@ -1379,6 +1399,37 @@ export function ChatComposer({
     );
   };
 
+  const commitDesktopScreenshotAnnotations = (
+    next: ScreenshotAnnotation[],
+    options?: {
+      selectedAnnotationId?: string | null;
+      preserveFuture?: boolean;
+    },
+  ) => {
+    if (areScreenshotAnnotationsEqual(desktopScreenshotAnnotations, next)) {
+      return;
+    }
+
+    setDesktopScreenshotAnnotationHistory((history) => [
+      ...history,
+      desktopScreenshotAnnotations,
+    ]);
+    if (!options?.preserveFuture) {
+      setDesktopScreenshotAnnotationFuture([]);
+    }
+    setDesktopScreenshotAnnotations(next);
+
+    const requestedSelection =
+      options && "selectedAnnotationId" in options
+        ? options.selectedAnnotationId
+        : desktopScreenshotSelectedAnnotationId;
+    setDesktopScreenshotSelectedAnnotationId(
+      requestedSelection && next.some((annotation) => annotation.id === requestedSelection)
+        ? requestedSelection
+        : null,
+    );
+  };
+
   const finalizeDesktopScreenshotSelection = (
     event: ReactPointerEvent<HTMLDivElement>,
   ) => {
@@ -1433,10 +1484,12 @@ export function ChatComposer({
                 x2: current.currentX / current.boundsWidth,
                 y2: current.currentY / current.boundsHeight,
               };
-        setDesktopScreenshotAnnotations((existing) => [
-          ...existing,
-          nextAnnotation,
-        ]);
+        commitDesktopScreenshotAnnotations(
+          [...desktopScreenshotAnnotations, nextAnnotation],
+          {
+            selectedAnnotationId: nextAnnotation.id,
+          },
+        );
       }
       return null;
     });
@@ -1536,11 +1589,66 @@ export function ChatComposer({
   };
 
   const handleClearScreenshotAnnotations = () => {
-    setDesktopScreenshotAnnotations([]);
+    if (!desktopScreenshotAnnotations.length) {
+      return;
+    }
+
+    commitDesktopScreenshotAnnotations([], {
+      selectedAnnotationId: null,
+    });
+  };
+
+  const handleSelectScreenshotAnnotation = (annotationId: string) => {
+    setDesktopScreenshotSelectedAnnotationId(annotationId);
+  };
+
+  const handleDeleteSelectedScreenshotAnnotation = () => {
+    if (!desktopScreenshotSelectedAnnotationId) {
+      return;
+    }
+
+    commitDesktopScreenshotAnnotations(
+      desktopScreenshotAnnotations.filter(
+        (annotation) =>
+          annotation.id !== desktopScreenshotSelectedAnnotationId,
+      ),
+      {
+        selectedAnnotationId: null,
+      },
+    );
+  };
+
+  const handleRedoScreenshotAnnotation = () => {
+    const next = desktopScreenshotAnnotationFuture[0];
+    if (!next) {
+      return;
+    }
+
+    setDesktopScreenshotAnnotationHistory((history) => [
+      ...history,
+      desktopScreenshotAnnotations,
+    ]);
+    setDesktopScreenshotAnnotationFuture((future) => future.slice(1));
+    setDesktopScreenshotAnnotations(next);
+    setDesktopScreenshotSelectedAnnotationId(null);
   };
 
   const handleUndoScreenshotAnnotation = () => {
-    setDesktopScreenshotAnnotations((existing) => existing.slice(0, -1));
+    const previous =
+      desktopScreenshotAnnotationHistory[
+        desktopScreenshotAnnotationHistory.length - 1
+      ];
+    if (!previous) {
+      return;
+    }
+
+    setDesktopScreenshotAnnotationHistory((history) => history.slice(0, -1));
+    setDesktopScreenshotAnnotationFuture((future) => [
+      desktopScreenshotAnnotations,
+      ...future,
+    ]);
+    setDesktopScreenshotAnnotations(previous);
+    setDesktopScreenshotSelectedAnnotationId(null);
   };
 
   const applyMentionCandidate = (candidate: {
@@ -1818,6 +1926,8 @@ export function ChatComposer({
             onCancel={closeDesktopScreenshotEditor}
             onToolChange={setDesktopScreenshotTool}
             annotationColor={desktopScreenshotAnnotationColor}
+            selectedAnnotationId={desktopScreenshotSelectedAnnotationId}
+            canRedoAnnotations={desktopScreenshotAnnotationFuture.length > 0}
             onAnnotationColorChange={setDesktopScreenshotAnnotationColor}
             onClearCrop={() => {
               setDesktopScreenshotCrop(null);
@@ -1825,6 +1935,9 @@ export function ChatComposer({
               setDesktopScreenshotCropMove(null);
             }}
             onClearAnnotations={handleClearScreenshotAnnotations}
+            onDeleteSelectedAnnotation={handleDeleteSelectedScreenshotAnnotation}
+            onRedoAnnotation={handleRedoScreenshotAnnotation}
+            onSelectAnnotation={handleSelectScreenshotAnnotation}
             onUndoAnnotation={handleUndoScreenshotAnnotation}
             onPointerDown={handleDesktopScreenshotPointerDown}
             onPointerMove={handleDesktopScreenshotPointerMove}
@@ -2563,6 +2676,7 @@ function DesktopScreenshotToolButton({
 function DesktopScreenshotEditor({
   annotationColor,
   annotations,
+  canRedoAnnotations,
   crop,
   draft,
   error,
@@ -2590,10 +2704,15 @@ function DesktopScreenshotEditor({
   onSendOriginal,
   onAnnotationColorChange,
   onToolChange,
+  onDeleteSelectedAnnotation,
+  onRedoAnnotation,
+  onSelectAnnotation,
   onUndoAnnotation,
+  selectedAnnotationId,
 }: {
   annotationColor: ScreenshotAnnotationColor;
   annotations: ScreenshotAnnotation[];
+  canRedoAnnotations: boolean;
   crop: NormalizedCropRect | null;
   draft: ImageDraft;
   error: string | null;
@@ -2624,7 +2743,11 @@ function DesktopScreenshotEditor({
   onSendOriginal: () => void;
   onAnnotationColorChange: (color: ScreenshotAnnotationColor) => void;
   onToolChange: (tool: "crop" | "rect" | "arrow") => void;
+  onDeleteSelectedAnnotation: () => void;
+  onRedoAnnotation: () => void;
+  onSelectAnnotation: (annotationId: string) => void;
   onUndoAnnotation: () => void;
+  selectedAnnotationId: string | null;
 }) {
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const [previewViewportSize, setPreviewViewportSize] = useState<{
@@ -3015,6 +3138,24 @@ function DesktopScreenshotEditor({
                 <Button
                   type="button"
                   variant="ghost"
+                  onClick={onRedoAnnotation}
+                  disabled={pending || !canRedoAnnotations}
+                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                >
+                  重做标注
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onDeleteSelectedAnnotation}
+                  disabled={pending || !selectedAnnotationId}
+                  className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                >
+                  删除标注
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
                   onClick={onClearAnnotations}
                   disabled={pending || !annotations.length}
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
@@ -3251,6 +3392,112 @@ function DesktopScreenshotEditor({
                           />
                         </g>
                       ) : null}
+                    </svg>
+                    <svg
+                      viewBox="0 0 1 1"
+                      preserveAspectRatio="none"
+                      className="absolute inset-0 h-full w-full"
+                    >
+                      {annotations.map((annotation) =>
+                        annotation.kind === "rect" ? (
+                          <rect
+                            key={`hit-${annotation.id}`}
+                            x={Math.min(annotation.x1, annotation.x2)}
+                            y={Math.min(annotation.y1, annotation.y2)}
+                            width={Math.abs(annotation.x2 - annotation.x1)}
+                            height={Math.abs(annotation.y2 - annotation.y1)}
+                            fill="transparent"
+                            stroke="transparent"
+                            strokeWidth="0.03"
+                            className="cursor-pointer"
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                              onSelectAnnotation(annotation.id);
+                            }}
+                          />
+                        ) : (
+                          <g key={`hit-${annotation.id}`}>
+                            <line
+                              x1={annotation.x1}
+                              y1={annotation.y1}
+                              x2={annotation.x2}
+                              y2={annotation.y2}
+                              stroke="transparent"
+                              strokeWidth="0.04"
+                              strokeLinecap="round"
+                              className="cursor-pointer"
+                              onPointerDown={(event) => {
+                                event.stopPropagation();
+                                onSelectAnnotation(annotation.id);
+                              }}
+                            />
+                            <circle
+                              cx={annotation.x2}
+                              cy={annotation.y2}
+                              r="0.025"
+                              fill="transparent"
+                              className="cursor-pointer"
+                              onPointerDown={(event) => {
+                                event.stopPropagation();
+                                onSelectAnnotation(annotation.id);
+                              }}
+                            />
+                          </g>
+                        ),
+                      )}
+                      {annotations.map((annotation) => {
+                        if (annotation.id !== selectedAnnotationId) {
+                          return null;
+                        }
+
+                        if (annotation.kind === "rect") {
+                          return (
+                            <rect
+                              key={`selected-${annotation.id}`}
+                              x={Math.min(annotation.x1, annotation.x2)}
+                              y={Math.min(annotation.y1, annotation.y2)}
+                              width={Math.abs(annotation.x2 - annotation.x1)}
+                              height={Math.abs(annotation.y2 - annotation.y1)}
+                              fill="none"
+                              stroke="rgba(255,255,255,0.92)"
+                              strokeWidth="0.012"
+                              strokeDasharray="0.03 0.02"
+                            />
+                          );
+                        }
+
+                        const palette = getScreenshotAnnotationPaletteEntry(
+                          annotation.color,
+                        );
+                        return (
+                          <g key={`selected-${annotation.id}`}>
+                            <line
+                              x1={annotation.x1}
+                              y1={annotation.y1}
+                              x2={annotation.x2}
+                              y2={annotation.y2}
+                              stroke="rgba(255,255,255,0.92)"
+                              strokeWidth="0.015"
+                              strokeLinecap="round"
+                            />
+                            <line
+                              x1={annotation.x1}
+                              y1={annotation.y1}
+                              x2={annotation.x2}
+                              y2={annotation.y2}
+                              stroke={palette.stroke}
+                              strokeWidth="0.009"
+                              strokeLinecap="round"
+                            />
+                            <circle
+                              cx={annotation.x2}
+                              cy={annotation.y2}
+                              r="0.014"
+                              fill="rgba(255,255,255,0.92)"
+                            />
+                          </g>
+                        );
+                      })}
                     </svg>
                   </div>
                 </div>
@@ -3815,6 +4062,25 @@ function getScreenshotAnnotationPaletteEntry(color: ScreenshotAnnotationColor) {
   return (
     SCREENSHOT_ANNOTATION_PALETTE.find((palette) => palette.id === color) ??
     SCREENSHOT_ANNOTATION_PALETTE[0]
+  );
+}
+
+function areScreenshotAnnotationsEqual(
+  left: ScreenshotAnnotation[],
+  right: ScreenshotAnnotation[],
+) {
+  return (
+    left.length === right.length &&
+    left.every(
+      (annotation, index) =>
+        annotation.id === right[index]?.id &&
+        annotation.kind === right[index]?.kind &&
+        annotation.color === right[index]?.color &&
+        annotation.x1 === right[index]?.x1 &&
+        annotation.y1 === right[index]?.y1 &&
+        annotation.x2 === right[index]?.x2 &&
+        annotation.y2 === right[index]?.y2,
+    )
   );
 }
 
