@@ -82,7 +82,7 @@ export function ChatMessageList({
   const isDesktop = variant === "desktop";
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
-  const baseUrl = runtimeConfig.apiBaseUrl;
+  const baseUrl = runtimeConfig.apiBaseUrl ?? "";
   const [activeHighlightedMessageId, setActiveHighlightedMessageId] = useState<
     string | undefined
   >(highlightedMessageId);
