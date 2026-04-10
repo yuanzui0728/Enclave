@@ -2086,6 +2086,42 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
+              <div className="grid gap-4 md:grid-cols-2">
+                <SelectFieldBlock
+                  label="默认角色在线状态"
+                  value={draft.defaultCharacterRules.isOnline ? "online" : "offline"}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      defaultCharacterRules: {
+                        ...current.defaultCharacterRules,
+                        isOnline: value === "online",
+                      },
+                    }))
+                  }
+                  options={[
+                    { value: "online", label: "在线" },
+                    { value: "offline", label: "离线" },
+                  ]}
+                />
+                <SelectFieldBlock
+                  label="默认角色活动"
+                  value={draft.defaultCharacterRules.activity}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      defaultCharacterRules: {
+                        ...current.defaultCharacterRules,
+                        activity: value,
+                      },
+                    }))
+                  }
+                  options={ACTIVITY_OPTIONS.map((item) => ({
+                    value: item.value,
+                    label: item.label,
+                  }))}
+                />
+              </div>
               <TextAreaBlock
                 label="场景加好友候选（每行一个）"
                 value={listToLines(draft.sceneFriendRequestScenes)}
@@ -3655,6 +3691,10 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
         eating: [...constants.activityScheduleHours.eating],
       },
       随机活动候选池: [...constants.activityRandomPool],
+      默认角色规则: {
+        在线状态: constants.defaultCharacterRules.isOnline ? "在线" : "离线",
+        活动: constants.defaultCharacterRules.activity,
+      },
       场景加好友候选: [...constants.sceneFriendRequestScenes],
       AI关系初始类型: constants.relationshipInitialType,
       AI关系初始强度: constants.relationshipInitialStrength,
