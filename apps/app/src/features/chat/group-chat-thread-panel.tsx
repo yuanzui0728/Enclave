@@ -9,8 +9,7 @@ import {
   sendGroupMessage,
   uploadChatAttachment,
 } from "@yinjie/contracts";
-import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
-import { AvatarChip } from "../../components/avatar-chip";
+import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
 import { ChatMessageList } from "../../components/chat-message-list";
 import { EmptyState } from "../../components/empty-state";
@@ -232,42 +231,6 @@ export function GroupChatThreadPanel({
         />
       )}
 
-      {isDesktop ? (
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-3">
-          {groupQuery.isError && groupQuery.error instanceof Error ? (
-            <ErrorBlock className="mb-2" message={groupQuery.error.message} />
-          ) : null}
-          {membersQuery.isError && membersQuery.error instanceof Error ? (
-            <ErrorBlock className="mb-2" message={membersQuery.error.message} />
-          ) : null}
-          <div className="flex gap-2 overflow-auto">
-            {membersQuery.isLoading ? (
-              <InlineNotice
-                className="rounded-full border-white/70 bg-white/82 px-3 py-2 text-xs text-[color:var(--text-muted)]"
-                tone="muted"
-              >
-                正在读取成员...
-              </InlineNotice>
-            ) : null}
-            {(membersQuery.data ?? []).map((member) => (
-              <div
-                key={member.id}
-                className="flex min-w-fit items-center gap-2 rounded-full border border-white/80 bg-white/88 px-2.5 py-1.5 shadow-[var(--shadow-soft)]"
-              >
-                <AvatarChip
-                  name={member.memberName ?? member.memberId}
-                  src={member.memberAvatar}
-                  size="sm"
-                />
-                <span className="text-xs text-[color:var(--text-secondary)]">
-                  {member.memberName ?? member.memberId}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
       <div className="relative flex-1 overflow-hidden">
         <div
           className="absolute inset-0 bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
@@ -281,14 +244,10 @@ export function GroupChatThreadPanel({
             isDesktop ? "px-8 py-6" : "px-3 py-4"
           }`}
         >
-          {!isDesktop &&
-          groupQuery.isError &&
-          groupQuery.error instanceof Error ? (
+          {groupQuery.isError && groupQuery.error instanceof Error ? (
             <ErrorBlock className="mb-3" message={groupQuery.error.message} />
           ) : null}
-          {!isDesktop &&
-          membersQuery.isError &&
-          membersQuery.error instanceof Error ? (
+          {membersQuery.isError && membersQuery.error instanceof Error ? (
             <ErrorBlock className="mb-3" message={membersQuery.error.message} />
           ) : null}
           {messagesQuery.isLoading ? (
