@@ -248,20 +248,20 @@ export function DesktopChatFilesPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,249,240,0.96))]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-        <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
-          <div className="text-base font-medium text-[color:var(--text-primary)]">
+    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
+      <section className="flex w-[300px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
+        <div className="border-b border-black/6 px-4 py-4">
+          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
             聊天文件
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            现在支持跨会话聚合浏览，也能从当前聊天直接带着上下文跳进来。
+            按会话聚合最近发送的图片和文件。
           </div>
           <TextField
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="搜索文件名或消息内容"
-            className="mt-4 rounded-[18px] border-[color:var(--border-faint)] bg-white/92 px-4 py-2.5 shadow-none"
+            className="mt-4 h-9 rounded-[10px] border-black/8 bg-white px-3 text-sm shadow-none"
           />
         </div>
 
@@ -272,10 +272,10 @@ export function DesktopChatFilesPage() {
               type="button"
               onClick={() => setFilter(item)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs transition",
+                "rounded-[9px] border px-3 py-1.5 text-xs transition",
                 filter === item
-                  ? "border-[rgba(249,115,22,0.18)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                  : "border-[color:var(--border-faint)] bg-white/88 text-[color:var(--text-secondary)]",
+                  ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
+                  : "border-transparent bg-[#e3e3e3] text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#e9e9e9]",
               )}
             >
               {item === "all" ? "全部" : item === "image" ? "图片" : "文件"}
@@ -292,18 +292,18 @@ export function DesktopChatFilesPage() {
             <ErrorBlock message={conversationsQuery.error.message} />
           ) : null}
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <button
               type="button"
               onClick={() => setSelectedConversationId(null)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition",
+                "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
                 !selectedConversationId
-                  ? "border-[rgba(249,115,22,0.20)] bg-white/94 shadow-[var(--shadow-soft)]"
-                  : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/82",
+                  ? "border-black/8 bg-white"
+                  : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
               )}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[rgba(255,138,61,0.12)] text-sm font-medium text-[color:var(--brand-primary)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-sm font-medium text-[color:var(--text-secondary)]">
                 全部
               </div>
               <div className="min-w-0 flex-1">
@@ -322,10 +322,10 @@ export function DesktopChatFilesPage() {
                 type="button"
                 onClick={() => setSelectedConversationId(conversation.id)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition",
+                  "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
                   conversation.id === selectedConversationId
-                    ? "border-[rgba(249,115,22,0.20)] bg-white/94 shadow-[var(--shadow-soft)]"
-                    : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/82",
+                    ? "border-black/8 bg-white"
+                    : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
                 )}
               >
                 <AvatarChip name={conversation.title} size="wechat" />
@@ -353,15 +353,15 @@ export function DesktopChatFilesPage() {
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto p-6">
+      <section className="min-w-0 flex-1 overflow-auto p-4">
         {conversations.length ? (
           <DesktopEntryShell
-            badge="Files"
-            title={selectedConversation?.title ?? "全部会话聊天文件"}
+            badge="聊天文件"
+            title={selectedConversation?.title ?? "全部聊天文件"}
             description={
               selectedConversation
-                ? "当前会话内的图片和文件已经集中到这里，也支持回跳原消息继续处理。"
-                : "桌面端聊天文件现在支持跨会话聚合，方便像微信一样统一翻最近发过的图片和文件。"
+                ? "当前会话里的图片和文件会集中显示在这里。"
+                : "这里会按会话聚合最近的聊天图片和文件。"
             }
             aside={
               <div className="space-y-3">
@@ -392,7 +392,7 @@ export function DesktopChatFilesPage() {
               </div>
             }
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               {allAttachmentsQuery.isLoading ? (
                 <LoadingBlock label="正在读取附件..." />
               ) : null}
@@ -412,14 +412,14 @@ export function DesktopChatFilesPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)] transition hover:border-[rgba(249,115,22,0.18)]"
+                    className="rounded-[14px] border border-black/6 bg-white p-4 transition hover:border-black/10 hover:bg-[#fcfcfc]"
                   >
                     <div className="flex items-start gap-4">
                       {isImage ? (
                         <button
                           type="button"
                           onClick={() => setViewerAttachmentId(item.id)}
-                          className="group relative block h-28 w-28 shrink-0 overflow-hidden rounded-[20px] border border-black/6 bg-[#f5f5f5]"
+                          className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[12px] border border-black/6 bg-[#f5f5f5]"
                         >
                           <img
                             src={item.attachment.url}
@@ -427,13 +427,13 @@ export function DesktopChatFilesPage() {
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
                           />
-                          <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(15,23,42,0.65))] px-3 py-2 text-left text-[11px] text-white">
+                          <div className="absolute inset-x-0 bottom-0 border-t border-black/6 bg-black/40 px-2 py-1.5 text-left text-[10px] text-white">
                             点击预览
                           </div>
                         </button>
                       ) : (
-                        <div className="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-[20px] border border-black/6 bg-[rgba(255,138,61,0.08)] px-4 text-center">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white text-[color:var(--brand-primary)] shadow-[var(--shadow-soft)]">
+                        <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[12px] border border-black/6 bg-[#f4f4f4] px-4 text-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white text-[#4b5563]">
                             <FileText size={18} />
                           </div>
                           <div className="mt-3 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
@@ -449,16 +449,16 @@ export function DesktopChatFilesPage() {
                           {item.senderName} · {item.conversationTitle} ·{" "}
                           {formatMessageTimestamp(item.createdAt)}
                         </div>
-                        <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                        <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
                           {item.text.trim() || "这条消息没有额外正文。"}
                         </div>
-                        <div className="mt-4 flex items-center gap-3">
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
                           {isImage ? (
                             <Button
                               variant="secondary"
                               size="sm"
                               onClick={() => setViewerAttachmentId(item.id)}
-                              className="rounded-full"
+                              className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
                             >
                               预览图片
                             </Button>
@@ -467,7 +467,7 @@ export function DesktopChatFilesPage() {
                             href={item.attachment.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex h-9 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-4 text-xs font-medium text-white"
+                            className="inline-flex h-8 items-center justify-center rounded-[8px] bg-[#07c160] px-3 text-[12px] font-medium text-white transition hover:bg-[#06ad56]"
                           >
                             打开附件
                           </a>
@@ -480,7 +480,7 @@ export function DesktopChatFilesPage() {
                                 item.attachment.fileName,
                               )
                             }
-                            className="rounded-full"
+                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
                           >
                             保存附件
                           </Button>
@@ -505,7 +505,7 @@ export function DesktopChatFilesPage() {
                                 hash: `chat-message-${item.id}`,
                               });
                             }}
-                            className="rounded-full"
+                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
                           >
                             定位到原消息
                           </Button>
@@ -535,13 +535,13 @@ export function DesktopChatFilesPage() {
                                 ),
                               );
                             }}
-                            className="rounded-full"
+                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
                           >
                             {collected ? "取消收藏" : "收藏"}
                           </Button>
                         </div>
                       </div>
-                      <div className="shrink-0 text-xs text-[color:var(--text-muted)]">
+                      <div className="shrink-0 rounded-[8px] bg-[#f5f5f5] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
                         {formatAttachmentMeta(item.attachment)}
                       </div>
                     </div>
@@ -737,7 +737,7 @@ function saveUrlAsFile(url: string, fileName: string) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
+    <div className="rounded-[12px] border border-black/6 bg-[#f7f7f7] p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -796,7 +796,7 @@ function DesktopChatFilesImageViewer({
   }, [onClose, onNext, onPrevious]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.82)] backdrop-blur-[3px]">
+    <div className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.72)] backdrop-blur-[2px]">
       <button
         type="button"
         aria-label="关闭图片预览"
@@ -804,7 +804,7 @@ function DesktopChatFilesImageViewer({
         className="absolute inset-0"
       />
 
-      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-5 text-white">
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between border-b border-white/10 px-6 py-4 text-white">
         <div className="min-w-0">
           <div className="truncate text-[15px] font-medium">
             {item.attachment.fileName}
@@ -818,7 +818,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onOpenInWindow}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
             aria-label="新窗口打开"
           >
             <ExternalLink size={16} />
@@ -826,7 +826,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onSave}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
             aria-label="保存图片"
           >
             <Download size={16} />
@@ -834,7 +834,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
             aria-label="关闭"
           >
             <X size={16} />
@@ -846,7 +846,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onPrevious}
-          className="absolute left-6 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
           aria-label="上一张"
         >
           <ChevronLeft size={20} />
@@ -857,7 +857,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onNext}
-          className="absolute right-6 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
           aria-label="下一张"
         >
           <ChevronRight size={20} />
@@ -868,11 +868,11 @@ function DesktopChatFilesImageViewer({
         <img
           src={item.attachment.url}
           alt={item.attachment.fileName}
-          className="max-h-full max-w-full rounded-[24px] object-contain shadow-[0_30px_80px_rgba(15,23,42,0.45)]"
+          className="max-h-full max-w-full rounded-[18px] object-contain shadow-[0_24px_72px_rgba(15,23,42,0.36)]"
         />
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 z-10 flex items-center justify-between px-6 py-5 text-white/76">
+      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-6 py-4 text-white/76">
         <div className="text-[12px]">
           {formatAttachmentMeta(item.attachment)}
         </div>
