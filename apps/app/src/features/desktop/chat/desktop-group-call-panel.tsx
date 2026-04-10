@@ -22,9 +22,14 @@ type DesktopGroupCallPanelProps = {
   groupName: string;
   members: GroupMember[];
   inviteNoticePending?: boolean;
+  endNoticePending?: boolean;
   onClose: () => void;
   onOpenMobileHandoff: () => void;
   onSendInviteNotice: (counts: {
+    activeCount: number;
+    totalCount: number;
+  }) => void;
+  onEndCall: (counts: {
     activeCount: number;
     totalCount: number;
   }) => void;
@@ -36,9 +41,11 @@ export function DesktopGroupCallPanel({
   groupName,
   members,
   inviteNoticePending = false,
+  endNoticePending = false,
   onClose,
   onOpenMobileHandoff,
   onSendInviteNotice,
+  onEndCall,
 }: DesktopGroupCallPanelProps) {
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(kind === "video");
@@ -190,11 +197,17 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={onClose}
+            onClick={() =>
+              onEndCall({
+                activeCount,
+                totalCount: members.length,
+              })
+            }
+            disabled={endNoticePending}
             className="rounded-full text-[#d74b45]"
           >
             <PhoneOff size={16} />
-            结束通话
+            {endNoticePending ? "结束中..." : "结束通话"}
           </Button>
         </div>
       </div>
