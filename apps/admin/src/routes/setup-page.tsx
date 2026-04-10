@@ -11,7 +11,13 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
-import { AdminCallout, AdminInfoRows, AdminPageHero } from "../components/admin-workbench";
+import {
+  AdminCallout,
+  AdminInfoRows,
+  AdminJumpCard,
+  AdminPageHero,
+  AdminStatusCard,
+} from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function formatProviderMode(mode?: string | null) {
@@ -159,20 +165,23 @@ export function SetupPage() {
             ) : null}
 
             <div className="mt-4 space-y-3">
-              <ChecklistItem
+              <AdminStatusCard
                 title="先确认远程 API 可达"
                 description="如果接口离线，先检查世界实例地址、反向代理和服务进程。"
-                ok={coreApiReady}
+                tone={coreApiReady ? "healthy" : "warning"}
+                statusLabel={coreApiReady ? "完成" : "待处理"}
               />
-              <ChecklistItem
+              <AdminStatusCard
                 title="确认世界主人数量正确"
                 description="当前实例必须保持单世界主人语义，数量不为 1 时先处理数据状态。"
-                ok={worldOwnerReady}
+                tone={worldOwnerReady ? "healthy" : "warning"}
+                statusLabel={worldOwnerReady ? "完成" : "待处理"}
               />
-              <ChecklistItem
+              <AdminStatusCard
                 title="保存并测试推理服务"
                 description="模型、接口地址和 API Key 都正确后，再进入回复逻辑和评测工作区。"
-                ok={providerReady}
+                tone={providerReady ? "healthy" : "warning"}
+                statusLabel={providerReady ? "完成" : "待处理"}
               />
             </div>
           </Card>
@@ -221,22 +230,22 @@ export function SetupPage() {
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>下一步建议</SectionHeading>
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <ActionHint
+              <AdminJumpCard
                 title="进入角色中心"
                 detail="接口和模型就绪后，优先检查角色资料、工厂和运行逻辑。"
-                href="/characters"
+                to="/characters"
                 disabled={!coreApiReady}
               />
-              <ActionHint
+              <AdminJumpCard
                 title="进入回复逻辑"
                 detail="确认真实回复链路、上下文快照和规则配置。"
-                href="/reply-logic"
+                to="/reply-logic"
                 disabled={!coreApiReady || !providerReady}
               />
-              <ActionHint
+              <AdminJumpCard
                 title="进入评测分析"
                 detail="用 runs、compare 和 trace 验证配置改动是否生效。"
-                href="/evals"
+                to="/evals"
                 disabled={!coreApiReady || !providerReady}
               />
             </div>
@@ -291,46 +300,5 @@ export function SetupPage() {
         </div>
       </div>
     </div>
-  );
-}
-
-function ChecklistItem({
-  title,
-  description,
-  ok,
-}: {
-  title: string;
-  description: string;
-  ok: boolean;
-}) {
-  return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
-        <StatusPill tone={ok ? "healthy" : "warning"}>{ok ? "完成" : "待处理"}</StatusPill>
-      </div>
-      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
-    </div>
-  );
-}
-
-function ActionHint({
-  title,
-  detail,
-  href,
-  disabled,
-}: {
-  title: string;
-  detail: string;
-  href: "/characters" | "/reply-logic" | "/evals";
-  disabled?: boolean;
-}) {
-  return (
-    <Link to={href} disabled={disabled} className={disabled ? "pointer-events-none opacity-50" : "block"}>
-      <div className="h-full rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
-        <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
-        <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
-      </div>
-    </Link>
   );
 }

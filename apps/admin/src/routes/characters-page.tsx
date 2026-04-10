@@ -17,6 +17,7 @@ import {
   AdminCallout,
   AdminDangerZone,
   AdminEmptyState,
+  AdminHintCard,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
@@ -318,9 +319,9 @@ export function CharactersPage() {
           <Card className="bg-[color:var(--surface-console)]">
             <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">运营建议</div>
             <div className="mt-4 space-y-3">
-              <HintBlock title="新角色创建" detail="先补齐关系、擅长领域和触发场景，再进入编辑页完善提示词和记忆。" />
-              <HintBlock title="角色制造" detail="需要大改人格、口头禅或长期设定时，优先进入工厂页维护配方。" />
-              <HintBlock title="运行排查" detail="角色回复异常或活动状态不对时，直接进入运行逻辑台看在线模式、活动和最近执行。" />
+              <AdminHintCard title="新角色创建" detail="先补齐关系、擅长领域和触发场景，再进入编辑页完善提示词和记忆。" />
+              <AdminHintCard title="角色制造" detail="需要大改人格、口头禅或长期设定时，优先进入工厂页维护配方。" />
+              <AdminHintCard title="运行排查" detail="角色回复异常或活动状态不对时，直接进入运行逻辑台看在线模式、活动和最近执行。" />
             </div>
           </Card>
         </div>
@@ -370,15 +371,6 @@ function SignalRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-3">
       <span className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{label}</span>
       <span className="text-right text-sm font-medium text-[color:var(--text-primary)]">{value}</span>
-    </div>
-  );
-}
-
-function HintBlock({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
-      <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
-      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
     </div>
   );
 }

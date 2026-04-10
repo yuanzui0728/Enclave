@@ -43,6 +43,8 @@ import {
   AdminActionGroup,
   AdminCallout,
   AdminDangerZone,
+  AdminJumpCard,
+  AdminStatusCard,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
@@ -278,37 +280,40 @@ export function DashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <QuickActionCard to={primaryActionHref} label={primaryActionLabel} detail="优先处理当前实例最关键的阻塞项。" tone="primary" />
-            <QuickActionCard to="/characters" label="进入角色中心" detail="查角色状态、打开工厂或运行逻辑台。" />
-            <QuickActionCard to="/reply-logic" label="查看回复逻辑" detail="排查真实回复链路和全局规则。" />
-            <QuickActionCard to="/evals" label="查看评测分析" detail="进入 runs、compare 和 trace 工作区。" />
+            <AdminJumpCard to={primaryActionHref} title={primaryActionLabel} detail="优先处理当前实例最关键的阻塞项。" emphasis="primary" />
+            <AdminJumpCard to="/characters" title="进入角色中心" detail="查角色状态、打开工厂或运行逻辑台。" />
+            <AdminJumpCard to="/reply-logic" title="查看回复逻辑" detail="排查真实回复链路和全局规则。" />
+            <AdminJumpCard to="/evals" title="查看评测分析" detail="进入 runs、compare 和 trace 工作区。" />
           </div>
         </Card>
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>运营提醒</SectionHeading>
           <div className="mt-4 space-y-3">
-            <PriorityItem
+            <AdminStatusCard
               tone={!desktopRuntimeReady ? "warning" : "healthy"}
               title="运行时检查"
+              statusLabel={!desktopRuntimeReady ? "关注" : "正常"}
               description={
                 !desktopRuntimeReady
                   ? "运行时还没完全恢复，优先进入设置页确认远程 API、运行数据目录和桌面托管状态。"
                   : "运行时已就绪，可以直接进入角色或评测工作区。"
               }
             />
-            <PriorityItem
+            <AdminStatusCard
               tone={!providerConfigured ? "warning" : "healthy"}
               title="推理服务配置"
+              statusLabel={!providerConfigured ? "关注" : "正常"}
               description={
                 !providerConfigured
                   ? "实例还没有可用模型，回复、评测和自动生成都会受影响。"
                   : `当前默认模型为 ${providerConfigQuery.data?.model ?? "已配置"}。`
               }
             />
-            <PriorityItem
+            <AdminStatusCard
               tone={systemHealthy ? "healthy" : "warning"}
               title="实例健康"
+              statusLabel={systemHealthy ? "正常" : "关注"}
               description={
                 systemHealthy
                   ? "核心接口已在线，下一步更适合进入评测或角色工作区做运营动作。"
@@ -1013,50 +1018,4 @@ function formatCommandSource(source?: string, bundledExists?: boolean) {
   }
 
   return bundledExists ? "sidecar 已就绪" : "sidecar 缺失";
-}
-
-function QuickActionCard({
-  to,
-  label,
-  detail,
-  tone = "secondary",
-}: {
-  to: "/" | "/setup" | "/characters" | "/evals" | "/reply-logic";
-  label: string;
-  detail: string;
-  tone?: "primary" | "secondary";
-}) {
-  return (
-    <Link to={to} className="block">
-      <div className="h-full rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
-            <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
-          </div>
-          <StatusPill tone={tone === "primary" ? "healthy" : "muted"}>{tone === "primary" ? "优先" : "入口"}</StatusPill>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function PriorityItem({
-  tone,
-  title,
-  description,
-}: {
-  tone: "healthy" | "warning";
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
-        <StatusPill tone={tone}>{tone === "healthy" ? "正常" : "关注"}</StatusPill>
-      </div>
-      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
-    </div>
-  );
 }
