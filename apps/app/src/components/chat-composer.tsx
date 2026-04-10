@@ -175,6 +175,9 @@ export function ChatComposer({
     useState<ScreenshotAnnotation[]>([]);
   const [desktopScreenshotSelection, setDesktopScreenshotSelection] =
     useState<ScreenshotSelectionDraft | null>(null);
+  const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
+    string | null
+  >(null);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [mobilePlusNotice, setMobilePlusNotice] = useState<string | null>(null);
@@ -893,6 +896,7 @@ export function ChatComposer({
       setDesktopScreenshotTool("crop");
       setDesktopScreenshotAnnotations([]);
       setDesktopScreenshotSelection(null);
+      setDesktopScreenshotNotice(null);
     } catch (captureError) {
       const name =
         captureError instanceof DOMException ? captureError.name : undefined;
@@ -1144,6 +1148,7 @@ export function ChatComposer({
     setDesktopScreenshotTool("crop");
     setDesktopScreenshotAnnotations([]);
     setDesktopScreenshotSelection(null);
+    setDesktopScreenshotNotice(null);
   };
 
   const handleDesktopScreenshotPointerDown = (
@@ -1253,37 +1258,40 @@ export function ChatComposer({
     });
   };
 
+  const buildDesktopScreenshotResult = async (
+    mode: "original" | "cropped",
+  ) => {
+    if (!desktopScreenshotDraft) {
+      return null;
+    }
+
+    if (
+      desktopScreenshotAnnotations.length ||
+      (mode === "cropped" && desktopScreenshotCrop)
+    ) {
+      return createEditedScreenshotPayload(desktopScreenshotDraft, {
+        crop: mode === "cropped" ? desktopScreenshotCrop : null,
+        annotations: desktopScreenshotAnnotations,
+      });
+    }
+
+    return {
+      file: desktopScreenshotDraft.file,
+      fileName: desktopScreenshotDraft.fileName,
+      width: desktopScreenshotDraft.width,
+      height: desktopScreenshotDraft.height,
+    };
+  };
+
   const handleSendDesktopScreenshot = async (mode: "original" | "cropped") => {
     if (!desktopScreenshotDraft || !onSendAttachment || attachmentBusy) {
       return;
     }
 
     try {
-      let imagePayload: {
-        file: File;
-        fileName: string;
-        width?: number;
-        height?: number;
-      };
-
-      if (
-        desktopScreenshotAnnotations.length ||
-        (mode === "cropped" && desktopScreenshotCrop)
-      ) {
-        imagePayload = await createEditedScreenshotPayload(
-          desktopScreenshotDraft,
-          {
-            crop: mode === "cropped" ? desktopScreenshotCrop : null,
-            annotations: desktopScreenshotAnnotations,
-          },
-        );
-      } else {
-        imagePayload = {
-          file: desktopScreenshotDraft.file,
-          fileName: desktopScreenshotDraft.fileName,
-          width: desktopScreenshotDraft.width,
-          height: desktopScreenshotDraft.height,
-        };
+      const imagePayload = await buildDesktopScreenshotResult(mode);
+      if (!imagePayload) {
+        return;
       }
 
       const sent = await handleSendAttachment({
@@ -1302,6 +1310,45 @@ export function ChatComposer({
         screenshotError instanceof Error
           ? screenshotError.message
           : "截图处理失败，请稍后再试。",
+      );
+    }
+  };
+
+  const handleCopyDesktopScreenshot = async (mode: "original" | "cropped") => {
+    if (!desktopScreenshotDraft || attachmentBusy) {
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard?.write ||
+      typeof ClipboardItem === "undefined"
+    ) {
+      setAttachmentError("当前浏览器不支持复制截图到剪贴板。");
+      return;
+    }
+
+    try {
+      const imagePayload = await buildDesktopScreenshotResult(mode);
+      if (!imagePayload) {
+        return;
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          [imagePayload.file.type || "image/png"]: imagePayload.file,
+        }),
+      ]);
+      setAttachmentError(null);
+      setDesktopScreenshotNotice(
+        mode === "cropped" ? "裁剪后的截图已复制。" : "截图已复制到剪贴板。",
+      );
+    } catch (copyError) {
+      setDesktopScreenshotNotice(null);
+      setAttachmentError(
+        copyError instanceof Error
+          ? copyError.message
+          : "复制截图失败，请稍后再试。",
       );
     }
   };
@@ -1585,6 +1632,7 @@ export function ChatComposer({
             imageRef={desktopScreenshotImageRef}
             pending={attachmentBusy}
             error={attachmentError}
+            notice={desktopScreenshotNotice}
             onCancel={closeDesktopScreenshotEditor}
             onToolChange={setDesktopScreenshotTool}
             onClearCrop={() => setDesktopScreenshotCrop(null)}
@@ -1599,6 +1647,12 @@ export function ChatComposer({
             }}
             onSendCropped={() => {
               void handleSendDesktopScreenshot("cropped");
+            }}
+            onCopyOriginal={() => {
+              void handleCopyDesktopScreenshot("original");
+            }}
+            onCopyCropped={() => {
+              void handleCopyDesktopScreenshot("cropped");
             }}
           />
         ) : null}
@@ -2317,12 +2371,15 @@ function DesktopScreenshotEditor({
   draft,
   error,
   imageRef,
+  notice,
   pending,
   selection,
   tool,
   onCancel,
   onClearAnnotations,
   onClearCrop,
+  onCopyCropped,
+  onCopyOriginal,
   onPointerCancel,
   onPointerDown,
   onPointerMove,
@@ -2337,12 +2394,15 @@ function DesktopScreenshotEditor({
   draft: ImageDraft;
   error: string | null;
   imageRef: React.RefObject<HTMLImageElement | null>;
+  notice: string | null;
   pending: boolean;
   selection: ScreenshotSelectionDraft | null;
   tool: "crop" | "rect" | "arrow";
   onCancel: () => void;
   onClearAnnotations: () => void;
   onClearCrop: () => void;
+  onCopyCropped: () => void;
+  onCopyOriginal: () => void;
   onPointerCancel: (event: ReactPointerEvent<HTMLDivElement>) => void;
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
   onPointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
@@ -2564,8 +2624,19 @@ function DesktopScreenshotEditor({
               </div>
             </div>
 
+            {notice ? (
+              <InlineNotice
+                className="border-white/10 bg-white/8 text-xs text-white"
+                tone="info"
+              >
+                {notice}
+              </InlineNotice>
+            ) : null}
             {error ? (
-              <InlineNotice className="border-white/10 bg-white/8 text-xs text-white" tone="danger">
+              <InlineNotice
+                className="border-white/10 bg-white/8 text-xs text-white"
+                tone="danger"
+              >
                 {error}
               </InlineNotice>
             ) : null}
@@ -2593,6 +2664,26 @@ function DesktopScreenshotEditor({
                 className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
               >
                 还原
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onCopyOriginal}
+              disabled={pending}
+              className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+            >
+              复制原图
+            </Button>
+            {crop ? (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onCopyCropped}
+                disabled={pending}
+                className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              >
+                复制裁剪图
               </Button>
             ) : null}
             <Button
