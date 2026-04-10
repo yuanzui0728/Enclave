@@ -98,6 +98,11 @@ const OfficialAccountsPage = lazy(async () => {
   return { default: mod.OfficialAccountsPage };
 });
 
+const GroupContactsPage = lazy(async () => {
+  const mod = await import("./routes/group-contacts-page");
+  return { default: mod.GroupContactsPage };
+});
+
 const OfficialAccountDetailPage = lazy(async () => {
   const mod = await import("./routes/official-account-detail-page");
   return { default: mod.OfficialAccountDetailPage };
@@ -166,6 +171,11 @@ const ChatRoomPage = lazy(async () => {
 const ChatBackgroundPage = lazy(async () => {
   const mod = await import("./routes/chat-background-page");
   return { default: mod.ChatBackgroundPage };
+});
+
+const GroupChatBackgroundPage = lazy(async () => {
+  const mod = await import("./routes/group-chat-background-page");
+  return { default: mod.GroupChatBackgroundPage };
 });
 
 const ChatDetailsPage = lazy(async () => {
@@ -410,6 +420,13 @@ const starredFriendsRoute = createRoute({
   component: StarredFriendsPage,
 });
 
+const groupContactsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/contacts/groups",
+  beforeLoad: requireWorldReady,
+  component: GroupContactsPage,
+});
+
 const officialAccountsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/contacts/official-accounts",
@@ -450,6 +467,13 @@ const groupChatDetailsRoute = createRoute({
   path: "/group/$groupId/details",
   beforeLoad: requireWorldReady,
   component: GroupChatDetailsPage,
+});
+
+const groupChatBackgroundRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/group/$groupId/background",
+  beforeLoad: requireWorldReady,
+  component: GroupChatBackgroundPage,
 });
 
 const groupAnnouncementRoute = createRoute({
@@ -636,12 +660,14 @@ const routeTree = rootRoute.addChildren([
   characterDetailRoute,
   friendRequestsRoute,
   starredFriendsRoute,
+  groupContactsRoute,
   officialAccountsRoute,
   officialAccountDetailRoute,
   officialAccountArticleRoute,
   officialAccountServiceRoute,
   groupChatRoute,
   groupChatDetailsRoute,
+  groupChatBackgroundRoute,
   groupAnnouncementRoute,
   groupMessageSearchRoute,
   groupMemberAddRoute,

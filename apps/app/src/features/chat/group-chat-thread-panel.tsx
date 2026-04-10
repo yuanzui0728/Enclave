@@ -22,7 +22,7 @@ import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
-import { useDefaultChatBackground } from "./backgrounds/use-conversation-background";
+import { useGroupBackground } from "./backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import { parseTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -54,7 +54,7 @@ export function GroupChatThreadPanel({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const ownerQuery = useDefaultChatBackground();
+  const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const isDesktop = variant === "desktop";
 
@@ -124,7 +124,7 @@ export function GroupChatThreadPanel({
 
   const sendError =
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
-  const defaultBackground = ownerQuery.data?.defaultChatBackground ?? null;
+  const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const announcement = groupQuery.data?.announcement?.trim() ?? "";
 
   useEffect(() => {
@@ -196,7 +196,9 @@ export function GroupChatThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop ? "bg-[#f5f5f5]" : "bg-[#ededed]"
+        isDesktop
+          ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
+          : "bg-[#ededed]"
       }`}
     >
       {isDesktop ? (
@@ -238,7 +240,7 @@ export function GroupChatThreadPanel({
           type="button"
           onClick={() => {
             void navigate({
-              to: "/group/$groupId/announcement",
+              to: "/group/$groupId/details",
               params: { groupId },
             });
           }}
@@ -257,7 +259,7 @@ export function GroupChatThreadPanel({
         <div
           className={
             isDesktop
-              ? "border-b border-black/6 bg-[#f7f7f7] px-5 py-3"
+              ? "border-b border-black/6 bg-white/70 px-5 py-3"
               : "border-b border-black/6 bg-white/82 px-3 py-2.5"
           }
         >
@@ -282,14 +284,16 @@ export function GroupChatThreadPanel({
       <div className="relative flex-1 overflow-hidden">
         <div
           className={`absolute inset-0 ${
-            isDesktop ? "bg-[#f5f5f5]" : "bg-[#ededed]"
+            isDesktop
+              ? "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
+              : "bg-[#ededed]"
           }`}
-          style={buildChatBackgroundStyle(defaultBackground)}
+          style={buildChatBackgroundStyle(effectiveBackground)}
         />
         <div
           className={`absolute inset-0 ${
             isDesktop
-              ? "bg-[rgba(255,255,255,0.72)]"
+              ? "bg-[rgba(255,250,244,0.30)]"
               : "bg-[rgba(237,237,237,0.72)]"
           }`}
         />
@@ -297,7 +301,7 @@ export function GroupChatThreadPanel({
         <div
           ref={scrollAnchorRef}
           className={`relative flex h-full flex-col overflow-auto ${
-            isDesktop ? "px-6 py-5" : "px-3 py-4"
+            isDesktop ? "px-8 py-6" : "px-3 py-4"
           }`}
         >
           {groupQuery.isError && groupQuery.error instanceof Error ? (
