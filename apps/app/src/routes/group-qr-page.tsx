@@ -1336,6 +1336,27 @@ export function GroupQrPage() {
                   <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
                     {currentReturnSourceConversation.title}
                   </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                    <span
+                      className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
+                        currentReturnSourceConversation,
+                        deliveredTargetByPath[
+                          buildConversationPath(currentReturnSourceConversation)
+                        ],
+                        "优先处理",
+                      ).tone}`}
+                    >
+                      {
+                        resolveConversationActionStatus(
+                          currentReturnSourceConversation,
+                          deliveredTargetByPath[
+                            buildConversationPath(currentReturnSourceConversation)
+                          ],
+                          "优先处理",
+                        ).label
+                      }
+                    </span>
+                  </div>
                   <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                     回流后可直接把当前群邀请再发回这条来源会话。
                   </div>
@@ -1366,7 +1387,13 @@ export function GroupQrPage() {
                   )}
                 </div>
                 <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                  立即回发
+                  {resolveConversationActionLabel(
+                    currentReturnSourceConversation,
+                    deliveredTargetByPath[
+                      buildConversationPath(currentReturnSourceConversation)
+                    ],
+                    "优先处理",
+                  )}
                 </span>
               </button>
             ) : null}
@@ -1385,6 +1412,25 @@ export function GroupQrPage() {
                     className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.14)] bg-[rgba(255,252,246,0.88)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
                   >
                     <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span
+                          className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
+                            conversation,
+                            deliveredTargetByPath[buildConversationPath(conversation)],
+                            "优先处理",
+                          ).tone}`}
+                        >
+                          {
+                            resolveConversationActionStatus(
+                              conversation,
+                              deliveredTargetByPath[
+                                buildConversationPath(conversation)
+                              ],
+                              "优先处理",
+                            ).label
+                          }
+                        </span>
+                      </div>
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                         {conversation.title}
                       </div>
@@ -1420,9 +1466,11 @@ export function GroupQrPage() {
                       )}
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      {deliveredPaths.has(buildConversationPath(conversation))
-                        ? "再次发送"
-                        : "发到相关会话"}
+                      {resolveConversationActionLabel(
+                        conversation,
+                        deliveredTargetByPath[buildConversationPath(conversation)],
+                        "优先处理",
+                      )}
                     </span>
                   </button>
                 ))}
@@ -1440,6 +1488,25 @@ export function GroupQrPage() {
                     className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
                   >
                     <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        <span
+                          className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
+                            conversation,
+                            deliveredTargetByPath[buildConversationPath(conversation)],
+                            "现在补最值",
+                          ).tone}`}
+                        >
+                          {
+                            resolveConversationActionStatus(
+                              conversation,
+                              deliveredTargetByPath[
+                                buildConversationPath(conversation)
+                              ],
+                              "现在补最值",
+                            ).label
+                          }
+                        </span>
+                      </div>
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                         {conversation.title}
                       </div>
@@ -1475,9 +1542,11 @@ export function GroupQrPage() {
                       )}
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
-                      {deliveredPaths.has(buildConversationPath(conversation))
-                        ? "再次发送"
-                        : "发到聊天"}
+                      {resolveConversationActionLabel(
+                        conversation,
+                        deliveredTargetByPath[buildConversationPath(conversation)],
+                        "现在就补",
+                      )}
                     </span>
                   </button>
                 ))}
@@ -2000,6 +2069,36 @@ function resolvePendingReturnActionLabel(
   }
 
   return "暂不建议";
+}
+
+function resolveConversationActionStatus(
+  conversation: ConversationListItem,
+  deliveredTarget: GroupInviteDeliveryTarget | undefined,
+  fallbackLabel: string,
+) {
+  if (!deliveredTarget) {
+    return {
+      label: fallbackLabel,
+      tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
+    };
+  }
+
+  return resolvePendingReturnActionStatus(
+    conversation,
+    deliveredTarget.deliveredAt,
+  );
+}
+
+function resolveConversationActionLabel(
+  conversation: ConversationListItem,
+  deliveredTarget: GroupInviteDeliveryTarget | undefined,
+  fallbackLabel: string,
+) {
+  if (!deliveredTarget) {
+    return fallbackLabel;
+  }
+
+  return resolvePendingReturnActionLabel(conversation, deliveredTarget.deliveredAt);
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {

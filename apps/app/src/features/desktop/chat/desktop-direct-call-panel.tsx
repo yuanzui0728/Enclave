@@ -18,18 +18,22 @@ type DesktopDirectCallPanelProps = {
   kind: DesktopChatCallKind;
   conversationTitle: string;
   inviteNoticePending?: boolean;
+  endNoticePending?: boolean;
   onClose: () => void;
   onOpenMobileHandoff: () => void;
   onSendInviteNotice: (status: { remoteJoined: boolean }) => void;
+  onEndCall?: (status: { remoteJoined: boolean }) => void;
 };
 
 export function DesktopDirectCallPanel({
   kind,
   conversationTitle,
   inviteNoticePending = false,
+  endNoticePending = false,
   onClose,
   onOpenMobileHandoff,
   onSendInviteNotice,
+  onEndCall,
 }: DesktopDirectCallPanelProps) {
   const [muted, setMuted] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(kind === "video");
@@ -153,11 +157,12 @@ export function DesktopDirectCallPanel({
           <Button
             type="button"
             variant="secondary"
-            onClick={onClose}
+            onClick={() => onEndCall?.({ remoteJoined })}
+            disabled={endNoticePending}
             className="rounded-full text-[#d74b45]"
           >
             <PhoneOff size={16} />
-            结束通话
+            {endNoticePending ? "结束中..." : "结束通话"}
           </Button>
         </div>
       </div>
