@@ -18,6 +18,7 @@ import {
   VoiceCallsController,
 } from './chat.controller';
 import { DigitalHumanCallsService } from './digital-human-calls.service';
+import { MockDigitalHumanProviderAdapter } from './digital-human-provider';
 import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
 import { MessageRemindersService } from './message-reminders.service';
@@ -56,6 +57,7 @@ import { GroupMessageEntity } from './group-message.entity';
     FavoritesService,
     MessageRemindersService,
     DigitalHumanCallsService,
+    MockDigitalHumanProviderAdapter,
     VoiceCallsService,
   ],
   controllers: [
