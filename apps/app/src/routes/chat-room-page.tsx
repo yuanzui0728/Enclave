@@ -38,7 +38,7 @@ export function ChatRoomPage() {
   }
 
   return (
-    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)] px-0 py-0">
+    <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[#ededed] px-0 py-0">
       <div className="h-full min-h-0 flex-1">
         <ConversationThreadPanel
           conversationId={conversationId}
