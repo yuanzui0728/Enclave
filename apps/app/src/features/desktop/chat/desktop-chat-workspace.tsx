@@ -322,6 +322,33 @@ export function DesktopChatWorkspace({
     };
   }, [conversationContextMenu]);
 
+  useEffect(() => {
+    const hasActiveThread = Boolean(activeConversation);
+    if (!hasActiveThread || subscriptionInboxActive || serviceConversationActive) {
+      return;
+    }
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "f") {
+        return;
+      }
+
+      if (event.altKey) {
+        return;
+      }
+
+      if (isEditableKeyboardTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      setRightPanelMode("history");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeConversation, serviceConversationActive, subscriptionInboxActive]);
+
   const conversationActionMutation = useMutation({
     mutationFn: async ({
       action,
@@ -1271,6 +1298,18 @@ function buildConversationActionNotice(
     case "leave":
       return "已删除并退出群聊。";
   }
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(
+      'input, textarea, [contenteditable="true"], [contenteditable=""], [role="textbox"]',
+    ),
+  );
 }
 
 function canConversationBeMarkedUnread(conversation: ConversationListItem) {
