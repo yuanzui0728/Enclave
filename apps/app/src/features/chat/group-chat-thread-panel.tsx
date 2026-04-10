@@ -293,6 +293,8 @@ export function GroupChatThreadPanel({
               totalCount: input.totalCount,
             },
             input.status,
+            undefined,
+            "desktop",
           ),
         },
         baseUrl,

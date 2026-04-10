@@ -7,7 +7,9 @@ const GROUP_VIDEO_CALL_PREFIX = "[群视频通话]";
 
 export type GroupCallInviteStatus = "ongoing" | "ended";
 export type DirectCallInviteStatus = "waiting" | "connected" | "ended";
-export type DirectCallInviteSource = "desktop" | "mobile";
+export type CallInviteSource = "desktop" | "mobile";
+export type DirectCallInviteSource = CallInviteSource;
+export type GroupCallInviteSource = CallInviteSource;
 
 export function buildDirectCallInviteMessage(
   kind: DesktopChatCallKind,
@@ -65,6 +67,7 @@ export function buildGroupCallInviteMessage(
   },
   status: GroupCallInviteStatus = "ongoing",
   recordedAt = new Date().toISOString(),
+  source?: GroupCallInviteSource,
 ) {
   const normalizedTotalCount = Math.max(counts?.totalCount ?? 0, 0);
   const normalizedActiveCount = Math.min(
@@ -75,22 +78,24 @@ export function buildGroupCallInviteMessage(
     normalizedTotalCount - normalizedActiveCount,
     0,
   );
+  const sourceLabel = formatCallInviteSource(source);
+  const summaryLines = buildGroupCallSummaryLines({
+    kind,
+    status,
+    sourceLabel,
+  });
 
   return [
     kind === "voice" ? GROUP_VOICE_CALL_PREFIX : GROUP_VIDEO_CALL_PREFIX,
     groupName.trim() || "当前群聊",
     status === "ended" ? "状态 已结束" : "状态 进行中",
     `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
+    sourceLabel ? `发起设备 ${sourceLabel}` : null,
     normalizedTotalCount
       ? `当前在线 ${normalizedActiveCount}/${normalizedTotalCount} 人`
       : "当前在线人数待同步",
     normalizedTotalCount ? `待加入 ${waitingCount} 人` : "待加入人数待同步",
-    status === "ended"
-      ? "本轮群通话已在桌面端结束，可继续在群里跟进结果。"
-      : "已从桌面端打开群通话工作台，可直接在聊天页继续查看成员状态。",
-    status === "ended"
-      ? "如需再次发起，请重新打开当前群聊顶部的通话面板。"
-      : "如需继续加入或转到手机，请在当前群聊顶部的通话面板里操作。",
+    ...summaryLines,
   ].join("\n");
 }
 
@@ -151,13 +156,15 @@ export function parseGroupCallInviteMessage(text: string) {
   }
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
-  const metricOffset = timestampLabel ? 1 : 0;
+  const sourceLabel = parseCallInviteSource(lines[timestampLabel ? 4 : 3]);
+  const metricOffset = Number(Boolean(timestampLabel)) + Number(Boolean(sourceLabel));
 
   return {
     kind: header === GROUP_VOICE_CALL_PREFIX ? "voice" : "video",
     groupName: lines[1] || "当前群聊",
     status: parseGroupCallStatus(lines[2]),
     timestampLabel,
+    sourceLabel,
     activeCount: parseGroupCallMetric(
       lines[3 + metricOffset],
       /当前在线\s+(\d+)\/(\d+)\s+人/,
@@ -169,6 +176,7 @@ export function parseGroupCallInviteMessage(text: string) {
     groupName: string;
     status: GroupCallInviteStatus;
     timestampLabel: string | null;
+    sourceLabel: string | null;
     activeCount: { current: number; total: number } | null;
     waitingCount: number | null;
     summaryLines: string[];
@@ -298,6 +306,28 @@ function formatCallInviteSource(source: DirectCallInviteSource | undefined) {
   }
 
   return null;
+}
+
+function buildGroupCallSummaryLines(input: {
+  kind: DesktopChatCallKind;
+  status: GroupCallInviteStatus;
+  sourceLabel: string | null;
+}) {
+  const callLabel = input.kind === "video" ? "群视频通话" : "群语音通话";
+  const panelLabel = input.kind === "video" ? "群视频通话面板" : "群语音通话面板";
+  const sourceLabel = input.sourceLabel ?? "当前设备";
+
+  if (input.status === "ended") {
+    return [
+      `本轮${callLabel}已结束，可继续在群里跟进结果。`,
+      `如需再次发起，请重新打开当前群聊顶部的${panelLabel}。`,
+    ];
+  }
+
+  return [
+    `已从${sourceLabel}打开${callLabel}工作台，可直接在聊天页继续查看成员状态。`,
+    `如需继续加入或切回聊天，请在当前群聊顶部的${panelLabel}里操作。`,
+  ];
 }
 
 function formatDirectCallStatusLabel(
