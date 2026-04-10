@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -8,8 +8,6 @@ import {
   hideGroup,
   leaveGroup,
   setGroupPinned,
-  updateGroup,
-  updateGroupOwnerProfile,
   updateGroupPreferences,
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -29,6 +27,7 @@ export function GroupChatDetailsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [notice, setNotice] = useState<string | null>(null);
+  const [memberGridExpanded, setMemberGridExpanded] = useState(false);
   const ownerQuery = useDefaultChatBackground();
 
   const groupQuery = useQuery({
@@ -41,23 +40,9 @@ export function GroupChatDetailsPage() {
     queryFn: () => getGroupMembers(groupId, baseUrl),
   });
 
-  const updateNameMutation = useMutation({
-    mutationFn: (name: string) => updateGroup(groupId, { name }, baseUrl),
-    onSuccess: async () => {
-      setNotice("群聊名称已更新。");
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
-    },
-  });
+  useEffect(() => {
+    setMemberGridExpanded(false);
+  }, [groupId]);
 
   const pinMutation = useMutation({
     mutationFn: (pinned: boolean) =>
@@ -115,23 +100,9 @@ export function GroupChatDetailsPage() {
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
-    },
-  });
-
-  const updateNicknameMutation = useMutation({
-    mutationFn: (nickname: string) =>
-      updateGroupOwnerProfile(groupId, { nickname }, baseUrl),
-    onSuccess: async () => {
-      setNotice("我在本群的昵称已更新。");
-      await queryClient.invalidateQueries({
-        queryKey: ["app-group-members", baseUrl, groupId],
-      });
     },
   });
 
@@ -145,9 +116,6 @@ export function GroupChatDetailsPage() {
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -188,9 +156,6 @@ export function GroupChatDetailsPage() {
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
-        }),
-        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
@@ -198,6 +163,7 @@ export function GroupChatDetailsPage() {
     },
   });
 
+  const visibleMemberCount = memberGridExpanded ? undefined : 13;
   const ownerMember = useMemo(
     () =>
       (membersQuery.data ?? []).find(
@@ -207,14 +173,17 @@ export function GroupChatDetailsPage() {
   );
 
   const memberItems = useMemo(() => {
-    const members = (membersQuery.data ?? []).slice(0, 10).map((member) => ({
-      key: member.id,
-      label: member.memberName ?? member.memberId,
-      src: member.memberAvatar,
-    }));
+    const members = (membersQuery.data ?? []).slice(
+      0,
+      visibleMemberCount,
+    );
 
     return [
-      ...members,
+      ...members.map((member) => ({
+        key: member.id,
+        label: member.memberName ?? member.memberId,
+        src: member.memberAvatar,
+      })),
       {
         key: "add",
         label: "添加",
@@ -238,13 +207,14 @@ export function GroupChatDetailsPage() {
         },
       },
     ];
-  }, [groupId, membersQuery.data, navigate]);
+  }, [groupId, membersQuery.data, navigate, visibleMemberCount]);
+
+  const hasCollapsedMembers =
+    (membersQuery.data?.length ?? 0) > (visibleMemberCount ?? 0);
 
   const busy =
-    updateNameMutation.isPending ||
     pinMutation.isPending ||
     preferencesMutation.isPending ||
-    updateNicknameMutation.isPending ||
     clearMutation.isPending ||
     leaveMutation.isPending ||
     hideMutation.isPending;
@@ -291,6 +261,15 @@ export function GroupChatDetailsPage() {
         <>
           <ChatDetailsSection title="群聊成员">
             <ChatMemberGrid items={memberItems} />
+            {hasCollapsedMembers || memberGridExpanded ? (
+              <button
+                type="button"
+                onClick={() => setMemberGridExpanded((current) => !current)}
+                className="flex min-h-12 w-full items-center justify-center border-t border-black/5 px-4 text-[15px] text-[#576b95]"
+              >
+                {memberGridExpanded ? "收起群成员" : "查看更多群成员"}
+              </button>
+            ) : null}
           </ChatDetailsSection>
 
           <ChatDetailsSection title="群聊资料">
@@ -299,14 +278,10 @@ export function GroupChatDetailsPage() {
                 label="群聊名称"
                 value={groupQuery.data.name}
                 onClick={() => {
-                  const nextName = window.prompt(
-                    "修改群聊名称",
-                    groupQuery.data.name,
-                  );
-                  if (!nextName || nextName.trim() === groupQuery.data.name) {
-                    return;
-                  }
-                  updateNameMutation.mutate(nextName.trim());
+                  void navigate({
+                    to: "/group/$groupId/edit/name",
+                    params: { groupId },
+                  });
                 }}
               />
               <ChatSettingRow
@@ -403,17 +378,10 @@ export function GroupChatDetailsPage() {
                 label="我在本群的昵称"
                 value={ownerMember?.memberName ?? "未设置"}
                 onClick={() => {
-                  const nextNickname = window.prompt(
-                    "修改我在本群的昵称",
-                    ownerMember?.memberName ?? "",
-                  );
-                  if (
-                    !nextNickname ||
-                    nextNickname.trim() === (ownerMember?.memberName ?? "")
-                  ) {
-                    return;
-                  }
-                  updateNicknameMutation.mutate(nextNickname.trim());
+                  void navigate({
+                    to: "/group/$groupId/edit/nickname",
+                    params: { groupId },
+                  });
                 }}
               />
               <ChatSettingRow
@@ -490,12 +458,6 @@ export function GroupChatDetailsPage() {
             </div>
           </ChatDetailsSection>
 
-          {updateNameMutation.isError &&
-          updateNameMutation.error instanceof Error ? (
-            <div className="px-3">
-              <ErrorBlock message={updateNameMutation.error.message} />
-            </div>
-          ) : null}
           {pinMutation.isError && pinMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={pinMutation.error.message} />
@@ -505,12 +467,6 @@ export function GroupChatDetailsPage() {
           preferencesMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={preferencesMutation.error.message} />
-            </div>
-          ) : null}
-          {updateNicknameMutation.isError &&
-          updateNicknameMutation.error instanceof Error ? (
-            <div className="px-3">
-              <ErrorBlock message={updateNicknameMutation.error.message} />
             </div>
           ) : null}
           {clearMutation.isError && clearMutation.error instanceof Error ? (
