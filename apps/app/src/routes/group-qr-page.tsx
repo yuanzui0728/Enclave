@@ -354,6 +354,18 @@ export function GroupQrPage() {
         item.conversation.id !==
           fallbackPendingReturnConversation?.conversation.id,
     ) ?? null;
+  const pendingReturnOverview = useMemo(() => {
+    const coolingDownCount = pendingCurrentBatchConversations.filter((item) =>
+      isPendingReturnCoolingDown(item.target.deliveredAt),
+    ).length;
+
+    return {
+      total: pendingCurrentBatchConversations.length,
+      coolingDownCount,
+      readyCount:
+        pendingCurrentBatchConversations.length - coolingDownCount,
+    };
+  }, [pendingCurrentBatchConversations]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -788,6 +800,41 @@ export function GroupQrPage() {
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
                   这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-3">
+                    <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                      本轮待处理
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
+                      {pendingReturnOverview.total}
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                      当前仍在等待回流的会话数
+                    </div>
+                  </div>
+                  <div className="rounded-[14px] border border-[rgba(34,197,94,0.12)] bg-[rgba(240,253,244,0.72)] px-3 py-3">
+                    <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
+                      可立即补发
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
+                      {pendingReturnOverview.readyCount}
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                      不在冷却中，可直接继续补发
+                    </div>
+                  </div>
+                  <div className="rounded-[14px] border border-[rgba(15,23,42,0.08)] bg-[rgba(15,23,42,0.04)] px-3 py-3">
+                    <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                      冷却暂缓
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-[color:var(--text-primary)]">
+                      {pendingReturnOverview.coolingDownCount}
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                      刚补发过，建议先等一轮回流
+                    </div>
+                  </div>
                 </div>
                 {topPendingReturnConversation ? (
                   <div className="rounded-[18px] border border-[rgba(249,115,22,0.22)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,244,232,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
