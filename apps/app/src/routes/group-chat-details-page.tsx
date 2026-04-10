@@ -305,9 +305,7 @@ export function GroupChatDetailsPage() {
                 label="群二维码"
                 value="暂未开放"
                 onClick={() => {
-                  setNotice(
-                    "群二维码能力下一步补。当前先打通群公告和成员管理。",
-                  );
+                  setNotice("群二维码能力下一步补。当前先打通群公告和成员管理。");
                 }}
               />
             </div>
@@ -413,13 +411,14 @@ export function GroupChatDetailsPage() {
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="聊天背景"
-                value={`默认：${getChatBackgroundLabel(
+                value={getChatBackgroundLabel(
                   ownerQuery.data?.defaultChatBackground,
-                )}`}
+                )}
                 onClick={() => {
-                  setNotice(
-                    "群聊当前会跟随默认背景图。可先到任意单聊的“聊天背景”页设置默认背景。",
-                  );
+                  void navigate({
+                    to: "/group/$groupId/background",
+                    params: { groupId },
+                  });
                 }}
               />
             </div>

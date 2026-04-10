@@ -13,13 +13,11 @@ import {
   getGroup,
   getGroupMembers,
   leaveGroup,
-  removeGroupMember,
   sendFriendRequest,
   setConversationPinned,
   setGroupPinned,
   updateGroup,
   updateGroupOwnerProfile,
-  updateGroupPreferences,
   type ConversationListItem,
 } from "@yinjie/contracts";
 import { ChevronRight, Search } from "lucide-react";
@@ -34,7 +32,9 @@ import {
 } from "../../chat/backgrounds/use-conversation-background";
 import {
   readDirectChatDetailPreferences,
+  readGroupChatDetailPreferences,
   writeDirectChatDetailPreferences,
+  writeGroupChatDetailPreferences,
 } from "../../chat-details/chat-detail-preferences";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -372,15 +372,19 @@ function GroupChatDetailsPanel({
   const ownerQuery = useDefaultChatBackground();
   const [notice, setNotice] = useState<string | null>(null);
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
-  const [memberPickerMode, setMemberPickerMode] = useState<"add" | "remove">(
-    "add",
+  const [preferences, setPreferences] = useState(() =>
+    readGroupChatDetailPreferences(conversation.id),
   );
 
   useEffect(() => {
+    setPreferences(readGroupChatDetailPreferences(conversation.id));
     setNotice(null);
     setMemberPickerOpen(false);
-    setMemberPickerMode("add");
   }, [conversation.id]);
+
+  useEffect(() => {
+    writeGroupChatDetailPreferences(conversation.id, preferences);
+  }, [conversation.id, preferences]);
 
   useEffect(() => {
     if (!notice) {
@@ -437,49 +441,6 @@ function GroupChatDetailsPanel({
     },
   });
 
-  const preferencesMutation = useMutation({
-    mutationFn: (payload: Parameters<typeof updateGroupPreferences>[1]) =>
-      updateGroupPreferences(conversation.id, payload, baseUrl),
-    onSuccess: async (_, payload) => {
-      const nextNotice =
-        payload.isMuted !== undefined
-          ? payload.isMuted
-            ? "已开启群消息免打扰。"
-            : "已关闭群消息免打扰。"
-          : payload.savedToContacts !== undefined
-            ? payload.savedToContacts
-              ? "已保存到通讯录。"
-              : "已从通讯录移除。"
-            : payload.showMemberNicknames !== undefined
-              ? payload.showMemberNicknames
-                ? "已开启显示群成员昵称。"
-                : "已关闭显示群成员昵称。"
-              : payload.notifyOnAtMe !== undefined
-                ? payload.notifyOnAtMe
-                  ? "开启了 @我 通知。"
-                  : "关闭了 @我 通知。"
-                : payload.notifyOnAtAll !== undefined
-                  ? payload.notifyOnAtAll
-                    ? "开启了 @所有人 通知。"
-                    : "关闭了 @所有人 通知。"
-                  : payload.notifyOnAnnouncement !== undefined
-                    ? payload.notifyOnAnnouncement
-                      ? "开启了群公告通知。"
-                      : "关闭了群公告通知。"
-                    : "群聊设置已更新。";
-
-      setNotice(nextNotice);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, conversation.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
-    },
-  });
-
   const updateNicknameMutation = useMutation({
     mutationFn: (nickname: string) =>
       updateGroupOwnerProfile(conversation.id, { nickname }, baseUrl),
@@ -509,33 +470,6 @@ function GroupChatDetailsPanel({
         memberIds.length === 1
           ? "已添加 1 位群成员。"
           : `已添加 ${memberIds.length} 位群成员。`,
-      );
-      setMemberPickerOpen(false);
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, conversation.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-group-members", baseUrl, conversation.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
-    },
-  });
-
-  const removeMembersMutation = useMutation({
-    mutationFn: async (memberIds: string[]) => {
-      for (const memberId of memberIds) {
-        await removeGroupMember(conversation.id, memberId, baseUrl);
-      }
-    },
-    onSuccess: async (_, memberIds) => {
-      setNotice(
-        memberIds.length === 1
-          ? "已移除 1 位群成员。"
-          : `已移除 ${memberIds.length} 位群成员。`,
       );
       setMemberPickerOpen(false);
       await Promise.all([
@@ -610,7 +544,6 @@ function GroupChatDetailsPanel({
       label: "添加",
       kind: "add" as const,
       onClick: () => {
-        setMemberPickerMode("add");
         setMemberPickerOpen(true);
       },
     },
@@ -619,24 +552,10 @@ function GroupChatDetailsPanel({
       label: "移除",
       kind: "remove" as const,
       onClick: () => {
-        setMemberPickerMode("remove");
-        setMemberPickerOpen(true);
+        setNotice("移除群成员入口已保留，后端补接口后接通。");
       },
     },
   ];
-
-  const removableMembers = useMemo(
-    () =>
-      (membersQuery.data ?? [])
-        .filter((member) => member.memberType === "character")
-        .map((member) => ({
-          id: member.memberId,
-          name: member.memberName ?? member.memberId,
-          subtitle: member.role === "admin" ? "管理员" : "群成员",
-          avatar: member.memberAvatar,
-        })),
-    [membersQuery.data],
-  );
 
   return (
     <div className="space-y-3 p-3">
@@ -650,14 +569,6 @@ function GroupChatDetailsPanel({
       {addMembersMutation.isError &&
       addMembersMutation.error instanceof Error ? (
         <ErrorBlock message={addMembersMutation.error.message} />
-      ) : null}
-      {removeMembersMutation.isError &&
-      removeMembersMutation.error instanceof Error ? (
-        <ErrorBlock message={removeMembersMutation.error.message} />
-      ) : null}
-      {preferencesMutation.isError &&
-      preferencesMutation.error instanceof Error ? (
-        <ErrorBlock message={preferencesMutation.error.message} />
       ) : null}
 
       <DesktopPanelSection>
@@ -707,17 +618,16 @@ function GroupChatDetailsPanel({
           label="群公告"
           value={groupQuery.data?.announcement?.trim() || "未设置"}
           onClick={() => {
-            void navigate({
-              to: "/group/$groupId/announcement",
-              params: { groupId: conversation.id },
+            const nextAnnouncement = window.prompt(
+              "修改群公告",
+              groupQuery.data?.announcement ?? "",
+            );
+            if (nextAnnouncement === null) {
+              return;
+            }
+            updateGroupMutation.mutate({
+              announcement: nextAnnouncement.trim() || null,
             });
-          }}
-        />
-        <DesktopPanelRow
-          label="群二维码"
-          value="暂未开放"
-          onClick={() => {
-            setNotice("群二维码能力下一步补。当前先打通群公告和成员管理。");
           }}
         />
       </DesktopPanelSection>
@@ -739,49 +649,15 @@ function GroupChatDetailsPanel({
       <DesktopPanelSection title="设置">
         <DesktopPanelRow
           label="消息免打扰"
-          checked={groupQuery.data?.isMuted ?? false}
+          checked={preferences.muted}
           onToggle={(checked) => {
-            preferencesMutation.mutate({ isMuted: checked });
+            setPreferences((current) => ({ ...current, muted: checked }));
           }}
         />
-        {groupQuery.data?.isMuted ? (
-          <>
-            <DesktopPanelRow
-              label="@我仍通知"
-              checked={groupQuery.data.notifyOnAtMe}
-              onToggle={(checked) => {
-                preferencesMutation.mutate({ notifyOnAtMe: checked });
-              }}
-            />
-            <DesktopPanelRow
-              label="@所有人仍通知"
-              checked={groupQuery.data.notifyOnAtAll}
-              onToggle={(checked) => {
-                preferencesMutation.mutate({ notifyOnAtAll: checked });
-              }}
-            />
-            <DesktopPanelRow
-              label="群公告仍通知"
-              checked={groupQuery.data.notifyOnAnnouncement}
-              onToggle={(checked) => {
-                preferencesMutation.mutate({
-                  notifyOnAnnouncement: checked,
-                });
-              }}
-            />
-          </>
-        ) : null}
         <DesktopPanelRow
           label="置顶聊天"
           checked={groupQuery.data?.isPinned ?? conversation.isPinned}
           onToggle={(checked) => pinMutation.mutate(checked)}
-        />
-        <DesktopPanelRow
-          label="保存到通讯录"
-          checked={groupQuery.data?.savedToContacts ?? false}
-          onToggle={(checked) => {
-            preferencesMutation.mutate({ savedToContacts: checked });
-          }}
         />
         <DesktopPanelRow
           label="我在本群的昵称"
@@ -802,18 +678,22 @@ function GroupChatDetailsPanel({
         />
         <DesktopPanelRow
           label="显示群成员昵称"
-          checked={groupQuery.data?.showMemberNicknames ?? true}
+          checked={preferences.showMemberNicknames}
           onToggle={(checked) => {
-            preferencesMutation.mutate({
+            setPreferences((current) => ({
+              ...current,
               showMemberNicknames: checked,
-            });
+            }));
           }}
         />
         <DesktopPanelRow
           label="聊天背景"
           value={backgroundLabel}
           onClick={() => {
-            setNotice("群聊当前复用默认聊天背景，独立群背景入口后续补齐。");
+            void navigate({
+              to: "/group/$groupId/background",
+              params: { groupId: conversation.id },
+            });
           }}
         />
       </DesktopPanelSection>
@@ -833,26 +713,13 @@ function GroupChatDetailsPanel({
 
       <DesktopGroupMemberPicker
         open={memberPickerOpen}
-        mode={memberPickerMode}
         groupName={groupQuery.data?.name ?? conversation.title}
         existingMemberIds={(membersQuery.data ?? []).map(
           (item) => item.memberId,
         )}
-        removableMembers={removableMembers}
-        pending={
-          memberPickerMode === "add"
-            ? addMembersMutation.isPending
-            : removeMembersMutation.isPending
-        }
+        pending={addMembersMutation.isPending}
         onClose={() => setMemberPickerOpen(false)}
-        onConfirm={(memberIds) => {
-          if (memberPickerMode === "add") {
-            addMembersMutation.mutate(memberIds);
-            return;
-          }
-
-          removeMembersMutation.mutate(memberIds);
-        }}
+        onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
       />
     </div>
   );
@@ -866,9 +733,9 @@ function DesktopPanelSection({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[10px] border border-black/5 bg-white">
+    <section className="overflow-hidden rounded-[14px] border border-black/6 bg-white">
       {title ? (
-        <div className="border-b border-black/5 bg-[#fcfcfc] px-4 py-2 text-[10px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+        <div className="border-b border-black/6 px-4 py-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
           {title}
         </div>
       ) : null}
@@ -915,9 +782,9 @@ function DesktopPanelRow({
         onClick?.();
       }}
       className={cn(
-        "flex min-h-[50px] w-full items-center justify-between gap-3 border-b border-black/5 px-4 py-3 text-left last:border-b-0",
+        "flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0",
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
-        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#f7f7f7]",
+        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#fafafa]",
       )}
       role={isSwitch ? "switch" : undefined}
       aria-checked={isSwitch ? checked : undefined}
@@ -958,7 +825,7 @@ function DesktopPanelRow({
 
 function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
   return (
-    <div className="grid grid-cols-4 gap-x-2.5 gap-y-3 px-4 py-3.5">
+    <div className="grid grid-cols-4 gap-x-3 gap-y-4 px-4 py-4">
       {items.map((item) => {
         const isAction = item.kind === "add" || item.kind === "remove";
         return (
@@ -971,10 +838,10 @@ function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
             {isAction ? (
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-[10px] border text-2xl transition-colors",
+                  "flex h-12 w-12 items-center justify-center rounded-[14px] border text-2xl transition-colors",
                   item.kind === "remove"
-                    ? "border-[rgba(220,38,38,0.14)] bg-[#fff5f5] text-red-500"
-                    : "border-black/8 bg-[#f7f7f7] text-[color:var(--text-secondary)]",
+                    ? "border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.88)] text-red-500"
+                    : "border-black/8 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
                 )}
               >
                 {item.kind === "remove" ? "−" : "+"}
