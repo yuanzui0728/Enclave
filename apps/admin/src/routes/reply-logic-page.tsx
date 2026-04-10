@@ -2077,6 +2077,16 @@ function RuntimeRulesEditorCard({
                 />
               </div>
               <TextAreaBlock
+                label="随机活动候选池（每行一个 activity）"
+                value={listToLines(draft.activityRandomPool)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    activityRandomPool: linesToList(value),
+                  }))
+                }
+              />
+              <TextAreaBlock
                 label="场景加好友候选（每行一个）"
                 value={listToLines(draft.sceneFriendRequestScenes)}
                 onChange={(value) =>
@@ -3644,6 +3654,7 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
         working: [...constants.activityScheduleHours.working],
         eating: [...constants.activityScheduleHours.eating],
       },
+      随机活动候选池: [...constants.activityRandomPool],
       场景加好友候选: [...constants.sceneFriendRequestScenes],
       AI关系初始类型: constants.relationshipInitialType,
       AI关系初始强度: constants.relationshipInitialStrength,
