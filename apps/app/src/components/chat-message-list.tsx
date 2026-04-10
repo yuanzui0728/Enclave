@@ -512,6 +512,13 @@ export function ChatMessageList({
       tone: "success",
     });
   };
+
+  const showUnavailableActionNotice = (message: string) => {
+    setActionNotice({
+      message,
+      tone: "danger",
+    });
+  };
   const selectedMessageIdSet = useMemo(
     () => new Set(selectedMessageIds),
     [selectedMessageIds],
@@ -853,6 +860,17 @@ export function ChatMessageList({
               }
             : undefined
         }
+        onSetReminder={
+          mobileActionMessage
+            ? () => {
+                showUnavailableActionNotice(
+                  "消息提醒能力待接服务端提醒接口，当前先保留微信式入口。",
+                );
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        reminderLabel="提醒"
         onToggleFavorite={
           mobileActionMessage
             ? () => {
@@ -915,6 +933,28 @@ export function ChatMessageList({
         saveAttachmentLabel={
           mobileActionMessage?.type === "image" ? "保存图片" : "保存文件"
         }
+        onRecall={
+          mobileActionMessage?.senderType === "user"
+            ? () => {
+                showUnavailableActionNotice(
+                  "撤回消息能力待接消息级接口，当前先保留微信式入口。",
+                );
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        recallLabel="撤回"
+        onDelete={
+          mobileActionMessage
+            ? () => {
+                showUnavailableActionNotice(
+                  "删除消息能力待接消息级接口，当前先保留微信式入口。",
+                );
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        deleteLabel="删除"
       />
       {activeImage ? (
         <ImageViewerOverlay
@@ -1649,70 +1689,107 @@ function ImageViewerOverlay({
         aria-label="关闭图片查看器"
       />
 
-      <div
-        className={`absolute inset-x-0 z-10 flex items-start justify-between gap-4 px-4 text-white ${
-          isDesktop
-            ? "top-5 px-8"
-            : "top-[calc(env(safe-area-inset-top,0px)+0.75rem)]"
-        }`}
-      >
-        <div className="min-w-0">
-          <div className="truncate text-sm font-medium">
-            {activeImage.fileName || activeImage.label}
+      {isDesktop ? (
+        <>
+          <div className="absolute inset-x-0 top-5 z-10 flex items-start justify-between gap-4 px-8 text-white">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium">
+                {activeImage.fileName || activeImage.label}
+              </div>
+              <div className="mt-1 text-xs text-white/70">
+                {activeIndex + 1} / {total}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ViewerActionButton label="保存图片" onClick={onSave}>
+                <Download size={16} />
+              </ViewerActionButton>
+              <ViewerActionButton label="定位到聊天位置" onClick={onLocate}>
+                <LocateFixed size={16} />
+              </ViewerActionButton>
+              <ViewerActionButton label="关闭图片查看器" onClick={onClose}>
+                <X size={16} />
+              </ViewerActionButton>
+            </div>
           </div>
-          <div className="mt-1 text-xs text-white/70">
-            {activeIndex + 1} / {total}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <ViewerActionButton
-            compact={!isDesktop}
-            label="保存图片"
-            onClick={onSave}
-          >
-            <Download size={16} />
-          </ViewerActionButton>
-          <ViewerActionButton
-            compact={!isDesktop}
-            label="定位到聊天位置"
-            onClick={onLocate}
-          >
-            <LocateFixed size={16} />
-          </ViewerActionButton>
-          <ViewerActionButton
-            compact={!isDesktop}
-            label="关闭图片查看器"
-            onClick={onClose}
-          >
-            <X size={16} />
-          </ViewerActionButton>
-        </div>
-      </div>
 
-      {onPrevious ? (
-        <ViewerNavButton
-          compact={!isDesktop}
-          side="left"
-          label="上一张图片"
-          onClick={onPrevious}
-        >
-          <ChevronLeft size={22} />
-        </ViewerNavButton>
-      ) : null}
-      {onNext ? (
-        <ViewerNavButton
-          compact={!isDesktop}
-          side="right"
-          label="下一张图片"
-          onClick={onNext}
-        >
-          <ChevronRight size={22} />
-        </ViewerNavButton>
-      ) : null}
+          {onPrevious ? (
+            <ViewerNavButton
+              side="left"
+              label="上一张图片"
+              onClick={onPrevious}
+            >
+              <ChevronLeft size={22} />
+            </ViewerNavButton>
+          ) : null}
+          {onNext ? (
+            <ViewerNavButton side="right" label="下一张图片" onClick={onNext}>
+              <ChevronRight size={22} />
+            </ViewerNavButton>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.5rem)] z-10 flex items-start justify-between gap-3 px-3 text-white">
+            <ViewerActionButton
+              compact
+              label="关闭图片查看器"
+              onClick={onClose}
+            >
+              <X size={16} />
+            </ViewerActionButton>
+            <div className="min-w-0 flex-1 pt-1 text-center">
+              <div className="truncate text-sm font-medium">
+                {activeImage.fileName || activeImage.label}
+              </div>
+              <div className="mt-1 text-xs text-white/70">
+                {activeIndex + 1} / {total}
+              </div>
+            </div>
+            <ViewerActionButton compact label="保存图片" onClick={onSave}>
+              <Download size={16} />
+            </ViewerActionButton>
+          </div>
+
+          {total > 1 ? (
+            <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-10 px-6 text-center text-xs text-white/70">
+              左右滑动切换图片
+            </div>
+          ) : null}
+
+          <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-[rgba(15,23,42,0.58)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
+            <div className="flex items-center justify-center gap-3">
+              <ViewerActionButton
+                compact
+                label="定位到聊天位置"
+                onClick={onLocate}
+              >
+                <LocateFixed size={16} />
+              </ViewerActionButton>
+              {onPrevious ? (
+                <ViewerActionButton
+                  compact
+                  label="上一张图片"
+                  onClick={onPrevious}
+                >
+                  <ChevronLeft size={18} />
+                </ViewerActionButton>
+              ) : null}
+              {onNext ? (
+                <ViewerActionButton compact label="下一张图片" onClick={onNext}>
+                  <ChevronRight size={18} />
+                </ViewerActionButton>
+              ) : null}
+            </div>
+          </div>
+        </>
+      )}
 
       <div
         className={`absolute inset-0 flex items-center justify-center ${
-          isDesktop ? "px-24 pb-10 pt-24" : "px-4 pb-8 pt-24"
+          isDesktop
+            ? "px-24 pb-10 pt-24"
+            : "px-4 pb-[calc(env(safe-area-inset-bottom,0px)+6.75rem)] pt-24"
         }`}
         onTouchStart={isDesktop ? undefined : handleTouchStart}
         onTouchMove={isDesktop ? undefined : handleTouchMove}
@@ -1745,6 +1822,7 @@ function ViewerActionButton({
     <button
       type="button"
       onClick={onClick}
+      onPointerDown={(event) => event.stopPropagation()}
       className={`flex items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
         compact ? "h-10 w-10 justify-center" : "h-10 gap-2 px-4 text-sm"
       }`}
