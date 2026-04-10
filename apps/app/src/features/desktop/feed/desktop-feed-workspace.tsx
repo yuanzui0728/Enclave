@@ -128,15 +128,15 @@ export function DesktopFeedWorkspace({
     const keyword = searchText.trim().toLowerCase();
 
     return posts.filter((post) => {
-      if (activeFilter === "owner" && post.authorType !== "user") {
-        return false;
-      }
-
-      if (activeFilter === "resident" && post.authorType !== "character") {
-        return false;
-      }
-
       if (activeAuthorId && post.authorId !== activeAuthorId) {
+        return false;
+      }
+
+      if (!activeAuthorId && activeFilter === "owner" && post.authorType !== "user") {
+        return false;
+      }
+
+      if (!activeAuthorId && activeFilter === "resident" && post.authorType !== "character") {
         return false;
       }
 
