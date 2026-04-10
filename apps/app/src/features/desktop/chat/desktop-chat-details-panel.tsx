@@ -29,6 +29,7 @@ import { ChevronRight, Search } from "lucide-react";
 import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
+import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
 import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
@@ -68,6 +69,10 @@ type GroupDetailsEditorConfig = {
   onConfirm: (value: string) => void;
 };
 
+type DirectDetailsConfirmAction = "hide" | "clear" | "report" | "block";
+
+type GroupDetailsConfirmAction = "hide" | "clear" | "leave";
+
 export function DesktopChatDetailsPanel({
   conversation,
   onOpenHistory,
@@ -100,11 +105,14 @@ function DirectChatDetailsPanel({
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] =
+    useState<DirectDetailsConfirmAction | null>(null);
   const backgroundQuery = useConversationBackground(conversation.id);
   const targetCharacterId = conversation.participants[0] ?? "";
 
   useEffect(() => {
     setNotice(null);
+    setConfirmAction(null);
   }, [conversation.id]);
 
   useEffect(() => {
@@ -293,6 +301,58 @@ function DirectChatDetailsPanel({
     hideMutation.isPending ||
     reportMutation.isPending ||
     blockMutation.isPending;
+  const activeConfirm =
+    confirmAction === "hide"
+      ? {
+          title: "隐藏聊天",
+          description:
+            "确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。",
+          confirmLabel: "隐藏聊天",
+          pendingLabel: "正在隐藏...",
+          onConfirm: () => {
+            setConfirmAction(null);
+            hideMutation.mutate();
+          },
+        }
+      : confirmAction === "clear"
+        ? {
+            title: "清空聊天记录",
+            description: "确认清空这段聊天记录吗？此操作只影响当前会话视图。",
+            confirmLabel: "清空记录",
+            pendingLabel: "正在清空...",
+            danger: true,
+            onConfirm: () => {
+              setConfirmAction(null);
+              clearMutation.mutate();
+            },
+          }
+        : confirmAction === "report"
+          ? {
+              title: "提交投诉",
+              description:
+                "确认提交投诉吗？系统会记录当前会话上下文用于后续处理。",
+              confirmLabel: "提交投诉",
+              pendingLabel: "正在提交...",
+              danger: true,
+              onConfirm: () => {
+                setConfirmAction(null);
+                reportMutation.mutate();
+              },
+            }
+          : confirmAction === "block"
+            ? {
+                title: "加入黑名单",
+                description:
+                  "加入黑名单后，将不再接收该角色的互动。确认继续吗？",
+                confirmLabel: "加入黑名单",
+                pendingLabel: "正在加入...",
+                danger: true,
+                onConfirm: () => {
+                  setConfirmAction(null);
+                  blockMutation.mutate();
+                },
+              }
+            : null;
 
   return (
     <div className="space-y-3 p-3">
@@ -381,52 +441,26 @@ function DirectChatDetailsPanel({
         <DesktopPanelRow
           label="隐藏聊天"
           disabled={busy}
-          onClick={() => {
-            if (
-              !window.confirm("确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。")
-            ) {
-              return;
-            }
-            hideMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("hide")}
         />
         <DesktopPanelRow
           label="清空聊天记录"
           danger
           disabled={busy}
-          onClick={() => {
-            if (!window.confirm("确认清空这段聊天记录吗？")) {
-              return;
-            }
-            clearMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("clear")}
         />
         <DesktopPanelRow
           label="投诉"
           danger
           disabled={busy || !targetCharacterId}
-          onClick={() => {
-            if (!window.confirm("确认提交投诉吗？")) {
-              return;
-            }
-            reportMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("report")}
         />
         <DesktopPanelRow
           label="加入黑名单"
           value={isBlocked ? "已加入" : undefined}
           disabled={busy || isBlocked || !targetCharacterId}
           danger
-          onClick={() => {
-            if (
-              !window.confirm(
-                "加入黑名单后，将不再接收该角色的互动。确认继续吗？",
-              )
-            ) {
-              return;
-            }
-            blockMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("block")}
         />
       </DesktopPanelSection>
 
@@ -452,6 +486,17 @@ function DirectChatDetailsPanel({
       {blockMutation.isError && blockMutation.error instanceof Error ? (
         <ErrorBlock message={blockMutation.error.message} />
       ) : null}
+      <DesktopChatConfirmDialog
+        open={Boolean(activeConfirm)}
+        title={activeConfirm?.title ?? ""}
+        description={activeConfirm?.description ?? ""}
+        confirmLabel={activeConfirm?.confirmLabel}
+        pendingLabel={activeConfirm?.pendingLabel}
+        danger={activeConfirm?.danger}
+        pending={busy}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => activeConfirm?.onConfirm()}
+      />
     </div>
   );
 }
@@ -466,6 +511,8 @@ function GroupChatDetailsPanel({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerQuery = useDefaultChatBackground();
   const [notice, setNotice] = useState<string | null>(null);
+  const [confirmAction, setConfirmAction] =
+    useState<GroupDetailsConfirmAction | null>(null);
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
   const [memberPickerMode, setMemberPickerMode] = useState<"add" | "remove">(
     "add",
@@ -476,6 +523,7 @@ function GroupChatDetailsPanel({
 
   useEffect(() => {
     setNotice(null);
+    setConfirmAction(null);
     setMemberPickerOpen(false);
     setMemberPickerMode("add");
     setEditorMode(null);
@@ -818,6 +866,46 @@ function GroupChatDetailsPanel({
               onConfirm: (value: string) => updateNicknameMutation.mutate(value),
             }
           : null;
+  const activeConfirm =
+    confirmAction === "hide"
+      ? {
+          title: "隐藏聊天",
+          description:
+            "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
+          confirmLabel: "隐藏聊天",
+          pendingLabel: "正在隐藏...",
+          onConfirm: () => {
+            setConfirmAction(null);
+            hideMutation.mutate();
+          },
+        }
+      : confirmAction === "clear"
+        ? {
+            title: "清空聊天记录",
+            description:
+              "确认清空这个群聊的聊天记录吗？此操作只影响当前群会话视图。",
+            confirmLabel: "清空记录",
+            pendingLabel: "正在清空...",
+            danger: true,
+            onConfirm: () => {
+              setConfirmAction(null);
+              clearMutation.mutate();
+            },
+          }
+        : confirmAction === "leave"
+          ? {
+              title: "删除并退出",
+              description:
+                "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
+              confirmLabel: "删除并退出",
+              pendingLabel: "正在退出...",
+              danger: true,
+              onConfirm: () => {
+                setConfirmAction(null);
+                leaveMutation.mutate();
+              },
+            }
+          : null;
 
   return (
     <div className="space-y-3 p-3">
@@ -988,42 +1076,19 @@ function GroupChatDetailsPanel({
         <DesktopPanelRow
           label="隐藏聊天"
           disabled={busy}
-          onClick={() => {
-            if (
-              !window.confirm(
-                "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
-              )
-            ) {
-              return;
-            }
-            hideMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("hide")}
         />
         <DesktopPanelRow
           label="清空聊天记录"
           danger
           disabled={busy}
-          onClick={() => {
-            if (!window.confirm("确认清空这个群聊的聊天记录吗？")) {
-              return;
-            }
-            clearMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("clear")}
         />
         <DesktopPanelRow
           label="删除并退出"
           danger
           disabled={busy}
-          onClick={() => {
-            if (
-              !window.confirm(
-                "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
-              )
-            ) {
-              return;
-            }
-            leaveMutation.mutate();
-          }}
+          onClick={() => setConfirmAction("leave")}
         />
       </DesktopPanelSection>
 
@@ -1081,6 +1146,17 @@ function GroupChatDetailsPanel({
         pending={activeEditor?.pending}
         onClose={() => setEditorMode(null)}
         onConfirm={(value) => activeEditor?.onConfirm(value)}
+      />
+      <DesktopChatConfirmDialog
+        open={Boolean(activeConfirm)}
+        title={activeConfirm?.title ?? ""}
+        description={activeConfirm?.description ?? ""}
+        confirmLabel={activeConfirm?.confirmLabel}
+        pendingLabel={activeConfirm?.pendingLabel}
+        danger={activeConfirm?.danger}
+        pending={busy}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => activeConfirm?.onConfirm()}
       />
     </div>
   );
