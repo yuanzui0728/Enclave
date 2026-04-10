@@ -13,6 +13,7 @@ import {
 } from "@yinjie/contracts";
 import {
   ChevronRight,
+  Gamepad2,
   Newspaper,
   PlaySquare,
   Sparkles,
@@ -46,7 +47,7 @@ const scenes = [
 ];
 
 type MobileDiscoverEntry = {
-  key: "moments" | "encounter" | "scene" | "feed" | "channels";
+  key: "moments" | "encounter" | "scene" | "feed" | "channels" | "games";
   label: string;
   description: string;
   detail: string;
@@ -57,7 +58,8 @@ type MobileDiscoverEntry = {
     | "/discover/encounter"
     | "/discover/scene"
     | "/discover/feed"
-    | "/discover/channels";
+    | "/discover/channels"
+    | "/discover/games";
 };
 
 const mobileDiscoverEntries: MobileDiscoverEntry[] = [
@@ -98,6 +100,15 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
     icon: PlaySquare,
     iconClassName: "bg-[linear-gradient(135deg,#ff8a3d,#ff5f45)] text-white",
     to: "/discover/channels",
+  },
+  {
+    key: "games",
+    label: "游戏",
+    description: "最近玩过与推荐",
+    detail: "按微信游戏中心的节奏承接最近玩过、好友热玩、推荐位和活动位，移动端从发现页进入。",
+    icon: Gamepad2,
+    iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
+    to: "/discover/games",
   },
 ];
 
