@@ -1,15 +1,19 @@
 type MobileMessageActionSheetProps = {
   open: boolean;
   onClose: () => void;
+  title?: string;
   onReply?: () => void;
   onCopy: () => void;
+  onCopySender?: () => void;
 };
 
 export function MobileMessageActionSheet({
   open,
   onClose,
+  title = "消息操作",
   onReply,
   onCopy,
+  onCopySender,
 }: MobileMessageActionSheetProps) {
   if (!open) {
     return null;
@@ -24,9 +28,15 @@ export function MobileMessageActionSheet({
         onClick={onClose}
       />
       <div className="absolute inset-x-0 bottom-0 rounded-t-[18px] bg-[#f2f2f2] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-16px_36px_rgba(15,23,42,0.14)]">
+        <div className="pb-3 text-center text-[13px] text-[#8c8c8c]">
+          {title}
+        </div>
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
           <ActionButton label="复制" onClick={onCopy} />
+          {onCopySender ? (
+            <ActionButton label="复制发送者" onClick={onCopySender} />
+          ) : null}
         </div>
         <button
           type="button"

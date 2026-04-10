@@ -64,6 +64,7 @@ export function ChatMessageList({
   const [mobileActionMessage, setMobileActionMessage] =
     useState<ChatRenderableMessage | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
+  const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop;
 
   useEffect(() => {
@@ -184,11 +185,13 @@ export function ChatMessageList({
 
   const clearLongPressTimer = () => {
     if (longPressTimerRef.current === null) {
+      longPressStartRef.current = null;
       return;
     }
 
     window.clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = null;
+    longPressStartRef.current = null;
   };
 
   const handleMobileMessagePointerDown = (
@@ -199,11 +202,32 @@ export function ChatMessageList({
       return;
     }
 
-    clearLongPressTimer();
+    longPressStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+    };
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+    }
     longPressTimerRef.current = window.setTimeout(() => {
       setMobileActionMessage(message);
       clearLongPressTimer();
     }, 380);
+  };
+
+  const handleMobileMessagePointerMove = (
+    event: PointerEvent<HTMLDivElement>,
+  ) => {
+    if (isDesktop || event.pointerType === "mouse" || !longPressStartRef.current) {
+      return;
+    }
+
+    if (
+      Math.abs(event.clientX - longPressStartRef.current.x) > 8 ||
+      Math.abs(event.clientY - longPressStartRef.current.y) > 8
+    ) {
+      clearLongPressTimer();
+    }
   };
 
   return (
@@ -264,7 +288,7 @@ export function ChatMessageList({
               }
               onPointerUp={clearLongPressTimer}
               onPointerCancel={clearLongPressTimer}
-              onPointerMove={clearLongPressTimer}
+              onPointerMove={handleMobileMessagePointerMove}
               className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
@@ -372,6 +396,9 @@ export function ChatMessageList({
       <MobileMessageActionSheet
         open={Boolean(mobileActionMessage)}
         onClose={() => setMobileActionMessage(null)}
+        title={
+          mobileActionMessage?.senderType === "user" ? "我的消息" : "消息操作"
+        }
         onReply={
           mobileActionMessage && onReplyMessage
             ? () => {
@@ -391,6 +418,19 @@ export function ChatMessageList({
           );
           setMobileActionMessage(null);
         }}
+        onCopySender={
+          mobileActionMessage &&
+          groupMode &&
+          mobileActionMessage.senderType !== "user"
+            ? () => {
+                void copyToClipboard(
+                  buildClipboardSender(mobileActionMessage),
+                  "发送者名称已复制。",
+                );
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
       />
     </div>
   );
