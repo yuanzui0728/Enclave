@@ -37,6 +37,7 @@ import {
   ToggleChip,
   useProviderSetup,
 } from "@yinjie/ui";
+import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
@@ -355,6 +356,66 @@ export function ReplyLogicPage() {
       ? `已保存实例级推理服务：${providerSetup.providerSaveMutation.data.model}`
       : "这里保存的是实例级兜底推理服务；如果世界主人配置了个人 API 密钥，聊天主链路仍会优先使用个人配置。");
 
+  const currentStatusRows = [
+    { label: "当前范围", value: scope === "character" ? "角色" : "会话" },
+    {
+      label: "当前目标",
+      value:
+        scope === "character"
+          ? selectedCharacter?.name ?? "未选择角色"
+          : selectedConversation?.title ?? "未选择会话",
+    },
+    { label: "角色草稿", value: isCharacterDraftDirty ? "未保存" : "已同步" },
+    { label: "运行规则", value: isRuntimeRulesDraftDirty ? "未保存" : "已同步" },
+  ];
+  const targetSummaryRows =
+    scope === "character" && selectedCharacter
+      ? [
+          { label: "角色", value: selectedCharacter.name },
+          { label: "活动", value: formatActivity(selectedCharacter.currentActivity) },
+          { label: "在线", value: selectedCharacter.isOnline ? "在线" : "离线" },
+        ]
+      : scope === "conversation" && selectedConversation
+        ? [
+            { label: "会话", value: selectedConversation.title },
+            { label: "来源", value: formatConversationSource(selectedConversation.source) },
+            {
+              label: "参与角色",
+              value: selectedConversation.participantNames.join(" / ") || "无",
+            },
+          ]
+        : [{ label: "当前目标", value: "未选择" }];
+  const providerSummaryRows = [
+    {
+      label: "模型",
+      value: `${overview?.provider.model ?? "未配置"} (${formatProviderModelSource(overview?.provider.modelSource ?? "")})`,
+    },
+    {
+      label: "接口地址",
+      value: `${overview?.provider.endpoint ?? "未配置"} (${formatProviderEndpointSource(overview?.provider.endpointSource ?? "")})`,
+    },
+    {
+      label: "API 密钥",
+      value: formatProviderApiKeySource(overview?.provider.apiKeySource ?? ""),
+    },
+    {
+      label: "实例级模型",
+      value: overview?.provider.configuredProviderModel ?? "未设置",
+    },
+    {
+      label: "实例级接口地址",
+      value: overview?.provider.configuredProviderEndpoint ?? "未设置",
+    },
+  ];
+
+  function jumpToSection(sectionId: string) {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-6">
       {overviewQuery.isLoading ? <LoadingBlock label="正在读取回复逻辑总览..." /> : null}
@@ -365,16 +426,12 @@ export function ReplyLogicPage() {
       {overview ? (
         <>
           <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
-              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-                <div className="max-w-2xl">
-                  <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">回复调试</div>
-                  <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">先选目标，再看真实快照，最后修改保存。</h2>
-                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                    这页已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。保存后会刷新真实运行快照。
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
+            <AdminPageHero
+              eyebrow="回复调试"
+              title="先选目标，再看真实快照，最后修改保存。"
+              description="这页已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。保存后会刷新真实运行快照。"
+              actions={
+                <>
                   <Button onClick={() => void refreshAll()} variant="secondary" size="lg">
                     刷新快照
                   </Button>
@@ -386,45 +443,31 @@ export function ReplyLogicPage() {
                   >
                     {runtimeRulesSaveMutation.isPending ? "保存规则中..." : "保存运行规则"}
                   </Button>
-                </div>
-              </div>
+                </>
+              }
+              metrics={[
+                { label: "角色数", value: overview.characters.length },
+                { label: "会话数", value: overview.conversations.length },
+                { label: "当前模型", value: overview.provider.model },
+                { label: "世界上下文", value: overview.worldContext?.text || "暂无快照" },
+              ]}
+            />
 
-              <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <MetricCard label="角色数" value={overview.characters.length} />
-                <MetricCard label="会话数" value={overview.conversations.length} />
-                <MetricCard label="当前模型" value={overview.provider.model} />
-                <MetricCard label="世界上下文" value={overview.worldContext?.text || "暂无快照"} />
-              </div>
-            </Card>
-
-            <Card className="bg-[color:var(--surface-console)]">
-              <SectionHeading>当前状态</SectionHeading>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
-                <MetricCard
-                  label="当前目标"
-                  value={
-                    scope === "character"
-                      ? selectedCharacter?.name ?? "未选择角色"
-                      : selectedConversation?.title ?? "未选择会话"
-                  }
-                />
-                <MetricCard
-                  label="角色草稿"
-                  value={isCharacterDraftDirty ? "未保存" : "已同步"}
-                  meta={<StatusPill tone={isCharacterDraftDirty ? "warning" : "healthy"}>{isCharacterDraftDirty ? "草稿" : "同步"}</StatusPill>}
-                />
-                <MetricCard
-                  label="运行规则"
-                  value={isRuntimeRulesDraftDirty ? "未保存" : "已同步"}
-                  meta={<StatusPill tone={isRuntimeRulesDraftDirty ? "warning" : "healthy"}>{isRuntimeRulesDraftDirty ? "草稿" : "同步"}</StatusPill>}
-                />
-              </div>
-            </Card>
+            <AdminInfoRows title="当前状态" rows={currentStatusRows} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_440px]">
             <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+              <AdminSectionNav
+                title="段落导航"
+                items={[
+                  { label: "真实快照", detail: "角色或会话的运行快照", onClick: () => jumpToSection("reply-logic-inspector") },
+                  { label: "候选预演", detail: "输入消息并预演生成链路", onClick: () => jumpToSection("reply-logic-preview") },
+                  { label: "配置抽屉", detail: "修改角色和实例运行配置", onClick: () => jumpToSection("reply-logic-config") },
+                  { label: "运行规则", detail: "维护全局规则与提示语", onClick: () => jumpToSection("reply-logic-rules") },
+                ]}
+              />
+
               <Card className="bg-[color:var(--surface-console)]">
                 <SectionHeading>工作范围</SectionHeading>
                 <div className="mt-4 space-y-4">
@@ -483,51 +526,13 @@ export function ReplyLogicPage() {
                 </div>
               </Card>
 
-              <Card className="bg-[color:var(--surface-console)]">
-                <SectionHeading>当前目标摘要</SectionHeading>
-                <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
-                  {scope === "character" && selectedCharacter ? (
-                    <>
-                      <StaticRow label="角色" value={selectedCharacter.name} />
-                      <StaticRow label="活动" value={formatActivity(selectedCharacter.currentActivity)} />
-                      <StaticRow label="在线" value={selectedCharacter.isOnline ? "在线" : "离线"} />
-                    </>
-                  ) : null}
-                  {scope === "conversation" && selectedConversation ? (
-                    <>
-                      <StaticRow label="会话" value={selectedConversation.title} />
-                      <StaticRow label="来源" value={formatConversationSource(selectedConversation.source)} />
-                      <StaticRow label="参与角色" value={selectedConversation.participantNames.join(" / ") || "无"} />
-                    </>
-                  ) : null}
-                </div>
-              </Card>
+              <AdminInfoRows title="当前目标摘要" rows={targetSummaryRows} />
 
-              <Card className="bg-[color:var(--surface-console)]">
-                <SectionHeading>真实运行推理服务</SectionHeading>
-                <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
-                  <StaticRow
-                    label="模型"
-                    value={`${overview.provider.model} (${formatProviderModelSource(overview.provider.modelSource)})`}
-                  />
-                  <StaticRow
-                    label="接口地址"
-                    value={`${overview.provider.endpoint} (${formatProviderEndpointSource(overview.provider.endpointSource)})`}
-                  />
-                  <StaticRow
-                    label="API 密钥"
-                    value={formatProviderApiKeySource(overview.provider.apiKeySource)}
-                  />
-                  <StaticRow
-                    label="实例级模型"
-                    value={overview.provider.configuredProviderModel ?? "未设置"}
-                  />
-                  <StaticRow
-                    label="实例级接口地址"
-                    value={overview.provider.configuredProviderEndpoint ?? "未设置"}
-                  />
-                </div>
-                {overview.provider.notes.length ? (
+              <AdminInfoRows title="真实运行推理服务" rows={providerSummaryRows} />
+
+              {overview.provider.notes.length ? (
+                <Card className="bg-[color:var(--surface-console)]">
+                  <SectionHeading>运行备注</SectionHeading>
                   <div className="mt-4 space-y-2">
                     {overview.provider.notes.map((note) => (
                       <InlineNotice key={note} tone="warning">
@@ -535,8 +540,8 @@ export function ReplyLogicPage() {
                       </InlineNotice>
                     ))}
                   </div>
-                ) : null}
-              </Card>
+                </Card>
+              ) : null}
 
               <Card className="bg-[color:var(--surface-console)]">
                 <SectionHeading>运行时常量</SectionHeading>
@@ -548,7 +553,7 @@ export function ReplyLogicPage() {
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div id="reply-logic-inspector" className="space-y-6">
               {scope === "character" ? (
                 <CharacterInspectorPanel
                   selectedCharacter={selectedCharacter}
@@ -565,51 +570,55 @@ export function ReplyLogicPage() {
             </div>
 
             <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-              <ReplyPreviewPanel
-                scope={scope}
-                previewMessage={previewMessage}
-                onPreviewMessageChange={setPreviewMessage}
-                actorOptions={conversationActorOptions}
-                configuredConversationActorId={configuredConversationActorId}
-                onConfiguredConversationActorIdChange={setConfiguredConversationActorId}
-                preview={previewMutation.data}
-                error={previewMutation.error}
-                isPending={previewMutation.isPending}
-                onRunPreview={() => previewMutation.mutate()}
-              />
+              <div id="reply-logic-preview">
+                <ReplyPreviewPanel
+                  scope={scope}
+                  previewMessage={previewMessage}
+                  onPreviewMessageChange={setPreviewMessage}
+                  actorOptions={conversationActorOptions}
+                  configuredConversationActorId={configuredConversationActorId}
+                  onConfiguredConversationActorIdChange={setConfiguredConversationActorId}
+                  preview={previewMutation.data}
+                  error={previewMutation.error}
+                  isPending={previewMutation.isPending}
+                  onRunPreview={() => previewMutation.mutate()}
+                />
+              </div>
 
-              <Card className="bg-[color:var(--surface-console)]">
-                <div className="flex items-center justify-between gap-3">
-                  <SectionHeading>配置抽屉</SectionHeading>
-                  <StatusPill tone={isCharacterDraftDirty ? "warning" : "healthy"}>
-                    {characterDraft ? (isCharacterDraftDirty ? "草稿未保存" : "已同步") : "等待目标"}
-                  </StatusPill>
-                </div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-                  <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
-                  <MetricCard
-                    label="配置目标"
-                    value={editableCharacterSource?.name ?? (scope === "conversation" ? "先选择会话角色" : "先选择角色")}
-                  />
-                </div>
+              <div id="reply-logic-config">
+                <Card className="bg-[color:var(--surface-console)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <SectionHeading>配置抽屉</SectionHeading>
+                    <StatusPill tone={isCharacterDraftDirty ? "warning" : "healthy"}>
+                      {characterDraft ? (isCharacterDraftDirty ? "草稿未保存" : "已同步") : "等待目标"}
+                    </StatusPill>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+                    <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
+                    <MetricCard
+                      label="配置目标"
+                      value={editableCharacterSource?.name ?? (scope === "conversation" ? "先选择会话角色" : "先选择角色")}
+                    />
+                  </div>
 
-                {scope === "conversation" ? (
-                  <SelectFieldBlock
-                    className="mt-4"
-                    label="会话内配置角色"
-                    value={configuredConversationActorId}
-                    onChange={setConfiguredConversationActorId}
-                    options={conversationActorOptions.map((item) => ({
-                      value: item.id,
-                      label: `${item.name} · ${item.relationship}`,
-                    }))}
-                  />
-                ) : null}
+                  {scope === "conversation" ? (
+                    <SelectFieldBlock
+                      className="mt-4"
+                      label="会话内配置角色"
+                      value={configuredConversationActorId}
+                      onChange={setConfiguredConversationActorId}
+                      options={conversationActorOptions.map((item) => ({
+                        value: item.id,
+                        label: `${item.name} · ${item.relationship}`,
+                      }))}
+                    />
+                  ) : null}
 
-                <InlineNotice className="mt-4" tone="muted">
-                  这里改的是实体字段和 `profile` 配置对象。本页不会实时重算草稿提示词，保存后会刷新右侧快照，看到真实生效结果。
-                </InlineNotice>
-              </Card>
+                  <InlineNotice className="mt-4" tone="muted">
+                    这里改的是实体字段和 `profile` 配置对象。本页不会实时重算草稿提示词，保存后会刷新右侧快照，看到真实生效结果。
+                  </InlineNotice>
+                </Card>
+              </div>
 
               <Card className="bg-[color:var(--surface-console)]">
                 <div className="flex items-center justify-between gap-3">
@@ -1285,35 +1294,26 @@ export function ReplyLogicPage() {
                 </div>
               </Card>
 
-              <RuntimeRulesEditorCard
-                draft={runtimeRulesDraft}
-                isDirty={isRuntimeRulesDraftDirty}
-                isPending={runtimeRulesSaveMutation.isPending}
-                error={
-                  runtimeRulesSaveMutation.error instanceof Error
-                    ? runtimeRulesSaveMutation.error.message
-                    : null
-                }
-                isSuccess={runtimeRulesSaveMutation.isSuccess}
-                onPatch={patchRuntimeRulesDraft}
-                onReset={resetRuntimeRulesDraft}
-                onSave={saveRuntimeRulesDraft}
-              />
+              <div id="reply-logic-rules">
+                <RuntimeRulesEditorCard
+                  draft={runtimeRulesDraft}
+                  isDirty={isRuntimeRulesDraftDirty}
+                  isPending={runtimeRulesSaveMutation.isPending}
+                  error={
+                    runtimeRulesSaveMutation.error instanceof Error
+                      ? runtimeRulesSaveMutation.error.message
+                      : null
+                  }
+                  isSuccess={runtimeRulesSaveMutation.isSuccess}
+                  onPatch={patchRuntimeRulesDraft}
+                  onReset={resetRuntimeRulesDraft}
+                  onSave={saveRuntimeRulesDraft}
+                />
+              </div>
             </div>
           </div>
         </>
       ) : null}
-    </div>
-  );
-}
-
-function OverviewMetrics({ overview }: { overview: ReplyLogicOverview }) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <MetricCard label="角色数" value={overview.characters.length} />
-      <MetricCard label="会话数" value={overview.conversations.length} />
-      <MetricCard label="当前模型" value={overview.provider.model} />
-      <MetricCard label="世界上下文" value={overview.worldContext?.text || "暂无快照"} />
     </div>
   );
 }
@@ -3469,17 +3469,6 @@ function NoteList({
         </li>
       ))}
     </ul>
-  );
-}
-
-function StaticRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3">
-      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-        {label}
-      </div>
-      <div className="break-all text-sm leading-7 text-[color:var(--text-primary)]">{value}</div>
-    </div>
   );
 }
 
