@@ -112,6 +112,9 @@ export function ChatMessageList({
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+  const [selectionAnchorMessageId, setSelectionAnchorMessageId] = useState<
+    string | null
+  >(null);
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
   >(null);
@@ -178,6 +181,11 @@ export function ChatMessageList({
           )
         : null,
     );
+    setSelectionAnchorMessageId((current) =>
+      current && messages.some((message) => message.id === current)
+        ? current
+        : null,
+    );
     setViewerMessageId((current) =>
       current && messages.some((message) => message.id === current)
         ? current
@@ -204,6 +212,7 @@ export function ChatMessageList({
   useEffect(() => {
     setSelectionMode(false);
     setSelectedMessageIds([]);
+    setSelectionAnchorMessageId(null);
     setForwardMessages(null);
   }, [isDesktop]);
 
@@ -213,6 +222,7 @@ export function ChatMessageList({
     }
 
     setSelectedMessageIds([]);
+    setSelectionAnchorMessageId(null);
   }, [selectionMode]);
 
   useEffect(() => {
@@ -550,12 +560,65 @@ export function ChatMessageList({
     return emptyState ?? null;
   }
 
+  const enterSelectionMode = (messageId: string) => {
+    setSelectionMode(true);
+    setSelectedMessageIds([messageId]);
+    setSelectionAnchorMessageId(messageId);
+  };
+
   const toggleSelectedMessage = (messageId: string) => {
-    setSelectedMessageIds((current) =>
-      current.includes(messageId)
-        ? current.filter((item) => item !== messageId)
-        : [...current, messageId],
+    const removing = selectedMessageIdSet.has(messageId);
+    const nextSelectedMessageIds = removing
+      ? selectedMessageIds.filter((item) => item !== messageId)
+      : [...selectedMessageIds, messageId];
+
+    setSelectedMessageIds(nextSelectedMessageIds);
+    if (removing && selectionAnchorMessageId === messageId) {
+      setSelectionAnchorMessageId(nextSelectedMessageIds[0] ?? null);
+      return;
+    }
+
+    if (!removing && !selectionAnchorMessageId) {
+      setSelectionAnchorMessageId(messageId);
+    }
+  };
+
+  const selectMessageRangeTo = (targetMessageId: string) => {
+    if (!selectionAnchorMessageId) {
+      return;
+    }
+
+    const anchorIndex = messages.findIndex(
+      (message) => message.id === selectionAnchorMessageId,
     );
+    const targetIndex = messages.findIndex(
+      (message) => message.id === targetMessageId,
+    );
+    if (anchorIndex < 0 || targetIndex < 0) {
+      return;
+    }
+
+    const [startIndex, endIndex] =
+      anchorIndex <= targetIndex
+        ? [anchorIndex, targetIndex]
+        : [targetIndex, anchorIndex];
+    const rangeIds = new Set(
+      messages
+        .slice(startIndex, endIndex + 1)
+        .map((message) => message.id),
+    );
+    const nextSelectedMessageIds = messages
+      .filter(
+        (message) =>
+          selectedMessageIdSet.has(message.id) || rangeIds.has(message.id),
+      )
+      .map((message) => message.id);
+
+    setSelectedMessageIds(nextSelectedMessageIds);
+    setActionNotice({
+      message: `已选择到这里，共 ${nextSelectedMessageIds.length} 条消息。`,
+      tone: "success",
+    });
   };
 
   return (
@@ -807,8 +870,7 @@ export function ChatMessageList({
               : undefined
           }
           onMultiSelect={() => {
-            setSelectionMode(true);
-            setSelectedMessageIds([contextMenuState.message.id]);
+            enterSelectionMode(contextMenuState.message.id);
             setContextMenuState(null);
           }}
           onSetReminder={() => {
@@ -910,8 +972,18 @@ export function ChatMessageList({
         onMultiSelect={
           mobileActionMessage
             ? () => {
-                setSelectionMode(true);
-                setSelectedMessageIds([mobileActionMessage.id]);
+                enterSelectionMode(mobileActionMessage.id);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        onSelectToHere={
+          mobileActionMessage &&
+          selectionMode &&
+          selectionAnchorMessageId &&
+          mobileActionMessage.id !== selectionAnchorMessageId
+            ? () => {
+                selectMessageRangeTo(mobileActionMessage.id);
                 setMobileActionMessage(null);
               }
             : undefined

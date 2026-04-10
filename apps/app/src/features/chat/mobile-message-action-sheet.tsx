@@ -5,6 +5,8 @@ type MobileMessageActionSheetProps = {
   onReply?: () => void;
   onForward?: () => void;
   onMultiSelect?: () => void;
+  onSelectToHere?: () => void;
+  selectToHereLabel?: string;
   onSetReminder?: () => void;
   reminderLabel?: string;
   onToggleFavorite?: () => void;
@@ -28,6 +30,8 @@ export function MobileMessageActionSheet({
   onReply,
   onForward,
   onMultiSelect,
+  onSelectToHere,
+  selectToHereLabel = "选择到这里",
   onSetReminder,
   reminderLabel = "提醒",
   onToggleFavorite,
@@ -64,6 +68,12 @@ export function MobileMessageActionSheet({
           {onForward ? <ActionButton label="转发" onClick={onForward} /> : null}
           {onMultiSelect ? (
             <ActionButton label="多选" onClick={onMultiSelect} />
+          ) : null}
+          {onSelectToHere ? (
+            <ActionButton
+              label={selectToHereLabel}
+              onClick={onSelectToHere}
+            />
           ) : null}
           {onSetReminder ? (
             <ActionButton label={reminderLabel} onClick={onSetReminder} />
