@@ -20,6 +20,7 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
+  createGroupInviteDeliveryBatchId,
   readGroupInviteDeliveryRecord,
   readGroupInviteDeliveryTargets,
   readGroupInviteReopenRecords,
@@ -57,6 +58,10 @@ export function GroupQrPage() {
   const [deliveryTargets, setDeliveryTargets] = useState<
     GroupInviteDeliveryTarget[]
   >(() => readGroupInviteDeliveryTargets(groupId));
+  const [deliveryBatch] = useState(() => ({
+    id: createGroupInviteDeliveryBatchId(),
+    startedAt: new Date().toISOString(),
+  }));
   const [reopenRecords, setReopenRecords] = useState<GroupInviteReopenRecord[]>(
     () => readGroupInviteReopenRecords(groupId),
   );
@@ -220,6 +225,30 @@ export function GroupQrPage() {
       ),
     [deliveryTargets],
   );
+  const deliveryTargetBatches = useMemo(
+    () =>
+      deliveryTargets.reduce<
+        Array<{
+          batchId: string;
+          batchStartedAt: string;
+          items: GroupInviteDeliveryTarget[];
+        }>
+      >((result, record) => {
+        const targetBatch = result.find((item) => item.batchId === record.batchId);
+        if (targetBatch) {
+          targetBatch.items.push(record);
+          return result;
+        }
+
+        result.push({
+          batchId: record.batchId,
+          batchStartedAt: record.batchStartedAt,
+          items: [record],
+        });
+        return result;
+      }, []),
+    [deliveryTargets],
+  );
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -330,6 +359,8 @@ export function GroupQrPage() {
           conversationPath,
           conversationTitle: conversation.title,
           groupName: groupQuery.data?.name,
+          batchId: deliveryBatch.id,
+          batchStartedAt: deliveryBatch.startedAt,
         }),
       );
       setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
@@ -363,6 +394,8 @@ export function GroupQrPage() {
         conversationPath,
         conversationTitle: conversation.title,
         groupName: groupQuery.data?.name,
+        batchId: deliveryBatch.id,
+        batchStartedAt: deliveryBatch.startedAt,
       }),
     );
     setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
@@ -515,35 +548,51 @@ export function GroupQrPage() {
                   最近已发邀请会话
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                  这些会话已经收到过这张群邀请，方便继续回跳或再次投递。
+                  这些会话已经收到过这张群邀请，并按发送批次归组，方便判断这一轮已经扩散到哪里。
                 </div>
               </div>
 
-              <div className="space-y-2">
-                {deliveryTargets.map((record) => (
-                  <div
-                    key={`${record.conversationPath}:${record.deliveredAt}`}
-                    className="flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+              <div className="space-y-3">
+                {deliveryTargetBatches.map((batch, index) => (
+                  <section
+                    key={batch.batchId}
+                    className="space-y-2 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white/86 px-4 py-3"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {record.conversationTitle}
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                        {index === 0 ? "最新发送批次" : `更早批次 ${index + 1}`}
                       </div>
                       <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        发送于 {formatConversationTimestamp(record.deliveredAt)}
+                        {batch.items.length} 条会话 · 开始于{" "}
+                        {formatConversationTimestamp(batch.batchStartedAt)}
                       </div>
                     </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        void navigate({ to: record.conversationPath });
-                      }}
-                      className="shrink-0 rounded-full"
-                    >
-                      回到会话
-                    </Button>
-                  </div>
+                    {batch.items.map((record) => (
+                      <div
+                        key={`${record.conversationPath}:${record.deliveredAt}`}
+                        className="flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                            {record.conversationTitle}
+                          </div>
+                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                            发送于 {formatConversationTimestamp(record.deliveredAt)}
+                          </div>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            void navigate({ to: record.conversationPath });
+                          }}
+                          className="shrink-0 rounded-full"
+                        >
+                          回到会话
+                        </Button>
+                      </div>
+                    ))}
+                  </section>
                 ))}
               </div>
             </section>
