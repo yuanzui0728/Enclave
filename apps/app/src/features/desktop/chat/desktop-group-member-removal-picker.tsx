@@ -72,7 +72,7 @@ export function DesktopGroupMemberRemovalPicker({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-6 backdrop-blur-[4px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
         aria-label="关闭移除群成员弹层"
@@ -84,9 +84,9 @@ export function DesktopGroupMemberRemovalPicker({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[30px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)]">
+      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
         <section className="flex w-[380px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-          <div className="border-b border-black/6 px-5 py-5">
+          <div className="border-b border-black/6 px-5 py-4">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               移除群成员
             </div>
@@ -104,7 +104,7 @@ export function DesktopGroupMemberRemovalPicker({
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="搜索群成员"
-                className="h-11 w-full rounded-2xl border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+                className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
               />
             </label>
           </div>
@@ -125,7 +125,7 @@ export function DesktopGroupMemberRemovalPicker({
               </div>
             ) : null}
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {filteredMembers.map((member) => (
                 <CandidateRow
                   key={member.id}
@@ -141,10 +141,10 @@ export function DesktopGroupMemberRemovalPicker({
           </div>
         </section>
 
-        <section className="flex min-w-0 flex-1 flex-col bg-[linear-gradient(180deg,#fcfcfc,#f6f6f6)]">
-          <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+        <section className="flex min-w-0 flex-1 flex-col bg-[#fafafa]">
+          <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                 已选成员
               </div>
               <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
@@ -158,7 +158,7 @@ export function DesktopGroupMemberRemovalPicker({
                   onClose();
                 }
               }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={pending}
               aria-label="关闭"
             >
@@ -172,7 +172,7 @@ export function DesktopGroupMemberRemovalPicker({
                 {selectedMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 rounded-[22px] border border-black/6 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]"
+                    className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-4"
                   >
                     <AvatarChip name={member.name} src={member.avatar} />
                     <div className="min-w-0 flex-1">
@@ -187,7 +187,7 @@ export function DesktopGroupMemberRemovalPicker({
                       type="button"
                       onClick={() => toggleSelection(member.id)}
                       disabled={pending}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                       aria-label={`移除 ${member.name}`}
                     >
                       <X size={14} />
@@ -209,7 +209,7 @@ export function DesktopGroupMemberRemovalPicker({
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-black/6 px-6 py-4">
+          <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
             <div className="text-[12px] text-[color:var(--text-muted)]">
               世界主人不会出现在移除列表里。
             </div>
@@ -219,7 +219,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="secondary"
                 onClick={onClose}
                 disabled={pending}
-                className="rounded-2xl"
+                className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
               >
                 取消
               </Button>
@@ -228,7 +228,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="primary"
                 onClick={() => onConfirm(selectedIds)}
                 disabled={!selectedIds.length || pending}
-                className="rounded-2xl px-6"
+                className="rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
               >
                 {pending ? "正在移除..." : "移出群聊"}
               </Button>
@@ -261,9 +261,9 @@ function CandidateRow({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-left transition disabled:opacity-60",
+        "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
         checked
-          ? "border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)] shadow-[0_8px_20px_rgba(7,193,96,0.08)]"
+          ? "border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)]"
           : "border border-transparent bg-transparent hover:bg-white",
       )}
     >
@@ -288,7 +288,7 @@ function SelectionBadge({ checked }: { checked: boolean }) {
         "h-6 w-6 shrink-0 rounded-full border transition-colors",
         checked
           ? "border-[#07c160] bg-[#07c160]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]",
+          : "border-black/8 bg-[#f3f3f3]",
       )}
     />
   );
