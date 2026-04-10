@@ -23,13 +23,13 @@ export class FriendshipEntity {
   @Column({ type: 'datetime', nullable: true })
   starredAt?: Date | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   remarkName?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   region?: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   source?: string | null;
 
   @Column('simple-json', { nullable: true })
