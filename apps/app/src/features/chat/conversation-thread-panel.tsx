@@ -432,6 +432,26 @@ export function ConversationThreadPanel({
               characterId={participants[0]}
               conversationTitle={conversationTitle}
               onClose={() => setDesktopCallPanelKind(null)}
+              onPanelOpened={async () => {
+                await sendTextMessage(
+                  buildDirectCallInviteMessage(
+                    desktopCallPanelKind,
+                    conversationTitle,
+                    "waiting",
+                  ),
+                );
+                scrollToBottom("smooth");
+              }}
+              onSessionConnected={async () => {
+                await sendTextMessage(
+                  buildDirectCallInviteMessage(
+                    desktopCallPanelKind,
+                    conversationTitle,
+                    "connected",
+                  ),
+                );
+                scrollToBottom("smooth");
+              }}
               onEndCall={async () => {
                 await sendTextMessage(
                   buildDirectCallInviteMessage(

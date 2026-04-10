@@ -1,4 +1,10 @@
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   LoaderCircle,
   Mic,
@@ -24,6 +30,8 @@ type DesktopDirectCallPanelProps = {
   characterId?: string;
   conversationTitle: string;
   onClose: () => void;
+  onPanelOpened?: () => Promise<void> | void;
+  onSessionConnected?: () => Promise<void> | void;
   onEndCall?: () => Promise<void> | void;
 };
 
@@ -33,14 +41,21 @@ export function DesktopDirectCallPanel({
   characterId,
   conversationTitle,
   onClose,
+  onPanelOpened,
+  onSessionConnected,
   onEndCall,
 }: DesktopDirectCallPanelProps) {
   const runtimeConfig = useAppRuntimeConfig();
   const [micMuted, setMicMuted] = useState(false);
   const [recordButtonHolding, setRecordButtonHolding] = useState(false);
+  const [sessionConnectedAnnounced, setSessionConnectedAnnounced] =
+    useState(false);
   const [endCallPending, setEndCallPending] = useState(false);
   const [endCallError, setEndCallError] = useState<string | null>(null);
   const [startedAt] = useState(() => new Date().toISOString());
+  const onPanelOpenedRef = useRef(onPanelOpened);
+
+  onPanelOpenedRef.current = onPanelOpened;
   const voiceCall = useVoiceCallSession({
     baseUrl: runtimeConfig.apiBaseUrl,
     conversationId,
@@ -49,6 +64,14 @@ export function DesktopDirectCallPanel({
       runtimeConfig.appPlatform === "web" &&
       kind === "voice" &&
       Boolean(conversationId),
+    onTurnSuccess: async () => {
+      if (sessionConnectedAnnounced || kind !== "voice") {
+        return;
+      }
+
+      setSessionConnectedAnnounced(true);
+      await onSessionConnected?.();
+    },
   });
   const speech = voiceCall.speech;
   const speakerEnabled = !voiceCall.audioMuted;
@@ -145,6 +168,11 @@ export function DesktopDirectCallPanel({
     voiceCall.stopReplyPlayback();
     onClose();
   };
+
+  useEffect(() => {
+    setSessionConnectedAnnounced(false);
+    void onPanelOpenedRef.current?.();
+  }, [conversationId, kind]);
 
   const handleEndCall = async () => {
     if (endCallPending) {
