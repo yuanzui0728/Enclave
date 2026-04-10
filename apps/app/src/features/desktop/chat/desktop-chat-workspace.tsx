@@ -11,6 +11,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BellOff,
   BellRing,
+  ChevronDown,
+  ChevronRight,
   FileText,
   Plus,
   Search,
@@ -55,6 +57,7 @@ import {
   formatReminderListTimestamp,
   getChatReminderStatus,
   getChatReminderStatusLabel,
+  isChatReminderGroupCollapsible,
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
 import { buildSearchRouteHash } from "../../search/search-route-state";
@@ -138,6 +141,8 @@ export function DesktopChatWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
+    useState(false);
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
@@ -670,44 +675,91 @@ export function DesktopChatWorkspace({
                 </div>
 
                 <div className="space-y-2 pt-1">
-                  {filteredReminderGroups.map((group) => (
-                    <section
-                      key={group.status}
-                      className="rounded-[14px] border border-white/70 bg-white/78"
-                    >
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] font-medium",
-                            group.status === "notified"
-                              ? "bg-[#fff7e6] text-[#d48806]"
-                              : group.status === "due"
-                                ? "bg-[#fff1f0] text-[#d74b45]"
-                                : "bg-[#eaf8ef] text-[#07c160]",
-                          )}
+                  {filteredReminderGroups.map((group) =>
+                    (() => {
+                      const collapsible = isChatReminderGroupCollapsible(
+                        group.status,
+                      );
+                      const collapsed =
+                        collapsible && !isNotifiedReminderGroupExpanded;
+
+                      return (
+                        <section
+                          key={group.status}
+                          className="rounded-[14px] border border-white/70 bg-white/78"
                         >
-                          {group.title}
-                        </span>
-                        <span className="text-[10px] text-[color:var(--text-dim)]">
-                          {group.count} 条
-                        </span>
-                      </div>
-                      <div className="space-y-1 border-t border-white/80 p-1.5">
-                        {group.entries.map((entry) => (
-                          <DesktopReminderCard
-                            key={entry.messageId}
-                            entry={entry}
-                            active={
-                              entry.threadId === selectedConversationId &&
-                              entry.messageId === highlightedMessageId
-                            }
-                            onOpen={openReminder}
-                            onDismiss={completeReminder}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  ))}
+                          {collapsible ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setIsNotifiedReminderGroupExpanded(
+                                  (current) => !current,
+                                )
+                              }
+                              className="flex w-full items-center justify-between px-3 py-2 text-left"
+                              aria-expanded={!collapsed}
+                            >
+                              <span
+                                className={cn(
+                                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                  group.status === "notified"
+                                    ? "bg-[#fff7e6] text-[#d48806]"
+                                    : group.status === "due"
+                                      ? "bg-[#fff1f0] text-[#d74b45]"
+                                      : "bg-[#eaf8ef] text-[#07c160]",
+                                )}
+                              >
+                                {group.title}
+                              </span>
+                              <span className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]">
+                                <span>{group.count} 条</span>
+                                <span>{collapsed ? "展开" : "收起"}</span>
+                                {collapsed ? (
+                                  <ChevronRight size={12} />
+                                ) : (
+                                  <ChevronDown size={12} />
+                                )}
+                              </span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center justify-between px-3 py-2">
+                              <span
+                                className={cn(
+                                  "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                  group.status === "notified"
+                                    ? "bg-[#fff7e6] text-[#d48806]"
+                                    : group.status === "due"
+                                      ? "bg-[#fff1f0] text-[#d74b45]"
+                                      : "bg-[#eaf8ef] text-[#07c160]",
+                                )}
+                              >
+                                {group.title}
+                              </span>
+                              <span className="text-[10px] text-[color:var(--text-dim)]">
+                                {group.count} 条
+                              </span>
+                            </div>
+                          )}
+                          {collapsed ? null : (
+                            <div className="space-y-1 border-t border-white/80 p-1.5">
+                              {group.entries.map((entry) => (
+                                <DesktopReminderCard
+                                  key={entry.messageId}
+                                  entry={entry}
+                                  active={
+                                    entry.threadId === selectedConversationId &&
+                                    entry.messageId === highlightedMessageId
+                                  }
+                                  onOpen={openReminder}
+                                  onDismiss={completeReminder}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                      );
+                    })(),
+                  )}
                 </div>
               </section>
             ) : null}

@@ -224,6 +224,10 @@ export function groupChatReminderEntries(
     .filter((group): group is ChatReminderGroup => Boolean(group));
 }
 
+export function isChatReminderGroupCollapsible(status: ChatReminderStatus) {
+  return status === "notified";
+}
+
 function compareChatReminderEntries(
   left: ChatReminderEntry,
   right: ChatReminderEntry,

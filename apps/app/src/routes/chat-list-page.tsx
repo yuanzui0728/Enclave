@@ -19,6 +19,8 @@ import {
   BellOff,
   BellRing,
   CheckCheck,
+  ChevronDown,
+  ChevronRight,
   Circle,
   Plus,
   Pin,
@@ -48,6 +50,7 @@ import {
   buildChatReminderNavigation,
   getChatReminderStatus,
   getChatReminderStatusLabel,
+  isChatReminderGroupCollapsible,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
@@ -129,6 +132,8 @@ function MobileChatListPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
+  const [isNotifiedReminderGroupExpanded, setIsNotifiedReminderGroupExpanded] =
+    useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [openSwipeConversationId, setOpenSwipeConversationId] = useState<
     string | null
@@ -555,77 +560,131 @@ function MobileChatListPage() {
                     : "",
                 )}
               >
-                <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        group.status === "notified"
-                          ? "bg-[#fff7e6] text-[#d48806]"
-                          : group.status === "due"
-                            ? "bg-[#fff1f0] text-[#d74b45]"
-                            : "bg-[#eaf8ef] text-[#07c160]",
-                      )}
-                    >
-                      {group.title}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#8c8c8c]">
-                    {group.count} 条
-                  </div>
-                </div>
-                {group.entries.map((entry, index) => (
-                  <div
-                    key={entry.messageId}
-                    className={cn(
-                      "flex items-center gap-3 px-4 py-3",
-                      index > 0
-                        ? "border-t border-[color:var(--border-faint)]"
-                        : "",
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => openReminder(entry)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                            getChatReminderStatus(entry) === "notified"
-                              ? "bg-[#fff7e6] text-[#d48806]"
-                              : entry.isDue
-                                ? "bg-[#fff1f0] text-[#d74b45]"
-                                : "bg-[#eaf8ef] text-[#07c160]",
-                          )}
+                {(() => {
+                  const collapsible = isChatReminderGroupCollapsible(
+                    group.status,
+                  );
+                  const collapsed =
+                    collapsible && !isNotifiedReminderGroupExpanded;
+
+                  return (
+                    <>
+                      {collapsible ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setIsNotifiedReminderGroupExpanded(
+                              (current) => !current,
+                            )
+                          }
+                          className="flex w-full items-center justify-between bg-[#f7faf7] px-4 py-2 text-left"
+                          aria-expanded={!collapsed}
                         >
-                          {getChatReminderStatusLabel(entry)}
-                        </span>
-                        <span className="min-w-0 truncate text-[14px] font-medium text-[#111827]">
-                          {entry.title}
-                        </span>
-                      </div>
-                      <div className="mt-1 truncate text-[13px] text-[#5f6368]">
-                        {entry.previewText}
-                      </div>
-                      <div className="mt-1 text-[12px] text-[#8c8c8c]">
-                        {formatReminderListTimestamp(
-                          entry.remindAt,
-                          entry.isDue,
-                          entry.notifiedAt,
-                        )}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => completeReminder(entry.messageId)}
-                      className="shrink-0 rounded-full border border-black/8 px-3 py-1.5 text-[12px] text-[#5f6368]"
-                    >
-                      完成
-                    </button>
-                  </div>
-                ))}
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                group.status === "notified"
+                                  ? "bg-[#fff7e6] text-[#d48806]"
+                                  : group.status === "due"
+                                    ? "bg-[#fff1f0] text-[#d74b45]"
+                                    : "bg-[#eaf8ef] text-[#07c160]",
+                              )}
+                            >
+                              {group.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[11px] text-[#8c8c8c]">
+                            <span>{group.count} 条</span>
+                            <span>{collapsed ? "展开" : "收起"}</span>
+                            {collapsed ? (
+                              <ChevronRight size={13} />
+                            ) : (
+                              <ChevronDown size={13} />
+                            )}
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="flex items-center justify-between bg-[#f7faf7] px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                group.status === "notified"
+                                  ? "bg-[#fff7e6] text-[#d48806]"
+                                  : group.status === "due"
+                                    ? "bg-[#fff1f0] text-[#d74b45]"
+                                    : "bg-[#eaf8ef] text-[#07c160]",
+                              )}
+                            >
+                              {group.title}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-[#8c8c8c]">
+                            {group.count} 条
+                          </div>
+                        </div>
+                      )}
+                      {collapsed
+                        ? null
+                        : group.entries.map((entry, index) => (
+                            <div
+                              key={entry.messageId}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-3",
+                                index > 0
+                                  ? "border-t border-[color:var(--border-faint)]"
+                                  : "",
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => openReminder(entry)}
+                                className="min-w-0 flex-1 text-left"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={cn(
+                                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                      getChatReminderStatus(entry) ===
+                                        "notified"
+                                        ? "bg-[#fff7e6] text-[#d48806]"
+                                        : entry.isDue
+                                          ? "bg-[#fff1f0] text-[#d74b45]"
+                                          : "bg-[#eaf8ef] text-[#07c160]",
+                                    )}
+                                  >
+                                    {getChatReminderStatusLabel(entry)}
+                                  </span>
+                                  <span className="min-w-0 truncate text-[14px] font-medium text-[#111827]">
+                                    {entry.title}
+                                  </span>
+                                </div>
+                                <div className="mt-1 truncate text-[13px] text-[#5f6368]">
+                                  {entry.previewText}
+                                </div>
+                                <div className="mt-1 text-[12px] text-[#8c8c8c]">
+                                  {formatReminderListTimestamp(
+                                    entry.remindAt,
+                                    entry.isDue,
+                                    entry.notifiedAt,
+                                  )}
+                                </div>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  completeReminder(entry.messageId)
+                                }
+                                className="shrink-0 rounded-full border border-black/8 px-3 py-1.5 text-[12px] text-[#5f6368]"
+                              >
+                                完成
+                              </button>
+                            </div>
+                          ))}
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </section>
