@@ -34,6 +34,7 @@ import {
   TagBadge,
   TextField,
 } from "@yinjie/ui";
+import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const EVALS_STATE_KEY = "yinjie-admin-evals-state";
@@ -1044,79 +1045,72 @@ export function EvalsPage() {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const currentFocusRows = [
+    { label: "显示模式", value: compactView ? "紧凑" : "完整" },
+    { label: "当前数据集", value: selectedDatasetId ?? "全部" },
+    { label: "当前运行", value: selectedRunId ?? "未选择" },
+    { label: "当前链路", value: selectedTraceId ?? "未选择" },
+    { label: "实验报告", value: selectedReport?.presetTitle ?? "未选择" },
+    { label: "用例聚焦", value: focusedCaseId ?? "未聚焦" },
+  ];
+  const quickStatusRows = [
+    { label: "最近运行", value: overviewQuery.data?.latestRunAt ?? "暂无" },
+    { label: "对比筛选", value: `${activeCompareFilterCount} 个` },
+    { label: "链路筛选", value: `${activeTraceFilterCount} 个` },
+    {
+      label: "当前对比",
+      value: baselineRunId && candidateRunId ? "已锁定" : "未锁定",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-2xl">
-              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">评测工作台</div>
-              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">先选视图，再跑实验，再下钻链路。</h2>
-              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                这里负责运行数据集、比较实验结果、查看实验报告，并沿着生成链路继续下钻到提示词与上下文。
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
+        <AdminPageHero
+          eyebrow="评测工作台"
+          title="先选视图，再跑实验，再下钻链路。"
+          description="这里负责运行数据集、比较实验结果、查看实验报告，并沿着生成链路继续下钻到提示词与上下文。"
+          actions={
+            <>
               <Button variant={compactView ? "primary" : "secondary"} onClick={() => setCompactView((value) => !value)}>
                 {compactView ? "紧凑模式：开" : "紧凑模式：关"}
               </Button>
               <Button variant="secondary" onClick={resetViewState}>
                 重置筛选
               </Button>
-            </div>
-          </div>
+            </>
+          }
+          metrics={[
+            { label: "数据集", value: overviewQuery.data?.datasetCount ?? 0 },
+            { label: "运行次数", value: overviewQuery.data?.runCount ?? 0 },
+            { label: "链路数", value: overviewQuery.data?.traceCount ?? 0 },
+            { label: "失败运行", value: overviewQuery.data?.failedRunCount ?? 0 },
+          ]}
+        />
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard label="数据集" value={overviewQuery.data?.datasetCount ?? 0} />
-            <MetricCard label="运行次数" value={overviewQuery.data?.runCount ?? 0} />
-            <MetricCard label="链路数" value={overviewQuery.data?.traceCount ?? 0} />
-            <MetricCard label="失败运行" value={overviewQuery.data?.failedRunCount ?? 0} />
-          </div>
-        </Card>
-
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>当前聚焦</SectionHeading>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <MetricCard
-              label="显示模式"
-              value={compactView ? "紧凑" : "完整"}
-              meta={<StatusPill tone={compactView ? "warning" : "healthy"}>{compactView ? "聚焦异常" : "完整浏览"}</StatusPill>}
-            />
-            <MetricCard label="当前数据集" value={selectedDatasetId ?? "全部"} />
-            <MetricCard label="当前运行" value={selectedRunId ?? "未选择"} />
-            <MetricCard label="当前链路" value={selectedTraceId ?? "未选择"} />
-            <MetricCard label="实验报告" value={selectedReport?.presetTitle ?? "未选择"} />
-            <MetricCard label="用例聚焦" value={focusedCaseId ?? "未聚焦"} />
-          </div>
+        <div className="space-y-4">
+          <AdminInfoRows title="当前聚焦" rows={currentFocusRows} />
           {shareViewName.trim() ? (
-            <InlineNotice className="mt-4" tone="info">当前分享视图：{shareViewName.trim()}</InlineNotice>
+            <InlineNotice tone="info">当前分享视图：{shareViewName.trim()}</InlineNotice>
           ) : null}
-        </Card>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-          <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>工作区导航</SectionHeading>
-            <div className="mt-4 grid gap-2">
-              <EvalWorkspaceNavButton label="评测概览" detail="看全局状态与视图配置" onClick={() => jumpToSection("eval-overview")} />
-              <EvalWorkspaceNavButton label="已保存视图" detail="保存和复用筛选组合" onClick={() => jumpToSection("eval-presets")} />
-              <EvalWorkspaceNavButton label="运行入口" detail="数据集、预设与最近运行" onClick={() => jumpToSection("eval-runs")} disabled={compactView} />
-              <EvalWorkspaceNavButton label="实验报告" detail="查看决策与关键差异" onClick={() => jumpToSection("eval-reports")} disabled={compactView} />
-              <EvalWorkspaceNavButton label="运行对比" detail="锁定基线和候选，缩小差异范围" onClick={() => jumpToSection("eval-compare")} />
-              <EvalWorkspaceNavButton label="生成链路" detail="查看 prompt、上下文和失败标签" onClick={() => jumpToSection("eval-traces")} />
-            </div>
-          </Card>
+          <AdminSectionNav
+            title="工作区导航"
+            items={[
+              { label: "评测概览", detail: "看全局状态与视图配置", onClick: () => jumpToSection("eval-overview") },
+              { label: "已保存视图", detail: "保存和复用筛选组合", onClick: () => jumpToSection("eval-presets") },
+              { label: "运行入口", detail: "数据集、预设与最近运行", onClick: () => jumpToSection("eval-runs"), disabled: compactView },
+              { label: "实验报告", detail: "查看决策与关键差异", onClick: () => jumpToSection("eval-reports"), disabled: compactView },
+              { label: "运行对比", detail: "锁定基线和候选，缩小差异范围", onClick: () => jumpToSection("eval-compare") },
+              { label: "生成链路", detail: "查看 prompt、上下文和失败标签", onClick: () => jumpToSection("eval-traces") },
+            ]}
+          />
 
-          <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>快速状态</SectionHeading>
-            <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
-              <StaticPillRow label="最近运行" value={overviewQuery.data?.latestRunAt ?? "暂无"} />
-              <StaticPillRow label="对比筛选" value={`${activeCompareFilterCount} 个`} />
-              <StaticPillRow label="链路筛选" value={`${activeTraceFilterCount} 个`} />
-              <StaticPillRow label="当前对比" value={baselineRunId && candidateRunId ? "已锁定" : "未锁定"} />
-            </div>
-          </Card>
+          <AdminInfoRows title="快速状态" rows={quickStatusRows} />
 
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>预设速览</SectionHeading>
@@ -2818,39 +2812,6 @@ function formatDecisionStatus(status: "keep-testing" | "promote" | "rollback" | 
     default:
       return status;
   }
-}
-
-function EvalWorkspaceNavButton({
-  label,
-  detail,
-  onClick,
-  disabled,
-}: {
-  label: string;
-  detail: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
-      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">{detail}</div>
-    </button>
-  );
-}
-
-function StaticPillRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
-      <span className="text-[color:var(--text-muted)]">{label}</span>
-      <span className="text-right text-[color:var(--text-primary)]">{value}</span>
-    </div>
-  );
 }
 
 function readInitialEvalsState(baseUrl: string): EvalsViewState {
