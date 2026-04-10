@@ -6,12 +6,25 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
-import { ContactRound, FileText, MapPin } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ContactRound,
+  FileText,
+  LocateFixed,
+  MapPin,
+  X,
+} from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
+import {
+  readDesktopFavorites,
+  removeDesktopFavorite,
+  upsertDesktopFavorite,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import {
   extractChatReplyMetadata,
   sanitizeDisplayedChatText,
@@ -63,9 +76,11 @@ export function ChatMessageList({
   } | null>(null);
   const [mobileActionMessage, setMobileActionMessage] =
     useState<ChatRenderableMessage | null>(null);
+  const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop;
+  const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!highlightedMessageId) {
@@ -112,6 +127,11 @@ export function ChatMessageList({
   useEffect(() => {
     setContextMenuState(null);
     setMobileActionMessage(null);
+    setViewerMessageId((current) =>
+      current && messages.some((message) => message.id === current)
+        ? current
+        : null,
+    );
   }, [messages]);
 
   useEffect(() => {
@@ -121,6 +141,15 @@ export function ChatMessageList({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      setFavoriteSourceIds([]);
+      return;
+    }
+
+    setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
+  }, [isDesktop]);
 
   if (!messages.length) {
     return emptyState ?? null;
@@ -218,7 +247,11 @@ export function ChatMessageList({
   const handleMobileMessagePointerMove = (
     event: PointerEvent<HTMLDivElement>,
   ) => {
-    if (isDesktop || event.pointerType === "mouse" || !longPressStartRef.current) {
+    if (
+      isDesktop ||
+      event.pointerType === "mouse" ||
+      !longPressStartRef.current
+    ) {
       return;
     }
 
@@ -228,6 +261,67 @@ export function ChatMessageList({
     ) {
       clearLongPressTimer();
     }
+  };
+
+  const handleToggleFavorite = (message: ChatRenderableMessage) => {
+    const sourceId = buildFavoriteSourceId(message.id);
+    const collected = favoriteSourceIds.includes(sourceId);
+
+    if (collected) {
+      const nextFavorites = removeDesktopFavorite(sourceId);
+      setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+      setActionNotice({
+        message: "已取消收藏消息。",
+        tone: "success",
+      });
+      return;
+    }
+
+    const nextFavorites = upsertDesktopFavorite(
+      buildMessageFavoriteRecord(message, groupMode),
+    );
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+    setActionNotice({
+      message: "消息已加入收藏。",
+      tone: "success",
+    });
+  };
+
+  const openAttachment = (message: ChatRenderableMessage) => {
+    const attachment = getOpenableAttachment(message);
+    if (!attachment) {
+      return;
+    }
+
+    window.open(attachment.url, "_blank", "noopener,noreferrer");
+    setActionNotice({
+      message: attachment.kind === "image" ? "已打开图片。" : "已打开文件。",
+      tone: "success",
+    });
+  };
+
+  const saveAttachment = (message: ChatRenderableMessage) => {
+    const attachment = getOpenableAttachment(message);
+    if (!attachment || typeof document === "undefined") {
+      return;
+    }
+
+    const anchor = document.createElement("a");
+    anchor.href = attachment.url;
+    anchor.download =
+      attachment.kind === "file"
+        ? attachment.fileName
+        : attachment.fileName || "image";
+    anchor.rel = "noreferrer";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+
+    setActionNotice({
+      message:
+        attachment.kind === "image" ? "图片开始下载。" : "文件开始下载。",
+      tone: "success",
+    });
   };
 
   return (
@@ -282,7 +376,9 @@ export function ChatMessageList({
             ) : null}
             <div
               id={`chat-message-${message.id}`}
-              onContextMenu={(event) => handleMessageContextMenu(event, message)}
+              onContextMenu={(event) =>
+                handleMessageContextMenu(event, message)
+              }
               onPointerDown={(event) =>
                 handleMobileMessagePointerDown(event, message)
               }
@@ -384,6 +480,39 @@ export function ChatMessageList({
             );
             setContextMenuState(null);
           }}
+          onToggleFavorite={() => {
+            handleToggleFavorite(contextMenuState.message);
+            setContextMenuState(null);
+          }}
+          favoriteLabel={
+            favoriteSourceIds.includes(
+              buildFavoriteSourceId(contextMenuState.message.id),
+            )
+              ? "取消收藏"
+              : "收藏消息"
+          }
+          onOpenAttachment={
+            getOpenableAttachment(contextMenuState.message)
+              ? () => {
+                  openAttachment(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
+          openAttachmentLabel={
+            contextMenuState.message.type === "image" ? "打开图片" : "打开文件"
+          }
+          onSaveAttachment={
+            getOpenableAttachment(contextMenuState.message)
+              ? () => {
+                  saveAttachment(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
+          saveAttachmentLabel={
+            contextMenuState.message.type === "image" ? "另存图片" : "另存文件"
+          }
           onCopySender={() => {
             void copyToClipboard(
               buildClipboardSender(contextMenuState.message),
@@ -507,6 +636,54 @@ function buildClipboardText(message: ChatRenderableMessage) {
   }
 
   return "消息";
+}
+
+function buildFavoriteSourceId(messageId: string) {
+  return `chat-message-${messageId}`;
+}
+
+function buildMessageFavoriteRecord(
+  message: ChatRenderableMessage,
+  groupMode: boolean,
+) {
+  const senderName = buildClipboardSender(message);
+  const description = buildClipboardText(message);
+  const currentPath =
+    typeof window === "undefined"
+      ? "/tabs/chat"
+      : `${window.location.pathname}${window.location.search}#chat-message-${message.id}`;
+
+  return {
+    id: `favorite-${buildFavoriteSourceId(message.id)}`,
+    sourceId: buildFavoriteSourceId(message.id),
+    category: "messages" as const,
+    title: senderName,
+    description,
+    meta: formatMessageTimestamp(message.createdAt),
+    to: currentPath,
+    badge: groupMode ? "群聊消息" : "聊天消息",
+    avatarName: senderName,
+  };
+}
+
+function getOpenableAttachment(message: ChatRenderableMessage) {
+  if (
+    message.type === "image" &&
+    message.attachment?.kind === "image" &&
+    message.attachment.url
+  ) {
+    return message.attachment;
+  }
+
+  if (
+    message.type === "file" &&
+    message.attachment?.kind === "file" &&
+    message.attachment.url
+  ) {
+    return message.attachment;
+  }
+
+  return null;
 }
 
 function renderTextWithMentions(text: string): ReactNode {

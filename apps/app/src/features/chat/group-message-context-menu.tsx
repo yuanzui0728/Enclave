@@ -1,5 +1,12 @@
 import { type ReactNode } from "react";
-import { Copy, CornerUpLeft, UserRound } from "lucide-react";
+import {
+  Copy,
+  CornerUpLeft,
+  Download,
+  ExternalLink,
+  Star,
+  UserRound,
+} from "lucide-react";
 
 type GroupMessageContextMenuProps = {
   x: number;
@@ -8,11 +15,15 @@ type GroupMessageContextMenuProps = {
   onReply?: () => void;
   onCopyText: () => void;
   onCopySender?: () => void;
+  onToggleFavorite?: () => void;
+  favoriteLabel?: string;
+  onOpenAttachment?: () => void;
+  openAttachmentLabel?: string;
+  onSaveAttachment?: () => void;
+  saveAttachmentLabel?: string;
 };
 
 const MENU_WIDTH = 188;
-const MENU_HEIGHT_WITH_REPLY = 156;
-const MENU_HEIGHT_DEFAULT = 108;
 const VIEWPORT_PADDING = 12;
 
 export function GroupMessageContextMenu({
@@ -22,8 +33,21 @@ export function GroupMessageContextMenu({
   onReply,
   onCopyText,
   onCopySender,
+  onToggleFavorite,
+  favoriteLabel = "收藏",
+  onOpenAttachment,
+  openAttachmentLabel = "打开附件",
+  onSaveAttachment,
+  saveAttachmentLabel = "另存为",
 }: GroupMessageContextMenuProps) {
-  const menuHeight = onReply ? MENU_HEIGHT_WITH_REPLY : MENU_HEIGHT_DEFAULT;
+  const actionCount =
+    1 +
+    Number(Boolean(onReply)) +
+    Number(Boolean(onCopySender)) +
+    Number(Boolean(onToggleFavorite)) +
+    Number(Boolean(onOpenAttachment)) +
+    Number(Boolean(onSaveAttachment));
+  const menuHeight = actionCount * 42 + 16;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
   const viewportHeight =
@@ -66,6 +90,27 @@ export function GroupMessageContextMenu({
           icon={<Copy size={15} />}
           onClick={onCopyText}
         />
+        {onToggleFavorite ? (
+          <ContextMenuButton
+            label={favoriteLabel}
+            icon={<Star size={15} />}
+            onClick={onToggleFavorite}
+          />
+        ) : null}
+        {onOpenAttachment ? (
+          <ContextMenuButton
+            label={openAttachmentLabel}
+            icon={<ExternalLink size={15} />}
+            onClick={onOpenAttachment}
+          />
+        ) : null}
+        {onSaveAttachment ? (
+          <ContextMenuButton
+            label={saveAttachmentLabel}
+            icon={<Download size={15} />}
+            onClick={onSaveAttachment}
+          />
+        ) : null}
         {onCopySender ? (
           <ContextMenuButton
             label="复制发送者"
