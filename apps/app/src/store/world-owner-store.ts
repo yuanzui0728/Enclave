@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { WorldOwner } from "@yinjie/contracts";
+import defaultOwnerAvatar from "../assets/default-owner-avatar.svg";
 import { createSessionStateStorage } from "../runtime/session-storage";
 
 type WorldOwnerState = {
@@ -30,8 +31,12 @@ type WorldOwnerState = {
   clearOwner: () => void;
 };
 
-const defaultAvatar = "";
+const defaultAvatar = defaultOwnerAvatar;
 const defaultSignature = "在现实之外，进入另一片世界。";
+
+function resolveOwnerAvatar(avatar?: string | null) {
+  return avatar && avatar.trim() ? avatar : defaultAvatar;
+}
 
 export const useWorldOwnerStore = create<WorldOwnerState>()(
   persist(
@@ -39,7 +44,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       id: null,
       username: null,
       onboardingCompleted: false,
-      avatar: defaultAvatar,
+      avatar: resolveOwnerAvatar(),
       signature: defaultSignature,
       hasCustomApiKey: false,
       customApiBase: null,
@@ -49,7 +54,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           id: owner.id,
           username: owner.username,
           onboardingCompleted: owner.onboardingCompleted,
-          avatar: owner.avatar ?? defaultAvatar,
+          avatar: resolveOwnerAvatar(owner.avatar),
           signature: owner.signature ?? defaultSignature,
           hasCustomApiKey: owner.hasCustomApiKey,
           customApiBase: owner.customApiBase ?? null,
@@ -58,7 +63,10 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       updateOwner: (input) =>
         set((state) => ({
           username: input.username ?? state.username,
-          avatar: input.avatar ?? state.avatar,
+          avatar:
+            input.avatar === undefined
+              ? state.avatar
+              : resolveOwnerAvatar(input.avatar),
           signature: input.signature ?? state.signature,
           onboardingCompleted: input.onboardingCompleted ?? state.onboardingCompleted,
           hasCustomApiKey: input.hasCustomApiKey ?? state.hasCustomApiKey,
@@ -68,7 +76,10 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
       updateProfile: (input) =>
         set((state) => ({
           username: input.username ?? state.username,
-          avatar: input.avatar ?? state.avatar,
+          avatar:
+            input.avatar === undefined
+              ? state.avatar
+              : resolveOwnerAvatar(input.avatar),
           signature: input.signature ?? state.signature,
         })),
       logout: () =>
@@ -76,7 +87,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           id: null,
           username: null,
           onboardingCompleted: false,
-          avatar: defaultAvatar,
+          avatar: resolveOwnerAvatar(),
           signature: defaultSignature,
           hasCustomApiKey: false,
           customApiBase: null,
@@ -87,7 +98,7 @@ export const useWorldOwnerStore = create<WorldOwnerState>()(
           id: null,
           username: null,
           onboardingCompleted: false,
-          avatar: defaultAvatar,
+          avatar: resolveOwnerAvatar(),
           signature: defaultSignature,
           hasCustomApiKey: false,
           customApiBase: null,
