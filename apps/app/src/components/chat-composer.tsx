@@ -1,4 +1,6 @@
 import {
+  FileText,
+  ImageIcon,
   Mic,
   Plus,
   SendHorizontal,
@@ -10,7 +12,7 @@ import {
 import { type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
 import { MobileSpeechInputSheet } from "./mobile-speech-input-sheet";
 import { MobileChatPlusPanel } from "./mobile-chat-plus-panel";
@@ -89,10 +91,12 @@ export function ChatComposer({
     loadRecentStickers(),
   );
   const desktopStickerRef = useRef<HTMLDivElement | null>(null);
+  const desktopPlusRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [desktopPlusMenuOpen, setDesktopPlusMenuOpen] = useState(false);
   const showSpeechEntry = Boolean(
     speechInput?.enabled && speechInput?.conversationId,
   );
@@ -180,6 +184,21 @@ export function ChatComposer({
   }, [isDesktop, stickerPanelOpen]);
 
   useEffect(() => {
+    if (!isDesktop || !desktopPlusMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!desktopPlusRef.current?.contains(event.target as Node)) {
+        setDesktopPlusMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [desktopPlusMenuOpen, isDesktop]);
+
+  useEffect(() => {
     return () => {
       releaseAttachmentDraft(attachmentDraft);
     };
@@ -193,6 +212,7 @@ export function ChatComposer({
     if (speech.status === "listening") {
       speech.stop();
     }
+    setDesktopPlusMenuOpen(false);
     setPlusPanelOpen(false);
     setAttachmentError(null);
     setStickerPanelOpen((current) => !current);
@@ -210,6 +230,19 @@ export function ChatComposer({
     setStickerPanelOpen(false);
     setAttachmentError(null);
     setPlusPanelOpen((current) => !current);
+  };
+
+  const toggleDesktopPlusMenu = () => {
+    if (!onSendAttachment || !isDesktop) {
+      return;
+    }
+
+    if (speech.status === "listening") {
+      speech.stop();
+    }
+    setStickerPanelOpen(false);
+    setAttachmentError(null);
+    setDesktopPlusMenuOpen((current) => !current);
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
@@ -263,6 +296,7 @@ export function ChatComposer({
       releaseAttachmentDraft(attachmentDraft);
       setAttachmentError(null);
       setPlusPanelOpen(false);
+      setDesktopPlusMenuOpen(false);
       setAttachmentDraft({
         kind: "images",
         items: draftItems,
@@ -286,6 +320,7 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setPlusPanelOpen(false);
+    setDesktopPlusMenuOpen(false);
     setAttachmentDraft({
       kind: "file",
       file,
@@ -452,6 +487,19 @@ export function ChatComposer({
             onSend={handleSendDraftAttachment}
           />
         ) : null}
+        {isDesktop && attachmentDraft ? (
+          <DesktopAttachmentDraftBar
+            draft={attachmentDraft}
+            pending={attachmentBusy}
+            onCancel={handleCancelAttachmentDraft}
+            onRemoveImage={
+              attachmentDraft.kind === "images"
+                ? handleRemoveDraftImage
+                : undefined
+            }
+            onSend={handleSendDraftAttachment}
+          />
+        ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
           className={`relative flex items-center gap-2 ${isDesktop ? "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : ""}`}
@@ -471,13 +519,44 @@ export function ChatComposer({
               >
                 <Smile size={18} />
               </button>
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]"
-                aria-label="更多功能"
-              >
-                <Plus size={18} />
-              </button>
+              {onSendAttachment ? (
+                <div ref={desktopPlusRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={toggleDesktopPlusMenu}
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)]",
+                      desktopPlusMenuOpen
+                        ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
+                        : "",
+                    )}
+                    aria-label="更多功能"
+                  >
+                    <Plus size={18} />
+                  </button>
+
+                  {desktopPlusMenuOpen ? (
+                    <div className="absolute left-0 top-[calc(100%+0.55rem)] z-30 w-40 overflow-hidden rounded-[16px] border border-black/6 bg-white py-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+                      <DesktopPlusMenuButton
+                        label="发送图片"
+                        icon={<ImageIcon size={15} />}
+                        onClick={() => {
+                          setDesktopPlusMenuOpen(false);
+                          pickAlbum();
+                        }}
+                      />
+                      <DesktopPlusMenuButton
+                        label="发送文件"
+                        icon={<FileText size={15} />}
+                        onClick={() => {
+                          setDesktopPlusMenuOpen(false);
+                          pickFile();
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           ) : showSpeechEntry ? (
             <Button
@@ -706,7 +785,7 @@ export function ChatComposer({
             <span>正在发送...</span>
           </div>
         ) : null}
-        {!isDesktop ? (
+        {onSendAttachment ? (
           <>
             <input
               ref={albumInputRef}
@@ -719,17 +798,19 @@ export function ChatComposer({
                 event.currentTarget.value = "";
               }}
             />
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={(event) => {
-                void handleImageSelection(event.target.files);
-                event.currentTarget.value = "";
-              }}
-            />
+            {!isDesktop ? (
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => {
+                  void handleImageSelection(event.target.files);
+                  event.currentTarget.value = "";
+                }}
+              />
+            ) : null}
             <input
               ref={fileInputRef}
               type="file"
@@ -775,6 +856,112 @@ export function ChatComposer({
         </div>
       ) : null}
     </>
+  );
+}
+
+function DesktopPlusMenuButton({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[#f5f5f5]"
+    >
+      <span className="text-[color:var(--text-secondary)]">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function DesktopAttachmentDraftBar({
+  draft,
+  pending,
+  onCancel,
+  onRemoveImage,
+  onSend,
+}: {
+  draft: AttachmentDraft;
+  pending: boolean;
+  onCancel: () => void;
+  onRemoveImage?: (index: number) => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="mb-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white/92 px-4 py-3 shadow-[var(--shadow-soft)]">
+      {draft.kind === "images" ? (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {draft.items.map((item, index) => (
+              <div
+                key={`${item.previewUrl}-${index}`}
+                className="relative h-16 w-16 overflow-hidden rounded-[14px] border border-black/6 bg-[#f4f4f4]"
+              >
+                <img
+                  src={item.previewUrl}
+                  alt={item.fileName}
+                  className="h-full w-full object-cover"
+                />
+                {onRemoveImage ? (
+                  <button
+                    type="button"
+                    onClick={() => onRemoveImage(index)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
+                    aria-label={`移除 ${item.fileName}`}
+                  >
+                    <X size={12} />
+                  </button>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
+            已选择 {draft.items.length} 张图片
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]">
+            <FileText size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {draft.fileName}
+            </div>
+            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+              {formatDraftFileSize(draft.size)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancel}
+          disabled={pending}
+          className="rounded-[14px]"
+        >
+          取消
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          onClick={onSend}
+          disabled={pending}
+          className="rounded-[14px]"
+        >
+          {pending ? "正在发送..." : "发送附件"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -836,3 +1023,15 @@ function releaseAttachmentDraft(draft: AttachmentDraft | null) {
 }
 
 const MAX_ALBUM_IMAGE_COUNT = 9;
+
+function formatDraftFileSize(size: number) {
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (size >= 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${size} B`;
+}
