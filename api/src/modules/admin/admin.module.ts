@@ -16,12 +16,14 @@ import { AuthModule } from '../auth/auth.module';
 import { AiModule } from '../ai/ai.module';
 import { WorldModule } from '../world/world.module';
 import { SystemConfigModule } from '../config/config.module';
+import { CharactersModule } from '../characters/characters.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 
 @Module({
   imports: [
     AuthModule,
     AiModule,
+    CharactersModule,
     WorldModule,
     SystemConfigModule,
     TypeOrmModule.forFeature([

@@ -3,6 +3,7 @@ export * from "./attachments";
 export * from "./auth";
 export * from "./chat-backgrounds";
 export * from "./chat";
+export * from "./character-blueprints";
 export * from "./cloud";
 export * from "./characters";
 export * from "./client";

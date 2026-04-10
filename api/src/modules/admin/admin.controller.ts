@@ -5,6 +5,7 @@ import {
 import { AdminGuard } from './admin.guard';
 import { AdminService } from './admin.service';
 import { CharacterEntity } from '../characters/character.entity';
+import { CharacterBlueprintService } from '../characters/character-blueprint.service';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 
 @Controller('admin')
@@ -13,6 +14,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly replyLogicAdminService: ReplyLogicAdminService,
+    private readonly characterBlueprintService: CharacterBlueprintService,
   ) {}
 
   @Get('stats')
@@ -53,6 +55,46 @@ export class AdminController {
   @Delete('characters/:id')
   deleteCharacter(@Param('id') id: string) {
     return this.adminService.deleteCharacter(id);
+  }
+
+  @Get('characters/:id/factory')
+  getCharacterFactory(@Param('id') id: string) {
+    return this.characterBlueprintService.getFactorySnapshot(id);
+  }
+
+  @Patch('characters/:id/factory')
+  updateCharacterFactory(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.characterBlueprintService.updateDraft(
+      id,
+      body as Parameters<CharacterBlueprintService['updateDraft']>[1],
+    );
+  }
+
+  @Post('characters/:id/factory/publish')
+  publishCharacterFactory(
+    @Param('id') id: string,
+    @Body() body?: { summary?: string | null },
+  ) {
+    return this.characterBlueprintService.publish(id, body?.summary);
+  }
+
+  @Get('characters/:id/factory/revisions')
+  listCharacterFactoryRevisions(@Param('id') id: string) {
+    return this.characterBlueprintService.listRevisions(id);
+  }
+
+  @Post('characters/:id/factory/revisions/:revisionId/restore')
+  restoreCharacterFactoryRevision(
+    @Param('id') id: string,
+    @Param('revisionId') revisionId: string,
+  ) {
+    return this.characterBlueprintService.restoreRevisionToDraft(
+      id,
+      revisionId,
+    );
   }
 
   @Get('reply-logic/overview')
