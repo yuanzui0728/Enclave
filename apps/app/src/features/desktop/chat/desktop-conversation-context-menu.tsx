@@ -1,5 +1,13 @@
 import { type ReactNode } from "react";
-import { BellOff, CheckCheck, Circle, Eraser, EyeOff, Pin } from "lucide-react";
+import {
+  BellOff,
+  CheckCheck,
+  Circle,
+  Eraser,
+  EyeOff,
+  Pin,
+  Trash2,
+} from "lucide-react";
 
 type DesktopConversationContextMenuProps = {
   x: number;
@@ -14,8 +22,11 @@ type DesktopConversationContextMenuProps = {
   onToggleMuted: () => void;
   onMarkRead?: () => void;
   onMarkUnread?: () => void;
-  onHide: () => void;
+  hideLabel?: string;
+  onHide?: () => void;
   onClear: () => void;
+  deleteLabel?: string;
+  onDelete?: () => void;
 };
 
 const MENU_WIDTH = 196;
@@ -36,13 +47,18 @@ export function DesktopConversationContextMenu({
   onToggleMuted,
   onMarkRead,
   onMarkUnread,
+  hideLabel = "隐藏聊天",
   onHide,
   onClear,
+  deleteLabel,
+  onDelete,
 }: DesktopConversationContextMenuProps) {
   const actionCount =
-    4 +
+    3 +
     Number(Boolean(showMarkRead && onMarkRead)) +
-    Number(Boolean(showMarkUnread && onMarkUnread));
+    Number(Boolean(showMarkUnread && onMarkUnread)) +
+    Number(Boolean(onHide)) +
+    Number(Boolean(onDelete));
   const menuHeight = actionCount * MENU_ITEM_HEIGHT + MENU_VERTICAL_PADDING;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
@@ -102,12 +118,14 @@ export function DesktopConversationContextMenu({
             disabled={busy}
           />
         ) : null}
-        <ContextMenuButton
-          icon={<EyeOff size={15} />}
-          label="隐藏聊天"
-          onClick={onHide}
-          disabled={busy}
-        />
+        {onHide ? (
+          <ContextMenuButton
+            icon={<EyeOff size={15} />}
+            label={hideLabel}
+            onClick={onHide}
+            disabled={busy}
+          />
+        ) : null}
         <ContextMenuButton
           icon={<Eraser size={15} />}
           label="清空聊天记录"
@@ -115,6 +133,15 @@ export function DesktopConversationContextMenu({
           disabled={busy}
           danger
         />
+        {onDelete && deleteLabel ? (
+          <ContextMenuButton
+            icon={<Trash2 size={15} />}
+            label={deleteLabel}
+            onClick={onDelete}
+            disabled={busy}
+            danger
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ import {
   getOfficialAccountMessageEntries,
   hideConversation,
   hideGroup,
+  leaveGroup,
   markConversationRead,
   markConversationUnread,
   markGroupRead,
@@ -81,6 +82,7 @@ import {
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "./desktop-chat-header-actions";
+import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopConversationContextMenu } from "./desktop-conversation-context-menu";
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
@@ -101,6 +103,8 @@ type DesktopQuickActionItem = {
   label: string;
   icon: typeof Users;
 };
+
+type DesktopConversationDangerAction = "hide" | "clear" | "delete" | "leave";
 
 const desktopQuickActionItems: DesktopQuickActionItem[] = [
   {
@@ -143,6 +147,10 @@ export function DesktopChatWorkspace({
     conversation: ConversationListItem;
     x: number;
     y: number;
+  } | null>(null);
+  const [conversationDangerAction, setConversationDangerAction] = useState<{
+    action: DesktopConversationDangerAction;
+    conversation: ConversationListItem;
   } | null>(null);
 
   const conversationsQuery = useQuery({
@@ -325,7 +333,15 @@ export function DesktopChatWorkspace({
       action,
       conversation,
     }: {
-      action: "pin" | "mute" | "read" | "unread" | "hide" | "clear";
+      action:
+        | "pin"
+        | "mute"
+        | "read"
+        | "unread"
+        | "hide"
+        | "clear"
+        | "delete"
+        | "leave";
       conversation: ConversationListItem;
     }) => {
       if (isPersistedGroupConversation(conversation)) {
@@ -350,6 +366,8 @@ export function DesktopChatWorkspace({
             return hideGroup(conversation.id, baseUrl);
           case "clear":
             return clearGroupMessages(conversation.id, baseUrl);
+          case "leave":
+            return leaveGroup(conversation.id, baseUrl);
         }
       }
 
@@ -374,6 +392,8 @@ export function DesktopChatWorkspace({
           return hideConversation(conversation.id, baseUrl);
         case "clear":
           return clearConversationHistory(conversation.id, baseUrl);
+        case "delete":
+          return hideConversation(conversation.id, baseUrl);
       }
     },
     onSuccess: async (_, variables) => {
@@ -381,6 +401,7 @@ export function DesktopChatWorkspace({
       const isGroupConversation = isPersistedGroupConversation(conversation);
 
       setConversationContextMenu(null);
+      setConversationDangerAction(null);
       setNotice(buildConversationActionNotice(action, conversation));
 
       await Promise.all([
@@ -389,10 +410,25 @@ export function DesktopChatWorkspace({
         }),
         isGroupConversation
           ? queryClient.invalidateQueries({
+              queryKey: ["app-saved-groups", baseUrl],
+            })
+          : Promise.resolve(),
+        isGroupConversation
+          ? queryClient.invalidateQueries({
               queryKey: ["app-group", baseUrl, conversation.id],
             })
           : Promise.resolve(),
+        action === "leave"
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-group-members", baseUrl, conversation.id],
+            })
+          : Promise.resolve(),
         action === "clear" && isGroupConversation
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-group-messages", baseUrl, conversation.id],
+            })
+          : Promise.resolve(),
+        action === "leave" && isGroupConversation
           ? queryClient.invalidateQueries({
               queryKey: ["app-group-messages", baseUrl, conversation.id],
             })
@@ -405,7 +441,7 @@ export function DesktopChatWorkspace({
       ]);
 
       if (
-        action === "hide" &&
+        (action === "hide" || action === "delete" || action === "leave") &&
         (selectedConversationId === conversation.id ||
           activeConversation?.id === conversation.id)
       ) {
@@ -415,9 +451,61 @@ export function DesktopChatWorkspace({
     },
     onError: (error) => {
       setConversationContextMenu(null);
+      setConversationDangerAction(null);
       setNotice(error instanceof Error ? error.message : "会话操作失败。");
     },
   });
+
+  const activeConversationDangerConfirm = useMemo(() => {
+    if (!conversationDangerAction) {
+      return null;
+    }
+
+    const { action, conversation } = conversationDangerAction;
+
+    if (action === "hide") {
+      return {
+        title: "隐藏聊天",
+        description:
+          "确认将这段聊天从消息列表中隐藏吗？有新消息时会再次出现。",
+        confirmLabel: "隐藏聊天",
+        pendingLabel: "正在隐藏...",
+        danger: false,
+      };
+    }
+
+    if (action === "clear") {
+      return {
+        title: "清空聊天记录",
+        description: isPersistedGroupConversation(conversation)
+          ? "确认清空这个群聊的聊天记录吗？"
+          : "确认清空这段聊天记录吗？",
+        confirmLabel: "清空记录",
+        pendingLabel: "正在清空...",
+        danger: true,
+      };
+    }
+
+    if (action === "leave") {
+      return {
+        title: "删除并退出",
+        description:
+          "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
+        confirmLabel: "删除并退出",
+        pendingLabel: "正在退出...",
+        danger: true,
+      };
+    }
+
+    return {
+      title: "删除聊天",
+      description:
+        "删除后，这段聊天会从消息列表中移除；有新消息时会再次出现。",
+      confirmLabel: "删除聊天",
+      pendingLabel: "正在删除...",
+      danger: true,
+    };
+  }, [conversationDangerAction]);
 
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
     setIsQuickMenuOpen(false);
@@ -799,20 +887,64 @@ export function DesktopChatWorkspace({
               conversation: conversationContextMenu.conversation,
             })
           }
-          onHide={() =>
-            conversationActionMutation.mutate({
-              action: "hide",
-              conversation: conversationContextMenu.conversation,
-            })
+          hideLabel="隐藏聊天"
+          onHide={
+            isPersistedGroupConversation(conversationContextMenu.conversation)
+              ? () => {
+                  setConversationContextMenu(null);
+                  setConversationDangerAction({
+                    action: "hide",
+                    conversation: conversationContextMenu.conversation,
+                  });
+                }
+              : undefined
           }
-          onClear={() =>
-            conversationActionMutation.mutate({
+          onClear={() => {
+            setConversationContextMenu(null);
+            setConversationDangerAction({
               action: "clear",
               conversation: conversationContextMenu.conversation,
-            })
+            });
+          }}
+          deleteLabel={
+            isPersistedGroupConversation(conversationContextMenu.conversation)
+              ? "删除并退出"
+              : "删除聊天"
           }
+          onDelete={() => {
+            setConversationContextMenu(null);
+            setConversationDangerAction({
+              action: isPersistedGroupConversation(
+                conversationContextMenu.conversation,
+              )
+                ? "leave"
+                : "delete",
+              conversation: conversationContextMenu.conversation,
+            });
+          }}
         />
       ) : null}
+
+      <DesktopChatConfirmDialog
+        open={Boolean(activeConversationDangerConfirm)}
+        title={activeConversationDangerConfirm?.title ?? ""}
+        description={activeConversationDangerConfirm?.description ?? ""}
+        confirmLabel={activeConversationDangerConfirm?.confirmLabel}
+        pendingLabel={activeConversationDangerConfirm?.pendingLabel}
+        danger={activeConversationDangerConfirm?.danger}
+        pending={conversationActionMutation.isPending}
+        onClose={() => setConversationDangerAction(null)}
+        onConfirm={() => {
+          if (!conversationDangerAction) {
+            return;
+          }
+
+          conversationActionMutation.mutate({
+            action: conversationDangerAction.action,
+            conversation: conversationDangerAction.conversation,
+          });
+        }}
+      />
     </div>
   );
 }
@@ -1047,7 +1179,15 @@ function ConversationCardLink({
 }
 
 function buildConversationActionNotice(
-  action: "pin" | "mute" | "read" | "unread" | "hide" | "clear",
+  action:
+    | "pin"
+    | "mute"
+    | "read"
+    | "unread"
+    | "hide"
+    | "clear"
+    | "delete"
+    | "leave",
   conversation: ConversationListItem,
 ) {
   switch (action) {
@@ -1067,6 +1207,10 @@ function buildConversationActionNotice(
       return isPersistedGroupConversation(conversation)
         ? "群聊记录已清空。"
         : "聊天记录已清空。";
+    case "delete":
+      return "聊天已从列表移除。";
+    case "leave":
+      return "已删除并退出群聊。";
   }
 }
 
