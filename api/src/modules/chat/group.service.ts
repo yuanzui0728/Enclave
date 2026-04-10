@@ -5,10 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MoreThan, Repository } from 'typeorm';
+import { In, MoreThan, Repository } from 'typeorm';
+import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
+import { MessageEntity } from './message.entity';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import {
   ContactCardAttachment,
@@ -31,6 +33,8 @@ import { ChatGateway } from './chat.gateway';
 export interface CreateGroupDto {
   name: string;
   memberIds: string[];
+  sourceConversationId?: string;
+  sharedMessageIds?: string[];
 }
 
 export interface AddMemberDto {
@@ -95,6 +99,10 @@ export class GroupService {
   private readonly logger = new Logger(GroupService.name);
 
   constructor(
+    @InjectRepository(ConversationEntity)
+    private conversationRepo: Repository<ConversationEntity>,
+    @InjectRepository(MessageEntity)
+    private conversationMessageRepo: Repository<MessageEntity>,
     @InjectRepository(GroupEntity)
     private groupRepo: Repository<GroupEntity>,
     @InjectRepository(GroupMemberEntity)
@@ -140,8 +148,14 @@ export class GroupService {
       await this.memberRepo.save(member);
     }
 
+    const sharedMessageCount = await this.copySharedConversationMessages(
+      group,
+      owner,
+      dto,
+    );
+
     this.logger.log(
-      `Created group ${group.id} with ${dto.memberIds.length + 1} members`,
+      `Created group ${group.id} with ${dto.memberIds.length + 1} members and ${sharedMessageCount} shared messages`,
     );
     return this.toGroup(group);
   }
@@ -971,6 +985,89 @@ export class GroupService {
     };
   }
 
+  private async copySharedConversationMessages(
+    group: GroupEntity,
+    owner: {
+      id: string;
+      username?: string | null;
+      avatar?: string | null;
+    },
+    dto: CreateGroupDto,
+  ) {
+    const sourceConversationId = dto.sourceConversationId?.trim();
+    const sharedMessageIds = dedupeIds(dto.sharedMessageIds ?? []);
+    if (!sourceConversationId || !sharedMessageIds.length) {
+      return 0;
+    }
+
+    const conversation = await this.conversationRepo.findOne({
+      where: {
+        id: sourceConversationId,
+        ownerId: owner.id,
+        type: 'direct',
+      },
+    });
+    if (!conversation) {
+      throw new NotFoundException(
+        `Conversation ${sourceConversationId} not found`,
+      );
+    }
+
+    const sourceMessages = await this.conversationMessageRepo.find({
+      where: {
+        conversationId: sourceConversationId,
+        id: In(sharedMessageIds),
+      },
+      order: { createdAt: 'ASC' },
+    });
+    if (!sourceMessages.length) {
+      return 0;
+    }
+
+    const selectedIdSet = new Set(sharedMessageIds);
+    const selectedMessages = sourceMessages.filter((message) =>
+      selectedIdSet.has(message.id),
+    );
+    if (!selectedMessages.length) {
+      return 0;
+    }
+
+    const sourceParticipantName =
+      (await this.characters.findById(conversation.participants[0] ?? ''))?.name ??
+      conversation.title;
+
+    await this.messageRepo.save(
+      this.messageRepo.create({
+        groupId: group.id,
+        senderId: 'system',
+        senderType: 'system',
+        senderName: 'system',
+        type: 'system',
+        text: `已分享你和 ${sourceParticipantName} 的 ${selectedMessages.length} 条聊天记录`,
+      }),
+    );
+
+    for (const sourceMessage of selectedMessages) {
+      await this.messageRepo.save(
+        this.messageRepo.create({
+          groupId: group.id,
+          senderId: sourceMessage.senderId,
+          senderType: sourceMessage.senderType,
+          senderName: sourceMessage.senderName,
+          type: sourceMessage.type,
+          text: sourceMessage.text,
+          attachmentKind: sourceMessage.attachmentKind ?? null,
+          attachmentPayload: sourceMessage.attachmentPayload ?? null,
+        }),
+      );
+    }
+
+    group.lastActivityAt = new Date();
+    await this.groupRepo.save(group);
+    await this.emitGroupConversationUpdated(group.id);
+    return selectedMessages.length;
+  }
+
   private toGroup(entity: GroupEntity): Group {
     return {
       id: entity.id,
@@ -1068,6 +1165,10 @@ export class GroupService {
     group.lastActivityAt = nextLastActivityAt;
     await this.groupRepo.save(group);
   }
+}
+
+function dedupeIds(items: string[]) {
+  return [...new Set(items.map((item) => item.trim()).filter(Boolean))];
 }
 
 function formatGroupAttachmentSize(size: number) {

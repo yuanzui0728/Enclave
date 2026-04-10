@@ -4,8 +4,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { Check, Search, X } from "lucide-react";
 import {
   createGroup,
+  getConversationMessages,
   getFriends,
   type FriendListItem,
+  type Message,
 } from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
@@ -18,12 +20,14 @@ import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 
 type DesktopCreateGroupDialogProps = {
   open: boolean;
+  conversationId?: string;
   seedMemberIds?: string[];
   onClose: () => void;
 };
 
 export function DesktopCreateGroupDialog({
   open,
+  conversationId,
   seedMemberIds = [],
   onClose,
 }: DesktopCreateGroupDialogProps) {
@@ -33,12 +37,19 @@ export function DesktopCreateGroupDialog({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [shareHistory, setShareHistory] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const seededSelectionRef = useRef("");
 
   const friendsQuery = useQuery({
     queryKey: ["desktop-create-group-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
     enabled: open,
+  });
+  const shareableMessagesQuery = useQuery({
+    queryKey: ["desktop-create-group-shareable-messages", baseUrl, conversationId],
+    queryFn: () => getConversationMessages(conversationId!, baseUrl, { limit: 20 }),
+    enabled: open && shareHistory && Boolean(conversationId),
   });
 
   const friendItems = useMemo(() => friendsQuery.data ?? [], [friendsQuery.data]);
@@ -85,6 +96,10 @@ export function DesktopCreateGroupDialog({
     () => buildDefaultGroupName(selectedFriends),
     [selectedFriends],
   );
+  const shareableMessages = useMemo(
+    () => shareableMessagesQuery.data ?? [],
+    [shareableMessagesQuery.data],
+  );
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -92,6 +107,10 @@ export function DesktopCreateGroupDialog({
         {
           name: defaultGroupName,
           memberIds: selectedIds,
+          sourceConversationId:
+            shareHistory && selectedMessageIds.length ? conversationId : undefined,
+          sharedMessageIds:
+            shareHistory && selectedMessageIds.length ? selectedMessageIds : undefined,
         },
         baseUrl,
       ),
@@ -111,6 +130,8 @@ export function DesktopCreateGroupDialog({
 
     setSearchTerm("");
     setSelectedIds([]);
+    setShareHistory(false);
+    setSelectedMessageIds([]);
     seededSelectionRef.current = "";
     createMutation.reset();
   }, [createMutation, open]);
@@ -178,6 +199,14 @@ export function DesktopCreateGroupDialog({
       current.includes(characterId)
         ? current.filter((item) => item !== characterId)
         : [...current, characterId],
+    );
+  };
+
+  const toggleMessageSelection = (messageId: string) => {
+    setSelectedMessageIds((current) =>
+      current.includes(messageId)
+        ? current.filter((item) => item !== messageId)
+        : [...current, messageId],
     );
   };
 
@@ -273,6 +302,98 @@ export function DesktopCreateGroupDialog({
               </div>
             )}
           </div>
+
+          {conversationId ? (
+            <div className="mt-4 rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-3">
+              <label className="flex items-start gap-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={shareHistory}
+                  onChange={(event) => setShareHistory(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-black/20 text-[#07c160] focus:ring-[#07c160]"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium text-[color:var(--text-primary)]">
+                    分享聊天记录
+                  </span>
+                  <span className="mt-1 block text-[12px] leading-5 text-[color:var(--text-muted)]">
+                    从当前单聊里挑选几条最近消息，一并带进新群。
+                  </span>
+                </span>
+              </label>
+
+              {shareHistory ? (
+                <div className="mt-3">
+                  {shareableMessagesQuery.isLoading ? (
+                    <LoadingBlock
+                      className="px-0 py-3 text-left"
+                      label="正在读取最近聊天记录..."
+                    />
+                  ) : null}
+                  {shareableMessagesQuery.isError &&
+                  shareableMessagesQuery.error instanceof Error ? (
+                    <ErrorBlock message={shareableMessagesQuery.error.message} />
+                  ) : null}
+                  {!shareableMessagesQuery.isLoading &&
+                  !shareableMessagesQuery.isError &&
+                  !shareableMessages.length ? (
+                    <div className="rounded-[10px] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
+                      当前单聊里还没有可分享的消息。
+                    </div>
+                  ) : null}
+                  {!shareableMessagesQuery.isLoading &&
+                  !shareableMessagesQuery.isError &&
+                  shareableMessages.length ? (
+                    <>
+                      <div className="mb-2 text-[12px] text-[color:var(--text-muted)]">
+                        已选择 {selectedMessageIds.length} 条
+                      </div>
+                      <div className="max-h-56 space-y-1 overflow-auto rounded-[10px] bg-white p-1.5">
+                        {shareableMessages.map((message) => {
+                          const checked = selectedMessageIds.includes(message.id);
+                          return (
+                            <button
+                              key={message.id}
+                              type="button"
+                              onClick={() => toggleMessageSelection(message.id)}
+                              className={cn(
+                                "flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left transition",
+                                checked ? "bg-[rgba(7,193,96,0.08)]" : "hover:bg-[#f7f7f7]",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                  checked
+                                    ? "border-[#07c160] bg-[#07c160] text-white"
+                                    : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                )}
+                              >
+                                <Check size={12} strokeWidth={2.8} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                                    {message.senderName}
+                                  </span>
+                                  <span className="text-[11px] text-[color:var(--text-dim)]">
+                                    {formatMessageTypeLabel(message)}
+                                  </span>
+                                </div>
+                                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                                  {getMessagePreviewText(message)}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
@@ -363,6 +484,9 @@ export function DesktopCreateGroupDialog({
           <div className="text-[12px] text-[color:var(--text-muted)]">
             已选择 {selectedIds.length} 位成员
             {selectedIds.length ? `，将创建“${defaultGroupName}”。` : "。"}
+            {shareHistory && selectedMessageIds.length
+              ? ` 会同步 ${selectedMessageIds.length} 条聊天记录。`
+              : ""}
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -388,6 +512,78 @@ export function DesktopCreateGroupDialog({
       </div>
     </div>
   );
+}
+
+function getMessagePreviewText(message: Message) {
+  if (message.type === "image") {
+    return message.text.trim() || "[图片]";
+  }
+
+  if (message.type === "file") {
+    return message.attachment?.kind === "file"
+      ? `[文件] ${message.attachment.fileName}`
+      : "[文件]";
+  }
+
+  if (message.type === "voice") {
+    return message.text.trim() || "[语音]";
+  }
+
+  if (message.type === "contact_card") {
+    return message.attachment?.kind === "contact_card"
+      ? `[名片] ${message.attachment.name}`
+      : "[名片]";
+  }
+
+  if (message.type === "location_card") {
+    return message.attachment?.kind === "location_card"
+      ? `[位置] ${message.attachment.title}`
+      : "[位置]";
+  }
+
+  if (message.type === "sticker") {
+    return message.attachment?.kind === "sticker"
+      ? `[表情] ${message.attachment.label ?? message.attachment.stickerId}`
+      : "[表情]";
+  }
+
+  if (message.type === "system") {
+    return message.text.trim() || "[系统消息]";
+  }
+
+  return message.text.trim() || "[文本消息]";
+}
+
+function formatMessageTypeLabel(message: Message) {
+  if (message.type === "text") {
+    return "文字";
+  }
+
+  if (message.type === "system") {
+    return "系统";
+  }
+
+  if (message.type === "sticker") {
+    return "表情";
+  }
+
+  if (message.type === "image") {
+    return "图片";
+  }
+
+  if (message.type === "file") {
+    return "文件";
+  }
+
+  if (message.type === "voice") {
+    return "语音";
+  }
+
+  if (message.type === "contact_card") {
+    return "名片";
+  }
+
+  return "位置";
 }
 
 function buildDefaultGroupName(

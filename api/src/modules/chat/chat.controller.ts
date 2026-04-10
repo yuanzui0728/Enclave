@@ -233,7 +233,15 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   @Post()
-  createGroup(@Body() body: { name: string; memberIds: string[] }) {
+  createGroup(
+    @Body()
+    body: {
+      name: string;
+      memberIds: string[];
+      sourceConversationId?: string;
+      sharedMessageIds?: string[];
+    },
+  ) {
     return this.groupService.createGroup(body);
   }
 

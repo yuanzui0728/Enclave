@@ -1064,6 +1064,7 @@ export function DesktopChatWorkspace({
 
       <DesktopCreateGroupDialog
         open={Boolean(createGroupDialogState)}
+        conversationId={createGroupDialogState?.conversationId}
         seedMemberIds={createGroupDialogState?.seedMemberIds}
         onClose={() => setCreateGroupDialogState(null)}
       />

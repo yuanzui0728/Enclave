@@ -106,6 +106,8 @@ export interface CreateGroupRequest {
   creatorId?: string;
   creatorType?: GroupMemberType;
   memberIds: string[];
+  sourceConversationId?: string;
+  sharedMessageIds?: string[];
 }
 
 export interface GroupMember {
