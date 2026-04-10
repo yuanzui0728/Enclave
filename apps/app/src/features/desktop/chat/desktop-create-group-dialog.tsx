@@ -57,10 +57,14 @@ export function DesktopCreateGroupDialog({
   const [friendIndexIndicatorLabel, setFriendIndexIndicatorLabel] = useState<
     string | null
   >(null);
+  const [activeFriendIndexKey, setActiveFriendIndexKey] = useState<string | null>(
+    null,
+  );
   const [focusedFriendIndex, setFocusedFriendIndex] = useState(0);
   const [focusedMessageIndex, setFocusedMessageIndex] = useState(0);
   const seededSelectionRef = useRef("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const friendListScrollRef = useRef<HTMLDivElement | null>(null);
   const friendItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const friendSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const messageItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -260,6 +264,10 @@ export function DesktopCreateGroupDialog({
       Math.min(Math.max(current, 0), filteredFriends.length - 1),
     );
   }, [filteredFriends.length]);
+
+  useEffect(() => {
+    setActiveFriendIndexKey(filteredFriends[focusedFriendIndex]?.indexLabel ?? null);
+  }, [filteredFriends, focusedFriendIndex]);
 
   useEffect(() => {
     if (!shareableMessages.length) {
@@ -557,6 +565,46 @@ export function DesktopCreateGroupDialog({
     });
     searchInputRef.current?.focus();
   };
+
+  const syncActiveFriendSectionFromScroll = () => {
+    const scrollContainer = friendListScrollRef.current;
+    if (!scrollContainer || !friendSections.length) {
+      return;
+    }
+
+    const containerTop = scrollContainer.getBoundingClientRect().top;
+    let nextSectionKey = friendSections[0]?.key ?? null;
+
+    for (const section of friendSections) {
+      const sectionNode = friendSectionRefs.current[section.key];
+      if (!sectionNode) {
+        continue;
+      }
+
+      const offset = sectionNode.getBoundingClientRect().top - containerTop;
+      if (offset <= 20) {
+        nextSectionKey = section.key;
+        continue;
+      }
+
+      break;
+    }
+
+    setActiveFriendIndexKey(nextSectionKey);
+  };
+
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      setActiveFriendIndexKey(filteredFriends[focusedFriendIndex]?.indexLabel ?? null);
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncActiveFriendSectionFromScroll();
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [friendSections, focusedFriendIndex, searchTerm, open]);
 
   if (!open) {
     return null;
@@ -877,7 +925,15 @@ export function DesktopCreateGroupDialog({
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
+        <div
+          ref={friendListScrollRef}
+          onScroll={() => {
+            if (!searchTerm.trim()) {
+              syncActiveFriendSectionFromScroll();
+            }
+          }}
+          className="min-h-0 flex-1 overflow-auto px-3 py-3"
+        >
           {friendsQuery.isLoading ? (
             <LoadingBlock className="px-3 py-4 text-left" label="正在读取联系人..." />
           ) : null}
@@ -985,7 +1041,7 @@ export function DesktopCreateGroupDialog({
             {!searchTerm.trim() && friendIndexItems.length > 1 ? (
               <ContactIndexList
                 items={friendIndexItems}
-                activeKey={filteredFriends[focusedFriendIndex]?.indexLabel ?? null}
+                activeKey={activeFriendIndexKey}
                 className="absolute right-0 top-0"
                 onSelect={jumpToFriendSection}
               />
