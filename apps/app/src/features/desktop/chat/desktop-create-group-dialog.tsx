@@ -17,7 +17,9 @@ import {
 } from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { ContactIndexList } from "../../contacts/contact-index-list";
 import {
+  buildContactSections,
   createFriendDirectoryItems,
   type FriendDirectoryItem,
 } from "../../contacts/contact-utils";
@@ -57,6 +59,7 @@ export function DesktopCreateGroupDialog({
   const seededSelectionRef = useRef("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const friendItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const friendSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const messageItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const friendsQuery = useQuery({
@@ -113,6 +116,28 @@ export function DesktopCreateGroupDialog({
       ].some((value) => value.toLowerCase().includes(keyword));
     });
   }, [searchTerm, sortedFriendItems]);
+  const friendSections = useMemo(
+    () => buildContactSections(filteredFriends),
+    [filteredFriends],
+  );
+  const friendIndexItems = useMemo(
+    () =>
+      friendSections.map((section) => ({
+        key: section.key,
+        indexLabel: section.indexLabel,
+      })),
+    [friendSections],
+  );
+  const friendPositionMap = useMemo(
+    () =>
+      new Map(
+        filteredFriends.map(
+          (item, index) =>
+            [item.character.id, index] satisfies [string, number],
+        ),
+      ),
+    [filteredFriends],
+  );
   const defaultGroupName = useMemo(
     () => buildDefaultGroupName(selectedFriends),
     [selectedFriends],
@@ -485,6 +510,28 @@ export function DesktopCreateGroupDialog({
     }
   };
 
+  const jumpToFriendSection = (
+    sectionKey: string,
+    behavior: ScrollBehavior = "smooth",
+  ) => {
+    const targetSection = friendSections.find((section) => section.key === sectionKey);
+    const firstItem = targetSection?.items[0];
+    if (!targetSection || !firstItem) {
+      return;
+    }
+
+    const nextIndex = friendPositionMap.get(firstItem.character.id);
+    if (typeof nextIndex === "number") {
+      setFocusedFriendIndex(nextIndex);
+    }
+
+    friendSectionRefs.current[sectionKey]?.scrollIntoView({
+      block: "start",
+      behavior,
+    });
+    searchInputRef.current?.focus();
+  };
+
   if (!open) {
     return null;
   }
@@ -808,54 +855,81 @@ export function DesktopCreateGroupDialog({
             </div>
           ) : null}
 
-          <div className="space-y-1">
-            {filteredFriends.map((item, index) => {
-              const displayName = getFriendDisplayName(item);
-              const checked = selectedIds.includes(item.character.id);
-              const focused = index === focusedFriendIndex;
-              return (
-                <button
-                  key={item.character.id}
-                  type="button"
+          <div className="relative pr-8">
+            <div className="space-y-3">
+              {friendSections.map((section) => (
+                <div
+                  key={section.key}
                   ref={(node) => {
-                    friendItemRefs.current[item.character.id] = node;
+                    friendSectionRefs.current[section.key] = node;
                   }}
-                  disabled={createMutation.isPending}
-                  onClick={() => toggleSelection(item.character.id)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-[12px] px-4 py-3 text-left transition disabled:opacity-60",
-                    checked
-                      ? "bg-[rgba(7,193,96,0.08)]"
-                      : "hover:bg-[#f7f7f7]",
-                    focused ? "ring-1 ring-[rgba(7,193,96,0.24)]" : "",
-                  )}
                 >
-                  <AvatarChip
-                    name={displayName}
-                    src={item.character.avatar}
-                    size="md"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                      {displayName}
-                    </div>
-                    <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-                      {item.character.relationship || "世界联系人"}
-                    </div>
+                  <div className="mb-1 px-2 text-[11px] font-medium tracking-[0.18em] text-[color:var(--text-dim)]">
+                    {section.title}
                   </div>
-                  <div
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                      checked
-                        ? "border-[#07c160] bg-[#07c160] text-white"
-                        : "border-black/10 bg-[#f5f5f5] text-transparent",
-                    )}
-                  >
-                    <Check size={12} strokeWidth={2.8} />
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const displayName = getFriendDisplayName(item);
+                      const checked = selectedIds.includes(item.character.id);
+                      const focused =
+                        friendPositionMap.get(item.character.id) ===
+                        focusedFriendIndex;
+                      return (
+                        <button
+                          key={item.character.id}
+                          type="button"
+                          ref={(node) => {
+                            friendItemRefs.current[item.character.id] = node;
+                          }}
+                          disabled={createMutation.isPending}
+                          onClick={() => toggleSelection(item.character.id)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-[12px] px-4 py-3 text-left transition disabled:opacity-60",
+                            checked
+                              ? "bg-[rgba(7,193,96,0.08)]"
+                              : "hover:bg-[#f7f7f7]",
+                            focused ? "ring-1 ring-[rgba(7,193,96,0.24)]" : "",
+                          )}
+                        >
+                          <AvatarChip
+                            name={displayName}
+                            src={item.character.avatar}
+                            size="md"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+                              {displayName}
+                            </div>
+                            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+                              {item.character.relationship || "世界联系人"}
+                            </div>
+                          </div>
+                          <div
+                            className={cn(
+                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                              checked
+                                ? "border-[#07c160] bg-[#07c160] text-white"
+                                : "border-black/10 bg-[#f5f5f5] text-transparent",
+                            )}
+                          >
+                            <Check size={12} strokeWidth={2.8} />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
-                </button>
-              );
-            })}
+                </div>
+              ))}
+            </div>
+
+            {!searchTerm.trim() && friendIndexItems.length > 1 ? (
+              <ContactIndexList
+                items={friendIndexItems}
+                activeKey={filteredFriends[focusedFriendIndex]?.indexLabel ?? null}
+                className="absolute right-0 top-0"
+                onSelect={jumpToFriendSection}
+              />
+            ) : null}
           </div>
         </div>
 
