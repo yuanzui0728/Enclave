@@ -348,6 +348,25 @@ export function DesktopCreateGroupDialog({
 
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (
+      event.altKey &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.shiftKey &&
+      /^[a-z]$/i.test(event.key)
+    ) {
+      const nextIndex = findFriendIndexByJumpKey(
+        filteredFriends,
+        event.key.toUpperCase(),
+      );
+      if (nextIndex !== -1) {
+        event.preventDefault();
+        setFocusedFriendIndex(nextIndex);
+        searchInputRef.current?.focus();
+      }
+      return;
+    }
+
+    if (
       (event.metaKey || event.ctrlKey) &&
       event.key === "Enter" &&
       selectedIds.length &&
@@ -797,7 +816,7 @@ export function DesktopCreateGroupDialog({
             {shareHistory && selectedMessageIds.length
               ? ` 会同步 ${selectedMessageIds.length} 条聊天记录。`
               : ""}
-            {" "}快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Ctrl/Cmd+Enter` 创建。
+            {" "}快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Ctrl/Cmd+Enter` 创建。
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -920,4 +939,25 @@ function getFriendDisplayName(
   item: Pick<FriendListItem, "friendship" | "character">,
 ) {
   return item.friendship.remarkName?.trim() || item.character.name;
+}
+
+function findFriendIndexByJumpKey(
+  items: FriendDirectoryItem[],
+  jumpKey: string,
+) {
+  const normalizedKey = jumpKey.trim().toUpperCase();
+  if (!normalizedKey) {
+    return -1;
+  }
+
+  const sectionMatchIndex = items.findIndex(
+    (item) => item.indexLabel.toUpperCase() === normalizedKey,
+  );
+  if (sectionMatchIndex !== -1) {
+    return sectionMatchIndex;
+  }
+
+  return items.findIndex((item) =>
+    getFriendDisplayName(item).trim().toUpperCase().startsWith(normalizedKey),
+  );
 }
