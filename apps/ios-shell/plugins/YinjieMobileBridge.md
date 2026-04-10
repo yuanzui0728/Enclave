@@ -16,8 +16,9 @@
 4. `getPushToken()`
 5. `getNotificationPermissionState()`
 6. `requestNotificationPermission()`
-7. `getPendingLaunchTarget()`
-8. `clearPendingLaunchTarget()`
+7. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
+8. `getPendingLaunchTarget()`
+9. `clearPendingLaunchTarget()`
 
 ## 返回结构
 
@@ -52,6 +53,18 @@
 }
 ```
 
+### showLocalNotification
+
+```json
+{
+  "id": "reminder-message-123",
+  "title": "消息提醒",
+  "body": "该回这条消息了",
+  "conversationId": "conversation-123",
+  "source": "local_reminder"
+}
+```
+
 ### getPendingLaunchTarget
 
 ```json
@@ -75,6 +88,7 @@
 - `getPushToken(_ call: CAPPluginCall)`
 - `getNotificationPermissionState(_ call: CAPPluginCall)`
 - `requestNotificationPermission(_ call: CAPPluginCall)`
+- `showLocalNotification(_ call: CAPPluginCall)`
 - `getPendingLaunchTarget(_ call: CAPPluginCall)`
 - `clearPendingLaunchTarget(_ call: CAPPluginCall)`
 
@@ -85,7 +99,8 @@
 3. 图片选择：`PHPickerViewController`
 4. Push token：已注册到 APNs 后缓存于原生层
 5. 通知权限：`UNUserNotificationCenter`
-6. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
+6. 本地提醒通知：`UNUserNotificationCenter` 本地通知
+7. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 当前 stub 行为：
 

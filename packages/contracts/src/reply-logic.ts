@@ -158,6 +158,18 @@ export interface ReplyLogicInspectorTemplates {
   previewDefaultUserMessage: string;
 }
 
+export interface ReplyLogicNarrativePresentationTemplates {
+  relationshipArcSuffix: string;
+  milestoneLabels: {
+    connected: string;
+    first_breakthrough: string;
+    shared_context: string;
+    growing_trust: string;
+    inner_circle: string;
+    story_complete: string;
+  };
+}
+
 export interface ReplyLogicProviderTemplates {
   endpointPriorityNote: string;
   modelPriorityNote: string;
@@ -242,6 +254,7 @@ export interface ReplyLogicSchedulerTextTemplates {
   jobSummaryProactiveReminderSkipped: string;
   jobSummaryTriggerMemoryProactiveMessages: string;
   proactiveReminderCheckPrompt: string;
+  proactiveReminderNoActionToken: string;
 }
 
 export interface ReplyLogicConstantSummary {
@@ -256,6 +269,8 @@ export interface ReplyLogicConstantSummary {
   channelGenerateChance: number;
   sceneFriendRequestChance: number;
   sceneFriendRequestScenes: string[];
+  relationshipInitialType: string;
+  relationshipInitialStrength: number;
   activityBaseWeight: number;
   proactiveReminderHour: number;
   relationshipInitialBackstory: string;
@@ -275,6 +290,7 @@ export interface ReplyLogicConstantSummary {
   observabilityTemplates: ReplyLogicObservabilityTemplates;
   worldContextRules: ReplyLogicWorldContextRules;
   inspectorTemplates: ReplyLogicInspectorTemplates;
+  narrativePresentationTemplates: ReplyLogicNarrativePresentationTemplates;
   providerTemplates: ReplyLogicProviderTemplates;
   runtimeNoteTemplates: ReplyLogicRuntimeNoteTemplates;
   schedulerDescriptions: ReplyLogicSchedulerDescriptions;

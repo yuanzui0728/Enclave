@@ -2,8 +2,12 @@ package com.yinjie.mobile;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
@@ -11,6 +15,9 @@ import android.os.Build;
 import android.provider.OpenableColumns;
 
 import androidx.activity.result.ActivityResult;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -42,6 +49,8 @@ public class YinjieMobileBridgePlugin extends Plugin {
     private static final String EXTRA_CONVERSATION_ID = "yinjie_conversation_id";
     private static final String EXTRA_GROUP_ID = "yinjie_group_id";
     private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
+    private static final String CHANNEL_ID = "yinjie_messages";
+    private static final String CHANNEL_NAME = "隐界消息";
 
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
@@ -191,6 +200,54 @@ public class YinjieMobileBridgePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void showLocalNotification(PluginCall call) {
+        String title = normalize(call.getString("title"));
+        String body = normalize(call.getString("body"));
+        if (title == null || body == null) {
+            call.reject("title and body are required");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(getContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            call.reject("notification permission is not granted");
+            return;
+        }
+
+        createNotificationChannelIfNeeded();
+
+        String route = normalize(call.getString("route"));
+        String conversationId = normalize(call.getString("conversationId"));
+        String groupId = normalize(call.getString("groupId"));
+        String source = normalize(call.getString("source"));
+        String notificationId = normalize(call.getString("id"));
+
+        Intent launchIntent = new Intent(getContext(), MainActivity.class);
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        applyLaunchTargetExtras(launchIntent, route, conversationId, groupId, source);
+
+        int requestCode = notificationId != null ? notificationId.hashCode() : (int) System.currentTimeMillis();
+        PendingIntent contentIntent = PendingIntent.getActivity(
+            getContext(),
+            requestCode,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(contentIntent);
+
+        NotificationManagerCompat.from(getContext()).notify(requestCode, builder.build());
+        call.resolve();
+    }
+
+    @PluginMethod
     public void clearPendingLaunchTarget(PluginCall call) {
         clearPendingLaunchTarget();
         call.resolve();
@@ -301,6 +358,63 @@ public class YinjieMobileBridgePlugin extends Plugin {
 
         String normalized = value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private void applyLaunchTargetExtras(
+        Intent intent,
+        String route,
+        String conversationId,
+        String groupId,
+        String source
+    ) {
+        if (intent == null) {
+            return;
+        }
+
+        String kind;
+        if (conversationId != null) {
+            kind = "conversation";
+        } else if (groupId != null) {
+            kind = "group";
+        } else {
+            kind = "route";
+        }
+
+        intent.putExtra(EXTRA_TARGET_KIND, kind);
+        intent.putExtra(EXTRA_TARGET_SOURCE, source != null ? source : "local_reminder");
+
+        if (route != null) {
+            intent.putExtra(EXTRA_TARGET_ROUTE, route);
+        } else if ("route".equals(kind)) {
+            intent.putExtra(EXTRA_TARGET_ROUTE, "/tabs/chat");
+        }
+
+        if (conversationId != null) {
+            intent.putExtra(EXTRA_CONVERSATION_ID, conversationId);
+        }
+
+        if (groupId != null) {
+            intent.putExtra(EXTRA_GROUP_ID, groupId);
+        }
+    }
+
+    private void createNotificationChannelIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return;
+        }
+
+        NotificationManager manager = getContext().getSystemService(NotificationManager.class);
+        if (manager == null || manager.getNotificationChannel(CHANNEL_ID) != null) {
+            return;
+        }
+
+        NotificationChannel channel = new NotificationChannel(
+            CHANNEL_ID,
+            CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        );
+        channel.setDescription("隐界的新消息与提醒");
+        manager.createNotificationChannel(channel);
     }
 
     static void cacheLaunchTarget(Context context, Intent intent) {
