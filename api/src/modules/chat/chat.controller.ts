@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -136,6 +137,22 @@ export class GroupController {
     return this.groupService.updateGroup(id, body);
   }
 
+  @Patch(':id/preferences')
+  updateGroupPreferences(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      isMuted?: boolean;
+      savedToContacts?: boolean;
+      showMemberNicknames?: boolean;
+      notifyOnAtMe?: boolean;
+      notifyOnAtAll?: boolean;
+      notifyOnAnnouncement?: boolean;
+    },
+  ) {
+    return this.groupService.updatePreferences(id, body);
+  }
+
   @Get(':id')
   getGroup(@Param('id') id: string) {
     return this.groupService.getGroup(id);
@@ -191,11 +208,16 @@ export class GroupController {
     body: {
       memberId: string;
       memberType: 'user' | 'character';
-      memberName: string;
+      memberName?: string;
       memberAvatar?: string;
     },
   ) {
     return this.groupService.addMember(id, body);
+  }
+
+  @Delete(':id/members/:memberId')
+  removeMember(@Param('id') id: string, @Param('memberId') memberId: string) {
+    return this.groupService.removeMember(id, memberId);
   }
 
   @Post(':id/messages')
