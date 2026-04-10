@@ -37,6 +37,7 @@ import {
   useProviderSetup,
 } from "@yinjie/ui";
 import {
+  AdminActionFeedback,
   AdminCallout,
   AdminEmptyState,
   AdminInfoRows,
@@ -663,7 +664,11 @@ export function ReplyLogicPage() {
                       <ErrorBlock message={characterSaveMutation.error.message} />
                     ) : null}
                     {characterSaveMutation.isSuccess ? (
-                      <InlineNotice tone="success">角色配置已保存，运行时快照正在刷新。</InlineNotice>
+                      <AdminActionFeedback
+                        tone="success"
+                        title="角色配置已保存"
+                        description="运行时快照正在刷新。"
+                      />
                     ) : null}
 
                     <div className="mt-4 space-y-6">
@@ -1281,7 +1286,11 @@ export function ReplyLogicPage() {
                   {providerLoadError ? <ErrorBlock message={providerLoadError} /> : null}
                   {providerActionError ? <ErrorBlock message={providerActionError} /> : null}
                   {providerSetup.providerSaveMutation.isSuccess ? (
-                    <InlineNotice tone="success">实例级推理服务已保存，运行时快照正在刷新。</InlineNotice>
+                    <AdminActionFeedback
+                      tone="success"
+                      title="运行配置已保存"
+                      description="实例级推理服务已保存，运行时快照正在刷新。"
+                    />
                   ) : null}
 
                   <div className="flex flex-wrap gap-3">
@@ -1916,7 +1925,13 @@ function RuntimeRulesEditorCard({
             这里改的是回复与生活调度的全局运行规则。保存后，角色快照、会话快照和状态门控摘要会按新规则刷新。
           </InlineNotice>
           {error ? <ErrorBlock message={error} /> : null}
-          {isSuccess ? <InlineNotice tone="success">运行规则已保存，快照正在刷新。</InlineNotice> : null}
+          {isSuccess ? (
+            <AdminActionFeedback
+              tone="success"
+              title="运行规则已保存"
+              description="相关快照正在按新规则刷新。"
+            />
+          ) : null}
 
           <div className="mt-4 space-y-6">
             <ConfigSection title="提示语与延迟">

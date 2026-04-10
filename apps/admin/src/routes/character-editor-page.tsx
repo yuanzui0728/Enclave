@@ -22,7 +22,12 @@ import {
   TextField as UiTextField,
   ToggleChip,
 } from "@yinjie/ui";
-import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
+import {
+  AdminActionFeedback,
+  AdminInfoRows,
+  AdminPageHero,
+  AdminSectionNav,
+} from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 const emptyCharacterDraft: CharacterDraft = {
@@ -208,7 +213,13 @@ export function CharacterEditorPage() {
 
       {saveMutation.isError && saveMutation.error instanceof Error ? <ErrorBlock message={saveMutation.error.message} /> : null}
 
-      {saveMutation.isSuccess ? <InlineNotice tone="success">角色已保存，正在返回角色名册...</InlineNotice> : null}
+      {saveMutation.isSuccess ? (
+        <AdminActionFeedback
+          tone="success"
+          title="角色已保存"
+          description="正在返回角色名册..."
+        />
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">

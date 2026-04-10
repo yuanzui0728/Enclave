@@ -21,7 +21,12 @@ import {
   TextField as UiTextField,
   ToggleChip,
 } from "@yinjie/ui";
-import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
+import {
+  AdminActionFeedback,
+  AdminInfoRows,
+  AdminPageHero,
+  AdminSectionNav,
+} from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
@@ -156,7 +161,11 @@ export function CharacterRuntimePage() {
         <ErrorBlock message={saveMutation.error.message} />
       ) : null}
       {saveMutation.isSuccess ? (
-        <InlineNotice tone="success">角色运行配置已保存，快照已刷新。</InlineNotice>
+        <AdminActionFeedback
+          tone="success"
+          title="运行配置已保存"
+          description="角色快照已刷新。"
+        />
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">

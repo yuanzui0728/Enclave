@@ -34,6 +34,7 @@ import {
   TextField,
 } from "@yinjie/ui";
 import {
+  AdminActionFeedback,
   AdminEmptyState,
   AdminInfoRows,
   AdminPageHero,
@@ -1240,19 +1241,31 @@ export function EvalsPage() {
           </Button>
         </div>
         {evalRunBusy || reportDecisionBusy ? (
-          <InlineNotice className="mt-4" tone="info">
-            {activeDatasetRunId
-              ? `正在执行数据集 ${activeDatasetRunId}...`
-              : activePairwiseRunId
-                ? `正在执行 ${activePairwiseRunId} 的成对评测...`
-                : activePresetRunId
-                  ? `正在执行预设 ${activePresetRunId}...`
-                  : activeReportDecisionId
-                  ? `正在更新报告 ${activeReportDecisionId} 的决策...`
-                  : "评测操作执行中..."}
-          </InlineNotice>
+          <AdminActionFeedback
+            className="mt-4"
+            tone="busy"
+            title="评测任务执行中"
+            description={
+              activeDatasetRunId
+                ? `正在执行数据集 ${activeDatasetRunId}...`
+                : activePairwiseRunId
+                  ? `正在执行 ${activePairwiseRunId} 的成对评测...`
+                  : activePresetRunId
+                    ? `正在执行预设 ${activePresetRunId}...`
+                    : activeReportDecisionId
+                      ? `正在更新报告 ${activeReportDecisionId} 的决策...`
+                      : "评测操作执行中..."
+            }
+          />
         ) : null}
-        {successNotice ? <InlineNotice className="mt-4" tone="success">{successNotice}</InlineNotice> : null}
+        {successNotice ? (
+          <AdminActionFeedback
+            className="mt-4"
+            tone="success"
+            title="评测任务已完成"
+            description={successNotice}
+          />
+        ) : null}
         {runDatasetMutation.isError && runDatasetMutation.error instanceof Error ? <ErrorBlock className="mt-4" message={runDatasetMutation.error.message} /> : null}
         {runPairwiseMutation.isError && runPairwiseMutation.error instanceof Error ? <ErrorBlock className="mt-4" message={runPairwiseMutation.error.message} /> : null}
         {runExperimentPresetMutation.isError && runExperimentPresetMutation.error instanceof Error ? <ErrorBlock className="mt-4" message={runExperimentPresetMutation.error.message} /> : null}
