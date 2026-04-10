@@ -139,8 +139,8 @@ export function DesktopChatImageViewerPage() {
 
   if (!routeState || !activeItem) {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.92),rgba(8,15,28,1))] p-6">
-        <div className="w-full max-w-lg rounded-[30px] border border-white/10 bg-[rgba(15,23,42,0.72)] p-8 shadow-[0_32px_80px_rgba(2,6,23,0.38)] backdrop-blur-xl">
+      <div className="flex h-full min-h-0 items-center justify-center bg-[#1f1f1f] p-6">
+        <div className="w-full max-w-lg rounded-[20px] border border-white/10 bg-[#2a2a2a] p-8 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
           <EmptyState
             title="这张图片已经失去上下文"
             description="可能是新窗口参数被清掉了。回到消息页后重新打开一次即可。"
@@ -149,7 +149,7 @@ export function DesktopChatImageViewerPage() {
             <Button
               type="button"
               onClick={() => window.location.assign("/tabs/chat")}
-              className="rounded-2xl"
+              className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
             >
               回到消息页
             </Button>
@@ -160,18 +160,18 @@ export function DesktopChatImageViewerPage() {
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-[radial-gradient(circle_at_top,rgba(30,41,59,0.92),rgba(8,15,28,1))] text-white">
-      <header className="flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+    <div className="relative flex h-full min-h-0 flex-col bg-[#1f1f1f] text-white">
+      <header className="flex items-start justify-between gap-4 border-b border-white/8 bg-[#242424] px-5 py-4">
         <div className="min-w-0">
           <div className="truncate text-[16px] font-medium">
             {activeItem.title}
           </div>
           {activeItem.meta ? (
-            <div className="mt-1 truncate text-[12px] text-white/68">
+            <div className="mt-1 truncate text-[12px] text-white/62">
               {activeItem.meta}
             </div>
           ) : null}
-          <div className="mt-1 text-[12px] text-white/52">
+          <div className="mt-1 text-[12px] text-white/46">
             {activeItemIndex + 1} / {viewerItems.length}
           </div>
         </div>
@@ -230,11 +230,11 @@ export function DesktopChatImageViewerPage() {
         </ViewerNavButton>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 items-center justify-center px-20 py-8">
+      <div className="flex min-h-0 flex-1 items-center justify-center px-16 py-8">
         <img
           src={activeItem.imageUrl}
           alt={activeItem.title}
-          className="max-h-full max-w-full rounded-[24px] object-contain shadow-[0_32px_88px_rgba(2,6,23,0.46)]"
+          className="max-h-full max-w-full rounded-[14px] object-contain shadow-[0_20px_64px_rgba(0,0,0,0.34)]"
         />
       </div>
     </div>
@@ -257,7 +257,7 @@ function ViewerNavButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/18 ${
+      className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434] ${
         side === "left" ? "left-6" : "right-6"
       }`}
     >
@@ -280,7 +280,7 @@ function StandaloneActionButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-white/10 text-white transition hover:bg-white/18"
+      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434]"
       title={label}
     >
       {children}
@@ -336,7 +336,7 @@ function openPrintWindow(input: { title: string; imageUrl: string }) {
       html, body {
         margin: 0;
         min-height: 100%;
-        background: #0f172a;
+        background: #1f1f1f;
       }
 
       body {
@@ -350,7 +350,7 @@ function openPrintWindow(input: { title: string; imageUrl: string }) {
         max-width: 100%;
         max-height: calc(100vh - 48px);
         object-fit: contain;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+        box-shadow: 0 20px 52px rgba(0, 0, 0, 0.26);
       }
     </style>
   </head>
