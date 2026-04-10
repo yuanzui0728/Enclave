@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -15,7 +16,11 @@ import {
 } from "../../chat/local-chat-message-actions";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
-import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
+import {
+  formatDetailedMessageTimestamp,
+  formatMessageTimestamp,
+  parseTimestamp,
+} from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 type DesktopChatHistoryPanelProps = {
@@ -44,6 +49,12 @@ type HistoryFilterType =
   | "location_card";
 
 type HistoryDateFilter = "all" | "today" | "7d" | "30d";
+
+type HistoryDateSection = {
+  key: string;
+  label: string;
+  rows: HistoryRow[];
+};
 
 const MAX_VISIBLE_ROWS = 60;
 const INITIAL_HISTORY_LIMIT = 80;
@@ -167,7 +178,7 @@ export function DesktopChatHistoryPanel({
   }, [historyRows]);
 
   const filteredRows = useMemo(() => {
-    const rows = historyRows.filter((row) => {
+    return historyRows.filter((row) => {
       if (typeFilter !== "all" && row.type !== typeFilter) {
         return false;
       }
@@ -180,7 +191,10 @@ export function DesktopChatHistoryPanel({
         return false;
       }
 
-      if (specificDate && !matchesSpecificHistoryDate(row.createdAt, specificDate)) {
+      if (
+        specificDate &&
+        !matchesSpecificHistoryDate(row.createdAt, specificDate)
+      ) {
         return false;
       }
 
@@ -197,8 +211,6 @@ export function DesktopChatHistoryPanel({
         typeLabel.includes(trimmedKeyword)
       );
     });
-
-    return rows.slice(0, MAX_VISIBLE_ROWS);
   }, [
     dateFilter,
     historyRows,
@@ -207,6 +219,25 @@ export function DesktopChatHistoryPanel({
     trimmedKeyword,
     typeFilter,
   ]);
+  const visibleRows = useMemo(
+    () => filteredRows.slice(0, MAX_VISIBLE_ROWS),
+    [filteredRows],
+  );
+  const visibleSections = useMemo(
+    () => buildHistoryDateSections(visibleRows),
+    [visibleRows],
+  );
+  const activeFilterCount =
+    (trimmedKeyword ? 1 : 0) +
+    (typeFilter !== "all" ? 1 : 0) +
+    (dateFilter !== "all" ? 1 : 0) +
+    (specificDate ? 1 : 0) +
+    (senderFilter !== "all" ? 1 : 0);
+  const reminderCount = historyRows.filter((row) =>
+    Boolean(row.reminderAt),
+  ).length;
+  const hasActiveFilters = activeFilterCount > 0;
+  const isPartialResult = filteredRows.length > visibleRows.length;
   const mayHaveEarlierMessages =
     historyRows.length > 0 && historyRows.length >= historyLimit;
 
@@ -220,6 +251,48 @@ export function DesktopChatHistoryPanel({
           placeholder="搜索聊天记录"
           className="w-full rounded-xl border border-black/8 bg-[#f5f5f5] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12 focus:bg-white"
         />
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap gap-2">
+            <HistoryStatPill label={`当前范围 ${historyRows.length} 条`} />
+            <HistoryStatPill
+              label={
+                trimmedKeyword || hasActiveFilters
+                  ? `命中 ${filteredRows.length} 条`
+                  : `可浏览 ${filteredRows.length} 条`
+              }
+              tone="brand"
+            />
+            {reminderCount ? (
+              <HistoryStatPill label={`提醒 ${reminderCount} 条`} tone="blue" />
+            ) : null}
+            {hasActiveFilters ? (
+              <HistoryStatPill label={`筛选 ${activeFilterCount} 项`} />
+            ) : null}
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              if (isPersistedGroupConversation(conversation)) {
+                void navigate({
+                  to: "/group/$groupId/search",
+                  params: { groupId: conversation.id },
+                });
+                return;
+              }
+
+              void navigate({
+                to: "/chat/$conversationId/search",
+                params: { conversationId: conversation.id },
+              });
+            }}
+            className="shrink-0 rounded-full"
+          >
+            完整搜索
+            <ArrowUpRight className="size-3.5" />
+          </Button>
+        </div>
         <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
           {trimmedKeyword
             ? `已在当前加载的 ${historyRows.length} 条里命中 ${filteredRows.length} 条`
@@ -227,7 +300,7 @@ export function DesktopChatHistoryPanel({
         </div>
         {mayHaveEarlierMessages ? (
           <div className="mt-1 text-[12px] text-[color:var(--text-dim)]">
-            继续加载可查看更早消息，当前筛选只覆盖已加载部分。
+            继续扩大检索范围可查看更早消息；需要全量历史时可直接进入完整搜索。
           </div>
         ) : null}
 
@@ -301,11 +374,11 @@ export function DesktopChatHistoryPanel({
         ) : null}
 
         {isGroupConversation ? (
-          <div className="mt-3">
+          <div className="mt-3 flex items-center gap-2">
             <select
               value={senderFilter}
               onChange={(event) => setSenderFilter(event.target.value)}
-              className="w-full rounded-xl border border-black/8 bg-[#f5f5f5] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+              className="min-w-0 flex-1 rounded-xl border border-black/8 bg-[#f5f5f5] px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
             >
               <option value="all">全部成员</option>
               {senderOptions.map((senderName) => (
@@ -314,6 +387,41 @@ export function DesktopChatHistoryPanel({
                 </option>
               ))}
             </select>
+            {hasActiveFilters ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setKeyword("");
+                  setTypeFilter("all");
+                  setDateFilter("all");
+                  setSpecificDate("");
+                  setSenderFilter("all");
+                }}
+                className="shrink-0 rounded-full"
+              >
+                清空筛选
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        {!isGroupConversation && hasActiveFilters ? (
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setKeyword("");
+                setTypeFilter("all");
+                setDateFilter("all");
+                setSpecificDate("");
+              }}
+              className="rounded-full"
+            >
+              清空筛选
+            </Button>
           </div>
         ) : null}
       </div>
@@ -341,62 +449,77 @@ export function DesktopChatHistoryPanel({
         {!messagesQuery.isLoading &&
         !messagesQuery.isError &&
         historyRows.length > 0 &&
-        !filteredRows.length ? (
+        !visibleRows.length ? (
           <div className="px-6 py-10 text-center text-sm leading-6 text-[color:var(--text-muted)]">
-            没有找到匹配的聊天记录。
+            当前筛选范围内没有匹配消息。可扩大检索范围，或进入完整搜索继续查找。
           </div>
         ) : null}
 
-        {filteredRows.length ? (
-          <div className="divide-y divide-black/6 bg-white">
-            {filteredRows.map((row) => (
-              <button
-                key={row.id}
-                type="button"
-                onClick={() => {
-                  if (isPersistedGroupConversation(conversation)) {
-                    void navigate({
-                      to: "/group/$groupId",
-                      params: { groupId: conversation.id },
-                      hash: `chat-message-${row.id}`,
-                    });
-                    return;
-                  }
+        {visibleSections.length ? (
+          <div className="bg-white">
+            {visibleSections.map((section) => (
+              <section key={section.key}>
+                <div className="sticky top-0 z-[1] border-y border-black/6 bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                  {section.label}
+                </div>
+                <div className="divide-y divide-black/6">
+                  {section.rows.map((row) => (
+                    <button
+                      key={row.id}
+                      type="button"
+                      onClick={() => {
+                        if (isPersistedGroupConversation(conversation)) {
+                          void navigate({
+                            to: "/group/$groupId",
+                            params: { groupId: conversation.id },
+                            hash: `chat-message-${row.id}`,
+                          });
+                          return;
+                        }
 
-                  void navigate({
-                    to: "/chat/$conversationId",
-                    params: { conversationId: conversation.id },
-                    hash: `chat-message-${row.id}`,
-                  });
-                }}
-                className="block w-full px-4 py-3 text-left transition hover:bg-[#f7f7f7]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
-                    {row.senderName}
-                  </div>
-                  <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
-                    {formatMessageTimestamp(row.createdAt)}
-                  </div>
+                        void navigate({
+                          to: "/chat/$conversationId",
+                          params: { conversationId: conversation.id },
+                          hash: `chat-message-${row.id}`,
+                        });
+                      }}
+                      className="block w-full px-4 py-3 text-left transition hover:bg-[#f7f7f7]"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                          {row.senderName}
+                        </div>
+                        <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+                          {formatDetailedMessageTimestamp(row.createdAt)}
+                        </div>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="shrink-0 rounded-full bg-[rgba(255,138,61,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                          {row.typeLabel}
+                        </span>
+                        {row.reminderAt ? (
+                          <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.12)] px-2 py-0.5 text-[10px] text-[#2563eb]">
+                            提醒 · {formatMessageTimestamp(row.reminderAt)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                        {renderHighlightedText(
+                          buildSearchPreview(row.preview, trimmedKeyword),
+                          trimmedKeyword,
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="shrink-0 rounded-full bg-[rgba(255,138,61,0.10)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
-                    {row.typeLabel}
-                  </span>
-                  {row.reminderAt ? (
-                    <span className="shrink-0 rounded-full bg-[rgba(59,130,246,0.12)] px-2 py-0.5 text-[10px] text-[#2563eb]">
-                      提醒 · {formatMessageTimestamp(row.reminderAt)}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                  {renderHighlightedText(
-                    buildSearchPreview(row.preview, trimmedKeyword),
-                    trimmedKeyword,
-                  )}
-                </div>
-              </button>
+              </section>
             ))}
+            {isPartialResult ? (
+              <div className="border-t border-black/6 bg-[#fafafa] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
+                当前仅展示前 {MAX_VISIBLE_ROWS}{" "}
+                条命中结果，可继续扩大检索范围或进入完整搜索。
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -415,7 +538,9 @@ export function DesktopChatHistoryPanel({
               {messagesQuery.isFetching
                 ? "正在加载更早消息..."
                 : mayHaveEarlierMessages
-                  ? `加载更早消息（当前 ${historyRows.length} 条）`
+                  ? hasActiveFilters
+                    ? `扩大检索范围（当前 ${historyRows.length} 条）`
+                    : `加载更早消息（当前 ${historyRows.length} 条）`
                   : "已全部加载"}
             </Button>
           </div>
@@ -435,7 +560,7 @@ function normalizeHistoryRows(
 
   return messages.map((message) => ({
     id: message.id,
-    senderName: message.senderName,
+    senderName: message.senderName || "消息",
     createdAt: message.createdAt,
     preview: resolveMessagePreview(message),
     reminderAt: reminderMap.get(message.id),
@@ -635,4 +760,104 @@ function matchesSpecificHistoryDate(createdAt: string, specificDate: string) {
   const dayStart = date.getTime();
   const dayEnd = dayStart + 24 * 60 * 60 * 1000;
   return timestamp >= dayStart && timestamp < dayEnd;
+}
+
+function buildHistoryDateSections(rows: HistoryRow[]): HistoryDateSection[] {
+  const sections: HistoryDateSection[] = [];
+
+  rows.forEach((row) => {
+    const key = resolveHistoryDateSectionKey(row.createdAt);
+    const lastSection = sections.at(-1);
+
+    if (lastSection?.key === key) {
+      lastSection.rows.push(row);
+      return;
+    }
+
+    sections.push({
+      key,
+      label: resolveHistoryDateSectionLabel(row.createdAt),
+      rows: [row],
+    });
+  });
+
+  return sections;
+}
+
+function resolveHistoryDateSectionKey(createdAt: string) {
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return "unknown";
+  }
+
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function resolveHistoryDateSectionLabel(createdAt: string) {
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return "未知时间";
+  }
+
+  const date = new Date(timestamp);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (isSameDay(date, now)) {
+    return "今天";
+  }
+
+  if (isSameDay(date, yesterday)) {
+    return "昨天";
+  }
+
+  if (date.getFullYear() === now.getFullYear()) {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+    }).format(date);
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+  }).format(date);
+}
+
+function isSameDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
+}
+
+function HistoryStatPill({
+  label,
+  tone = "neutral",
+}: {
+  label: string;
+  tone?: "neutral" | "brand" | "blue";
+}) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2.5 py-1 text-[11px]",
+        tone === "brand" &&
+          "bg-[rgba(255,138,61,0.14)] text-[color:var(--brand-primary)]",
+        tone === "blue" && "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
+        tone === "neutral" && "bg-[#f5f5f5] text-[color:var(--text-muted)]",
+      )}
+    >
+      {label}
+    </span>
+  );
 }
