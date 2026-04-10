@@ -117,14 +117,49 @@ type ScreenshotSelectionDraft = {
   boundsHeight: number;
 };
 
+type ScreenshotAnnotationColor = "amber" | "cyan" | "rose" | "lime";
+
 type ScreenshotAnnotation = {
   id: string;
   kind: "rect" | "arrow";
+  color: ScreenshotAnnotationColor;
   x1: number;
   y1: number;
   x2: number;
   y2: number;
 };
+
+const SCREENSHOT_ANNOTATION_PALETTE = [
+  {
+    id: "amber",
+    label: "琥珀",
+    stroke: "#f59e0b",
+    fill: "rgba(245,158,11,0.12)",
+  },
+  {
+    id: "cyan",
+    label: "青蓝",
+    stroke: "#38bdf8",
+    fill: "rgba(56,189,248,0.14)",
+  },
+  {
+    id: "rose",
+    label: "玫红",
+    stroke: "#fb7185",
+    fill: "rgba(251,113,133,0.14)",
+  },
+  {
+    id: "lime",
+    label: "青柠",
+    stroke: "#84cc16",
+    fill: "rgba(132,204,22,0.14)",
+  },
+] satisfies Array<{
+  id: ScreenshotAnnotationColor;
+  label: string;
+  stroke: string;
+  fill: string;
+}>;
 
 type ScreenshotCropResizeDraft = {
   pointerId: number;
@@ -194,6 +229,8 @@ export function ChatComposer({
   const [desktopScreenshotTool, setDesktopScreenshotTool] = useState<
     "crop" | "rect" | "arrow"
   >("crop");
+  const [desktopScreenshotAnnotationColor, setDesktopScreenshotAnnotationColor] =
+    useState<ScreenshotAnnotationColor>("amber");
   const [desktopScreenshotAnnotations, setDesktopScreenshotAnnotations] =
     useState<ScreenshotAnnotation[]>([]);
   const [desktopScreenshotSelection, setDesktopScreenshotSelection] =
@@ -920,6 +957,7 @@ export function ChatComposer({
       setDesktopScreenshotDraft(screenshotDraft);
       setDesktopScreenshotCrop(null);
       setDesktopScreenshotTool("crop");
+      setDesktopScreenshotAnnotationColor("amber");
       setDesktopScreenshotAnnotations([]);
       setDesktopScreenshotSelection(null);
       setDesktopScreenshotCropResize(null);
@@ -1174,6 +1212,7 @@ export function ChatComposer({
     setDesktopScreenshotDraft(null);
     setDesktopScreenshotCrop(null);
     setDesktopScreenshotTool("crop");
+    setDesktopScreenshotAnnotationColor("amber");
     setDesktopScreenshotAnnotations([]);
     setDesktopScreenshotSelection(null);
     setDesktopScreenshotCropResize(null);
@@ -1379,6 +1418,7 @@ export function ChatComposer({
             ? {
                 id: createScreenshotAnnotationId(),
                 kind: "rect" as const,
+                color: desktopScreenshotAnnotationColor,
                 x1: rectSelection.x,
                 y1: rectSelection.y,
                 x2: rectSelection.x + rectSelection.width,
@@ -1387,6 +1427,7 @@ export function ChatComposer({
             : {
                 id: createScreenshotAnnotationId(),
                 kind: "arrow" as const,
+                color: desktopScreenshotAnnotationColor,
                 x1: current.anchorX / current.boundsWidth,
                 y1: current.anchorY / current.boundsHeight,
                 x2: current.currentX / current.boundsWidth,
@@ -1776,6 +1817,8 @@ export function ChatComposer({
             notice={desktopScreenshotNotice}
             onCancel={closeDesktopScreenshotEditor}
             onToolChange={setDesktopScreenshotTool}
+            annotationColor={desktopScreenshotAnnotationColor}
+            onAnnotationColorChange={setDesktopScreenshotAnnotationColor}
             onClearCrop={() => {
               setDesktopScreenshotCrop(null);
               setDesktopScreenshotCropResize(null);
@@ -2518,6 +2561,7 @@ function DesktopScreenshotToolButton({
 }
 
 function DesktopScreenshotEditor({
+  annotationColor,
   annotations,
   crop,
   draft,
@@ -2544,9 +2588,11 @@ function DesktopScreenshotEditor({
   onPointerUp,
   onSendCropped,
   onSendOriginal,
+  onAnnotationColorChange,
   onToolChange,
   onUndoAnnotation,
 }: {
+  annotationColor: ScreenshotAnnotationColor;
   annotations: ScreenshotAnnotation[];
   crop: NormalizedCropRect | null;
   draft: ImageDraft;
@@ -2576,6 +2622,7 @@ function DesktopScreenshotEditor({
   onPointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
   onSendCropped: () => void;
   onSendOriginal: () => void;
+  onAnnotationColorChange: (color: ScreenshotAnnotationColor) => void;
   onToolChange: (tool: "crop" | "rect" | "arrow") => void;
   onUndoAnnotation: () => void;
 }) {
@@ -2625,6 +2672,9 @@ function DesktopScreenshotEditor({
   const previewPanEnabled = previewZoom > 1 && previewSpacePressed;
   const previewPanVisible =
     previewZoom > 1 && Boolean(previewSpacePressed || previewPanDrag);
+  const activeAnnotationPalette = getScreenshotAnnotationPaletteEntry(
+    annotationColor,
+  );
 
   useEffect(() => {
     setPreviewZoom(1);
@@ -2901,6 +2951,25 @@ function DesktopScreenshotEditor({
                   active={tool === "arrow"}
                   onClick={() => onToolChange("arrow")}
                 />
+                {tool !== "crop" ? (
+                  <div className="ml-1 flex items-center gap-2 rounded-full bg-white/6 px-2 py-1">
+                    {SCREENSHOT_ANNOTATION_PALETTE.map((palette) => (
+                      <button
+                        key={palette.id}
+                        type="button"
+                        onClick={() => onAnnotationColorChange(palette.id)}
+                        className={cn(
+                          "h-5 w-5 rounded-full border transition",
+                          palette.id === annotationColor
+                            ? "scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
+                            : "border-white/20 hover:border-white/60",
+                        )}
+                        style={{ backgroundColor: palette.stroke }}
+                        aria-label={`切换为${palette.label}标注`}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -3081,17 +3150,20 @@ function DesktopScreenshotEditor({
                     ) : null}
                     {previewRect ? (
                       <div
-                        className={cn(
-                          "absolute border-2 shadow-[0_0_0_1px_rgba(255,255,255,0.16)]",
-                          selection?.mode === "crop"
-                            ? "border-[#07c160] bg-[rgba(7,193,96,0.14)]"
-                            : "border-[#f59e0b] bg-[rgba(245,158,11,0.12)]",
-                        )}
+                        className="absolute border-2 shadow-[0_0_0_1px_rgba(255,255,255,0.16)]"
                         style={{
                           left: `${previewRect.x * 100}%`,
                           top: `${previewRect.y * 100}%`,
                           width: `${previewRect.width * 100}%`,
                           height: `${previewRect.height * 100}%`,
+                          borderColor:
+                            selection?.mode === "crop"
+                              ? "#07c160"
+                              : activeAnnotationPalette.stroke,
+                          backgroundColor:
+                            selection?.mode === "crop"
+                              ? "rgba(7,193,96,0.14)"
+                              : activeAnnotationPalette.fill,
                         }}
                       >
                         {selection?.mode === "crop" && previewPixelSize ? (
@@ -3114,8 +3186,16 @@ function DesktopScreenshotEditor({
                             y={Math.min(annotation.y1, annotation.y2)}
                             width={Math.abs(annotation.x2 - annotation.x1)}
                             height={Math.abs(annotation.y2 - annotation.y1)}
-                            fill="rgba(245,158,11,0.10)"
-                            stroke="#f59e0b"
+                            fill={
+                              getScreenshotAnnotationPaletteEntry(
+                                annotation.color,
+                              ).fill
+                            }
+                            stroke={
+                              getScreenshotAnnotationPaletteEntry(
+                                annotation.color,
+                              ).stroke
+                            }
                             strokeWidth="0.006"
                           />
                         ) : (
@@ -3125,7 +3205,11 @@ function DesktopScreenshotEditor({
                               y1={annotation.y1}
                               x2={annotation.x2}
                               y2={annotation.y2}
-                              stroke="#38bdf8"
+                              stroke={
+                                getScreenshotAnnotationPaletteEntry(
+                                  annotation.color,
+                                ).stroke
+                              }
                               strokeWidth="0.007"
                               strokeLinecap="round"
                             />
@@ -3136,7 +3220,11 @@ function DesktopScreenshotEditor({
                                 annotation.x2,
                                 annotation.y2,
                               )}
-                              fill="#38bdf8"
+                              fill={
+                                getScreenshotAnnotationPaletteEntry(
+                                  annotation.color,
+                                ).stroke
+                              }
                             />
                           </g>
                         ),
@@ -3144,14 +3232,14 @@ function DesktopScreenshotEditor({
                       {previewArrow ? (
                         <g>
                           <line
-                            x1={previewArrow.x1}
-                            y1={previewArrow.y1}
-                            x2={previewArrow.x2}
-                            y2={previewArrow.y2}
-                            stroke="#67e8f9"
-                            strokeWidth="0.007"
-                            strokeLinecap="round"
-                          />
+                          x1={previewArrow.x1}
+                          y1={previewArrow.y1}
+                          x2={previewArrow.x2}
+                          y2={previewArrow.y2}
+                          stroke={activeAnnotationPalette.stroke}
+                          strokeWidth="0.007"
+                          strokeLinecap="round"
+                        />
                           <polygon
                             points={buildArrowHeadPoints(
                               previewArrow.x1,
@@ -3159,7 +3247,7 @@ function DesktopScreenshotEditor({
                               previewArrow.x2,
                               previewArrow.y2,
                             )}
-                            fill="#67e8f9"
+                            fill={activeAnnotationPalette.stroke}
                           />
                         </g>
                       ) : null}
@@ -3674,6 +3762,7 @@ function drawScreenshotAnnotations(
   },
 ) {
   for (const annotation of annotations) {
+    const palette = getScreenshotAnnotationPaletteEntry(annotation.color);
     if (annotation.kind === "rect") {
       const rect = projectNormalizedRectToCanvas(annotation, options);
       if (!rect) {
@@ -3681,8 +3770,8 @@ function drawScreenshotAnnotations(
       }
 
       context.save();
-      context.strokeStyle = "#f59e0b";
-      context.fillStyle = "rgba(245,158,11,0.10)";
+      context.strokeStyle = palette.stroke;
+      context.fillStyle = palette.fill;
       context.lineWidth = Math.max(3, Math.round(options.width * 0.004));
       context.strokeRect(rect.x, rect.y, rect.width, rect.height);
       context.fillRect(rect.x, rect.y, rect.width, rect.height);
@@ -3696,8 +3785,8 @@ function drawScreenshotAnnotations(
     }
 
     context.save();
-    context.strokeStyle = "#38bdf8";
-    context.fillStyle = "#38bdf8";
+    context.strokeStyle = palette.stroke;
+    context.fillStyle = palette.stroke;
     context.lineWidth = Math.max(4, Math.round(options.width * 0.005));
     context.lineCap = "round";
     context.beginPath();
@@ -3720,6 +3809,13 @@ function drawScreenshotAnnotations(
     context.fill();
     context.restore();
   }
+}
+
+function getScreenshotAnnotationPaletteEntry(color: ScreenshotAnnotationColor) {
+  return (
+    SCREENSHOT_ANNOTATION_PALETTE.find((palette) => palette.id === color) ??
+    SCREENSHOT_ANNOTATION_PALETTE[0]
+  );
 }
 
 function projectNormalizedRectToCanvas(
