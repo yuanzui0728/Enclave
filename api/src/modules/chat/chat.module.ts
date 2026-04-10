@@ -13,9 +13,11 @@ import {
   ChatController,
   FavoritesController,
   GroupController,
+  MessageRemindersController,
 } from './chat.controller';
 import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
+import { MessageRemindersService } from './message-reminders.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
@@ -48,11 +50,13 @@ import { GroupMessageEntity } from './group-message.entity';
     ChatBackgroundsService,
     GroupService,
     FavoritesService,
+    MessageRemindersService,
   ],
   controllers: [
     ChatController,
     ChatAttachmentController,
     FavoritesController,
+    MessageRemindersController,
     ConversationBackgroundController,
     GroupBackgroundController,
     ChatBackgroundAssetsController,

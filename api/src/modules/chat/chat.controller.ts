@@ -20,6 +20,11 @@ import {
   type CreateMessageFavoriteInput,
 } from './favorites.service';
 import { GroupService } from './group.service';
+import {
+  MessageRemindersService,
+  type CreateMessageReminderInput,
+  type MarkMessageReminderNotifiedInput,
+} from './message-reminders.service';
 import type {
   ContactCardAttachment,
   FileAttachment,
@@ -175,6 +180,39 @@ export class FavoritesController {
   @Delete(':sourceId')
   removeFavorite(@Param('sourceId') sourceId: string) {
     return this.favoritesService.removeFavorite(sourceId);
+  }
+}
+
+@Controller('reminders/messages')
+export class MessageRemindersController {
+  constructor(
+    private readonly messageRemindersService: MessageRemindersService,
+  ) {}
+
+  @Get()
+  getMessageReminders() {
+    return this.messageRemindersService.listMessageReminders();
+  }
+
+  @Post()
+  createMessageReminder(@Body() body: CreateMessageReminderInput) {
+    return this.messageRemindersService.createMessageReminder(body);
+  }
+
+  @Post(':sourceId/notified')
+  markMessageReminderNotified(
+    @Param('sourceId') sourceId: string,
+    @Body() body?: MarkMessageReminderNotifiedInput,
+  ) {
+    return this.messageRemindersService.markMessageReminderNotified(
+      sourceId,
+      body,
+    );
+  }
+
+  @Delete(':sourceId')
+  removeMessageReminder(@Param('sourceId') sourceId: string) {
+    return this.messageRemindersService.removeMessageReminder(sourceId);
   }
 }
 

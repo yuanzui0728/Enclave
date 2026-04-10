@@ -53,6 +53,11 @@ import type {
   FavoriteRecord,
 } from "./favorites";
 import type {
+  CreateMessageReminderRequest,
+  MarkMessageReminderNotifiedRequest,
+  MessageReminderRecord,
+} from "./reminders";
+import type {
   CreateMomentCommentRequest,
   CreateUserMomentRequest,
   Moment,
@@ -1278,6 +1283,53 @@ export function createMessageFavorite(
 export function removeFavorite(sourceId: string, baseUrl?: string) {
   return requestLegacyApi<SuccessResponse>(
     `/favorites/${encodeURIComponent(sourceId)}`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function getMessageReminders(baseUrl?: string) {
+  return requestLegacyApi<MessageReminderRecord[]>(
+    "/reminders/messages",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function createMessageReminder(
+  payload: CreateMessageReminderRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<MessageReminderRecord>(
+    "/reminders/messages",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function markMessageReminderNotified(
+  sourceId: string,
+  payload?: MarkMessageReminderNotifiedRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<MessageReminderRecord>(
+    `/reminders/messages/${encodeURIComponent(sourceId)}/notified`,
+    {
+      method: "POST",
+      body: payload ? JSON.stringify(payload) : undefined,
+    },
+    baseUrl,
+  );
+}
+
+export function removeMessageReminder(sourceId: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/reminders/messages/${encodeURIComponent(sourceId)}`,
     {
       method: "DELETE",
     },

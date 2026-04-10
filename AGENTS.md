@@ -171,6 +171,11 @@
   - `GET /api/favorites`
   - `POST /api/favorites/messages`
   - `DELETE /api/favorites/:sourceId`
+- 消息提醒路由：
+  - `GET /api/reminders/messages`
+  - `POST /api/reminders/messages`
+  - `POST /api/reminders/messages/:sourceId/notified`
+  - `DELETE /api/reminders/messages/:sourceId`
 - 公众号消息路由：
   - `GET /api/official-accounts/message-entries`
   - `GET /api/official-accounts/subscription-inbox`
