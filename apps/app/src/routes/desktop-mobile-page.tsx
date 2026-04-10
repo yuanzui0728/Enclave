@@ -62,6 +62,7 @@ type MobileHandoffCategory =
   | "messages"
   | "official"
   | "mini_program"
+  | "games"
   | "channel"
   | "shortcut"
   | "other";
@@ -85,6 +86,11 @@ const mobileHandoffCategoryMeta: Array<{
     id: "mini_program",
     label: "小程序",
     description: "小程序工作台和最近使用入口。",
+  },
+  {
+    id: "games",
+    label: "游戏",
+    description: "游戏中心、组局邀约和继续游玩入口。",
   },
   {
     id: "channel",
@@ -1097,6 +1103,10 @@ function resolveMobileHandoffCategory(
     item.path.startsWith("/discover/mini-programs")
   ) {
     return "mini_program";
+  }
+
+  if (item.path === "/games" || item.path.startsWith("/discover/games")) {
+    return "games";
   }
 
   if (item.path === "/tabs/channels" || item.path.startsWith("/desktop/channels")) {
