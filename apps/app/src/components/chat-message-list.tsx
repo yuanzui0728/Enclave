@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ContactRound,
+  Download,
   FileText,
   LocateFixed,
   MapPin,
@@ -623,6 +624,28 @@ export function ChatMessageList({
               }
             : undefined
         }
+        onOpenAttachment={
+          mobileActionMessage && getOpenableAttachment(mobileActionMessage)
+            ? () => {
+                openAttachment(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        openAttachmentLabel={
+          mobileActionMessage?.type === "image" ? "打开图片" : "打开文件"
+        }
+        onSaveAttachment={
+          mobileActionMessage && getOpenableAttachment(mobileActionMessage)
+            ? () => {
+                saveAttachment(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        saveAttachmentLabel={
+          mobileActionMessage?.type === "image" ? "保存图片" : "保存文件"
+        }
       />
       {activeImage ? (
         <ImageViewerOverlay
@@ -645,6 +668,12 @@ export function ChatMessageList({
             setViewerMessageId(null);
             jumpToMessage(activeImage.id);
           }}
+          onSave={() =>
+            saveUrlAsFile(
+              activeImage.url,
+              activeImage.fileName || activeImage.label || "image",
+            )
+          }
         />
       ) : null}
     </div>
@@ -770,6 +799,20 @@ function getOpenableAttachment(message: ChatRenderableMessage) {
   }
 
   return null;
+}
+
+function saveUrlAsFile(url: string, fileName: string) {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.rel = "noreferrer";
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
 }
 
 function renderTextWithMentions(text: string): ReactNode {
@@ -1009,6 +1052,7 @@ function ImageViewerOverlay({
   onPrevious,
   onNext,
   onLocate,
+  onSave,
 }: {
   variant: "mobile" | "desktop";
   activeImage: {
@@ -1023,6 +1067,7 @@ function ImageViewerOverlay({
   onPrevious?: () => void;
   onNext?: () => void;
   onLocate: () => void;
+  onSave: () => void;
 }) {
   const isDesktop = variant === "desktop";
 
@@ -1051,6 +1096,13 @@ function ImageViewerOverlay({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ViewerActionButton
+            compact={!isDesktop}
+            label="保存图片"
+            onClick={onSave}
+          >
+            <Download size={16} />
+          </ViewerActionButton>
           <ViewerActionButton
             compact={!isDesktop}
             label="定位到聊天位置"

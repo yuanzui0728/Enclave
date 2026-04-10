@@ -5,6 +5,10 @@ type MobileMessageActionSheetProps = {
   onReply?: () => void;
   onCopy: () => void;
   onCopySender?: () => void;
+  onOpenAttachment?: () => void;
+  openAttachmentLabel?: string;
+  onSaveAttachment?: () => void;
+  saveAttachmentLabel?: string;
 };
 
 export function MobileMessageActionSheet({
@@ -14,6 +18,10 @@ export function MobileMessageActionSheet({
   onReply,
   onCopy,
   onCopySender,
+  onOpenAttachment,
+  openAttachmentLabel = "打开附件",
+  onSaveAttachment,
+  saveAttachmentLabel = "保存附件",
 }: MobileMessageActionSheetProps) {
   if (!open) {
     return null;
@@ -34,6 +42,12 @@ export function MobileMessageActionSheet({
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
           <ActionButton label="复制" onClick={onCopy} />
+          {onOpenAttachment ? (
+            <ActionButton label={openAttachmentLabel} onClick={onOpenAttachment} />
+          ) : null}
+          {onSaveAttachment ? (
+            <ActionButton label={saveAttachmentLabel} onClick={onSaveAttachment} />
+          ) : null}
           {onCopySender ? (
             <ActionButton label="复制发送者" onClick={onCopySender} />
           ) : null}
