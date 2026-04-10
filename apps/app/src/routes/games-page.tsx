@@ -85,6 +85,7 @@ export function GamesPage() {
   const {
     activeGameId,
     eventActionStatusById,
+    lastInviteConversationTitleByActivityId,
     friendInviteSentAtByActivityId,
     friendInviteStatusByActivityId,
     launchCountById,
@@ -94,6 +95,7 @@ export function GamesPage() {
     dismissActiveGame,
     applyEventAction,
     applyFriendInvite,
+    markInviteDelivered,
     launchGame,
     togglePinned,
   } = useGameCenterState();
@@ -304,7 +306,7 @@ export function GamesPage() {
       }, 500);
     }
 
-    applyFriendInvite(activityId, "invited");
+    markInviteDelivered(activityId, conversation.id, conversation.title);
     setSelectedGameId(activity.gameId);
     setActiveInviteActivityId(null);
     setNoticeTone("success");
@@ -387,6 +389,9 @@ export function GamesPage() {
         eventActionStatusById={eventActionStatusById}
         friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
         friendInviteStatusByActivityId={friendInviteStatusByActivityId}
+        lastInviteConversationTitleByActivityId={
+          lastInviteConversationTitleByActivityId
+        }
         inviteConversationCandidates={inviteConversationCandidates}
         inviteConversationCandidatesLoading={conversationsQuery.isLoading}
         launchCountById={launchCountById}
