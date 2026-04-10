@@ -112,6 +112,7 @@ export function ChatComposer({
     useState<AttachmentDraft | null>(null);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [mobilePlusNotice, setMobilePlusNotice] = useState<string | null>(null);
   const [activeStickerPackId, setActiveStickerPackId] =
     useState("yinjie-mochi");
   const [recentStickers, setRecentStickers] = useState(() =>
@@ -234,6 +235,7 @@ export function ChatComposer({
   const closeMobileTransientSurfaces = () => {
     setStickerPanelOpen(false);
     setPlusPanelOpen(false);
+    setMobilePlusNotice(null);
   };
 
   const setMobileSpeechCancelState = (nextValue: boolean) => {
@@ -525,6 +527,7 @@ export function ChatComposer({
     setDesktopPlusMenuOpen(false);
     setPlusPanelOpen(false);
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     setStickerPanelOpen((current) => !current);
   };
 
@@ -539,6 +542,7 @@ export function ChatComposer({
     }
     setStickerPanelOpen(false);
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     setPlusPanelOpen((current) => !current);
   };
 
@@ -552,6 +556,7 @@ export function ChatComposer({
     }
     setStickerPanelOpen(false);
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     setDesktopPlusMenuOpen((current) => !current);
   };
 
@@ -572,6 +577,7 @@ export function ChatComposer({
     }
 
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     albumInputRef.current?.click();
   };
 
@@ -581,6 +587,7 @@ export function ChatComposer({
     }
 
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     cameraInputRef.current?.click();
   };
 
@@ -590,6 +597,7 @@ export function ChatComposer({
     }
 
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     fileInputRef.current?.click();
   };
 
@@ -609,6 +617,7 @@ export function ChatComposer({
       );
       releaseAttachmentDraft(attachmentDraft);
       setAttachmentError(null);
+      setMobilePlusNotice(null);
       setPlusPanelOpen(false);
       setDesktopPlusMenuOpen(false);
       setAttachmentDraft({
@@ -637,6 +646,7 @@ export function ChatComposer({
     releaseAttachmentDraft(attachmentDraft);
 
     setAttachmentError(null);
+    setMobilePlusNotice(null);
     setPlusPanelOpen(false);
     setDesktopPlusMenuOpen(false);
     setAttachmentDraft({
@@ -842,6 +852,7 @@ export function ChatComposer({
 
     setAttachmentBusy(true);
     setAttachmentError(null);
+    setMobilePlusNotice(null);
 
     try {
       await onSendAttachment(payload);
@@ -1282,13 +1293,23 @@ export function ChatComposer({
                 attachment,
               })
             }
-            onSelectLocationCard={(attachment) =>
+              onSelectLocationCard={(attachment) =>
               void handleSendAttachment({
                 type: "location_card",
                 attachment,
               })
             }
+            onUnavailableAction={(message) => {
+              setPlusPanelOpen(false);
+              setAttachmentError(null);
+              setMobilePlusNotice(message);
+            }}
           />
+        ) : null}
+        {mobilePlusNotice && !isDesktop ? (
+          <InlineNotice className="mt-2 text-xs" tone="info">
+            {mobilePlusNotice}
+          </InlineNotice>
         ) : null}
         {speechDisabledReason ? (
           <InlineNotice className="mt-2 text-xs" tone="muted">

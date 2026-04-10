@@ -12,6 +12,7 @@ import {
   FileText,
   ImagePlus,
   MapPin,
+  Star,
 } from "lucide-react";
 import { LoadingBlock, cn } from "@yinjie/ui";
 import {
@@ -33,10 +34,11 @@ type MobileChatPlusPanelProps = {
   onSelectLocationCard: (
     attachment: LocationCardAttachment,
   ) => void | Promise<void>;
+  onUnavailableAction?: (message: string) => void;
 };
 
 type PanelView = "root" | "contacts" | "locations";
-const ROOT_ACTIONS_PER_PAGE = 4;
+const ROOT_ACTIONS_PER_PAGE = 8;
 
 const rootActions = [
   {
@@ -69,6 +71,13 @@ const rootActions = [
     icon: FileText,
     iconClassName: "bg-[#5cc8c9]",
   },
+  {
+    key: "favorite",
+    label: "收藏",
+    icon: Star,
+    iconClassName: "bg-[#f3c64e]",
+    unavailableNotice: "收藏面板待接入，当前先保留微信式入口。",
+  },
 ] as const;
 
 export function MobileChatPlusPanel({
@@ -79,6 +88,7 @@ export function MobileChatPlusPanel({
   onPickFile,
   onSelectContactCard,
   onSelectLocationCard,
+  onUnavailableAction,
 }: MobileChatPlusPanelProps) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -140,7 +150,13 @@ export function MobileChatPlusPanel({
                             ? () => setActiveView("contacts")
                             : item.key === "file"
                               ? onPickFile
-                              : () => setActiveView("locations");
+                              : item.key === "favorite"
+                                ? () =>
+                                    onUnavailableAction?.(
+                                      item.unavailableNotice ??
+                                        "该入口暂未接入。",
+                                    )
+                                : () => setActiveView("locations");
 
                     return (
                       <button
