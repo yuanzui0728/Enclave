@@ -682,9 +682,16 @@ function MobileChatListPage() {
                           </div>
                         </div>
                       )}
-                      {collapsed
-                        ? null
-                        : group.entries.map((entry, index) => (
+                      <div
+                        className={cn(
+                          "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                          collapsed
+                            ? "grid-rows-[0fr] opacity-0"
+                            : "grid-rows-[1fr] opacity-100",
+                        )}
+                      >
+                        <div className="overflow-hidden">
+                          {group.entries.map((entry, index) => (
                             <div
                               key={entry.messageId}
                               className={cn(
@@ -744,6 +751,8 @@ function MobileChatListPage() {
                               </button>
                             </div>
                           ))}
+                        </div>
+                      </div>
                     </>
                   );
                 })()}

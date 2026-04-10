@@ -868,25 +868,34 @@ export function DesktopChatWorkspace({
                                 </span>
                               </div>
                             )}
-                            {collapsed ? null : (
-                              <div className="space-y-1 border-t border-white/80 p-1.5">
-                                {group.entries.map((entry) => (
-                                  <DesktopReminderCard
-                                    key={entry.messageId}
-                                    entry={entry}
-                                    active={
-                                      entry.threadId ===
-                                        selectedConversationId &&
-                                      entry.messageId === highlightedMessageId
-                                    }
-                                    onOpen={openReminder}
-                                    onDismiss={(targetEntry) => {
-                                      void completeReminder(targetEntry);
-                                    }}
-                                  />
-                                ))}
+                            <div
+                              className={cn(
+                                "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                                collapsed
+                                  ? "grid-rows-[0fr] opacity-0"
+                                  : "grid-rows-[1fr] opacity-100",
+                              )}
+                            >
+                              <div className="overflow-hidden">
+                                <div className="space-y-1 border-t border-white/80 p-1.5">
+                                  {group.entries.map((entry) => (
+                                    <DesktopReminderCard
+                                      key={entry.messageId}
+                                      entry={entry}
+                                      active={
+                                        entry.threadId ===
+                                          selectedConversationId &&
+                                        entry.messageId === highlightedMessageId
+                                      }
+                                      onOpen={openReminder}
+                                      onDismiss={(targetEntry) => {
+                                        void completeReminder(targetEntry);
+                                      }}
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                            )}
+                            </div>
                           </section>
                         );
                       })(),
