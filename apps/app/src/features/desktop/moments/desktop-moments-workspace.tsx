@@ -3,28 +3,18 @@ import { type Moment } from "@yinjie/contracts";
 import {
   Button,
   ErrorBlock,
-  InlineNotice,
-  LoadingBlock,
-  TextField,
   TextAreaField,
   cn,
 } from "@yinjie/ui";
-import {
-  ArrowUp,
-  Bot,
-  PenSquare,
-  RefreshCcw,
-  Search,
-  UserRound,
-  X,
-} from "lucide-react";
+import { Bot, PenSquare, UserRound, X } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
-import { EmptyState } from "../../../components/empty-state";
 import { parseTimestamp } from "../../../lib/format";
 import { DesktopMomentDetailPanel } from "./desktop-moment-detail-panel";
-import { DesktopMomentRow } from "./desktop-moment-row";
-
-type FeedFilter = "all" | "owner" | "character";
+import { DesktopMomentsFeed } from "./desktop-moments-feed";
+import {
+  DesktopMomentsToolbar,
+  type DesktopMomentsFeedFilter,
+} from "./desktop-moments-toolbar";
 
 type DesktopMomentsWorkspaceProps = {
   commentDrafts: Record<string, string>;
@@ -52,12 +42,6 @@ type DesktopMomentsWorkspaceProps = {
   onTextChange: (value: string) => void;
 };
 
-const filterOptions: Array<{ key: FeedFilter; label: string }> = [
-  { key: "all", label: "全部" },
-  { key: "owner", label: "只看我" },
-  { key: "character", label: "只看角色" },
-];
-
 export function DesktopMomentsWorkspace({
   commentDrafts,
   commentErrorMessage,
@@ -83,7 +67,8 @@ export function DesktopMomentsWorkspace({
   onRefresh,
   onTextChange,
 }: DesktopMomentsWorkspaceProps) {
-  const [activeFilter, setActiveFilter] = useState<FeedFilter>("all");
+  const [activeFilter, setActiveFilter] =
+    useState<DesktopMomentsFeedFilter>("all");
   const [searchText, setSearchText] = useState("");
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
@@ -244,170 +229,51 @@ export function DesktopMomentsWorkspace({
     <div className="relative flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,249,241,0.96))]">
       <section className="min-w-0 flex-1 border-r border-[rgba(15,23,42,0.06)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
-                  朋友圈
-                </div>
-                <div className="mt-2 text-[26px] font-semibold tracking-[0.02em] text-[color:var(--text-primary)]">
-                  桌面里连续浏览，右边看详情
-                </div>
-                <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-secondary)]">
-                  把发帖、浏览、筛选和评论放进一个工作区里，不再是移动页的放大版。
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="secondary" size="sm" onClick={onRefresh}>
-                  <RefreshCcw size={14} />
-                  刷新
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    scrollViewportRef.current?.scrollTo({
-                      top: 0,
-                      behavior: "smooth",
-                    });
-                  }}
-                >
-                  <ArrowUp size={14} />
-                  回到顶部
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setShowCompose(true)}
-                >
-                  <PenSquare size={14} />
-                  发朋友圈
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              {filterOptions.map((option) => (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setActiveFilter(option.key)}
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-[12px] font-medium transition-[border-color,background-color,color]",
-                    activeFilter === option.key
-                      ? "border-[rgba(249,115,22,0.18)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                      : "border-[rgba(15,23,42,0.08)] bg-white/86 text-[color:var(--text-secondary)] hover:border-[rgba(249,115,22,0.14)] hover:text-[color:var(--text-primary)]",
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-
-              {selectedAuthorSummary ? (
-                <button
-                  type="button"
-                  onClick={() => setSelectedAuthorId(null)}
-                  className="inline-flex items-center gap-2 rounded-full border border-[rgba(16,185,129,0.16)] bg-[rgba(236,253,245,0.92)] px-4 py-2 text-[12px] font-medium text-emerald-700"
-                >
-                  只看 {selectedAuthorSummary.authorName}
-                  <X size={13} />
-                </button>
-              ) : null}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <label className="relative block min-w-[240px] flex-1 max-w-[420px]">
-                <Search
-                  size={15}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
-                />
-                <TextField
-                  value={searchText}
-                  onChange={(event) => setSearchText(event.target.value)}
-                  placeholder="搜索动态正文、作者或评论"
-                  className="rounded-full border-[rgba(15,23,42,0.08)] bg-white/86 pl-11 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
-                />
-              </label>
-              <div className="text-[12px] text-[color:var(--text-muted)]">
-                {filteredCountLabel}
-              </div>
-            </div>
-
-            {successNotice ? (
-              <div className="mt-4">
-                <InlineNotice tone="success">{successNotice}</InlineNotice>
-              </div>
-            ) : null}
-            {errors.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {errors.map((message, index) => (
-                  <ErrorBlock key={`${message}-${index}`} message={message} />
-                ))}
-              </div>
-            ) : null}
-            {likeErrorMessage ? (
-              <div className="mt-4">
-                <ErrorBlock message={likeErrorMessage} />
-              </div>
-            ) : null}
-            {commentErrorMessage ? (
-              <div className="mt-4">
-                <ErrorBlock message={commentErrorMessage} />
-              </div>
-            ) : null}
-          </div>
+          <DesktopMomentsToolbar
+            activeFilter={activeFilter}
+            commentErrorMessage={commentErrorMessage}
+            errors={errors}
+            filteredCountLabel={filteredCountLabel}
+            likeErrorMessage={likeErrorMessage}
+            searchText={searchText}
+            selectedAuthorName={selectedAuthorSummary?.authorName ?? null}
+            successNotice={successNotice}
+            onBackToTop={() => {
+              scrollViewportRef.current?.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
+            }}
+            onClearAuthor={() => setSelectedAuthorId(null)}
+            onFilterChange={setActiveFilter}
+            onOpenCompose={() => setShowCompose(true)}
+            onRefresh={onRefresh}
+            onSearchChange={setSearchText}
+          />
 
           <div
             ref={scrollViewportRef}
             className="min-h-0 flex-1 overflow-auto px-6 py-5"
           >
-            {isLoading ? <LoadingBlock label="正在读取朋友圈..." /> : null}
-
-            {!isLoading && filteredMoments.length > 0 ? (
-              <div className="space-y-4">
-                {filteredMoments.map((moment) => (
-                  <DesktopMomentRow
-                    key={moment.id}
-                    active={moment.id === selectedMomentId}
-                    commentDraft={commentDrafts[moment.id] ?? ""}
-                    commentLoading={commentPendingMomentId === moment.id}
-                    likeLoading={likePendingMomentId === moment.id}
-                    moment={moment}
-                    ownerId={ownerId}
-                    onCommentChange={(value) =>
-                      onCommentChange(moment.id, value)
-                    }
-                    onCommentSubmit={() => onCommentSubmit(moment.id)}
-                    onLike={() => onLike(moment.id)}
-                    onOpenDetail={() => setSelectedMomentId(moment.id)}
-                    onSelectAuthor={() => {
-                      focusAuthor(moment.authorId);
-                      setSelectedMomentId(moment.id);
-                    }}
-                  />
-                ))}
-              </div>
-            ) : null}
-
-            {!isLoading && !filteredMoments.length ? (
-              <EmptyState
-                title={moments.length ? "当前筛选下没有动态" : "朋友圈还很安静"}
-                description={
-                  moments.length
-                    ? "换个筛选条件试试，或者去右边直接发一条新的朋友圈。"
-                    : "你先发一条，或者等世界里的其他人先开口。"
-                }
-                action={
-                  <Button
-                    variant="primary"
-                    onClick={() => setShowCompose(true)}
-                  >
-                    发朋友圈
-                  </Button>
-                }
-              />
-            ) : null}
+            <DesktopMomentsFeed
+              commentDrafts={commentDrafts}
+              commentPendingMomentId={commentPendingMomentId}
+              isLoading={isLoading}
+              likePendingMomentId={likePendingMomentId}
+              moments={filteredMoments}
+              ownerId={ownerId}
+              selectedMomentId={selectedMomentId}
+              totalMomentsCount={moments.length}
+              onCommentChange={onCommentChange}
+              onCommentSubmit={onCommentSubmit}
+              onLike={onLike}
+              onOpenCompose={() => setShowCompose(true)}
+              onOpenDetail={setSelectedMomentId}
+              onSelectAuthor={(authorId, momentId) => {
+                focusAuthor(authorId);
+                setSelectedMomentId(momentId);
+              }}
+            />
           </div>
         </div>
       </section>
