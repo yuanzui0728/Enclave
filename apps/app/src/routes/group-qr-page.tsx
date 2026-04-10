@@ -787,6 +787,18 @@ export function GroupQrPage() {
                       <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
                         上次发送于 {formatConversationTimestamp(target.deliveredAt)}
                       </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                        <span
+                          className={`rounded-full px-2.5 py-1 font-medium ${resolvePendingReturnBadgeTone(
+                            target.deliveredAt,
+                          )}`}
+                        >
+                          {resolvePendingReturnBadgeLabel(target.deliveredAt)}
+                        </span>
+                        <span className="text-[color:var(--text-muted)]">
+                          待回流 {formatPendingReturnDuration(target.deliveredAt)}
+                        </span>
+                      </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
                       优先补发
@@ -1084,6 +1096,78 @@ function resolveDeliveredBatchLabel(
   }
 
   return "更早批次";
+}
+
+function formatPendingReturnDuration(deliveredAt: string) {
+  const deliveredAtMs = parseTimestamp(deliveredAt);
+  if (!deliveredAtMs) {
+    return "一段时间";
+  }
+
+  const elapsedMinutes = Math.max(
+    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
+    0,
+  );
+  if (elapsedMinutes < 1) {
+    return "不到 1 分钟";
+  }
+
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} 分钟`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  const remainderMinutes = elapsedMinutes % 60;
+
+  if (!remainderMinutes) {
+    return `${elapsedHours} 小时`;
+  }
+
+  return `${elapsedHours} 小时 ${remainderMinutes} 分钟`;
+}
+
+function resolvePendingReturnBadgeLabel(deliveredAt: string) {
+  const deliveredAtMs = parseTimestamp(deliveredAt);
+  if (!deliveredAtMs) {
+    return "待回流";
+  }
+
+  const elapsedMinutes = Math.max(
+    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
+    0,
+  );
+
+  if (elapsedMinutes >= 60) {
+    return "长时间未回流";
+  }
+
+  if (elapsedMinutes >= 15) {
+    return "待回流偏久";
+  }
+
+  return "刚发出待回流";
+}
+
+function resolvePendingReturnBadgeTone(deliveredAt: string) {
+  const deliveredAtMs = parseTimestamp(deliveredAt);
+  if (!deliveredAtMs) {
+    return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
+  }
+
+  const elapsedMinutes = Math.max(
+    Math.floor((Date.now() - deliveredAtMs) / 1000 / 60),
+    0,
+  );
+
+  if (elapsedMinutes >= 60) {
+    return "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]";
+  }
+
+  if (elapsedMinutes >= 15) {
+    return "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]";
+  }
+
+  return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
 }
 
 function buildInviteMatrixSvg({
