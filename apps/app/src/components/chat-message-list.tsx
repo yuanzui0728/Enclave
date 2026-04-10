@@ -9,7 +9,7 @@ import {
   sanitizeDisplayedChatText,
   splitChatTextSegments,
 } from "../lib/chat-text";
-import { formatMessageTimestamp } from "../lib/format";
+import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
 
 export type ChatRenderableMessage = {
   id: string;
@@ -169,7 +169,12 @@ export function ChatMessageList({
           {actionNotice.message}
         </InlineNotice>
       ) : null}
-      {messages.map((message) => {
+      {messages.map((message, index) => {
+        const previousMessage = index > 0 ? messages[index - 1] : undefined;
+        const showTimestamp = shouldShowMessageTimestamp(
+          message.createdAt,
+          previousMessage?.createdAt,
+        );
         const isUser = message.senderType === "user";
         const isSystem =
           message.type === "system" || message.senderType === "system";
@@ -199,83 +204,88 @@ export function ChatMessageList({
         }
 
         return (
-          <div
-            key={message.id}
-            id={`chat-message-${message.id}`}
-            onContextMenu={(event) => handleMessageContextMenu(event, message)}
-            className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
-              isHighlighted
-                ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
-                : ""
-            }`}
-          >
-            <div className="text-center text-[11px] text-[color:var(--text-dim)]">
-              {formatMessageTimestamp(message.createdAt)}
-            </div>
-            <div
-              className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
-            >
-              {!isUser ? (
-                <AvatarChip name={message.senderName} size="wechat" />
-              ) : null}
-              <div
-                className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}
-              >
-                {!isUser && groupMode && showGroupMemberNicknames ? (
-                  <div className="mb-1 px-1 text-[11px] text-[color:var(--text-muted)]">
-                    {message.senderName}
-                  </div>
-                ) : null}
-                {replyPreview ? (
-                  <ReplyQuoteCard
-                    messageId={replyPreview.messageId}
-                    senderName={replyPreview.senderName}
-                    previewText={replyPreview.previewText}
-                    align={isUser ? "right" : "left"}
-                    variant={variant}
-                    onJump={jumpToMessage}
-                  />
-                ) : null}
-                {message.type === "sticker" &&
-                message.attachment?.kind === "sticker" ? (
-                  <StickerMessage
-                    url={message.attachment.url}
-                    label={message.attachment.label ?? displayText}
-                    maxSize={isDesktop ? 160 : 132}
-                  />
-                ) : message.type === "image" &&
-                  message.attachment?.kind === "image" ? (
-                  <ImageMessage
-                    url={message.attachment.url}
-                    label={message.attachment.fileName || displayText}
-                    maxSize={isDesktop ? 180 : 144}
-                  />
-                ) : message.type === "file" &&
-                  message.attachment?.kind === "file" ? (
-                  <FileAttachmentMessage attachment={message.attachment} />
-                ) : message.type === "contact_card" &&
-                  message.attachment?.kind === "contact_card" ? (
-                  <ContactCardMessage attachment={message.attachment} />
-                ) : message.type === "location_card" &&
-                  message.attachment?.kind === "location_card" ? (
-                  <LocationCardMessage attachment={message.attachment} />
-                ) : (
-                  <div
-                    className={`rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
-                      isUser
-                        ? isDesktop
-                          ? "bg-[var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]"
-                          : "bg-[#95ec69] text-[#111827] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
-                        : isDesktop
-                          ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
-                          : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
-                    } whitespace-pre-wrap break-words`}
-                  >
-                    {renderTextWithMentions(displayText)}
-                  </div>
-                )}
+          <div key={message.id}>
+            {showTimestamp ? (
+              <div className="pb-2 pt-1 text-center">
+                <span className="inline-flex rounded-full bg-[rgba(0,0,0,0.08)] px-3 py-1 text-[11px] text-[#7d7d7d]">
+                  {formatMessageTimestamp(message.createdAt)}
+                </span>
               </div>
-              {isUser ? <AvatarChip name="我" size="wechat" /> : null}
+            ) : null}
+            <div
+              id={`chat-message-${message.id}`}
+              onContextMenu={(event) => handleMessageContextMenu(event, message)}
+              className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
+                isHighlighted
+                  ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
+                  : ""
+              }`}
+            >
+              <div
+                className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
+              >
+                {!isUser ? (
+                  <AvatarChip name={message.senderName} size="wechat" />
+                ) : null}
+                <div
+                  className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}
+                >
+                  {!isUser && groupMode && showGroupMemberNicknames ? (
+                    <div className="mb-1 px-1 text-[11px] text-[color:var(--text-muted)]">
+                      {message.senderName}
+                    </div>
+                  ) : null}
+                  {replyPreview ? (
+                    <ReplyQuoteCard
+                      messageId={replyPreview.messageId}
+                      senderName={replyPreview.senderName}
+                      previewText={replyPreview.previewText}
+                      align={isUser ? "right" : "left"}
+                      variant={variant}
+                      onJump={jumpToMessage}
+                    />
+                  ) : null}
+                  {message.type === "sticker" &&
+                  message.attachment?.kind === "sticker" ? (
+                    <StickerMessage
+                      url={message.attachment.url}
+                      label={message.attachment.label ?? displayText}
+                      maxSize={isDesktop ? 160 : 132}
+                    />
+                  ) : message.type === "image" &&
+                    message.attachment?.kind === "image" ? (
+                    <ImageMessage
+                      url={message.attachment.url}
+                      label={message.attachment.fileName || displayText}
+                      maxSize={isDesktop ? 180 : 144}
+                    />
+                  ) : message.type === "file" &&
+                    message.attachment?.kind === "file" ? (
+                    <FileAttachmentMessage attachment={message.attachment} />
+                  ) : message.type === "contact_card" &&
+                    message.attachment?.kind === "contact_card" ? (
+                    <ContactCardMessage attachment={message.attachment} />
+                  ) : message.type === "location_card" &&
+                    message.attachment?.kind === "location_card" ? (
+                    <LocationCardMessage attachment={message.attachment} />
+                  ) : (
+                    <div
+                      className={`rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
+                        isUser
+                          ? isDesktop
+                            ? "bg-[var(--brand-gradient)] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]"
+                            : "bg-[#95ec69] text-[#111827] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
+                          : isDesktop
+                            ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                            : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
+                      } whitespace-pre-wrap break-words`}
+                    >
+                      {renderTextWithMentions(displayText)}
+                    </div>
+                  )}
+                </div>
+                {isUser ? <AvatarChip name="我" size="wechat" /> : null}
+              </div>
             </div>
           </div>
         );
@@ -311,6 +321,27 @@ export function ChatMessageList({
       ) : null}
     </div>
   );
+}
+
+function shouldShowMessageTimestamp(
+  createdAt?: string | null,
+  previousCreatedAt?: string | null,
+) {
+  if (!createdAt) {
+    return false;
+  }
+
+  if (!previousCreatedAt) {
+    return true;
+  }
+
+  const currentTimestamp = parseTimestamp(createdAt);
+  const previousTimestamp = parseTimestamp(previousCreatedAt);
+  if (currentTimestamp === null || previousTimestamp === null) {
+    return true;
+  }
+
+  return currentTimestamp - previousTimestamp >= 5 * 60 * 1000;
 }
 
 function buildClipboardSender(message: ChatRenderableMessage) {

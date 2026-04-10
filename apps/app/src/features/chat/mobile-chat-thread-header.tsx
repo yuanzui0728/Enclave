@@ -1,6 +1,4 @@
 import { ArrowLeft, Ellipsis } from "lucide-react";
-import { Button } from "@yinjie/ui";
-
 type MobileChatThreadHeaderProps = {
   title: string;
   subtitle?: string;
@@ -17,28 +15,27 @@ export function MobileChatThreadHeader({
   moreLabel = "更多操作",
 }: MobileChatThreadHeaderProps) {
   return (
-    <header className="border-b border-white/80 bg-[linear-gradient(180deg,rgba(255,254,250,0.94),rgba(255,248,238,0.96))] px-3 py-3">
-      <div className="relative flex min-h-11 items-center gap-3">
+    <header className="border-b border-black/5 bg-[#f7f7f7] px-2 py-2.5">
+      <div className="relative flex min-h-11 items-center gap-1.5">
         {onBack ? (
-          <Button
+          <button
+            type="button"
             onClick={onBack}
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 shrink-0 rounded-full border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#111827] transition active:bg-black/5"
             aria-label="返回"
           >
-            <ArrowLeft size={18} />
-          </Button>
+            <ArrowLeft size={20} />
+          </button>
         ) : (
-          <div className="h-9 w-9 shrink-0" aria-hidden="true" />
+          <div className="h-10 w-10 shrink-0" aria-hidden="true" />
         )}
 
         <div className="pointer-events-none absolute inset-x-12 text-center">
-          <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[17px] font-medium text-[#111827]">
             {title}
           </div>
           {subtitle ? (
-            <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
               {subtitle}
             </div>
           ) : null}
@@ -47,10 +44,10 @@ export function MobileChatThreadHeader({
         <button
           type="button"
           onClick={onMore}
-          className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/65 bg-white/72 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#111827] transition active:bg-black/5"
           aria-label={moreLabel}
         >
-          <Ellipsis size={18} />
+          <Ellipsis size={20} />
         </button>
       </div>
     </header>

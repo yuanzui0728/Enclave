@@ -73,9 +73,7 @@ export function ConversationThreadPanel({
       ? `${participants.length || 0} 人群聊`
       : typingCharacterId
         ? "对方正在输入..."
-        : isDesktop
-          ? undefined
-          : "连接顺畅";
+        : undefined;
 
   const hasHighlightedMessage = renderedMessages.some(
     (message) => message.id === highlightedMessageId,
@@ -101,7 +99,7 @@ export function ConversationThreadPanel({
       className={`flex h-full min-h-0 flex-col ${
         isDesktop
           ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
-          : "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
+          : "bg-[#ededed]"
       }`}
     >
       {isDesktop ? (
@@ -178,7 +176,7 @@ export function ConversationThreadPanel({
           className={`absolute inset-0 ${
             isDesktop
               ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.94),rgba(255,248,240,0.96))]"
-              : "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
+              : "bg-[#ededed]"
           }`}
           style={buildChatBackgroundStyle(effectiveBackground)}
         />
@@ -186,7 +184,7 @@ export function ConversationThreadPanel({
           className={`absolute inset-0 ${
             isDesktop
               ? "bg-[rgba(255,249,242,0.36)]"
-              : "bg-[rgba(255,250,244,0.30)]"
+              : "bg-[rgba(237,237,237,0.74)]"
           }`}
         />
 
