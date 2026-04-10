@@ -52,7 +52,7 @@ export function SubscriptionInboxCard({
               {formatConversationTimestamp(summary.lastDeliveredAt)}
             </div>
             {summary.unreadCount > 0 ? (
-              <div className="min-w-5 rounded-full bg-[var(--brand-gradient)] px-1.5 py-0.5 text-center text-[11px] leading-none text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">
+              <div className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
                 {summary.unreadCount > 99 ? "99+" : summary.unreadCount}
               </div>
             ) : null}

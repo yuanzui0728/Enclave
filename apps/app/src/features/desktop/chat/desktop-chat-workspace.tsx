@@ -514,7 +514,7 @@ function ConversationCardLink({
             {sanitizeDisplayedChatText(conversation.lastMessage?.text ?? "")}
           </div>
           {conversation.unreadCount > 0 ? (
-            <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">
+            <div className="min-w-6 rounded-full bg-[#fa5151] px-2 py-0.5 text-center text-[11px] text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
               {conversation.unreadCount}
             </div>
           ) : null}
