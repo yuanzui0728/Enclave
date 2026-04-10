@@ -28,7 +28,7 @@ import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
-import { DigitalHumanStage } from "./digital-human-stage";
+import { DigitalHumanPlayer } from "./digital-human-player";
 import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
 
@@ -387,10 +387,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       <div className="flex min-h-[calc(100dvh-65px)] flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
         {isVideoMode ? (
           <section className="relative">
-            <DigitalHumanStage
+            <DigitalHumanPlayer
               variant="mobile"
               name={characterName}
-              src={digitalSession?.posterUrl || characterAvatar}
+              fallbackSrc={characterAvatar}
+              session={digitalSession}
               talking={activeCall.playbackState === "playing"}
               thinking={
                 digitalHumanCall.sessionState === "connecting" ||
@@ -398,11 +399,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               }
               statusLabel={statusLabel}
               statusHint={statusHint}
-              providerLabel={
-                digitalSession?.presentationMode === "mock_stage"
-                  ? "内置数字人舞台"
-                  : "数字人视频流"
-              }
             />
 
             <div className="absolute right-4 top-4 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">

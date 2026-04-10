@@ -23,7 +23,7 @@ import {
 import { Button, ErrorBlock, InlineNotice, cn } from "@yinjie/ui";
 import type { VoiceCallTurnResult } from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
-import { DigitalHumanStage } from "../../chat/digital-human-stage";
+import { DigitalHumanPlayer } from "../../chat/digital-human-player";
 import { useDigitalHumanCallSession } from "../../chat/use-digital-human-call-session";
 import { useSelfCameraPreview } from "../../chat/use-self-camera-preview";
 import { useVoiceCallSession } from "../../chat/use-voice-call-session";
@@ -444,12 +444,11 @@ export function DesktopDirectCallPanel({
 
         <div className="mt-5 flex min-h-0 flex-1">
           {isVideoMode ? (
-            <DigitalHumanStage
+            <DigitalHumanPlayer
               variant="desktop"
               name={conversationTitle}
-              src={
-                digitalHumanCall.session?.posterUrl || undefined
-              }
+              fallbackSrc={undefined}
+              session={digitalHumanCall.session}
               talking={activeCall.playbackState === "playing"}
               thinking={
                 digitalHumanCall.sessionState === "connecting" ||
@@ -457,11 +456,6 @@ export function DesktopDirectCallPanel({
               }
               statusLabel={statusLabel}
               statusHint={statusHint}
-              providerLabel={
-                digitalHumanCall.session?.presentationMode === "mock_stage"
-                  ? "内置数字人舞台"
-                  : "数字人视频流"
-              }
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
