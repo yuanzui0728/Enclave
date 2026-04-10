@@ -3,6 +3,8 @@ type MobileMessageActionSheetProps = {
   onClose: () => void;
   title?: string;
   onReply?: () => void;
+  onQuoteSelection?: () => void;
+  quoteSelectionLabel?: string;
   onForward?: () => void;
   onMultiSelect?: () => void;
   onSelectToHere?: () => void;
@@ -28,6 +30,8 @@ export function MobileMessageActionSheet({
   onClose,
   title = "消息操作",
   onReply,
+  onQuoteSelection,
+  quoteSelectionLabel = "部分引用",
   onForward,
   onMultiSelect,
   onSelectToHere,
@@ -65,6 +69,12 @@ export function MobileMessageActionSheet({
         </div>
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
+          {onQuoteSelection ? (
+            <ActionButton
+              label={quoteSelectionLabel}
+              onClick={onQuoteSelection}
+            />
+          ) : null}
           {onForward ? <ActionButton label="转发" onClick={onForward} /> : null}
           {onMultiSelect ? (
             <ActionButton label="多选" onClick={onMultiSelect} />

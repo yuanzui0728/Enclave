@@ -49,6 +49,7 @@ import {
   MobileMessageReminderSheet,
   type MobileMessageReminderOption,
 } from "../features/chat/mobile-message-reminder-sheet";
+import { MessageQuoteSelectionSheet } from "../features/chat/message-quote-selection-sheet";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   DesktopMessageForwardDialog,
@@ -139,6 +140,8 @@ export function ChatMessageList({
     useState<ChatRenderableMessage | null>(null);
   const [reminderTargetMessage, setReminderTargetMessage] =
     useState<ChatRenderableMessage | null>(null);
+  const [quoteSelectionMessage, setQuoteSelectionMessage] =
+    useState<ChatRenderableMessage | null>(null);
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
@@ -211,6 +214,11 @@ export function ChatMessageList({
     setContextMenuState(null);
     setMobileActionMessage(null);
     setReminderTargetMessage((current) =>
+      current && messages.some((message) => message.id === current.id)
+        ? current
+        : null,
+    );
+    setQuoteSelectionMessage((current) =>
       current && messages.some((message) => message.id === current.id)
         ? current
         : null,
@@ -804,6 +812,31 @@ export function ChatMessageList({
     handleSetReminder(message);
   };
 
+  const handleOpenQuoteSelection = (message: ChatRenderableMessage) => {
+    if (!getPartialQuoteSourceText(message)) {
+      setActionNotice({
+        message: "当前消息暂不支持部分引用。",
+        tone: "danger",
+      });
+      return;
+    }
+
+    setQuoteSelectionMessage(message);
+  };
+
+  const handleConfirmQuoteSelection = (selectedText: string) => {
+    if (!quoteSelectionMessage || !onReplyMessage) {
+      return;
+    }
+
+    onReplyMessage(quoteSelectionMessage, { quotedText: selectedText });
+    setQuoteSelectionMessage(null);
+    setActionNotice({
+      message: "已带入所选文字。",
+      tone: "success",
+    });
+  };
+
   const handleSelectReminder = (option: MobileMessageReminderOption) => {
     if (!reminderTargetMessage) {
       return;
@@ -1176,6 +1209,14 @@ export function ChatMessageList({
                 }
               : undefined
           }
+          onQuoteSelection={
+            onReplyMessage && getPartialQuoteSourceText(contextMenuState.message)
+              ? () => {
+                  handleOpenQuoteSelection(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
           onForward={
             canForwardMessage(contextMenuState.message)
               ? () => {
@@ -1270,6 +1311,16 @@ export function ChatMessageList({
           mobileActionMessage && onReplyMessage
             ? () => {
                 onReplyMessage(mobileActionMessage);
+                setMobileActionMessage(null);
+              }
+            : undefined
+        }
+        onQuoteSelection={
+          mobileActionMessage &&
+          onReplyMessage &&
+          getPartialQuoteSourceText(mobileActionMessage)
+            ? () => {
+                handleOpenQuoteSelection(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -1406,6 +1457,22 @@ export function ChatMessageList({
         options={reminderOptions}
         onClose={() => setReminderTargetMessage(null)}
         onSelect={handleSelectReminder}
+      />
+      <MessageQuoteSelectionSheet
+        open={Boolean(quoteSelectionMessage)}
+        variant={variant}
+        senderName={
+          quoteSelectionMessage
+            ? buildClipboardSender(quoteSelectionMessage)
+            : "消息"
+        }
+        messageText={
+          quoteSelectionMessage
+            ? getPartialQuoteSourceText(quoteSelectionMessage) ?? ""
+            : ""
+        }
+        onClose={() => setQuoteSelectionMessage(null)}
+        onConfirm={handleConfirmQuoteSelection}
       />
       {activeImage ? (
         <ImageViewerOverlay
@@ -1765,6 +1832,11 @@ function getOpenableAttachment(
   }
 
   return null;
+}
+
+function getPartialQuoteSourceText(message: ChatRenderableMessage) {
+  const text = sanitizeDisplayedChatText(message.text).trim();
+  return text || null;
 }
 
 function canForwardMessage(message: ChatRenderableMessage) {

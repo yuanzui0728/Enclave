@@ -6,6 +6,7 @@ import {
   CornerUpLeft,
   Download,
   ExternalLink,
+  FileText,
   Forward,
   RotateCcw,
   Star,
@@ -18,6 +19,8 @@ type GroupMessageContextMenuProps = {
   y: number;
   onClose: () => void;
   onReply?: () => void;
+  onQuoteSelection?: () => void;
+  quoteSelectionLabel?: string;
   onForward?: () => void;
   onMultiSelect?: () => void;
   onSetReminder?: () => void;
@@ -44,6 +47,8 @@ export function GroupMessageContextMenu({
   y,
   onClose,
   onReply,
+  onQuoteSelection,
+  quoteSelectionLabel = "部分引用",
   onForward,
   onMultiSelect,
   onSetReminder,
@@ -64,6 +69,7 @@ export function GroupMessageContextMenu({
   const actionCount =
     1 +
     Number(Boolean(onReply)) +
+    Number(Boolean(onQuoteSelection)) +
     Number(Boolean(onForward)) +
     Number(Boolean(onMultiSelect)) +
     Number(Boolean(onSetReminder)) +
@@ -109,6 +115,13 @@ export function GroupMessageContextMenu({
             label="回复消息"
             icon={<CornerUpLeft size={15} />}
             onClick={onReply}
+          />
+        ) : null}
+        {onQuoteSelection ? (
+          <ContextMenuButton
+            label={quoteSelectionLabel}
+            icon={<FileText size={15} />}
+            onClick={onQuoteSelection}
           />
         ) : null}
         {onForward ? (
