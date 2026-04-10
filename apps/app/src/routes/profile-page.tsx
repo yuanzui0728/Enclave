@@ -40,20 +40,28 @@ export function ProfilePage() {
 
       <ProfileEntryGroup>
         <ProfileEntry icon={Settings} label="设置" to="/profile/settings" />
-        <ProfileEntry icon={Bell} label="通知" to="/profile/settings" isFirst={false} badge="即将上线" />
+        {isDesktopLayout ? null : (
+          <ProfileEntry
+            icon={Bell}
+            label="通知"
+            to="/profile/settings"
+            isFirst={false}
+            badge="即将上线"
+          />
+        )}
       </ProfileEntryGroup>
 
-      <ProfileEntryGroup>
-        <ProfileEntry icon={Globe} label="世界设置" to="/profile/settings" />
-        {isDesktopLayout ? null : (
+      {isDesktopLayout ? null : (
+        <ProfileEntryGroup>
+          <ProfileEntry icon={Globe} label="世界设置" to="/profile/settings" />
           <ProfileEntry
             icon={HelpCircle}
             label="帮助与反馈"
             to="/profile/settings"
             isFirst={false}
           />
-        )}
-      </ProfileEntryGroup>
+        </ProfileEntryGroup>
+      )}
     </AppPage>
   );
 }
