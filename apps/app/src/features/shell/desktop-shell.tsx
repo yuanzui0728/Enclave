@@ -211,35 +211,34 @@ export function DesktopShell({ children }: PropsWithChildren) {
           <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[rgba(16,185,129,0.09)] blur-3xl" />
         </div>
 
-        <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.86)] px-5 backdrop-blur-2xl">
-          <div
-            className={cn(
-              "flex min-w-0 flex-1 select-none items-center gap-3",
-              nativeDesktopShell ? "cursor-grab active:cursor-grabbing" : "",
-            )}
-            data-tauri-drag-region={nativeDesktopShell ? "" : undefined}
-            onMouseDown={handleTitleBarMouseDown}
-            onDoubleClick={() => {
-              if (!nativeDesktopShell || !desktopWindow) {
-                return;
-              }
+        {nativeDesktopShell ? (
+          <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.86)] px-5 backdrop-blur-2xl">
+            <div
+              className={cn(
+                "flex min-w-0 flex-1 select-none items-center gap-3",
+                nativeDesktopShell ? "cursor-grab active:cursor-grabbing" : "",
+              )}
+              data-tauri-drag-region={nativeDesktopShell ? "" : undefined}
+              onMouseDown={handleTitleBarMouseDown}
+              onDoubleClick={() => {
+                if (!nativeDesktopShell || !desktopWindow) {
+                  return;
+                }
 
-              void desktopWindow.toggleMaximize();
-            }}
-          >
-            <div className="flex h-10 items-center gap-3 rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-3 shadow-[var(--shadow-soft)]">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-gradient)] text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(255,138,61,0.24)]">
-                YJ
-              </div>
-              <div className="leading-none">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">Yinjie</div>
-                <div className="mt-1 text-[11px] tracking-[0.22em] text-[color:var(--text-dim)]">DESKTOP WORLD</div>
+                void desktopWindow.toggleMaximize();
+              }}
+            >
+              <div className="flex h-10 items-center gap-3 rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-3 shadow-[var(--shadow-soft)]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-gradient)] text-[11px] font-semibold text-white shadow-[0_10px_24px_rgba(255,138,61,0.24)]">
+                  YJ
+                </div>
+                <div className="leading-none">
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">Yinjie</div>
+                  <div className="mt-1 text-[11px] tracking-[0.22em] text-[color:var(--text-dim)]">DESKTOP WORLD</div>
+                </div>
               </div>
             </div>
 
-          </div>
-
-          {nativeDesktopShell ? (
             <div className="flex items-center gap-2">
               <DesktopWindowButton
                 label="Minimize"
@@ -279,10 +278,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 <X size={14} strokeWidth={1.9} />
               </DesktopWindowButton>
             </div>
-          ) : null}
-        </header>
+          </header>
+        ) : null}
 
-        <div className="relative z-10 flex min-h-0 flex-1 gap-4 p-4 pt-3">
+        <div className={cn("relative z-10 flex min-h-0 flex-1 gap-4 p-4", nativeDesktopShell ? "pt-3" : undefined)}>
           <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-[rgba(249,115,22,0.10)] bg-[linear-gradient(180deg,rgba(255,254,250,0.95),rgba(255,249,238,0.90))] p-3 shadow-[var(--shadow-section)] backdrop-blur-2xl lg:flex lg:flex-col">
             <Link
               to="/tabs/profile"
