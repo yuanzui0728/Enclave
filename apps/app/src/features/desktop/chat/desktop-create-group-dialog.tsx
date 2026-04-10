@@ -149,7 +149,6 @@ export function DesktopCreateGroupDialog({
       ),
     [shareableMessagesQuery.data],
   );
-
   const createMutation = useMutation({
     mutationFn: () =>
       createGroup(
@@ -550,7 +549,7 @@ export function DesktopCreateGroupDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.24)] p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.24)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
         aria-label="关闭发起群聊弹层"
@@ -563,10 +562,10 @@ export function DesktopCreateGroupDialog({
       />
 
       <div
-        className="relative flex h-[min(720px,82vh)] w-full max-w-[640px] flex-col overflow-hidden rounded-[20px] border border-black/8 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+        className="relative flex h-[min(720px,82vh)] w-full max-w-[640px] flex-col overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]"
         onKeyDown={handleDialogKeyDown}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div>
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               发起群聊
@@ -584,7 +583,7 @@ export function DesktopCreateGroupDialog({
             }}
             disabled={createMutation.isPending}
             aria-label="关闭"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X size={16} />
           </button>
@@ -592,7 +591,7 @@ export function DesktopCreateGroupDialog({
 
         <div className="border-b border-black/6 px-6 py-4">
           {seedMemberIds.length ? (
-            <div className="mb-3 rounded-[12px] bg-[#f3fff8] px-3 py-2.5 text-[12px] leading-5 text-[#2f7a4c]">
+            <div className="mb-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[#f3fff8] px-3 py-2.5 text-[12px] leading-5 text-[#2f7a4c]">
               已按当前聊天默认勾选对方，你可以继续添加其他联系人。
             </div>
           ) : null}
@@ -609,7 +608,7 @@ export function DesktopCreateGroupDialog({
               onChange={(event) => setSearchTerm(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="搜索联系人"
-              className="h-11 w-full rounded-[12px] border border-black/8 bg-[#f8f8f8] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12 focus:bg-white"
+              className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
             />
           </label>
 
@@ -623,7 +622,7 @@ export function DesktopCreateGroupDialog({
                       key={item.character.id}
                       type="button"
                       onClick={() => toggleSelection(item.character.id)}
-                      className="flex items-center gap-2 rounded-full bg-[#f1f1f1] px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition hover:bg-[#e9e9e9]"
+                      className="flex items-center gap-2 rounded-[8px] border border-black/6 bg-[#f5f5f5] px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition hover:bg-[#ededed]"
                     >
                       <AvatarChip
                         name={displayName}
@@ -712,10 +711,10 @@ export function DesktopCreateGroupDialog({
                               type="button"
                               onClick={() => selectRecentMessages(count)}
                               className={cn(
-                                "rounded-full border px-2.5 py-1 transition",
+                                "rounded-[8px] border px-2.5 py-1 transition",
                                 recentPresetSelectionState.get(count)
                                   ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                  : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                                  : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
                               )}
                             >
                               最近{count}条
@@ -729,10 +728,10 @@ export function DesktopCreateGroupDialog({
                               )
                             }
                             className={cn(
-                              "rounded-full border px-2.5 py-1 transition",
+                              "rounded-[8px] border px-2.5 py-1 transition",
                               allShareableMessagesSelected
                                 ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                                : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
                             )}
                           >
                             全选
@@ -741,10 +740,10 @@ export function DesktopCreateGroupDialog({
                             type="button"
                             onClick={() => setSelectedMessageIds([])}
                             className={cn(
-                              "rounded-full border px-2.5 py-1 transition",
+                              "rounded-[8px] border px-2.5 py-1 transition",
                               selectedMessageIds.length === 0
                                 ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                : "border-black/8 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                                : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
                             )}
                           >
                             清空
@@ -754,60 +753,74 @@ export function DesktopCreateGroupDialog({
                       <div
                         tabIndex={0}
                         onKeyDown={handleSharedMessagesKeyDown}
-                        className="max-h-56 space-y-1 overflow-auto rounded-[10px] bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.22)]"
+                        className="max-h-56 overflow-auto rounded-[10px] border border-black/6 bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.18)]"
                         aria-label="可分享聊天记录列表"
                       >
-                        {shareableMessages.map((message) => {
-                          const checked = selectedMessageIds.includes(message.id);
-                          const focused =
-                            focusedMessageIndex ===
-                            shareableMessages.findIndex(
-                              (item) => item.id === message.id,
-                            );
-                          return (
-                            <button
-                              key={message.id}
-                              type="button"
-                              ref={(node) => {
-                                messageItemRefs.current[message.id] = node;
-                              }}
-                              onClick={() => toggleMessageSelection(message.id)}
-                              className={cn(
-                                "flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left transition",
-                                checked
-                                  ? "bg-[rgba(7,193,96,0.08)]"
-                                  : "hover:bg-[#f7f7f7]",
-                                focused
-                                  ? "ring-1 ring-[rgba(7,193,96,0.24)]"
-                                  : "",
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                                  checked
-                                    ? "border-[#07c160] bg-[#07c160] text-white"
-                                    : "border-black/10 bg-[#f5f5f5] text-transparent",
-                                )}
-                              >
-                                <Check size={12} strokeWidth={2.8} />
+                        <div className="space-y-3">
+                          {shareableMessageSections.map((section) => (
+                            <div key={section.key}>
+                              <div className="sticky top-0 z-10 -mx-1.5 mb-1 bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-dim)] backdrop-blur">
+                                {section.label}
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[12px] font-medium text-[color:var(--text-primary)]">
-                                    {message.senderName}
-                                  </span>
-                                  <span className="text-[11px] text-[color:var(--text-dim)]">
-                                    {formatMessageTypeLabel(message)}
-                                  </span>
-                                </div>
-                                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
-                                  {getMessagePreviewText(message)}
-                                </div>
+                              <div className="space-y-1">
+                                {section.items.map((message) => {
+                                  const checked = selectedMessageIds.includes(message.id);
+                                  const focused =
+                                    shareableMessagePositionMap.get(message.id) ===
+                                    focusedMessageIndex;
+                                  return (
+                                    <button
+                                      key={message.id}
+                                      type="button"
+                                      ref={(node) => {
+                                        messageItemRefs.current[message.id] = node;
+                                      }}
+                                      onClick={() =>
+                                        toggleMessageSelection(message.id)
+                                      }
+                                      className={cn(
+                                        "flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left transition",
+                                        checked
+                                          ? "bg-[rgba(7,193,96,0.08)]"
+                                          : "hover:bg-[#f7f7f7]",
+                                        focused
+                                          ? "ring-1 ring-[rgba(7,193,96,0.24)]"
+                                          : "",
+                                      )}
+                                    >
+                                      <div
+                                        className={cn(
+                                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                          checked
+                                            ? "border-[#07c160] bg-[#07c160] text-white"
+                                            : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                        )}
+                                      >
+                                        <Check size={12} strokeWidth={2.8} />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+                                            {message.senderName}
+                                          </span>
+                                          <span className="text-[11px] text-[color:var(--text-dim)]">
+                                            {formatMessageTypeLabel(message)}
+                                          </span>
+                                          <span className="ml-auto shrink-0 text-[11px] text-[color:var(--text-dim)]">
+                                            {formatShareableMessageTime(message.createdAt)}
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                                          {getMessagePreviewText(message)}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            </button>
-                          );
-                        })}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </>
                   ) : null}
@@ -864,7 +877,7 @@ export function DesktopCreateGroupDialog({
                     friendSectionRefs.current[section.key] = node;
                   }}
                 >
-                  <div className="mb-1 px-2 text-[11px] font-medium tracking-[0.18em] text-[color:var(--text-dim)]">
+                  <div className="mb-1 px-2 text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-dim)]">
                     {section.title}
                   </div>
                   <div className="space-y-1">
@@ -884,7 +897,7 @@ export function DesktopCreateGroupDialog({
                           disabled={createMutation.isPending}
                           onClick={() => toggleSelection(item.character.id)}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-[12px] px-4 py-3 text-left transition disabled:opacity-60",
+                            "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
                             checked
                               ? "bg-[rgba(7,193,96,0.08)]"
                               : "hover:bg-[#f7f7f7]",
@@ -933,7 +946,7 @@ export function DesktopCreateGroupDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-black/6 px-6 py-4">
+        <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div className="text-[12px] text-[color:var(--text-muted)]">
             已选择 {selectedIds.length} 位成员
             {selectedIds.length ? `，将创建“${defaultGroupName}”。` : "。"}
@@ -948,7 +961,7 @@ export function DesktopCreateGroupDialog({
               variant="secondary"
               onClick={onClose}
               disabled={createMutation.isPending}
-              className="rounded-2xl"
+              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
             >
               取消
             </Button>
@@ -957,7 +970,7 @@ export function DesktopCreateGroupDialog({
               variant="primary"
               onClick={handleCreate}
               disabled={!selectedIds.length || createMutation.isPending}
-              className="rounded-2xl px-6"
+              className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
             >
               {createMutation.isPending ? "正在创建..." : "创建群聊"}
             </Button>
