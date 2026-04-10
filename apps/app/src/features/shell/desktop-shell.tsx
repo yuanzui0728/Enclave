@@ -42,6 +42,7 @@ function isActive(pathname: string, to: string) {
   if (to === "/tabs/contacts") {
     return (
       pathname.startsWith("/tabs/contacts") ||
+      pathname.startsWith("/contacts/starred") ||
       pathname.startsWith("/contacts/official-accounts") ||
       pathname.startsWith("/official-accounts/") ||
       pathname.startsWith("/character/") ||

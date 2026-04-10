@@ -38,6 +38,7 @@
 - 底部 Tab：`tabs/chat-list-page` · `contacts-page` · `discover-page` · `profile-page`
 - `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
 - `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态
+- `starred-friends-page.tsx`：星标朋友页，移动端承载通讯录内“星标朋友”入口，桌面端承载双栏星标好友工作区
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
 - `official-account-detail-page.tsx`：公众号主页，承载账号资料、关注状态与最近文章列表
 - `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端复用工作区阅读面板

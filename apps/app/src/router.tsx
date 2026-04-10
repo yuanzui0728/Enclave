@@ -53,6 +53,11 @@ const ContactsPage = lazy(async () => {
   return { default: mod.ContactsPage };
 });
 
+const StarredFriendsPage = lazy(async () => {
+  const mod = await import("./routes/starred-friends-page");
+  return { default: mod.StarredFriendsPage };
+});
+
 const OfficialAccountsPage = lazy(async () => {
   const mod = await import("./routes/official-accounts-page");
   return { default: mod.OfficialAccountsPage };
@@ -265,6 +270,13 @@ const friendRequestsRoute = createRoute({
   component: FriendRequestsPage,
 });
 
+const starredFriendsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/contacts/starred",
+  beforeLoad: requireWorldReady,
+  component: StarredFriendsPage,
+});
+
 const officialAccountsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/contacts/official-accounts",
@@ -392,6 +404,7 @@ const routeTree = rootRoute.addChildren([
   chatMessageSearchRoute,
   characterDetailRoute,
   friendRequestsRoute,
+  starredFriendsRoute,
   officialAccountsRoute,
   officialAccountDetailRoute,
   officialAccountArticleRoute,

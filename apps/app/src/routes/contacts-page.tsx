@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { BookText, BookUser, Search, Tag, UserPlus, Users } from "lucide-react";
+import { BookText, BookUser, Search, Star, Tag, UserPlus, Users } from "lucide-react";
 import {
   blockCharacter,
   getBlockedCharacters,
@@ -11,6 +11,7 @@ import {
   listCharacters,
   setFriendStarred,
   unblockCharacter,
+  updateFriendProfile,
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -33,6 +34,7 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 type ShortcutRoute =
   | "/group/new"
   | "/friend-requests"
+  | "/contacts/starred"
   | "/contacts/official-accounts";
 
 type DesktopSelection =
@@ -127,6 +129,10 @@ export function ContactsPage() {
     () => (friendRequestsQuery.data ?? []).filter((request) => request.status === "pending").length,
     [friendRequestsQuery.data],
   );
+  const starredFriendCount = useMemo(
+    () => (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred).length,
+    [friendsQuery.data],
+  );
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -191,6 +197,24 @@ export function ContactsPage() {
       setFriendStarred(characterId, { starred }, baseUrl),
     onSuccess: async (_, variables) => {
       setNotice(variables.starred ? "已设为星标朋友。" : "已取消星标朋友。");
+      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
+    },
+  });
+  const updateProfileMutation = useMutation({
+    mutationFn: ({
+      characterId,
+      payload,
+    }: {
+      characterId: string;
+      payload: {
+        remarkName?: string | null;
+        region?: string | null;
+        source?: string | null;
+        tags?: string[] | null;
+      };
+    }) => updateFriendProfile(characterId, payload, baseUrl),
+    onSuccess: async () => {
+      setNotice("联系人资料已更新。");
       await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
     },
   });
@@ -372,6 +396,14 @@ export function ContactsPage() {
       onClick: () => handleShortcutNavigate("/friend-requests"),
     },
     {
+      key: "starred-friends",
+      label: "星标朋友",
+      subtitle: starredFriendCount > 0 ? `${starredFriendCount} 位常联系好友` : "查看星标朋友",
+      icon: Star,
+      iconClassName: "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)]",
+      onClick: () => handleShortcutNavigate("/contacts/starred"),
+    },
+    {
       key: "group-chat",
       label: "群聊",
       subtitle: "发起新的群聊",
@@ -471,9 +503,19 @@ export function ContactsPage() {
                     <ErrorBlock message={startChatMutation.error.message} />
                   </div>
                 ) : null}
+                {setStarredMutation.isError && setStarredMutation.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={setStarredMutation.error.message} />
+                  </div>
+                ) : null}
                 {blockMutation.isError && blockMutation.error instanceof Error ? (
                   <div className="px-3 pb-3">
                     <ErrorBlock message={blockMutation.error.message} />
+                  </div>
+                ) : null}
+                {updateProfileMutation.isError && updateProfileMutation.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={updateProfileMutation.error.message} />
                   </div>
                 ) : null}
 
@@ -560,6 +602,16 @@ export function ContactsPage() {
                         })
                     : undefined
                 }
+                profilePending={updateProfileMutation.isPending && updateProfileMutation.variables?.characterId === selectedCharacterId}
+                onSaveProfile={
+                  selectedFriendItem
+                    ? (payload) =>
+                        updateProfileMutation.mutateAsync({
+                          characterId: selectedFriendItem.character.id,
+                          payload,
+                        })
+                    : undefined
+                }
                 isBlocked={selectedFriendBlocked}
                 blockPending={blockMutation.isPending && blockMutation.variables?.characterId === selectedCharacterId}
                 onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}
@@ -625,6 +677,11 @@ export function ContactsPage() {
           {startChatMutation.isError && startChatMutation.error instanceof Error ? (
             <div className="px-3 pt-3">
               <ErrorBlock message={startChatMutation.error.message} />
+            </div>
+          ) : null}
+          {setStarredMutation.isError && setStarredMutation.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={setStarredMutation.error.message} />
             </div>
           ) : null}
 
@@ -739,6 +796,7 @@ function FriendListRow({
             : item.character.currentStatus?.trim() || item.character.relationship || "保持联系"}
         </div>
       </div>
+      {item.friendship.isStarred ? <Star size={15} className="shrink-0 text-[#f59e0b]" fill="currentColor" /> : null}
     </button>
   );
 }

@@ -127,6 +127,9 @@ export function CharacterDetailPage() {
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
             <ErrorBlock message={friendsQuery.error.message} />
           ) : null}
+          {setStarredMutation.isError && setStarredMutation.error instanceof Error ? (
+            <ErrorBlock message={setStarredMutation.error.message} />
+          ) : null}
           {isFriend ? (
             <div className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white/92">
               <ChatSettingRow
