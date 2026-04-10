@@ -163,14 +163,14 @@ export function DesktopChatHistoryPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,249,240,0.96))]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-        <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
-          <div className="text-base font-medium text-[color:var(--text-primary)]">
+    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
+      <section className="flex w-[300px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
+        <div className="border-b border-black/6 px-4 py-4">
+          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
             聊天记录管理
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            先按会话查看和清理消息，逐步往更像微信电脑端的历史翻阅工作流收口。
+            先按会话查看、展开和清理最近聊天记录。
           </div>
         </div>
 
@@ -183,17 +183,17 @@ export function DesktopChatHistoryPage() {
             <ErrorBlock message={conversationsQuery.error.message} />
           ) : null}
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {conversations.map((conversation) => (
               <button
                 key={conversation.id}
                 type="button"
                 onClick={() => setSelectedConversationId(conversation.id)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-[20px] border px-3 py-3 text-left transition",
+                  "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
                   conversation.id === selectedConversationId
-                    ? "border-[rgba(249,115,22,0.20)] bg-white/94 shadow-[var(--shadow-soft)]"
-                    : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/82",
+                    ? "border-black/8 bg-white"
+                    : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
                 )}
               >
                 <AvatarChip name={conversation.title} size="wechat" />
@@ -212,12 +212,12 @@ export function DesktopChatHistoryPage() {
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto p-6">
+      <section className="min-w-0 flex-1 overflow-auto p-4">
         {selectedConversation ? (
           <DesktopEntryShell
-            badge="History"
+            badge="聊天记录"
             title={selectedConversation.title}
-            description="这里先承接当前会话的聊天摘要、逐步加载更早消息和清理动作，让桌面端先具备微信式历史翻阅工作流。"
+            description="这里集中查看当前会话的最近聊天记录，也能继续展开更早消息。"
             aside={
               <div className="space-y-3">
                 <InfoCard
@@ -249,7 +249,7 @@ export function DesktopChatHistoryPage() {
               <InlineNotice tone="success">{notice}</InlineNotice>
             ) : null}
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -259,6 +259,7 @@ export function DesktopChatHistoryPage() {
                     `已刷新当前会话最近 ${historyRows.length} 条记录。`,
                   );
                 }}
+                className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
               >
                 刷新记录
               </Button>
@@ -274,6 +275,7 @@ export function DesktopChatHistoryPage() {
                   setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
                 }}
                 disabled={!historyRows.length || messagesQuery.isFetching}
+                className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
               >
                 {messagesQuery.isFetching
                   ? "正在加载更早消息..."
@@ -286,13 +288,13 @@ export function DesktopChatHistoryPage() {
                 size="sm"
                 onClick={() => clearMutation.mutate(selectedConversation)}
                 disabled={clearMutation.isPending}
-                className="border-[rgba(239,68,68,0.18)] text-[color:var(--state-danger-text)]"
+                className="h-8 rounded-[8px] border-[rgba(239,68,68,0.18)] bg-[rgba(254,242,242,0.9)] px-3 text-[12px] text-[color:var(--state-danger-text)] shadow-none hover:bg-[rgba(254,226,226,0.95)]"
               >
                 {clearMutation.isPending ? "清空中..." : "清空当前会话记录"}
               </Button>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 space-y-2.5">
               {messagesQuery.isLoading ? (
                 <LoadingBlock label="正在读取聊天记录..." />
               ) : null}
@@ -306,7 +308,7 @@ export function DesktopChatHistoryPage() {
               {historyRows.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]"
+                  className="rounded-[14px] border border-black/6 bg-white p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -317,16 +319,16 @@ export function DesktopChatHistoryPage() {
                         {formatMessageTimestamp(item.createdAt)}
                       </div>
                     </div>
-                    <span className="rounded-full bg-[rgba(255,138,61,0.10)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+                    <span className="rounded-[8px] bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
                       {item.typeLabel}
                     </span>
                     {item.reminderAt ? (
-                      <span className="rounded-full bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
+                      <span className="rounded-[8px] bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
                         提醒 · {formatMessageTimestamp(item.reminderAt)}
                       </span>
                     ) : null}
                   </div>
-                  <div className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
+                  <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
                     {item.preview}
                   </div>
                 </div>
@@ -350,7 +352,7 @@ export function DesktopChatHistoryPage() {
                       setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
                     }
                     disabled={messagesQuery.isFetching}
-                    className="rounded-full"
+                    className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-4 text-[12px] shadow-none hover:bg-[#efefef]"
                   >
                     {messagesQuery.isFetching
                       ? "正在加载更早消息..."
@@ -458,7 +460,7 @@ function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
+    <div className="rounded-[12px] border border-black/6 bg-[#f7f7f7] p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
