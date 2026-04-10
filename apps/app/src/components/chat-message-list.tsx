@@ -378,7 +378,9 @@ export function ChatMessageList({
         );
       }
 
-      setViewerMessageId((current) => (current === message.id ? null : current));
+      setViewerMessageId((current) =>
+        current === message.id ? null : current,
+      );
       setActionNotice({
         message: "已撤回这条消息。",
         tone: "success",
@@ -889,6 +891,7 @@ export function ChatMessageList({
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
+        const reminderRecord = messageReminderMap.get(message.id);
         const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
           isUser && !isSystem
@@ -1035,6 +1038,12 @@ export function ChatMessageList({
                       {renderTextWithMentions(displayText)}
                     </div>
                   )}
+                  {reminderRecord ? (
+                    <div className="mt-1 px-1 text-[11px] text-[#8c8c8c]">
+                      已设提醒 ·{" "}
+                      {formatReminderSummary(reminderRecord.remindAt)}
+                    </div>
+                  ) : null}
                 </div>
                 {isUser ? <AvatarChip name="我" size="wechat" /> : null}
                 {isUser && selectionMode ? (
@@ -1074,9 +1083,7 @@ export function ChatMessageList({
             setContextMenuState(null);
           }}
           onSetReminder={() => {
-            showUnavailableActionNotice(
-              "消息提醒能力待接服务端提醒接口，当前先保留微信式入口。",
-            );
+            handleSetReminder(contextMenuState.message);
             setContextMenuState(null);
           }}
           reminderLabel="提醒"
@@ -1187,9 +1194,7 @@ export function ChatMessageList({
         onSetReminder={
           mobileActionMessage
             ? () => {
-                showUnavailableActionNotice(
-                  "消息提醒能力待接服务端提醒接口，当前先保留微信式入口。",
-                );
+                handleSetReminder(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -1276,6 +1281,17 @@ export function ChatMessageList({
             : undefined
         }
         deleteLabel="删除"
+      />
+      <MobileMessageReminderSheet
+        open={Boolean(reminderTargetMessage)}
+        previewText={
+          reminderTargetMessage
+            ? buildClipboardText(reminderTargetMessage)
+            : undefined
+        }
+        options={reminderOptions}
+        onClose={() => setReminderTargetMessage(null)}
+        onSelect={handleSelectReminder}
       />
       {activeImage ? (
         <ImageViewerOverlay
@@ -1419,6 +1435,77 @@ function buildRecalledMessageNotice(message: ChatRenderableMessage) {
   const actor =
     message.senderType === "user" ? "你" : message.senderName?.trim() || "对方";
   return `${actor}撤回了一条消息`;
+}
+
+function buildReminderOptions(now: Date): MobileMessageReminderOption[] {
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  const tonight = new Date(now);
+  tonight.setHours(20, 0, 0, 0);
+  if (tonight.getTime() <= now.getTime()) {
+    tonight.setDate(tonight.getDate() + 1);
+  }
+
+  const tomorrowMorning = new Date(now);
+  tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
+  tomorrowMorning.setHours(9, 0, 0, 0);
+
+  return [
+    {
+      id: "one-hour",
+      label: "1 小时后",
+      detail: formatReminderSummary(oneHourLater.toISOString()),
+      remindAt: oneHourLater.toISOString(),
+    },
+    {
+      id: "tonight",
+      label: "今晚 20:00",
+      detail: formatReminderSummary(tonight.toISOString()),
+      remindAt: tonight.toISOString(),
+    },
+    {
+      id: "tomorrow-morning",
+      label: "明天上午 09:00",
+      detail: formatReminderSummary(tomorrowMorning.toISOString()),
+      remindAt: tomorrowMorning.toISOString(),
+    },
+  ];
+}
+
+function formatReminderSummary(remindAt: string) {
+  const date = new Date(remindAt);
+  if (Number.isNaN(date.getTime())) {
+    return "稍后";
+  }
+
+  const now = new Date();
+  const sameYear = now.getFullYear() === date.getFullYear();
+  const sameMonth = now.getMonth() === date.getMonth();
+  const sameDate = now.getDate() === date.getDate();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const isTomorrow =
+    tomorrow.getFullYear() === date.getFullYear() &&
+    tomorrow.getMonth() === date.getMonth() &&
+    tomorrow.getDate() === date.getDate();
+
+  const timeLabel = date.toLocaleTimeString("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  if (sameYear && sameMonth && sameDate) {
+    return `今天 ${timeLabel}`;
+  }
+
+  if (isTomorrow) {
+    return `明天 ${timeLabel}`;
+  }
+
+  return `${date.toLocaleDateString("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+  })} ${timeLabel}`;
 }
 
 function buildClipboardSender(message: ChatRenderableMessage) {
@@ -1579,8 +1666,8 @@ function canRecallMessage(
 ) {
   return Boolean(
     threadContext &&
-      message.senderType === "user" &&
-      !message.id.startsWith("local_"),
+    message.senderType === "user" &&
+    !message.id.startsWith("local_"),
   );
 }
 
