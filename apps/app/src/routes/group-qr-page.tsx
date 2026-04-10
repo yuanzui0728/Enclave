@@ -342,6 +342,8 @@ export function GroupQrPage() {
         return left.conversation.title.localeCompare(right.conversation.title);
       });
   }, [conversationsQuery.data, deliveryTargetBatches, reopenedPaths]);
+  const topPendingReturnConversation =
+    pendingCurrentBatchConversations[0] ?? null;
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -777,6 +779,77 @@ export function GroupQrPage() {
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
                   这一轮已经发出但还没有从聊天线程回到邀请页的目标，会先避开刚补发过的会话；冷却结束后会自动回到优先位，再按最近活跃和发送先后优先补发。
                 </div>
+                {topPendingReturnConversation ? (
+                  <div className="rounded-[18px] border border-[rgba(249,115,22,0.22)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,244,232,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                          当前最值得优先补发
+                        </div>
+                        <div className="mt-2 truncate text-sm font-medium text-[color:var(--text-primary)]">
+                          {topPendingReturnConversation.conversation.title}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          优先补发理由：
+                          {
+                            resolvePendingReturnPrimaryReason(
+                              topPendingReturnConversation.conversation,
+                              topPendingReturnConversation.target.deliveredAt,
+                            ).label
+                          }
+                        </div>
+                        <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {resolvePendingReturnRecommendationSummary(
+                            topPendingReturnConversation.conversation,
+                            topPendingReturnConversation.target.deliveredAt,
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void sendToConversation(
+                            topPendingReturnConversation.conversation,
+                          );
+                        }}
+                        className="shrink-0 rounded-full bg-[rgba(249,115,22,0.12)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-secondary)] transition hover:bg-[rgba(249,115,22,0.18)]"
+                      >
+                        {isPendingReturnCoolingDown(
+                          topPendingReturnConversation.target.deliveredAt,
+                        )
+                          ? "稍后补发"
+                          : "现在补发"}
+                      </button>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                      <span
+                        className={`rounded-full px-2.5 py-1 font-medium ${resolvePendingReturnPrimaryReason(
+                          topPendingReturnConversation.conversation,
+                          topPendingReturnConversation.target.deliveredAt,
+                        ).tone}`}
+                      >
+                        {
+                          resolvePendingReturnPrimaryReason(
+                            topPendingReturnConversation.conversation,
+                            topPendingReturnConversation.target.deliveredAt,
+                          ).label
+                        }
+                      </span>
+                      <span className="text-[color:var(--text-muted)]">
+                        待回流{" "}
+                        {formatPendingReturnDuration(
+                          topPendingReturnConversation.target.deliveredAt,
+                        )}
+                      </span>
+                      <span className="text-[color:var(--text-muted)]">
+                        最近活跃{" "}
+                        {formatConversationTimestamp(
+                          topPendingReturnConversation.conversation.lastActivityAt,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
                 {pendingCurrentBatchConversations.map(({ conversation, target }) => (
                   <button
                     key={`${conversation.id}:${target.deliveredAt}`}
