@@ -1708,7 +1708,7 @@ function DesktopGroupMemberBrowserDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-6 backdrop-blur-[4px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
       <button
         type="button"
         aria-label="关闭群成员列表"
@@ -1720,8 +1720,8 @@ function DesktopGroupMemberBrowserDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[760px] flex-col overflow-hidden rounded-[30px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)]">
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+      <div className="relative flex h-[min(760px,78vh)] w-full max-w-[760px] flex-col overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
+        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div>
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               更多群成员
@@ -1738,7 +1738,7 @@ function DesktopGroupMemberBrowserDialog({
               }
             }}
             disabled={pending}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
@@ -1771,10 +1771,10 @@ function DesktopGroupMemberBrowserDialog({
                 type="button"
                 onClick={() => setActiveFilter(tab.id)}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs transition",
+                  "rounded-[8px] border px-3 py-1.5 text-xs transition",
                   activeFilter === tab.id
-                    ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]"
-                    : "border-black/8 bg-[#f7f7f7] text-[color:var(--text-secondary)] hover:bg-white",
+                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
+                    : "border-transparent bg-[#ececec] text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#e6e6e6]",
                 )}
               >
                 {tab.label} {tab.count}
@@ -1792,7 +1792,7 @@ function DesktopGroupMemberBrowserDialog({
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="搜索昵称、角色或成员 ID"
-              className="h-11 w-full rounded-2xl border border-black/8 bg-[#f7f7f7] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12 focus:bg-white"
+              className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
             />
           </label>
 
@@ -1802,7 +1802,7 @@ function DesktopGroupMemberBrowserDialog({
               variant="primary"
               onClick={onAddMembers}
               disabled={pending}
-              className="rounded-full"
+              className="h-8 rounded-[8px] bg-[#07c160] px-3 text-[12px] text-white hover:bg-[#06ad56]"
             >
               添加成员
             </Button>
@@ -1811,7 +1811,7 @@ function DesktopGroupMemberBrowserDialog({
               variant="secondary"
               onClick={onRemoveMembers}
               disabled={pending || !canRemoveMembers}
-              className="rounded-full"
+              className="h-8 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
             >
               移除成员
             </Button>
@@ -1844,13 +1844,13 @@ function DesktopGroupMemberBrowserDialog({
                     }}
                     disabled={pending || !canViewProfile}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-[20px] border px-4 py-3 text-left transition",
+                      "flex w-full items-center gap-3 rounded-[12px] border px-4 py-3 text-left transition",
                       canViewProfile
                         ? "border-black/6 bg-[#fafafa] hover:bg-white"
-                        : "border-black/[0.05] bg-[#f7f7f7]",
+                        : "border-black/[0.05] bg-[#f4f4f4]",
                       pending || !canViewProfile
                         ? "cursor-default"
-                        : "shadow-[0_8px_24px_rgba(15,23,42,0.05)]",
+                        : "shadow-none",
                     )}
                   >
                     <AvatarChip
@@ -1865,7 +1865,7 @@ function DesktopGroupMemberBrowserDialog({
                         </div>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-[10px]",
+                            "shrink-0 rounded-[7px] px-2 py-0.5 text-[10px]",
                             member.role === "owner"
                               ? "bg-[rgba(245,158,11,0.14)] text-[#b45309]"
                               : member.role === "admin"
@@ -1877,7 +1877,7 @@ function DesktopGroupMemberBrowserDialog({
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-[10px]",
+                            "shrink-0 rounded-[7px] px-2 py-0.5 text-[10px]",
                             member.memberType === "user"
                               ? "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]"
                               : "bg-[rgba(47,122,63,0.10)] text-[#2f7a3f]",
@@ -1927,8 +1927,8 @@ function MemberBrowserStatCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[18px] border border-black/6 bg-[#fafafa] px-4 py-3">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+    <div className="rounded-[12px] border border-black/6 bg-[#f5f5f5] px-4 py-3">
+      <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
