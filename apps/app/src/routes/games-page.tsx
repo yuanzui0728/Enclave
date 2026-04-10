@@ -51,6 +51,17 @@ function resolveGames(ids: string[]) {
     .filter((game): game is GameCenterGame => Boolean(game));
 }
 
+function resolveInitialGameSelection() {
+  if (typeof window === "undefined") {
+    return gameCenterFeaturedGameIds[0] ?? "signal-squad";
+  }
+
+  const gameId = new URLSearchParams(window.location.search).get("game");
+  return getGameCenterGame(gameId ?? "")
+    ? gameId!
+    : (gameCenterFeaturedGameIds[0] ?? "signal-squad");
+}
+
 export function GamesPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
@@ -72,7 +83,7 @@ export function GamesPage() {
   const [activeCategory, setActiveCategory] =
     useState<GameCenterCategoryId>("featured");
   const [selectedGameId, setSelectedGameId] = useState(
-    gameCenterFeaturedGameIds[0] ?? "signal-squad",
+    resolveInitialGameSelection(),
   );
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
@@ -91,6 +102,30 @@ export function GamesPage() {
     const timer = window.setTimeout(() => setSuccessNotice(""), 2800);
     return () => window.clearTimeout(timer);
   }, [successNotice]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const gameId = params.get("game");
+    const inviteId = params.get("invite");
+    const activity = inviteId
+      ? gameCenterFriendActivities.find((item) => item.id === inviteId)
+      : null;
+
+    if (gameId && getGameCenterGame(gameId)) {
+      setSelectedGameId(gameId);
+    }
+
+    if (activity) {
+      setNoticeTone("info");
+      setSuccessNotice(
+        `已带上 ${activity.friendName} 的组局邀约，可在手机继续查看 ${getGameCenterGame(activity.gameId)?.name ?? "当前游戏"}。`,
+      );
+    }
+  }, []);
 
   const featuredGames = resolveGames(gameCenterFeaturedGameIds);
   const selectedGame =
@@ -156,6 +191,43 @@ export function GamesPage() {
     );
   }
 
+  async function handleCopyInviteToMobile(activityId: string) {
+    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    if (!activity) {
+      return;
+    }
+
+    const game = getGameCenterGame(activity.gameId);
+    const path = `/discover/games?game=${activity.gameId}&invite=${activity.id}`;
+    const link = resolveMobileHandoffLink(path);
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNoticeTone("info");
+      setSuccessNotice("当前环境暂不支持复制到手机。");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(link);
+      applyFriendInvite(activityId, "invited");
+      setSelectedGameId(activity.gameId);
+      pushMobileHandoffRecord({
+        description: `${activity.friendName} 正在玩 ${game?.name ?? "当前游戏"}，把这条组局邀约发到手机继续跟进。`,
+        label: `${activity.friendName} 组局邀约`,
+        path,
+      });
+      setNoticeTone("success");
+      setSuccessNotice(`已把 ${activity.friendName} 的组局邀约复制到手机。`);
+    } catch {
+      setNoticeTone("info");
+      setSuccessNotice("复制到手机失败，请稍后重试。");
+    }
+  }
+
   async function handleCopyGameToMobile(gameId: string) {
     const game = getGameCenterGame(gameId);
     const path = "/games";
@@ -203,6 +275,7 @@ export function GamesPage() {
         noticeTone={noticeTone}
         onCategoryChange={setActiveCategory}
         onCompleteEventAction={handleCompleteEventAction}
+        onCopyInviteToMobile={handleCopyInviteToMobile}
         onInviteFriend={handleInviteFriend}
         onCopyGameToMobile={handleCopyGameToMobile}
         onDismissActiveGame={dismissActiveGame}

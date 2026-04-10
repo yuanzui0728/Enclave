@@ -50,6 +50,7 @@ type DesktopGamesWorkspaceProps = {
   noticeTone?: "success" | "info";
   onCategoryChange: (categoryId: GameCenterCategoryId) => void;
   onCompleteEventAction: (eventId: string) => void;
+  onCopyInviteToMobile: (activityId: string) => void;
   onInviteFriend: (activityId: string) => void;
   onCopyGameToMobile: (gameId: string) => void;
   onDismissActiveGame: () => void;
@@ -79,6 +80,7 @@ export function DesktopGamesWorkspace({
   noticeTone = "success",
   onCategoryChange,
   onCompleteEventAction,
+  onCopyInviteToMobile,
   onInviteFriend,
   onCopyGameToMobile,
   onDismissActiveGame,
@@ -501,6 +503,14 @@ export function DesktopGamesWorkspace({
                           {friendInviteStatusByActivityId[activity.id]
                             ? "再邀一次"
                             : "邀请一起玩"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onCopyInviteToMobile(activity.id)}
+                          className="shrink-0 rounded-full"
+                        >
+                          发到手机
                         </Button>
                       </div>
                     );
