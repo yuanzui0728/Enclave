@@ -15,6 +15,7 @@ export function buildDirectCallInviteMessage(
     | DirectCallInviteStatus
     | {
         remoteJoined?: boolean;
+        recordedAt?: string;
       } = "waiting",
 ) {
   const normalizedStatus: DirectCallInviteStatus =
@@ -23,6 +24,8 @@ export function buildDirectCallInviteMessage(
       : status.remoteJoined
         ? "connected"
         : "waiting";
+  const recordedAt =
+    typeof status === "string" ? new Date().toISOString() : status.recordedAt;
   const statusLabel =
     normalizedStatus === "ended"
       ? "已结束"
@@ -34,6 +37,7 @@ export function buildDirectCallInviteMessage(
     kind === "voice" ? DIRECT_VOICE_CALL_PREFIX : DIRECT_VIDEO_CALL_PREFIX,
     conversationTitle.trim() || "当前聊天",
     `当前状态 ${statusLabel}`,
+    `${normalizedStatus === "ended" ? "结束于" : "发起于"} ${recordedAt ?? new Date().toISOString()}`,
     normalizedStatus === "ended"
       ? "本轮单聊通话已在桌面端结束，可继续在聊天里跟进。"
       : "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
@@ -51,6 +55,7 @@ export function buildGroupCallInviteMessage(
     totalCount: number;
   },
   status: GroupCallInviteStatus = "ongoing",
+  recordedAt = new Date().toISOString(),
 ) {
   const normalizedTotalCount = Math.max(counts?.totalCount ?? 0, 0);
   const normalizedActiveCount = Math.min(
@@ -66,6 +71,7 @@ export function buildGroupCallInviteMessage(
     kind === "voice" ? GROUP_VOICE_CALL_PREFIX : GROUP_VIDEO_CALL_PREFIX,
     groupName.trim() || "当前群聊",
     status === "ended" ? "状态 已结束" : "状态 进行中",
+    `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
     normalizedTotalCount
       ? `当前在线 ${normalizedActiveCount}/${normalizedTotalCount} 人`
       : "当前在线人数待同步",
@@ -92,15 +98,19 @@ export function parseDirectCallInviteMessage(text: string) {
     return null;
   }
 
+  const timestampLabel = parseCallInviteTimestamp(lines[3]);
+
   return {
     kind: header === DIRECT_VOICE_CALL_PREFIX ? "voice" : "video",
     title: lines[1] || "当前聊天",
     connectionStatus: parseDirectCallStatus(lines[2]),
-    summaryLines: lines.slice(3),
+    timestampLabel,
+    summaryLines: lines.slice(timestampLabel ? 4 : 3),
   } satisfies {
     kind: DesktopChatCallKind;
     title: string;
     connectionStatus: DirectCallInviteStatus | null;
+    timestampLabel: string | null;
     summaryLines: string[];
   };
 }
@@ -118,17 +128,25 @@ export function parseGroupCallInviteMessage(text: string) {
     return null;
   }
 
+  const timestampLabel = parseCallInviteTimestamp(lines[3]);
+  const metricOffset = timestampLabel ? 1 : 0;
+
   return {
     kind: header === GROUP_VOICE_CALL_PREFIX ? "voice" : "video",
     groupName: lines[1] || "当前群聊",
     status: parseGroupCallStatus(lines[2]),
-    activeCount: parseGroupCallMetric(lines[3], /当前在线\s+(\d+)\/(\d+)\s+人/),
-    waitingCount: parseGroupCallWaitingMetric(lines[4]),
-    summaryLines: lines.slice(5),
+    timestampLabel,
+    activeCount: parseGroupCallMetric(
+      lines[3 + metricOffset],
+      /当前在线\s+(\d+)\/(\d+)\s+人/,
+    ),
+    waitingCount: parseGroupCallWaitingMetric(lines[4 + metricOffset]),
+    summaryLines: lines.slice(5 + metricOffset),
   } satisfies {
     kind: DesktopChatCallKind;
     groupName: string;
     status: GroupCallInviteStatus;
+    timestampLabel: string | null;
     activeCount: { current: number; total: number } | null;
     waitingCount: number | null;
     summaryLines: string[];
@@ -180,6 +198,18 @@ function parseDirectCallStatus(line: string | undefined) {
 
   if (line.includes("等待接听")) {
     return "waiting";
+  }
+
+  return null;
+}
+
+function parseCallInviteTimestamp(line: string | undefined) {
+  if (!line) {
+    return null;
+  }
+
+  if (line.startsWith("发起于 ") || line.startsWith("结束于 ")) {
+    return line;
   }
 
   return null;

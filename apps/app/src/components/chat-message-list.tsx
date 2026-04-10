@@ -1636,7 +1636,9 @@ export function ChatMessageList({
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
-        const isSharedHistoryMessage = importedSharedMessageIdSet.has(message.id);
+        const isSharedHistoryMessage = importedSharedMessageIdSet.has(
+          message.id,
+        );
         const reminderRecord = messageReminderMap.get(message.id);
         const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
@@ -1677,7 +1679,9 @@ export function ChatMessageList({
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
-                  {isRecalled ? buildRecalledMessageNotice(message) : displayText}
+                  {isRecalled
+                    ? buildRecalledMessageNotice(message)
+                    : displayText}
                 </InlineNotice>
               )}
             </div>
@@ -3631,6 +3635,9 @@ function GroupCallInviteMessage({
           label="当前状态"
           value={invite.status === "ended" ? "已结束" : "进行中"}
         />
+        {invite.timestampLabel ? (
+          <CallInviteMetric label="时间" value={invite.timestampLabel} />
+        ) : null}
         {invite.activeCount ? (
           <div className="grid grid-cols-2 gap-2">
             <CallInviteMetric
@@ -3736,8 +3743,15 @@ function DirectCallInviteMessage({
             {invite.title}
           </div>
         </div>
-        <div className="rounded-full bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#2563eb]">
-          桌面工作台
+        <div
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[10px] font-medium",
+            invite.connectionStatus === "ended"
+              ? "bg-[rgba(239,68,68,0.10)] text-[#d74b45]"
+              : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+          )}
+        >
+          {invite.connectionStatus === "ended" ? "已结束" : "桌面工作台"}
         </div>
       </div>
 
@@ -3746,9 +3760,16 @@ function DirectCallInviteMessage({
           <CallInviteMetric
             label="当前状态"
             value={
-              invite.connectionStatus === "connected" ? "已接通" : "等待接听"
+              invite.connectionStatus === "ended"
+                ? "已结束"
+                : invite.connectionStatus === "connected"
+                  ? "已接通"
+                  : "等待接听"
             }
           />
+        ) : null}
+        {invite.timestampLabel ? (
+          <CallInviteMetric label="时间" value={invite.timestampLabel} />
         ) : null}
         {invite.summaryLines.map((line) => (
           <div
@@ -3762,18 +3783,26 @@ function DirectCallInviteMessage({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-          {onOpen
-            ? "点击可回到当前单聊通话工作台。"
-            : "当前消息已转成单聊通话卡片，方便快速识别状态。"}
+          {invite.connectionStatus === "ended"
+            ? onOpen
+              ? "点击可重新打开当前单聊通话工作台。"
+              : "这轮单聊通话已经结束，当前保留为状态记录卡片。"
+            : onOpen
+              ? "点击可回到当前单聊通话工作台。"
+              : "当前消息已转成单聊通话卡片，方便快速识别状态。"}
         </div>
         <div className="text-[11px] font-medium text-[#2563eb]">
-          {onOpen
-            ? invite.kind === "voice"
-              ? "回到语音"
-              : "回到视频"
-            : invite.kind === "voice"
-              ? "语音中"
-              : "视频中"}
+          {invite.connectionStatus === "ended"
+            ? onOpen
+              ? "重新发起"
+              : "通话结束"
+            : onOpen
+              ? invite.kind === "voice"
+                ? "回到语音"
+                : "回到视频"
+              : invite.kind === "voice"
+                ? "语音中"
+                : "视频中"}
         </div>
       </div>
     </div>
