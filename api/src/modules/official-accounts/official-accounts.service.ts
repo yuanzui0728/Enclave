@@ -6,6 +6,7 @@ import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
 import { OfficialAccountDeliveryEntity } from './official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './official-account-follow.entity';
+import { OfficialAccountServiceMessageEntity } from './official-account-service-message.entity';
 
 type SeedArticle = {
   title: string;
@@ -125,6 +126,8 @@ export class OfficialAccountsService {
     private readonly deliveryRepo: Repository<OfficialAccountDeliveryEntity>,
     @InjectRepository(OfficialAccountFollowEntity)
     private readonly followRepo: Repository<OfficialAccountFollowEntity>,
+    @InjectRepository(OfficialAccountServiceMessageEntity)
+    private readonly serviceMessageRepo: Repository<OfficialAccountServiceMessageEntity>,
     private readonly worldOwnerService: WorldOwnerService,
   ) {}
 
@@ -195,11 +198,14 @@ export class OfficialAccountsService {
   async getMessageEntries() {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const subscriptionInbox = await this.buildSubscriptionInbox(owner.id);
+    const [subscriptionInbox, serviceConversations] = await Promise.all([
+      this.buildSubscriptionInbox(owner.id),
+      this.getServiceConversations(),
+    ]);
 
     return {
       subscriptionInbox: subscriptionInbox.summary,
-      serviceConversations: [],
+      serviceConversations,
     };
   }
 
@@ -209,12 +215,110 @@ export class OfficialAccountsService {
     return this.buildSubscriptionInbox(owner.id);
   }
 
+  async getServiceConversations() {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const serviceAccountIds = await this.getFollowedServiceAccountIds(owner.id);
+
+    if (!serviceAccountIds.length) {
+      return [];
+    }
+
+    await this.ensureServiceMessages(owner.id, serviceAccountIds);
+
+    const [accounts, recentArticles, messages] = await Promise.all([
+      this.accountRepo.find({
+        where: {
+          id: In(serviceAccountIds),
+          accountType: 'service',
+          isEnabled: true,
+        },
+      }),
+      this.getRecentArticlesForAccounts(serviceAccountIds),
+      this.serviceMessageRepo.find({
+        where: {
+          ownerId: owner.id,
+          accountId: In(serviceAccountIds),
+        },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
+
+    return accounts
+      .map((account) =>
+        this.serializeServiceConversationSummary(
+          account,
+          messages.filter((message) => message.accountId === account.id),
+          recentArticles.get(account.id)?.[0],
+        ),
+      )
+      .filter(
+        (
+          summary,
+        ): summary is ReturnType<
+          OfficialAccountsService['serializeServiceConversationSummary']
+        > => Boolean(summary),
+      )
+      .sort((left, right) => {
+        const leftTime = left.lastDeliveredAt
+          ? new Date(left.lastDeliveredAt).getTime()
+          : 0;
+        const rightTime = right.lastDeliveredAt
+          ? new Date(right.lastDeliveredAt).getTime()
+          : 0;
+        return rightTime - leftTime;
+      });
+  }
+
+  async getServiceMessages(accountId: string) {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const account = await this.getServiceAccountEntityOrThrow(accountId);
+    await this.ensureServiceMessages(owner.id, [account.id]);
+
+    const messages = await this.serviceMessageRepo.find({
+      where: {
+        ownerId: owner.id,
+        accountId: account.id,
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    return messages.map((message) => this.serializeServiceMessage(message));
+  }
+
   async markArticleRead(articleId: string) {
     await this.ensureSeedData();
     const article = await this.getArticleEntityOrThrow(articleId);
     article.readCount += 1;
     await this.articleRepo.save(article);
     return this.getArticleDetail(articleId);
+  }
+
+  async markServiceMessagesRead(accountId: string) {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.getServiceAccountEntityOrThrow(accountId);
+
+    const unreadMessages = await this.serviceMessageRepo.find({
+      where: {
+        ownerId: owner.id,
+        accountId,
+        readAt: null,
+      },
+    });
+
+    if (unreadMessages.length) {
+      const now = new Date();
+      await this.serviceMessageRepo.save(
+        unreadMessages.map((message) => ({
+          ...message,
+          readAt: now,
+        })),
+      );
+    }
+
+    return this.getServiceMessages(accountId);
   }
 
   async markDeliveryRead(deliveryId: string) {
@@ -273,7 +377,7 @@ export class OfficialAccountsService {
   async followAccount(id: string) {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    await this.getAccountEntityOrThrow(id);
+    const account = await this.getAccountEntityOrThrow(id);
 
     const existing = await this.followRepo.findOneBy({
       ownerId: owner.id,
@@ -286,6 +390,10 @@ export class OfficialAccountsService {
         accountId: id,
       });
       await this.followRepo.save(follow);
+    }
+
+    if (account.accountType === 'service') {
+      await this.ensureServiceMessages(owner.id, [account.id]);
     }
 
     return this.getAccount(id);
@@ -416,6 +524,73 @@ export class OfficialAccountsService {
     };
   }
 
+  private async ensureServiceMessages(ownerId: string, accountIds: string[]) {
+    const accounts = await this.accountRepo.find({
+      where: {
+        id: In(accountIds),
+        accountType: 'service',
+        isEnabled: true,
+      },
+    });
+
+    if (!accounts.length) {
+      return;
+    }
+
+    const existingMessages = await this.serviceMessageRepo.find({
+      where: {
+        ownerId,
+        accountId: In(accounts.map((account) => account.id)),
+      },
+    });
+    const initializedAccountIds = new Set(
+      existingMessages.map((message) => message.accountId),
+    );
+    const recentArticles = await this.getRecentArticlesForAccounts(
+      accounts.map((account) => account.id),
+    );
+
+    const missingMessages = accounts.flatMap((account) => {
+      if (initializedAccountIds.has(account.id)) {
+        return [];
+      }
+
+      const welcomeMessage = this.serviceMessageRepo.create({
+        ownerId,
+        accountId: account.id,
+        type: 'text',
+        text: `${account.name} 已接入。后续世界通知、文章卡片和服务提醒会在这里集中出现。`,
+      });
+      const latestArticle = recentArticles.get(account.id)?.[0];
+
+      if (!latestArticle) {
+        return [welcomeMessage];
+      }
+
+      const articleCardMessage = this.serviceMessageRepo.create({
+        ownerId,
+        accountId: account.id,
+        type: 'article_card',
+        text: '为你准备了一条服务说明',
+        attachmentKind: 'article_card',
+        attachmentPayload: JSON.stringify({
+          kind: 'article_card',
+          articleId: latestArticle.id,
+          title: latestArticle.title,
+          summary: latestArticle.summary,
+          coverImage: latestArticle.coverImage ?? undefined,
+          publishedAt: latestArticle.publishedAt.toISOString(),
+        }),
+      });
+
+      return [welcomeMessage, articleCardMessage];
+    });
+
+    if (missingMessages.length) {
+      await this.serviceMessageRepo.save(missingMessages);
+    }
+  }
+
   private async getArticleDetail(articleId: string) {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const article = await this.getArticleEntityOrThrow(articleId);
@@ -538,6 +713,27 @@ export class OfficialAccountsService {
     return subscriptionAccounts.map((account) => account.id);
   }
 
+  private async getFollowedServiceAccountIds(ownerId: string) {
+    const follows = await this.followRepo.find({
+      where: { ownerId },
+    });
+
+    if (!follows.length) {
+      return [];
+    }
+
+    const serviceAccounts = await this.accountRepo.find({
+      select: ['id'],
+      where: {
+        id: In(follows.map((follow) => follow.accountId)),
+        accountType: 'service',
+        isEnabled: true,
+      },
+    });
+
+    return serviceAccounts.map((account) => account.id);
+  }
+
   private async getRecentArticlesForAccounts(accountIds: string[]) {
     const articles = await this.articleRepo.find({
       where: { accountId: In(accountIds) },
@@ -558,6 +754,15 @@ export class OfficialAccountsService {
     const account = await this.accountRepo.findOneBy({ id, isEnabled: true });
     if (!account) {
       throw new NotFoundException('公众号不存在。');
+    }
+
+    return account;
+  }
+
+  private async getServiceAccountEntityOrThrow(id: string) {
+    const account = await this.getAccountEntityOrThrow(id);
+    if (account.accountType !== 'service') {
+      throw new NotFoundException('服务号不存在。');
     }
 
     return account;
@@ -635,5 +840,59 @@ export class OfficialAccountsService {
       account: this.serializeAccountSummary(account, true, recentArticle),
       article: this.serializeArticleSummary(article),
     };
+  }
+
+  private serializeServiceConversationSummary(
+    account: OfficialAccountEntity,
+    messages: OfficialAccountServiceMessageEntity[],
+    recentArticle?: OfficialAccountArticleEntity,
+  ) {
+    const latestMessage = messages[0];
+    if (!latestMessage) {
+      return null;
+    }
+
+    const latestAttachment = this.parseServiceAttachment(latestMessage);
+    return {
+      accountId: account.id,
+      account: this.serializeAccountSummary(account, true, recentArticle),
+      unreadCount: messages.filter((message) => !message.readAt).length,
+      lastDeliveredAt: latestMessage.createdAt.toISOString(),
+      preview:
+        latestAttachment?.title ??
+        latestMessage.text ??
+        `${account.name} 给你发来一条服务消息`,
+    };
+  }
+
+  private serializeServiceMessage(message: OfficialAccountServiceMessageEntity) {
+    return {
+      id: message.id,
+      accountId: message.accountId,
+      type: message.type,
+      text: message.text,
+      attachment: this.parseServiceAttachment(message) ?? undefined,
+      createdAt: message.createdAt.toISOString(),
+      readAt: message.readAt?.toISOString(),
+    };
+  }
+
+  private parseServiceAttachment(message: OfficialAccountServiceMessageEntity) {
+    if (message.attachmentKind !== 'article_card' || !message.attachmentPayload) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(message.attachmentPayload) as {
+        kind: 'article_card';
+        articleId: string;
+        title: string;
+        summary: string;
+        coverImage?: string;
+        publishedAt: string;
+      };
+    } catch {
+      return null;
+    }
   }
 }
