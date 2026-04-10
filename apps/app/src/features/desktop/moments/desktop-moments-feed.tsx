@@ -66,7 +66,7 @@ export function DesktopMomentsFeed({
           title={totalMomentsCount ? "当前筛选下没有动态" : "朋友圈还很安静"}
           description={
             totalMomentsCount
-              ? "换个筛选条件试试，或者去右边直接发一条新的朋友圈。"
+              ? "换个筛选条件试试，或者直接发一条新的朋友圈。"
               : "你先发一条，或者等世界里的其他人先开口。"
           }
           action={

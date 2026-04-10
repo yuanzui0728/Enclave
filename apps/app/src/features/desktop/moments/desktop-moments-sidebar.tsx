@@ -65,7 +65,7 @@ export function DesktopMomentsSidebar({
 }: DesktopMomentsSidebarProps) {
   if (mode === "detail" && selectedMoment) {
     return (
-      <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+      <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <DesktopMomentDetailPanel
           commentDraft={commentDrafts[selectedMoment.id] ?? ""}
           commentLoading={commentPendingMomentId === selectedMoment.id}
@@ -84,7 +84,7 @@ export function DesktopMomentsSidebar({
 
   if (mode === "author" && activeAuthorSummary) {
     return (
-      <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+      <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
@@ -181,7 +181,7 @@ export function DesktopMomentsSidebar({
   }
 
   return (
-      <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+    <aside className="flex w-[340px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
         <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
           <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">

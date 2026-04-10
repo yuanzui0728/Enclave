@@ -160,12 +160,12 @@ export function DesktopMomentDetailPanel({
           </div>
 
           {moment.comments.length > 0 ? (
-              <div className="mt-4 space-y-3">
-                {moment.comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3"
-                  >
+            <div className="mt-4 space-y-3">
+              {moment.comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3"
+                >
                   <div className="flex items-center gap-2 text-[12px]">
                     <span className="font-medium text-[color:var(--text-primary)]">
                       {comment.authorName}

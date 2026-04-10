@@ -229,24 +229,26 @@ export function DesktopMomentsWorkspace({
             ref={scrollViewportRef}
             className="min-h-0 flex-1 overflow-auto px-6 py-5"
           >
-            <DesktopMomentsFeed
-              commentDrafts={commentDrafts}
-              commentPendingMomentId={commentPendingMomentId}
-              isLoading={isLoading}
-              likePendingMomentId={likePendingMomentId}
-              moments={filteredMoments}
-              ownerId={ownerId}
-              selectedMomentId={selectedMomentId}
-              totalMomentsCount={moments.length}
-              onCommentChange={onCommentChange}
-              onCommentSubmit={onCommentSubmit}
-              onLike={onLike}
-              onOpenCompose={() => setShowCompose(true)}
-              onOpenDetail={(momentId) => setSelectedMomentId(momentId)}
-              onSelectAuthor={(authorId) => {
-                focusAuthor(authorId);
-              }}
-            />
+            <div className="mx-auto w-full max-w-[760px]">
+              <DesktopMomentsFeed
+                commentDrafts={commentDrafts}
+                commentPendingMomentId={commentPendingMomentId}
+                isLoading={isLoading}
+                likePendingMomentId={likePendingMomentId}
+                moments={filteredMoments}
+                ownerId={ownerId}
+                selectedMomentId={selectedMomentId}
+                totalMomentsCount={moments.length}
+                onCommentChange={onCommentChange}
+                onCommentSubmit={onCommentSubmit}
+                onLike={onLike}
+                onOpenCompose={() => setShowCompose(true)}
+                onOpenDetail={(momentId) => setSelectedMomentId(momentId)}
+                onSelectAuthor={(authorId) => {
+                  focusAuthor(authorId);
+                }}
+              />
+            </div>
           </div>
         </div>
       </section>
