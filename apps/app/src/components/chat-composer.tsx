@@ -1,6 +1,7 @@
 import {
   FileText,
   ImageIcon,
+  Keyboard,
   Mic,
   Plus,
   SendHorizontal,
@@ -18,6 +19,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type DragEvent,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
@@ -115,14 +117,19 @@ export function ChatComposer({
   );
   const desktopStickerRef = useRef<HTMLDivElement | null>(null);
   const desktopPlusRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const desktopDropDepthRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [desktopPlusMenuOpen, setDesktopPlusMenuOpen] = useState(false);
+  const [desktopDropActive, setDesktopDropActive] = useState(false);
   const [inputCursor, setInputCursor] = useState(0);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<number | null>(null);
+  const [mobileInputMode, setMobileInputMode] = useState<"text" | "speech">(
+    "text",
+  );
   const showSpeechEntry = Boolean(
     speechInput?.enabled && speechInput?.conversationId,
   );
@@ -143,6 +150,7 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
+  const mobileSpeechMode = !isDesktop && showSpeechEntry && mobileInputMode === "speech";
   const activeMention = useMemo(
     () =>
       isDesktop
@@ -214,6 +222,7 @@ export function ChatComposer({
   const commitSpeechInput = () => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
+    setMobileInputMode("text");
     setMobileSpeechSheetOpen(false);
     focusInput();
   };
@@ -231,13 +240,38 @@ export function ChatComposer({
     }
   };
 
+  const toggleMobileInputMode = () => {
+    if (!showSpeechEntry) {
+      return;
+    }
+
+    blurActiveElement();
+    closeMobileTransientSurfaces();
+    setMobileInputMode((current) => (current === "text" ? "speech" : "text"));
+  };
+
   useEffect(() => {
     if (showSpeechEntry) {
       return;
     }
 
+    setMobileInputMode("text");
     setMobileSpeechSheetOpen(false);
   }, [showSpeechEntry]);
+
+  useEffect(() => {
+    if (isDesktop) {
+      return;
+    }
+
+    const input = inputRef.current;
+    if (!(input instanceof HTMLTextAreaElement)) {
+      return;
+    }
+
+    input.style.height = "0px";
+    input.style.height = `${Math.min(Math.max(input.scrollHeight, 38), 108)}px`;
+  }, [isDesktop, value]);
 
   useEffect(() => {
     if (!isDesktop || !stickerPanelOpen) {
@@ -274,6 +308,15 @@ export function ChatComposer({
       releaseAttachmentDraft(attachmentDraft);
     };
   }, [attachmentDraft]);
+
+  useEffect(() => {
+    if (isDesktop && onSendAttachment && !attachmentBusy) {
+      return;
+    }
+
+    desktopDropDepthRef.current = 0;
+    setDesktopDropActive(false);
+  }, [attachmentBusy, isDesktop, onSendAttachment]);
 
   useEffect(() => {
     if (!mentionPickerOpen) {
@@ -467,6 +510,79 @@ export function ChatComposer({
     applyGenericFileDraft(pastedFiles[0]);
   };
 
+  const handleDesktopDragEnter = (event: DragEvent<HTMLDivElement>) => {
+    if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+
+    const droppedFiles = extractClipboardFiles(event.dataTransfer);
+    if (!droppedFiles.length) {
+      return;
+    }
+
+    event.preventDefault();
+    desktopDropDepthRef.current += 1;
+    setDesktopDropActive(true);
+  };
+
+  const handleDesktopDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+
+    const droppedFiles = extractClipboardFiles(event.dataTransfer);
+    if (!droppedFiles.length) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDesktopDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (!isDesktop || !onSendAttachment) {
+      return;
+    }
+
+    const relatedTarget = event.relatedTarget;
+    if (
+      relatedTarget instanceof Node &&
+      event.currentTarget.contains(relatedTarget)
+    ) {
+      return;
+    }
+
+    desktopDropDepthRef.current = Math.max(desktopDropDepthRef.current - 1, 0);
+    if (desktopDropDepthRef.current === 0) {
+      setDesktopDropActive(false);
+    }
+  };
+
+  const handleDesktopDrop = async (event: DragEvent<HTMLDivElement>) => {
+    if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+
+    const droppedFiles = extractClipboardFiles(event.dataTransfer);
+    if (!droppedFiles.length) {
+      return;
+    }
+
+    event.preventDefault();
+    desktopDropDepthRef.current = 0;
+    setDesktopDropActive(false);
+
+    const imageFiles = droppedFiles.filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    if (imageFiles.length === droppedFiles.length) {
+      await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      return;
+    }
+
+    applyGenericFileDraft(droppedFiles[0]);
+  };
+
   const handleCancelAttachmentDraft = () => {
     releaseAttachmentDraft(attachmentDraft);
     setAttachmentDraft(null);
@@ -633,14 +749,14 @@ export function ChatComposer({
         className={
           isDesktop
             ? "border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.98),rgba(255,248,239,0.98))] px-4 py-3"
-            : "border-t border-white/70 bg-[linear-gradient(180deg,rgba(255,254,250,0.90),rgba(255,248,236,0.94))] px-3 pt-2 backdrop-blur-xl"
+            : "border-t border-black/6 bg-[#f7f7f7] px-2 pb-2 pt-1.5"
         }
         style={{
           paddingBottom: keyboardOpen
             ? `${keyboardInset}px`
             : isDesktop
               ? "0.75rem"
-              : "0.35rem",
+              : "0.5rem",
         }}
       >
         {!isDesktop && attachmentDraft ? (
@@ -692,6 +808,7 @@ export function ChatComposer({
         ) : null}
         {replyPreview ? (
           <ReplyPreviewBar
+            variant={variant}
             senderName={replyPreview.senderName}
             text={replyPreview.text}
             onClose={onCancelReply}
@@ -706,7 +823,7 @@ export function ChatComposer({
         ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
-          className={`relative flex items-center gap-2 ${isDesktop ? "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : ""}`}
+          className={`relative ${isDesktop ? "flex items-center gap-2 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : "space-y-2"}`}
         >
           {isDesktop ? (
             <>
@@ -761,100 +878,165 @@ export function ChatComposer({
                   ) : null}
                 </div>
               ) : null}
-            </>
-          ) : showSpeechEntry ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => void toggleMobileSpeech()}
-              disabled={speechButtonDisabled}
-              title={speechDisabledReason ?? undefined}
-              className={cn(
-                "h-10 w-10 rounded-full border border-white/70 bg-white/80 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-45",
-                speech.status === "listening"
-                  ? "border-[rgba(249,115,22,0.35)] text-[color:var(--brand-primary)]"
-                  : "",
-              )}
-              aria-label={speechDisabledReason ?? "语音输入"}
-            >
-              {speech.status === "listening" ? (
-                <Square size={16} fill="currentColor" />
-              ) : (
-                <Mic size={18} />
-              )}
-            </Button>
-          ) : null}
 
-          <div
-            className={`flex min-w-0 flex-1 items-center gap-2 ${isDesktop ? "" : "rounded-[24px] border border-white/80 bg-white/90 px-3 py-2 shadow-[var(--shadow-soft)]"}`}
-          >
-            <input
-              ref={inputRef}
-              value={value}
-              onChange={(event) => {
-                onChange(event.target.value);
-                setInputCursor(
-                  event.target.selectionStart ?? event.target.value.length,
-                );
-              }}
-              onPaste={(event) => {
-                void handleDesktopPaste(event);
-              }}
-              onFocus={() => {
-                setPlusPanelOpen(false);
-                syncInputCursor();
-              }}
-              onClick={syncInputCursor}
-              onKeyUp={syncInputCursor}
-              onSelect={syncInputCursor}
-              onKeyDown={handleDesktopInputKeyDown}
-              placeholder={placeholder}
-              className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
-            />
-            {!isDesktop ? (
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <input
+                  ref={(node) => {
+                    inputRef.current = node;
+                  }}
+                  value={value}
+                  onChange={(event) => {
+                    onChange(event.target.value);
+                    setInputCursor(
+                      event.target.selectionStart ?? event.target.value.length,
+                    );
+                  }}
+                  onPaste={(event) => {
+                    void handleDesktopPaste(event);
+                  }}
+                  onFocus={() => {
+                    setPlusPanelOpen(false);
+                    setStickerPanelOpen(false);
+                    syncInputCursor();
+                  }}
+                  onClick={syncInputCursor}
+                  onKeyUp={syncInputCursor}
+                  onSelect={syncInputCursor}
+                  onKeyDown={handleDesktopInputKeyDown}
+                  placeholder={placeholder}
+                  className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                />
+                {showSpeechEntry ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (speech.status === "listening") {
+                        speech.stop();
+                        return;
+                      }
+                      setStickerPanelOpen(false);
+                      void speech.start();
+                    }}
+                    disabled={
+                      speechButtonDisabled && speech.status !== "listening"
+                    }
+                    title={speechDisabledReason ?? undefined}
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)] disabled:cursor-not-allowed disabled:opacity-45",
+                      speech.status === "listening"
+                        ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
+                        : "",
+                    )}
+                    aria-label={
+                      speechDisabledReason ??
+                      (speech.status === "listening"
+                        ? "停止语音输入"
+                        : "语音输入")
+                    }
+                  >
+                    {speech.status === "listening" ? (
+                      <Square size={15} fill="currentColor" />
+                    ) : (
+                      <Mic size={18} />
+                    )}
+                  </button>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-end gap-1.5">
+              {showSpeechEntry ? (
+                <button
+                  type="button"
+                  onClick={toggleMobileInputMode}
+                  disabled={speechButtonDisabled && mobileSpeechMode}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45"
+                  aria-label={mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"}
+                >
+                  {mobileSpeechMode ? <Keyboard size={20} /> : <Mic size={20} />}
+                </button>
+              ) : null}
+
+              {mobileSpeechMode ? (
+                <button
+                  type="button"
+                  onClick={() => void toggleMobileSpeech()}
+                  disabled={speechButtonDisabled && speech.status !== "listening"}
+                  title={speechDisabledReason ?? undefined}
+                  className={cn(
+                    "flex min-h-[40px] min-w-0 flex-1 items-center justify-center rounded-[7px] border border-black/8 bg-white px-4 py-2 text-[15px] text-[#7a7a7a]",
+                    speech.status === "listening"
+                      ? "border-[#07c160]/35 text-[#07c160]"
+                      : "",
+                  )}
+                >
+                  {speech.status === "listening" ? "停止 说话" : "按住 说话"}
+                </button>
+              ) : (
+                <div className="flex min-w-0 flex-1 items-end rounded-[7px] border border-black/8 bg-white px-3 py-1">
+                  <textarea
+                    ref={(node) => {
+                      inputRef.current = node;
+                    }}
+                    rows={1}
+                    value={value}
+                    onChange={(event) => {
+                      onChange(event.target.value);
+                      setInputCursor(
+                        event.target.selectionStart ?? event.target.value.length,
+                      );
+                    }}
+                    onFocus={() => {
+                      setPlusPanelOpen(false);
+                      setStickerPanelOpen(false);
+                      setMobileInputMode("text");
+                      syncInputCursor();
+                    }}
+                    onClick={syncInputCursor}
+                    onKeyUp={syncInputCursor}
+                    onSelect={syncInputCursor}
+                    placeholder={placeholder}
+                    className="min-h-[38px] max-h-[108px] flex-1 resize-none bg-transparent py-1 text-[16px] leading-6 text-[#111827] outline-none placeholder:text-[#a3a3a3]"
+                  />
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={toggleStickerPanel}
-                className="text-[color:var(--text-secondary)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5"
                 aria-label="表情"
               >
-                <Smile size={18} />
+                <Smile size={20} />
               </button>
-            ) : showSpeechEntry ? (
-              <button
-                type="button"
-                onClick={() => {
-                  if (speech.status === "listening") {
-                    speech.stop();
-                    return;
-                  }
-                  setStickerPanelOpen(false);
-                  void speech.start();
-                }}
-                disabled={speechButtonDisabled && speech.status !== "listening"}
-                title={speechDisabledReason ?? undefined}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--brand-primary)] disabled:cursor-not-allowed disabled:opacity-45",
-                  speech.status === "listening"
-                    ? "bg-[color:var(--surface-soft)] text-[color:var(--brand-primary)]"
-                    : "",
-                )}
-                aria-label={
-                  speechDisabledReason ??
-                  (speech.status === "listening" ? "停止语音输入" : "语音输入")
-                }
-              >
-                {speech.status === "listening" ? (
-                  <Square size={15} fill="currentColor" />
-                ) : (
-                  <Mic size={18} />
-                )}
-              </button>
-            ) : null}
-          </div>
 
-          {value.trim() ? (
+              {!mobileSpeechMode && value.trim() ? (
+                <button
+                  type="button"
+                  onClick={onSubmit}
+                  disabled={composerPending}
+                  className="flex h-9 shrink-0 items-center justify-center rounded-[6px] bg-[#07c160] px-3.5 text-[15px] font-medium text-white disabled:opacity-45"
+                >
+                  发送
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={togglePlusPanel}
+                  disabled={!onSendAttachment || attachmentBusy}
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45",
+                    plusPanelOpen ? "bg-black/5 text-[#111827]" : "",
+                  )}
+                  aria-label="更多功能"
+                >
+                  <Plus size={20} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {isDesktop && value.trim() ? (
             <Button
               onClick={onSubmit}
               disabled={composerPending}
@@ -867,26 +1049,9 @@ export function ChatComposer({
             >
               发送
             </Button>
-          ) : !isDesktop ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={togglePlusPanel}
-              disabled={!onSendAttachment || attachmentBusy}
-              className={cn(
-                "h-10 w-10 rounded-full border border-white/70 bg-white/80 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)] hover:bg-white disabled:cursor-not-allowed disabled:opacity-45",
-                plusPanelOpen
-                  ? "border-[rgba(249,115,22,0.35)] text-[color:var(--brand-primary)]"
-                  : "",
-              )}
-              aria-label="更多功能"
-            >
-              <Plus size={18} />
-            </Button>
-          ) : (
+          ) : isDesktop ? (
             <div className="h-10 w-[74px]" />
-          )}
+          ) : null}
 
           {stickerPanelOpen && onSendSticker ? (
             <StickerPanel
@@ -1179,18 +1344,33 @@ function DesktopAttachmentDraftBar({
 }
 
 function ReplyPreviewBar({
+  variant,
   senderName,
   text,
   onClose,
 }: {
+  variant: "mobile" | "desktop";
   senderName: string;
   text: string;
   onClose?: () => void;
 }) {
+  const isDesktop = variant === "desktop";
   return (
-    <div className="mb-3 flex items-start justify-between gap-3 rounded-[18px] border border-black/6 bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]">
+    <div
+      className={`mb-3 flex items-start justify-between gap-3 ${
+        isDesktop
+          ? "rounded-[18px] border border-black/6 bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]"
+          : "rounded-[10px] border-l-[3px] border-l-[#07c160] bg-white px-3 py-2.5"
+      }`}
+    >
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+        <div
+          className={`text-[11px] font-medium ${
+            isDesktop
+              ? "uppercase tracking-[0.14em] text-[color:var(--text-dim)]"
+              : "text-[#07c160]"
+          }`}
+        >
           回复 {senderName}
         </div>
         <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
@@ -1201,7 +1381,11 @@ function ReplyPreviewBar({
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]"
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition ${
+            isDesktop
+              ? "hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]"
+              : "active:bg-black/5"
+          }`}
           aria-label="取消回复"
         >
           <X size={15} />

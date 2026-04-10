@@ -106,7 +106,7 @@ export function MobileChatPlusPanel({
   }
 
   return (
-    <div className="mt-2 overflow-hidden rounded-[24px] border border-white/75 bg-[linear-gradient(180deg,rgba(245,247,250,0.98),rgba(236,240,245,0.98))] shadow-[var(--shadow-section)]">
+    <div className="mt-2 overflow-hidden rounded-[18px] border border-black/6 bg-[#f1f1f1] shadow-none">
       <div className="flex justify-center py-2.5">
         <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
       </div>
@@ -114,11 +114,11 @@ export function MobileChatPlusPanel({
       {activeView === "root" ? (
         <div className="pb-5 pt-1">
           <div className="px-4">
-            <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+            <div className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
               更多功能
             </div>
             <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              常用入口放在第一页，左右滑动继续查看低频附件。
+              选择要发送的内容
             </div>
           </div>
 
