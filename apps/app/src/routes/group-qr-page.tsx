@@ -1122,7 +1122,7 @@ export function GroupQrPage() {
                             }}
                             className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(249,115,22,0.18)] hover:text-[color:var(--brand-secondary)]"
                           >
-                            看这条
+                            切到备选
                           </button>
                         </div>
                       </div>
@@ -1159,7 +1159,7 @@ export function GroupQrPage() {
                               )}
                             </div>
                             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                              这条会话已经在当前轮次里补发过，先给它一点回流时间，冷却结束后会重新参与优先排序。
+                              这条刚补发过，等冷却结束后会自动回到优先位。
                             </div>
                           </div>
                           <button
@@ -1171,7 +1171,7 @@ export function GroupQrPage() {
                             }}
                             className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-muted)] transition hover:border-[rgba(15,23,42,0.14)] hover:text-[color:var(--text-primary)]"
                           >
-                            先不动
+                            暂缓处理
                           </button>
                         </div>
                       </div>
