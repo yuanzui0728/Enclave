@@ -24,6 +24,7 @@ import {
   buildDesktopChatFilesRouteHash,
   parseDesktopChatFilesRouteState,
 } from "../features/desktop/chat/desktop-chat-files-route-state";
+import { openDesktopChatImageViewerWindow } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import {
   readDesktopFavorites,
@@ -570,7 +571,12 @@ export function DesktopChatFilesPage() {
               : undefined
           }
           onOpenInWindow={() => {
-            openUrlInNewWindow(activeImage.attachment.url);
+            openDesktopChatImageViewerWindow({
+              imageUrl: activeImage.attachment.url,
+              title: activeImage.attachment.fileName,
+              meta: `${activeImage.conversationTitle} · ${activeImage.senderName} · ${formatMessageTimestamp(activeImage.createdAt)}`,
+              returnTo: buildAttachmentMessagePath(activeImage),
+            });
           }}
           onSave={() =>
             saveUrlAsFile(
@@ -711,14 +717,6 @@ function saveUrlAsFile(url: string, fileName: string) {
   anchor.remove();
 }
 
-function openUrlInNewWindow(url: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return Boolean(window.open(url, "_blank", "noopener,noreferrer"));
-}
-
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
@@ -728,6 +726,12 @@ function InfoCard({ label, value }: { label: string; value: string }) {
       </div>
     </div>
   );
+}
+
+function buildAttachmentMessagePath(item: AttachmentRow) {
+  return item.conversationType === "group"
+    ? `/group/${item.conversationId}#chat-message-${item.id}`
+    : `/chat/${item.conversationId}#chat-message-${item.id}`;
 }
 
 function DesktopChatFilesImageViewer({

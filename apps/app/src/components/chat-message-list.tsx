@@ -58,6 +58,7 @@ import {
   DesktopMessageForwardDialog,
   type DesktopMessageForwardPreviewItem,
 } from "../features/desktop/chat/desktop-message-forward-dialog";
+import { openDesktopChatImageViewerWindow } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -660,6 +661,7 @@ export function ChatMessageList({
         sanitizeDisplayedChatText(message.text) ||
         "[图片]",
       fileName: message.attachment.fileName,
+      createdAt: message.createdAt,
     }));
   const activeImageIndex = viewerMessageId
     ? imageMessages.findIndex((message) => message.id === viewerMessageId)
@@ -1768,11 +1770,26 @@ export function ChatMessageList({
           onOpenInWindow={
             isDesktop
               ? () => {
+                  const returnTo = threadContext
+                    ? threadContext.type === "group"
+                      ? `/group/${threadContext.id}#chat-message-${activeImage.id}`
+                      : `/chat/${threadContext.id}#chat-message-${activeImage.id}`
+                    : undefined;
+                  const meta = threadContext?.title?.trim()
+                    ? `${threadContext.title} · ${formatMessageTimestamp(activeImage.createdAt)}`
+                    : formatMessageTimestamp(activeImage.createdAt);
+
                   if (
-                    openUrlInNewWindow(activeImage.url, "noopener,noreferrer")
+                    openDesktopChatImageViewerWindow({
+                      imageUrl: activeImage.url,
+                      title:
+                        activeImage.fileName || activeImage.label || "图片",
+                      meta,
+                      returnTo,
+                    })
                   ) {
                     setActionNotice({
-                      message: "已在新窗口打开图片。",
+                      message: "已在独立窗口打开图片。",
                       tone: "success",
                     });
                     return;
@@ -2278,14 +2295,6 @@ function saveUrlAsFile(url: string, fileName: string) {
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
-}
-
-function openUrlInNewWindow(url: string, features?: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return Boolean(window.open(url, "_blank", features));
 }
 
 function openPrintWindow(input: { title: string; imageUrl: string }) {

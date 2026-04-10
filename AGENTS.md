@@ -56,6 +56,7 @@
 - `desktop/mobile`：桌面端底部“手机”入口承接页，后续承接设备联动能力
 - `desktop/chat-files`：桌面端“聊天文件”页，承接会话附件聚合浏览
 - `desktop/chat-history`：桌面端“聊天记录管理”页，承接会话记录查看与管理
+- `desktop/chat-image-viewer`：桌面端图片独立窗口路由，承接聊天图片的新窗口预览、打印与回跳原消息
 - `desktop/feedback`：桌面端“意见反馈”页
 - `desktop/settings`：桌面端“设置”页
 - `desktop/channels/live-companion`：桌面端“视频号直播伴侣”工具页

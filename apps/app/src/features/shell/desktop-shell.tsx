@@ -99,6 +99,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
+  const standaloneDesktopRoute = isStandaloneDesktopRoute(pathname);
   const runtimeConfig = useAppRuntimeConfig();
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
@@ -355,7 +356,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[rgba(16,185,129,0.09)] blur-3xl" />
         </div>
 
-        {nativeDesktopShell ? (
+        {nativeDesktopShell && !standaloneDesktopRoute ? (
           <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.86)] px-5 backdrop-blur-2xl">
             <div
               className={cn(
@@ -431,11 +432,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
         <div
           className={cn(
-            "relative z-10 flex min-h-0 flex-1 gap-4 p-4",
-            nativeDesktopShell ? "pt-3" : undefined,
+            "relative z-10 flex min-h-0 flex-1",
+            standaloneDesktopRoute ? undefined : "gap-4 p-4",
+            nativeDesktopShell && !standaloneDesktopRoute ? "pt-3" : undefined,
           )}
         >
-          {isMoreMenuOpen ? (
+          {isMoreMenuOpen && !standaloneDesktopRoute ? (
             <button
               type="button"
               aria-label="关闭更多菜单"
@@ -444,88 +446,97 @@ export function DesktopShell({ children }: PropsWithChildren) {
             />
           ) : null}
 
-          <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-[rgba(249,115,22,0.10)] bg-[linear-gradient(180deg,rgba(255,254,250,0.95),rgba(255,249,238,0.90))] p-3 shadow-[var(--shadow-section)] backdrop-blur-2xl lg:flex lg:flex-col">
-            <Link
-              to="/tabs/profile"
-              className="group mb-3 flex justify-center rounded-[22px] px-2 py-1.5"
-              aria-label="打开我的资料"
-            >
-              <div className="rounded-[22px] border border-transparent p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white/88 group-hover:shadow-[var(--shadow-card)]">
-                <AvatarChip
-                  name={ownerName ?? "世界主人"}
-                  src={ownerAvatar}
-                  size="wechat"
-                />
-              </div>
-            </Link>
-
-            <nav className="min-h-0 flex-1 overflow-y-auto pr-1">
-              <div className="flex flex-col gap-2 pb-3">
-                {desktopPrimaryNavItems.map((item) => (
-                  <DesktopNavLink
-                    key={item.to}
-                    active={isDesktopNavItemActive(pathname, item)}
-                    item={item}
+          {standaloneDesktopRoute ? null : (
+            <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-[rgba(249,115,22,0.10)] bg-[linear-gradient(180deg,rgba(255,254,250,0.95),rgba(255,249,238,0.90))] p-3 shadow-[var(--shadow-section)] backdrop-blur-2xl lg:flex lg:flex-col">
+              <Link
+                to="/tabs/profile"
+                className="group mb-3 flex justify-center rounded-[22px] px-2 py-1.5"
+                aria-label="打开我的资料"
+              >
+                <div className="rounded-[22px] border border-transparent p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white/88 group-hover:shadow-[var(--shadow-card)]">
+                  <AvatarChip
+                    name={ownerName ?? "世界主人"}
+                    src={ownerAvatar}
+                    size="wechat"
                   />
-                ))}
-              </div>
-            </nav>
-
-            <div className="relative mt-3 border-t border-[rgba(249,115,22,0.10)] pt-3">
-              <div className="flex flex-col gap-2">
-                {desktopBottomNavItems.map((item) => (
-                  <DesktopActionButton
-                    key={item.action}
-                    active={
-                      item.action === "open-more-menu"
-                        ? isMoreMenuOpen ||
-                          isDesktopNavItemActive(pathname, item)
-                        : isDesktopNavItemActive(pathname, item)
-                    }
-                    item={item}
-                    onClick={() => {
-                      if (item.action === "open-mobile-panel") {
-                        void navigate({ to: "/desktop/mobile" });
-                        return;
-                      }
-
-                      setIsMoreMenuOpen((current) => !current);
-                    }}
-                  />
-                ))}
-              </div>
-
-              {isMoreMenuOpen ? (
-                <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[248px] rounded-[26px] border border-[rgba(255,255,255,0.7)] bg-[rgba(255,252,246,0.98)] p-2 shadow-[0_24px_48px_rgba(135,78,24,0.18)] backdrop-blur-2xl">
-                  <div className="px-3 pb-2 pt-2 text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
-                    更多
-                  </div>
-                  <div className="space-y-1">
-                    {desktopMoreMenuItems.map((item) => (
-                      <DesktopMoreMenuButton
-                        key={item.action}
-                        item={item}
-                        onClick={() => {
-                          handleDesktopAction(item.action);
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-2 rounded-[18px] bg-[rgba(255,248,240,0.88)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-dim)]">
-                    `Ctrl/⌘ + K` 搜一搜
-                    <br />
-                    `Ctrl/⌘ + ,` 设置
-                    <br />
-                    `Ctrl/⌘ + Shift + F` 聊天文件
-                    <br />
-                    `Ctrl/⌘ + L` 锁定
-                  </div>
                 </div>
-              ) : null}
-            </div>
-          </aside>
+              </Link>
 
-          <main className="min-w-0 flex-1 overflow-hidden rounded-[32px] border border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.92)] shadow-[var(--shadow-section)] backdrop-blur-2xl">
+              <nav className="min-h-0 flex-1 overflow-y-auto pr-1">
+                <div className="flex flex-col gap-2 pb-3">
+                  {desktopPrimaryNavItems.map((item) => (
+                    <DesktopNavLink
+                      key={item.to}
+                      active={isDesktopNavItemActive(pathname, item)}
+                      item={item}
+                    />
+                  ))}
+                </div>
+              </nav>
+
+              <div className="relative mt-3 border-t border-[rgba(249,115,22,0.10)] pt-3">
+                <div className="flex flex-col gap-2">
+                  {desktopBottomNavItems.map((item) => (
+                    <DesktopActionButton
+                      key={item.action}
+                      active={
+                        item.action === "open-more-menu"
+                          ? isMoreMenuOpen ||
+                            isDesktopNavItemActive(pathname, item)
+                          : isDesktopNavItemActive(pathname, item)
+                      }
+                      item={item}
+                      onClick={() => {
+                        if (item.action === "open-mobile-panel") {
+                          void navigate({ to: "/desktop/mobile" });
+                          return;
+                        }
+
+                        setIsMoreMenuOpen((current) => !current);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {isMoreMenuOpen ? (
+                  <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[248px] rounded-[26px] border border-[rgba(255,255,255,0.7)] bg-[rgba(255,252,246,0.98)] p-2 shadow-[0_24px_48px_rgba(135,78,24,0.18)] backdrop-blur-2xl">
+                    <div className="px-3 pb-2 pt-2 text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
+                      更多
+                    </div>
+                    <div className="space-y-1">
+                      {desktopMoreMenuItems.map((item) => (
+                        <DesktopMoreMenuButton
+                          key={item.action}
+                          item={item}
+                          onClick={() => {
+                            handleDesktopAction(item.action);
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-2 rounded-[18px] bg-[rgba(255,248,240,0.88)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-dim)]">
+                      `Ctrl/⌘ + K` 搜一搜
+                      <br />
+                      `Ctrl/⌘ + ,` 设置
+                      <br />
+                      `Ctrl/⌘ + Shift + F` 聊天文件
+                      <br />
+                      `Ctrl/⌘ + L` 锁定
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </aside>
+          )}
+
+          <main
+            className={cn(
+              "min-w-0 flex-1 overflow-hidden",
+              standaloneDesktopRoute
+                ? "bg-transparent"
+                : "rounded-[32px] border border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.92)] shadow-[var(--shadow-section)] backdrop-blur-2xl",
+            )}
+          >
             {children}
           </main>
         </div>
@@ -725,6 +736,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
       openDesktopLock();
     }
   }
+}
+
+function isStandaloneDesktopRoute(pathname: string) {
+  return pathname === "/desktop/chat-image-viewer";
 }
 
 function DesktopWindowButton({
