@@ -1,11 +1,12 @@
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircleMore } from "lucide-react";
-import { getCharacter, getOrCreateConversation } from "@yinjie/contracts";
-import { AppHeader, AppPage, AppSection, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { getCharacter, getFriends, getOrCreateConversation, setFriendStarred } from "@yinjie/contracts";
+import { AppHeader, AppPage, AppSection, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function CharacterDetailPage() {
@@ -13,13 +14,23 @@ export function CharacterDetailPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const [notice, setNotice] = useState<string | null>(null);
 
   const characterQuery = useQuery({
     queryKey: ["app-character", baseUrl, characterId],
     queryFn: () => getCharacter(characterId, baseUrl),
   });
+  const friendsQuery = useQuery({
+    queryKey: ["app-friends", baseUrl],
+    queryFn: () => getFriends(baseUrl),
+  });
 
   const character = characterQuery.data;
+  const friendship = useMemo(
+    () => (friendsQuery.data ?? []).find((item) => item.character.id === characterId)?.friendship ?? null,
+    [characterId, friendsQuery.data],
+  );
+  const isFriend = Boolean(friendship);
 
   const startChatMutation = useMutation({
     mutationFn: async () => {
@@ -37,6 +48,13 @@ export function CharacterDetailPage() {
       void navigate({ to: "/chat/$conversationId", params: { conversationId: conversation.id } });
     },
   });
+  const setStarredMutation = useMutation({
+    mutationFn: (starred: boolean) => setFriendStarred(characterId, { starred }, baseUrl),
+    onSuccess: async (_, starred) => {
+      setNotice(starred ? "已设为星标朋友。" : "已取消星标朋友。");
+      await friendsQuery.refetch();
+    },
+  });
 
   const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
@@ -44,6 +62,7 @@ export function CharacterDetailPage() {
 
   useEffect(() => {
     resetStartChatMutation();
+    setNotice(null);
   }, [baseUrl, characterId, resetStartChatMutation]);
 
   return (
@@ -68,6 +87,7 @@ export function CharacterDetailPage() {
         <LoadingBlock label="正在读取角色资料..." />
       ) : character ? (
         <AppSection className="space-y-5 p-6">
+          {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
           <div className="flex items-center gap-4">
             <AvatarChip name={character.name} src={character.avatar} size="lg" />
             <div>
@@ -103,6 +123,19 @@ export function CharacterDetailPage() {
 
           {startChatMutation.isError && startChatMutation.error instanceof Error ? (
             <ErrorBlock message={startChatMutation.error.message} />
+          ) : null}
+          {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+            <ErrorBlock message={friendsQuery.error.message} />
+          ) : null}
+          {isFriend ? (
+            <div className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white/92">
+              <ChatSettingRow
+                label="设为星标朋友"
+                checked={friendship?.isStarred ?? false}
+                disabled={setStarredMutation.isPending}
+                onToggle={(checked) => setStarredMutation.mutate(checked)}
+              />
+            </div>
           ) : null}
         </AppSection>
       ) : (

@@ -9,6 +9,7 @@ import {
   getFriends,
   getOrCreateConversation,
   listCharacters,
+  setFriendStarred,
   unblockCharacter,
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
@@ -183,6 +184,14 @@ export function ContactsPage() {
         queryClient.invalidateQueries({ queryKey: ["app-chat-blocked-characters", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
       ]);
+    },
+  });
+  const setStarredMutation = useMutation({
+    mutationFn: ({ characterId, starred }: { characterId: string; starred: boolean }) =>
+      setFriendStarred(characterId, { starred }, baseUrl),
+    onSuccess: async (_, variables) => {
+      setNotice(variables.starred ? "已设为星标朋友。" : "已取消星标朋友。");
+      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
     },
   });
 
@@ -540,6 +549,17 @@ export function ContactsPage() {
                 friendship={selectedFriendItem?.friendship ?? null}
                 onStartChat={selectedFriendItem ? () => handleStartChat(selectedFriendItem.character.id) : undefined}
                 chatPending={selectedFriendItem?.character.id === pendingCharacterId}
+                isStarred={selectedFriendItem?.friendship.isStarred ?? false}
+                starPending={setStarredMutation.isPending && setStarredMutation.variables?.characterId === selectedCharacterId}
+                onToggleStarred={
+                  selectedFriendItem
+                    ? () =>
+                        setStarredMutation.mutate({
+                          characterId: selectedFriendItem.character.id,
+                          starred: !selectedFriendItem.friendship.isStarred,
+                        })
+                    : undefined
+                }
                 isBlocked={selectedFriendBlocked}
                 blockPending={blockMutation.isPending && blockMutation.variables?.characterId === selectedCharacterId}
                 onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}

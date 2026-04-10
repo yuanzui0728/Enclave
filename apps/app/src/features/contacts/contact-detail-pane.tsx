@@ -11,6 +11,9 @@ type ContactDetailPaneProps = {
   onOpenProfile: () => void;
   onStartChat?: () => void;
   chatPending?: boolean;
+  isStarred?: boolean;
+  starPending?: boolean;
+  onToggleStarred?: () => void;
   isBlocked?: boolean;
   blockPending?: boolean;
   onToggleBlock?: () => void;
@@ -22,6 +25,9 @@ export function ContactDetailPane({
   onOpenProfile,
   onStartChat,
   chatPending = false,
+  isStarred = false,
+  starPending = false,
+  onToggleStarred,
   isBlocked = false,
   blockPending = false,
   onToggleBlock,
@@ -120,6 +126,14 @@ export function ContactDetailPane({
               <StaticDetailRow label="置顶聊天" value="后续接入" muted />
               <StaticDetailRow label="消息免打扰" value="后续接入" muted />
               <ActionDetailRow label="查看资料" value="进入角色资料详情页" onClick={onOpenProfile} />
+              {onToggleStarred ? (
+                <ActionDetailRow
+                  label="星标朋友"
+                  value={starPending ? "正在更新..." : isStarred ? "取消星标" : "设为星标朋友"}
+                  onClick={onToggleStarred}
+                  disabled={starPending}
+                />
+              ) : null}
               {onToggleBlock ? (
                 <ActionDetailRow
                   label={isBlocked ? "黑名单" : "联系人管理"}
