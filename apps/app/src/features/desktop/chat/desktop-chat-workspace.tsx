@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { FileText, Plus, UserPlus, Users } from "lucide-react";
+import { BellOff, FileText, Plus, UserPlus, Users } from "lucide-react";
 import {
   getBlockedCharacters,
   getConversations,
@@ -18,7 +18,7 @@ import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subsc
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
-import { formatTimestamp } from "../../../lib/format";
+import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import {
@@ -253,8 +253,8 @@ export function DesktopChatWorkspace({
         />
       ) : null}
 
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,239,0.98))]">
-        <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[#f5f5f5]">
+        <div className="border-b border-[color:var(--border-faint)] bg-[#f7f7f7] px-4 py-4">
           <div className="relative z-20 flex items-center gap-2">
             <TextField
               value={searchTerm}
@@ -461,8 +461,10 @@ function ConversationCardLink({
   conversation: ConversationListItem;
 }) {
   const className = active
-    ? "flex items-center gap-3 rounded-[18px] border border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] px-4 py-3 shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
-    : "flex items-center gap-3 rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]";
+    ? "flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
+    : conversation.isPinned
+      ? "flex items-center gap-3 rounded-[12px] border border-transparent bg-[#ededed] px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#e7e7e7]"
+      : "flex items-center gap-3 rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white";
   const preview = buildConversationPreview(conversation);
   const isGroupConversation = isPersistedGroupConversation(conversation);
 
@@ -489,7 +491,7 @@ function ConversationCardLink({
             ) : null}
           </div>
           <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
-            {formatTimestamp(
+            {formatConversationTimestamp(
               conversation.lastMessage?.createdAt ?? conversation.updatedAt,
             )}
           </div>
@@ -503,11 +505,29 @@ function ConversationCardLink({
             ) : null}
             <span>{preview.text}</span>
           </div>
-          {conversation.unreadCount > 0 ? (
-            <div className="min-w-6 rounded-full bg-[#fa5151] px-2 py-0.5 text-center text-[11px] text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
-              {conversation.unreadCount}
-            </div>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {conversation.isMuted ? (
+              <BellOff
+                size={13}
+                className="text-[color:var(--text-dim)]"
+                aria-label="消息免打扰"
+              />
+            ) : null}
+            {conversation.unreadCount > 0 ? (
+              conversation.isMuted ? (
+                <div
+                  className="h-2.5 w-2.5 rounded-full bg-[#fa5151]"
+                  aria-label={`${conversation.unreadCount} 条未读消息`}
+                />
+              ) : (
+                <div className="min-w-6 rounded-full bg-[#fa5151] px-2 py-0.5 text-center text-[11px] text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
+                  {conversation.unreadCount > 99
+                    ? "99+"
+                    : conversation.unreadCount}
+                </div>
+              )
+            ) : null}
+          </div>
         </div>
       </div>
     </>
