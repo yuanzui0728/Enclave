@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  addGroupMember,
   blockCharacter,
   clearConversationHistory,
   clearGroupMessages,
@@ -23,6 +24,7 @@ import { ChevronRight, Search } from "lucide-react";
 import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
+import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
 import {
   useConversationBackground,
@@ -369,6 +371,7 @@ function GroupChatDetailsPanel({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerQuery = useDefaultChatBackground();
   const [notice, setNotice] = useState<string | null>(null);
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
   const [preferences, setPreferences] = useState(() =>
     readGroupChatDetailPreferences(conversation.id),
   );
@@ -376,6 +379,7 @@ function GroupChatDetailsPanel({
   useEffect(() => {
     setPreferences(readGroupChatDetailPreferences(conversation.id));
     setNotice(null);
+    setMemberPickerOpen(false);
   }, [conversation.id]);
 
   useEffect(() => {
@@ -448,6 +452,40 @@ function GroupChatDetailsPanel({
     },
   });
 
+  const addMembersMutation = useMutation({
+    mutationFn: async (memberIds: string[]) => {
+      for (const memberId of memberIds) {
+        await addGroupMember(
+          conversation.id,
+          {
+            memberId,
+            memberType: "character",
+          },
+          baseUrl,
+        );
+      }
+    },
+    onSuccess: async (_, memberIds) => {
+      setNotice(
+        memberIds.length === 1
+          ? "已添加 1 位群成员。"
+          : `已添加 ${memberIds.length} 位群成员。`,
+      );
+      setMemberPickerOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-members", baseUrl, conversation.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+  });
+
   const clearMutation = useMutation({
     mutationFn: () => clearGroupMessages(conversation.id, baseUrl),
     onSuccess: async () => {
@@ -506,7 +544,7 @@ function GroupChatDetailsPanel({
       label: "添加",
       kind: "add" as const,
       onClick: () => {
-        setNotice("添加群成员入口已保留，后端补接口后接通。");
+        setMemberPickerOpen(true);
       },
     },
     {
@@ -527,6 +565,10 @@ function GroupChatDetailsPanel({
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         <ErrorBlock message={membersQuery.error.message} />
+      ) : null}
+      {addMembersMutation.isError &&
+      addMembersMutation.error instanceof Error ? (
+        <ErrorBlock message={addMembersMutation.error.message} />
       ) : null}
 
       <DesktopPanelSection>
@@ -665,6 +707,17 @@ function GroupChatDetailsPanel({
           onClick={() => leaveMutation.mutate()}
         />
       </DesktopPanelSection>
+
+      <DesktopGroupMemberPicker
+        open={memberPickerOpen}
+        groupName={groupQuery.data?.name ?? conversation.title}
+        existingMemberIds={(membersQuery.data ?? []).map(
+          (item) => item.memberId,
+        )}
+        pending={addMembersMutation.isPending}
+        onClose={() => setMemberPickerOpen(false)}
+        onConfirm={(memberIds) => addMembersMutation.mutate(memberIds)}
+      />
     </div>
   );
 }
