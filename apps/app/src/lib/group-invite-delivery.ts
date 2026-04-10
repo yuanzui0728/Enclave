@@ -14,6 +14,13 @@ export type GroupInviteRouteContext = {
   returnPath: string;
 };
 
+export type GroupInviteDeliveryTarget = {
+  conversationId: string;
+  conversationPath: string;
+  conversationTitle: string;
+  deliveredAt: string;
+};
+
 export type GroupInviteReopenRecord = {
   conversationPath: string;
   conversationTitle: string;
@@ -21,6 +28,8 @@ export type GroupInviteReopenRecord = {
 };
 
 const GROUP_INVITE_DELIVERY_STORAGE_KEY = "yinjie-group-invite-delivery";
+const GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY =
+  "yinjie-group-invite-delivery-targets";
 const GROUP_INVITE_REOPEN_STORAGE_KEY = "yinjie-group-invite-reopen";
 
 export function readGroupInviteDeliveryRecord(groupId: string) {
@@ -79,6 +88,11 @@ export function writeGroupInviteDeliveryRecord(
     GROUP_INVITE_DELIVERY_STORAGE_KEY,
     JSON.stringify(nextState),
   );
+  writeGroupInviteDeliveryTarget(groupId, {
+    conversationId: input.conversationId,
+    conversationPath: input.conversationPath,
+    conversationTitle: input.conversationTitle,
+  });
 
   return nextRecord;
 }
@@ -130,6 +144,42 @@ export function resolveGroupInviteRouteContext(
       conversationTitle: record.conversationTitle,
     }),
   };
+}
+
+export function readGroupInviteDeliveryTargets(groupId: string) {
+  if (typeof window === "undefined") {
+    return [] as GroupInviteDeliveryTarget[];
+  }
+
+  const raw = window.localStorage.getItem(
+    GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY,
+  );
+  if (!raw) {
+    return [] as GroupInviteDeliveryTarget[];
+  }
+
+  try {
+    const parsed = JSON.parse(
+      raw,
+    ) as Record<string, GroupInviteDeliveryTarget[]>;
+    const records = parsed[groupId];
+    if (!Array.isArray(records)) {
+      return [] as GroupInviteDeliveryTarget[];
+    }
+
+    return records.filter(
+      (record): record is GroupInviteDeliveryTarget =>
+        Boolean(
+          record &&
+            typeof record.conversationId === "string" &&
+            typeof record.conversationPath === "string" &&
+            typeof record.conversationTitle === "string" &&
+            typeof record.deliveredAt === "string",
+        ),
+    );
+  } catch {
+    return [] as GroupInviteDeliveryTarget[];
+  }
 }
 
 export function readGroupInviteReopenRecords(groupId: string) {
@@ -196,6 +246,41 @@ export function writeGroupInviteReopenRecord(
   return nextState[groupId];
 }
 
+function writeGroupInviteDeliveryTarget(
+  groupId: string,
+  input: {
+    conversationId: string;
+    conversationPath: string;
+    conversationTitle: string;
+  },
+) {
+  if (typeof window === "undefined") {
+    return [] as GroupInviteDeliveryTarget[];
+  }
+
+  const nextRecord: GroupInviteDeliveryTarget = {
+    conversationId: input.conversationId,
+    conversationPath: input.conversationPath,
+    conversationTitle: input.conversationTitle,
+    deliveredAt: new Date().toISOString(),
+  };
+  const nextState = readAllGroupInviteDeliveryTargets();
+  const currentRecords = nextState[groupId] ?? [];
+
+  nextState[groupId] = [
+    nextRecord,
+    ...currentRecords.filter(
+      (record) => record.conversationPath !== nextRecord.conversationPath,
+    ),
+  ].slice(0, 6);
+  window.localStorage.setItem(
+    GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY,
+    JSON.stringify(nextState),
+  );
+
+  return nextState[groupId];
+}
+
 function readAllGroupInviteReopenRecords() {
   if (typeof window === "undefined") {
     return {} as Record<string, GroupInviteReopenRecord[]>;
@@ -213,6 +298,30 @@ function readAllGroupInviteReopenRecords() {
       : ({} as Record<string, GroupInviteReopenRecord[]>);
   } catch {
     return {} as Record<string, GroupInviteReopenRecord[]>;
+  }
+}
+
+function readAllGroupInviteDeliveryTargets() {
+  if (typeof window === "undefined") {
+    return {} as Record<string, GroupInviteDeliveryTarget[]>;
+  }
+
+  const raw = window.localStorage.getItem(
+    GROUP_INVITE_DELIVERY_TARGETS_STORAGE_KEY,
+  );
+  if (!raw) {
+    return {} as Record<string, GroupInviteDeliveryTarget[]>;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      raw,
+    ) as Record<string, GroupInviteDeliveryTarget[]>;
+    return parsed && typeof parsed === "object"
+      ? parsed
+      : ({} as Record<string, GroupInviteDeliveryTarget[]>);
+  } catch {
+    return {} as Record<string, GroupInviteDeliveryTarget[]>;
   }
 }
 
