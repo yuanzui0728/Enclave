@@ -22,6 +22,11 @@ const CharacterFactoryPage = lazy(async () => {
   return { default: mod.CharacterFactoryPage };
 });
 
+const CharacterRuntimePage = lazy(async () => {
+  const mod = await import("./routes/character-runtime-page");
+  return { default: mod.CharacterRuntimePage };
+});
+
 const EvalsPage = lazy(async () => {
   const mod = await import("./routes/evals-page");
   return { default: mod.EvalsPage };
@@ -65,6 +70,12 @@ const characterFactoryRoute = createRoute({
   component: CharacterFactoryPage,
 });
 
+const characterRuntimeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/characters/$characterId/runtime",
+  component: CharacterRuntimePage,
+});
+
 const evalsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/evals",
@@ -88,6 +99,7 @@ const routeTree = rootRoute.addChildren([
   charactersRoute,
   characterEditorRoute,
   characterFactoryRoute,
+  characterRuntimeRoute,
   evalsRoute,
   replyLogicRoute,
   setupRoute,

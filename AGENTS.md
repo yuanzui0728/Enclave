@@ -46,6 +46,7 @@
 - `games-page.tsx`：桌面端游戏中心一级入口；移动端复用为发现页内“游戏”二级页
 - `mini-programs-page.tsx`：桌面端小程序面板一级入口；移动端复用为发现页内“小程序”二级页
 - `starred-friends-page.tsx`：星标朋友页，移动端承载通讯录内“星标朋友”入口，桌面端承载双栏星标好友工作区
+- `group-contacts-page.tsx`：群聊列表页，移动端承载通讯录内“群聊”入口，桌面端承载已保存群聊工作区
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
 - `official-account-detail-page.tsx`：公众号主页，承载账号资料、关注状态与最近文章列表
 - `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端复用工作区阅读面板
@@ -139,6 +140,7 @@
   - `PATCH /api/conversations/:id/background`
   - `DELETE /api/conversations/:id/background`
   - `PATCH /api/groups/:id`
+  - `GET /api/groups/saved`
   - `GET /api/groups/:id/background`
   - `PATCH /api/groups/:id/background`
   - `DELETE /api/groups/:id/background`
@@ -190,6 +192,8 @@
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
+- `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、已发布版本、字段映射与版本记录
+- `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、生活状态、记忆摘要与叙事进度，并直接修改运行时字段
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
