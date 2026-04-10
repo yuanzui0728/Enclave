@@ -16,6 +16,9 @@ export function ContactIndexList({
 }) {
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const gesturePointerIdRef = useRef<number | null>(null);
+  const gesturePointerTypeRef = useRef<string | null>(null);
+  const gestureStartYRef = useRef<number | null>(null);
+  const gestureActiveRef = useRef(false);
   const lastGestureKeyRef = useRef<string | null>(null);
   const suppressClickRef = useRef(false);
 
@@ -56,6 +59,9 @@ export function ContactIndexList({
 
   const finishGesture = () => {
     gesturePointerIdRef.current = null;
+    gesturePointerTypeRef.current = null;
+    gestureStartYRef.current = null;
+    gestureActiveRef.current = false;
     lastGestureKeyRef.current = null;
     onGestureActiveChange?.(false);
   };
@@ -67,19 +73,37 @@ export function ContactIndexList({
         className,
       )}
       onPointerDown={(event) => {
-        if (event.pointerType === "mouse") {
-          return;
+        gesturePointerIdRef.current = event.pointerId;
+        gesturePointerTypeRef.current = event.pointerType;
+        gestureStartYRef.current = event.clientY;
+        gestureActiveRef.current = event.pointerType !== "mouse";
+
+        if (gestureActiveRef.current) {
+          suppressClickRef.current = true;
+          onGestureActiveChange?.(true);
+          handleGestureSelect(event.clientY);
         }
 
-        gesturePointerIdRef.current = event.pointerId;
-        suppressClickRef.current = true;
-        onGestureActiveChange?.(true);
-        handleGestureSelect(event.clientY);
+        event.currentTarget.setPointerCapture(event.pointerId);
         event.preventDefault();
       }}
       onPointerMove={(event) => {
         if (gesturePointerIdRef.current !== event.pointerId) {
           return;
+        }
+
+        if (!gestureActiveRef.current) {
+          if (
+            gesturePointerTypeRef.current === "mouse" &&
+            gestureStartYRef.current !== null &&
+            Math.abs(event.clientY - gestureStartYRef.current) < 4
+          ) {
+            return;
+          }
+
+          gestureActiveRef.current = true;
+          suppressClickRef.current = true;
+          onGestureActiveChange?.(true);
         }
 
         handleGestureSelect(event.clientY);
@@ -90,11 +114,26 @@ export function ContactIndexList({
           return;
         }
 
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+
+        if (!gestureActiveRef.current) {
+          gesturePointerIdRef.current = null;
+          gesturePointerTypeRef.current = null;
+          gestureStartYRef.current = null;
+          return;
+        }
+
         finishGesture();
       }}
       onPointerCancel={(event) => {
         if (gesturePointerIdRef.current !== event.pointerId) {
           return;
+        }
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
         }
 
         finishGesture();
