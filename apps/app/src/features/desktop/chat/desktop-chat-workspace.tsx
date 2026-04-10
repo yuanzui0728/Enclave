@@ -71,7 +71,10 @@ import { buildSearchRouteHash } from "../../search/search-route-state";
 import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
-import { ChatReminderSummaryText } from "../../chat/chat-reminder-summary-text";
+import {
+  ChatReminderCountText,
+  ChatReminderSummaryText,
+} from "../../chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../../chat/use-message-reminders";
 import {
   splitChatTextSegments,
@@ -856,7 +859,7 @@ export function DesktopChatWorkspace({
                                     className="flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)]"
                                     aria-expanded={!collapsed}
                                   >
-                                    <span>{group.count} 条</span>
+                                    <ChatReminderCountText count={group.count} />
                                     <span>{collapsed ? "展开" : "收起"}</span>
                                     {collapsed ? (
                                       <ChevronRight size={12} />
@@ -881,7 +884,7 @@ export function DesktopChatWorkspace({
                                   {group.title}
                                 </span>
                                 <span className="text-[10px] text-[color:var(--text-dim)]">
-                                  {group.count} 条
+                                  <ChatReminderCountText count={group.count} />
                                 </span>
                               </div>
                             )}

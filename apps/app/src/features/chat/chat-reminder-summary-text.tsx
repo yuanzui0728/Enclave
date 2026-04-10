@@ -1,36 +1,46 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@yinjie/ui";
 
+type ChatReminderFadeTextProps = {
+  text: string;
+  className?: string;
+};
+
 type ChatReminderSummaryTextProps = {
   summary: string;
   className?: string;
 };
 
+type ChatReminderCountTextProps = {
+  count: number;
+  className?: string;
+};
+
 const SUMMARY_FADE_OUT_MS = 120;
 
-export function ChatReminderSummaryText({
-  summary,
+export function ChatReminderFadeText({
+  text,
   className,
-}: ChatReminderSummaryTextProps) {
-  const [displaySummary, setDisplaySummary] = useState(summary);
+}: ChatReminderFadeTextProps) {
+  const [displayText, setDisplayText] = useState(text);
   const [visible, setVisible] = useState(true);
-  const latestSummaryRef = useRef(summary);
+  const latestTextRef = useRef(text);
 
   useEffect(() => {
-    if (summary === latestSummaryRef.current) {
+    if (text === latestTextRef.current) {
       return;
     }
 
-    latestSummaryRef.current = summary;
+    latestTextRef.current = text;
     setVisible(false);
 
     const timer = window.setTimeout(() => {
-      setDisplaySummary(summary);
+      setDisplayText(text);
       setVisible(true);
     }, SUMMARY_FADE_OUT_MS);
 
     return () => window.clearTimeout(timer);
-  }, [summary]);
+  }, [text]);
 
   return (
     <span
@@ -40,7 +50,21 @@ export function ChatReminderSummaryText({
         className,
       )}
     >
-      {displaySummary}
+      {displayText}
     </span>
   );
+}
+
+export function ChatReminderSummaryText({
+  summary,
+  className,
+}: ChatReminderSummaryTextProps) {
+  return <ChatReminderFadeText text={summary} className={className} />;
+}
+
+export function ChatReminderCountText({
+  count,
+  className,
+}: ChatReminderCountTextProps) {
+  return <ChatReminderFadeText text={`${count} 条`} className={className} />;
 }

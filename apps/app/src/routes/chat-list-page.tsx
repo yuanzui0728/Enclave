@@ -59,7 +59,10 @@ import {
   isChatReminderGroupClearable,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
-import { ChatReminderSummaryText } from "../features/chat/chat-reminder-summary-text";
+import {
+  ChatReminderCountText,
+  ChatReminderSummaryText,
+} from "../features/chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
@@ -652,7 +655,7 @@ function MobileChatListPage() {
                               className="flex items-center gap-1.5 text-[11px] text-[#8c8c8c]"
                               aria-expanded={!collapsed}
                             >
-                              <span>{group.count} 条</span>
+                              <ChatReminderCountText count={group.count} />
                               <span>{collapsed ? "展开" : "收起"}</span>
                               {collapsed ? (
                                 <ChevronRight size={13} />
@@ -679,7 +682,7 @@ function MobileChatListPage() {
                             </span>
                           </div>
                           <div className="text-[11px] text-[#8c8c8c]">
-                            {group.count} 条
+                            <ChatReminderCountText count={group.count} />
                           </div>
                         </div>
                       )}
