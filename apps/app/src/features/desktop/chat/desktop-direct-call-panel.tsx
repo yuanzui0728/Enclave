@@ -20,7 +20,7 @@ type DesktopDirectCallPanelProps = {
   inviteNoticePending?: boolean;
   onClose: () => void;
   onOpenMobileHandoff: () => void;
-  onSendInviteNotice: () => void;
+  onSendInviteNotice: (status: { remoteJoined: boolean }) => void;
 };
 
 export function DesktopDirectCallPanel({
@@ -134,7 +134,7 @@ export function DesktopDirectCallPanel({
           <Button
             type="button"
             variant="primary"
-            onClick={onSendInviteNotice}
+            onClick={() => onSendInviteNotice({ remoteJoined })}
             disabled={inviteNoticePending}
             className="rounded-full"
           >
