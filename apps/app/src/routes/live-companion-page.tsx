@@ -499,6 +499,8 @@ export function LiveCompanionPage() {
                           coverHook:
                             current.coverHook.trim() ||
                             createCoverHookFromPost(post),
+                          referencePostAuthorName: post.authorName,
+                          referencePostId: post.id,
                         }));
                         setNotice("已把这条视频号内容带入直播准备草稿。");
                         setError(null);

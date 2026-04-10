@@ -2,6 +2,8 @@ export type LiveDraft = {
   title: string;
   topic: string;
   coverHook: string;
+  referencePostAuthorName: string | null;
+  referencePostId: string | null;
   quality: "standard" | "hd" | "ultra";
   mode: "solo" | "product" | "story";
   syncComments: boolean;
@@ -28,6 +30,8 @@ export const defaultLiveDraft: LiveDraft = {
   title: "",
   topic: "",
   coverHook: "",
+  referencePostAuthorName: null,
+  referencePostId: null,
   quality: "hd",
   mode: "solo",
   syncComments: true,
@@ -50,6 +54,14 @@ export function readLiveDraft() {
       title: typeof parsed.title === "string" ? parsed.title : "",
       topic: typeof parsed.topic === "string" ? parsed.topic : "",
       coverHook: typeof parsed.coverHook === "string" ? parsed.coverHook : "",
+      referencePostAuthorName:
+        typeof parsed.referencePostAuthorName === "string"
+          ? parsed.referencePostAuthorName
+          : null,
+      referencePostId:
+        typeof parsed.referencePostId === "string"
+          ? parsed.referencePostId
+          : null,
       quality: isLiveQuality(parsed.quality) ? parsed.quality : "hd",
       mode: isLiveMode(parsed.mode) ? parsed.mode : "solo",
       syncComments:
@@ -125,6 +137,7 @@ export function startLocalLiveSession(input: {
     id: `live-session-${Date.now()}`,
     title: input.draft.title.trim(),
     topic: input.draft.topic.trim(),
+    channelPostId: input.draft.referencePostId ?? undefined,
     quality: input.draft.quality,
     mode: input.draft.mode,
     startedAt: new Date().toISOString(),

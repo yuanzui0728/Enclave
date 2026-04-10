@@ -11,6 +11,7 @@ import {
 } from "@yinjie/ui";
 import {
   Bookmark,
+  Clapperboard,
   MessageCircleMore,
   PlaySquare,
   RadioTower,
@@ -19,6 +20,12 @@ import {
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import {
+  readLiveDraft,
+  readLiveHistory,
+  type LiveDraft,
+  type LiveSessionRecord,
+} from "./live-companion-storage";
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopChannelsWorkspaceProps = {
@@ -54,6 +61,10 @@ export function DesktopChannelsWorkspace({
 }: DesktopChannelsWorkspaceProps) {
   const navigate = useNavigate();
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [liveDraft, setLiveDraft] = useState<LiveDraft>(() => readLiveDraft());
+  const [liveHistory, setLiveHistory] = useState<LiveSessionRecord[]>(() =>
+    readLiveHistory(),
+  );
 
   useEffect(() => {
     if (!posts.length) {
@@ -66,8 +77,39 @@ export function DesktopChannelsWorkspace({
     }
   }, [posts, selectedPostId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncLiveCompanionState = () => {
+      setLiveDraft(readLiveDraft());
+      setLiveHistory(readLiveHistory());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncLiveCompanionState();
+      }
+    };
+
+    window.addEventListener("focus", syncLiveCompanionState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", syncLiveCompanionState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   const selectedPost =
     posts.find((post) => post.id === selectedPostId) ?? posts[0] ?? null;
+  const activeLiveSession =
+    liveHistory.find((item) => item.status === "live") ?? null;
+  const liveCompanionReferencePostId =
+    activeLiveSession?.channelPostId ?? liveDraft.referencePostId;
+  const liveCompanionReferencePost =
+    posts.find((post) => post.id === liveCompanionReferencePostId) ?? null;
   const nextPosts = useMemo(
     () => posts.filter((post) => post.id !== selectedPost?.id),
     [posts, selectedPost?.id],
@@ -117,13 +159,16 @@ export function DesktopChannelsWorkspace({
             视频号
           </div>
           <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-            桌面版按微信频道工作区组织 AI 生成短视频，左边浏览，右边持续接住评论和下一条推荐。
+            桌面版按微信频道工作区组织 AI
+            生成短视频，左边浏览，右边持续接住评论和下一条推荐。
           </div>
         </div>
 
         <div className="space-y-4 overflow-auto px-4 py-4">
           <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-            <div className="text-xs text-[color:var(--text-muted)]">当前节奏</div>
+            <div className="text-xs text-[color:var(--text-muted)]">
+              当前节奏
+            </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
               推荐流 {posts.length} 条
             </div>
@@ -147,6 +192,68 @@ export function DesktopChannelsWorkspace({
               >
                 <RadioTower size={14} />
                 直播伴侣
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                直播伴侣状态
+              </div>
+              <Clapperboard
+                size={16}
+                className="text-[color:var(--brand-primary)]"
+              />
+            </div>
+            <div className="mt-2 text-sm leading-6 text-[color:var(--text-primary)]">
+              {activeLiveSession?.title ||
+                liveDraft.title.trim() ||
+                "还没有直播准备稿"}
+            </div>
+            <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
+              {activeLiveSession
+                ? `直播中 · ${resolveLiveModeLabel(activeLiveSession.mode)} · ${resolveLiveQualityLabel(activeLiveSession.quality)}`
+                : liveDraft.title.trim()
+                  ? `准备中 · ${resolveLiveModeLabel(liveDraft.mode)} · ${resolveLiveQualityLabel(liveDraft.quality)}`
+                  : "从直播伴侣挑一条内容后，这里会回带当前准备状态。"}
+            </div>
+            {liveCompanionReferencePost ? (
+              <div className="mt-3 rounded-[18px] bg-[rgba(255,248,239,0.72)] px-3 py-3">
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                  当前参考内容
+                </div>
+                <div className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
+                  {liveCompanionReferencePost.text}
+                </div>
+                <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                  {liveCompanionReferencePost.authorName} ·{" "}
+                  {formatTimestamp(liveCompanionReferencePost.createdAt)}
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  void navigate({ to: "/desktop/channels/live-companion" })
+                }
+              >
+                <RadioTower size={14} />
+                打开伴侣
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!liveCompanionReferencePost}
+                onClick={() => {
+                  if (liveCompanionReferencePost) {
+                    setSelectedPostId(liveCompanionReferencePost.id);
+                  }
+                }}
+              >
+                定位参考内容
               </Button>
             </div>
           </div>
@@ -219,6 +326,14 @@ export function DesktopChannelsWorkspace({
                     <span>{post.authorName}</span>
                     <span>·</span>
                     <span>{formatTimestamp(post.createdAt)}</span>
+                    {post.id === liveCompanionReferencePostId ? (
+                      <>
+                        <span>·</span>
+                        <span className="rounded-full bg-[rgba(249,115,22,0.10)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                          直播参考
+                        </span>
+                      </>
+                    ) : null}
                   </div>
                 </button>
               ))}
@@ -293,7 +408,8 @@ export function DesktopChannelsWorkspace({
                             {selectedPost.authorName}
                           </div>
                           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                            {formatTimestamp(selectedPost.createdAt)} · AI 世界内容
+                            {formatTimestamp(selectedPost.createdAt)} · AI
+                            世界内容
                           </div>
                         </div>
                       </div>
@@ -381,7 +497,10 @@ export function DesktopChannelsWorkspace({
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 当前内容
               </div>
-              <PlaySquare size={16} className="text-[color:var(--brand-primary)]" />
+              <PlaySquare
+                size={16}
+                className="text-[color:var(--brand-primary)]"
+              />
             </div>
             {selectedPost ? (
               <>
@@ -448,4 +567,32 @@ export function DesktopChannelsWorkspace({
       </aside>
     </div>
   );
+}
+
+function resolveLiveModeLabel(
+  mode: LiveDraft["mode"] | LiveSessionRecord["mode"],
+) {
+  if (mode === "product") {
+    return "产品讲解";
+  }
+
+  if (mode === "story") {
+    return "剧情陪看";
+  }
+
+  return "单人控台";
+}
+
+function resolveLiveQualityLabel(
+  quality: LiveDraft["quality"] | LiveSessionRecord["quality"],
+) {
+  if (quality === "standard") {
+    return "标准";
+  }
+
+  if (quality === "ultra") {
+    return "超清";
+  }
+
+  return "高清";
 }
