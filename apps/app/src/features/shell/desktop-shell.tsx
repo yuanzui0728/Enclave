@@ -231,10 +231,6 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
             </div>
 
-            <div className="hidden min-w-0 items-center gap-2 rounded-full border border-[rgba(16,185,129,0.24)] bg-[rgba(240,253,248,0.88)] px-3 py-2 text-xs xl:flex">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.50)]" />
-              <span className="truncate font-medium text-emerald-700">远程世界连接顺畅</span>
-            </div>
           </div>
 
           {nativeDesktopShell ? (
@@ -277,13 +273,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 <X size={14} strokeWidth={1.9} />
               </DesktopWindowButton>
             </div>
-          ) : (
-            <div className="hidden items-center gap-2 xl:flex">
-              <div className="rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.84)] px-3 py-2 text-xs text-[color:var(--text-secondary)]">
-                浏览器桌面布局
-              </div>
-            </div>
-          )}
+          ) : null}
         </header>
 
         <div className="relative z-10 flex min-h-0 flex-1 gap-4 p-4 pt-3">
