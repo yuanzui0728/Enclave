@@ -71,8 +71,8 @@ export function ChatMessageList({
               className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
                 isDesktop
                   ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
-                  : "border border-white/70 bg-white/82 shadow-[var(--shadow-soft)]"
-              } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.42)] ring-offset-2 ring-offset-transparent" : ""}`}
+                  : "border border-black/5 bg-[rgba(255,255,255,0.82)] shadow-none"
+              } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
               tone="muted"
             >
               {message.text}
@@ -84,9 +84,9 @@ export function ChatMessageList({
           <div
             key={message.id}
             id={`chat-message-${message.id}`}
-            className={`space-y-1.5 rounded-[24px] px-2 py-2 transition-[background-color,box-shadow] duration-300 ${
+            className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
               isHighlighted
-                ? "bg-[rgba(255,224,120,0.18)] shadow-[0_0_0_1px_rgba(255,191,0,0.18)]"
+                ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
                 : ""
             }`}
           >
@@ -136,10 +136,10 @@ export function ChatMessageList({
                       isUser
                         ? isDesktop
                           ? "bg-[var(--brand-gradient)] text-white shadow-[var(--shadow-soft)]"
-                          : "bg-[linear-gradient(135deg,rgba(251,191,36,0.96),rgba(249,115,22,0.90))] text-white [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-[var(--shadow-soft)]"
+                          : "bg-[#95ec69] text-[#111827] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                         : isDesktop
                           ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
-                          : "border border-[rgba(255,240,220,0.80)] bg-[rgba(255,253,248,0.92)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                          : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
                     }`}
                   >
                     {message.text}
@@ -179,7 +179,7 @@ function ImageMessage({
       src={url}
       alt={label}
       onError={() => setLoadFailed(true)}
-      className="rounded-[22px] border border-white/75 bg-white/80 object-cover shadow-[var(--shadow-soft)]"
+      className="rounded-[18px] border border-black/5 bg-white object-cover shadow-none"
       style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
       loading="lazy"
     />
@@ -192,7 +192,7 @@ function ContactCardMessage({
   attachment: Extract<MessageAttachment, { kind: "contact_card" }>;
 }) {
   return (
-    <div className="w-[220px] rounded-[22px] border border-white/80 bg-white/92 p-3 shadow-[var(--shadow-soft)]">
+    <div className="w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-3">
         <AvatarChip
           name={attachment.name}
@@ -226,7 +226,7 @@ function FileAttachmentMessage({
       href={attachment.url}
       target="_blank"
       rel="noreferrer"
-      className="block w-[220px] rounded-[22px] border border-white/80 bg-white/92 p-3 shadow-[var(--shadow-soft)] transition-colors hover:bg-white"
+      className="block w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none transition-colors hover:bg-[#fafafa]"
     >
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,rgba(196,181,253,0.25),rgba(129,140,248,0.2))] text-[color:var(--brand-primary)]">
@@ -254,7 +254,7 @@ function LocationCardMessage({
   attachment: Extract<MessageAttachment, { kind: "location_card" }>;
 }) {
   return (
-    <div className="w-[220px] rounded-[22px] border border-white/80 bg-white/92 p-3 shadow-[var(--shadow-soft)]">
+    <div className="w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
         <MapPin size={12} />
         <span>位置</span>
@@ -295,7 +295,7 @@ function StickerMessage({
       src={url}
       alt={label}
       onError={() => setLoadFailed(true)}
-      className="rounded-[22px] bg-white/70 object-contain shadow-[var(--shadow-soft)]"
+      className="rounded-[18px] bg-white/70 object-contain shadow-none"
       style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
       loading="lazy"
     />
