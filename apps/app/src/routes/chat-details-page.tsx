@@ -21,10 +21,6 @@ import { useConversationBackground } from "../features/chat/backgrounds/use-conv
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
-import {
-  readDirectChatDetailPreferences,
-  writeDirectChatDetailPreferences,
-} from "../features/chat-details/chat-detail-preferences";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -40,18 +36,10 @@ export function ChatDetailsPage() {
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const [notice, setNotice] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState(() =>
-    readDirectChatDetailPreferences(conversationId),
-  );
 
   useEffect(() => {
-    setPreferences(readDirectChatDetailPreferences(conversationId));
     setNotice(null);
   }, [conversationId]);
-
-  useEffect(() => {
-    writeDirectChatDetailPreferences(conversationId, preferences);
-  }, [conversationId, preferences]);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -335,13 +323,11 @@ export function ChatDetailsPage() {
               />
               <ChatSettingRow
                 label="强提醒"
-                checked={preferences.strongReminder}
-                onToggle={(checked) => {
-                  setPreferences((current) => ({
-                    ...current,
-                    strongReminder: checked,
-                  }));
-                  setNotice(checked ? "已开启强提醒。" : "已关闭强提醒。");
+                value="待接入"
+                onClick={() => {
+                  setNotice(
+                    "强提醒待接真实通知链路，当前先保留微信式入口。",
+                  );
                 }}
               />
             </div>
