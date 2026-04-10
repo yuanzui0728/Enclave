@@ -269,7 +269,11 @@ export function ConversationThreadPanel({
 
           <ChatMessageList
             messages={renderedMessages}
-            threadContext={{ id: conversationId, type: "direct" }}
+            threadContext={{
+              id: conversationId,
+              type: "direct",
+              title: conversationTitle,
+            }}
             groupMode={conversationType === "group"}
             variant={isDesktop ? "desktop" : "mobile"}
             highlightedMessageId={highlightedMessageId}
@@ -286,7 +290,6 @@ export function ConversationThreadPanel({
               ) : null
             }
           />
-
         </div>
       </div>
 

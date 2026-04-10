@@ -92,6 +92,7 @@ type ChatMessageListProps = {
   threadContext?: {
     id: string;
     type: "direct" | "group";
+    title?: string;
   };
   groupMode?: boolean;
   showGroupMemberNicknames?: boolean;
@@ -806,6 +807,10 @@ export function ChatMessageList({
     const nextState = upsertLocalChatMessageReminder({
       messageId: reminderTargetMessage.id,
       remindAt: option.remindAt,
+      threadId: threadContext?.id ?? "",
+      threadType: threadContext?.type ?? "direct",
+      threadTitle: threadContext?.title,
+      previewText: buildClipboardText(reminderTargetMessage),
     });
     setMessageReminders(nextState.reminders);
     setReminderTargetMessage(null);
@@ -910,8 +915,13 @@ export function ChatMessageList({
       {selectionMode ? (
         isDesktop ? (
           <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[20px] border border-black/6 bg-white/92 px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur">
-            <div className="text-sm text-[color:var(--text-primary)]">
-              已选择 {selectedMessageIds.length} 条消息
+            <div>
+              <div className="text-sm text-[color:var(--text-primary)]">
+                已选择 {selectedMessageIds.length} 条消息
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                `Shift + 点击` 可连续选择消息
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -1022,7 +1032,12 @@ export function ChatMessageList({
               id={`chat-message-${message.id}`}
               onClick={
                 selectionMode
-                  ? () => {
+                  ? (event) => {
+                      if (isDesktop && event.shiftKey) {
+                        selectMessageRangeTo(message.id);
+                        return;
+                      }
+
                       toggleSelectedMessage(message.id);
                     }
                   : undefined
@@ -1284,8 +1299,7 @@ export function ChatMessageList({
             : undefined
         }
         reminderLabel={
-          mobileActionMessage &&
-          messageReminderMap.has(mobileActionMessage.id)
+          mobileActionMessage && messageReminderMap.has(mobileActionMessage.id)
             ? "取消提醒"
             : "提醒"
         }
@@ -1751,6 +1765,7 @@ function canRecallMessage(
   threadContext?: {
     id: string;
     type: "direct" | "group";
+    title?: string;
   },
 ) {
   return Boolean(

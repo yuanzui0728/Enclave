@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export type LocalChatMessageActionState = {
   hiddenMessageIds: string[];
   recalledMessageIds: string[];
@@ -7,9 +9,14 @@ export type LocalChatMessageActionState = {
 export type LocalChatMessageReminderRecord = {
   messageId: string;
   remindAt: string;
+  threadId: string;
+  threadType: "direct" | "group";
+  threadTitle?: string;
+  previewText?: string;
 };
 
 const STORAGE_KEY = "yinjie-chat-local-message-actions";
+const CHANGE_EVENT = "yinjie-chat-local-message-actions-change";
 
 const EMPTY_STATE: LocalChatMessageActionState = {
   hiddenMessageIds: [],
@@ -98,12 +105,65 @@ export function removeLocalChatMessageReminder(messageId: string) {
   return nextState;
 }
 
+export function useLocalChatMessageActionState() {
+  const [state, setState] = useState(() => readLocalChatMessageActionState());
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncState = () => {
+      setState(readLocalChatMessageActionState());
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncState();
+      }
+    };
+
+    window.addEventListener("focus", syncState);
+    window.addEventListener("storage", syncState);
+    window.addEventListener(CHANGE_EVENT, syncState);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", syncState);
+      window.removeEventListener("storage", syncState);
+      window.removeEventListener(CHANGE_EVENT, syncState);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  return state;
+}
+
+export function shouldHideSearchableChatMessage(
+  messageId: string,
+  state: LocalChatMessageActionState,
+) {
+  return (
+    state.hiddenMessageIds.includes(messageId) ||
+    state.recalledMessageIds.includes(messageId)
+  );
+}
+
+export function filterSearchableChatMessages<T extends { id: string }>(
+  messages: T[],
+  state: LocalChatMessageActionState,
+) {
+  return messages.filter(
+    (message) => !shouldHideSearchableChatMessage(message.id, state),
+  );
+}
+
 function writeState(state: LocalChatMessageActionState) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
 function normalizeState(
@@ -136,16 +196,29 @@ function normalizeReminderList(input: unknown) {
       typeof item === "object" &&
       item !== null &&
       typeof item.messageId === "string" &&
-      typeof item.remindAt === "string",
+      typeof item.remindAt === "string" &&
+      typeof item.threadId === "string" &&
+      (item.threadType === "direct" || item.threadType === "group"),
   );
 
   const seenMessageIds = new Set<string>();
-  return reminders.filter((item) => {
-    if (seenMessageIds.has(item.messageId)) {
-      return false;
-    }
+  return reminders
+    .filter((item) => {
+      if (seenMessageIds.has(item.messageId)) {
+        return false;
+      }
 
-    seenMessageIds.add(item.messageId);
-    return true;
-  });
+      seenMessageIds.add(item.messageId);
+      return true;
+    })
+    .map((item) => ({
+      messageId: item.messageId,
+      remindAt: item.remindAt,
+      threadId: item.threadId,
+      threadType: item.threadType,
+      threadTitle:
+        typeof item.threadTitle === "string" ? item.threadTitle : undefined,
+      previewText:
+        typeof item.previewText === "string" ? item.previewText : undefined,
+    }));
 }
