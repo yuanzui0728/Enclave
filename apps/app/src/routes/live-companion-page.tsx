@@ -11,6 +11,7 @@ import {
   AlertCircle,
   BadgeCheck,
   Clapperboard,
+  Copy,
   MonitorUp,
   RadioTower,
   RefreshCcw,
@@ -27,47 +28,25 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import {
+  defaultLiveDraft,
+  endLocalLiveSession,
+  readLiveDraft,
+  readLiveHistory,
+  startLocalLiveSession,
+  writeLiveDraft,
+  type LiveDraft,
+  type LiveSessionRecord,
+} from "../features/desktop/channels/live-companion-storage";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import {
+  pushMobileHandoffRecord,
+  resolveMobileHandoffLink,
+} from "../features/shell/mobile-handoff-storage";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
-
-type LiveDraft = {
-  title: string;
-  topic: string;
-  coverHook: string;
-  quality: "standard" | "hd" | "ultra";
-  mode: "solo" | "product" | "story";
-  syncComments: boolean;
-  autoClip: boolean;
-};
-
-type LiveSessionRecord = {
-  id: string;
-  title: string;
-  topic: string;
-  quality: LiveDraft["quality"];
-  mode: LiveDraft["mode"];
-  startedAt: string;
-  endedAt?: string;
-  status: "live" | "ended";
-  channelPostId?: string;
-};
-
-const LIVE_DRAFT_STORAGE_KEY = "yinjie-desktop-live-companion-draft";
-const LIVE_HISTORY_STORAGE_KEY = "yinjie-desktop-live-companion-history";
-const MAX_LIVE_HISTORY = 12;
-
-const defaultDraft: LiveDraft = {
-  title: "",
-  topic: "",
-  coverHook: "",
-  quality: "hd",
-  mode: "solo",
-  syncComments: true,
-  autoClip: true,
-};
 
 export function LiveCompanionPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -134,6 +113,36 @@ export function LiveCompanionPage() {
     ],
   );
   const passedCheckCount = preflightChecks.filter((item) => item.passed).length;
+
+  async function copyLiveToMobile(input: {
+    description: string;
+    label: string;
+  }) {
+    const path = "/tabs/channels";
+    const link = resolveMobileHandoffLink(path);
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setError("当前环境暂不支持复制到手机。");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(link);
+      pushMobileHandoffRecord({
+        description: input.description,
+        label: input.label,
+        path,
+      });
+      setError(null);
+      setNotice(`${input.label} 已复制，可发到手机继续。`);
+    } catch {
+      setError("复制到手机失败，请稍后重试。");
+    }
+  }
 
   if (!isDesktopLayout) {
     return null;
@@ -344,8 +353,8 @@ export function LiveCompanionPage() {
                     type="button"
                     variant="secondary"
                     onClick={() => {
-                      setDraft({ ...defaultDraft });
-                      writeLiveDraft({ ...defaultDraft });
+                      setDraft({ ...defaultLiveDraft });
+                      writeLiveDraft({ ...defaultLiveDraft });
                       setNotice("直播准备草稿已清空。");
                       setError(null);
                     }}
@@ -353,6 +362,23 @@ export function LiveCompanionPage() {
                   >
                     <RefreshCcw size={15} />
                     清空准备
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={!draft.title.trim()}
+                    onClick={() =>
+                      void copyLiveToMobile({
+                        description: draft.topic.trim()
+                          ? `${draft.title} · ${draft.topic}`
+                          : `${draft.title}，切到手机继续处理视频号直播准备。`,
+                        label: draft.title.trim() || "直播准备",
+                      })
+                    }
+                    className="rounded-2xl"
+                  >
+                    <Copy size={15} />
+                    发准备到手机
                   </Button>
                 </div>
               </div>
@@ -558,6 +584,26 @@ export function LiveCompanionPage() {
                           <span>下播 {formatTimestamp(item.endedAt)}</span>
                         ) : null}
                       </div>
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            void copyLiveToMobile({
+                              description:
+                                item.status === "live"
+                                  ? `${item.title} 正在直播中，切到手机继续跟进频道表现。`
+                                  : `${item.title} 已结束，切到手机继续跟进视频号内容。`,
+                              label: item.title,
+                            })
+                          }
+                          className="rounded-full"
+                        >
+                          <Copy size={14} />
+                          发到手机继续
+                        </Button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -718,138 +764,6 @@ function MetricCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function readLiveDraft() {
-  if (typeof window === "undefined") {
-    return { ...defaultDraft };
-  }
-
-  const raw = window.localStorage.getItem(LIVE_DRAFT_STORAGE_KEY);
-  if (!raw) {
-    return { ...defaultDraft };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<LiveDraft>;
-    return {
-      title: typeof parsed.title === "string" ? parsed.title : "",
-      topic: typeof parsed.topic === "string" ? parsed.topic : "",
-      coverHook: typeof parsed.coverHook === "string" ? parsed.coverHook : "",
-      quality: isLiveQuality(parsed.quality) ? parsed.quality : "hd",
-      mode: isLiveMode(parsed.mode) ? parsed.mode : "solo",
-      syncComments:
-        typeof parsed.syncComments === "boolean"
-          ? parsed.syncComments
-          : defaultDraft.syncComments,
-      autoClip:
-        typeof parsed.autoClip === "boolean"
-          ? parsed.autoClip
-          : defaultDraft.autoClip,
-    };
-  } catch {
-    return { ...defaultDraft };
-  }
-}
-
-function writeLiveDraft(draft: LiveDraft) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-}
-
-function readLiveHistory() {
-  if (typeof window === "undefined") {
-    return [] as LiveSessionRecord[];
-  }
-
-  const raw = window.localStorage.getItem(LIVE_HISTORY_STORAGE_KEY);
-  if (!raw) {
-    return [] as LiveSessionRecord[];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as LiveSessionRecord[];
-    if (!Array.isArray(parsed)) {
-      return [] as LiveSessionRecord[];
-    }
-
-    return parsed.filter(
-      (item) =>
-        typeof item?.id === "string" &&
-        typeof item.title === "string" &&
-        typeof item.topic === "string" &&
-        isLiveQuality(item.quality) &&
-        isLiveMode(item.mode) &&
-        typeof item.startedAt === "string" &&
-        (item.endedAt === undefined || typeof item.endedAt === "string") &&
-        (item.status === "live" || item.status === "ended"),
-    );
-  } catch {
-    return [] as LiveSessionRecord[];
-  }
-}
-
-function writeLiveHistory(history: LiveSessionRecord[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    LIVE_HISTORY_STORAGE_KEY,
-    JSON.stringify(history),
-  );
-}
-
-function startLocalLiveSession({
-  draft,
-  previous,
-}: {
-  draft: LiveDraft;
-  previous: LiveSessionRecord[];
-}) {
-  const nextSession: LiveSessionRecord = {
-    id: `live-session-${Date.now()}`,
-    title: draft.title.trim(),
-    topic: draft.topic.trim(),
-    quality: draft.quality,
-    mode: draft.mode,
-    startedAt: new Date().toISOString(),
-    status: "live",
-  };
-  const nextHistory = [
-    nextSession,
-    ...previous.map((item) =>
-      item.status === "live"
-        ? {
-            ...item,
-            status: "ended" as const,
-            endedAt: item.endedAt ?? new Date().toISOString(),
-          }
-        : item,
-    ),
-  ].slice(0, MAX_LIVE_HISTORY);
-
-  writeLiveHistory(nextHistory);
-  return nextHistory;
-}
-
-function endLocalLiveSession(previous: LiveSessionRecord[]) {
-  const endedAt = new Date().toISOString();
-  const nextHistory = previous.map((item) =>
-    item.status === "live"
-      ? {
-          ...item,
-          status: "ended" as const,
-          endedAt,
-        }
-      : item,
-  );
-
-  writeLiveHistory(nextHistory);
-  return nextHistory;
-}
-
 function createTopicFromPost(post: FeedPostListItem) {
   return post.text.trim().slice(0, 24) || `${post.authorName} 的视频号内容`;
 }
@@ -880,12 +794,4 @@ function resolveQualityLabel(quality: LiveDraft["quality"]) {
   }
 
   return "高清";
-}
-
-function isLiveMode(value: unknown): value is LiveDraft["mode"] {
-  return value === "solo" || value === "product" || value === "story";
-}
-
-function isLiveQuality(value: unknown): value is LiveDraft["quality"] {
-  return value === "standard" || value === "hd" || value === "ultra";
 }

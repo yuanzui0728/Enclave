@@ -14,14 +14,26 @@ import {
   CheckCircle2,
   Copy,
   RefreshCw,
+  RadioTower,
   Smartphone,
   Wifi,
 } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import {
+  readLiveDraft,
+  readLiveHistory,
+  type LiveSessionRecord,
+} from "../features/desktop/channels/live-companion-storage";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import {
+  pushMobileHandoffRecord,
+  readMobileHandoffHistory,
+  resolveMobileHandoffLink,
+  type MobileHandoffRecord,
+} from "../features/shell/mobile-handoff-storage";
 import {
   formatConversationTimestamp,
   formatTimestamp,
@@ -30,23 +42,12 @@ import {
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-type MobileHandoffRecord = {
-  id: string;
-  label: string;
-  description: string;
-  path: string;
-  sentAt: string;
-};
-
 type QuickEntry = {
   id: string;
   label: string;
   description: string;
   to: string;
 };
-
-const MOBILE_HANDOFF_STORAGE_KEY = "yinjie-desktop-mobile-handoff-history";
-const MAX_HANDOFF_RECORDS = 8;
 
 const quickEntries: QuickEntry[] = [
   {
@@ -85,6 +86,10 @@ export function DesktopMobilePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [handoffHistory, setHandoffHistory] = useState<MobileHandoffRecord[]>(
     () => readMobileHandoffHistory(),
+  );
+  const [liveDraft, setLiveDraft] = useState(() => readLiveDraft());
+  const [liveHistory, setLiveHistory] = useState<LiveSessionRecord[]>(() =>
+    readLiveHistory(),
   );
 
   const conversationsQuery = useQuery({
@@ -126,6 +131,8 @@ export function DesktopMobilePage() {
         .slice(0, 4),
     [officialAccountsQuery.data],
   );
+  const activeLiveSession =
+    liveHistory.find((item) => item.status === "live") ?? null;
 
   const syncTimestamp = useMemo(() => {
     const candidates = [
@@ -443,6 +450,131 @@ export function DesktopMobilePage() {
           </div>
 
           <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  <RadioTower
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
+                  <span>直播接力</span>
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  桌面直播伴侣里的准备稿和最近直播记录，会优先从这里发到手机继续跟进。
+                </div>
+              </div>
+              <Link
+                to="/desktop/channels/live-companion"
+                className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+              >
+                打开直播伴侣
+              </Link>
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
+              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  当前直播准备
+                </div>
+                <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                  {liveDraft.title.trim()
+                    ? `${liveDraft.title} · ${liveDraft.topic || "未填写主题"}`
+                    : "直播伴侣里还没有填写准备稿。"}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+                  <span>模式 {resolveLiveModeLabel(liveDraft.mode)}</span>
+                  <span>质量 {resolveLiveQualityLabel(liveDraft.quality)}</span>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    disabled={!liveDraft.title.trim()}
+                    onClick={() =>
+                      void handleCopyHandoff({
+                        description: liveDraft.topic.trim()
+                          ? `${liveDraft.title} · ${liveDraft.topic}`
+                          : `${liveDraft.title}，在手机上继续直播准备与内容导流。`,
+                        label: liveDraft.title.trim() || "直播准备",
+                        path: "/tabs/channels",
+                        setHistory: setHandoffHistory,
+                        setNotice,
+                      })
+                    }
+                    className="rounded-full"
+                  >
+                    <Copy size={14} />
+                    发准备到手机
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => {
+                      const nextLiveDraft = readLiveDraft();
+                      const nextLiveHistory = readLiveHistory();
+                      setLiveDraft(nextLiveDraft);
+                      setLiveHistory(nextLiveHistory);
+                      setNotice(
+                        nextLiveHistory[0]?.title || nextLiveDraft.title.trim()
+                          ? "已刷新直播接力内容。"
+                          : "直播伴侣还没有可同步到手机的内容。",
+                      );
+                    }}
+                    className="rounded-full"
+                  >
+                    <RefreshCw size={14} />
+                    刷新直播状态
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  最近直播状态
+                </div>
+                <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                  {activeLiveSession
+                    ? `${activeLiveSession.title} 正在直播，可在手机端继续关注频道动线。`
+                    : liveHistory[0]
+                      ? `${liveHistory[0].title} 已结束，可在手机端继续做频道跟进。`
+                      : "还没有直播记录。"}
+                </div>
+                <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+                  {activeLiveSession
+                    ? `开播于 ${formatTimestamp(activeLiveSession.startedAt)}`
+                    : liveHistory[0]?.startedAt
+                      ? `最近开播于 ${formatTimestamp(liveHistory[0].startedAt)}`
+                      : "先在直播伴侣里启动一场直播。"}
+                </div>
+                <div className="mt-4">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={!activeLiveSession && !liveHistory[0]}
+                    onClick={() =>
+                      void handleCopyHandoff({
+                        description: activeLiveSession
+                          ? `${activeLiveSession.title} 正在直播中，切到手机端继续查看频道表现。`
+                          : `${liveHistory[0]?.title ?? "最近直播"} 已结束，切到手机端继续跟进频道内容。`,
+                        label:
+                          activeLiveSession?.title ??
+                          liveHistory[0]?.title ??
+                          "最近直播",
+                        path: "/tabs/channels",
+                        setHistory: setHandoffHistory,
+                        setNotice,
+                      })
+                    }
+                    className="rounded-full"
+                  >
+                    <ArrowUpRight size={14} />
+                    发直播状态到手机
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <CheckCircle2
                 size={16}
@@ -609,6 +741,30 @@ function StatusRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function resolveLiveModeLabel(mode: LiveSessionRecord["mode"]) {
+  if (mode === "product") {
+    return "产品讲解";
+  }
+
+  if (mode === "story") {
+    return "剧情陪看";
+  }
+
+  return "单人控台";
+}
+
+function resolveLiveQualityLabel(quality: LiveSessionRecord["quality"]) {
+  if (quality === "standard") {
+    return "标准";
+  }
+
+  if (quality === "ultra") {
+    return "超清";
+  }
+
+  return "高清";
+}
+
 async function handleCopyHandoff({
   description,
   label,
@@ -622,8 +778,7 @@ async function handleCopyHandoff({
   setHistory: Dispatch<SetStateAction<MobileHandoffRecord[]>>;
   setNotice: Dispatch<SetStateAction<string | null>>;
 }) {
-  const link =
-    typeof window === "undefined" ? path : `${window.location.origin}${path}`;
+  const link = resolveMobileHandoffLink(path);
 
   if (
     typeof navigator === "undefined" ||
@@ -636,7 +791,7 @@ async function handleCopyHandoff({
 
   try {
     await navigator.clipboard.writeText(link);
-    const nextHistory = writeMobileHandoffHistory({
+    const nextHistory = pushMobileHandoffRecord({
       description,
       label,
       path,
@@ -646,63 +801,4 @@ async function handleCopyHandoff({
   } catch {
     setNotice("复制失败，请稍后重试。");
   }
-}
-
-function readMobileHandoffHistory() {
-  if (typeof window === "undefined") {
-    return [] as MobileHandoffRecord[];
-  }
-
-  const raw = window.localStorage.getItem(MOBILE_HANDOFF_STORAGE_KEY);
-  if (!raw) {
-    return [] as MobileHandoffRecord[];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as MobileHandoffRecord[];
-    if (!Array.isArray(parsed)) {
-      return [] as MobileHandoffRecord[];
-    }
-
-    return parsed.filter(
-      (item) =>
-        typeof item?.id === "string" &&
-        typeof item?.label === "string" &&
-        typeof item?.description === "string" &&
-        typeof item?.path === "string" &&
-        typeof item?.sentAt === "string",
-    );
-  } catch {
-    return [] as MobileHandoffRecord[];
-  }
-}
-
-function writeMobileHandoffHistory(input: {
-  description: string;
-  label: string;
-  path: string;
-}) {
-  if (typeof window === "undefined") {
-    return [] as MobileHandoffRecord[];
-  }
-
-  const nextRecord: MobileHandoffRecord = {
-    id: `mobile-handoff-${input.path}`,
-    label: input.label,
-    description: input.description,
-    path: input.path,
-    sentAt: new Date().toISOString(),
-  };
-
-  const nextHistory = [
-    nextRecord,
-    ...readMobileHandoffHistory().filter((item) => item.path !== input.path),
-  ].slice(0, MAX_HANDOFF_RECORDS);
-
-  window.localStorage.setItem(
-    MOBILE_HANDOFF_STORAGE_KEY,
-    JSON.stringify(nextHistory),
-  );
-
-  return nextHistory;
 }
