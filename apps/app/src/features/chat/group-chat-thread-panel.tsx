@@ -267,13 +267,21 @@ export function GroupChatThreadPanel({
   });
 
   const sendCallInviteMutation = useMutation({
-    mutationFn: (kind: DesktopChatCallKind) =>
+    mutationFn: (input: {
+      kind: DesktopChatCallKind;
+      activeCount: number;
+      totalCount: number;
+    }) =>
       sendGroupMessage(
         groupId,
         {
           text: buildGroupCallInviteMessage(
-            kind,
+            input.kind,
             groupQuery.data?.name ?? "当前群聊",
+            {
+              activeCount: input.activeCount,
+              totalCount: input.totalCount,
+            },
           ),
         },
         baseUrl,
@@ -798,8 +806,12 @@ export function GroupChatThreadPanel({
                   }),
                 });
               }}
-              onSendInviteNotice={() => {
-                void sendCallInviteMutation.mutateAsync(desktopCallPanelKind);
+              onSendInviteNotice={(counts) => {
+                void sendCallInviteMutation.mutateAsync({
+                  kind: desktopCallPanelKind,
+                  activeCount: counts.activeCount,
+                  totalCount: counts.totalCount,
+                });
               }}
             />
           </div>

@@ -24,7 +24,10 @@ type DesktopGroupCallPanelProps = {
   inviteNoticePending?: boolean;
   onClose: () => void;
   onOpenMobileHandoff: () => void;
-  onSendInviteNotice: () => void;
+  onSendInviteNotice: (counts: {
+    activeCount: number;
+    totalCount: number;
+  }) => void;
 };
 
 export function DesktopGroupCallPanel({
@@ -163,7 +166,12 @@ export function DesktopGroupCallPanel({
           <Button
             type="button"
             variant="primary"
-            onClick={onSendInviteNotice}
+            onClick={() =>
+              onSendInviteNotice({
+                activeCount,
+                totalCount: members.length,
+              })
+            }
             disabled={inviteNoticePending}
             className="rounded-full"
           >
