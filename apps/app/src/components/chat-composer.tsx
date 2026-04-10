@@ -118,7 +118,8 @@ export function ChatComposer({
   const desktopStickerRef = useRef<HTMLDivElement | null>(null);
   const desktopPlusRef = useRef<HTMLDivElement | null>(null);
   const desktopDropDepthRef = useRef(0);
-  const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const desktopInputRef = useRef<HTMLInputElement | null>(null);
+  const mobileTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -150,8 +151,7 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
-  const mobileSpeechMode =
-    !isDesktop && showSpeechEntry && mobileInputMode === "speech";
+  const mobileSpeechMode = !isDesktop && showSpeechEntry && mobileInputMode === "speech";
   const activeMention = useMemo(
     () =>
       isDesktop
@@ -189,13 +189,18 @@ export function ChatComposer({
   }, [activeMention, isDesktop, mentionCandidates]);
   const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
 
+  const getActiveInput = () =>
+    (isDesktop ? desktopInputRef.current : mobileTextareaRef.current) ??
+    desktopInputRef.current ??
+    mobileTextareaRef.current;
+
   const focusInput = () => {
     if (typeof window === "undefined") {
       return;
     }
 
     window.requestAnimationFrame(() => {
-      const input = inputRef.current;
+      const input = getActiveInput();
       if (!input) {
         return;
       }
@@ -207,7 +212,7 @@ export function ChatComposer({
   };
 
   const syncInputCursor = () => {
-    const input = inputRef.current;
+    const input = getActiveInput();
     if (!input) {
       return;
     }
@@ -265,7 +270,7 @@ export function ChatComposer({
       return;
     }
 
-    const input = inputRef.current;
+    const input = mobileTextareaRef.current;
     if (!(input instanceof HTMLTextAreaElement)) {
       return;
     }
@@ -336,7 +341,7 @@ export function ChatComposer({
     }
 
     const frame = window.requestAnimationFrame(() => {
-      const input = inputRef.current;
+      const input = getActiveInput();
       if (!input) {
         setPendingSelection(null);
         return;
@@ -349,7 +354,7 @@ export function ChatComposer({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [pendingSelection, value]);
+  }, [isDesktop, pendingSelection, value]);
 
   const toggleStickerPanel = () => {
     if (!onSendSticker) {
@@ -893,9 +898,7 @@ export function ChatComposer({
 
               <div className="flex min-w-0 flex-1 items-center gap-2">
                 <input
-                  ref={(node) => {
-                    inputRef.current = node;
-                  }}
+                  ref={desktopInputRef}
                   value={value}
                   onChange={(event) => {
                     onChange(event.target.value);
@@ -963,15 +966,9 @@ export function ChatComposer({
                   onClick={toggleMobileInputMode}
                   disabled={speechButtonDisabled && mobileSpeechMode}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45"
-                  aria-label={
-                    mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"
-                  }
+                  aria-label={mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"}
                 >
-                  {mobileSpeechMode ? (
-                    <Keyboard size={20} />
-                  ) : (
-                    <Mic size={20} />
-                  )}
+                  {mobileSpeechMode ? <Keyboard size={20} /> : <Mic size={20} />}
                 </button>
               ) : null}
 
@@ -979,9 +976,7 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={() => void toggleMobileSpeech()}
-                  disabled={
-                    speechButtonDisabled && speech.status !== "listening"
-                  }
+                  disabled={speechButtonDisabled && speech.status !== "listening"}
                   title={speechDisabledReason ?? undefined}
                   className={cn(
                     "flex min-h-[40px] min-w-0 flex-1 items-center justify-center rounded-[7px] border border-black/8 bg-white px-4 py-2 text-[15px] text-[#7a7a7a]",
@@ -995,16 +990,13 @@ export function ChatComposer({
               ) : (
                 <div className="flex min-w-0 flex-1 items-end rounded-[7px] border border-black/8 bg-white px-3 py-1">
                   <textarea
-                    ref={(node) => {
-                      inputRef.current = node;
-                    }}
+                    ref={mobileTextareaRef}
                     rows={1}
                     value={value}
                     onChange={(event) => {
                       onChange(event.target.value);
                       setInputCursor(
-                        event.target.selectionStart ??
-                          event.target.value.length,
+                        event.target.selectionStart ?? event.target.value.length,
                       );
                     }}
                     onFocus={() => {
