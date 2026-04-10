@@ -20,6 +20,8 @@ import { SystemModule } from './modules/system/system.module';
 
 // Entities
 import { CharacterEntity } from './modules/characters/character.entity';
+import { CharacterBlueprintEntity } from './modules/characters/character-blueprint.entity';
+import { CharacterBlueprintRevisionEntity } from './modules/characters/character-blueprint-revision.entity';
 import { UserEntity } from './modules/auth/user.entity';
 import { ConversationEntity } from './modules/chat/conversation.entity';
 import { MessageEntity } from './modules/chat/message.entity';
@@ -56,6 +58,7 @@ import { OfficialAccountServiceMessageEntity } from './modules/official-accounts
       database: process.env.DATABASE_PATH ?? 'database.sqlite',
       entities: [
         CharacterEntity, UserEntity, ConversationEntity, MessageEntity,
+        CharacterBlueprintEntity, CharacterBlueprintRevisionEntity,
         SystemConfigEntity, MomentEntity, MomentPostEntity, MomentCommentEntity,
         MomentLikeEntity, FriendshipEntity, FriendRequestEntity, AIRelationshipEntity,
         GroupEntity, GroupMemberEntity, GroupMessageEntity,

@@ -71,9 +71,11 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（26个，物理表保持兼容）
+## 数据库实体（28个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
+
+**角色工厂**：CharacterBlueprint · CharacterBlueprintRevision
 
 **朋友圈**：MomentPost · MomentComment · MomentLike · MomentEntity（legacy）
 
@@ -185,6 +187,7 @@
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
+- `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、已发布版本、字段映射与版本记录
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
@@ -196,6 +199,14 @@
 - `PATCH /api/admin/reply-logic/rules`
 - `GET /api/admin/reply-logic/characters/:id`
 - `GET /api/admin/reply-logic/conversations/:id`
+
+## 管理后台角色工厂路由
+
+- `GET /api/admin/characters/:id/factory`
+- `PATCH /api/admin/characters/:id/factory`
+- `POST /api/admin/characters/:id/factory/publish`
+- `GET /api/admin/characters/:id/factory/revisions`
+- `POST /api/admin/characters/:id/factory/revisions/:revisionId/restore`
 
 ## 环境变量（`api/.env`）
 
