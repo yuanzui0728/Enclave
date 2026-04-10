@@ -5,6 +5,7 @@ import { ChatService } from './chat.service';
 import {
   ChatBackgroundAssetsController,
   ConversationBackgroundController,
+  GroupBackgroundController,
 } from './chat-backgrounds.controller';
 import { ChatBackgroundsService } from './chat-backgrounds.service';
 import {
@@ -42,6 +43,7 @@ import { GroupMessageEntity } from './group-message.entity';
     ChatController,
     ChatAttachmentController,
     ConversationBackgroundController,
+    GroupBackgroundController,
     ChatBackgroundAssetsController,
     GroupController,
   ],

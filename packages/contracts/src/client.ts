@@ -897,6 +897,39 @@ export function clearConversationBackground(id: string, baseUrl?: string) {
   );
 }
 
+export function getGroupBackground(id: string, baseUrl?: string) {
+  return requestLegacyApi<ConversationBackgroundSettings>(
+    `/groups/${id}/background`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function setGroupBackground(
+  id: string,
+  payload: UpdateConversationBackgroundRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<ConversationBackgroundSettings>(
+    `/groups/${id}/background`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function clearGroupBackground(id: string, baseUrl?: string) {
+  return requestLegacyApi<ConversationBackgroundSettings>(
+    `/groups/${id}/background`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
 export function uploadChatAttachment(payload: FormData, baseUrl?: string) {
   return requestLegacyApi<UploadChatAttachmentResponse>(
     "/chat/attachments",

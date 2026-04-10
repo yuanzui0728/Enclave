@@ -63,6 +63,7 @@
 - `chat/$conversationId/details`：单聊右上角三个点详情页，对齐微信式聊天信息页
 - `chat/$conversationId/search`：单聊聊天记录检索页，由聊天信息页进入
 - `group/$groupId/details`：群聊右上角三个点详情页，对齐微信式群聊信息页
+- `group/$groupId/background`：群聊聊天背景设置路由，对齐微信式“群聊信息 -> 聊天背景”
 - `group/$groupId/announcement`：群公告独立页，承载群公告阅读与编辑
 - `group/$groupId/search`：群聊聊天记录检索页，由群聊信息页进入
 - `group/$groupId/members/add`：群成员添加页，承载群成员微信式多选添加
@@ -71,11 +72,9 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（28个，物理表保持兼容）
+## 数据库实体（26个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
-
-**角色工厂**：CharacterBlueprint · CharacterBlueprintRevision
 
 **朋友圈**：MomentPost · MomentComment · MomentLike · MomentEntity（legacy）
 
@@ -128,6 +127,7 @@
 - `Conversation` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载会话专属聊天背景配置
 - `Message` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载 `sticker` 表情包消息元数据
 - `Group` 表现已扩展字段：`announcement`、`isMuted`、`mutedAt`、`isPinned`、`pinnedAt`、`savedToContacts`、`savedToContactsAt`、`showMemberNicknames`、`notifyOnAtMe`、`notifyOnAtAll`、`notifyOnAnnouncement`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
+- `Group` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载群聊专属聊天背景配置
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
@@ -139,6 +139,9 @@
   - `PATCH /api/conversations/:id/background`
   - `DELETE /api/conversations/:id/background`
   - `PATCH /api/groups/:id`
+  - `GET /api/groups/:id/background`
+  - `PATCH /api/groups/:id/background`
+  - `DELETE /api/groups/:id/background`
   - `PATCH /api/groups/:id/preferences`
   - `POST /api/groups/:id/pin`
   - `POST /api/groups/:id/clear`
@@ -187,7 +190,6 @@
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
 - `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
-- `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、已发布版本、字段映射与版本记录
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
@@ -199,14 +201,6 @@
 - `PATCH /api/admin/reply-logic/rules`
 - `GET /api/admin/reply-logic/characters/:id`
 - `GET /api/admin/reply-logic/conversations/:id`
-
-## 管理后台角色工厂路由
-
-- `GET /api/admin/characters/:id/factory`
-- `PATCH /api/admin/characters/:id/factory`
-- `POST /api/admin/characters/:id/factory/publish`
-- `GET /api/admin/characters/:id/factory/revisions`
-- `POST /api/admin/characters/:id/factory/revisions/:revisionId/restore`
 
 ## 环境变量（`api/.env`）
 
