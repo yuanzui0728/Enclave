@@ -1172,6 +1172,47 @@ function GroupChatDetailsPanel({
           disabled={busy}
           onClick={() => setEditorMode("announcement")}
         />
+        <DesktopPanelInfoRow
+          label="群主"
+          value={ownerMember?.memberName?.trim() || "我"}
+        />
+        <DesktopPanelRow
+          label="全部成员"
+          value={`${groupMembers.length} 人`}
+          onClick={() => setMemberBrowserOpen(true)}
+        />
+        <DesktopPanelInfoRow
+          label="最近活跃"
+          value={formatTimestamp(conversation.lastActivityAt) || "刚刚"}
+        />
+      </DesktopPanelSection>
+
+      <DesktopPanelSection title="聊天内容">
+        <DesktopPanelRow
+          label="查找聊天记录"
+          value="搜索当前群消息"
+          icon={<Search size={15} />}
+          onClick={onOpenHistory}
+        />
+        <DesktopPanelRow
+          label="消息提醒"
+          value={reminderCount ? `${reminderCount} 条` : "暂无提醒"}
+          icon={<BellRing size={15} />}
+          onClick={onOpenHistory}
+        />
+        <DesktopPanelRow
+          label="聊天文件"
+          value="查看本群附件"
+          onClick={() => {
+            void navigate({
+              to: "/desktop/chat-files",
+              hash: buildDesktopChatFilesRouteHash(conversation.id),
+            });
+          }}
+        />
+      </DesktopPanelSection>
+
+      <DesktopPanelSection title="群工具">
         <DesktopPanelRow
           label="群二维码"
           value="查看邀请卡"
@@ -1181,20 +1222,6 @@ function GroupChatDetailsPanel({
               params: { groupId: conversation.id },
             });
           }}
-        />
-      </DesktopPanelSection>
-
-      <DesktopPanelSection title="聊天内容">
-        <DesktopPanelRow
-          label="查找聊天记录"
-          icon={<Search size={15} />}
-          onClick={onOpenHistory}
-        />
-        <DesktopPanelRow
-          label="消息提醒"
-          value={reminderCount ? `${reminderCount} 条` : "暂无提醒"}
-          icon={<BellRing size={15} />}
-          onClick={onOpenHistory}
         />
         <DesktopPanelRow
           label="群接龙"
@@ -1213,12 +1240,10 @@ function GroupChatDetailsPanel({
           }}
         />
         <DesktopPanelRow
-          label="聊天文件"
+          label="成员管理"
+          value={`${groupMembers.length} 人`}
           onClick={() => {
-            void navigate({
-              to: "/desktop/chat-files",
-              hash: buildDesktopChatFilesRouteHash(conversation.id),
-            });
+            setMemberBrowserOpen(true);
           }}
         />
       </DesktopPanelSection>
@@ -1516,6 +1541,25 @@ function DesktopPanelRow({
         )}
       </span>
     </button>
+  );
+}
+
+function DesktopPanelInfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-h-12 items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0">
+      <span className="min-w-0 text-[14px] text-[color:var(--text-primary)]">
+        {label}
+      </span>
+      <span className="max-w-[12rem] truncate text-[12px] text-[color:var(--text-muted)]">
+        {value}
+      </span>
+    </div>
   );
 }
 
