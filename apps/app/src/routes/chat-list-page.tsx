@@ -171,6 +171,10 @@ function MobileChatListPage() {
       reminders,
       conversations,
     });
+  const hasNotifiedReminderGroup = useMemo(
+    () => filteredReminderGroups.some((group) => group.status === "notified"),
+    [filteredReminderGroups],
+  );
   const { openReminder, completeReminder } = useChatReminderActions({
     navigateToReminder: (entry) => {
       void navigate(buildChatReminderNavigation(entry));
@@ -192,6 +196,12 @@ function MobileChatListPage() {
   const serviceConversations =
     messageEntriesQuery.data?.serviceConversations ?? [];
   const showSubscriptionInboxItem = Boolean(subscriptionInboxSummary);
+
+  useEffect(() => {
+    if (!hasNotifiedReminderGroup && isNotifiedReminderGroupExpanded) {
+      setIsNotifiedReminderGroupExpanded(false);
+    }
+  }, [hasNotifiedReminderGroup, isNotifiedReminderGroupExpanded]);
 
   const hasConversations =
     reminderEntries.length > 0 ||
