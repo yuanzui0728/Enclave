@@ -81,7 +81,6 @@ function MobileChatListPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [searchText, setSearchText] = useState("");
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -103,60 +102,12 @@ function MobileChatListPage() {
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations =
     messageEntriesQuery.data?.serviceConversations ?? [];
-  const normalizedSearchText = searchText.trim().toLowerCase();
-  const filteredConversations = useMemo(() => {
-    if (!normalizedSearchText) {
-      return conversations;
-    }
-
-    return conversations.filter((conversation) => {
-      const title = conversation.title.toLowerCase();
-      const lastMessageText =
-        conversation.lastMessage?.text?.toLowerCase() ?? "";
-      return (
-        title.includes(normalizedSearchText) ||
-        lastMessageText.includes(normalizedSearchText)
-      );
-    });
-  }, [conversations, normalizedSearchText]);
-  const showSubscriptionInboxItem = useMemo(() => {
-    if (!subscriptionInboxSummary) {
-      return false;
-    }
-
-    if (!normalizedSearchText) {
-      return true;
-    }
-
-    return (
-      "订阅号消息".includes(normalizedSearchText) ||
-      (subscriptionInboxSummary.preview ?? "")
-        .toLowerCase()
-        .includes(normalizedSearchText)
-    );
-  }, [normalizedSearchText, subscriptionInboxSummary]);
-  const filteredServiceConversations = useMemo(() => {
-    if (!normalizedSearchText) {
-      return serviceConversations;
-    }
-
-    return serviceConversations.filter((conversation) => {
-      return (
-        conversation.account.name
-          .toLowerCase()
-          .includes(normalizedSearchText) ||
-        (conversation.preview ?? "")
-          .toLowerCase()
-          .includes(normalizedSearchText)
-      );
-    });
-  }, [normalizedSearchText, serviceConversations]);
+  const showSubscriptionInboxItem = Boolean(subscriptionInboxSummary);
 
   const hasConversations =
-    filteredConversations.length > 0 ||
-    filteredServiceConversations.length > 0 ||
+    conversations.length > 0 ||
+    serviceConversations.length > 0 ||
     showSubscriptionInboxItem;
-  const hasSearchResult = normalizedSearchText.length > 0;
 
   function handleUnavailableAction(message: string) {
     setIsQuickMenuOpen(false);
@@ -241,19 +192,22 @@ function MobileChatListPage() {
           </div>
         }
       >
-        <label className="relative block">
+        <button
+          type="button"
+          onClick={() => {
+            void navigate({ to: "/tabs/search" });
+          }}
+          className="relative block w-full text-left"
+          aria-label="打开搜一搜"
+        >
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
           />
-          <input
-            type="search"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="搜索"
-            className="h-9 w-full rounded-[10px] border border-transparent bg-[rgba(255,249,238,0.85)] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white/92"
-          />
-        </label>
+          <div className="h-9 w-full rounded-[10px] border border-transparent bg-[rgba(255,249,238,0.85)] pl-10 pr-4 text-sm leading-9 text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
+            搜索
+          </div>
+        </button>
       </TabPageTopBar>
 
       <div className="pb-6">
@@ -292,7 +246,7 @@ function MobileChatListPage() {
                 />
               ) : null}
 
-              {filteredServiceConversations.map((conversation) => (
+              {serviceConversations.map((conversation) => (
                 <OfficialServiceConversationCard
                   key={conversation.accountId}
                   conversation={conversation}
@@ -305,7 +259,7 @@ function MobileChatListPage() {
                 />
               ))}
 
-              {filteredConversations.map((conversation, index) => (
+              {conversations.map((conversation, index) => (
                 <ConversationListItemLink
                   key={conversation.id}
                   conversation={conversation}
@@ -313,21 +267,21 @@ function MobileChatListPage() {
                     "block transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,138,61,0.05)]",
                     index > 0 ||
                       showSubscriptionInboxItem ||
-                      filteredServiceConversations.length > 0
+                      serviceConversations.length > 0
                       ? "border-t border-[color:var(--border-faint)]"
                       : undefined,
                   )}
                 />
               ))}
             </section>
-          ) : hasSearchResult ? (
+          ) : (
             <div className="px-3 pt-8">
               <EmptyState
-                title="没有找到匹配的会话"
-                description="换一个关键词试试"
+                title="消息列表还是空的"
+                description="等角色和服务号开始发消息后，这里会出现会话。"
               />
             </div>
-          ) : null
+          )
         ) : null}
       </div>
     </AppPage>
