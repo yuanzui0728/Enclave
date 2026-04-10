@@ -38,6 +38,9 @@ export function GroupAnnouncementPage() {
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);

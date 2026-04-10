@@ -60,13 +60,17 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
     },
     ...options,
   });
+  const rawBody = await res.text();
   if (res.status === 401) {
+    if (rawBody.includes("not configured")) {
+      throw new Error("服务端尚未配置 ADMIN_SECRET。");
+    }
     throw new Error("ADMIN_SECRET 不正确。");
   }
   if (!res.ok) {
-    throw new Error(`管理接口请求失败 ${res.status}：${path}`);
+    throw new Error(rawBody || `管理接口请求失败 ${res.status}：${path}`);
   }
-  return res.json() as Promise<T>;
+  return (rawBody ? JSON.parse(rawBody) : undefined) as T;
 }
 
 export type AdminStats = {

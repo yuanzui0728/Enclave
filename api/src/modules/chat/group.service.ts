@@ -166,6 +166,24 @@ export class GroupService {
     return group ? this.toGroup(group) : null;
   }
 
+  async listSavedGroups(): Promise<Group[]> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const groups = await this.groupRepo.find({
+      where: {
+        creatorId: owner.id,
+        creatorType: 'user',
+        savedToContacts: true,
+      },
+      order: {
+        savedToContactsAt: 'DESC',
+        lastActivityAt: 'DESC',
+        updatedAt: 'DESC',
+      },
+    });
+
+    return groups.map((group) => this.toGroup(group));
+  }
+
   async getMembers(groupId: string): Promise<GroupMemberEntity[]> {
     await this.requireAccessibleGroup(groupId);
     const members = await this.memberRepo.find({

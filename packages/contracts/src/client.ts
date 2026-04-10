@@ -987,6 +987,10 @@ export function createGroup(payload: CreateGroupRequest, baseUrl?: string) {
   );
 }
 
+export function getSavedGroups(baseUrl?: string) {
+  return requestLegacyApi<Group[]>("/groups/saved", undefined, baseUrl);
+}
+
 export function getGroup(id: string, baseUrl?: string) {
   return requestLegacyApi<Group>(`/groups/${id}`, undefined, baseUrl);
 }

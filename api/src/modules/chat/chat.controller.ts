@@ -153,6 +153,11 @@ export class GroupController {
     return this.groupService.updatePreferences(id, body);
   }
 
+  @Get('saved')
+  getSavedGroups() {
+    return this.groupService.listSavedGroups();
+  }
+
   @Get(':id')
   getGroup(@Param('id') id: string) {
     return this.groupService.getGroup(id);

@@ -115,6 +115,9 @@ export function GroupChatDetailsPage() {
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
@@ -142,6 +145,9 @@ export function GroupChatDetailsPage() {
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -180,6 +186,9 @@ export function GroupChatDetailsPage() {
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group", baseUrl, groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-saved-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],

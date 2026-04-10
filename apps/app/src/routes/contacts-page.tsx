@@ -24,6 +24,7 @@ import {
   getFriendRequests,
   getFriends,
   getOrCreateConversation,
+  getSavedGroups,
   listCharacters,
   setConversationMuted,
   setConversationPinned,
@@ -60,7 +61,7 @@ import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ShortcutRoute =
-  | "/group/new"
+  | "/contacts/groups"
   | "/friend-requests"
   | "/contacts/starred"
   | "/contacts/official-accounts";
@@ -109,6 +110,11 @@ export function ContactsPage() {
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
+  });
+
+  const savedGroupsQuery = useQuery({
+    queryKey: ["app-saved-groups", baseUrl],
+    queryFn: () => getSavedGroups(baseUrl),
   });
 
   const blockedCharactersQuery = useQuery({
@@ -202,6 +208,7 @@ export function ContactsPage() {
         .length,
     [friendsQuery.data],
   );
+  const savedGroupCount = savedGroupsQuery.data?.length ?? 0;
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -634,10 +641,11 @@ export function ContactsPage() {
     {
       key: "group-chat",
       label: "群聊",
-      subtitle: "发起新的群聊",
+      subtitle:
+        savedGroupCount > 0 ? `${savedGroupCount} 个已保存群聊` : "查看已保存群聊",
       icon: Users,
       iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
-      onClick: () => handleShortcutNavigate("/group/new"),
+      onClick: () => handleShortcutNavigate("/contacts/groups"),
     },
     {
       key: "tags",
@@ -729,6 +737,12 @@ export function ContactsPage() {
                 friendRequestsQuery.error instanceof Error ? (
                   <div className="px-3 pb-3">
                     <ErrorBlock message={friendRequestsQuery.error.message} />
+                  </div>
+                ) : null}
+                {savedGroupsQuery.isError &&
+                savedGroupsQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={savedGroupsQuery.error.message} />
                   </div>
                 ) : null}
                 {blockedCharactersQuery.isError &&
@@ -1031,6 +1045,12 @@ export function ContactsPage() {
           friendRequestsQuery.error instanceof Error ? (
             <div className="px-3 pt-3">
               <ErrorBlock message={friendRequestsQuery.error.message} />
+            </div>
+          ) : null}
+          {savedGroupsQuery.isError &&
+          savedGroupsQuery.error instanceof Error ? (
+            <div className="px-3 pt-3">
+              <ErrorBlock message={savedGroupsQuery.error.message} />
             </div>
           ) : null}
           {startChatMutation.isError &&
