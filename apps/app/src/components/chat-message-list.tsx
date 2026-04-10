@@ -401,6 +401,15 @@ export function ChatMessageList({
       return;
     }
 
+    const openImageFromKeyboard = (nextIndex: number) => {
+      const target = imageMessages[nextIndex];
+      if (!target) {
+        return;
+      }
+
+      setViewerMessageId(target.id);
+    };
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setViewerMessageId(null);
@@ -409,13 +418,13 @@ export function ChatMessageList({
 
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        openImageByIndex(Math.max(activeImageIndex - 1, 0));
+        openImageFromKeyboard(Math.max(activeImageIndex - 1, 0));
         return;
       }
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        openImageByIndex(
+        openImageFromKeyboard(
           Math.min(activeImageIndex + 1, imageMessages.length - 1),
         );
       }
