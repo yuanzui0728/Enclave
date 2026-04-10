@@ -18,6 +18,7 @@ import { AIRelationshipEntity } from '../social/ai-relationship.entity';
 import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
+import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 
 type TrackedJobResult = {
   summary: string;
@@ -48,6 +49,7 @@ export class SchedulerService {
     private readonly feedService: FeedService,
     private readonly chatGateway: ChatGateway,
     private readonly telemetry: SchedulerTelemetryService,
+    private readonly replyLogicRules: ReplyLogicRulesService,
   ) {}
 
   @Cron('*/30 * * * *')
@@ -122,7 +124,7 @@ export class SchedulerService {
     );
   }
 
-  @Cron('0 20 * * *')
+  @Cron('0 * * * *')
   async triggerMemoryProactiveMessages() {
     await this.runScheduledJob(
       'trigger_memory_proactive_messages',
@@ -323,6 +325,7 @@ export class SchedulerService {
   }
 
   private async handleCheckMomentSchedule(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const friendCharacterIds = new Set(
       await this.socialService.getFriendCharacterIds(),
     );
@@ -354,7 +357,10 @@ export class SchedulerService {
         where: { authorId: char.id, postedAt: LessThan(now) },
       });
 
-      if (todayCount < char.momentsFrequency && Math.random() < 0.15) {
+      if (
+        todayCount < char.momentsFrequency &&
+        Math.random() < runtimeRules.momentGenerateChance
+      ) {
         const post = await this.generateMomentForChar(char);
         if (post) {
           generatedCount += 1;
@@ -376,7 +382,8 @@ export class SchedulerService {
   }
 
   private async handleTriggerSceneFriendRequests(): Promise<TrackedJobResult> {
-    if (Math.random() > 0.4) {
+    const runtimeRules = await this.replyLogicRules.getRules();
+    if (Math.random() > runtimeRules.sceneFriendRequestChance) {
       return {
         summary: '场景加好友命中概率门控，本轮未触发。',
       };
@@ -429,6 +436,7 @@ export class SchedulerService {
   }
 
   private async handleCheckChannelsSchedule(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const now = new Date();
     const hour = now.getHours();
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -458,7 +466,7 @@ export class SchedulerService {
         continue;
       }
 
-      if (Math.random() > 0.22) {
+      if (Math.random() > runtimeRules.channelGenerateChance) {
         continue;
       }
 
@@ -485,6 +493,7 @@ export class SchedulerService {
   }
 
   private async handleUpdateCharacterStatus(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const chars = await this.characterRepo.find();
     const hour = new Date().getHours();
     let updatedCount = 0;
@@ -546,7 +555,7 @@ export class SchedulerService {
       }
 
       const activity =
-        Math.random() < 0.8
+        Math.random() < runtimeRules.activityBaseWeight
           ? baseActivity
           : activities[Math.floor(Math.random() * activities.length)];
       if (char.currentActivity === activity) {
@@ -572,6 +581,14 @@ export class SchedulerService {
   }
 
   private async handleTriggerMemoryProactiveMessages(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
+    const now = new Date();
+    if (now.getHours() !== runtimeRules.proactiveReminderHour) {
+      return {
+        summary: `当前小时 ${now.getHours()} 不等于主动提醒小时 ${runtimeRules.proactiveReminderHour}，跳过本轮。`,
+      };
+    }
+
     const chars = await this.characterRepo.find();
     let memorySeededCount = 0;
     let sentMessages = 0;
@@ -587,7 +604,7 @@ export class SchedulerService {
         }
 
         memorySeededCount += 1;
-        const checkPrompt = `以下是${char.name}对用户的记忆：\n${memoryText}\n\n今天是${new Date().toLocaleDateString('zh-CN')}。判断是否有值得主动提醒用户的事项（如考试、面试、生日、重要约定等）。\n\n如果有，输出一条自然的提醒消息（以${char.name}的口吻，不超过50字）。\n如果没有，只输出：NO_ACTION`;
+        const checkPrompt = `以下是${char.name}对用户的记忆：\n${memoryText}\n\n今天是${now.toLocaleDateString('zh-CN')}。判断是否有值得主动提醒用户的事项（如考试、面试、生日、重要约定等）。\n\n如果有，输出一条自然的提醒消息（以${char.name}的口吻，不超过50字）。\n如果没有，只输出：NO_ACTION`;
         const model = await this.ai['configService'].getAiModel();
         const client = this.ai['client'] as import('openai').default;
         const resp = await client.chat.completions.create({

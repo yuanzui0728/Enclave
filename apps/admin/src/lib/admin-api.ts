@@ -5,6 +5,8 @@ import type {
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
   ReplyLogicOverview,
+  ReplyLogicPreviewRequest,
+  ReplyLogicPreviewResult,
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
@@ -143,6 +145,16 @@ export const adminApi = {
     }),
   getReplyLogicCharacterSnapshot: (id: string) =>
     adminFetch<ReplyLogicCharacterSnapshot>(`/reply-logic/characters/${id}`),
+  previewReplyLogicCharacter: (id: string, payload: ReplyLogicPreviewRequest) =>
+    adminFetch<ReplyLogicPreviewResult>(`/reply-logic/characters/${id}/preview`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getReplyLogicConversationSnapshot: (id: string) =>
     adminFetch<ReplyLogicConversationSnapshot>(`/reply-logic/conversations/${id}`),
+  previewReplyLogicConversation: (id: string, payload: ReplyLogicPreviewRequest) =>
+    adminFetch<ReplyLogicPreviewResult>(`/reply-logic/conversations/${id}/preview`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };

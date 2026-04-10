@@ -15,6 +15,7 @@ import {
   type ReplyLogicHistoryItem,
   type ReplyLogicNarrativeArcSummary,
   type ReplyLogicOverview,
+  type ReplyLogicPreviewResult,
   type ReplyLogicPromptSection,
   type ReasoningConfig,
   type ReplyLogicStateGateSummary,
@@ -83,6 +84,7 @@ export function ReplyLogicPage() {
   const [configuredConversationActorId, setConfiguredConversationActorId] = useState("");
   const [characterDraft, setCharacterDraft] = useState<EditableCharacter | null>(null);
   const [runtimeRulesDraft, setRuntimeRulesDraft] = useState<ReplyLogicConstantSummary | null>(null);
+  const [previewMessage, setPreviewMessage] = useState("");
 
   const overviewQuery = useQuery({
     queryKey: ["admin-reply-logic-overview", baseUrl],
@@ -233,6 +235,26 @@ export function ReplyLogicPage() {
     },
   });
 
+  const previewMutation = useMutation({
+    mutationFn: async () => {
+      const userMessage = previewMessage.trim();
+      if (!userMessage) {
+        throw new Error("请先输入候选用户消息。");
+      }
+
+      if (scope === "character") {
+        return adminApi.previewReplyLogicCharacter(activeCharacterId, {
+          userMessage,
+        });
+      }
+
+      return adminApi.previewReplyLogicConversation(activeConversationId, {
+        userMessage,
+        actorCharacterId: configuredConversationActorId || undefined,
+      });
+    },
+  });
+
   useEffect(() => {
     setCharacterDraft(editableCharacterSeed);
     characterSaveMutation.reset();
@@ -242,6 +264,10 @@ export function ReplyLogicPage() {
     setRuntimeRulesDraft(overview?.constants ?? null);
     runtimeRulesSaveMutation.reset();
   }, [runtimeRulesSeedSignature]);
+
+  useEffect(() => {
+    previewMutation.reset();
+  }, [activeCharacterId, activeConversationId, configuredConversationActorId, scope]);
 
   const isCharacterDraftDirty = useMemo(() => {
     if (!characterDraft || !editableCharacterSeedSignature) {
@@ -437,6 +463,18 @@ export function ReplyLogicPage() {
             </div>
 
             <div className="space-y-6">
+              <ReplyPreviewPanel
+                scope={scope}
+                previewMessage={previewMessage}
+                onPreviewMessageChange={setPreviewMessage}
+                actorOptions={conversationActorOptions}
+                configuredConversationActorId={configuredConversationActorId}
+                onConfiguredConversationActorIdChange={setConfiguredConversationActorId}
+                preview={previewMutation.data}
+                error={previewMutation.error}
+                isPending={previewMutation.isPending}
+                onRunPreview={() => previewMutation.mutate()}
+              />
               {scope === "character" ? (
                 <CharacterInspectorPanel
                   selectedCharacter={selectedCharacter}
@@ -1238,6 +1276,92 @@ function CharacterInspectorPanel({
   );
 }
 
+function ReplyPreviewPanel({
+  scope,
+  previewMessage,
+  onPreviewMessageChange,
+  actorOptions,
+  configuredConversationActorId,
+  onConfiguredConversationActorIdChange,
+  preview,
+  error,
+  isPending,
+  onRunPreview,
+}: {
+  scope: InspectorScope;
+  previewMessage: string;
+  onPreviewMessageChange: (value: string) => void;
+  actorOptions: Array<{ id: string; name: string; relationship: string }>;
+  configuredConversationActorId: string;
+  onConfiguredConversationActorIdChange: (value: string) => void;
+  preview?: ReplyLogicPreviewResult;
+  error: unknown;
+  isPending: boolean;
+  onRunPreview: () => void;
+}) {
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <div className="flex items-center justify-between gap-3">
+        <SectionHeading>候选消息预演</SectionHeading>
+        <StatusPill tone={preview ? "healthy" : "muted"}>
+          {preview ? "已生成预演" : "等待预演"}
+        </StatusPill>
+      </div>
+
+      <InlineNotice className="mt-4" tone="muted">
+        这里会按当前角色配置、当前可见历史、当前世界上下文和当前状态门，预演这条用户消息会如何进入模型。
+      </InlineNotice>
+
+      {scope === "conversation" ? (
+        <SelectFieldBlock
+          className="mt-4"
+          label="预演角色"
+          value={configuredConversationActorId}
+          onChange={onConfiguredConversationActorIdChange}
+          options={actorOptions.map((item) => ({
+            value: item.id,
+            label: `${item.name} · ${item.relationship}`,
+          }))}
+        />
+      ) : null}
+
+      <TextAreaBlock
+        label="候选用户消息"
+        value={previewMessage}
+        placeholder="输入一条你想预演的用户消息。"
+        onChange={onPreviewMessageChange}
+      />
+
+      {error instanceof Error ? <ErrorBlock message={error.message} /> : null}
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button variant="secondary" onClick={() => onPreviewMessageChange("")}>
+          清空
+        </Button>
+        <Button
+          variant="primary"
+          onClick={onRunPreview}
+          disabled={!previewMessage.trim() || isPending}
+        >
+          {isPending ? "预演中..." : "执行预演"}
+        </Button>
+      </div>
+
+      {preview ? (
+        <div className="mt-6 space-y-6 border-t border-[color:var(--border-faint)] pt-6">
+          <ActorSnapshotCard actor={preview.actor} title="候选消息预演快照" />
+          <Card className="bg-[color:var(--surface-card)]">
+            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+              预演备注
+            </div>
+            <NoteList notes={preview.notes} className="mt-3" />
+          </Card>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 function ConversationInspectorPanel({
   selectedConversation,
   query,
@@ -1314,6 +1438,8 @@ function ActorSnapshotCard({
         <div className="space-y-4">
           <StateGateCard gate={actor.stateGate} />
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+            <MetricCard label="模型" value={actor.model} />
+            <MetricCard label="API 可用" value={actor.apiAvailable ? "可用" : "不可用"} />
             <MetricCard label="历史窗口" value={actor.historyWindow} />
             <MetricCard label="可见消息数" value={actor.visibleHistoryCount} />
             <MetricCard label="最近聊天时间" value={formatDateTime(actor.lastChatAt)} />
@@ -1347,6 +1473,13 @@ function ActorSnapshotCard({
               上下文窗口
             </div>
             <HistoryList className="mt-4" items={actor.windowMessages} />
+          </Card>
+
+          <Card className="bg-[color:var(--surface-card)]">
+            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+              最终请求消息
+            </div>
+            <RequestMessageList className="mt-4" items={actor.requestMessages} />
           </Card>
         </div>
       </div>
@@ -1464,6 +1597,38 @@ function HistoryList({
             <div className="mt-2 text-xs text-[color:var(--text-muted)]">
               {formatReplyLogicText(item.note)}
             </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RequestMessageList({
+  items,
+  className,
+}: {
+  items: ReplyLogicActorSnapshot["requestMessages"];
+  className?: string;
+}) {
+  if (!items.length) {
+    return <PanelEmpty message="当前没有可展示的模型请求消息。" />;
+  }
+
+  return (
+    <div className={className}>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div
+            key={`${item.role}-${index}`}
+            className="rounded-[20px] border border-[color:var(--border-faint)] bg-white/90 p-4"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill tone={item.role === "system" ? "warning" : item.role === "assistant" ? "healthy" : "muted"}>
+                {formatRequestRole(item.role)}
+              </StatusPill>
+            </div>
+            <CodeBlock className="mt-3" value={item.content} />
           </div>
         ))}
       </div>
@@ -1744,6 +1909,80 @@ function RuntimeRulesEditorCard({
                       memoryCompressionEveryMessages: parsePositiveInteger(
                         value,
                         current.memoryCompressionEveryMessages,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+            </ConfigSection>
+
+            <ConfigSection title="生活调度">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock
+                  label="朋友圈生成概率"
+                  value={draft.momentGenerateChance}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      momentGenerateChance: parseProbability(value, current.momentGenerateChance),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="视频号生成概率"
+                  value={draft.channelGenerateChance}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      channelGenerateChance: parseProbability(value, current.channelGenerateChance),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="场景加好友概率"
+                  value={draft.sceneFriendRequestChance}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      sceneFriendRequestChance: parseProbability(value, current.sceneFriendRequestChance),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="基础活动权重"
+                  value={draft.activityBaseWeight}
+                  type="number"
+                  min={0}
+                  max={1}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      activityBaseWeight: parseProbability(value, current.activityBaseWeight),
+                    }))
+                  }
+                />
+                <FieldBlock
+                  label="主动提醒小时"
+                  value={draft.proactiveReminderHour}
+                  type="number"
+                  min={0}
+                  max={23}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      proactiveReminderHour: clamp(
+                        parseNonNegativeInteger(value, current.proactiveReminderHour),
+                        0,
+                        23,
                       ),
                     }))
                   }
@@ -2244,6 +2483,19 @@ function formatProviderApiKeySource(source: string) {
   }
 }
 
+function formatRequestRole(role: "system" | "user" | "assistant") {
+  switch (role) {
+    case "system":
+      return "System";
+    case "assistant":
+      return "Assistant";
+    case "user":
+      return "User";
+    default:
+      return role;
+  }
+}
+
 function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
   return {
     睡眠提示语: [...constants.sleepHintMessages],
@@ -2263,6 +2515,13 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       最大值: constants.groupReplyDelayMs.max,
     },
     记忆压缩间隔消息数: constants.memoryCompressionEveryMessages,
+    生活调度: {
+      朋友圈生成概率: constants.momentGenerateChance,
+      视频号生成概率: constants.channelGenerateChance,
+      场景加好友概率: constants.sceneFriendRequestChance,
+      基础活动权重: constants.activityBaseWeight,
+      主动提醒小时: constants.proactiveReminderHour,
+    },
     历史窗口: {
       基础值: constants.historyWindow.base,
       浮动范围: constants.historyWindow.range,

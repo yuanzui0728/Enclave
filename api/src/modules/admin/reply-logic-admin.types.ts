@@ -86,6 +86,11 @@ export interface ReplyLogicOverview {
     groupReplyChance: { high: number; normal: number; low: number };
     groupReplyDelayMs: { min: number; max: number };
     memoryCompressionEveryMessages: number;
+    momentGenerateChance: number;
+    channelGenerateChance: number;
+    sceneFriendRequestChance: number;
+    activityBaseWeight: number;
+    proactiveReminderHour: number;
     historyWindow: {
       base: number;
       range: number;
@@ -116,6 +121,11 @@ export interface ReplyLogicHistoryItem {
   note: string;
 }
 
+export interface ReplyLogicRequestMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
 export interface ReplyLogicNarrativeArcSummary {
   id: string;
   title: string;
@@ -141,11 +151,14 @@ export interface ReplyLogicActorSnapshot {
   character: ReplyLogicCharacterContract;
   isGroupChat: boolean;
   stateGate: ReplyLogicStateGateSummary;
+  model: string;
+  apiAvailable: boolean;
   lastChatAt?: string | null;
   forgettingCurve: number;
   historyWindow: number;
   visibleHistoryCount: number;
   windowMessages: ReplyLogicHistoryItem[];
+  requestMessages: ReplyLogicRequestMessage[];
   promptSections: ReplyLogicPromptSection[];
   effectivePrompt: string;
   worldContextText?: string | null;
@@ -200,6 +213,15 @@ export interface ReplyLogicConversationSnapshot {
     title: string;
     notes: string[];
   };
+}
+
+export interface ReplyLogicPreviewResult {
+  scope: 'character' | 'conversation';
+  targetId: string;
+  actorCharacterId: string;
+  userMessage: string;
+  actor: ReplyLogicActorSnapshot;
+  notes: string[];
 }
 
 export type ReplyLogicCharacterContract = {
