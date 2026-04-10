@@ -81,7 +81,7 @@ export function DesktopNotesWorkspace({
     if (resolvedNote.id !== selectedNoteId) {
       onSelectNote?.(resolvedNote.id);
     }
-  }, []);
+  }, [onSelectNote, selectedNoteId]);
 
   useEffect(() => {
     if (!notes.length) {
