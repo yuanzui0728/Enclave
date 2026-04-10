@@ -19,6 +19,8 @@ export type ChatReminderTarget = Pick<
   "messageId" | "threadId" | "threadType"
 >;
 
+export type ChatReminderStatus = "pending" | "due" | "notified";
+
 export function buildChatReminderEntries(
   reminders: readonly LocalChatMessageReminderRecord[],
   conversations: readonly ConversationListItem[],
@@ -81,18 +83,6 @@ export function filterChatReminderEntries(
   });
 }
 
-export function buildDueChatReminderEntries(
-  reminders: readonly LocalChatMessageReminderRecord[],
-  conversations: readonly ConversationListItem[],
-  nowTimestamp: number,
-) {
-  return buildChatReminderEntries(
-    reminders,
-    conversations,
-    nowTimestamp,
-  ).filter((entry) => entry.isDue);
-}
-
 export function buildChatReminderHashValue(messageId: string) {
   return `chat-message-${messageId}`;
 }
@@ -123,7 +113,37 @@ export function buildChatReminderNavigation(entry: ChatReminderTarget) {
       };
 }
 
-export function formatReminderListTimestamp(remindAt: string, isDue: boolean) {
+export function getChatReminderStatus({
+  isDue,
+  notifiedAt,
+}: Pick<ChatReminderEntry, "isDue" | "notifiedAt">): ChatReminderStatus {
+  if (notifiedAt) {
+    return "notified";
+  }
+
+  return isDue ? "due" : "pending";
+}
+
+export function getChatReminderStatusLabel(
+  entry: Pick<ChatReminderEntry, "isDue" | "notifiedAt">,
+) {
+  const status = getChatReminderStatus(entry);
+  if (status === "notified") {
+    return "已通知";
+  }
+
+  return status === "due" ? "已到时间" : "待提醒";
+}
+
+export function formatReminderListTimestamp(
+  remindAt: string,
+  isDue: boolean,
+  notifiedAt?: string,
+) {
+  if (notifiedAt) {
+    return `已于 ${formatMessageTimestamp(notifiedAt)} 通知`;
+  }
+
   const label = formatMessageTimestamp(remindAt);
   return isDue ? `提醒时间 ${label}` : `将在 ${label} 提醒`;
 }

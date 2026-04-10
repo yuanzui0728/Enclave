@@ -9,6 +9,8 @@ import {
   buildChatReminderHref,
   buildChatReminderNavigation,
   buildChatReminderPath,
+  formatReminderListTimestamp,
+  getChatReminderStatusLabel,
 } from "./chat-reminder-entries";
 import {
   removeLocalChatMessageReminder,
@@ -16,7 +18,6 @@ import {
   useLocalChatMessageActionState,
 } from "./local-chat-message-actions";
 import { useChatReminderEntries } from "./use-chat-reminder-entries";
-import { formatMessageTimestamp } from "../../lib/format";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 
 export function MobileReminderToastHost() {
@@ -104,6 +105,7 @@ export function MobileReminderToastHost() {
   const remainingCount = dueReminders.filter(
     (item) => item.messageId !== activeReminder.messageId,
   ).length;
+  const activeReminderStatusLabel = getChatReminderStatusLabel(activeReminder);
 
   const handleDismiss = () => {
     setDismissedMessageIds((current) =>
@@ -151,14 +153,21 @@ export function MobileReminderToastHost() {
               </button>
             </div>
             <div className="mt-1 truncate text-[13px] font-medium text-[#3f3f46]">
-              {activeReminder.title}
+              <span>{activeReminder.title}</span>
+              <span className="ml-2 rounded-full bg-[rgba(0,0,0,0.06)] px-2 py-0.5 text-[11px] font-normal text-[#5f6368]">
+                {activeReminderStatusLabel}
+              </span>
             </div>
             <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[#5f6368]">
               {activeReminder.previewText}
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <div className="text-[12px] text-[#8c8c8c]">
-                提醒时间 {formatMessageTimestamp(activeReminder.remindAt)}
+                {formatReminderListTimestamp(
+                  activeReminder.remindAt,
+                  activeReminder.isDue,
+                  activeReminder.notifiedAt,
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button

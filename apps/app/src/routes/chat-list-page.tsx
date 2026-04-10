@@ -49,6 +49,8 @@ import {
 } from "../features/chat/local-chat-message-actions";
 import {
   buildChatReminderNavigation,
+  getChatReminderStatus,
+  getChatReminderStatusLabel,
   type ChatReminderEntry,
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
@@ -571,12 +573,14 @@ function MobileChatListPage() {
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        entry.isDue
-                          ? "bg-[#fff1f0] text-[#d74b45]"
-                          : "bg-[#eaf8ef] text-[#07c160]",
+                        getChatReminderStatus(entry) === "notified"
+                          ? "bg-[#fff7e6] text-[#d48806]"
+                          : entry.isDue
+                            ? "bg-[#fff1f0] text-[#d74b45]"
+                            : "bg-[#eaf8ef] text-[#07c160]",
                       )}
                     >
-                      {entry.isDue ? "已到时间" : "待提醒"}
+                      {getChatReminderStatusLabel(entry)}
                     </span>
                     <span className="min-w-0 truncate text-[14px] font-medium text-[#111827]">
                       {entry.title}
@@ -586,7 +590,11 @@ function MobileChatListPage() {
                     {entry.previewText}
                   </div>
                   <div className="mt-1 text-[12px] text-[#8c8c8c]">
-                    {formatReminderListTimestamp(entry.remindAt, entry.isDue)}
+                    {formatReminderListTimestamp(
+                      entry.remindAt,
+                      entry.isDue,
+                      entry.notifiedAt,
+                    )}
                   </div>
                 </button>
                 <button

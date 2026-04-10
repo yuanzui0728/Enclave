@@ -53,6 +53,8 @@ import { OfficialAccountServiceThread } from "../../official-accounts/service/of
 import {
   buildChatReminderNavigation,
   formatReminderListTimestamp,
+  getChatReminderStatus,
+  getChatReminderStatusLabel,
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
 import { buildSearchRouteHash } from "../../search/search-route-state";
@@ -947,12 +949,14 @@ function DesktopReminderCard({
             <span
               className={cn(
                 "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                entry.isDue
-                  ? "bg-[#fff1f0] text-[#d74b45]"
-                  : "bg-[#eaf8ef] text-[#07c160]",
+                getChatReminderStatus(entry) === "notified"
+                  ? "bg-[#fff7e6] text-[#d48806]"
+                  : entry.isDue
+                    ? "bg-[#fff1f0] text-[#d74b45]"
+                    : "bg-[#eaf8ef] text-[#07c160]",
               )}
             >
-              {entry.isDue ? "已到时间" : "待提醒"}
+              {getChatReminderStatusLabel(entry)}
             </span>
             <span className="min-w-0 truncate text-[13px] font-medium text-[color:var(--text-primary)]">
               {entry.title}
@@ -962,7 +966,11 @@ function DesktopReminderCard({
             {entry.previewText}
           </div>
           <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-            {formatReminderListTimestamp(entry.remindAt, entry.isDue)}
+            {formatReminderListTimestamp(
+              entry.remindAt,
+              entry.isDue,
+              entry.notifiedAt,
+            )}
           </div>
         </div>
       </button>
