@@ -99,7 +99,12 @@ type ChatMessageListProps = {
   variant?: "mobile" | "desktop";
   highlightedMessageId?: string;
   emptyState?: React.ReactNode;
-  onReplyMessage?: (message: ChatRenderableMessage) => void;
+  onReplyMessage?: (
+    message: ChatRenderableMessage,
+    options?: {
+      quotedText?: string;
+    },
+  ) => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
 
@@ -1083,7 +1088,13 @@ export function ChatMessageList({
                     <ReplyQuoteCard
                       messageId={replyPreview.messageId}
                       senderName={replyPreview.senderName}
-                      previewText={replyPreview.previewText}
+                      previewText={
+                        replyPreview.quotedText?.trim() ||
+                        replyPreview.previewText
+                      }
+                      modeLabel={
+                        replyPreview.quotedText ? "部分引用" : undefined
+                      }
                       align={isUser ? "right" : "left"}
                       variant={variant}
                       onJump={jumpToMessage}
@@ -2040,6 +2051,7 @@ function ReplyQuoteCard({
   messageId,
   senderName,
   previewText,
+  modeLabel,
   align,
   variant,
   onJump,
@@ -2048,6 +2060,7 @@ function ReplyQuoteCard({
   messageId: string;
   senderName: string;
   previewText: string;
+  modeLabel?: string;
   align: "left" | "right";
   variant: "mobile" | "desktop";
   onJump: (messageId: string) => void;
@@ -2070,8 +2083,15 @@ function ReplyQuoteCard({
           : "border-black/6 bg-[rgba(248,248,248,0.96)] text-[color:var(--text-primary)]"
       } text-left transition ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
-      <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
-        回复 {senderName}
+      <div className="flex items-center gap-2">
+        <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
+          回复 {senderName}
+        </div>
+        {modeLabel ? (
+          <div className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+            {modeLabel}
+          </div>
+        ) : null}
       </div>
       <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
         {renderTextWithMentions(previewText)}

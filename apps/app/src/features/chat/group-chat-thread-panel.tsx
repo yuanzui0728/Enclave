@@ -212,7 +212,8 @@ export function GroupChatThreadPanel({
   const replyPreview = replyDraft
     ? {
         senderName: replyDraft.senderName,
-        text: replyDraft.previewText,
+        text: replyDraft.quotedText?.trim() || replyDraft.previewText,
+        modeLabel: replyDraft.quotedText ? "部分引用" : undefined,
       }
     : null;
   const mentionCandidates = useMemo(() => {
@@ -252,16 +253,23 @@ export function GroupChatThreadPanel({
     return candidates;
   }, [membersQuery.data]);
 
-  const handleReplyMessage = (message: ChatRenderableMessage) => {
+  const handleReplyMessage = (
+    message: ChatRenderableMessage,
+    options?: {
+      quotedText?: string;
+    },
+  ) => {
     const senderName =
       message.senderType === "user"
         ? "我"
         : message.senderName?.trim() || "群成员";
     const previewText = describeReplyPreview(message);
+    const quotedText = options?.quotedText?.trim();
     setReplyDraft({
       messageId: message.id,
       senderName,
       previewText,
+      quotedText: quotedText || undefined,
     });
   };
 

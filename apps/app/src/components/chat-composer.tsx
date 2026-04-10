@@ -61,6 +61,7 @@ type ChatComposerProps = {
   replyPreview?: {
     senderName: string;
     text: string;
+    modeLabel?: string;
   } | null;
   onCancelReply?: () => void;
   onChange: (value: string) => void;
@@ -998,6 +999,7 @@ export function ChatComposer({
             variant={variant}
             senderName={replyPreview.senderName}
             text={replyPreview.text}
+            modeLabel={replyPreview.modeLabel}
             onClose={onCancelReply}
           />
         ) : null}
@@ -1560,11 +1562,13 @@ function ReplyPreviewBar({
   variant,
   senderName,
   text,
+  modeLabel,
   onClose,
 }: {
   variant: "mobile" | "desktop";
   senderName: string;
   text: string;
+  modeLabel?: string;
   onClose?: () => void;
 }) {
   const isDesktop = variant === "desktop";
@@ -1577,14 +1581,27 @@ function ReplyPreviewBar({
       }`}
     >
       <div className="min-w-0 flex-1">
-        <div
-          className={`text-[11px] font-medium ${
-            isDesktop
-              ? "uppercase tracking-[0.14em] text-[color:var(--text-dim)]"
-              : "text-[#07c160]"
-          }`}
-        >
-          回复 {senderName}
+        <div className="flex items-center gap-2">
+          <div
+            className={`text-[11px] font-medium ${
+              isDesktop
+                ? "uppercase tracking-[0.14em] text-[color:var(--text-dim)]"
+                : "text-[#07c160]"
+            }`}
+          >
+            回复 {senderName}
+          </div>
+          {modeLabel ? (
+            <div
+              className={`rounded-full px-2 py-0.5 text-[10px] ${
+                isDesktop
+                  ? "bg-[rgba(160,90,10,0.08)] text-[color:var(--brand-primary)]"
+                  : "bg-[rgba(7,193,96,0.12)] text-[#07c160]"
+              }`}
+            >
+              {modeLabel}
+            </div>
+          ) : null}
         </div>
         <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
           {text}

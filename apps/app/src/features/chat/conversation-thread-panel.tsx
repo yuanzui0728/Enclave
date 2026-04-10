@@ -93,7 +93,8 @@ export function ConversationThreadPanel({
   const replyPreview = replyDraft
     ? {
         senderName: replyDraft.senderName,
-        text: replyDraft.previewText,
+        text: replyDraft.quotedText?.trim() || replyDraft.previewText,
+        modeLabel: replyDraft.quotedText ? "部分引用" : undefined,
       }
     : null;
 
@@ -117,15 +118,22 @@ export function ConversationThreadPanel({
     setSelectionModeActive(false);
   }, [conversationId]);
 
-  const handleReplyMessage = (message: ChatRenderableMessage) => {
+  const handleReplyMessage = (
+    message: ChatRenderableMessage,
+    options?: {
+      quotedText?: string;
+    },
+  ) => {
     const senderName =
       message.senderType === "user"
         ? "我"
         : message.senderName?.trim() || "对方";
+    const quotedText = options?.quotedText?.trim();
     setReplyDraft({
       messageId: message.id,
       senderName,
       previewText: describeReplyPreview(message),
+      quotedText: quotedText || undefined,
     });
   };
 

@@ -12,6 +12,7 @@ export type ChatReplyMetadata = {
   messageId: string;
   senderName: string;
   previewText: string;
+  quotedText?: string;
 };
 
 export type ChatTextSegment =
@@ -63,6 +64,8 @@ export function extractChatReplyMetadata(text: string): {
         messageId: parsed.messageId,
         senderName: parsed.senderName,
         previewText: parsed.previewText,
+        quotedText:
+          typeof parsed.quotedText === "string" ? parsed.quotedText : undefined,
       },
       body,
     };
