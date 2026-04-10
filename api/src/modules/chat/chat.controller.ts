@@ -21,6 +21,7 @@ import type {
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
+  StickerAttachment,
 } from './chat.types';
 
 @Controller('conversations')
@@ -302,6 +303,11 @@ export class GroupController {
           type: 'location_card';
           text?: string;
           attachment: LocationCardAttachment;
+        }
+      | {
+          type: 'sticker';
+          text?: string;
+          attachment: StickerAttachment;
         },
   ) {
     const message = await this.groupService.sendOwnerMessage(id, body);

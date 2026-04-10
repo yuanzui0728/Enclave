@@ -4,6 +4,7 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
   MessageAttachment,
+  StickerAttachment,
   UploadableAttachment,
 } from "./attachments";
 
@@ -186,6 +187,13 @@ export type SendGroupMessageRequest =
       type: "location_card";
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "sticker";
+      text?: string;
+      attachment: StickerAttachment;
     };
 
 export interface UploadChatAttachmentResponse {
