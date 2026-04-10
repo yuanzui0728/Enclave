@@ -21,7 +21,6 @@ import {
   type ReplyLogicStateGateSummary,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   Button,
   Card,
   ErrorBlock,
@@ -358,21 +357,6 @@ export function ReplyLogicPage() {
 
   return (
     <div className="space-y-6">
-      <AppHeader
-        eyebrow="回复运行控制台"
-        title="AI回复逻辑"
-        description="在一个页面里同时查看真实回复链路、最终提示词、上下文窗口，并直接修改当前会生效的角色与推理服务配置。"
-        actions={
-          <Button onClick={() => void refreshAll()} variant="secondary" size="lg">
-            刷新快照
-          </Button>
-        }
-      />
-
-      <InlineNotice tone="muted">
-        这一版已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。右侧保存后会刷新运行时快照。
-      </InlineNotice>
-
       {overviewQuery.isLoading ? <LoadingBlock label="正在读取回复逻辑总览..." /> : null}
       {overviewQuery.isError && overviewQuery.error instanceof Error ? (
         <ErrorBlock message={overviewQuery.error.message} />
@@ -380,44 +364,142 @@ export function ReplyLogicPage() {
 
       {overview ? (
         <>
-          <OverviewMetrics overview={overview} />
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
+              <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                <div className="max-w-2xl">
+                  <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">回复调试</div>
+                  <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">先选目标，再看真实快照，最后修改保存。</h2>
+                  <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    这页已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。保存后会刷新真实运行快照。
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button onClick={() => void refreshAll()} variant="secondary" size="lg">
+                    刷新快照
+                  </Button>
+                  <Button
+                    onClick={saveRuntimeRulesDraft}
+                    variant="primary"
+                    size="lg"
+                    disabled={!isRuntimeRulesDraftDirty || runtimeRulesSaveMutation.isPending}
+                  >
+                    {runtimeRulesSaveMutation.isPending ? "保存规则中..." : "保存运行规则"}
+                  </Button>
+                </div>
+              </div>
 
-          <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_420px]">
-            <div className="space-y-6">
+              <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="角色数" value={overview.characters.length} />
+                <MetricCard label="会话数" value={overview.conversations.length} />
+                <MetricCard label="当前模型" value={overview.provider.model} />
+                <MetricCard label="世界上下文" value={overview.worldContext?.text || "暂无快照"} />
+              </div>
+            </Card>
+
+            <Card className="bg-[color:var(--surface-console)]">
+              <SectionHeading>当前状态</SectionHeading>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
+                <MetricCard
+                  label="当前目标"
+                  value={
+                    scope === "character"
+                      ? selectedCharacter?.name ?? "未选择角色"
+                      : selectedConversation?.title ?? "未选择会话"
+                  }
+                />
+                <MetricCard
+                  label="角色草稿"
+                  value={isCharacterDraftDirty ? "未保存" : "已同步"}
+                  meta={<StatusPill tone={isCharacterDraftDirty ? "warning" : "healthy"}>{isCharacterDraftDirty ? "草稿" : "同步"}</StatusPill>}
+                />
+                <MetricCard
+                  label="运行规则"
+                  value={isRuntimeRulesDraftDirty ? "未保存" : "已同步"}
+                  meta={<StatusPill tone={isRuntimeRulesDraftDirty ? "warning" : "healthy"}>{isRuntimeRulesDraftDirty ? "草稿" : "同步"}</StatusPill>}
+                />
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_440px]">
+            <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
               <Card className="bg-[color:var(--surface-console)]">
-                <SectionHeading>查看范围</SectionHeading>
+                <SectionHeading>工作范围</SectionHeading>
                 <div className="mt-4 space-y-4">
-                  <SelectFieldBlock
-                    label="范围"
-                    value={scope}
-                    onChange={(value) => setScope(value as InspectorScope)}
-                    options={[
-                      { value: "character", label: "角色" },
-                      { value: "conversation", label: "会话" },
-                    ]}
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setScope("character")}
+                      className={
+                        scope === "character"
+                          ? "rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-sm font-medium text-[color:var(--brand-primary)]"
+                          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
+                      }
+                    >
+                      按角色查看
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScope("conversation")}
+                      className={
+                        scope === "conversation"
+                          ? "rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-sm font-medium text-[color:var(--brand-primary)]"
+                          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
+                      }
+                    >
+                      按会话查看
+                    </button>
+                  </div>
 
                   {scope === "character" ? (
-                    <SelectFieldBlock
-                      label="角色"
-                      value={activeCharacterId}
-                      onChange={setSelectedCharacterId}
-                      options={(overview.characters ?? []).map((item) => ({
-                        value: item.id,
-                        label: `${item.name} · ${formatActivity(item.currentActivity)}`,
+                    <TargetListCard
+                      title="角色列表"
+                      items={(overview.characters ?? []).map((item) => ({
+                        id: item.id,
+                        title: item.name,
+                        subtitle: formatActivity(item.currentActivity),
+                        active: item.id === activeCharacterId,
+                        status: item.isOnline ? "在线" : "离线",
+                        tone: item.isOnline ? "healthy" : "muted",
+                        onSelect: () => setSelectedCharacterId(item.id),
                       }))}
                     />
                   ) : (
-                    <SelectFieldBlock
-                      label="会话"
-                      value={activeConversationId}
-                      onChange={setSelectedConversationId}
-                      options={(overview.conversations ?? []).map((item) => ({
-                        value: item.id,
-                        label: `${item.title} · ${formatConversationSource(item.source)}`,
+                    <TargetListCard
+                      title="会话列表"
+                      items={(overview.conversations ?? []).map((item) => ({
+                        id: item.id,
+                        title: item.title,
+                        subtitle: formatConversationSource(item.source),
+                        active: item.id === activeConversationId,
+                        status: item.participantNames.join(" / ") || "无角色",
+                        tone: "muted" as const,
+                        onSelect: () => setSelectedConversationId(item.id),
                       }))}
                     />
                   )}
+                </div>
+              </Card>
+
+              <Card className="bg-[color:var(--surface-console)]">
+                <SectionHeading>当前目标摘要</SectionHeading>
+                <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
+                  {scope === "character" && selectedCharacter ? (
+                    <>
+                      <StaticRow label="角色" value={selectedCharacter.name} />
+                      <StaticRow label="活动" value={formatActivity(selectedCharacter.currentActivity)} />
+                      <StaticRow label="在线" value={selectedCharacter.isOnline ? "在线" : "离线"} />
+                    </>
+                  ) : null}
+                  {scope === "conversation" && selectedConversation ? (
+                    <>
+                      <StaticRow label="会话" value={selectedConversation.title} />
+                      <StaticRow label="来源" value={formatConversationSource(selectedConversation.source)} />
+                      <StaticRow label="参与角色" value={selectedConversation.participantNames.join(" / ") || "无"} />
+                    </>
+                  ) : null}
                 </div>
               </Card>
 
@@ -467,6 +549,22 @@ export function ReplyLogicPage() {
             </div>
 
             <div className="space-y-6">
+              {scope === "character" ? (
+                <CharacterInspectorPanel
+                  selectedCharacter={selectedCharacter}
+                  query={characterSnapshotQuery}
+                  narrativePresentation={narrativePresentation}
+                />
+              ) : (
+                <ConversationInspectorPanel
+                  selectedConversation={selectedConversation}
+                  query={conversationSnapshotQuery}
+                  narrativePresentation={narrativePresentation}
+                />
+              )}
+            </div>
+
+            <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <ReplyPreviewPanel
                 scope={scope}
                 previewMessage={previewMessage}
@@ -479,22 +577,7 @@ export function ReplyLogicPage() {
                 isPending={previewMutation.isPending}
                 onRunPreview={() => previewMutation.mutate()}
               />
-              {scope === "character" ? (
-              <CharacterInspectorPanel
-                selectedCharacter={selectedCharacter}
-                query={characterSnapshotQuery}
-                narrativePresentation={narrativePresentation}
-              />
-            ) : (
-              <ConversationInspectorPanel
-                selectedConversation={selectedConversation}
-                query={conversationSnapshotQuery}
-                narrativePresentation={narrativePresentation}
-              />
-            )}
-            </div>
 
-            <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Card className="bg-[color:var(--surface-console)]">
                 <div className="flex items-center justify-between gap-3">
                   <SectionHeading>配置抽屉</SectionHeading>
@@ -1231,6 +1314,50 @@ function OverviewMetrics({ overview }: { overview: ReplyLogicOverview }) {
       <MetricCard label="会话数" value={overview.conversations.length} />
       <MetricCard label="当前模型" value={overview.provider.model} />
       <MetricCard label="世界上下文" value={overview.worldContext?.text || "暂无快照"} />
+    </div>
+  );
+}
+
+function TargetListCard({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    active: boolean;
+    status: string;
+    tone: "healthy" | "warning" | "muted";
+    onSelect: () => void;
+  }>;
+}) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">{title}</div>
+      <div className="mt-3 space-y-2">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={item.onSelect}
+            className={
+              item.active
+                ? "block w-full rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-left shadow-[var(--shadow-soft)]"
+                : "block w-full rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+            }
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="truncate font-semibold text-[color:var(--text-primary)]">{item.title}</div>
+                <div className="mt-1 truncate text-sm text-[color:var(--text-secondary)]">{item.subtitle}</div>
+              </div>
+              <StatusPill tone={item.tone}>{item.status}</StatusPill>
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
