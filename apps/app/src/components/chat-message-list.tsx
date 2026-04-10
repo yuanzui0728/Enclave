@@ -42,6 +42,7 @@ import {
   hideLocalChatMessage,
   type LocalChatMessageReminderRecord,
   readLocalChatMessageActionState,
+  removeLocalChatMessageReminder,
   upsertLocalChatMessageReminder,
 } from "../features/chat/local-chat-message-actions";
 import {
@@ -770,13 +771,31 @@ export function ChatMessageList({
     });
   };
 
-  const reminderOptions = useMemo(
-    () => buildReminderOptions(new Date()),
-    [reminderTargetMessage?.id],
-  );
+  const reminderOptions = buildReminderOptions(new Date());
 
   const handleSetReminder = (message: ChatRenderableMessage) => {
     setReminderTargetMessage(message);
+  };
+
+  const handleClearReminder = (messageId: string) => {
+    const nextState = removeLocalChatMessageReminder(messageId);
+    setMessageReminders(nextState.reminders);
+    setReminderTargetMessage((current) =>
+      current?.id === messageId ? null : current,
+    );
+    setActionNotice({
+      message: "已取消这条消息的本机提醒。",
+      tone: "success",
+    });
+  };
+
+  const handleToggleReminder = (message: ChatRenderableMessage) => {
+    if (messageReminderMap.has(message.id)) {
+      handleClearReminder(message.id);
+      return;
+    }
+
+    handleSetReminder(message);
   };
 
   const handleSelectReminder = (option: MobileMessageReminderOption) => {
@@ -1144,10 +1163,14 @@ export function ChatMessageList({
             setContextMenuState(null);
           }}
           onSetReminder={() => {
-            handleSetReminder(contextMenuState.message);
+            handleToggleReminder(contextMenuState.message);
             setContextMenuState(null);
           }}
-          reminderLabel="提醒"
+          reminderLabel={
+            messageReminderMap.has(contextMenuState.message.id)
+              ? "取消提醒"
+              : "提醒"
+          }
           onCopyText={() => {
             void copyToClipboard(
               buildClipboardText(contextMenuState.message),
@@ -1255,12 +1278,17 @@ export function ChatMessageList({
         onSetReminder={
           mobileActionMessage
             ? () => {
-                handleSetReminder(mobileActionMessage);
+                handleToggleReminder(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
         }
-        reminderLabel="提醒"
+        reminderLabel={
+          mobileActionMessage &&
+          messageReminderMap.has(mobileActionMessage.id)
+            ? "取消提醒"
+            : "提醒"
+        }
         onToggleFavorite={
           mobileActionMessage
             ? () => {

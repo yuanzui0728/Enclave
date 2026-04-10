@@ -87,6 +87,17 @@ export function upsertLocalChatMessageReminder(
   return nextState;
 }
 
+export function removeLocalChatMessageReminder(messageId: string) {
+  const current = readLocalChatMessageActionState();
+  const nextState = normalizeState({
+    hiddenMessageIds: current.hiddenMessageIds,
+    recalledMessageIds: current.recalledMessageIds,
+    reminders: current.reminders.filter((item) => item.messageId !== messageId),
+  });
+  writeState(nextState);
+  return nextState;
+}
+
 function writeState(state: LocalChatMessageActionState) {
   if (typeof window === "undefined") {
     return;
