@@ -27,7 +27,7 @@ import {
   type ConversationListItem,
   type GroupMember,
 } from "@yinjie/contracts";
-import { ChevronRight, Search, X } from "lucide-react";
+import { BellRing, ChevronRight, Search, X } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
@@ -48,6 +48,7 @@ import {
   useConversationBackground,
   useDefaultChatBackground,
 } from "../../chat/backgrounds/use-conversation-background";
+import { useMessageReminders } from "../../chat/use-message-reminders";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -83,11 +84,7 @@ type DirectDetailsConfirmAction = "hide" | "clear" | "report" | "block";
 
 type GroupDetailsConfirmAction = "hide" | "clear" | "leave";
 
-type DesktopGroupMemberBrowserFilter =
-  | "all"
-  | "owner"
-  | "admin"
-  | "character";
+type DesktopGroupMemberBrowserFilter = "all" | "owner" | "admin" | "character";
 
 export function DesktopChatDetailsPanel({
   conversation,
@@ -124,6 +121,7 @@ function DirectChatDetailsPanel({
   const [confirmAction, setConfirmAction] =
     useState<DirectDetailsConfirmAction | null>(null);
   const backgroundQuery = useConversationBackground(conversation.id);
+  const { reminders } = useMessageReminders();
   const targetCharacterId = conversation.participants[0] ?? "";
 
   useEffect(() => {
@@ -192,6 +190,14 @@ function DirectChatDetailsPanel({
     : targetCharacter?.relationship || "世界角色";
   const backgroundLabel = getChatBackgroundLabel(
     backgroundQuery.data?.effectiveBackground ?? null,
+  );
+  const reminderCount = useMemo(
+    () =>
+      reminders.filter(
+        (item) =>
+          item.threadType === "direct" && item.threadId === conversation.id,
+      ).length,
+    [conversation.id, reminders],
   );
 
   const pinMutation = useMutation({
@@ -448,12 +454,18 @@ function DirectChatDetailsPanel({
             </div>
           ) : isFriend ? (
             <>
-              <DesktopContactProfileRow label="备注" value={remarkName || "未设置"} />
+              <DesktopContactProfileRow
+                label="备注"
+                value={remarkName || "未设置"}
+              />
               <DesktopContactProfileRow
                 label="昵称"
                 value={targetCharacter?.name ?? conversation.title}
               />
-              <DesktopContactProfileRow label="隐界号" value={identifier ?? "未设置"} />
+              <DesktopContactProfileRow
+                label="隐界号"
+                value={identifier ?? "未设置"}
+              />
               <DesktopContactProfileRow
                 label="地区"
                 value={friendship?.region?.trim() || "未设置"}
@@ -465,7 +477,9 @@ function DirectChatDetailsPanel({
               <DesktopContactProfileRow
                 label="标签"
                 value={
-                  friendship?.tags?.length ? friendship.tags.join(" / ") : "未设置"
+                  friendship?.tags?.length
+                    ? friendship.tags.join(" / ")
+                    : "未设置"
                 }
               />
               <DesktopContactProfileRow
@@ -484,7 +498,10 @@ function DirectChatDetailsPanel({
                 label="身份"
                 value={targetCharacter?.relationship || "世界角色"}
               />
-              <DesktopContactProfileRow label="隐界号" value={identifier ?? "未设置"} />
+              <DesktopContactProfileRow
+                label="隐界号"
+                value={identifier ?? "未设置"}
+              />
               <DesktopContactProfileRow
                 label="个性签名"
                 value={signature}
@@ -494,10 +511,41 @@ function DirectChatDetailsPanel({
           )}
         </DesktopContactProfileSection>
 
+        <DesktopContactProfileSection title="聊天内容">
+          <DesktopContactProfileActionRow
+            label="搜索聊天记录"
+            value="在当前会话内查找"
+            onClick={onOpenHistory}
+          />
+          <DesktopContactProfileActionRow
+            label="消息提醒"
+            value={
+              reminderCount
+                ? `当前会话 ${reminderCount} 条`
+                : "当前会话暂无提醒"
+            }
+            onClick={onOpenHistory}
+          />
+          <DesktopContactProfileActionRow
+            label="聊天文件"
+            value="查看本聊天附件"
+            onClick={() => {
+              void navigate({
+                to: "/desktop/chat-files",
+                hash: buildDesktopChatFilesRouteHash(conversation.id),
+              });
+            }}
+          />
+        </DesktopContactProfileSection>
+
         <DesktopContactProfileSection title="内容与关系">
           <DesktopContactProfileRow
             label="共同群聊"
-            value={commonGroups.length ? `${commonGroups.length} 个共同群聊` : "暂时没有共同群聊"}
+            value={
+              commonGroups.length
+                ? `${commonGroups.length} 个共同群聊`
+                : "暂时没有共同群聊"
+            }
             muted={!commonGroups.length}
           />
           {commonGroups.slice(0, 2).map((group) => (
@@ -513,21 +561,6 @@ function DirectChatDetailsPanel({
               }}
             />
           ))}
-          <DesktopContactProfileActionRow
-            label="查找记录"
-            value="搜索这段聊天"
-            onClick={onOpenHistory}
-          />
-          <DesktopContactProfileActionRow
-            label="聊天文件"
-            value="查看本聊天附件"
-            onClick={() => {
-              void navigate({
-                to: "/desktop/chat-files",
-                hash: buildDesktopChatFilesRouteHash(conversation.id),
-              });
-            }}
-          />
           <DesktopContactProfileActionRow
             label="更多资料"
             value={isFriend ? "查看完整联系人资料" : "查看角色完整资料"}
@@ -653,6 +686,7 @@ function GroupChatDetailsPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerQuery = useDefaultChatBackground();
+  const { reminders } = useMessageReminders();
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] =
     useState<GroupDetailsConfirmAction | null>(null);
@@ -695,6 +729,14 @@ function GroupChatDetailsPanel({
 
   const backgroundLabel = getChatBackgroundLabel(
     ownerQuery.data?.defaultChatBackground ?? null,
+  );
+  const reminderCount = useMemo(
+    () =>
+      reminders.filter(
+        (item) =>
+          item.threadType === "group" && item.threadId === conversation.id,
+      ).length,
+    [conversation.id, reminders],
   );
 
   const updateGroupMutation = useMutation({
@@ -1018,15 +1060,15 @@ function GroupChatDetailsPanel({
               multiline: false,
               emptyAllowed: false,
               pending: updateNicknameMutation.isPending,
-              onConfirm: (value: string) => updateNicknameMutation.mutate(value),
+              onConfirm: (value: string) =>
+                updateNicknameMutation.mutate(value),
             }
           : null;
   const activeConfirm =
     confirmAction === "hide"
       ? {
           title: "隐藏聊天",
-          description:
-            "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
+          description: "确认将该群聊从消息列表中隐藏吗？有新消息时会再次出现。",
           confirmLabel: "隐藏聊天",
           pendingLabel: "正在隐藏...",
           onConfirm: () => {
@@ -1142,10 +1184,16 @@ function GroupChatDetailsPanel({
         />
       </DesktopPanelSection>
 
-      <DesktopPanelSection title="常用">
+      <DesktopPanelSection title="聊天内容">
         <DesktopPanelRow
           label="查找聊天记录"
           icon={<Search size={15} />}
+          onClick={onOpenHistory}
+        />
+        <DesktopPanelRow
+          label="消息提醒"
+          value={reminderCount ? `${reminderCount} 条` : "暂无提醒"}
+          icon={<BellRing size={15} />}
           onClick={onOpenHistory}
         />
         <DesktopPanelRow
@@ -1180,7 +1228,9 @@ function GroupChatDetailsPanel({
           label="消息免打扰"
           checked={isMuted}
           disabled={busy || !group}
-          onToggle={(checked) => preferencesMutation.mutate({ isMuted: checked })}
+          onToggle={(checked) =>
+            preferencesMutation.mutate({ isMuted: checked })
+          }
         />
         {isMuted ? (
           <>
@@ -1573,10 +1623,7 @@ function DesktopGroupMemberBrowserDialog({
         return false;
       }
 
-      if (
-        activeFilter === "character" &&
-        member.memberType !== "character"
-      ) {
+      if (activeFilter === "character" && member.memberType !== "character") {
         return false;
       }
 
