@@ -25,6 +25,7 @@ import {
 
 type SearchableChatMessage = Message | GroupMessage;
 type SearchCategoryId = "all" | "media" | "files" | "links";
+type SearchDateFilter = "all" | "today" | "7d" | "30d";
 
 type IndexedSearchMessage = {
   message: SearchableChatMessage;
@@ -44,6 +45,16 @@ type SearchResultSection = {
 };
 
 const MAX_VISIBLE_RESULTS = 80;
+
+const SEARCH_DATE_FILTERS: Array<{
+  id: SearchDateFilter;
+  label: string;
+}> = [
+  { id: "all", label: "全部时间" },
+  { id: "today", label: "今天" },
+  { id: "7d", label: "7天内" },
+  { id: "30d", label: "30天内" },
+];
 
 type ChatMessageSearchPanelProps = {
   subtitle: string;
@@ -112,6 +123,8 @@ export function ChatMessageSearchPanel({
   const [keyword, setKeyword] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
   const [senderFilter, setSenderFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<SearchDateFilter>("all");
+  const [specificDate, setSpecificDate] = useState("");
   const localMessageActionState = useLocalChatMessageActionState();
   const { reminders } = useMessageReminders();
   const reminderMap = useMemo(
@@ -144,13 +157,31 @@ export function ChatMessageSearchPanel({
         return false;
       }
 
+      if (!matchesSearchDateFilter(item.message.createdAt, dateFilter)) {
+        return false;
+      }
+
+      if (
+        specificDate &&
+        !matchesSpecificSearchDate(item.message.createdAt, specificDate)
+      ) {
+        return false;
+      }
+
       if (!trimmedKeyword) {
         return true;
       }
 
       return item.searchableText.includes(trimmedKeyword);
     });
-  }, [enableSenderFilter, indexedMessages, senderFilter, trimmedKeyword]);
+  }, [
+    dateFilter,
+    enableSenderFilter,
+    indexedMessages,
+    senderFilter,
+    specificDate,
+    trimmedKeyword,
+  ]);
   const senderOptions = useMemo(() => {
     if (!enableSenderFilter) {
       return [];
@@ -197,7 +228,10 @@ export function ChatMessageSearchPanel({
   const isKeywordSearch = Boolean(trimmedKeyword);
   const isPartialResult = results.length > visibleResults.length;
   const activeFilterCount =
-    (trimmedKeyword ? 1 : 0) + (senderFilter !== "all" ? 1 : 0);
+    (trimmedKeyword ? 1 : 0) +
+    (senderFilter !== "all" ? 1 : 0) +
+    (dateFilter !== "all" ? 1 : 0) +
+    (specificDate ? 1 : 0);
 
   const activeCategoryMeta =
     SEARCH_CATEGORIES.find((item) => item.id === activeCategory) ??
@@ -236,9 +270,50 @@ export function ChatMessageSearchPanel({
             {senderFilter !== "all" ? (
               <SearchStatPill label={`成员 ${senderFilter}`} />
             ) : null}
+            {specificDate ? (
+              <SearchStatPill label={`日期 ${specificDate}`} />
+            ) : dateFilter !== "all" ? (
+              <SearchStatPill
+                label={
+                  SEARCH_DATE_FILTERS.find((item) => item.id === dateFilter)
+                    ?.label ?? "时间筛选"
+                }
+              />
+            ) : null}
           </div>
-          {enableSenderFilter ? (
-            <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SEARCH_DATE_FILTERS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setDateFilter(item.id);
+                  setSpecificDate("");
+                }}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-[12px] transition",
+                  dateFilter === item.id && !specificDate
+                    ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
+                    : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="date"
+              value={specificDate}
+              onChange={(event) => {
+                setSpecificDate(event.target.value);
+                if (event.target.value) {
+                  setDateFilter("all");
+                }
+              }}
+              className="min-w-0 flex-1 rounded-[14px] border border-black/8 bg-[#f5f5f5] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+            />
+            {enableSenderFilter ? (
               <select
                 value={senderFilter}
                 onChange={(event) => setSenderFilter(event.target.value)}
@@ -251,32 +326,23 @@ export function ChatMessageSearchPanel({
                   </option>
                 ))}
               </select>
-              {activeFilterCount ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setKeyword("");
-                    setSenderFilter("all");
-                  }}
-                  className="shrink-0 rounded-full"
-                >
-                  清空筛选
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {!enableSenderFilter && keyword ? (
+            ) : null}
+          </div>
+          {activeFilterCount ? (
             <div className="mt-3">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                onClick={() => setKeyword("")}
+                onClick={() => {
+                  setKeyword("");
+                  setSenderFilter("all");
+                  setDateFilter("all");
+                  setSpecificDate("");
+                }}
                 className="rounded-full"
               >
-                清空关键词
+                清空筛选
               </Button>
             </div>
           ) : null}
@@ -376,11 +442,26 @@ export function ChatMessageSearchPanel({
             </div>
           ) : null}
 
-          {!trimmedKeyword && senderFilter !== "all" && !results.length ? (
+          {!trimmedKeyword &&
+          !specificDate &&
+          dateFilter === "all" &&
+          senderFilter !== "all" &&
+          !results.length ? (
             <div className="px-3">
               <EmptyState
                 title={`没有来自 ${senderFilter} 的${activeCategoryMeta.shortLabel}`}
                 description="换个成员试试，或者切回全部成员继续浏览。"
+              />
+            </div>
+          ) : null}
+
+          {!trimmedKeyword &&
+          (dateFilter !== "all" || specificDate) &&
+          !results.length ? (
+            <div className="px-3">
+              <EmptyState
+                title="这个时间范围内没有匹配消息"
+                description="换个时间试试，或者清空时间筛选继续浏览。"
               />
             </div>
           ) : null}
@@ -662,6 +743,55 @@ function buildSearchPreview(text: string, keyword: string) {
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
+}
+
+function matchesSearchDateFilter(createdAt: string, filter: SearchDateFilter) {
+  if (filter === "all") {
+    return true;
+  }
+
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return false;
+  }
+
+  const now = Date.now();
+
+  if (filter === "today") {
+    return timestamp >= startOfToday();
+  }
+
+  if (filter === "7d") {
+    return timestamp >= now - 7 * 24 * 60 * 60 * 1000;
+  }
+
+  return timestamp >= now - 30 * 24 * 60 * 60 * 1000;
+}
+
+function matchesSpecificSearchDate(createdAt: string, specificDate: string) {
+  if (!specificDate) {
+    return true;
+  }
+
+  const timestamp = parseTimestamp(createdAt);
+  if (timestamp === null) {
+    return false;
+  }
+
+  const date = new Date(`${specificDate}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  const dayStart = date.getTime();
+  const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+  return timestamp >= dayStart && timestamp < dayEnd;
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today.getTime();
 }
 
 function buildSearchResultSections(
