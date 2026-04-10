@@ -37,6 +37,12 @@ export function DesktopFeedDetailPanel({
   onToggleFavorite,
 }: DesktopFeedDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const residentCommentCount = post?.comments.filter(
+    (comment) => comment.authorType === "character",
+  ).length ?? 0;
+  const ownerCommentCount = post?.comments.filter(
+    (comment) => comment.authorType === "user",
+  ).length ?? 0;
 
   useEffect(() => {
     if (!post) {
@@ -146,6 +152,32 @@ export function DesktopFeedDetailPanel({
                 />
               </div>
 
+              <div
+                className={cn(
+                  "mt-4 rounded-[16px] border px-4 py-3",
+                  post.aiReacted
+                    ? "border-[rgba(34,197,94,0.16)] bg-[rgba(236,253,245,0.92)]"
+                    : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.98)]",
+                )}
+              >
+                <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                  居民回应状态
+                </div>
+                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                  {post.aiReacted
+                    ? "这条动态已经进入居民回应链，评论区里会更容易出现角色接话和后续互动。"
+                    : "这条动态暂时还没有触发居民侧 AI 跟进，现在更像一条公开广播。"}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+                  <span className="rounded-full bg-white/80 px-2.5 py-1">
+                    居民评论 {residentCommentCount}
+                  </span>
+                  <span className="rounded-full bg-white/80 px-2.5 py-1">
+                    主人评论 {ownerCommentCount}
+                  </span>
+                </div>
+              </div>
+
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"
@@ -179,6 +211,10 @@ export function DesktopFeedDetailPanel({
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
                 <MessageCircle size={14} />
                 评论区
+              </div>
+              <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-muted)]">
+                共 {post.commentCount} 条评论，其中 {residentCommentCount} 条来自居民，
+                {ownerCommentCount} 条来自世界主人。
               </div>
 
               {post.comments.length > 0 ? (
