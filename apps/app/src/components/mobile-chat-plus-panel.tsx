@@ -12,7 +12,10 @@ import {
   FileText,
   ImagePlus,
   MapPin,
+  Phone,
   Star,
+  Video,
+  WalletCards,
 } from "lucide-react";
 import { LoadingBlock, cn } from "@yinjie/ui";
 import {
@@ -40,7 +43,25 @@ type MobileChatPlusPanelProps = {
 type PanelView = "root" | "contacts" | "locations";
 const ROOT_ACTIONS_PER_PAGE = 8;
 
-const rootActions = [
+type RootAction = {
+  key:
+    | "album"
+    | "camera"
+    | "video-call"
+    | "contact"
+    | "location"
+    | "voice-call"
+    | "file"
+    | "favorite"
+    | "transfer";
+  label: string;
+  icon: typeof ImagePlus;
+  iconClassName: string;
+  disabled?: boolean;
+  disabledLabel?: string;
+};
+
+const rootActions: RootAction[] = [
   {
     key: "album",
     label: "相册",
@@ -52,6 +73,14 @@ const rootActions = [
     label: "拍摄",
     icon: Camera,
     iconClassName: "bg-[#54a7ff]",
+  },
+  {
+    key: "video-call",
+    label: "视频通话",
+    icon: Video,
+    iconClassName: "bg-[#60a5fa]",
+    disabled: true,
+    disabledLabel: "待接入",
   },
   {
     key: "contact",
@@ -66,6 +95,14 @@ const rootActions = [
     iconClassName: "bg-[#4cb5f5]",
   },
   {
+    key: "voice-call",
+    label: "语音通话",
+    icon: Phone,
+    iconClassName: "bg-[#38b36b]",
+    disabled: true,
+    disabledLabel: "待接入",
+  },
+  {
     key: "file",
     label: "文件",
     icon: FileText,
@@ -76,7 +113,16 @@ const rootActions = [
     label: "收藏",
     icon: Star,
     iconClassName: "bg-[#f3c64e]",
-    unavailableNotice: "收藏面板待接入，当前先保留微信式入口。",
+    disabled: true,
+    disabledLabel: "待接入",
+  },
+  {
+    key: "transfer",
+    label: "转账",
+    icon: WalletCards,
+    iconClassName: "bg-[#f59e0b]",
+    disabled: true,
+    disabledLabel: "待接入",
   },
 ] as const;
 
@@ -150,33 +196,45 @@ export function MobileChatPlusPanel({
                             ? () => setActiveView("contacts")
                             : item.key === "file"
                               ? onPickFile
-                              : item.key === "favorite"
-                                ? () =>
-                                    onUnavailableAction?.(
-                                      item.unavailableNotice ??
-                                        "该入口暂未接入。",
-                                    )
-                                : () => setActiveView("locations");
+                              : item.key === "location"
+                                ? () => setActiveView("locations")
+                                : () =>
+                                    onUnavailableAction?.("该入口暂未接入。");
 
                     return (
                       <button
                         key={item.key}
                         type="button"
                         onClick={handleClick}
-                        disabled={busy}
-                        className="flex flex-col items-center gap-2.5 text-center disabled:opacity-60"
+                        disabled={busy || item.disabled}
+                        className={cn(
+                          "flex flex-col items-center gap-2.5 text-center",
+                          item.disabled
+                            ? "cursor-not-allowed opacity-55"
+                            : "disabled:opacity-60",
+                        )}
                       >
                         <div
                           className={cn(
-                            "flex h-14 w-14 items-center justify-center rounded-[16px] border border-black/6 text-white shadow-none",
-                            item.iconClassName,
+                            "flex h-14 w-14 items-center justify-center rounded-[16px] border text-white shadow-none",
+                            item.disabled
+                              ? "border-black/5 bg-[#d7d7d7]"
+                              : "border-black/6",
+                            item.disabled ? null : item.iconClassName,
                           )}
                         >
                           <Icon size={22} />
                         </div>
-                        <span className="text-[12px] text-[#5f5f5f]">
-                          {item.label}
-                        </span>
+                        <div className="min-h-[2.15rem] text-center">
+                          <div className="text-[12px] text-[#5f5f5f]">
+                            {item.label}
+                          </div>
+                          {item.disabledLabel ? (
+                            <div className="mt-0.5 text-[10px] text-[#a0a0a0]">
+                              {item.disabledLabel}
+                            </div>
+                          ) : null}
+                        </div>
                       </button>
                     );
                   })}
