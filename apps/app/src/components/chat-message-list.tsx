@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { ContactRound, FileText, MapPin } from "lucide-react";
 import { type MessageAttachment } from "@yinjie/contracts";
 import { InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
+import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { formatMessageTimestamp } from "../lib/format";
 
@@ -37,6 +38,16 @@ export function ChatMessageList({
   const [activeHighlightedMessageId, setActiveHighlightedMessageId] = useState<
     string | undefined
   >(highlightedMessageId);
+  const [actionNotice, setActionNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+  } | null>(null);
+  const [contextMenuState, setContextMenuState] = useState<{
+    message: ChatRenderableMessage;
+    x: number;
+    y: number;
+  } | null>(null);
+  const contextMenuEnabled = isDesktop && groupMode;
 
   useEffect(() => {
     if (!highlightedMessageId) {
@@ -54,12 +65,90 @@ export function ChatMessageList({
     return () => window.clearTimeout(timer);
   }, [highlightedMessageId]);
 
+  useEffect(() => {
+    if (!actionNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setActionNotice(null), 2200);
+    return () => window.clearTimeout(timer);
+  }, [actionNotice]);
+
+  useEffect(() => {
+    if (!contextMenuState) {
+      return;
+    }
+
+    const closeMenu = () => setContextMenuState(null);
+    window.addEventListener("pointerdown", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [contextMenuState]);
+
+  useEffect(() => {
+    setContextMenuState(null);
+  }, [messages]);
+
   if (!messages.length) {
     return emptyState ?? null;
   }
 
+  const copyToClipboard = async (text: string, successMessage: string) => {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setActionNotice({
+        message: "当前环境不支持剪贴板复制。",
+        tone: "danger",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setActionNotice({
+        message: successMessage,
+        tone: "success",
+      });
+    } catch {
+      setActionNotice({
+        message: "复制失败，请稍后再试。",
+        tone: "danger",
+      });
+    }
+  };
+
+  const handleMessageContextMenu = (
+    event: MouseEvent<HTMLDivElement>,
+    message: ChatRenderableMessage,
+  ) => {
+    if (!contextMenuEnabled) {
+      return;
+    }
+
+    event.preventDefault();
+    setContextMenuState({
+      message,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
+      {actionNotice ? (
+        <InlineNotice className="text-xs" tone={actionNotice.tone}>
+          {actionNotice.message}
+        </InlineNotice>
+      ) : null}
       {messages.map((message) => {
         const isUser = message.senderType === "user";
         const isSystem =
@@ -91,6 +180,7 @@ export function ChatMessageList({
           <div
             key={message.id}
             id={`chat-message-${message.id}`}
+            onContextMenu={(event) => handleMessageContextMenu(event, message)}
             className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
               isHighlighted
                 ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
@@ -158,8 +248,80 @@ export function ChatMessageList({
           </div>
         );
       })}
+      {contextMenuState ? (
+        <GroupMessageContextMenu
+          x={contextMenuState.x}
+          y={contextMenuState.y}
+          onClose={() => setContextMenuState(null)}
+          onCopyText={() => {
+            void copyToClipboard(
+              buildClipboardText(contextMenuState.message),
+              "消息内容已复制。",
+            );
+            setContextMenuState(null);
+          }}
+          onCopySender={() => {
+            void copyToClipboard(
+              buildClipboardSender(contextMenuState.message),
+              "发送者名称已复制。",
+            );
+            setContextMenuState(null);
+          }}
+        />
+      ) : null}
     </div>
   );
+}
+
+function buildClipboardSender(message: ChatRenderableMessage) {
+  if (message.senderType === "user") {
+    return "我";
+  }
+
+  return message.senderName?.trim() || "群成员";
+}
+
+function buildClipboardText(message: ChatRenderableMessage) {
+  const displayedText =
+    message.senderType === "user"
+      ? message.text.trim()
+      : sanitizeDisplayedChatText(message.text).trim();
+
+  if (displayedText) {
+    return displayedText;
+  }
+
+  if (message.type === "image") {
+    return message.attachment?.kind === "image" && message.attachment.fileName
+      ? `[图片] ${message.attachment.fileName}`
+      : "[图片]";
+  }
+
+  if (message.type === "file") {
+    return message.attachment?.kind === "file" && message.attachment.fileName
+      ? `[文件] ${message.attachment.fileName}`
+      : "[文件]";
+  }
+
+  if (message.type === "contact_card") {
+    return message.attachment?.kind === "contact_card"
+      ? `[名片] ${message.attachment.name}`
+      : "[名片]";
+  }
+
+  if (message.type === "location_card") {
+    return message.attachment?.kind === "location_card"
+      ? `[位置] ${message.attachment.title}`
+      : "[位置]";
+  }
+
+  if (message.type === "sticker") {
+    return message.attachment?.kind === "sticker" && message.attachment.label
+      ? `[表情] ${message.attachment.label}`
+      : "[表情]";
+  }
+
+  return "消息";
 }
 
 function ImageMessage({
