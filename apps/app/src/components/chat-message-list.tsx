@@ -64,6 +64,10 @@ export type ChatRenderableMessage = {
   createdAt: string;
 };
 
+type OpenableAttachment =
+  | Extract<MessageAttachment, { kind: "image" }>
+  | Extract<MessageAttachment, { kind: "file" }>;
+
 type ChatMessageListProps = {
   messages: ChatRenderableMessage[];
   groupMode?: boolean;
@@ -1128,7 +1132,9 @@ function buildMessageFavoriteRecord(
   };
 }
 
-function getOpenableAttachment(message: ChatRenderableMessage) {
+function getOpenableAttachment(
+  message: ChatRenderableMessage,
+): OpenableAttachment | null {
   if (
     message.type === "image" &&
     message.attachment?.kind === "image" &&
