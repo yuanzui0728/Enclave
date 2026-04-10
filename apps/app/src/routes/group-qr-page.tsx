@@ -392,6 +392,32 @@ export function GroupQrPage() {
         : `处理完 ${topPendingReturnConversation.conversation.title} 后，这轮可立即补发会话会先减少一条，刚处理的目标会进入短暂冷却等待回流。`,
     };
   }, [pendingReturnOverview, topPendingReturnConversation]);
+  const fallbackPendingReturnExpectedOutcome = useMemo(() => {
+    if (!fallbackPendingReturnConversation) {
+      return null;
+    }
+
+    const fallbackIsCoolingDown = isPendingReturnCoolingDown(
+      fallbackPendingReturnConversation.target.deliveredAt,
+    );
+    const nextReadyCount = fallbackIsCoolingDown
+      ? pendingReturnOverview.readyCount
+      : Math.max(pendingReturnOverview.readyCount - 1, 0);
+    const nextCoolingDownCount = fallbackIsCoolingDown
+      ? pendingReturnOverview.coolingDownCount
+      : Math.min(
+          pendingReturnOverview.coolingDownCount + 1,
+          pendingReturnOverview.total,
+        );
+
+    return {
+      nextReadyCount,
+      nextCoolingDownCount,
+      summary: fallbackIsCoolingDown
+        ? "如果改做备选，这轮结构也不会立刻变化，因为它当前还在冷却里。"
+        : `如果先改做 ${fallbackPendingReturnConversation.conversation.title}，可立即补发会话同样会减少一条，但主推荐仍会保留在前面等待处理。`,
+    };
+  }, [fallbackPendingReturnConversation, pendingReturnOverview]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -900,26 +926,79 @@ export function GroupQrPage() {
                     <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
                       预计处理后
                     </div>
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                      <div className="rounded-[12px] bg-[rgba(240,253,244,0.72)] px-3 py-3">
-                        <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
-                          可立即补发
+                    <div className="mt-2 grid gap-2 lg:grid-cols-2">
+                      <div className="rounded-[12px] border border-[rgba(249,115,22,0.16)] bg-[rgba(255,248,240,0.72)] px-3 py-3">
+                        <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-secondary)]">
+                          先处理主推荐
                         </div>
-                        <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-                          {pendingReturnExpectedOutcome.nextReadyCount}
+                        <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+                          {topPendingReturnConversation?.conversation.title}
+                        </div>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          <div className="rounded-[12px] bg-[rgba(240,253,244,0.72)] px-3 py-3">
+                            <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
+                              可立即补发
+                            </div>
+                            <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                              {pendingReturnExpectedOutcome.nextReadyCount}
+                            </div>
+                          </div>
+                          <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
+                            <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                              冷却暂缓
+                            </div>
+                            <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                              {pendingReturnExpectedOutcome.nextCoolingDownCount}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                          {pendingReturnExpectedOutcome.summary}
                         </div>
                       </div>
-                      <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
+                      <div className="rounded-[12px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-3">
                         <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                          冷却暂缓
+                          改做次优先备选
                         </div>
-                        <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
-                          {pendingReturnExpectedOutcome.nextCoolingDownCount}
+                        <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+                          {fallbackPendingReturnConversation?.conversation.title ??
+                            "暂无备选"}
                         </div>
+                        {fallbackPendingReturnExpectedOutcome ? (
+                          <>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                              <div className="rounded-[12px] bg-[rgba(240,253,244,0.72)] px-3 py-3">
+                                <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
+                                  可立即补发
+                                </div>
+                                <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                                  {fallbackPendingReturnExpectedOutcome.nextReadyCount}
+                                </div>
+                              </div>
+                              <div className="rounded-[12px] bg-[rgba(15,23,42,0.04)] px-3 py-3">
+                                <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                                  冷却暂缓
+                                </div>
+                                <div className="mt-1 text-base font-semibold text-[color:var(--text-primary)]">
+                                  {fallbackPendingReturnExpectedOutcome.nextCoolingDownCount}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                              {fallbackPendingReturnExpectedOutcome.summary}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                            当前没有可对比的次优先备选。
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {pendingReturnExpectedOutcome.summary}
+                      {fallbackPendingReturnExpectedOutcome
+                        ? "主推荐先处理后，主路径会更顺；如果改做备选，主推荐仍会保留在前面等待你回头处理。"
+                        : pendingReturnExpectedOutcome.summary}
                     </div>
                   </div>
                 ) : null}
