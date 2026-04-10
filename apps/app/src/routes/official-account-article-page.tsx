@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -6,13 +6,14 @@ import {
   getOfficialAccountArticle,
   markOfficialAccountArticleRead,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  ErrorBlock,
-  LoadingBlock,
-} from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
+import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
+import {
+  readDesktopFavorites,
+  removeDesktopFavorite,
+  upsertDesktopFavorite,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -24,20 +25,25 @@ export function OfficialAccountArticlePage() {
   const isDesktopLayout = useDesktopLayout();
 
   if (isDesktopLayout) {
-    return (
-      <DesktopOfficialAccountsWorkspace selectedArticleId={articleId} />
-    );
+    return <DesktopOfficialAccountsWorkspace selectedArticleId={articleId} />;
   }
 
   return <MobileOfficialAccountArticlePage articleId={articleId} />;
 }
 
-function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) {
+function MobileOfficialAccountArticlePage({
+  articleId,
+}: {
+  articleId: string;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedArticleIdRef = useRef<string | null>(null);
+  const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
+    readDesktopFavorites().map((item) => item.sourceId),
+  );
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, articleId],
@@ -59,7 +65,11 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["app-official-account", baseUrl, updatedArticle.account.id],
+          queryKey: [
+            "app-official-account",
+            baseUrl,
+            updatedArticle.account.id,
+          ],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-official-accounts", baseUrl],
@@ -69,6 +79,9 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
   });
 
   const article = articleQuery.data;
+  const articleFavoriteSourceId = article
+    ? `official-article-${article.id}`
+    : null;
 
   useEffect(() => {
     if (!article?.id || lastMarkedArticleIdRef.current === article.id) {
@@ -78,6 +91,19 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
     lastMarkedArticleIdRef.current = article.id;
     markReadMutation.mutate(article.id);
   }, [article?.id, markReadMutation]);
+
+  function toggleArticleFavorite() {
+    if (!article) {
+      return;
+    }
+
+    const sourceId = `official-article-${article.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(buildOfficialArticleFavoriteRecord(article));
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
 
   return (
     <AppPage className="space-y-5">
@@ -113,6 +139,11 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
       {article ? (
         <OfficialArticleViewer
           article={article}
+          favorite={
+            articleFavoriteSourceId
+              ? favoriteSourceIds.includes(articleFavoriteSourceId)
+              : false
+          }
           onOpenAccount={(accountId) => {
             void navigate({
               to: "/official-accounts/$accountId",
@@ -125,6 +156,7 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
               params: { articleId: nextArticleId },
             });
           }}
+          onToggleFavorite={toggleArticleFavorite}
         />
       ) : null}
     </AppPage>

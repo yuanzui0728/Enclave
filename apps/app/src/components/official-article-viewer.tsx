@@ -1,19 +1,23 @@
 import { useState } from "react";
 import type { OfficialAccountArticleDetail } from "@yinjie/contracts";
-import { ArrowRight, Copy, Newspaper } from "lucide-react";
+import { ArrowRight, Copy, Newspaper, Star } from "lucide-react";
 import { Button, InlineNotice } from "@yinjie/ui";
 import { formatTimestamp } from "../lib/format";
 
 export function OfficialArticleViewer({
   article,
   accountName,
+  favorite = false,
   onOpenAccount,
   onOpenArticle,
+  onToggleFavorite,
 }: {
   article: OfficialAccountArticleDetail;
   accountName?: string;
+  favorite?: boolean;
   onOpenAccount?: (accountId: string) => void;
   onOpenArticle?: (articleId: string) => void;
+  onToggleFavorite?: (article: OfficialAccountArticleDetail) => void;
 }) {
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
@@ -64,16 +68,30 @@ export function OfficialArticleViewer({
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => void handleCopyLink()}
-          className="rounded-full"
-        >
-          <Copy size={14} />
-          复制链接
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {onToggleFavorite ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => onToggleFavorite(article)}
+              className="rounded-full"
+            >
+              <Star size={14} className={favorite ? "fill-current" : ""} />
+              {favorite ? "已收藏" : "收藏"}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => void handleCopyLink()}
+            className="rounded-full"
+          >
+            <Copy size={14} />
+            复制链接
+          </Button>
+        </div>
       </div>
       <h1 className="mt-3 text-[28px] font-semibold leading-[1.35] text-[color:var(--text-primary)]">
         {article.title}
@@ -84,7 +102,10 @@ export function OfficialArticleViewer({
         <span>{article.readCount} 阅读</span>
       </div>
       {copyNotice ? (
-        <InlineNotice className="mt-4" tone={copyNotice.includes("已复制") ? "success" : "info"}>
+        <InlineNotice
+          className="mt-4"
+          tone={copyNotice.includes("已复制") ? "success" : "info"}
+        >
           {copyNotice}
         </InlineNotice>
       ) : null}
@@ -108,7 +129,10 @@ export function OfficialArticleViewer({
       {article.relatedArticles.length ? (
         <section className="mt-10 rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,249,242,0.82)] p-5">
           <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-            <Newspaper size={16} className="text-[color:var(--brand-primary)]" />
+            <Newspaper
+              size={16}
+              className="text-[color:var(--brand-primary)]"
+            />
             <span>该号更多内容</span>
           </div>
 

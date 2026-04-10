@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -18,6 +18,12 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { OfficialArticleCard } from "../components/official-article-card";
+import { buildOfficialAccountFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
+import {
+  readDesktopFavorites,
+  removeDesktopFavorite,
+  upsertDesktopFavorite,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -27,9 +33,7 @@ export function OfficialAccountDetailPage() {
   const isDesktopLayout = useDesktopLayout();
 
   if (isDesktopLayout) {
-    return (
-      <DesktopOfficialAccountsWorkspace selectedAccountId={accountId} />
-    );
+    return <DesktopOfficialAccountsWorkspace selectedAccountId={accountId} />;
   }
 
   return <MobileOfficialAccountDetailPage accountId={accountId} />;
@@ -40,6 +44,9 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
+    readDesktopFavorites().map((item) => item.sourceId),
+  );
 
   const accountQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, accountId],
@@ -68,6 +75,20 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   }, [accountId, baseUrl]);
 
   const account = accountQuery.data;
+  const accountFavoriteSourceId = account ? `official-${account.id}` : null;
+
+  function toggleAccountFavorite() {
+    if (!account) {
+      return;
+    }
+
+    const sourceId = `official-${account.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(buildOfficialAccountFavoriteRecord(account));
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
 
   return (
     <AppPage>
@@ -89,7 +110,9 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         }
       />
 
-      {accountQuery.isLoading ? <LoadingBlock label="正在读取公众号..." /> : null}
+      {accountQuery.isLoading ? (
+        <LoadingBlock label="正在读取公众号..." />
+      ) : null}
       {accountQuery.isError && accountQuery.error instanceof Error ? (
         <ErrorBlock message={accountQuery.error.message} />
       ) : null}
@@ -119,18 +142,30 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               </div>
             </div>
 
-            <Button
-              type="button"
-              onClick={() => followMutation.mutate()}
-              disabled={followMutation.isPending}
-              variant={account.isFollowing ? "secondary" : "primary"}
-            >
-              {followMutation.isPending
-                ? "处理中..."
-                : account.isFollowing
-                  ? "取消关注"
-                  : "关注公众号"}
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                onClick={() => followMutation.mutate()}
+                disabled={followMutation.isPending}
+                variant={account.isFollowing ? "secondary" : "primary"}
+              >
+                {followMutation.isPending
+                  ? "处理中..."
+                  : account.isFollowing
+                    ? "取消关注"
+                    : "关注公众号"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={toggleAccountFavorite}
+              >
+                {accountFavoriteSourceId &&
+                favoriteSourceIds.includes(accountFavoriteSourceId)
+                  ? "取消收藏"
+                  : "收藏主页"}
+              </Button>
+            </div>
 
             {followMutation.isError && followMutation.error instanceof Error ? (
               <ErrorBlock message={followMutation.error.message} />

@@ -74,7 +74,7 @@ export function FavoritesPage() {
       <DesktopEntryShell
         badge="Favorites"
         title="收藏把跨频道的重要内容统一收住"
-        description="首版先接通桌面本地收藏路径，让搜索结果可以立刻进入收藏工作区。后续再把聊天、文章和内容流里的收藏动作继续补进来。"
+        description="桌面收藏已经接通搜索、聊天文件、朋友圈、广场动态和公众号阅读链路，把跨频道的重要内容统一收住。"
         aside={
           <div className="space-y-3">
             <StatCard label="当前收藏" value={`${favorites.length} 项`} />

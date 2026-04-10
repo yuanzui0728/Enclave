@@ -14,6 +14,15 @@ import { OfficialAccountListItem } from "../../../components/official-account-li
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { EmptyState } from "../../../components/empty-state";
+import {
+  buildOfficialAccountFavoriteRecord,
+  buildOfficialArticleFavoriteRecord,
+} from "../favorites/official-account-favorite-records";
+import {
+  readDesktopFavorites,
+  removeDesktopFavorite,
+  upsertDesktopFavorite,
+} from "../favorites/desktop-favorites-storage";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 export function DesktopOfficialAccountsWorkspace({
@@ -31,6 +40,9 @@ export function DesktopOfficialAccountsWorkspace({
   const [searchTerm, setSearchTerm] = useState("");
   const [accountFilter, setAccountFilter] = useState<"all" | "following">(
     "all",
+  );
+  const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
+    readDesktopFavorites().map((item) => item.sourceId),
   );
 
   const accountsQuery = useQuery({
@@ -100,6 +112,10 @@ export function DesktopOfficialAccountsWorkspace({
     ? (pinnedArticleQuery.data ?? articleDetailQuery.data)
     : articleDetailQuery.data;
   const account = accountDetailQuery.data;
+  const accountFavoriteSourceId = account ? `official-${account.id}` : null;
+  const articleFavoriteSourceId = activeArticle
+    ? `official-article-${activeArticle.id}`
+    : null;
 
   const followMutation = useMutation({
     mutationFn: () => {
@@ -162,6 +178,34 @@ export function DesktopOfficialAccountsWorkspace({
     lastMarkedArticleIdRef.current = activeArticle.id;
     markReadMutation.mutate(activeArticle.id);
   }, [activeArticle?.id, markReadMutation]);
+
+  function toggleAccountFavorite() {
+    if (!account) {
+      return;
+    }
+
+    const sourceId = `official-${account.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(buildOfficialAccountFavoriteRecord(account));
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
+
+  function toggleArticleFavorite() {
+    if (!activeArticle) {
+      return;
+    }
+
+    const sourceId = `official-article-${activeArticle.id}`;
+    const nextFavorites = favoriteSourceIds.includes(sourceId)
+      ? removeDesktopFavorite(sourceId)
+      : upsertDesktopFavorite(
+          buildOfficialArticleFavoriteRecord(activeArticle),
+        );
+
+    setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
 
   return (
     <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))]">
@@ -265,7 +309,7 @@ export function DesktopOfficialAccountsWorkspace({
             </div>
           ) : null}
           {account ? (
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant={account.isFollowing ? "secondary" : "primary"}
@@ -278,6 +322,17 @@ export function DesktopOfficialAccountsWorkspace({
                   : account.isFollowing
                     ? "取消关注"
                     : "关注公众号"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={toggleAccountFavorite}
+                className="rounded-full"
+              >
+                {accountFavoriteSourceId &&
+                favoriteSourceIds.includes(accountFavoriteSourceId)
+                  ? "取消收藏"
+                  : "收藏主页"}
               </Button>
             </div>
           ) : null}
@@ -326,6 +381,11 @@ export function DesktopOfficialAccountsWorkspace({
         {activeArticle ? (
           <OfficialArticleViewer
             article={activeArticle}
+            favorite={
+              articleFavoriteSourceId
+                ? favoriteSourceIds.includes(articleFavoriteSourceId)
+                : false
+            }
             onOpenAccount={(accountId) => {
               void navigate({
                 to: "/official-accounts/$accountId",
@@ -338,6 +398,7 @@ export function DesktopOfficialAccountsWorkspace({
                 params: { articleId: nextArticleId },
               });
             }}
+            onToggleFavorite={toggleArticleFavorite}
           />
         ) : (
           <EmptyState
