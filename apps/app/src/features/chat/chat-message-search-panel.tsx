@@ -273,7 +273,7 @@ export function ChatMessageSearchPanel({
     return matchedMessages.filter((item) =>
       item.categories.includes(activeCategory),
     );
-  }, [activeCategory, matchedMessages, trimmedKeyword]);
+  }, [activeCategory, matchedMessages]);
   const visibleResults = useMemo(
     () => results.slice(0, MAX_VISIBLE_RESULTS),
     [results],
@@ -302,7 +302,7 @@ export function ChatMessageSearchPanel({
     <ChatDetailsShell title="查找聊天记录" subtitle={subtitle} onBack={onBack}>
       <ChatDetailsSection title="搜索">
         <div className="px-3 py-3">
-          <label className="flex items-center gap-2 rounded-[14px] bg-[#f5f5f5] px-3 py-3">
+          <label className="flex items-center gap-2 rounded-[10px] border border-black/8 bg-white px-3 py-2.5">
             <Search
               size={16}
               className="shrink-0 text-[color:var(--text-dim)]"
@@ -361,10 +361,10 @@ export function ChatMessageSearchPanel({
                   setSpecificDate("");
                 }}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-[12px] transition",
+                  "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                   dateFilter === item.id && !specificDate
-                    ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
-                    : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
+                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
+                    : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
                 )}
               >
                 {item.label}
@@ -378,10 +378,10 @@ export function ChatMessageSearchPanel({
                 type="button"
                 onClick={() => setMessageTypeFilter(item.id)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-[12px] transition",
+                  "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                   messageTypeFilter === item.id
-                    ? "bg-[rgba(255,138,61,0.16)] text-[color:var(--brand-primary)]"
-                    : "bg-[#f5f5f5] text-[color:var(--text-muted)] hover:bg-[#eeeeee]",
+                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
+                    : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
                 )}
               >
                 {item.label}
@@ -398,13 +398,13 @@ export function ChatMessageSearchPanel({
                   setDateFilter("all");
                 }
               }}
-              className="min-w-0 flex-1 rounded-[14px] border border-black/8 bg-[#f5f5f5] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+              className="min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
             />
             {enableSenderFilter ? (
               <select
                 value={senderFilter}
                 onChange={(event) => setSenderFilter(event.target.value)}
-                className="min-w-0 flex-1 rounded-[14px] border border-black/8 bg-[#f5f5f5] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+                className="min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
               >
                 <option value="all">全部成员</option>
                 {senderOptions.map((senderName) => (
@@ -428,7 +428,7 @@ export function ChatMessageSearchPanel({
                   setDateFilter("all");
                   setSpecificDate("");
                 }}
-                className="rounded-full"
+                className="h-8 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
               >
                 清空筛选
               </Button>
@@ -466,17 +466,17 @@ export function ChatMessageSearchPanel({
                     type="button"
                     onClick={() => setActiveCategory(category.id)}
                     className={cn(
-                      "rounded-[18px] border px-3 py-3 text-left transition-colors",
+                      "rounded-[12px] border px-3 py-3 text-left transition-colors",
                       active
-                        ? "border-[#07c160]/20 bg-[rgba(7,193,96,0.1)]"
-                        : "border-black/5 bg-[#f7f7f7] hover:bg-[#f1f1f1]",
+                        ? "border-black/8 bg-white"
+                        : "border-black/6 bg-[#f6f6f6] hover:bg-[#efefef]",
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
-                            "flex h-9 w-9 items-center justify-center rounded-full",
+                            "flex h-9 w-9 items-center justify-center rounded-[10px]",
                             active
                               ? "bg-[#07c160] text-white"
                               : "bg-white text-[color:var(--text-secondary)]",
@@ -584,7 +584,7 @@ export function ChatMessageSearchPanel({
               <div>
                 {resultSections.map((section) => (
                   <section key={section.key}>
-                    <div className="sticky top-0 z-[1] border-y border-black/5 bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                    <div className="sticky top-0 z-[1] border-y border-black/5 bg-[#f6f6f6] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                       {section.label}
                     </div>
                     <div className="divide-y divide-black/5">
@@ -622,11 +622,11 @@ export function ChatMessageSearchPanel({
                               : item.previewText}
                           </div>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
-                            <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                            <span className="rounded-[7px] bg-[#f1f3f5] px-2 py-0.5 text-[11px] text-[color:var(--text-secondary)]">
                               {item.typeLabel}
                             </span>
                             {item.reminderAt ? (
-                              <span className="rounded-full bg-[rgba(59,130,246,0.10)] px-2 py-0.5 text-[11px] text-[#2563eb]">
+                              <span className="rounded-[7px] bg-[rgba(59,130,246,0.10)] px-2 py-0.5 text-[11px] text-[#2563eb]">
                                 提醒 · {formatMessageTimestamp(item.reminderAt)}
                               </span>
                             ) : null}
@@ -649,7 +649,7 @@ export function ChatMessageSearchPanel({
                   </section>
                 ))}
                 {isPartialResult ? (
-                  <div className="border-t border-black/5 bg-[#fafafa] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="border-t border-black/5 bg-[#f6f6f6] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
                     当前仅展示前 {MAX_VISIBLE_RESULTS}{" "}
                     条结果，请继续缩小范围查找。
                   </div>
@@ -866,7 +866,7 @@ function renderHighlightedText(text: string, keyword: string) {
   return (
     <>
       {text.slice(0, start)}
-      <mark className="rounded bg-[rgba(255,214,102,0.5)] px-0.5 text-current">
+      <mark className="rounded-[4px] bg-[rgba(250,204,21,0.28)] px-0.5 text-current">
         {text.slice(start, end)}
       </mark>
       {text.slice(end)}
@@ -1031,11 +1031,10 @@ function SearchStatPill({
   return (
     <span
       className={cn(
-        "rounded-full px-2.5 py-1 text-[11px]",
-        tone === "brand" &&
-          "bg-[rgba(255,138,61,0.14)] text-[color:var(--brand-primary)]",
+        "rounded-[7px] px-2.5 py-1 text-[11px]",
+        tone === "brand" && "bg-[#ededed] text-[color:var(--text-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
-        tone === "neutral" && "bg-[#f5f5f5] text-[color:var(--text-muted)]",
+        tone === "neutral" && "bg-[#ededed] text-[color:var(--text-muted)]",
       )}
     >
       {label}
