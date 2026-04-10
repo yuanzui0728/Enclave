@@ -28,6 +28,7 @@ import {
   type ClipboardEvent,
   type DragEvent,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type WheelEvent as ReactWheelEvent,
@@ -2715,7 +2716,13 @@ function DesktopScreenshotEditor({
     };
   }, [imageRef, draft.previewUrl, previewZoom]);
 
-  const updatePreviewZoom = (nextZoom: number) => {
+  const updatePreviewZoom = (
+    nextZoom: number,
+    focusPoint?: {
+      x: number;
+      y: number;
+    },
+  ) => {
     const viewport = previewViewportRef.current;
     const clampedZoom = clamp(nextZoom, 1, 3);
     if (!viewport || Math.abs(clampedZoom - previewZoom) < 0.001) {
@@ -2723,19 +2730,21 @@ function DesktopScreenshotEditor({
       return;
     }
 
-    const centerX = viewport.scrollLeft + viewport.clientWidth / 2;
-    const centerY = viewport.scrollTop + viewport.clientHeight / 2;
+    const viewportFocusX = focusPoint?.x ?? viewport.clientWidth / 2;
+    const viewportFocusY = focusPoint?.y ?? viewport.clientHeight / 2;
+    const contentFocusX = viewport.scrollLeft + viewportFocusX;
+    const contentFocusY = viewport.scrollTop + viewportFocusY;
     const zoomRatio = clampedZoom / previewZoom;
 
     setPreviewZoom(clampedZoom);
     requestAnimationFrame(() => {
       viewport.scrollLeft = Math.max(
         0,
-        centerX * zoomRatio - viewport.clientWidth / 2,
+        contentFocusX * zoomRatio - viewportFocusX,
       );
       viewport.scrollTop = Math.max(
         0,
-        centerY * zoomRatio - viewport.clientHeight / 2,
+        contentFocusY * zoomRatio - viewportFocusY,
       );
     });
   };
@@ -2748,6 +2757,29 @@ function DesktopScreenshotEditor({
     event.preventDefault();
     const step = event.deltaY < 0 ? 0.1 : -0.1;
     updatePreviewZoom(previewZoom + step);
+  };
+
+  const handlePreviewDoubleClick = (
+    event: ReactMouseEvent<HTMLDivElement>,
+  ) => {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("button")
+    ) {
+      return;
+    }
+
+    const viewport = previewViewportRef.current;
+    if (!viewport) {
+      return;
+    }
+
+    const bounds = viewport.getBoundingClientRect();
+    const nextZoom = previewZoom >= 1.5 ? 1 : 2;
+    updatePreviewZoom(nextZoom, {
+      x: clamp(event.clientX - bounds.left, 0, viewport.clientWidth),
+      y: clamp(event.clientY - bounds.top, 0, viewport.clientHeight),
+    });
   };
 
   const handlePreviewPanStart = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -2921,7 +2953,7 @@ function DesktopScreenshotEditor({
                   清空标注
                 </Button>
                 <span className="text-[11px] text-white/42">
-                  Ctrl/Cmd + 滚轮缩放，空格拖动画布
+                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布
                 </span>
               </div>
             </div>
@@ -2929,6 +2961,7 @@ function DesktopScreenshotEditor({
             <div
               ref={previewViewportRef}
               onWheel={handlePreviewWheel}
+              onDoubleClick={handlePreviewDoubleClick}
               className="relative min-h-0 flex-1 overflow-auto rounded-[18px] border border-white/8 bg-[#111]"
             >
               <div className="flex min-h-full min-w-full items-center justify-center p-5">
