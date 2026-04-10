@@ -78,7 +78,9 @@ export function upsertLocalChatMessageReminder(
     recalledMessageIds: current.recalledMessageIds,
     reminders: [
       reminder,
-      ...current.reminders.filter((item) => item.messageId !== reminder.messageId),
+      ...current.reminders.filter(
+        (item) => item.messageId !== reminder.messageId,
+      ),
     ],
   });
   writeState(nextState);
