@@ -27,10 +27,34 @@ export class GroupEntity {
   announcement?: string | null;
 
   @Column({ default: false })
+  isMuted: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  mutedAt?: Date | null;
+
+  @Column({ default: false })
   isPinned: boolean;
 
   @Column({ type: 'datetime', nullable: true })
   pinnedAt?: Date | null;
+
+  @Column({ default: false })
+  savedToContacts: boolean;
+
+  @Column({ type: 'datetime', nullable: true })
+  savedToContactsAt?: Date | null;
+
+  @Column({ default: true })
+  showMemberNicknames: boolean;
+
+  @Column({ default: true })
+  notifyOnAtMe: boolean;
+
+  @Column({ default: true })
+  notifyOnAtAll: boolean;
+
+  @Column({ default: true })
+  notifyOnAnnouncement: boolean;
 
   @Column({ type: 'datetime', nullable: true })
   lastClearedAt?: Date | null;

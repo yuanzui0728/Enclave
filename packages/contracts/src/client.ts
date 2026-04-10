@@ -20,6 +20,7 @@ import type {
   SetConversationMutedRequest,
   SendGroupMessageRequest,
   UploadChatAttachmentResponse,
+  UpdateGroupPreferencesRequest,
   UpdateGroupOwnerProfileRequest,
   UpdateGroupRequest,
 } from "./chat";
@@ -828,7 +829,11 @@ export function setConversationPinned(
   );
 }
 
-export function setConversationMuted(id: string, payload: SetConversationMutedRequest, baseUrl?: string) {
+export function setConversationMuted(
+  id: string,
+  payload: SetConversationMutedRequest,
+  baseUrl?: string,
+) {
   return requestLegacyApi<Conversation>(
     `/conversations/${id}/mute`,
     {
@@ -968,6 +973,21 @@ export function updateGroup(
   );
 }
 
+export function updateGroupPreferences(
+  id: string,
+  payload: UpdateGroupPreferencesRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/preferences`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
 export function getGroupMembers(id: string, baseUrl?: string) {
   return requestLegacyApi<GroupMember[]>(
     `/groups/${id}/members`,
@@ -986,6 +1006,20 @@ export function addGroupMember(
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function removeGroupMember(
+  id: string,
+  memberId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<SuccessResponse>(
+    `/groups/${id}/members/${memberId}`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );

@@ -73,8 +73,16 @@ export interface Group {
   creatorId: string;
   creatorType: GroupMemberType;
   announcement?: string;
+  isMuted: boolean;
+  mutedAt?: string;
   isPinned: boolean;
   pinnedAt?: string;
+  savedToContacts: boolean;
+  savedToContactsAt?: string;
+  showMemberNicknames: boolean;
+  notifyOnAtMe: boolean;
+  notifyOnAtAll: boolean;
+  notifyOnAnnouncement: boolean;
   lastClearedAt?: string;
   lastReadAt?: string;
   isHidden: boolean;
@@ -98,7 +106,7 @@ export interface GroupMember {
   memberType: GroupMemberType;
   memberName?: string;
   memberAvatar?: string;
-  role: "owner" | "member";
+  role: "owner" | "admin" | "member";
   joinedAt: string;
 }
 
@@ -116,6 +124,15 @@ export interface UpdateGroupRequest {
 
 export interface SetGroupPinnedRequest {
   pinned: boolean;
+}
+
+export interface UpdateGroupPreferencesRequest {
+  isMuted?: boolean;
+  savedToContacts?: boolean;
+  showMemberNicknames?: boolean;
+  notifyOnAtMe?: boolean;
+  notifyOnAtAll?: boolean;
+  notifyOnAnnouncement?: boolean;
 }
 
 export interface UpdateGroupOwnerProfileRequest {

@@ -96,8 +96,16 @@ export interface Group {
   creatorId: string;
   creatorType: 'user' | 'character';
   announcement?: string;
+  isMuted: boolean;
+  mutedAt?: Date;
   isPinned: boolean;
   pinnedAt?: Date;
+  savedToContacts: boolean;
+  savedToContactsAt?: Date;
+  showMemberNicknames: boolean;
+  notifyOnAtMe: boolean;
+  notifyOnAtAll: boolean;
+  notifyOnAnnouncement: boolean;
   lastClearedAt?: Date;
   lastReadAt?: Date;
   isHidden: boolean;
