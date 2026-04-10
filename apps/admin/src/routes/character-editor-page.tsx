@@ -9,7 +9,6 @@ import {
   type CharacterDraft,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   Button,
   Card,
   ErrorBlock,
@@ -157,23 +156,55 @@ export function CharacterEditorPage() {
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
   const canSave = Boolean(draft.name?.trim() && draft.relationship?.trim());
 
+  function jumpToSection(sectionId: string) {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-6">
-      <AppHeader
-        eyebrow="角色编辑"
-        title={isNew ? "新建角色" : draft.name || "编辑角色"}
-        description="先补齐基础身份和关系，再完善提示词、特征、记忆与边界。"
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <Link to="/characters">
-              <Button variant="secondary" size="lg">返回</Button>
-            </Link>
-            <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending} variant="primary" size="lg">
-              {saveMutation.isPending ? "保存中..." : "保存"}
-            </Button>
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">角色编辑</div>
+              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">
+                {isNew ? "新建角色资料" : draft.name || "编辑角色资料"}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                先补齐基础身份和关系，再完善提示词、特征、记忆与边界。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/characters">
+                <Button variant="secondary" size="lg">返回角色中心</Button>
+              </Link>
+              <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending} variant="primary" size="lg">
+                {saveMutation.isPending ? "保存中..." : "保存角色"}
+              </Button>
+            </div>
           </div>
-        }
-      />
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="可保存" value={canSave ? "是" : "否"} />
+            <MetricCard label="关系类型" value={formatRelationshipType(draft.relationshipType ?? "expert")} />
+            <MetricCard label="擅长领域数" value={(draft.expertDomains?.length ?? 0) || 0} />
+            <MetricCard label="触发场景数" value={(draft.triggerScenes?.length ?? 0) || 0} />
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>当前状态</SectionHeading>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard label="名称" value={draft.name || "未填写"} />
+            <MetricCard label="关系" value={draft.relationship || "待填写"} />
+            <MetricCard label="在线" value={draft.isOnline ? "在线" : "离线"} />
+            <MetricCard label="模板" value={draft.isTemplate ? "是" : "否"} />
+          </div>
+        </Card>
+      </div>
 
       {!isNew && characterQuery.isLoading ? <LoadingBlock label="正在加载角色草稿..." /> : null}
 
@@ -185,9 +216,32 @@ export function CharacterEditorPage() {
 
       {saveMutation.isSuccess ? <InlineNotice tone="success">角色已保存，正在返回角色名册...</InlineNotice> : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>段落导航</SectionHeading>
+            <div className="mt-4 grid gap-2">
+              <SectionNavButton label="基础信息" detail="名称、关系、触发场景" onClick={() => jumpToSection("character-editor-basics")} />
+              <SectionNavButton label="提示词与特征" detail="basePrompt、systemPrompt、说话风格" onClick={() => jumpToSection("character-editor-prompt")} />
+              <SectionNavButton label="推理与记忆" detail="记忆摘要、核心记忆、推理开关" onClick={() => jumpToSection("character-editor-memory")} />
+              <SectionNavButton label="身份与边界" detail="职业、背景、边界说明" onClick={() => jumpToSection("character-editor-identity")} />
+              <SectionNavButton label="预览" detail="查看当前角色摘要" onClick={() => jumpToSection("character-editor-preview")} />
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>保存提示</SectionHeading>
+            <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
+              <HintRow label="必填字段" value={canSave ? "已满足" : "名称和关系描述未齐"} />
+              <HintRow label="建议流程" value="先补基础信息，再写提示词和记忆" />
+              <HintRow label="当前入口" value={isNew ? "新建角色" : "编辑现有角色"} />
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6">
+          <Card id="character-editor-basics" className="bg-[color:var(--surface-console)]">
             <SectionHeading>基础信息</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="名称" value={draft.name ?? ""} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} />
@@ -239,7 +293,7 @@ export function CharacterEditorPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-editor-prompt" className="bg-[color:var(--surface-console)]">
             <SectionHeading>提示词与特征</SectionHeading>
             <TextAreaField
               label="基础提示词"
@@ -318,7 +372,7 @@ export function CharacterEditorPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-editor-memory" className="bg-[color:var(--surface-console)]">
             <SectionHeading>推理与记忆</SectionHeading>
             <TextAreaField
               label="记忆摘要"
@@ -400,7 +454,7 @@ export function CharacterEditorPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-editor-identity" className="bg-[color:var(--surface-console)]">
             <SectionHeading>身份与边界</SectionHeading>
             <Field
               label="职业"
@@ -463,7 +517,7 @@ export function CharacterEditorPage() {
             />
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-editor-preview" className="bg-[color:var(--surface-console)]">
             <SectionHeading>预览</SectionHeading>
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-xl">
@@ -481,6 +535,7 @@ export function CharacterEditorPage() {
             </div>
             <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">{draft.bio || "补充角色简介，说明它应当如何出现在这个世界里。"}</p>
           </Card>
+        </div>
         </div>
       </div>
     </div>
@@ -624,6 +679,36 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return <ToggleChip label={label} checked={checked} onChange={(event) => onChange(event.target.checked)} />;
+}
+
+function SectionNavButton({
+  label,
+  detail,
+  onClick,
+}: {
+  label: string;
+  detail: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+    >
+      <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
+      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">{detail}</div>
+    </button>
+  );
+}
+
+function HintRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
+      <span className="text-[color:var(--text-muted)]">{label}</span>
+      <span className="text-right text-[color:var(--text-primary)]">{value}</span>
+    </div>
+  );
 }
 
 function formatRelationshipType(type: Character["relationshipType"]) {
