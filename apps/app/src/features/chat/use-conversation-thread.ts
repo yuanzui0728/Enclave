@@ -295,6 +295,28 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
+    if (payload.type === "voice") {
+      const formData = new FormData();
+      formData.set("file", payload.file, payload.fileName);
+      if (payload.durationMs) {
+        formData.set("durationMs", String(payload.durationMs));
+      }
+      const result = await uploadChatAttachment(formData, baseUrl);
+
+      if (result.attachment.kind !== "voice") {
+        throw new Error("语音上传结果异常。");
+      }
+
+      await sendMutation.mutateAsync({
+        conversationId,
+        characterId: targetCharacterId,
+        type: "voice",
+        text: overrideText,
+        attachment: result.attachment,
+      });
+      return;
+    }
+
     if (payload.type === "contact_card") {
       await sendMutation.mutateAsync({
         conversationId,

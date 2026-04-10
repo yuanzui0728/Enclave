@@ -201,6 +201,27 @@ export function GroupChatThreadPanel({
       return;
     }
 
+    if (payload.type === "voice") {
+      const formData = new FormData();
+      formData.set("file", payload.file, payload.fileName);
+      if (payload.durationMs) {
+        formData.set("durationMs", String(payload.durationMs));
+      }
+      const result = await uploadChatAttachment(formData, baseUrl);
+
+      if (result.attachment.kind !== "voice") {
+        throw new Error("语音上传结果异常。");
+      }
+
+      await sendMutation.mutateAsync({
+        type: "voice",
+        text: replyText || undefined,
+        attachment: result.attachment,
+      });
+      scrollToBottom("smooth");
+      return;
+    }
+
     if (payload.type === "contact_card") {
       await sendMutation.mutateAsync({
         type: "contact_card",
@@ -445,7 +466,9 @@ export function GroupChatThreadPanel({
         />
         <div
           className={`absolute inset-0 ${
-            isDesktop ? "bg-[rgba(245,245,245,0.64)]" : "bg-[rgba(237,237,237,0.72)]"
+            isDesktop
+              ? "bg-[rgba(245,245,245,0.64)]"
+              : "bg-[rgba(237,237,237,0.72)]"
           }`}
         />
 

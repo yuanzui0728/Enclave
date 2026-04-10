@@ -19,6 +19,14 @@ export type ChatComposerAttachmentPayload =
       size: number;
     }
   | {
+      type: "voice";
+      file: Blob;
+      fileName: string;
+      mimeType: string;
+      size: number;
+      durationMs?: number;
+    }
+  | {
       type: "contact_card";
       attachment: ContactCardAttachment;
     }
