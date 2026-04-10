@@ -20,7 +20,12 @@ import {
   TextField as UiTextField,
   ToggleChip,
 } from "@yinjie/ui";
-import { AdminInfoRows, AdminPageHero, AdminSectionNav } from "../components/admin-workbench";
+import {
+  AdminActionFeedback,
+  AdminInfoRows,
+  AdminPageHero,
+  AdminSectionNav,
+} from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 
 const ACTIVITY_OPTIONS = [
@@ -883,7 +888,12 @@ export function CharacterFactoryPage() {
                 ))}
               </div>
             ) : (
-              <InlineNotice className="mt-4" tone="success">当前草稿与已发布版本一致。</InlineNotice>
+              <AdminActionFeedback
+                className="mt-4"
+                tone="success"
+                title="当前草稿已同步"
+                description="当前草稿与已发布版本一致。"
+              />
             )}
           </Card>
 
@@ -896,7 +906,11 @@ export function CharacterFactoryPage() {
               onChange={setPublishSummary}
             />
             {publishMutation.isSuccess ? (
-              <InlineNotice tone="success">草稿已发布到运行时实体。</InlineNotice>
+              <AdminActionFeedback
+                tone="success"
+                title="草稿已发布"
+                description="运行时实体已经更新为最新草稿。"
+              />
             ) : null}
             <div className="mt-4 flex flex-wrap gap-3">
               <Button

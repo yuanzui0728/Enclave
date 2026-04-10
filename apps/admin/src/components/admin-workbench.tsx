@@ -14,6 +14,7 @@ export type AdminInfoRowItem = {
 };
 
 type AdminCalloutTone = "warning" | "success" | "info" | "muted";
+type AdminActionFeedbackTone = "busy" | "success" | "warning" | "info";
 
 type AdminPageHeroProps = {
   eyebrow: string;
@@ -228,6 +229,37 @@ export function AdminDangerZone({
       <div className="text-xs uppercase tracking-[0.18em] text-amber-700">{title}</div>
       <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
       <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+export function AdminActionFeedback({
+  tone,
+  title,
+  description,
+  className,
+}: {
+  tone: AdminActionFeedbackTone;
+  title: string;
+  description: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[18px] border px-4 py-3 shadow-[var(--shadow-soft)]",
+        tone === "busy"
+          ? "border-sky-200 bg-[linear-gradient(160deg,rgba(239,246,255,0.98),rgba(224,242,254,0.92))]"
+          : tone === "success"
+            ? "border-emerald-200 bg-[linear-gradient(160deg,rgba(236,253,245,0.98),rgba(220,252,231,0.92))]"
+            : tone === "warning"
+              ? "border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))]"
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
+        className,
+      )}
+    >
+      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
+      <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
     </div>
   );
 }

@@ -38,7 +38,12 @@ import {
   TextAreaField,
   useDesktopRuntime,
 } from "@yinjie/ui";
-import { AdminActionGroup, AdminCallout, AdminDangerZone } from "../components/admin-workbench";
+import {
+  AdminActionFeedback,
+  AdminActionGroup,
+  AdminCallout,
+  AdminDangerZone,
+} from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type InferencePreviewForm = {
@@ -322,7 +327,9 @@ export function DashboardPage() {
           </div>
         </Card>
       </div>
-      {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+      {successNotice ? (
+        <AdminActionFeedback tone="success" title="操作已完成" description={successNotice} />
+      ) : null}
       {adminStatsQuery.isError && adminStatsQuery.error instanceof Error ? (
         <ErrorBlock message={adminStatsQuery.error.message} />
       ) : null}
@@ -911,9 +918,11 @@ export function DashboardPage() {
 
           <div className="mt-4 space-y-3">
             {operationsBusy ? (
-              <InlineNotice tone="info">
-                当前有运维任务执行中，其他维护操作暂时被锁定。
-              </InlineNotice>
+              <AdminActionFeedback
+                tone="busy"
+                title="运维任务执行中"
+                description="当前有运维任务执行中，其他维护操作暂时被锁定。"
+              />
             ) : null}
             {exportDiagnosticsMutation.isError && exportDiagnosticsMutation.error instanceof Error ? (
               <ErrorBlock message={exportDiagnosticsMutation.error.message} />
