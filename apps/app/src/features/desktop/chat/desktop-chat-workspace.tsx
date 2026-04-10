@@ -571,8 +571,8 @@ export function DesktopChatWorkspace({
         />
       ) : null}
 
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[#f5f5f5]">
-        <div className="border-b border-[color:var(--border-faint)] bg-[#f7f7f7] px-4 py-4">
+      <section className="flex w-[324px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
+        <div className="border-b border-black/6 bg-[#f3f3f3] px-3 py-3">
           <div className="relative z-20 flex items-center gap-2">
             <div className="relative min-w-0 flex-1">
               <TextField
@@ -580,30 +580,30 @@ export function DesktopChatWorkspace({
                 onChange={(event) => setSearchTerm(event.target.value)}
                 onKeyDown={handleSearchFieldKeyDown}
                 placeholder="搜索"
-                className="flex-1 rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-2.5 pl-4 pr-12 shadow-none hover:bg-white focus:shadow-none"
+                className="flex-1 rounded-[8px] border-black/6 bg-white py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-black/10 focus:shadow-none"
               />
               <button
                 type="button"
                 onClick={() => openDesktopSearch()}
-                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[color:var(--text-dim)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+                className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[7px] text-[color:var(--text-dim)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
                 aria-label="在搜一搜中搜索"
                 title="回车或点击进入搜一搜"
               >
-                <Search size={16} />
+                <Search size={15} />
               </button>
             </div>
             <div className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setIsQuickMenuOpen((current) => !current)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-white"
+                className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-black/6 bg-white text-[color:var(--text-primary)] transition hover:bg-[#f8f8f8]"
                 aria-label="打开快捷菜单"
               >
-                <Plus size={18} strokeWidth={2.2} />
+                <Plus size={17} strokeWidth={2.2} />
               </button>
 
               {isQuickMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-44 overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.6)] bg-[rgba(44,44,44,0.96)] p-1.5 shadow-[0_14px_40px_rgba(15,23,42,0.22)]">
+                <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[12px] border border-black/8 bg-white p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
                   {desktopQuickActionItems.map((item) => {
                     const Icon = item.icon;
 
@@ -612,9 +612,9 @@ export function DesktopChatWorkspace({
                         key={item.key}
                         type="button"
                         onClick={() => handleQuickAction(item.key)}
-                        className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10"
+                        className="flex w-full items-center gap-3 rounded-[8px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#f5f5f5]"
                       >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-white/10 text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#f3f3f3] text-[color:var(--text-secondary)]">
                           <Icon size={16} />
                         </div>
                         <span>{item.label}</span>
@@ -626,13 +626,13 @@ export function DesktopChatWorkspace({
             </div>
           </div>
           {notice ? (
-            <InlineNotice className="mt-3 text-xs" tone="info">
+            <InlineNotice className="mt-3 border-black/6 bg-white text-xs" tone="info">
               {notice}
             </InlineNotice>
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
+        <div className="min-h-0 flex-1 overflow-auto px-2 py-2.5">
           {conversationsQuery.isLoading ? (
             <LoadingBlock label="正在读取会话..." />
           ) : null}
@@ -648,12 +648,12 @@ export function DesktopChatWorkspace({
             <ErrorBlock message={blockedQuery.error.message} />
           ) : null}
 
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {filteredReminderEntries.length ? (
-              <section className="overflow-hidden rounded-[18px] border border-[#dcefe3] bg-[linear-gradient(145deg,rgba(238,248,241,0.96),rgba(255,255,255,0.98))] p-2 shadow-[0_10px_24px_rgba(7,193,96,0.08)]">
+              <section className="overflow-hidden rounded-[10px] border border-[#dcefe3] bg-[#f8fcf9] p-2 shadow-none">
                 <div className="flex items-center justify-between gap-3 px-2 py-1.5">
                   <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
                       <BellRing size={14} />
                     </div>
                     <span>消息提醒</span>
@@ -712,6 +712,9 @@ export function DesktopChatWorkspace({
                 active={conversation.id === activeConversation?.id}
                 conversation={conversation}
                 localMessageActionState={localMessageActionState}
+                contextMenuOpen={
+                  conversationContextMenu?.conversation.id === conversation.id
+                }
                 onContextMenu={handleConversationContextMenu}
               />
             ))}
@@ -723,7 +726,7 @@ export function DesktopChatWorkspace({
           !filteredServiceConversations.length &&
           !showSubscriptionInboxItem &&
           searchTerm.trim() ? (
-            <div className="pt-4">
+            <div className="px-2 pt-5">
               <EmptyState
                 title="没有匹配的会话"
                 description="换个关键词试试。"
@@ -983,11 +986,13 @@ function ConversationCard({
   active,
   conversation,
   localMessageActionState,
+  contextMenuOpen,
   onContextMenu,
 }: {
   active: boolean;
   conversation: ConversationListItem;
   localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
+  contextMenuOpen: boolean;
   onContextMenu: (
     event: MouseEvent<HTMLElement>,
     conversation: ConversationListItem,
@@ -998,6 +1003,7 @@ function ConversationCard({
       active={active}
       conversation={conversation}
       localMessageActionState={localMessageActionState}
+      contextMenuOpen={contextMenuOpen}
       onContextMenu={onContextMenu}
     />
   );
@@ -1007,21 +1013,25 @@ function ConversationCardLink({
   active,
   conversation,
   localMessageActionState,
+  contextMenuOpen,
   onContextMenu,
 }: {
   active: boolean;
   conversation: ConversationListItem;
   localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
+  contextMenuOpen: boolean;
   onContextMenu: (
     event: MouseEvent<HTMLElement>,
     conversation: ConversationListItem,
   ) => void;
 }) {
   const className = active
-    ? "flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
-    : conversation.isPinned
-      ? "flex items-center gap-3 rounded-[12px] border border-transparent bg-[#ededed] px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#e7e7e7]"
-      : "flex items-center gap-3 rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white";
+    ? "flex items-center gap-3 rounded-[8px] border border-black/6 bg-[#dcdcdc] px-3 py-2.5"
+    : contextMenuOpen
+      ? "flex items-center gap-3 rounded-[8px] border border-black/6 bg-[#e4e4e4] px-3 py-2.5"
+      : conversation.isPinned
+        ? "flex items-center gap-3 rounded-[8px] border border-transparent bg-[#e7e7e7] px-3 py-2.5 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#e1e1e1]"
+        : "flex items-center gap-3 rounded-[8px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[#e7e7e7]";
   const preview = getConversationPreviewParts(
     conversation,
     localMessageActionState,
@@ -1053,11 +1063,11 @@ function ConversationCardLink({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
-            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
               {conversation.title}
             </div>
             {isGroupConversation ? (
-              <span className="shrink-0 rounded-full bg-[#ededed] px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="shrink-0 rounded-full bg-white/70 px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 群聊
               </span>
             ) : null}
@@ -1071,7 +1081,7 @@ function ConversationCardLink({
           </div>
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <div className="truncate text-sm text-[color:var(--text-secondary)]">
+          <div className="truncate text-[12px] text-[color:var(--text-secondary)]">
             {preview.prefix ? (
               <span className="text-[color:var(--text-muted)]">
                 {preview.prefix}
@@ -1095,11 +1105,11 @@ function ConversationCardLink({
             {conversation.unreadCount > 0 ? (
               conversation.isMuted ? (
                 <div
-                  className="h-2.5 w-2.5 rounded-full bg-[#fa5151]"
+                  className="h-2 w-2 rounded-full bg-[#fa5151]"
                   aria-label={`${conversation.unreadCount} 条未读消息`}
                 />
               ) : (
-                <div className="min-w-6 rounded-full bg-[#fa5151] px-2 py-0.5 text-center text-[11px] text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]">
+                <div className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white">
                   {conversation.unreadCount > 99
                     ? "99+"
                     : conversation.unreadCount}
