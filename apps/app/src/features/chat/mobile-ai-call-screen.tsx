@@ -29,6 +29,7 @@ import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
+import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
 
 type MobileAiCallScreenProps = {
@@ -105,7 +106,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     baseUrl,
     conversationId: resolvedConversationId,
     characterId,
-    enabled: !isDesktopLayout && Boolean(conversationId),
+    enabled: mode === "voice" && !isDesktopLayout && Boolean(conversationId),
     onTurnSuccess: async (result) => {
       if (connectedNoticeSentRef.current) {
         return;
@@ -115,6 +116,24 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       await sendCallStatusMessage("connected", result.totalDurationMs);
     },
   });
+  const digitalHumanCall = useDigitalHumanCallSession({
+    baseUrl,
+    conversationId: resolvedConversationId,
+    characterId,
+    enabled:
+      mode === "video" &&
+      !isDesktopLayout &&
+      Boolean(conversationId) &&
+      Boolean(characterId),
+    onTurnSuccess: async (result) => {
+      if (connectedNoticeSentRef.current) {
+        return;
+      }
+
+      connectedNoticeSentRef.current = true;
+      await sendCallStatusMessage("connected", result.turn.totalDurationMs);
+    },
+  });
   const cameraPreview = useSelfCameraPreview({
     enabled:
       mode === "video" &&
@@ -122,8 +141,16 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       Boolean(conversationId) &&
       cameraEnabled,
   });
-  const speech = voiceCall.speech;
   const isVideoMode = mode === "video";
+  const activeCall = isVideoMode ? digitalHumanCall : voiceCall;
+  const speech = activeCall.speech;
+  const digitalSession = isVideoMode ? digitalHumanCall.session : null;
+  const lastUserTranscript = isVideoMode
+    ? digitalHumanCall.lastTurn?.userTranscript
+    : voiceCall.lastTurn?.userTranscript;
+  const lastAssistantText = isVideoMode
+    ? digitalHumanCall.lastTurn?.assistantText
+    : voiceCall.lastTurn?.assistantText;
 
   const characterName =
     characterQuery.data?.name?.trim() ||
@@ -134,13 +161,21 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     characterQuery.data?.currentStatus?.trim() ||
     characterQuery.data?.currentActivity?.trim() ||
     "在线";
-  const busy = voiceCall.busy;
+  const busy = activeCall.busy;
   const statusLabel = useMemo(() => {
-    if (voiceCall.turnMutation.isPending) {
+    if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
+      return "正在连接数字人";
+    }
+
+    if (isVideoMode && digitalHumanCall.sessionError) {
+      return "数字人连接失败";
+    }
+
+    if (activeCall.turnMutation.isPending) {
       return isVideoMode ? "数字人整理回复中" : "AI 正在思考";
     }
 
-    if (voiceCall.playbackState === "playing") {
+    if (activeCall.playbackState === "playing") {
       return isVideoMode ? "数字人正在说话" : "正在说话";
     }
 
@@ -151,24 +186,34 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       return isVideoMode ? "正在听你说话" : "正在聆听";
     }
 
-    if (voiceCall.lastTurn) {
+    if (lastAssistantText) {
       return isVideoMode ? "继续通话" : "继续说话";
     }
 
     return "按住说话";
   }, [
+    activeCall.playbackState,
+    activeCall.turnMutation.isPending,
+    digitalHumanCall.sessionError,
+    digitalHumanCall.sessionState,
     isVideoMode,
+    lastAssistantText,
     speech.status,
-    voiceCall.lastTurn,
-    voiceCall.playbackState,
-    voiceCall.turnMutation.isPending,
   ]);
   const statusHint = useMemo(() => {
-    if (voiceCall.turnMutation.isPending) {
+    if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
+      return "正在建立 AI 数字人视频通话，会话就绪后即可开始第一轮。";
+    }
+
+    if (isVideoMode && digitalHumanCall.sessionError) {
+      return "当前数字人会话没有建立成功，请返回聊天后重新发起。";
+    }
+
+    if (activeCall.turnMutation.isPending) {
       return "本轮语音已收到，正在转写并组织回复。";
     }
 
-    if (voiceCall.playbackState === "playing") {
+    if (activeCall.playbackState === "playing") {
       return isVideoMode
         ? "当前是半双工数字人通话，等 TA 说完后再开始下一轮。"
         : "当前是半双工模式，等 TA 说完后再开始下一轮。";
@@ -182,13 +227,18 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
 
     return isVideoMode
-      ? "远端是 AI 数字人舞台，本地摄像头仅用于预览，不影响 AI 回复链路。"
+      ? digitalSession?.presentationMode === "mock_stage"
+        ? "当前已接入数字人会话接口，远端先以内置数字人舞台承载，后续可替换真实 provider 流。"
+        : "远端是 AI 数字人舞台，本地摄像头仅用于预览，不影响 AI 回复链路。"
       : "每次说一段，AI 会回复一段语音。";
   }, [
+    activeCall.playbackState,
+    activeCall.turnMutation.isPending,
+    digitalHumanCall.sessionError,
+    digitalHumanCall.sessionState,
+    digitalSession?.presentationMode,
     isVideoMode,
     speech.status,
-    voiceCall.playbackState,
-    voiceCall.turnMutation.isPending,
   ]);
 
   const handlePressStart = async () => {
@@ -197,16 +247,20 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
 
     setRecordButtonHolding(true);
-    await voiceCall.startRecordingTurn();
+    await activeCall.startRecordingTurn();
   };
 
   const handlePressEnd = () => {
     setRecordButtonHolding(false);
-    voiceCall.stopRecordingTurn();
+    activeCall.stopRecordingTurn();
   };
 
   const handleBack = async () => {
-    voiceCall.stopReplyPlayback();
+    activeCall.stopReplyPlayback();
+    if (isVideoMode) {
+      await digitalHumanCall.endSession();
+    }
+
     if (
       conversation?.type === "direct" &&
       waitingNoticeSentRef.current &&
@@ -296,7 +350,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   return (
     <AppPage className="min-h-full space-y-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.22),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_42%,#020617_100%)] px-0 py-0 text-white">
-      <audio ref={voiceCall.audioRef} preload="auto" />
+      <audio ref={activeCall.audioRef} preload="auto" />
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.68)] px-3 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -317,11 +371,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           </div>
           <button
             type="button"
-            onClick={() => voiceCall.setAudioMuted((current) => !current)}
+            onClick={() => activeCall.setAudioMuted((current) => !current)}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16"
-            aria-label={voiceCall.audioMuted ? "取消静音播放" : "静音播放"}
+            aria-label={activeCall.audioMuted ? "取消静音播放" : "静音播放"}
           >
-            {voiceCall.audioMuted ? (
+            {activeCall.audioMuted ? (
               <VolumeX size={18} />
             ) : (
               <Volume2 size={18} />
@@ -361,9 +415,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <div className="relative flex flex-1 items-center justify-center py-6">
                 <DigitalHumanPortrait
                   name={characterName}
-                  src={characterAvatar}
-                  talking={voiceCall.playbackState === "playing"}
-                  thinking={voiceCall.turnMutation.isPending}
+                  src={digitalSession?.posterUrl || characterAvatar}
+                  talking={activeCall.playbackState === "playing"}
+                  thinking={
+                    digitalHumanCall.sessionState === "connecting" ||
+                    activeCall.turnMutation.isPending
+                  }
+                  providerLabel={
+                    digitalSession?.presentationMode === "mock_stage"
+                      ? "内置数字人舞台"
+                      : "数字人视频流"
+                  }
                 />
 
                 <div className="absolute right-0 top-0 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
@@ -451,12 +513,20 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           cameraPreview.status !== "requesting-permission" ? (
             <InlineNotice tone="warning">{cameraPreview.error}</InlineNotice>
           ) : null}
-          {voiceCall.turnMutation.error instanceof Error ? (
-            <ErrorBlock message={voiceCall.turnMutation.error.message} />
+          {isVideoMode && digitalHumanCall.session?.presentationMode === "mock_stage" ? (
+            <InlineNotice tone="info">
+              当前视频通话已走数字人会话接口，远端先以内置数字人舞台承载，后续可替换真实 provider 视频输出。
+            </InlineNotice>
+          ) : null}
+          {isVideoMode && digitalHumanCall.sessionError ? (
+            <ErrorBlock message={digitalHumanCall.sessionError} />
+          ) : null}
+          {activeCall.turnMutation.error instanceof Error ? (
+            <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
           {speech.error ? <ErrorBlock message={speech.error} /> : null}
-          {voiceCall.playerError ? (
-            <InlineNotice tone="info">{voiceCall.playerError}</InlineNotice>
+          {activeCall.playerError ? (
+            <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
           ) : null}
           {characterQuery.isError && characterQuery.error instanceof Error ? (
             <ErrorBlock message={characterQuery.error.message} />
@@ -467,9 +537,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           <CallBubble
             label="我"
             text={
-              voiceCall.turnMutation.isPending
+              activeCall.turnMutation.isPending
                 ? speech.displayText || "本轮语音已发出，正在整理..."
-                : voiceCall.lastTurn?.userTranscript ||
+                : lastUserTranscript ||
                   (isVideoMode
                     ? "按住底部按钮说话，画面会保持在当前视频通话里。"
                     : "按住底部按钮，说出你想对 TA 说的话。")
@@ -479,7 +549,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           <CallBubble
             label={characterName}
             text={
-              voiceCall.lastTurn?.assistantText ||
+              lastAssistantText ||
               (isVideoMode
                 ? "数字人的回复会在这里显示，并通过语音自动播报。"
                 : "TA 的回复会在这里显示，并自动播报给你听。")
@@ -503,9 +573,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <button
               type="button"
               onClick={() => {
-                void voiceCall.replayLastTurn();
+                void activeCall.replayLastTurn();
               }}
-              disabled={!voiceCall.lastTurn || voiceCall.turnMutation.isPending}
+              disabled={!lastAssistantText || activeCall.turnMutation.isPending}
               className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
             >
               <RotateCcw size={16} />
@@ -538,7 +608,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   handlePressEnd();
                 }
               }}
-              disabled={busy}
+              disabled={
+                busy || (isVideoMode && digitalHumanCall.sessionState !== "ready")
+              }
               className={cn(
                 "flex items-center justify-center rounded-full border shadow-[0_30px_80px_rgba(16,185,129,0.3)] transition active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-55",
                 isVideoMode
@@ -547,17 +619,23 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               )}
             >
               <span className="flex flex-col items-center gap-3">
-                {voiceCall.turnMutation.isPending ? (
+                {digitalHumanCall.sessionState === "connecting" ? (
+                  <LoaderCircle size={34} className="animate-spin" />
+                ) : activeCall.turnMutation.isPending ? (
                   <LoaderCircle size={34} className="animate-spin" />
                 ) : (
                   <Mic size={36} />
                 )}
                 <span className="text-[17px] font-medium">
-                  {voiceCall.turnMutation.isPending
+                  {digitalHumanCall.sessionState === "connecting"
+                    ? "连接中"
+                    : isVideoMode && digitalHumanCall.sessionError
+                      ? "暂不可用"
+                    : activeCall.turnMutation.isPending
                     ? "AI 回复中"
                     : speech.status === "listening" || recordButtonHolding
                       ? "松开发送"
-                      : voiceCall.playbackState === "playing"
+                      : activeCall.playbackState === "playing"
                         ? "播放中"
                         : "按住说话"}
                 </span>
@@ -591,11 +669,13 @@ function DigitalHumanPortrait({
   src,
   talking,
   thinking,
+  providerLabel,
 }: {
   name: string;
   src?: string;
   talking: boolean;
   thinking: boolean;
+  providerLabel?: string;
 }) {
   const initial = name.trim().slice(0, 1) || "AI";
 
@@ -645,6 +725,11 @@ function DigitalHumanPortrait({
         <span className="text-sm text-white/76">
           {talking ? "数字人播报中" : thinking ? "数字人思考中" : "数字人在线"}
         </span>
+        {providerLabel ? (
+          <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[11px] text-white/56">
+            {providerLabel}
+          </span>
+        ) : null}
       </div>
     </div>
   );
