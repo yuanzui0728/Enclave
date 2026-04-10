@@ -5,11 +5,14 @@ import { FileText, Plus, UserPlus, Users, X } from "lucide-react";
 import {
   getBlockedCharacters,
   getConversations,
+  getOfficialAccountMessageEntries,
   type ConversationListItem,
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
+import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
+import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -20,6 +23,7 @@ import { createDesktopNote } from "./desktop-notes-storage";
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
   highlightedMessageId?: string;
+  selectedSpecialView?: "subscription-inbox";
 };
 
 type DesktopQuickActionItem = {
@@ -49,6 +53,7 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 export function DesktopChatWorkspace({
   selectedConversationId,
   highlightedMessageId,
+  selectedSpecialView,
 }: DesktopChatWorkspaceProps) {
   const navigate = useNavigate();
   const ownerId = useWorldOwnerStore((state) => state.id);
@@ -62,6 +67,12 @@ export function DesktopChatWorkspace({
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    enabled: Boolean(ownerId),
+    refetchInterval: 3_000,
+  });
+  const messageEntriesQuery = useQuery({
+    queryKey: ["app-official-message-entries", baseUrl],
+    queryFn: () => getOfficialAccountMessageEntries(baseUrl),
     enabled: Boolean(ownerId),
     refetchInterval: 3_000,
   });
@@ -99,8 +110,29 @@ export function DesktopChatWorkspace({
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, searchTerm]);
+  const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
+  const subscriptionInboxActive = selectedSpecialView === "subscription-inbox";
+  const showSubscriptionInboxItem = useMemo(() => {
+    if (!subscriptionInboxSummary) {
+      return false;
+    }
+
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) {
+      return true;
+    }
+
+    return (
+      "订阅号消息".includes(keyword) ||
+      (subscriptionInboxSummary.preview ?? "").toLowerCase().includes(keyword)
+    );
+  }, [searchTerm, subscriptionInboxSummary]);
 
   const activeConversation = useMemo(() => {
+    if (subscriptionInboxActive) {
+      return null;
+    }
+
     if (!filteredConversations.length) {
       return null;
     }
@@ -114,13 +146,13 @@ export function DesktopChatWorkspace({
     }
 
     return filteredConversations[0];
-  }, [filteredConversations, selectedConversationId]);
+  }, [filteredConversations, selectedConversationId, subscriptionInboxActive]);
 
   useEffect(() => {
-    if (!activeConversation) {
+    if (!activeConversation || subscriptionInboxActive) {
       setInspectorOpen(false);
     }
-  }, [activeConversation]);
+  }, [activeConversation, subscriptionInboxActive]);
 
   useEffect(() => {
     if (!notice) {
@@ -217,11 +249,26 @@ export function DesktopChatWorkspace({
           conversationsQuery.error instanceof Error ? (
             <ErrorBlock message={conversationsQuery.error.message} />
           ) : null}
+          {messageEntriesQuery.isError &&
+          messageEntriesQuery.error instanceof Error ? (
+            <ErrorBlock message={messageEntriesQuery.error.message} />
+          ) : null}
           {blockedQuery.isError && blockedQuery.error instanceof Error ? (
             <ErrorBlock message={blockedQuery.error.message} />
           ) : null}
 
           <div className="space-y-1.5">
+            {showSubscriptionInboxItem && subscriptionInboxSummary ? (
+              <SubscriptionInboxCard
+                summary={subscriptionInboxSummary}
+                variant="desktop"
+                active={subscriptionInboxActive}
+                onClick={() => {
+                  void navigate({ to: "/chat/subscription-inbox" });
+                }}
+              />
+            ) : null}
+
             {filteredConversations.map((conversation) => (
               <ConversationCard
                 key={conversation.id}
@@ -231,7 +278,9 @@ export function DesktopChatWorkspace({
             ))}
           </div>
 
-          {!conversationsQuery.isLoading && !filteredConversations.length && searchTerm.trim() ? (
+          {!conversationsQuery.isLoading &&
+          !filteredConversations.length &&
+          searchTerm.trim() ? (
             <div className="pt-4">
               <EmptyState
                 title="没有匹配的会话"
@@ -243,7 +292,9 @@ export function DesktopChatWorkspace({
       </section>
 
       <section className="min-w-0 flex-1">
-        {activeConversation ? (
+        {subscriptionInboxActive ? (
+          <DesktopSubscriptionWorkspace />
+        ) : activeConversation ? (
           activeConversation.type === "group" ? (
             <GroupChatThreadPanel
               groupId={activeConversation.id}
@@ -340,7 +391,9 @@ export function DesktopChatWorkspace({
                   className="flex items-center justify-between rounded-[14px] px-3 py-3 text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
                 >
                   <span>
-                    {activeConversation.type === "group" ? "群聊信息" : "聊天信息"}
+                    {activeConversation.type === "group"
+                      ? "群聊信息"
+                      : "聊天信息"}
                   </span>
                   <span className="text-[color:var(--brand-secondary)]">›</span>
                 </Link>
@@ -374,9 +427,7 @@ function ConversationCard({
   active: boolean;
   conversation: ConversationListItem;
 }) {
-  return (
-    <ConversationCardLink active={active} conversation={conversation} />
-  );
+  return <ConversationCardLink active={active} conversation={conversation} />;
 }
 
 function ConversationCardLink({
@@ -409,7 +460,7 @@ function ConversationCardLink({
             {conversation.lastMessage?.text ?? ""}
           </div>
           {conversation.unreadCount > 0 ? (
-            <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-white shadow-[var(--shadow-soft)]">
+            <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]">
               {conversation.unreadCount}
             </div>
           ) : null}

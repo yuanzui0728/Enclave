@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { getConversations } from "@yinjie/contracts";
+import {
+  getConversations,
+  getOfficialAccountMessageEntries,
+} from "@yinjie/contracts";
 import {
   Plus,
   QrCode,
@@ -21,6 +24,7 @@ import {
 
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -85,11 +89,17 @@ function MobileChatListPage() {
     queryFn: () => getConversations(baseUrl),
     refetchInterval: 3_000,
   });
+  const messageEntriesQuery = useQuery({
+    queryKey: ["app-official-message-entries", baseUrl],
+    queryFn: () => getOfficialAccountMessageEntries(baseUrl),
+    refetchInterval: 3_000,
+  });
 
   const conversations = useMemo(
     () => conversationsQuery.data ?? [],
     [conversationsQuery.data],
   );
+  const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const normalizedSearchText = searchText.trim().toLowerCase();
   const filteredConversations = useMemo(() => {
     if (!normalizedSearchText) {
@@ -106,8 +116,25 @@ function MobileChatListPage() {
       );
     });
   }, [conversations, normalizedSearchText]);
+  const showSubscriptionInboxItem = useMemo(() => {
+    if (!subscriptionInboxSummary) {
+      return false;
+    }
 
-  const hasConversations = filteredConversations.length > 0;
+    if (!normalizedSearchText) {
+      return true;
+    }
+
+    return (
+      "订阅号消息".includes(normalizedSearchText) ||
+      (subscriptionInboxSummary.preview ?? "")
+        .toLowerCase()
+        .includes(normalizedSearchText)
+    );
+  }, [normalizedSearchText, subscriptionInboxSummary]);
+
+  const hasConversations =
+    filteredConversations.length > 0 || showSubscriptionInboxItem;
   const hasSearchResult = normalizedSearchText.length > 0;
 
   function handleUnavailableAction(message: string) {
@@ -225,17 +252,32 @@ function MobileChatListPage() {
             <ErrorBlock message={conversationsQuery.error.message} />
           </div>
         ) : null}
+        {messageEntriesQuery.isError &&
+        messageEntriesQuery.error instanceof Error ? (
+          <div className="px-3 pt-3">
+            <ErrorBlock message={messageEntriesQuery.error.message} />
+          </div>
+        ) : null}
 
         {!conversationsQuery.isLoading && !conversationsQuery.isError ? (
           hasConversations ? (
             <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+              {showSubscriptionInboxItem && subscriptionInboxSummary ? (
+                <SubscriptionInboxCard
+                  summary={subscriptionInboxSummary}
+                  onClick={() => {
+                    void navigate({ to: "/chat/subscription-inbox" });
+                  }}
+                />
+              ) : null}
+
               {filteredConversations.map((conversation, index) => (
                 <ConversationListItemLink
                   key={conversation.id}
                   conversation={conversation}
                   className={cn(
                     "block transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,138,61,0.05)]",
-                    index > 0
+                    index > 0 || showSubscriptionInboxItem
                       ? "border-t border-[color:var(--border-faint)]"
                       : undefined,
                   )}
@@ -244,7 +286,10 @@ function MobileChatListPage() {
             </section>
           ) : hasSearchResult ? (
             <div className="px-3 pt-8">
-              <EmptyState title="没有找到匹配的会话" description="换一个关键词试试" />
+              <EmptyState
+                title="没有找到匹配的会话"
+                description="换一个关键词试试"
+              />
             </div>
           ) : null
         ) : null}
@@ -265,7 +310,9 @@ function ConversationListItemLink({
     <div
       className={cn(
         "flex items-center gap-3 px-4 py-3.5",
-        isPinned ? "bg-[rgba(255,246,228,0.72)]" : "bg-[color:var(--bg-canvas-elevated)]",
+        isPinned
+          ? "bg-[rgba(255,246,228,0.72)]"
+          : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       <AvatarChip name={conversation.title} size="wechat" />
@@ -288,7 +335,7 @@ function ConversationListItemLink({
             {conversation.unreadCount > 0 ? (
               <div
                 className={cn(
-                  "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-1.5 text-[11px] leading-none text-white shadow-[var(--shadow-soft)]",
+                  "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-1.5 text-[11px] leading-none text-[color:var(--text-on-brand)] shadow-[var(--shadow-soft)]",
                   conversation.unreadCount > 9 ? "min-w-6" : undefined,
                 )}
               >

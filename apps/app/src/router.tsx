@@ -103,6 +103,11 @@ const OfficialAccountArticlePage = lazy(async () => {
   return { default: mod.OfficialAccountArticlePage };
 });
 
+const SubscriptionInboxPage = lazy(async () => {
+  const mod = await import("./routes/subscription-inbox-page");
+  return { default: mod.SubscriptionInboxPage };
+});
+
 const ProfilePage = lazy(async () => {
   const mod = await import("./routes/profile-page");
   return { default: mod.ProfilePage };
@@ -262,6 +267,13 @@ const chatListRoute = createRoute({
   getParentRoute: () => tabsRoute,
   path: "/chat",
   component: ChatListPage,
+});
+
+const subscriptionInboxRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat/subscription-inbox",
+  beforeLoad: requireWorldReady,
+  component: SubscriptionInboxPage,
 });
 
 const momentsRoute = createRoute({
@@ -542,6 +554,7 @@ const routeTree = rootRoute.addChildren([
     contactsRoute,
     profileRoute,
   ]),
+  subscriptionInboxRoute,
   chatRoomRoute,
   chatDetailsRoute,
   chatBackgroundRoute,
