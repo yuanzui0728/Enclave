@@ -231,6 +231,39 @@ export class ChatService {
     await this.convRepo.update({ id: convId }, { lastReadAt: new Date() });
   }
 
+  async markConversationUnread(convId: string): Promise<Conversation> {
+    const entity = await this.requireOwnedConversation(convId);
+    const lastCharacterMessage = await this.msgRepo.findOne({
+      where: this.buildMessageWhere(
+        convId,
+        this.getVisibleMessageCutoff(entity),
+        {
+          senderType: 'character',
+        },
+      ),
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!lastCharacterMessage) {
+      return this._entityToConversation(entity);
+    }
+
+    const previousReadAt = new Date(lastCharacterMessage.createdAt.getTime() - 1);
+    const lastClearedAt = entity.lastClearedAt
+      ? new Date(entity.lastClearedAt)
+      : null;
+    const nextReadAt =
+      lastClearedAt && previousReadAt.getTime() < lastClearedAt.getTime()
+        ? lastClearedAt
+        : previousReadAt;
+    const updated = await this.convRepo.save({
+      ...entity,
+      lastReadAt: nextReadAt,
+    });
+
+    return this._entityToConversation(updated);
+  }
+
   async setConversationPinned(
     convId: string,
     pinned: boolean,

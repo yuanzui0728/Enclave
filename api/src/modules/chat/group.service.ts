@@ -309,6 +309,42 @@ export class GroupService {
     return this.toGroup(updated);
   }
 
+  async markGroupUnread(groupId: string): Promise<Group> {
+    const group = await this.requireAccessibleGroup(groupId);
+    const lastCharacterMessage = await this.messageRepo.findOne({
+      where: group.lastClearedAt
+        ? {
+            groupId,
+            senderType: 'character',
+            createdAt: MoreThan(group.lastClearedAt),
+          }
+        : {
+            groupId,
+            senderType: 'character',
+          },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!lastCharacterMessage) {
+      return this.toGroup(group);
+    }
+
+    const previousReadAt = new Date(lastCharacterMessage.createdAt.getTime() - 1);
+    const lastClearedAt = group.lastClearedAt
+      ? new Date(group.lastClearedAt)
+      : null;
+    const nextReadAt =
+      lastClearedAt && previousReadAt.getTime() < lastClearedAt.getTime()
+        ? lastClearedAt
+        : previousReadAt;
+    const updated = await this.groupRepo.save({
+      ...group,
+      lastReadAt: nextReadAt,
+    });
+
+    return this.toGroup(updated);
+  }
+
   async hideGroup(groupId: string): Promise<Group> {
     const group = await this.requireOwnedGroup(groupId);
     const updated = await this.groupRepo.save({

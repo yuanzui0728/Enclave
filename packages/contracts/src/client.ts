@@ -814,6 +814,16 @@ export function markConversationRead(id: string, baseUrl?: string) {
   );
 }
 
+export function markConversationUnread(id: string, baseUrl?: string) {
+  return requestLegacyApi<Conversation>(
+    `/conversations/${id}/unread`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function setConversationPinned(
   id: string,
   payload: SetConversationPinnedRequest,
@@ -1098,6 +1108,16 @@ export function clearGroupMessages(id: string, baseUrl?: string) {
 export function markGroupRead(id: string, baseUrl?: string) {
   return requestLegacyApi<Group>(
     `/groups/${id}/read`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function markGroupUnread(id: string, baseUrl?: string) {
+  return requestLegacyApi<Group>(
+    `/groups/${id}/unread`,
     {
       method: "POST",
     },

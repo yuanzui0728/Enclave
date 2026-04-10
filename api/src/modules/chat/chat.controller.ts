@@ -50,6 +50,11 @@ export class ChatController {
     return this.chatService.markConversationRead(id);
   }
 
+  @Post(':id/unread')
+  markUnread(@Param('id') id: string) {
+    return this.chatService.markConversationUnread(id);
+  }
+
   @Post(':id/pin')
   setPinned(@Param('id') id: string, @Body() body: { pinned: boolean }) {
     return this.chatService.setConversationPinned(id, body.pinned);
@@ -186,6 +191,11 @@ export class GroupController {
   @Post(':id/read')
   markGroupRead(@Param('id') id: string) {
     return this.groupService.markGroupRead(id);
+  }
+
+  @Post(':id/unread')
+  markGroupUnread(@Param('id') id: string) {
+    return this.groupService.markGroupUnread(id);
   }
 
   @Post(':id/hide')
