@@ -8,6 +8,8 @@ import type {
 } from "@yinjie/contracts";
 
 const ADMIN_SECRET_KEY = "yinjie_admin_secret";
+const DEV_ADMIN_SECRET =
+  import.meta.env.DEV ? import.meta.env.VITE_ADMIN_SECRET?.trim() ?? "" : "";
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -35,7 +37,8 @@ function resolveAdminApiBase() {
 }
 
 export function getAdminSecret(): string {
-  return getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
+  const stored = getStorage()?.getItem(ADMIN_SECRET_KEY)?.trim() ?? "";
+  return stored || DEV_ADMIN_SECRET;
 }
 
 export function setAdminSecret(secret: string) {
