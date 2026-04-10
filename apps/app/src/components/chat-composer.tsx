@@ -21,6 +21,7 @@ import {
   type ClipboardEvent,
   type DragEvent,
   type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
@@ -124,12 +125,19 @@ export function ChatComposer({
   const albumInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const mobileSpeechPointerIdRef = useRef<number | null>(null);
+  const mobileSpeechStartYRef = useRef<number | null>(null);
+  const mobileSpeechAutoCommitRef = useRef(false);
+  const mobileSpeechCancelIntentRef = useRef(false);
   const [desktopPlusMenuOpen, setDesktopPlusMenuOpen] = useState(false);
   const [desktopDropActive, setDesktopDropActive] = useState(false);
   const [inputCursor, setInputCursor] = useState(0);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<number | null>(null);
   const [mobileMentionDismissed, setMobileMentionDismissed] = useState(false);
+  const [mobileSpeechPressing, setMobileSpeechPressing] = useState(false);
+  const [mobileSpeechCancelIntent, setMobileSpeechCancelIntent] =
+    useState(false);
   const [mobileInputMode, setMobileInputMode] = useState<"text" | "speech">(
     "text",
   );
@@ -228,25 +236,129 @@ export function ChatComposer({
     setPlusPanelOpen(false);
   };
 
+  const setMobileSpeechCancelState = (nextValue: boolean) => {
+    mobileSpeechCancelIntentRef.current = nextValue;
+    setMobileSpeechCancelIntent(nextValue);
+  };
+
+  const resetMobileSpeechGesture = () => {
+    mobileSpeechPointerIdRef.current = null;
+    mobileSpeechStartYRef.current = null;
+    setMobileSpeechPressing(false);
+    setMobileSpeechCancelState(false);
+  };
+
+  const closeMobileSpeechSheet = () => {
+    mobileSpeechAutoCommitRef.current = false;
+    resetMobileSpeechGesture();
+    setMobileSpeechSheetOpen(false);
+  };
+
+  const cancelMobileSpeech = () => {
+    speech.cancel();
+    closeMobileSpeechSheet();
+  };
+
   const commitSpeechInput = () => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
     setMobileInputMode("text");
-    setMobileSpeechSheetOpen(false);
+    closeMobileSpeechSheet();
     focusInput();
   };
 
-  const toggleMobileSpeech = async () => {
-    if (!speechSupported) {
+  const handleMobileSpeechPressStart = async (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!mobileSpeechMode || !speechSupported || speech.status === "processing") {
       return;
     }
 
     blurActiveElement();
     closeMobileTransientSurfaces();
-    setMobileSpeechSheetOpen(true);
-    if (speech.status === "idle" || speech.status === "error") {
-      await speech.start();
+    if (speech.status !== "idle") {
+      speech.cancel();
     }
+    mobileSpeechAutoCommitRef.current = true;
+    mobileSpeechPointerIdRef.current = event.pointerId;
+    mobileSpeechStartYRef.current = event.clientY;
+    setMobileSpeechPressing(true);
+    setMobileSpeechCancelState(false);
+    setMobileSpeechSheetOpen(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    await speech.start();
+  };
+
+  const handleMobileSpeechPressMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (mobileSpeechPointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const startY = mobileSpeechStartYRef.current;
+    if (startY === null) {
+      return;
+    }
+
+    setMobileSpeechCancelState(
+      startY - event.clientY >= MOBILE_SPEECH_CANCEL_DISTANCE,
+    );
+  };
+
+  const releaseMobileSpeechPointer = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (mobileSpeechPointerIdRef.current !== event.pointerId) {
+      return false;
+    }
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    mobileSpeechPointerIdRef.current = null;
+    mobileSpeechStartYRef.current = null;
+    setMobileSpeechPressing(false);
+    return true;
+  };
+
+  const handleMobileSpeechPressEnd = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!releaseMobileSpeechPointer(event)) {
+      return;
+    }
+
+    const shouldCancel = mobileSpeechCancelIntentRef.current;
+    setMobileSpeechCancelState(false);
+
+    if (shouldCancel) {
+      cancelMobileSpeech();
+      return;
+    }
+
+    if (
+      speech.status === "listening" ||
+      speech.status === "requesting-permission"
+    ) {
+      speech.stop();
+      return;
+    }
+
+    if (speech.status === "idle") {
+      closeMobileSpeechSheet();
+    }
+  };
+
+  const handleMobileSpeechPressCancel = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (!releaseMobileSpeechPointer(event)) {
+      return;
+    }
+
+    cancelMobileSpeech();
   };
 
   const toggleMobileInputMode = () => {
@@ -256,7 +368,14 @@ export function ChatComposer({
 
     blurActiveElement();
     closeMobileTransientSurfaces();
-    setMobileInputMode((current) => (current === "text" ? "speech" : "text"));
+    const nextMode = mobileInputMode === "text" ? "speech" : "text";
+    if (nextMode === "text") {
+      if (speech.status !== "idle") {
+        speech.cancel();
+      }
+      closeMobileSpeechSheet();
+    }
+    setMobileInputMode(nextMode);
   };
 
   useEffect(() => {
@@ -265,8 +384,35 @@ export function ChatComposer({
     }
 
     setMobileInputMode("text");
-    setMobileSpeechSheetOpen(false);
+    closeMobileSpeechSheet();
   }, [showSpeechEntry]);
+
+  useEffect(() => {
+    if (
+      isDesktop ||
+      !mobileSpeechSheetOpen ||
+      !mobileSpeechAutoCommitRef.current ||
+      mobileSpeechPressing
+    ) {
+      return;
+    }
+
+    if (speech.status === "ready" && speech.canCommit) {
+      commitSpeechInput();
+      return;
+    }
+
+    if (speech.status === "idle" && !speech.canCommit) {
+      closeMobileSpeechSheet();
+    }
+  }, [
+    commitSpeechInput,
+    isDesktop,
+    mobileSpeechPressing,
+    mobileSpeechSheetOpen,
+    speech.canCommit,
+    speech.status,
+  ]);
 
   useEffect(() => {
     if (isDesktop) {
@@ -991,7 +1137,9 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={toggleMobileInputMode}
-                  disabled={speechButtonDisabled && mobileSpeechMode}
+                  disabled={
+                    speech.status === "processing" || mobileSpeechPressing
+                  }
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45"
                   aria-label={mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"}
                 >
@@ -1002,17 +1150,34 @@ export function ChatComposer({
               {mobileSpeechMode ? (
                 <button
                   type="button"
-                  onClick={() => void toggleMobileSpeech()}
-                  disabled={speechButtonDisabled && speech.status !== "listening"}
+                  onPointerDown={(event) => {
+                    void handleMobileSpeechPressStart(event);
+                  }}
+                  onPointerMove={handleMobileSpeechPressMove}
+                  onPointerUp={handleMobileSpeechPressEnd}
+                  onPointerCancel={handleMobileSpeechPressCancel}
+                  disabled={!speechSupported || speech.status === "processing"}
                   title={speechDisabledReason ?? undefined}
                   className={cn(
-                    "flex min-h-[40px] min-w-0 flex-1 items-center justify-center rounded-[7px] border border-black/8 bg-white px-4 py-2 text-[15px] text-[#7a7a7a]",
-                    speech.status === "listening"
-                      ? "border-[#07c160]/35 text-[#07c160]"
+                    "flex min-h-[40px] min-w-0 flex-1 select-none items-center justify-center rounded-[7px] border border-black/8 bg-white px-4 py-2 text-[15px] transition touch-none",
+                    mobileSpeechPressing
+                      ? mobileSpeechCancelIntent
+                        ? "border-[#ff4d4f]/45 bg-[#fff5f5] text-[#ff4d4f]"
+                        : "border-[#07c160]/35 bg-[#f3fff8] text-[#07c160]"
+                      : "text-[#7a7a7a]",
+                    speech.status === "processing"
+                      ? "border-black/12 bg-black/[0.03] text-[#8b8b8b]"
                       : "",
                   )}
+                  aria-label="按住说话，松开后转成文字"
                 >
-                  {speech.status === "listening" ? "停止 说话" : "按住 说话"}
+                  {mobileSpeechPressing
+                    ? mobileSpeechCancelIntent
+                      ? "松开取消"
+                      : "松开转文字"
+                    : speech.status === "processing"
+                      ? "正在转写..."
+                      : "按住说话"}
                 </button>
               ) : (
                 <div className="flex min-w-0 flex-1 items-end rounded-[7px] border border-black/8 bg-white px-3 py-1">
@@ -1243,26 +1408,13 @@ export function ChatComposer({
       </div>
       <MobileSpeechInputSheet
         open={showSpeechEntry && mobileSpeechSheetOpen}
-        supported={speech.supported}
         status={speech.status}
         text={speechDisplayText}
         error={speech.error}
-        onClose={() => {
-          if (
-            speech.status === "listening" ||
-            speech.status === "processing" ||
-            speech.status === "requesting-permission"
-          ) {
-            speech.cancel();
-          }
-          setMobileSpeechSheetOpen(false);
-        }}
-        onStart={() => void speech.start()}
-        onStop={speech.stop}
-        onCancel={() => {
-          speech.cancel();
-          setMobileSpeechSheetOpen(false);
-        }}
+        holding={mobileSpeechPressing}
+        cancelIntent={mobileSpeechCancelIntent}
+        onClose={cancelMobileSpeech}
+        onCancel={cancelMobileSpeech}
         onCommit={commitSpeechInput}
         canCommit={speech.canCommit}
       />
@@ -1612,6 +1764,7 @@ function findActiveMentionToken(value: string, cursor: number) {
 }
 
 const MAX_ALBUM_IMAGE_COUNT = 9;
+const MOBILE_SPEECH_CANCEL_DISTANCE = 72;
 
 function formatDraftFileSize(size: number) {
   if (size >= 1024 * 1024) {

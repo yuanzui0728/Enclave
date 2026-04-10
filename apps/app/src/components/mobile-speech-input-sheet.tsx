@@ -1,47 +1,80 @@
 import { Mic, Square, WandSparkles, X } from "lucide-react";
-import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { cn } from "@yinjie/ui";
 import type { SpeechInputStatus } from "../features/chat/speech-input-types";
 
 type MobileSpeechInputSheetProps = {
   open: boolean;
-  supported: boolean;
   status: SpeechInputStatus;
   text: string;
   error?: string | null;
+  holding: boolean;
+  cancelIntent: boolean;
   onClose: () => void;
-  onStart: () => void;
-  onStop: () => void;
   onCancel: () => void;
   onCommit: () => void;
   canCommit: boolean;
 };
 
-function resolveStatusLabel(status: SpeechInputStatus) {
+function resolveStatusTitle(
+  status: SpeechInputStatus,
+  holding: boolean,
+  cancelIntent: boolean,
+) {
+  if (holding) {
+    return cancelIntent ? "松开手指，取消转写" : "松开手指，转成文字";
+  }
+
   switch (status) {
     case "requesting-permission":
       return "正在请求麦克风权限...";
     case "listening":
-      return "正在聆听，点停止结束录音";
+      return "继续按住说话";
     case "processing":
       return "正在转写语音...";
     case "ready":
-      return "识别完成，插入输入框后可继续编辑";
+      return "识别完成";
     case "error":
       return "语音输入暂时不可用";
     default:
-      return "点击开始说话，识别结果会先进入草稿区";
+      return "按住说话";
+  }
+}
+
+function resolveStatusHint(
+  status: SpeechInputStatus,
+  holding: boolean,
+  cancelIntent: boolean,
+) {
+  if (holding) {
+    return cancelIntent
+      ? "向下移回按钮区域，可以继续保留本次语音。"
+      : "上滑取消，松开后只会转成文字，不会直接发送。";
+  }
+
+  switch (status) {
+    case "requesting-permission":
+      return "第一次使用时，浏览器可能会弹出麦克风授权。";
+    case "listening":
+      return "继续按住说话，松开后结束本次输入。";
+    case "processing":
+      return "录音已经结束，正在把语音整理成文字。";
+    case "ready":
+      return "确认后插入输入框，你还可以继续修改。";
+    case "error":
+      return "可以关闭后重试，或直接切回键盘输入。";
+    default:
+      return "识别结果会先停留在这里，等待你决定是否插入。";
   }
 }
 
 export function MobileSpeechInputSheet({
   open,
-  supported,
   status,
   text,
   error,
+  holding,
+  cancelIntent,
   onClose,
-  onStart,
-  onStop,
   onCancel,
   onCommit,
   canCommit,
@@ -53,109 +86,110 @@ export function MobileSpeechInputSheet({
   const listening = status === "listening";
   const processing =
     status === "processing" || status === "requesting-permission";
+  const title = resolveStatusTitle(status, holding, cancelIntent);
+  const hint = resolveStatusHint(status, holding, cancelIntent);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-[rgba(30,24,12,0.22)] backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/22 backdrop-blur-[1.5px]">
       <button
         type="button"
         className="absolute inset-0"
         aria-label="关闭语音输入面板"
         onClick={onClose}
+        disabled={holding}
       />
-      <div className="relative w-full rounded-t-[28px] border-t border-white/70 bg-[linear-gradient(180deg,rgba(255,253,247,0.98),rgba(255,247,235,0.98))] px-4 pb-6 pt-4 shadow-[0_-16px_36px_rgba(90,56,16,0.16)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              语音输入
+      <div className="relative w-full max-w-sm px-5 pb-[calc(env(safe-area-inset-bottom,0px)+18px)]">
+        <div className="rounded-[28px] bg-[rgba(28,28,30,0.94)] px-5 pb-5 pt-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.28)]">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[17px] font-medium tracking-[0.01em]">
+                {title}
+              </div>
+              <div className="mt-1 text-[12px] leading-5 text-white/65">
+                {hint}
+              </div>
             </div>
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              {resolveStatusLabel(status)}
-            </div>
-          </div>
-          <button
-            type="button"
+            <button
+              type="button"
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white/72 transition",
+                holding ? "opacity-0" : "opacity-100",
+              )}
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/80 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]"
             aria-label="关闭"
           >
             <X size={16} />
           </button>
-        </div>
+          </div>
 
-        <div className="mt-4 rounded-[22px] border border-white/75 bg-white/86 p-4 shadow-[var(--shadow-soft)]">
-          <div className="text-xs text-[color:var(--text-muted)]">识别草稿</div>
+          <div className="mt-5 flex items-center justify-center">
+            <div
+              className={cn(
+                "flex h-24 w-24 items-center justify-center rounded-full border text-white transition",
+                holding && cancelIntent
+                  ? "border-[#ff7875]/40 bg-[#ff4d4f]"
+                  : listening || holding
+                    ? "border-[#07c160]/35 bg-[#07c160]"
+                    : processing
+                      ? "border-white/16 bg-white/14"
+                      : "border-white/12 bg-white/10",
+              )}
+            >
+              {processing ? (
+                <WandSparkles size={32} />
+              ) : listening || holding ? (
+                cancelIntent ? (
+                  <X size={34} />
+                ) : (
+                  <Mic size={34} />
+                )
+              ) : status === "ready" ? (
+                <Square size={28} fill="currentColor" />
+              ) : (
+                <Mic size={34} />
+              )}
+            </div>
+          </div>
+
           <div
             className={cn(
-              "mt-2 min-h-[108px] rounded-[18px] border border-dashed px-4 py-3 text-[15px] leading-7",
+              "mt-5 min-h-[112px] rounded-[22px] border px-4 py-3 text-[15px] leading-7",
               text
-                ? "border-[rgba(249,115,22,0.28)] text-[color:var(--text-primary)]"
-                : "border-white/70 text-[color:var(--text-dim)]",
+                ? "border-white/14 bg-white/10 text-white/92"
+                : "border-white/10 bg-white/[0.06] text-white/40",
             )}
           >
-            {text || "识别结果会先显示在这里，不会自动发送。"}
+            {text || "识别结果会显示在这里。"}
           </div>
-        </div>
 
-        {!supported ? (
-          <InlineNotice className="mt-4 text-xs" tone="warning">
-            当前浏览器不支持语音输入，请改用键盘输入。
-          </InlineNotice>
-        ) : null}
+          {error ? (
+            <div className="mt-3 rounded-[16px] border border-[#ff7875]/25 bg-[#ff4d4f]/12 px-3 py-2 text-[12px] leading-5 text-[#ffd7d5]">
+              {error}
+            </div>
+          ) : null}
 
-        {error ? (
-          <InlineNotice className="mt-4 text-xs" tone="danger">
-            {error}
-          </InlineNotice>
-        ) : null}
-
-        <div className="mt-5 flex items-center justify-center">
-          <button
-            type="button"
-            onClick={listening ? onStop : onStart}
-            disabled={!supported || processing}
-            className={cn(
-              "flex h-20 w-20 items-center justify-center rounded-full text-white shadow-[0_10px_22px_rgba(249,115,22,0.28)] transition",
-              listening
-                ? "bg-[linear-gradient(135deg,#f97316,#ea580c)]"
-                : "bg-[linear-gradient(135deg,#fbbf24,#f97316)]",
-              processing ? "opacity-70" : "",
-            )}
-            aria-label={listening ? "停止录音" : "开始录音"}
-          >
-            {listening ? (
-              <Square size={24} fill="currentColor" />
-            ) : (
-              <Mic size={28} />
-            )}
-          </button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          <Button
-            variant="ghost"
-            className="h-11 rounded-[16px] border border-white/70 bg-white/78 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]"
-            onClick={onCancel}
-          >
-            取消
-          </Button>
-          <Button
-            variant="ghost"
-            className="h-11 rounded-[16px] border border-white/70 bg-white/78 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]"
-            onClick={listening ? onStop : onStart}
-            disabled={!supported || processing}
-          >
-            {listening ? "停止" : "开始"}
-          </Button>
-          <Button
-            className="h-11 rounded-[16px] bg-[linear-gradient(135deg,#fbbf24,#f97316)] text-[color:var(--text-on-brand)] shadow-[0_6px_16px_rgba(249,115,22,0.26)]"
-            onClick={onCommit}
-            disabled={!canCommit || listening || processing}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <WandSparkles size={15} />
-              插入
-            </span>
-          </Button>
+          {!holding ? (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex h-11 items-center justify-center rounded-[16px] border border-white/12 bg-white/8 text-[14px] font-medium text-white/78 transition active:bg-white/12"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={onCommit}
+                disabled={!canCommit || processing}
+                className="flex h-11 items-center justify-center rounded-[16px] bg-[#07c160] text-[14px] font-medium text-white transition disabled:opacity-45"
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <WandSparkles size={15} />
+                  插入输入框
+                </span>
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
