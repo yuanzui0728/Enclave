@@ -2399,6 +2399,167 @@ function RuntimeRulesEditorCard({
               />
             </ConfigSection>
 
+            <ConfigSection title="世界快照规则">
+              <InlineNotice tone="muted">
+                这里定义世界上下文的生成方式，以及注入到 system prompt 时的拼接模板。
+              </InlineNotice>
+              <TextAreaBlock
+                label="季节标签（key=value）"
+                value={recordToLines(draft.worldContextRules.seasonLabels)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    worldContextRules: {
+                      ...current.worldContextRules,
+                      seasonLabels: parseKeyValueLines(
+                        value,
+                        current.worldContextRules.seasonLabels,
+                      ),
+                    },
+                  }))
+                }
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <TextAreaBlock
+                  label="春季天气候选"
+                  value={listToLines(draft.worldContextRules.weatherOptions.spring)}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      worldContextRules: {
+                        ...current.worldContextRules,
+                        weatherOptions: {
+                          ...current.worldContextRules.weatherOptions,
+                          spring: linesToList(value),
+                        },
+                      },
+                    }))
+                  }
+                />
+                <TextAreaBlock
+                  label="夏季天气候选"
+                  value={listToLines(draft.worldContextRules.weatherOptions.summer)}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      worldContextRules: {
+                        ...current.worldContextRules,
+                        weatherOptions: {
+                          ...current.worldContextRules.weatherOptions,
+                          summer: linesToList(value),
+                        },
+                      },
+                    }))
+                  }
+                />
+                <TextAreaBlock
+                  label="秋季天气候选"
+                  value={listToLines(draft.worldContextRules.weatherOptions.autumn)}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      worldContextRules: {
+                        ...current.worldContextRules,
+                        weatherOptions: {
+                          ...current.worldContextRules.weatherOptions,
+                          autumn: linesToList(value),
+                        },
+                      },
+                    }))
+                  }
+                />
+                <TextAreaBlock
+                  label="冬季天气候选"
+                  value={listToLines(draft.worldContextRules.weatherOptions.winter)}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      worldContextRules: {
+                        ...current.worldContextRules,
+                        weatherOptions: {
+                          ...current.worldContextRules.weatherOptions,
+                          winter: linesToList(value),
+                        },
+                      },
+                    }))
+                  }
+                />
+              </div>
+              <TextAreaBlock
+                label="节日规则（month|day|label）"
+                value={holidayRulesToLines(draft.worldContextRules.holidays)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    worldContextRules: {
+                      ...current.worldContextRules,
+                      holidays: parseHolidayRules(
+                        value,
+                        current.worldContextRules.holidays,
+                      ),
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="本地时间模板（{{timeOfDay}} / {{hour}} / {{minute}}）"
+                value={draft.worldContextRules.localTimeTemplate}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    worldContextRules: {
+                      ...current.worldContextRules,
+                      localTimeTemplate: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="上下文字段模板（key=value）"
+                value={recordToLines(draft.worldContextRules.contextFieldTemplates)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    worldContextRules: {
+                      ...current.worldContextRules,
+                      contextFieldTemplates: parseKeyValueLines(
+                        value,
+                        current.worldContextRules.contextFieldTemplates,
+                      ),
+                    },
+                  }))
+                }
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <FieldBlock
+                  label="上下文分隔符"
+                  value={draft.worldContextRules.contextSeparator}
+                  onChange={(value) =>
+                    onPatch((current) => ({
+                      ...current,
+                      worldContextRules: {
+                        ...current.worldContextRules,
+                        contextSeparator: value,
+                      },
+                    }))
+                  }
+                />
+              </div>
+              <TextAreaBlock
+                label="Prompt 注入模板（{{context}}）"
+                value={draft.worldContextRules.promptContextTemplate}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    worldContextRules: {
+                      ...current.worldContextRules,
+                      promptContextTemplate: value,
+                    },
+                  }))
+                }
+              />
+            </ConfigSection>
+
             <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
               <Button variant="secondary" onClick={onReset}>
                 重置运行规则
@@ -2912,6 +3073,24 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       群聊上下文备注: constants.observabilityTemplates.actorNoteGroupContext,
       单聊上下文备注: constants.observabilityTemplates.actorNoteDirectContext,
     },
+    世界快照规则: {
+      季节标签: { ...constants.worldContextRules.seasonLabels },
+      天气候选: {
+        春季: [...constants.worldContextRules.weatherOptions.spring],
+        夏季: [...constants.worldContextRules.weatherOptions.summer],
+        秋季: [...constants.worldContextRules.weatherOptions.autumn],
+        冬季: [...constants.worldContextRules.weatherOptions.winter],
+      },
+      节日规则: constants.worldContextRules.holidays.map((item) => ({
+        月份: item.month,
+        日期: item.day,
+        标签: item.label,
+      })),
+      本地时间模板: constants.worldContextRules.localTimeTemplate,
+      上下文字段模板: { ...constants.worldContextRules.contextFieldTemplates },
+      上下文分隔符: constants.worldContextRules.contextSeparator,
+      Prompt注入模板: constants.worldContextRules.promptContextTemplate,
+    },
   } as Record<string, unknown>;
 }
 
@@ -2966,6 +3145,41 @@ function parseKeyValueLines<T extends Record<string, string>>(value: string, fal
 function parseWeekdayLabels(value: string, fallback: string[]) {
   const parsed = linesToList(value);
   return fallback.map((item, index) => parsed[index] ?? item);
+}
+
+function holidayRulesToLines(
+  holidays: ReplyLogicConstantSummary["worldContextRules"]["holidays"],
+) {
+  return holidays
+    .map((item) => `${item.month}|${item.day}|${item.label}`)
+    .join("\n");
+}
+
+function parseHolidayRules(
+  value: string,
+  fallback: ReplyLogicConstantSummary["worldContextRules"]["holidays"],
+) {
+  const next = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [monthText, dayText, labelText] = line.split("|").map((item) => item.trim());
+      const month = Number(monthText);
+      const day = Number(dayText);
+      if (!labelText || Number.isNaN(month) || Number.isNaN(day)) {
+        return null;
+      }
+
+      return {
+        month: Math.min(Math.max(Math.round(month), 1), 12),
+        day: Math.min(Math.max(Math.round(day), 1), 31),
+        label: labelText,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  return next.length ? next : fallback;
 }
 
 function parseNonNegativeInteger(value: string, fallback: number) {
