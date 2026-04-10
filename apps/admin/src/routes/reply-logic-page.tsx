@@ -2221,6 +2221,184 @@ function RuntimeRulesEditorCard({
               />
             </ConfigSection>
 
+            <ConfigSection title="语义标签">
+              <InlineNotice tone="muted">
+                这里定义回复链路里会被拼进 Prompt 的专长、活动、星期和时段标签。
+              </InlineNotice>
+              <TextAreaBlock
+                label="专长标签（key=value）"
+                value={recordToLines(draft.semanticLabels.domainLabels)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    semanticLabels: {
+                      ...current.semanticLabels,
+                      domainLabels: parseKeyValueLines(value, current.semanticLabels.domainLabels),
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="活动标签（key=value）"
+                value={recordToLines(draft.semanticLabels.activityLabels)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    semanticLabels: {
+                      ...current.semanticLabels,
+                      activityLabels: parseKeyValueLines(
+                        value,
+                        current.semanticLabels.activityLabels,
+                      ),
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="星期标签（每行一个，按周日到周六）"
+                value={listToLines(draft.semanticLabels.weekdayLabels)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    semanticLabels: {
+                      ...current.semanticLabels,
+                      weekdayLabels: parseWeekdayLabels(
+                        value,
+                        current.semanticLabels.weekdayLabels,
+                      ),
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="时段标签（key=value）"
+                value={recordToLines(draft.semanticLabels.timeOfDayLabels)}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    semanticLabels: {
+                      ...current.semanticLabels,
+                      timeOfDayLabels: parseKeyValueLines(
+                        value,
+                        current.semanticLabels.timeOfDayLabels,
+                      ),
+                    },
+                  }))
+                }
+              />
+            </ConfigSection>
+
+            <ConfigSection title="观测说明模板">
+              <InlineNotice tone="muted">
+                这部分主要影响后台快照里的状态门和链路备注文案；忙碌/睡眠状态支持{" "}
+                <code>{"{{activity}}"}</code> 占位符。
+              </InlineNotice>
+              <TextAreaBlock
+                label="睡眠状态门说明"
+                value={draft.observabilityTemplates.stateGateSleeping}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      stateGateSleeping: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="忙碌状态门说明"
+                value={draft.observabilityTemplates.stateGateBusy}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      stateGateBusy: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="立即回复说明"
+                value={draft.observabilityTemplates.stateGateImmediate}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      stateGateImmediate: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="未应用状态门说明"
+                value={draft.observabilityTemplates.stateGateNotApplied}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      stateGateNotApplied: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="可用 API Key 备注"
+                value={draft.observabilityTemplates.actorNoteApiAvailable}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      actorNoteApiAvailable: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="无 API Key 备注"
+                value={draft.observabilityTemplates.actorNoteApiUnavailable}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      actorNoteApiUnavailable: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="群聊上下文备注"
+                value={draft.observabilityTemplates.actorNoteGroupContext}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      actorNoteGroupContext: value,
+                    },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="单聊上下文备注"
+                value={draft.observabilityTemplates.actorNoteDirectContext}
+                onChange={(value) =>
+                  onPatch((current) => ({
+                    ...current,
+                    observabilityTemplates: {
+                      ...current.observabilityTemplates,
+                      actorNoteDirectContext: value,
+                    },
+                  }))
+                }
+              />
+            </ConfigSection>
+
             <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
               <Button variant="secondary" onClick={onReset}>
                 重置运行规则
@@ -2599,19 +2777,7 @@ function formatGateMode(mode: ReplyLogicStateGateSummary["mode"]) {
 }
 
 function formatStateGateReason(gate: ReplyLogicStateGateSummary) {
-  if (gate.mode === "sleep_hint_delay") {
-    return "当前活动为睡觉中，会先发送系统提示，再进入延迟回复。";
-  }
-
-  if (gate.mode === "busy_hint_delay") {
-    return `当前活动为${formatActivity(gate.activity)}，会先发送忙碌提示，再进入延迟回复。`;
-  }
-
-  if (gate.mode === "not_applied") {
-    return "当前链路不经过单聊状态门控。";
-  }
-
-  return "当前状态不会触发额外系统提示，下一条消息会直接进入回复链。";
+  return gate.reason;
 }
 
 function formatNarrativeStatus(status: string) {
@@ -2730,6 +2896,22 @@ function formatRuntimeConstants(constants: ReplyLogicOverview["constants"]) {
       记忆压缩模板: constants.promptTemplates.memoryCompressionPrompt,
       拉群说明模板: constants.promptTemplates.groupCoordinatorPrompt,
     },
+    语义标签: {
+      专长标签: { ...constants.semanticLabels.domainLabels },
+      活动标签: { ...constants.semanticLabels.activityLabels },
+      星期标签: [...constants.semanticLabels.weekdayLabels],
+      时段标签: { ...constants.semanticLabels.timeOfDayLabels },
+    },
+    观测说明模板: {
+      睡眠状态门: constants.observabilityTemplates.stateGateSleeping,
+      忙碌状态门: constants.observabilityTemplates.stateGateBusy,
+      立即回复: constants.observabilityTemplates.stateGateImmediate,
+      未应用状态门: constants.observabilityTemplates.stateGateNotApplied,
+      可用APIKey备注: constants.observabilityTemplates.actorNoteApiAvailable,
+      无APIKey备注: constants.observabilityTemplates.actorNoteApiUnavailable,
+      群聊上下文备注: constants.observabilityTemplates.actorNoteGroupContext,
+      单聊上下文备注: constants.observabilityTemplates.actorNoteDirectContext,
+    },
   } as Record<string, unknown>;
 }
 
@@ -2742,6 +2924,48 @@ function linesToList(value: string) {
     .split("\n")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function recordToLines(record: Record<string, string>) {
+  return Object.entries(record)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+}
+
+function parseKeyValueLines<T extends Record<string, string>>(value: string, fallback: T): T {
+  const entries = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const separatorIndex = line.indexOf("=");
+      if (separatorIndex <= 0) {
+        return null;
+      }
+
+      const key = line.slice(0, separatorIndex).trim();
+      const content = line.slice(separatorIndex + 1).trim();
+      if (!key || !content) {
+        return null;
+      }
+
+      return [key, content] as const;
+    })
+    .filter((entry): entry is readonly [string, string] => Boolean(entry));
+
+  const next = { ...fallback } as Record<string, string>;
+  for (const [key, content] of entries) {
+    if (Object.prototype.hasOwnProperty.call(next, key)) {
+      next[key] = content;
+    }
+  }
+
+  return next as T;
+}
+
+function parseWeekdayLabels(value: string, fallback: string[]) {
+  const parsed = linesToList(value);
+  return fallback.map((item, index) => parsed[index] ?? item);
 }
 
 function parseNonNegativeInteger(value: string, fallback: number) {
