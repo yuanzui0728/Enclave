@@ -54,6 +54,9 @@ export function DesktopCreateGroupDialog({
   const [messageSelectionNotice, setMessageSelectionNotice] = useState<
     string | null
   >(null);
+  const [friendIndexIndicatorLabel, setFriendIndexIndicatorLabel] = useState<
+    string | null
+  >(null);
   const [focusedFriendIndex, setFocusedFriendIndex] = useState(0);
   const [focusedMessageIndex, setFocusedMessageIndex] = useState(0);
   const seededSelectionRef = useRef("");
@@ -218,6 +221,15 @@ export function DesktopCreateGroupDialog({
     const timer = window.setTimeout(() => setMessageSelectionNotice(null), 2200);
     return () => window.clearTimeout(timer);
   }, [messageSelectionNotice]);
+
+  useEffect(() => {
+    if (!friendIndexIndicatorLabel) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setFriendIndexIndicatorLabel(null), 850);
+    return () => window.clearTimeout(timer);
+  }, [friendIndexIndicatorLabel]);
 
   useEffect(() => {
     if (!open || !shareHistory || selectedMessageIds.length > 0) {
@@ -417,6 +429,7 @@ export function DesktopCreateGroupDialog({
       if (nextIndex !== -1) {
         event.preventDefault();
         setFocusedFriendIndex(nextIndex);
+        setFriendIndexIndicatorLabel(filteredFriends[nextIndex]?.indexLabel ?? null);
         searchInputRef.current?.focus();
       }
       return;
@@ -537,6 +550,7 @@ export function DesktopCreateGroupDialog({
       setFocusedFriendIndex(nextIndex);
     }
 
+    setFriendIndexIndicatorLabel(targetSection.title);
     friendSectionRefs.current[sectionKey]?.scrollIntoView({
       block: "start",
       behavior,
@@ -957,6 +971,14 @@ export function DesktopCreateGroupDialog({
               />
             ) : null}
           </div>
+
+          {!searchTerm.trim() && friendIndexIndicatorLabel ? (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-[rgba(22,22,22,0.72)] text-[30px] font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] backdrop-blur">
+                {friendIndexIndicatorLabel}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
