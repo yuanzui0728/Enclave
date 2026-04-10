@@ -1366,31 +1366,15 @@ export function GroupQrPage() {
                       "来源会话",
                     )}
                   </div>
-                  {deliveredTargetByPath[
-                    buildConversationPath(currentReturnSourceConversation)
-                  ] ? (
-                    <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
-                      {resolveDeliveredBatchLabel(
-                        deliveredTargetByPath[
-                          buildConversationPath(currentReturnSourceConversation)
-                        ],
-                        deliveryBatchRankById,
-                      )}{" "}
-                      · 上次发送于{" "}
-                      {formatConversationTimestamp(
-                        deliveredTargetByPath[
-                          buildConversationPath(currentReturnSourceConversation)
-                        ].deliveredAt,
-                      )}
-                    </div>
-                  ) : (
-                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                      {resolveDeliveredBatchLabel(
-                        undefined,
-                        deliveryBatchRankById,
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {resolveConversationMetaSummary(
+                      currentReturnSourceConversation,
+                      deliveredTargetByPath[
+                        buildConversationPath(currentReturnSourceConversation)
+                      ],
+                      deliveryBatchRankById,
+                    )}
+                  </div>
                 </div>
                 <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
                   {resolveConversationActionLabel(
@@ -1447,29 +1431,13 @@ export function GroupQrPage() {
                           "相关会话",
                         )}
                       </div>
-                      {deliveredTargetByPath[buildConversationPath(conversation)] ? (
-                        <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
-                          {resolveDeliveredBatchLabel(
-                            deliveredTargetByPath[
-                              buildConversationPath(conversation)
-                            ],
-                            deliveryBatchRankById,
-                          )}{" "}
-                          · 上次发送于{" "}
-                          {formatConversationTimestamp(
-                            deliveredTargetByPath[
-                              buildConversationPath(conversation)
-                            ].deliveredAt,
-                          )}
-                        </div>
-                      ) : (
-                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {resolveDeliveredBatchLabel(
-                            undefined,
-                            deliveryBatchRankById,
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {resolveConversationMetaSummary(
+                          conversation,
+                          deliveredTargetByPath[buildConversationPath(conversation)],
+                          deliveryBatchRankById,
+                        )}
+                      </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
                       {resolveConversationActionLabel(
@@ -1523,29 +1491,13 @@ export function GroupQrPage() {
                           "最近会话",
                         )}
                       </div>
-                      {deliveredTargetByPath[buildConversationPath(conversation)] ? (
-                        <div className="mt-1 text-xs text-[color:var(--brand-secondary)]">
-                          {resolveDeliveredBatchLabel(
-                            deliveredTargetByPath[
-                              buildConversationPath(conversation)
-                            ],
-                            deliveryBatchRankById,
-                          )}{" "}
-                          · 上次发送于{" "}
-                          {formatConversationTimestamp(
-                            deliveredTargetByPath[
-                              buildConversationPath(conversation)
-                            ].deliveredAt,
-                          )}
-                        </div>
-                      ) : (
-                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {resolveDeliveredBatchLabel(
-                            undefined,
-                            deliveryBatchRankById,
-                          )}
-                        </div>
-                      )}
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {resolveConversationMetaSummary(
+                          conversation,
+                          deliveredTargetByPath[buildConversationPath(conversation)],
+                          deliveryBatchRankById,
+                        )}
+                      </div>
                     </div>
                     <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
                       {resolveConversationActionLabel(
@@ -2146,6 +2098,23 @@ function resolveConversationActionDescription(
   }
 
   return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 当前值得继续跟进这一轮。`;
+}
+
+function resolveConversationMetaSummary(
+  conversation: ConversationListItem,
+  deliveredTarget: GroupInviteDeliveryTarget | undefined,
+  deliveryBatchRankById: Record<string, number>,
+) {
+  const parts = [
+    resolveDeliveredBatchLabel(deliveredTarget, deliveryBatchRankById),
+  ];
+
+  if (deliveredTarget) {
+    parts.push(`上次发送于 ${formatConversationTimestamp(deliveredTarget.deliveredAt)}`);
+  }
+
+  parts.push(`最近活跃 ${formatConversationTimestamp(conversation.lastActivityAt)}`);
+  return parts.join(" · ");
 }
 
 function isPendingReturnCoolingDown(deliveredAt: string) {
