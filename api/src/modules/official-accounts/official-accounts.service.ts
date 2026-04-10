@@ -4,6 +4,7 @@ import { In, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
+import { OfficialAccountDeliveryEntity } from './official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './official-account-follow.entity';
 
 type SeedArticle = {
@@ -120,6 +121,8 @@ export class OfficialAccountsService {
     private readonly accountRepo: Repository<OfficialAccountEntity>,
     @InjectRepository(OfficialAccountArticleEntity)
     private readonly articleRepo: Repository<OfficialAccountArticleEntity>,
+    @InjectRepository(OfficialAccountDeliveryEntity)
+    private readonly deliveryRepo: Repository<OfficialAccountDeliveryEntity>,
     @InjectRepository(OfficialAccountFollowEntity)
     private readonly followRepo: Repository<OfficialAccountFollowEntity>,
     private readonly worldOwnerService: WorldOwnerService,
@@ -189,12 +192,82 @@ export class OfficialAccountsService {
     return this.getArticleDetail(articleId);
   }
 
+  async getMessageEntries() {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const subscriptionInbox = await this.buildSubscriptionInbox(owner.id);
+
+    return {
+      subscriptionInbox: subscriptionInbox.summary,
+      serviceConversations: [],
+    };
+  }
+
+  async getSubscriptionInbox() {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    return this.buildSubscriptionInbox(owner.id);
+  }
+
   async markArticleRead(articleId: string) {
     await this.ensureSeedData();
     const article = await this.getArticleEntityOrThrow(articleId);
     article.readCount += 1;
     await this.articleRepo.save(article);
     return this.getArticleDetail(articleId);
+  }
+
+  async markDeliveryRead(deliveryId: string) {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const delivery = await this.deliveryRepo.findOneBy({
+      id: deliveryId,
+      ownerId: owner.id,
+    });
+
+    if (!delivery) {
+      throw new NotFoundException('推送记录不存在。');
+    }
+
+    if (!delivery.readAt) {
+      delivery.readAt = new Date();
+      await this.deliveryRepo.save(delivery);
+    }
+
+    return this.getSubscriptionInbox();
+  }
+
+  async markSubscriptionInboxRead() {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const subscriptionAccountIds = await this.getFollowedSubscriptionAccountIds(
+      owner.id,
+    );
+
+    if (!subscriptionAccountIds.length) {
+      return this.buildSubscriptionInbox(owner.id);
+    }
+
+    const unreadDeliveries = await this.deliveryRepo.find({
+      where: {
+        ownerId: owner.id,
+        accountId: In(subscriptionAccountIds),
+        deliveryKind: 'subscription_digest',
+        readAt: null,
+      },
+    });
+
+    if (unreadDeliveries.length) {
+      const now = new Date();
+      await this.deliveryRepo.save(
+        unreadDeliveries.map((delivery) => ({
+          ...delivery,
+          readAt: now,
+        })),
+      );
+    }
+
+    return this.buildSubscriptionInbox(owner.id);
   }
 
   async followAccount(id: string) {
@@ -227,6 +300,120 @@ export class OfficialAccountsService {
       accountId: id,
     });
     return this.getAccount(id);
+  }
+
+  private async buildSubscriptionInbox(ownerId: string) {
+    const subscriptionAccountIds = await this.getFollowedSubscriptionAccountIds(
+      ownerId,
+    );
+
+    if (!subscriptionAccountIds.length) {
+      return {
+        summary: null,
+        groups: [],
+      };
+    }
+
+    await this.ensureSubscriptionDeliveries(ownerId, subscriptionAccountIds);
+
+    const [accounts, deliveries, recentArticles] = await Promise.all([
+      this.accountRepo.find({
+        where: {
+          id: In(subscriptionAccountIds),
+          isEnabled: true,
+        },
+        order: { lastPublishedAt: 'DESC', createdAt: 'DESC' },
+      }),
+      this.deliveryRepo.find({
+        where: {
+          ownerId,
+          accountId: In(subscriptionAccountIds),
+          deliveryKind: 'subscription_digest',
+        },
+        order: { deliveredAt: 'DESC', createdAt: 'DESC' },
+      }),
+      this.getRecentArticlesForAccounts(subscriptionAccountIds),
+    ]);
+
+    if (!deliveries.length) {
+      return {
+        summary: null,
+        groups: [],
+      };
+    }
+
+    const articleIds = [...new Set(deliveries.map((delivery) => delivery.articleId))];
+    const articles = await this.articleRepo.find({
+      where: { id: In(articleIds) },
+    });
+    const articleMap = new Map(articles.map((article) => [article.id, article]));
+
+    const groups = accounts
+      .map((account) => {
+        const serializedDeliveries = deliveries
+          .filter((delivery) => delivery.accountId === account.id)
+          .map((delivery) => {
+            const article = articleMap.get(delivery.articleId);
+            if (!article) {
+              return null;
+            }
+
+            return this.serializeDeliveryItem(
+              delivery,
+              account,
+              article,
+              recentArticles.get(account.id)?.[0],
+            );
+          })
+          .filter(
+            (
+              delivery,
+            ): delivery is ReturnType<OfficialAccountsService['serializeDeliveryItem']> =>
+              Boolean(delivery),
+          );
+
+        if (!serializedDeliveries.length) {
+          return null;
+        }
+
+        return {
+          account: this.serializeAccountSummary(
+            account,
+            true,
+            recentArticles.get(account.id)?.[0],
+          ),
+          deliveries: serializedDeliveries,
+          unreadCount: serializedDeliveries.filter((delivery) => !delivery.readAt)
+            .length,
+          lastDeliveredAt: serializedDeliveries[0]?.deliveredAt,
+        };
+      })
+      .filter(
+        (
+          group,
+        ): group is {
+          account: ReturnType<OfficialAccountsService['serializeAccountSummary']>;
+          deliveries: ReturnType<OfficialAccountsService['serializeDeliveryItem']>[];
+          unreadCount: number;
+          lastDeliveredAt?: string;
+        } => Boolean(group),
+      );
+
+    const latestDelivery = groups[0]?.deliveries[0];
+
+    return {
+      summary: latestDelivery
+        ? {
+            unreadCount: groups.reduce(
+              (count, group) => count + group.unreadCount,
+              0,
+            ),
+            lastDeliveredAt: latestDelivery.deliveredAt,
+            preview: `${latestDelivery.account.name}：${latestDelivery.article.title}`,
+          }
+        : null,
+      groups,
+    };
   }
 
   private async getArticleDetail(articleId: string) {
@@ -288,6 +475,67 @@ export class OfficialAccountsService {
         await this.articleRepo.save(article);
       }
     }
+  }
+
+  private async ensureSubscriptionDeliveries(
+    ownerId: string,
+    subscriptionAccountIds: string[],
+  ) {
+    const articles = await this.articleRepo.find({
+      where: { accountId: In(subscriptionAccountIds) },
+      order: { publishedAt: 'DESC' },
+    });
+
+    if (!articles.length) {
+      return;
+    }
+
+    const existingDeliveries = await this.deliveryRepo.find({
+      where: {
+        ownerId,
+        articleId: In(articles.map((article) => article.id)),
+        deliveryKind: 'subscription_digest',
+      },
+    });
+    const deliveredArticleIds = new Set(
+      existingDeliveries.map((delivery) => delivery.articleId),
+    );
+    const missingDeliveries = articles
+      .filter((article) => !deliveredArticleIds.has(article.id))
+      .map((article) =>
+        this.deliveryRepo.create({
+          ownerId,
+          accountId: article.accountId,
+          articleId: article.id,
+          deliveryKind: 'subscription_digest',
+          deliveredAt: article.publishedAt,
+        }),
+      );
+
+    if (missingDeliveries.length) {
+      await this.deliveryRepo.save(missingDeliveries);
+    }
+  }
+
+  private async getFollowedSubscriptionAccountIds(ownerId: string) {
+    const follows = await this.followRepo.find({
+      where: { ownerId },
+    });
+
+    if (!follows.length) {
+      return [];
+    }
+
+    const subscriptionAccounts = await this.accountRepo.find({
+      select: ['id'],
+      where: {
+        id: In(follows.map((follow) => follow.accountId)),
+        accountType: 'subscription',
+        isEnabled: true,
+      },
+    });
+
+    return subscriptionAccounts.map((account) => account.id);
   }
 
   private async getRecentArticlesForAccounts(accountIds: string[]) {
@@ -368,6 +616,24 @@ export class OfficialAccountsService {
       publishedAt: article.publishedAt.toISOString(),
       isPinned: article.isPinned,
       readCount: article.readCount,
+    };
+  }
+
+  private serializeDeliveryItem(
+    delivery: OfficialAccountDeliveryEntity,
+    account: OfficialAccountEntity,
+    article: OfficialAccountArticleEntity,
+    recentArticle?: OfficialAccountArticleEntity,
+  ) {
+    return {
+      id: delivery.id,
+      accountId: delivery.accountId,
+      articleId: delivery.articleId,
+      deliveryKind: delivery.deliveryKind,
+      deliveredAt: delivery.deliveredAt.toISOString(),
+      readAt: delivery.readAt?.toISOString(),
+      account: this.serializeAccountSummary(account, true, recentArticle),
+      article: this.serializeArticleSummary(article),
     };
   }
 }

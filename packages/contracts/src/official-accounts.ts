@@ -1,4 +1,7 @@
 export type OfficialAccountType = "subscription" | "service";
+export type OfficialAccountDeliveryKind =
+  | "subscription_digest"
+  | "service_notice";
 
 export interface OfficialAccountArticleSummary {
   id: string;
@@ -35,4 +38,45 @@ export interface OfficialAccountArticleDetail
   account: OfficialAccountSummary;
   contentHtml: string;
   relatedArticles: OfficialAccountArticleSummary[];
+}
+
+export interface OfficialAccountDeliveryItem {
+  id: string;
+  accountId: string;
+  articleId: string;
+  deliveryKind: OfficialAccountDeliveryKind;
+  deliveredAt: string;
+  readAt?: string;
+  account: OfficialAccountSummary;
+  article: OfficialAccountArticleSummary;
+}
+
+export interface OfficialAccountSubscriptionInboxSummary {
+  unreadCount: number;
+  lastDeliveredAt?: string;
+  preview?: string;
+}
+
+export interface OfficialAccountSubscriptionInboxGroup {
+  account: OfficialAccountSummary;
+  deliveries: OfficialAccountDeliveryItem[];
+  unreadCount: number;
+  lastDeliveredAt?: string;
+}
+
+export interface OfficialAccountServiceConversationSummary {
+  accountId: string;
+  unreadCount: number;
+  lastDeliveredAt?: string;
+  preview?: string;
+}
+
+export interface OfficialAccountMessageEntries {
+  subscriptionInbox: OfficialAccountSubscriptionInboxSummary | null;
+  serviceConversations: OfficialAccountServiceConversationSummary[];
+}
+
+export interface OfficialAccountSubscriptionInbox {
+  summary: OfficialAccountSubscriptionInboxSummary | null;
+  groups: OfficialAccountSubscriptionInboxGroup[];
 }
