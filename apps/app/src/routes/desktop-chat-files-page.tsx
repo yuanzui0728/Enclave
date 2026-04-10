@@ -339,6 +339,9 @@ export function DesktopChatFilesPage() {
               {attachmentRows.map((item) => {
                 const sourceId = `chat-file-${item.id}`;
                 const collected = favoriteSourceIds.includes(sourceId);
+                const favoriteRouteHash = buildDesktopChatFilesRouteHash(
+                  item.conversationId,
+                );
 
                 return (
                   <div
@@ -413,7 +416,7 @@ export function DesktopChatFilesPage() {
                                       item.text.trim() ||
                                       `${item.senderName} 分享的聊天附件`,
                                     meta: `${item.conversationTitle} · ${formatMessageTimestamp(item.createdAt)}`,
-                                    to: "/desktop/chat-files",
+                                    to: `/desktop/chat-files${favoriteRouteHash ? `#${favoriteRouteHash}` : ""}`,
                                     badge: "聊天文件",
                                     avatarName: item.conversationTitle,
                                   });
