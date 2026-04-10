@@ -3626,7 +3626,11 @@ function GroupCallInviteMessage({
               : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
           )}
         >
-          {invite.status === "ended" ? "已结束" : "桌面工作台"}
+          {invite.status === "ended"
+            ? "已结束"
+            : invite.sourceLabel
+              ? `${invite.sourceLabel}发起`
+              : "桌面发起"}
         </div>
       </div>
 
@@ -3637,6 +3641,9 @@ function GroupCallInviteMessage({
         />
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
+        ) : null}
+        {invite.sourceLabel ? (
+          <CallInviteMetric label="发起端" value={invite.sourceLabel} />
         ) : null}
         {invite.activeCount ? (
           <div className="grid grid-cols-2 gap-2">
