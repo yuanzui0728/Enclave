@@ -44,6 +44,7 @@ import { OfficialAccountEntity } from './modules/official-accounts/official-acco
 import { OfficialAccountArticleEntity } from './modules/official-accounts/official-account-article.entity';
 import { OfficialAccountDeliveryEntity } from './modules/official-accounts/official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './modules/official-accounts/official-account-follow.entity';
+import { OfficialAccountServiceMessageEntity } from './modules/official-accounts/official-account-service-message.entity';
 
 @Module({
   imports: [
@@ -60,7 +61,7 @@ import { OfficialAccountFollowEntity } from './modules/official-accounts/officia
         GroupEntity, GroupMemberEntity, GroupMessageEntity,
         FeedPostEntity, FeedCommentEntity, WorldContextEntity,
         NarrativeArcEntity, AIBehaviorLogEntity, UserFeedInteractionEntity,
-        OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity,
+        OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity, OfficialAccountServiceMessageEntity,
       ],
       synchronize: true,
     }),

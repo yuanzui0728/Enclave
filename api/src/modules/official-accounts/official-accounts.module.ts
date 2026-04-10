@@ -5,6 +5,7 @@ import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
 import { OfficialAccountDeliveryEntity } from './official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './official-account-follow.entity';
+import { OfficialAccountServiceMessageEntity } from './official-account-service-message.entity';
 import { OfficialAccountsController } from './official-accounts.controller';
 import { OfficialAccountsService } from './official-accounts.service';
 
@@ -15,6 +16,7 @@ import { OfficialAccountsService } from './official-accounts.service';
       OfficialAccountArticleEntity,
       OfficialAccountDeliveryEntity,
       OfficialAccountFollowEntity,
+      OfficialAccountServiceMessageEntity,
     ]),
     AuthModule,
   ],

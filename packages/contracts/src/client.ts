@@ -55,6 +55,8 @@ import type {
 } from "./moments";
 import type {
   OfficialAccountArticleDetail,
+  OfficialAccountServiceConversationSummary,
+  OfficialAccountServiceMessage,
   OfficialAccountArticleSummary,
   OfficialAccountMessageEntries,
   OfficialAccountDetail,
@@ -1393,6 +1395,38 @@ export function getOfficialAccountSubscriptionInbox(baseUrl?: string) {
   return requestLegacyApi<OfficialAccountSubscriptionInbox>(
     "/official-accounts/subscription-inbox",
     undefined,
+    baseUrl,
+  );
+}
+
+export function getOfficialAccountServiceConversations(baseUrl?: string) {
+  return requestLegacyApi<OfficialAccountServiceConversationSummary[]>(
+    "/official-accounts/service-conversations",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getOfficialAccountServiceMessages(
+  accountId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<OfficialAccountServiceMessage[]>(
+    `/official-accounts/${accountId}/service-messages`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function markOfficialAccountServiceMessagesRead(
+  accountId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<OfficialAccountServiceMessage[]>(
+    `/official-accounts/${accountId}/service-messages/read`,
+    {
+      method: "POST",
+    },
     baseUrl,
   );
 }

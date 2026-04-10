@@ -2,6 +2,7 @@ export type OfficialAccountType = "subscription" | "service";
 export type OfficialAccountDeliveryKind =
   | "subscription_digest"
   | "service_notice";
+export type OfficialAccountServiceMessageType = "text" | "article_card";
 
 export interface OfficialAccountArticleSummary {
   id: string;
@@ -66,9 +67,29 @@ export interface OfficialAccountSubscriptionInboxGroup {
 
 export interface OfficialAccountServiceConversationSummary {
   accountId: string;
+  account: OfficialAccountSummary;
   unreadCount: number;
   lastDeliveredAt?: string;
   preview?: string;
+}
+
+export interface OfficialAccountArticleCardAttachment {
+  kind: "article_card";
+  articleId: string;
+  title: string;
+  summary: string;
+  coverImage?: string;
+  publishedAt: string;
+}
+
+export interface OfficialAccountServiceMessage {
+  id: string;
+  accountId: string;
+  type: OfficialAccountServiceMessageType;
+  text: string;
+  attachment?: OfficialAccountArticleCardAttachment;
+  createdAt: string;
+  readAt?: string;
 }
 
 export interface OfficialAccountMessageEntries {

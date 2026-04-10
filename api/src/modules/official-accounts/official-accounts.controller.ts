@@ -27,6 +27,11 @@ export class OfficialAccountsController {
     return this.officialAccountsService.getSubscriptionInbox();
   }
 
+  @Get('service-conversations')
+  getServiceConversations() {
+    return this.officialAccountsService.getServiceConversations();
+  }
+
   @Post('subscription-inbox/read')
   markSubscriptionInboxRead() {
     return this.officialAccountsService.markSubscriptionInboxRead();
@@ -45,6 +50,16 @@ export class OfficialAccountsController {
   @Get(':id/articles')
   listAccountArticles(@Param('id') id: string) {
     return this.officialAccountsService.listAccountArticles(id);
+  }
+
+  @Get(':id/service-messages')
+  getServiceMessages(@Param('id') id: string) {
+    return this.officialAccountsService.getServiceMessages(id);
+  }
+
+  @Post(':id/service-messages/read')
+  markServiceMessagesRead(@Param('id') id: string) {
+    return this.officialAccountsService.markServiceMessagesRead(id);
   }
 
   @Get(':id')
