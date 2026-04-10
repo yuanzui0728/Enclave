@@ -5,6 +5,7 @@ import {
   Circle,
   Eraser,
   EyeOff,
+  ExternalLink,
   Pin,
   Trash2,
 } from "lucide-react";
@@ -20,6 +21,7 @@ type DesktopConversationContextMenuProps = {
   onClose: () => void;
   onTogglePinned: () => void;
   onToggleMuted: () => void;
+  onOpenWindow?: () => void;
   onMarkRead?: () => void;
   onMarkUnread?: () => void;
   hideLabel?: string;
@@ -45,6 +47,7 @@ export function DesktopConversationContextMenu({
   onClose,
   onTogglePinned,
   onToggleMuted,
+  onOpenWindow,
   onMarkRead,
   onMarkUnread,
   hideLabel = "隐藏聊天",
@@ -55,6 +58,7 @@ export function DesktopConversationContextMenu({
 }: DesktopConversationContextMenuProps) {
   const actionCount =
     3 +
+    Number(Boolean(onOpenWindow)) +
     Number(Boolean(showMarkRead && onMarkRead)) +
     Number(Boolean(showMarkUnread && onMarkUnread)) +
     Number(Boolean(onHide)) +
@@ -90,6 +94,17 @@ export function DesktopConversationContextMenu({
         className="absolute w-[196px] overflow-hidden rounded-[14px] border border-black/8 bg-white py-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
+        {onOpenWindow ? (
+          <>
+            <ContextMenuButton
+              icon={<ExternalLink size={15} />}
+              label="在独立窗口打开"
+              onClick={onOpenWindow}
+              disabled={busy}
+            />
+            <MenuDivider />
+          </>
+        ) : null}
         <ContextMenuButton
           icon={<Pin size={15} />}
           label={isPinned ? "取消置顶" : "置顶聊天"}

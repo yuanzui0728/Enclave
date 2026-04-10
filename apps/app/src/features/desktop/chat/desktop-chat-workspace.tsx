@@ -100,6 +100,7 @@ import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
 import { createDesktopNote } from "./desktop-notes-storage";
+import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
@@ -631,6 +632,27 @@ export function DesktopChatWorkspace({
     });
   }
 
+  function handleOpenConversationWindow(conversation: ConversationListItem) {
+    const returnTo = isPersistedGroupConversation(conversation)
+      ? `/group/${conversation.id}`
+      : `/chat/${conversation.id}`;
+    const opened = openDesktopChatWindow({
+      conversationId: conversation.id,
+      conversationType: isPersistedGroupConversation(conversation)
+        ? "group"
+        : "direct",
+      title: conversation.title,
+      returnTo,
+    });
+
+    setConversationContextMenu(null);
+    setNotice(
+      opened
+        ? "已在独立窗口打开聊天。"
+        : "浏览器阻止了新窗口，请检查弹窗权限。",
+    );
+  }
+
   async function handleClearReminderGroup(
     status: ChatReminderStatus,
     messageIds: string[],
@@ -1033,6 +1055,9 @@ export function DesktopChatWorkspace({
               action: "mute",
               conversation: conversationContextMenu.conversation,
             })
+          }
+          onOpenWindow={() =>
+            handleOpenConversationWindow(conversationContextMenu.conversation)
           }
           onMarkRead={() =>
             conversationActionMutation.mutate({
