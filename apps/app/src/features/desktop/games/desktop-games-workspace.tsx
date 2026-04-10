@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import type { ConversationListItem } from "@yinjie/contracts";
 import {
   Button,
   InlineNotice,
+  LoadingBlock,
   cn,
 } from "@yinjie/ui";
 import {
@@ -20,6 +22,8 @@ import {
   formatConversationTimestamp,
   formatTimestamp,
 } from "../../../lib/format";
+import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import { EmptyState } from "../../../components/empty-state";
 import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
 import {
   gameCenterCategoryTabs,
@@ -38,9 +42,12 @@ import {
 type DesktopGamesWorkspaceProps = {
   activeCategory: GameCenterCategoryId;
   activeGameId: string | null;
+  activeInviteActivityId: string | null;
   eventActionStatusById: Record<string, string>;
   friendInviteSentAtByActivityId: Record<string, string>;
   friendInviteStatusByActivityId: Record<string, string>;
+  inviteConversationCandidates: ConversationListItem[];
+  inviteConversationCandidatesLoading: boolean;
   launchCountById: Record<string, number>;
   pinnedGameIds: string[];
   recentGameIds: string[];
@@ -51,6 +58,11 @@ type DesktopGamesWorkspaceProps = {
   onCategoryChange: (categoryId: GameCenterCategoryId) => void;
   onCompleteEventAction: (eventId: string) => void;
   onCopyInviteToMobile: (activityId: string) => void;
+  onOpenInviteToChat: (activityId: string) => void;
+  onSendInviteToConversation: (
+    activityId: string,
+    conversationId: string,
+  ) => void;
   onInviteFriend: (activityId: string) => void;
   onCopyGameToMobile: (gameId: string) => void;
   onDismissActiveGame: () => void;
@@ -68,9 +80,12 @@ function resolveGames(ids: string[]) {
 export function DesktopGamesWorkspace({
   activeCategory,
   activeGameId,
+  activeInviteActivityId,
   eventActionStatusById,
   friendInviteSentAtByActivityId,
   friendInviteStatusByActivityId,
+  inviteConversationCandidates,
+  inviteConversationCandidatesLoading,
   launchCountById,
   pinnedGameIds,
   recentGameIds,
@@ -81,6 +96,8 @@ export function DesktopGamesWorkspace({
   onCategoryChange,
   onCompleteEventAction,
   onCopyInviteToMobile,
+  onOpenInviteToChat,
+  onSendInviteToConversation,
   onInviteFriend,
   onCopyGameToMobile,
   onDismissActiveGame,
@@ -90,6 +107,13 @@ export function DesktopGamesWorkspace({
 }: DesktopGamesWorkspaceProps) {
   const selectedGame =
     getGameCenterGame(selectedGameId) ?? getGameCenterGame("signal-squad");
+  const activeInviteActivity = activeInviteActivityId
+    ? gameCenterFriendActivities.find((item) => item.id === activeInviteActivityId) ??
+      null
+    : null;
+  const activeInviteGame = activeInviteActivity
+    ? getGameCenterGame(activeInviteActivity.gameId)
+    : null;
   const pinnedGames = resolveGames(pinnedGameIds);
   const recentGames = resolveGames(recentGameIds);
   const browseGames =
@@ -497,6 +521,14 @@ export function DesktopGamesWorkspace({
                         <Button
                           variant="secondary"
                           size="sm"
+                          onClick={() => onOpenInviteToChat(activity.id)}
+                          className="shrink-0 rounded-full"
+                        >
+                          发到聊天
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => onInviteFriend(activity.id)}
                           className="shrink-0 rounded-full"
                         >
@@ -516,6 +548,94 @@ export function DesktopGamesWorkspace({
                     );
                   })}
                 </div>
+              </section>
+
+              <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  <Gamepad2 size={16} className="text-[color:var(--brand-secondary)]" />
+                  投递到最近会话
+                </div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                  {activeInviteActivity
+                    ? `把 ${activeInviteActivity.friendName} 的组局邀约发回消息流，点哪条会话就投递到哪条。`
+                    : "先在上面选一条好友动态，再决定把组局邀约投递到哪条会话。"}
+                </div>
+
+                {!activeInviteActivity ? (
+                  <div className="mt-4">
+                    <EmptyState
+                      title="还没有选中的组局邀约"
+                      description="从“好友在玩”里点“发到聊天”，这里就会出现最近会话投递面板。"
+                    />
+                  </div>
+                ) : inviteConversationCandidatesLoading ? (
+                  <div className="mt-4">
+                    <LoadingBlock label="正在读取最近会话..." />
+                  </div>
+                ) : inviteConversationCandidates.length ? (
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[rgba(255,250,244,0.82)] px-4 py-4">
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        当前邀约
+                      </div>
+                      <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                        {activeInviteActivity.friendName} 正在玩 {activeInviteGame?.name ?? "当前游戏"}，{activeInviteActivity.status}
+                      </div>
+                    </div>
+                    {inviteConversationCandidates.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className="flex w-full items-start justify-between gap-3 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] px-4 py-4 text-left transition hover:bg-white"
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onSendInviteToConversation(
+                              activeInviteActivity.id,
+                              conversation.id,
+                            )
+                          }
+                          className="min-w-0 flex-1 text-left"
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                              {conversation.title}
+                            </div>
+                            <span className="text-[11px] text-[color:var(--text-muted)]">
+                              {isPersistedGroupConversation(conversation) ? "群聊" : "单聊"}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                            {conversation.lastMessage?.text || "把组局邀约投递到这条会话。"}
+                          </div>
+                          <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                            {formatConversationTimestamp(conversation.lastActivityAt)}
+                          </div>
+                        </button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            onSendInviteToConversation(
+                              activeInviteActivity.id,
+                              conversation.id,
+                            )
+                          }
+                          className="shrink-0 rounded-full"
+                        >
+                          发邀约
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4">
+                    <EmptyState
+                      title="还没有最近会话"
+                      description="先回消息里产生一些会话，再把游戏邀约投递回来。"
+                    />
+                  </div>
+                )}
               </section>
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">

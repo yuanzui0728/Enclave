@@ -1,5 +1,10 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  getConversations,
+  sendGroupMessage,
+} from "@yinjie/contracts";
 import {
   AppPage,
   AppSection,
@@ -37,13 +42,21 @@ import {
 } from "../features/games/game-center-data";
 import { GameCenterSessionPanel } from "../features/games/game-center-session-panel";
 import { useGameCenterState } from "../features/games/use-game-center-state";
+import { emitChatMessage, joinConversationRoom } from "../lib/socket";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   pushMobileHandoffRecord,
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { AvatarChip } from "../components/avatar-chip";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { formatConversationTimestamp, formatTimestamp } from "../lib/format";
+import {
+  formatConversationTimestamp,
+  formatTimestamp,
+  parseTimestamp,
+} from "../lib/format";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 
 function resolveGames(ids: string[]) {
   return ids
@@ -64,7 +77,11 @@ function resolveInitialGameSelection() {
 
 export function GamesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const ownerId = useWorldOwnerStore((state) => state.id);
   const {
     activeGameId,
     eventActionStatusById,
@@ -85,8 +102,17 @@ export function GamesPage() {
   const [selectedGameId, setSelectedGameId] = useState(
     resolveInitialGameSelection(),
   );
+  const [activeInviteActivityId, setActiveInviteActivityId] = useState<string | null>(
+    null,
+  );
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: Boolean(ownerId),
+  });
 
   useEffect(() => {
     if (!getGameCenterGame(selectedGameId)) {
@@ -135,6 +161,33 @@ export function GamesPage() {
       ? gameCenterGames.slice(0, 5)
       : gameCenterGames.filter((game) => game.category === activeCategory);
   const recentGames = resolveGames(recentGameIds);
+  const inviteConversationCandidates = useMemo(
+    () =>
+      [...(conversationsQuery.data ?? [])]
+        .sort(
+          (left, right) =>
+            (parseTimestamp(right.lastActivityAt) ?? 0) -
+            (parseTimestamp(left.lastActivityAt) ?? 0),
+        )
+        .slice(0, 5),
+    [conversationsQuery.data],
+  );
+
+  const sendGroupInviteMutation = useMutation({
+    mutationFn: (input: { conversationId: string; text: string }) =>
+      sendGroupMessage(
+        input.conversationId,
+        {
+          text: input.text,
+        },
+        baseUrl,
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+  });
 
   function handleLaunchGame(gameId: string) {
     const game = getGameCenterGame(gameId);
@@ -189,6 +242,73 @@ export function GamesPage() {
         ? `已再次邀请 ${activity.friendName} 一起玩${game?.name ?? "当前游戏"}。`
         : `已向 ${activity.friendName} 发出一起玩${game?.name ?? "当前游戏"} 的邀约。`,
     );
+  }
+
+  function handleOpenInviteToChat(activityId: string) {
+    setActiveInviteActivityId((current) =>
+      current === activityId ? null : activityId,
+    );
+  }
+
+  function buildInviteMessage(
+    activity: (typeof gameCenterFriendActivities)[number],
+    game: GameCenterGame | null,
+  ) {
+    return [
+      "【组局邀约】",
+      `${activity.friendName} 正在玩《${game?.name ?? "当前游戏"}》`,
+      activity.status,
+      "要不要一起上？",
+    ].join(" ");
+  }
+
+  async function handleSendInviteToConversation(
+    activityId: string,
+    conversationId: string,
+  ) {
+    const activity = gameCenterFriendActivities.find((item) => item.id === activityId);
+    const conversation = inviteConversationCandidates.find(
+      (item) => item.id === conversationId,
+    );
+
+    if (!activity || !conversation) {
+      return;
+    }
+
+    const game = getGameCenterGame(activity.gameId);
+    const text = buildInviteMessage(activity, game);
+
+    if (isPersistedGroupConversation(conversation)) {
+      await sendGroupInviteMutation.mutateAsync({
+        conversationId: conversation.id,
+        text,
+      });
+    } else {
+      const characterId = conversation.participants[0];
+      if (!characterId) {
+        setNoticeTone("info");
+        setSuccessNotice("这条单聊还没有可用的角色目标，暂时无法投递邀约。");
+        return;
+      }
+
+      joinConversationRoom({ conversationId: conversation.id });
+      emitChatMessage({
+        conversationId: conversation.id,
+        characterId,
+        text,
+      });
+      window.setTimeout(() => {
+        void queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }, 500);
+    }
+
+    applyFriendInvite(activityId, "invited");
+    setSelectedGameId(activity.gameId);
+    setActiveInviteActivityId(null);
+    setNoticeTone("success");
+    setSuccessNotice(`已把 ${activity.friendName} 的组局邀约发到 ${conversation.title}。`);
   }
 
   async function handleCopyInviteToMobile(activityId: string) {
@@ -263,9 +383,12 @@ export function GamesPage() {
       <DesktopGamesWorkspace
         activeCategory={activeCategory}
         activeGameId={activeGameId}
+        activeInviteActivityId={activeInviteActivityId}
         eventActionStatusById={eventActionStatusById}
         friendInviteSentAtByActivityId={friendInviteSentAtByActivityId}
         friendInviteStatusByActivityId={friendInviteStatusByActivityId}
+        inviteConversationCandidates={inviteConversationCandidates}
+        inviteConversationCandidatesLoading={conversationsQuery.isLoading}
         launchCountById={launchCountById}
         pinnedGameIds={pinnedGameIds}
         recentGameIds={recentGameIds}
@@ -276,6 +399,8 @@ export function GamesPage() {
         onCategoryChange={setActiveCategory}
         onCompleteEventAction={handleCompleteEventAction}
         onCopyInviteToMobile={handleCopyInviteToMobile}
+        onOpenInviteToChat={handleOpenInviteToChat}
+        onSendInviteToConversation={handleSendInviteToConversation}
         onInviteFriend={handleInviteFriend}
         onCopyGameToMobile={handleCopyGameToMobile}
         onDismissActiveGame={dismissActiveGame}
