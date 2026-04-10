@@ -8,7 +8,6 @@ import {
   type ReplyLogicHistoryItem,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   Button,
   Card,
   ErrorBlock,
@@ -98,34 +97,64 @@ export function CharacterRuntimePage() {
   const snapshot = snapshotQuery.data;
   const latestRun = snapshot.observability.recentRuns[0] ?? null;
 
+  function jumpToSection(sectionId: string) {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-6">
-      <AppHeader
-        eyebrow="角色运行逻辑台"
-        title={snapshot.character.name}
-        description="聚焦查看并调整这个角色当前的回复链路、生活状态、记忆摘要与叙事进度。"
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <Link to="/characters">
-              <Button variant="secondary" size="lg">返回角色名册</Button>
-            </Link>
-            <Link to="/characters/$characterId/factory" params={{ characterId }}>
-              <Button variant="secondary" size="lg">前往工厂</Button>
-            </Link>
-            <Link to="/reply-logic">
-              <Button variant="secondary" size="lg">世界级调试台</Button>
-            </Link>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => saveMutation.mutate(draft)}
-              disabled={!isDirty || saveMutation.isPending}
-            >
-              {saveMutation.isPending ? "保存中..." : "保存运行配置"}
-            </Button>
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">角色运行逻辑台</div>
+              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">{snapshot.character.name}</h2>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                聚焦查看并调整这个角色当前的回复链路、生活状态、记忆摘要与叙事进度。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/characters">
+                <Button variant="secondary" size="lg">返回角色中心</Button>
+              </Link>
+              <Link to="/characters/$characterId/factory" params={{ characterId }}>
+                <Button variant="secondary" size="lg">前往工厂</Button>
+              </Link>
+              <Link to="/reply-logic">
+                <Button variant="secondary" size="lg">世界级调试台</Button>
+              </Link>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => saveMutation.mutate(draft)}
+                disabled={!isDirty || saveMutation.isPending}
+              >
+                {saveMutation.isPending ? "保存中..." : "保存运行配置"}
+              </Button>
+            </div>
           </div>
-        }
-      />
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="在线状态" value={draft.isOnline ? "在线" : "离线"} />
+            <MetricCard label="在线模式" value={formatMode(draft.onlineMode)} />
+            <MetricCard label="当前活动" value={formatActivity(draft.currentActivity)} />
+            <MetricCard label="最近调度" value={latestRun ? formatSchedulerRunStatus(latestRun.status) : "暂无"} />
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>当前状态</SectionHeading>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard label="活动模式" value={formatMode(draft.activityMode)} />
+            <MetricCard label="活跃时间窗" value={snapshot.observability.activeWindow.label} />
+            <MetricCard label="记忆摘要" value={draft.profile.memorySummary ? "已填写" : "未填写"} />
+            <MetricCard label="叙事弧线" value={snapshot.narrativeArc ? "有" : "无"} />
+          </div>
+        </Card>
+      </div>
 
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <ErrorBlock message={saveMutation.error.message} />
@@ -134,21 +163,32 @@ export function CharacterRuntimePage() {
         <InlineNotice tone="success">角色运行配置已保存，快照已刷新。</InlineNotice>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="在线状态" value={draft.isOnline ? "在线" : "离线"} />
-        <MetricCard label="在线模式" value={formatMode(draft.onlineMode)} />
-        <MetricCard label="当前活动" value={formatActivity(draft.currentActivity)} />
-        <MetricCard label="活动模式" value={formatMode(draft.activityMode)} />
-        <MetricCard label="活跃时间窗" value={snapshot.observability.activeWindow.label} />
-        <MetricCard
-          label="最近调度"
-          value={latestRun ? `${latestRun.jobName} · ${formatSchedulerRunStatus(latestRun.status)}` : "暂无"}
-        />
-      </div>
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>段落导航</SectionHeading>
+            <div className="mt-4 grid gap-2">
+              <SectionNavButton label="生活状态配置" detail="在线模式、活动、频率" onClick={() => jumpToSection("character-runtime-lifestyle")} />
+              <SectionNavButton label="记忆与状态" detail="摘要、核心记忆、遗忘曲线" onClick={() => jumpToSection("character-runtime-memory")} />
+              <SectionNavButton label="运行观测" detail="运行摘要、生活逻辑、调度" onClick={() => jumpToSection("character-runtime-observability")} />
+              <SectionNavButton label="提示词与窗口" detail="分段、最终 prompt、上下文窗口" onClick={() => jumpToSection("character-runtime-prompt")} />
+              <SectionNavButton label="叙事弧线" detail="当前叙事推进状态" onClick={() => jumpToSection("character-runtime-arc")} />
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>操作提示</SectionHeading>
+            <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
+              <HintRow label="保存状态" value={isDirty ? "有未保存变更" : "已同步"} />
+              <HintRow label="调度影响" value={(draft.onlineMode ?? "auto") === "auto" || (draft.activityMode ?? "auto") === "auto" ? "仍受自动调度影响" : "当前为人工锁定"} />
+              <HintRow label="建议流程" value="先看观测，再修改运行态，最后保存" />
+            </div>
+          </Card>
+        </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="space-y-6">
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-runtime-lifestyle" className="bg-[color:var(--surface-console)]">
             <SectionHeading>生活状态配置</SectionHeading>
             <div className="mt-4 space-y-4">
               <SelectFieldBlock
@@ -282,7 +322,7 @@ export function CharacterRuntimePage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-runtime-memory" className="bg-[color:var(--surface-console)]">
             <SectionHeading>记忆与状态</SectionHeading>
             <div className="mt-4 space-y-4">
               <TextAreaBlock
@@ -352,7 +392,7 @@ export function CharacterRuntimePage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-runtime-observability" className="bg-[color:var(--surface-console)]">
             <SectionHeading>运行时摘要</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
               <MetricCard label="状态门" value={formatGateMode(snapshot.actor.stateGate.mode)} />
@@ -467,7 +507,7 @@ export function CharacterRuntimePage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-runtime-prompt" className="bg-[color:var(--surface-console)]">
             <SectionHeading>提示词分段</SectionHeading>
             <div className="mt-4 space-y-3">
               {snapshot.actor.promptSections.map((section) => (
@@ -503,7 +543,7 @@ export function CharacterRuntimePage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-runtime-arc" className="bg-[color:var(--surface-console)]">
             <SectionHeading>叙事弧线</SectionHeading>
             {snapshot.narrativeArc ? (
               <div className="mt-4 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
@@ -529,6 +569,7 @@ export function CharacterRuntimePage() {
             )}
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );
@@ -686,6 +727,36 @@ function CodeBlock({ value, className }: { value: string; className?: string }) 
     >
       {value}
     </pre>
+  );
+}
+
+function SectionNavButton({
+  label,
+  detail,
+  onClick,
+}: {
+  label: string;
+  detail: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+    >
+      <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
+      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">{detail}</div>
+    </button>
+  );
+}
+
+function HintRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
+      <span className="text-[color:var(--text-muted)]">{label}</span>
+      <span className="text-right text-[color:var(--text-primary)]">{value}</span>
+    </div>
   );
 }
 

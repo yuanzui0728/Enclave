@@ -7,7 +7,6 @@ import type {
   CharacterFactorySnapshot,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   Button,
   Card,
   ErrorBlock,
@@ -147,39 +146,69 @@ export function CharacterFactoryPage() {
   const driftFieldCount = snapshot.fieldSources.filter((item) => item.status === "runtime_drift").length;
   const changedPublishItems = snapshot.publishDiff.items.filter((item) => item.changed);
 
+  function jumpToSection(sectionId: string) {
+    if (typeof document === "undefined") {
+      return;
+    }
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-6">
-      <AppHeader
-        eyebrow="角色工厂"
-        title={snapshot.character.name}
-        description="在这里定义角色配方、查看发布版本、对比草稿差异，并把制造阶段的设定发布到运行时实体。"
-        actions={
-          <div className="flex flex-wrap gap-3">
-            <Link to="/characters">
-              <Button variant="secondary" size="lg">返回角色名册</Button>
-            </Link>
-            <Link to="/characters/$characterId" params={{ characterId }}>
-              <Button variant="secondary" size="lg">基础资料</Button>
-            </Link>
-            <Button
-              variant="secondary"
-              size="lg"
-              onClick={() => setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null)}
-              disabled={!isDirty}
-            >
-              重置草稿
-            </Button>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => draft && saveMutation.mutate(draft)}
-              disabled={!isDirty || saveMutation.isPending}
-            >
-              {saveMutation.isPending ? "保存中..." : "保存草稿"}
-            </Button>
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_42%,rgba(237,250,244,0.95))]">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-2xl">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">角色工厂</div>
+              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">{snapshot.character.name}</h2>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                在这里定义角色配方、查看发布版本、对比草稿差异，并把制造阶段的设定发布到运行时实体。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/characters">
+                <Button variant="secondary" size="lg">返回角色中心</Button>
+              </Link>
+              <Link to="/characters/$characterId" params={{ characterId }}>
+                <Button variant="secondary" size="lg">基础资料</Button>
+              </Link>
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null)}
+                disabled={!isDirty}
+              >
+                重置草稿
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => draft && saveMutation.mutate(draft)}
+                disabled={!isDirty || saveMutation.isPending}
+              >
+                {saveMutation.isPending ? "保存中..." : "保存草稿"}
+              </Button>
+            </div>
           </div>
-        }
-      />
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <MetricCard label="来源" value={formatSourceType(snapshot.blueprint.sourceType)} />
+            <MetricCard label="状态" value={formatStatus(snapshot.blueprint.status)} />
+            <MetricCard label="已发布版本" value={snapshot.blueprint.publishedVersion || 0} />
+            <MetricCard label="未发布变更" value={snapshot.diffSummary.hasUnpublishedChanges ? "有" : "无"} />
+          </div>
+        </Card>
+
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>当前状态</SectionHeading>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <MetricCard label="运行态漂移字段" value={driftFieldCount} />
+            <MetricCard label="发布将覆盖字段" value={snapshot.publishDiff.changedCount} />
+            <MetricCard label="草稿变更字段" value={snapshot.diffSummary.changedFields.length} />
+            <MetricCard label="版本记录" value={revisions.length} />
+          </div>
+        </Card>
+      </div>
 
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <ErrorBlock message={saveMutation.error.message} />
@@ -194,25 +223,38 @@ export function CharacterFactoryPage() {
         <ErrorBlock message={aiGenerateMutation.error.message} />
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="来源" value={formatSourceType(snapshot.blueprint.sourceType)} />
-        <MetricCard label="状态" value={formatStatus(snapshot.blueprint.status)} />
-        <MetricCard label="已发布版本" value={snapshot.blueprint.publishedVersion || 0} />
-        <MetricCard
-          label="未发布变更"
-          value={snapshot.diffSummary.hasUnpublishedChanges ? "有" : "无"}
-        />
-        <MetricCard label="运行态漂移字段" value={driftFieldCount} />
-        <MetricCard label="发布将覆盖字段" value={snapshot.publishDiff.changedCount} />
-      </div>
-
       <InlineNotice tone="muted">
         工厂页改的是角色配方。只有点击“发布到运行时”后，配方才会映射到当前 `Character` 实体并影响真实对话与生活逻辑。
       </InlineNotice>
 
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>段落导航</SectionHeading>
+            <div className="mt-4 grid gap-2">
+              <SectionNavButton label="AI 辅助制造" detail="从聊天样本生成草稿" onClick={() => jumpToSection("character-factory-ai")} />
+              <SectionNavButton label="身份与关系" detail="名字、关系、背景和动机" onClick={() => jumpToSection("character-factory-identity")} />
+              <SectionNavButton label="能力与边界" detail="擅长领域、知识边界、拒绝方式" onClick={() => jumpToSection("character-factory-expertise")} />
+              <SectionNavButton label="语气与行为" detail="口头禅、风格、提示词" onClick={() => jumpToSection("character-factory-tone")} />
+              <SectionNavButton label="记忆与生活策略" detail="频率、活跃时段、触发场景" onClick={() => jumpToSection("character-factory-memory")} />
+              <SectionNavButton label="推理与发布映射" detail="默认开关和发布目标" onClick={() => jumpToSection("character-factory-publish")} />
+              <SectionNavButton label="版本与 Diff" detail="发布差异、字段来源、版本记录" onClick={() => jumpToSection("character-factory-diff")} />
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>运营提示</SectionHeading>
+            <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
+              <HintRow label="草稿状态" value={isDirty ? "有未保存变更" : "已同步"} />
+              <HintRow label="发布状态" value={snapshot.diffSummary.hasUnpublishedChanges ? "待发布" : "已发布同步"} />
+              <HintRow label="建议流程" value="先改草稿，再看 Diff，最后发布" />
+            </div>
+          </Card>
+        </div>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-ai" className="bg-[color:var(--surface-console)]">
             <SectionHeading>AI 辅助制造</SectionHeading>
             <InlineNotice className="mt-4" tone="muted">
               输入一段角色聊天样本后，后台会走人格提取链，把可结构化的语气、口头禅、兴趣、情绪基调和记忆摘要写回工厂草稿。
@@ -249,7 +291,7 @@ export function CharacterFactoryPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-identity" className="bg-[color:var(--surface-console)]">
             <SectionHeading>身份与关系</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <FieldBlock
@@ -353,7 +395,7 @@ export function CharacterFactoryPage() {
             />
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-expertise" className="bg-[color:var(--surface-console)]">
             <SectionHeading>能力域与边界</SectionHeading>
             <div className="mt-4 space-y-4">
               <FieldBlock
@@ -411,7 +453,7 @@ export function CharacterFactoryPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-tone" className="bg-[color:var(--surface-console)]">
             <SectionHeading>语气与行为</SectionHeading>
             <div className="mt-4 space-y-4">
               <FieldBlock
@@ -555,7 +597,7 @@ export function CharacterFactoryPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-memory" className="bg-[color:var(--surface-console)]">
             <SectionHeading>记忆底稿与生活策略</SectionHeading>
             <div className="mt-4 space-y-4">
               <TextAreaBlock
@@ -699,7 +741,7 @@ export function CharacterFactoryPage() {
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card id="character-factory-publish" className="bg-[color:var(--surface-console)]">
             <SectionHeading>推理与路由</SectionHeading>
             <InlineNotice className="mt-4" tone="muted">
               这里定义发布后角色默认带上的推理开关，而不是运行时临时覆盖值。
@@ -933,7 +975,7 @@ export function CharacterFactoryPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div id="character-factory-diff" className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>字段来源</SectionHeading>
           <InlineNotice className="mt-4" tone={driftFieldCount > 0 ? "warning" : "muted"}>
@@ -969,6 +1011,7 @@ export function CharacterFactoryPage() {
             ) : null}
           </div>
         </Card>
+      </div>
       </div>
     </div>
   );
@@ -1169,6 +1212,36 @@ function CodeBlock({ value, className }: { value: string; className?: string }) 
     >
       {value}
     </pre>
+  );
+}
+
+function SectionNavButton({
+  label,
+  detail,
+  onClick,
+}: {
+  label: string;
+  detail: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+    >
+      <div className="font-semibold text-[color:var(--text-primary)]">{label}</div>
+      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">{detail}</div>
+    </button>
+  );
+}
+
+function HintRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
+      <span className="text-[color:var(--text-muted)]">{label}</span>
+      <span className="text-right text-[color:var(--text-primary)]">{value}</span>
+    </div>
   );
 }
 
