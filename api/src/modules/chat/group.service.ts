@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { GroupEntity } from './group.entity';
@@ -18,6 +14,7 @@ import {
   MessageAttachment,
 } from './chat.types';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 
@@ -197,12 +194,16 @@ export class GroupService {
     const group = await this.requireOwnedGroup(groupId);
     const nextName = dto.name?.trim();
     const nextAnnouncement =
-      dto.announcement === undefined ? undefined : dto.announcement?.trim() || null;
+      dto.announcement === undefined
+        ? undefined
+        : dto.announcement?.trim() || null;
     const updated = await this.groupRepo.save({
       ...group,
       name: nextName || group.name,
       announcement:
-        nextAnnouncement === undefined ? group.announcement ?? null : nextAnnouncement,
+        nextAnnouncement === undefined
+          ? (group.announcement ?? null)
+          : nextAnnouncement,
     });
 
     return this.toGroup(updated);
@@ -267,7 +268,9 @@ export class GroupService {
     });
 
     if (!member) {
-      throw new NotFoundException(`Owner member for group ${groupId} not found`);
+      throw new NotFoundException(
+        `Owner member for group ${groupId} not found`,
+      );
     }
 
     return this.memberRepo.save({
@@ -366,7 +369,7 @@ export class GroupService {
     });
     const history = recentMessages.reverse().map((message) => ({
       role: 'user' as const,
-      content: `[${message.senderName}]: ${message.text}`,
+      content: `[${message.senderName}]: ${sanitizeAiText(message.text)}`,
     }));
 
     for (const member of members) {
@@ -484,7 +487,7 @@ export class GroupService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: entity.text,
+      text: sanitizeAiText(entity.text),
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
     };
@@ -509,7 +512,9 @@ export class GroupService {
     }
   }
 
-  private async findAccessibleGroup(groupId: string): Promise<GroupEntity | null> {
+  private async findAccessibleGroup(
+    groupId: string,
+  ): Promise<GroupEntity | null> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const membership = await this.memberRepo.findOne({
       where: {
@@ -566,7 +571,8 @@ export class GroupService {
       lastReadAt: entity.lastReadAt ?? undefined,
       isHidden: entity.isHidden ?? false,
       hiddenAt: entity.hiddenAt ?? undefined,
-      lastActivityAt: entity.lastActivityAt ?? entity.updatedAt ?? entity.createdAt,
+      lastActivityAt:
+        entity.lastActivityAt ?? entity.updatedAt ?? entity.createdAt,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

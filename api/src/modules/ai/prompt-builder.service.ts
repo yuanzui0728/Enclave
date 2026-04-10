@@ -1,4 +1,8 @@
-import { PersonalityProfile, GenerateReplyOptions, GenerateMomentOptions } from './ai.types';
+import {
+  PersonalityProfile,
+  GenerateReplyOptions,
+  GenerateMomentOptions,
+} from './ai.types';
 
 export interface ChatContext {
   currentActivity?: string;
@@ -6,8 +10,11 @@ export interface ChatContext {
 }
 
 export class PromptBuilderService {
-
-  buildChatSystemPrompt(profile: PersonalityProfile, isGroupChat = false, context?: ChatContext): string {
+  buildChatSystemPrompt(
+    profile: PersonalityProfile,
+    isGroupChat = false,
+    context?: ChatContext,
+  ): string {
     const { name, expertDomains, basePrompt } = profile;
 
     const domainMap: Record<string, string> = {
@@ -21,13 +28,17 @@ export class PromptBuilderService {
       general: '日常生活',
     };
 
-    const expertiseDesc = expertDomains.map((d) => domainMap[d] ?? d).join('、');
-    const identityText = basePrompt ?? `你是${name}，用户的${profile.relationship}。`;
+    const expertiseDesc = expertDomains
+      .map((d) => domainMap[d] ?? d)
+      .join('、');
+    const identityText =
+      basePrompt ?? `你是${name}，用户的${profile.relationship}。`;
 
     // 深度人格模块
     let identitySection = `<identity>\n${identityText}`;
     if (profile.identity) {
-      const { occupation, background, motivation, worldview } = profile.identity;
+      const { occupation, background, motivation, worldview } =
+        profile.identity;
       if (occupation) identitySection += `\n职业：${occupation}`;
       if (background) identitySection += `\n背景：${background}`;
       if (motivation) identitySection += `\n核心动机：${motivation}`;
@@ -39,8 +50,10 @@ export class PromptBuilderService {
     const { traits } = profile;
     let personalitySection = `<personality_and_tone>`;
     personalitySection += `\n情感基调：${traits.emotionalTone || '自然真实'}`;
-    if (traits.speechPatterns?.length) personalitySection += `\n说话习惯：${traits.speechPatterns.join('、')}`;
-    if (traits.catchphrases?.length) personalitySection += `\n口头禅：${traits.catchphrases.join('、')}`;
+    if (traits.speechPatterns?.length)
+      personalitySection += `\n说话习惯：${traits.speechPatterns.join('、')}`;
+    if (traits.catchphrases?.length)
+      personalitySection += `\n口头禅：${traits.catchphrases.join('、')}`;
     personalitySection += `\n回复长度：${{ short: '简短', medium: '适中', long: '详细' }[traits.responseLength] ?? '适中'}`;
     personalitySection += `\nEmoji使用：${{ none: '不用', occasional: '偶尔', frequent: '频繁' }[traits.emojiUsage] ?? '偶尔'}`;
     personalitySection += `\n</personality_and_tone>`;
@@ -48,34 +61,42 @@ export class PromptBuilderService {
     // 行为模式（有值才注入）
     let behaviorSection = '';
     if (profile.behavioralPatterns) {
-      const { workStyle, socialStyle, taboos, quirks } = profile.behavioralPatterns;
+      const { workStyle, socialStyle, taboos, quirks } =
+        profile.behavioralPatterns;
       const parts: string[] = [];
       if (workStyle) parts.push(`工作风格：${workStyle}`);
       if (socialStyle) parts.push(`社交风格：${socialStyle}`);
       if (taboos?.length) parts.push(`语言禁忌：${taboos.join('、')}`);
       if (quirks?.length) parts.push(`个人癖好：${quirks.join('、')}`);
-      if (parts.length) behaviorSection = `<behavioral_patterns>\n${parts.join('\n')}\n</behavioral_patterns>`;
+      if (parts.length)
+        behaviorSection = `<behavioral_patterns>\n${parts.join('\n')}\n</behavioral_patterns>`;
     }
 
     // 专长边界（有值才注入）
     let boundarySection = '';
     if (profile.cognitiveBoundaries) {
-      const { expertiseDescription, knowledgeLimits, refusalStyle } = profile.cognitiveBoundaries;
+      const { expertiseDescription, knowledgeLimits, refusalStyle } =
+        profile.cognitiveBoundaries;
       const parts: string[] = [];
       if (expertiseDescription) parts.push(`专长描述：${expertiseDescription}`);
       if (expertiseDesc) parts.push(`专业领域：${expertiseDesc}`);
       if (knowledgeLimits) parts.push(`知识边界：${knowledgeLimits}`);
       if (refusalStyle) parts.push(`超出边界时：${refusalStyle}`);
-      if (parts.length) boundarySection = `<cognitive_boundaries>\n${parts.join('\n')}\n</cognitive_boundaries>`;
+      if (parts.length)
+        boundarySection = `<cognitive_boundaries>\n${parts.join('\n')}\n</cognitive_boundaries>`;
     } else if (expertiseDesc) {
       boundarySection = `<cognitive_boundaries>\n专业领域：${expertiseDesc}\n</cognitive_boundaries>`;
     }
 
     // 推理机制
-    const rc = profile.reasoningConfig ?? { enableCoT: true, enableReflection: true, enableRouting: true };
+    const rc = profile.reasoningConfig ?? {
+      enableCoT: true,
+      enableReflection: true,
+      enableRouting: true,
+    };
     let reasoningSection = `<internal_reasoning>`;
     if (rc.enableCoT !== false) {
-      reasoningSection += `\n在回复前，先在内心用 <thought>...</thought> 标签思考：用户真正想要什么？我该如何回应？`;
+      reasoningSection += `\n在回复前，先在内心想清楚：用户真正想要什么？我该如何回应？不要输出思考过程、内部标记或推理步骤。`;
     }
     if (rc.enableReflection !== false) {
       reasoningSection += `\n回复后反思：这个回答是否符合我的身份和价值观？`;
@@ -87,7 +108,7 @@ export class PromptBuilderService {
     if (rc.enableRouting !== false) {
       routingSection = `<collaboration_routing>
 当用户的问题超出你的专长时：
-1. 先在 <thought> 中判断：你认识的朋友里有没有擅长这个的？
+1. 先判断：你认识的朋友里有没有擅长这个的？
 2. 如果有 → 告诉用户"我帮你问问[朋友名字]"，系统会自动拉群
 3. 如果没有 → 诚实说"这个我不太懂，你最好找专业的[领域]人士咨询"
 4. 绝对不要假装认识一个不存在的朋友
@@ -96,7 +117,8 @@ export class PromptBuilderService {
 
     // 记忆注入（兼容旧 memorySummary）
     const coreMemory = profile.memory?.coreMemory || '';
-    const recentSummary = profile.memory?.recentSummary || profile.memorySummary || '';
+    const recentSummary =
+      profile.memory?.recentSummary || profile.memorySummary || '';
     let memorySection = `<memory>`;
     if (coreMemory) {
       memorySection += `\n【你对用户的长期了解（核心记忆，始终牢记）】\n${coreMemory}`;
@@ -119,7 +141,7 @@ export class PromptBuilderService {
         day: 'numeric',
         weekday: 'long',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       });
 
       const activityMap: Record<string, string> = {
@@ -130,7 +152,9 @@ export class PromptBuilderService {
         resting: '正在休息',
         free: '空闲中',
       };
-      const activityDesc = context.currentActivity ? activityMap[context.currentActivity] || '空闲中' : '空闲中';
+      const activityDesc = context.currentActivity
+        ? activityMap[context.currentActivity] || '空闲中'
+        : '空闲中';
 
       let timeSinceLastChat = '';
       if (context.lastChatAt) {
@@ -197,20 +221,34 @@ export class PromptBuilderService {
 请用自然的方式说明为什么拉群，语气要像真实朋友一样，简短自然，不超过两句话。`;
   }
 
-  buildMomentPrompt(profile: PersonalityProfile, currentTime: Date, recentTopics: string[] = []): string {
+  buildMomentPrompt(
+    profile: PersonalityProfile,
+    currentTime: Date,
+    recentTopics: string[] = [],
+  ): string {
     const hour = currentTime.getHours();
     const timeOfDay =
-      hour < 6 ? '深夜' :
-      hour < 9 ? '早上' :
-      hour < 12 ? '上午' :
-      hour < 14 ? '中午' :
-      hour < 18 ? '下午' :
-      hour < 21 ? '傍晚' : '晚上';
+      hour < 6
+        ? '深夜'
+        : hour < 9
+          ? '早上'
+          : hour < 12
+            ? '上午'
+            : hour < 14
+              ? '中午'
+              : hour < 18
+                ? '下午'
+                : hour < 21
+                  ? '傍晚'
+                  : '晚上';
 
-    const dayOfWeek = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][currentTime.getDay()];
-    const topicsHint = recentTopics.length > 0
-      ? `\n最近你聊过的话题：${recentTopics.join('、')}，可以适当延续或换个话题。`
-      : '';
+    const dayOfWeek = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][
+      currentTime.getDay()
+    ];
+    const topicsHint =
+      recentTopics.length > 0
+        ? `\n最近你聊过的话题：${recentTopics.join('、')}，可以适当延续或换个话题。`
+        : '';
 
     return `你是${profile.name}，${profile.relationship}。现在是${dayOfWeek}${timeOfDay}（${currentTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}）。
 
@@ -225,7 +263,10 @@ export class PromptBuilderService {
 只输出朋友圈正文内容，不要加任何解释。`;
   }
 
-  buildPersonalityExtractionPrompt(chatSample: string, personName: string): string {
+  buildPersonalityExtractionPrompt(
+    chatSample: string,
+    personName: string,
+  ): string {
     return `以下是与"${personName}"的真实聊天记录片段：
 
 ${chatSample}
