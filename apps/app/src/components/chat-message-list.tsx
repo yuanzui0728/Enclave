@@ -32,6 +32,11 @@ import {
 import { Button, InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
+import {
+  hideLocalChatMessage,
+  readLocalChatMessageActionState,
+  recallLocalChatMessage,
+} from "../features/chat/local-chat-message-actions";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   DesktopMessageForwardDialog,
@@ -122,6 +127,12 @@ export function ChatMessageList({
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop && !selectionMode;
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<string[]>(
+    () => readLocalChatMessageActionState().hiddenMessageIds,
+  );
+  const [recalledMessageIds, setRecalledMessageIds] = useState<string[]>(
+    () => readLocalChatMessageActionState().recalledMessageIds,
+  );
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
     readDetailedTimestampMode(),
   );
@@ -394,14 +405,30 @@ export function ChatMessageList({
     }
   };
 
-  const imageMessages = messages
+  const hiddenMessageIdSet = useMemo(
+    () => new Set(hiddenMessageIds),
+    [hiddenMessageIds],
+  );
+  const recalledMessageIdSet = useMemo(
+    () => new Set(recalledMessageIds),
+    [recalledMessageIds],
+  );
+  const visibleMessages = useMemo(
+    () => messages.filter((message) => !hiddenMessageIdSet.has(message.id)),
+    [hiddenMessageIdSet, messages],
+  );
+
+  const imageMessages = visibleMessages
     .filter(
       (
         message,
       ): message is ChatRenderableMessage & {
         type: "image";
         attachment: Extract<MessageAttachment, { kind: "image" }>;
-      } => message.type === "image" && message.attachment?.kind === "image",
+      } =>
+        !recalledMessageIdSet.has(message.id) &&
+        message.type === "image" &&
+        message.attachment?.kind === "image",
     )
     .map((message) => ({
       id: message.id,
@@ -537,13 +564,51 @@ export function ChatMessageList({
       tone: "danger",
     });
   };
+
+  const applyLocalMessageActionState = (
+    nextState: ReturnType<typeof readLocalChatMessageActionState>,
+    targetMessageId: string,
+  ) => {
+    setHiddenMessageIds(nextState.hiddenMessageIds);
+    setRecalledMessageIds(nextState.recalledMessageIds);
+    setSelectedMessageIds((current) =>
+      current.filter((item) => item !== targetMessageId),
+    );
+    setForwardMessages(
+      (current) =>
+        current?.filter((item) => item.id !== targetMessageId) ?? null,
+    );
+    setViewerMessageId((current) =>
+      current === targetMessageId ? null : current,
+    );
+  };
+
+  const handleDeleteMessage = (message: ChatRenderableMessage) => {
+    const nextState = hideLocalChatMessage(message.id);
+    applyLocalMessageActionState(nextState, message.id);
+    setActionNotice({
+      message: "已从当前设备删除这条消息。",
+      tone: "success",
+    });
+  };
+
+  const handleRecallMessage = (message: ChatRenderableMessage) => {
+    const nextState = recallLocalChatMessage(message.id);
+    applyLocalMessageActionState(nextState, message.id);
+    setActionNotice({
+      message: "已撤回这条消息。",
+      tone: "success",
+    });
+  };
+
   const selectedMessageIdSet = useMemo(
     () => new Set(selectedMessageIds),
     [selectedMessageIds],
   );
   const selectedMessages = useMemo(
-    () => messages.filter((message) => selectedMessageIdSet.has(message.id)),
-    [messages, selectedMessageIdSet],
+    () =>
+      visibleMessages.filter((message) => selectedMessageIdSet.has(message.id)),
+    [selectedMessageIdSet, visibleMessages],
   );
   const forwardPreviewItems: DesktopMessageForwardPreviewItem[] = useMemo(
     () =>
@@ -556,7 +621,7 @@ export function ChatMessageList({
     [forwardMessages],
   );
 
-  if (!messages.length) {
+  if (!visibleMessages.length) {
     return emptyState ?? null;
   }
 
@@ -588,10 +653,10 @@ export function ChatMessageList({
       return;
     }
 
-    const anchorIndex = messages.findIndex(
+    const anchorIndex = visibleMessages.findIndex(
       (message) => message.id === selectionAnchorMessageId,
     );
-    const targetIndex = messages.findIndex(
+    const targetIndex = visibleMessages.findIndex(
       (message) => message.id === targetMessageId,
     );
     if (anchorIndex < 0 || targetIndex < 0) {
@@ -603,11 +668,11 @@ export function ChatMessageList({
         ? [anchorIndex, targetIndex]
         : [targetIndex, anchorIndex];
     const rangeIds = new Set(
-      messages
+      visibleMessages
         .slice(startIndex, endIndex + 1)
         .map((message) => message.id),
     );
-    const nextSelectedMessageIds = messages
+    const nextSelectedMessageIds = visibleMessages
       .filter(
         (message) =>
           selectedMessageIdSet.has(message.id) || rangeIds.has(message.id),
@@ -678,13 +743,15 @@ export function ChatMessageList({
           </div>
         )
       ) : null}
-      {messages.map((message, index) => {
-        const previousMessage = index > 0 ? messages[index - 1] : undefined;
+      {visibleMessages.map((message, index) => {
+        const previousMessage =
+          index > 0 ? visibleMessages[index - 1] : undefined;
         const showTimestamp = shouldShowMessageTimestamp(
           message.createdAt,
           previousMessage?.createdAt,
         );
         const isUser = message.senderType === "user";
+        const isRecalled = recalledMessageIdSet.has(message.id);
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
@@ -696,7 +763,7 @@ export function ChatMessageList({
             : sanitizeDisplayedChatText(message.text);
         const replyPreview = replyContent.reply;
 
-        if (isSystem) {
+        if (isSystem || isRecalled) {
           return (
             <InlineNotice
               key={message.id}
@@ -708,7 +775,7 @@ export function ChatMessageList({
               } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
               tone="muted"
             >
-              {displayText}
+              {isRecalled ? buildRecalledMessageNotice(message) : displayText}
             </InlineNotice>
           );
         }
@@ -930,18 +997,14 @@ export function ChatMessageList({
           onRecall={
             contextMenuState.message.senderType === "user"
               ? () => {
-                  showUnavailableActionNotice(
-                    "撤回消息能力待接消息级接口，当前先保留微信式入口。",
-                  );
+                  handleRecallMessage(contextMenuState.message);
                   setContextMenuState(null);
                 }
               : undefined
           }
           recallLabel="撤回"
           onDelete={() => {
-            showUnavailableActionNotice(
-              "删除消息能力待接消息级接口，当前先保留微信式入口。",
-            );
+            handleDeleteMessage(contextMenuState.message);
             setContextMenuState(null);
           }}
           deleteLabel="删除"
@@ -1062,11 +1125,10 @@ export function ChatMessageList({
           mobileActionMessage?.type === "image" ? "保存图片" : "保存文件"
         }
         onRecall={
-          mobileActionMessage?.senderType === "user"
+          mobileActionMessage?.senderType === "user" &&
+          !recalledMessageIdSet.has(mobileActionMessage.id)
             ? () => {
-                showUnavailableActionNotice(
-                  "撤回消息能力待接消息级接口，当前先保留微信式入口。",
-                );
+                handleRecallMessage(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -1075,9 +1137,7 @@ export function ChatMessageList({
         onDelete={
           mobileActionMessage
             ? () => {
-                showUnavailableActionNotice(
-                  "删除消息能力待接消息级接口，当前先保留微信式入口。",
-                );
+                handleDeleteMessage(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -1220,6 +1280,12 @@ function writeDetailedTimestampMode(enabled: boolean) {
     DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
     enabled ? "1" : "0",
   );
+}
+
+function buildRecalledMessageNotice(message: ChatRenderableMessage) {
+  const actor =
+    message.senderType === "user" ? "你" : message.senderName?.trim() || "对方";
+  return `${actor}撤回了一条消息`;
 }
 
 function buildClipboardSender(message: ChatRenderableMessage) {
