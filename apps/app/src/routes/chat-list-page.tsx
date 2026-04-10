@@ -1,14 +1,23 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   getConversations,
   getOfficialAccountMessageEntries,
+  hideConversation,
+  hideGroup,
+  setConversationMuted,
+  setConversationPinned,
+  setGroupPinned,
+  updateGroupPreferences,
 } from "@yinjie/contracts";
 import {
+  BellOff,
   Plus,
+  Pin,
   QrCode,
   Search,
+  Trash2,
   UserPlus,
   Users,
   WalletCards,
@@ -29,6 +38,7 @@ import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatConversationTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -68,6 +78,9 @@ const quickActionItems: QuickActionItem[] = [
   },
 ];
 
+type ConversationListEntry = Awaited<ReturnType<typeof getConversations>>[number];
+const SWIPE_ACTION_WIDTH = 216;
+
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
 
@@ -80,10 +93,14 @@ export function ChatListPage() {
 
 function MobileChatListPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [openSwipeConversationId, setOpenSwipeConversationId] = useState<
+    string | null
+  >(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -109,6 +126,84 @@ function MobileChatListPage() {
     conversations.length > 0 ||
     serviceConversations.length > 0 ||
     showSubscriptionInboxItem;
+
+  const pinMutation = useMutation({
+    mutationFn: async ({
+      conversationId,
+      pinned,
+      isGroup,
+    }: {
+      conversationId: string;
+      pinned: boolean;
+      isGroup: boolean;
+    }) =>
+      isGroup
+        ? setGroupPinned(conversationId, { pinned }, baseUrl)
+        : setConversationPinned(conversationId, { pinned }, baseUrl),
+    onSuccess: async (_, variables) => {
+      setNotice(variables.pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, variables.conversationId],
+        }),
+      ]);
+    },
+  });
+  const muteMutation = useMutation({
+    mutationFn: async ({
+      conversationId,
+      muted,
+      isGroup,
+    }: {
+      conversationId: string;
+      muted: boolean;
+      isGroup: boolean;
+    }) =>
+      isGroup
+        ? updateGroupPreferences(conversationId, { isMuted: muted }, baseUrl)
+        : setConversationMuted(conversationId, { muted }, baseUrl),
+    onSuccess: async (_, variables) => {
+      setNotice(variables.muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group", baseUrl, variables.conversationId],
+        }),
+      ]);
+    },
+  });
+  const hideMutation = useMutation({
+    mutationFn: async ({
+      conversationId,
+      isGroup,
+    }: {
+      conversationId: string;
+      isGroup: boolean;
+    }) =>
+      isGroup
+        ? hideGroup(conversationId, baseUrl)
+        : hideConversation(conversationId, baseUrl),
+    onSuccess: async () => {
+      setNotice("聊天已从列表移除。");
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (
+      openSwipeConversationId &&
+      !conversations.some((conversation) => conversation.id === openSwipeConversationId)
+    ) {
+      setOpenSwipeConversationId(null);
+    }
+  }, [conversations, openSwipeConversationId]);
 
   function handleUnavailableAction(message: string) {
     setIsQuickMenuOpen(false);
@@ -264,8 +359,45 @@ function MobileChatListPage() {
                 <ConversationListItemLink
                   key={conversation.id}
                   conversation={conversation}
+                  open={openSwipeConversationId === conversation.id}
+                  pending={
+                    (pinMutation.isPending &&
+                      pinMutation.variables?.conversationId === conversation.id) ||
+                    (muteMutation.isPending &&
+                      muteMutation.variables?.conversationId === conversation.id) ||
+                    (hideMutation.isPending &&
+                      hideMutation.variables?.conversationId === conversation.id)
+                  }
+                  onOpenChange={(nextOpen) => {
+                    setOpenSwipeConversationId(
+                      nextOpen ? conversation.id : null,
+                    );
+                  }}
+                  onTogglePinned={() => {
+                    setOpenSwipeConversationId(null);
+                    pinMutation.mutate({
+                      conversationId: conversation.id,
+                      pinned: !conversation.isPinned,
+                      isGroup: isPersistedGroupConversation(conversation),
+                    });
+                  }}
+                  onToggleMuted={() => {
+                    setOpenSwipeConversationId(null);
+                    muteMutation.mutate({
+                      conversationId: conversation.id,
+                      muted: !conversation.isMuted,
+                      isGroup: isPersistedGroupConversation(conversation),
+                    });
+                  }}
+                  onHide={() => {
+                    setOpenSwipeConversationId(null);
+                    hideMutation.mutate({
+                      conversationId: conversation.id,
+                      isGroup: isPersistedGroupConversation(conversation),
+                    });
+                  }}
                   className={cn(
-                    "block transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,138,61,0.05)]",
+                    "transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     index > 0 ||
                       showSubscriptionInboxItem ||
                       serviceConversations.length > 0
@@ -291,18 +423,105 @@ function MobileChatListPage() {
 
 function ConversationListItemLink({
   conversation,
+  open,
+  pending = false,
+  onOpenChange,
+  onTogglePinned,
+  onToggleMuted,
+  onHide,
   className,
 }: {
-  conversation: Awaited<ReturnType<typeof getConversations>>[number];
+  conversation: ConversationListEntry;
+  open: boolean;
+  pending?: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTogglePinned: () => void;
+  onToggleMuted: () => void;
+  onHide: () => void;
   className?: string;
 }) {
+  const gestureRef = useRef<{
+    startX: number;
+    startY: number;
+    initialOffset: number;
+    dragging: boolean;
+  } | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(open ? -SWIPE_ACTION_WIDTH : 0);
   const isPinned = conversation.isPinned;
+  const isGroupConversation = isPersistedGroupConversation(conversation);
+
+  useEffect(() => {
+    if (!gestureRef.current?.dragging) {
+      setSwipeOffset(open ? -SWIPE_ACTION_WIDTH : 0);
+    }
+  }, [open]);
+
+  const handleTouchStart = (event: TouchEvent<HTMLAnchorElement>) => {
+    if (pending) {
+      return;
+    }
+
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+
+    gestureRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      initialOffset: open ? -SWIPE_ACTION_WIDTH : 0,
+      dragging: true,
+    };
+  };
+
+  const handleTouchMove = (event: TouchEvent<HTMLAnchorElement>) => {
+    const gesture = gestureRef.current;
+    if (!gesture?.dragging) {
+      return;
+    }
+
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+
+    const deltaX = touch.clientX - gesture.startX;
+    const deltaY = touch.clientY - gesture.startY;
+    if (Math.abs(deltaY) > 14 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      gestureRef.current = null;
+      setSwipeOffset(open ? -SWIPE_ACTION_WIDTH : 0);
+      return;
+    }
+
+    const nextOffset = clamp(
+      gesture.initialOffset + deltaX,
+      -SWIPE_ACTION_WIDTH,
+      0,
+    );
+    if (Math.abs(deltaX) > 6) {
+      event.preventDefault();
+    }
+    setSwipeOffset(nextOffset);
+  };
+
+  const handleTouchEnd = () => {
+    const gesture = gestureRef.current;
+    if (!gesture) {
+      return;
+    }
+
+    gestureRef.current = null;
+    const shouldOpen = swipeOffset <= -SWIPE_ACTION_WIDTH / 2;
+    setSwipeOffset(shouldOpen ? -SWIPE_ACTION_WIDTH : 0);
+    onOpenChange(shouldOpen);
+  };
+
   const content = (
     <div
       className={cn(
         "flex items-center gap-3 px-4 py-3.5",
         isPinned
-          ? "bg-[rgba(255,246,228,0.72)]"
+          ? "bg-[#f2f2f2]"
           : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -323,83 +542,163 @@ function ConversationListItemLink({
                 conversation.lastMessage?.createdAt ?? conversation.updatedAt,
               )}
             </div>
-            {conversation.unreadCount > 0 ? (
-              <div
-                className={cn(
-                  "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
-                  conversation.unreadCount > 9 ? "min-w-6" : undefined,
-                )}
-              >
-                {conversation.unreadCount > 99
-                  ? "99+"
-                  : conversation.unreadCount}
-              </div>
-            ) : isPinned ? (
-              <div className="text-[10px] text-[color:var(--text-dim)]">
-                置顶
-              </div>
-            ) : null}
+            <div className="flex min-h-5 items-center gap-1.5">
+              {conversation.isMuted ? (
+                <BellOff
+                  size={12}
+                  className="text-[color:var(--text-dim)]"
+                  aria-label="消息免打扰"
+                />
+              ) : null}
+              {conversation.unreadCount > 0 ? (
+                <div
+                  className={cn(
+                    "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
+                    conversation.unreadCount > 9 ? "min-w-6" : undefined,
+                  )}
+                >
+                  {conversation.unreadCount > 99
+                    ? "99+"
+                    : conversation.unreadCount}
+                </div>
+              ) : isPinned ? (
+                <div className="text-[10px] text-[color:var(--text-dim)]">
+                  置顶
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 
-  if (isPersistedGroupConversation(conversation)) {
-    return (
-      <Link
-        to="/group/$groupId"
-        params={{ groupId: conversation.id }}
-        search={{}}
-        className={className}
-      >
-        {content}
-      </Link>
-    );
-  }
+  const linkClassName = cn(
+    "relative block transition-transform duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+    pending ? "pointer-events-none opacity-70" : "",
+  );
 
-  return (
+  const contentLink = isGroupConversation ? (
+    <Link
+      to="/group/$groupId"
+      params={{ groupId: conversation.id }}
+      search={{}}
+      className={linkClassName}
+      style={{ transform: `translateX(${swipeOffset}px)` }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onClick={(event) => {
+        if (open || swipeOffset !== 0) {
+          event.preventDefault();
+          setSwipeOffset(0);
+          onOpenChange(false);
+        }
+      }}
+    >
+      {content}
+    </Link>
+  ) : (
     <Link
       to="/chat/$conversationId"
       params={{ conversationId: conversation.id }}
       search={{}}
-      className={className}
+      className={linkClassName}
+      style={{ transform: `translateX(${swipeOffset}px)` }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      onClick={(event) => {
+        if (open || swipeOffset !== 0) {
+          event.preventDefault();
+          setSwipeOffset(0);
+          onOpenChange(false);
+        }
+      }}
     >
       {content}
     </Link>
   );
+
+  return (
+    <div className={cn("relative overflow-hidden bg-[#c7c7cc]", className)}>
+      <div className="absolute inset-y-0 right-0 flex">
+        <button
+          type="button"
+          onClick={onTogglePinned}
+          className="flex w-[72px] items-center justify-center bg-[#c7c7cc] text-white"
+        >
+          <div className="flex flex-col items-center gap-1 text-[11px]">
+            <Pin size={15} />
+            <span>{conversation.isPinned ? "取消置顶" : "置顶"}</span>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={onToggleMuted}
+          className="flex w-[72px] items-center justify-center bg-[#f59e0b] text-white"
+        >
+          <div className="flex flex-col items-center gap-1 text-[11px]">
+            <BellOff size={15} />
+            <span>{conversation.isMuted ? "取消免打扰" : "免打扰"}</span>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={onHide}
+          className="flex w-[72px] items-center justify-center bg-[#fa5151] text-white"
+        >
+          <div className="flex flex-col items-center gap-1 text-[11px]">
+            <Trash2 size={15} />
+            <span>删除</span>
+          </div>
+        </button>
+      </div>
+      {contentLink}
+    </div>
+  );
 }
 
-function formatConversationPreview(
-  conversation: Awaited<ReturnType<typeof getConversations>>[number],
-) {
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatConversationPreview(conversation: ConversationListEntry) {
   const lastMessage = conversation.lastMessage;
   if (!lastMessage) {
     return "从这里开始第一句问候";
   }
 
+  const prefix = isPersistedGroupConversation(conversation)
+    ? `${lastMessage.senderType === "user" ? "我" : (lastMessage.senderName || "群成员")}：`
+    : "";
+
   if (lastMessage.type === "image") {
-    return "[图片]";
+    return `${prefix}[图片]`;
   }
 
   if (lastMessage.type === "file") {
-    return "[文件]";
+    return `${prefix}[文件]`;
   }
 
   if (lastMessage.type === "contact_card") {
-    return "[名片]";
+    return `${prefix}[名片]`;
   }
 
   if (lastMessage.type === "location_card") {
-    return "[位置]";
+    return `${prefix}[位置]`;
   }
 
   if (lastMessage.type === "sticker") {
-    return lastMessage.attachment?.kind === "sticker" &&
-      lastMessage.attachment.label
-      ? `[表情] ${lastMessage.attachment.label}`
-      : "[表情]";
+    return (
+      lastMessage.attachment?.kind === "sticker" && lastMessage.attachment.label
+        ? `${prefix}[表情] ${lastMessage.attachment.label}`
+        : `${prefix}[表情]`
+    );
   }
 
-  return lastMessage.text || "从这里开始第一句问候";
+  const sanitizedText = sanitizeDisplayedChatText(lastMessage.text);
+  return sanitizedText ? `${prefix}${sanitizedText}` : "从这里开始第一句问候";
 }

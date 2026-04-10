@@ -10,6 +10,7 @@ import {
   getConversations,
   getFriends,
   sendFriendRequest,
+  setConversationMuted,
   setConversationPinned,
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -97,6 +98,16 @@ export function ChatDetailsPage() {
       setConversationPinned(conversationId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
       setNotice(pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+  });
+  const muteMutation = useMutation({
+    mutationFn: (muted: boolean) =>
+      setConversationMuted(conversationId, { muted }, baseUrl),
+    onSuccess: async (_, muted) => {
+      setNotice(muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -192,6 +203,7 @@ export function ChatDetailsPage() {
   });
 
   const busy =
+    muteMutation.isPending ||
     pinMutation.isPending ||
     saveToContactsMutation.isPending ||
     clearMutation.isPending ||
@@ -293,13 +305,8 @@ export function ChatDetailsPage() {
             <div className="divide-y divide-black/5">
               <ChatSettingRow
                 label="消息免打扰"
-                checked={preferences.muted}
-                onToggle={(checked) => {
-                  setPreferences((current) => ({ ...current, muted: checked }));
-                  setNotice(
-                    checked ? "已开启消息免打扰。" : "已关闭消息免打扰。",
-                  );
-                }}
+                checked={conversation?.isMuted ?? false}
+                onToggle={(checked) => muteMutation.mutate(checked)}
               />
               <ChatSettingRow
                 label="置顶聊天"
@@ -393,6 +400,11 @@ export function ChatDetailsPage() {
           {pinMutation.isError && pinMutation.error instanceof Error ? (
             <div className="px-3">
               <ErrorBlock message={pinMutation.error.message} />
+            </div>
+          ) : null}
+          {muteMutation.isError && muteMutation.error instanceof Error ? (
+            <div className="px-3">
+              <ErrorBlock message={muteMutation.error.message} />
             </div>
           ) : null}
           {saveToContactsMutation.isError &&
