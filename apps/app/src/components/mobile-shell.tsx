@@ -1,4 +1,4 @@
-import { useMemo, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
@@ -9,6 +9,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { buildDueChatReminderEntries } from "../features/chat/chat-reminder-entries";
+import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -25,6 +27,8 @@ export function MobileShell({ children }: PropsWithChildren) {
   });
   const showTabs = pathname.startsWith("/tabs/") && pathname !== "/tabs/search";
   const runtimeConfig = useAppRuntimeConfig();
+  const { reminders } = useLocalChatMessageActionState();
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
 
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
@@ -39,6 +43,24 @@ export function MobileShell({ children }: PropsWithChildren) {
         .reduce((sum, c) => sum + c.unreadCount, 0),
     [conversations],
   );
+  const dueReminderCount = useMemo(
+    () =>
+      buildDueChatReminderEntries(reminders, conversations ?? [], nowTimestamp)
+        .length,
+    [conversations, nowTimestamp, reminders],
+  );
+
+  useEffect(() => {
+    if (!reminders.length) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, [reminders.length]);
 
   return (
     <div className="relative h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
@@ -71,7 +93,16 @@ export function MobileShell({ children }: PropsWithChildren) {
             >
               {tabs.map(({ to, label, icon: Icon }) => {
                 const active = pathname === to;
-                const badgeCount = to === "/tabs/chat" ? chatUnreadCount : 0;
+                const showReminderBadge =
+                  to === "/tabs/chat" &&
+                  chatUnreadCount === 0 &&
+                  dueReminderCount > 0;
+                const badgeCount =
+                  to === "/tabs/chat"
+                    ? chatUnreadCount > 0
+                      ? chatUnreadCount
+                      : dueReminderCount
+                    : 0;
                 return (
                   <Link
                     key={to}
@@ -93,7 +124,12 @@ export function MobileShell({ children }: PropsWithChildren) {
                     >
                       <Icon size={17} />
                       {badgeCount > 0 ? (
-                        <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[9px] leading-none text-white">
+                        <span
+                          className={cn(
+                            "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] leading-none text-white",
+                            showReminderBadge ? "bg-[#07c160]" : "bg-red-500",
+                          )}
+                        >
                           {badgeCount > 99 ? "99+" : badgeCount}
                         </span>
                       ) : null}
