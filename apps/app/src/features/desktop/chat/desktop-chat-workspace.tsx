@@ -201,11 +201,12 @@ export function DesktopChatWorkspace({
       return title.includes(keyword) || preview.includes(keyword);
     });
   }, [conversations, localMessageActionState, searchTerm]);
-  const { filteredReminderEntries, dueReminderCount } = useChatReminderEntries({
-    reminders: localMessageActionState.reminders,
-    conversations,
-    keyword: searchTerm,
-  });
+  const { filteredReminderEntries, filteredReminderSummary } =
+    useChatReminderEntries({
+      reminders: localMessageActionState.reminders,
+      conversations,
+      keyword: searchTerm,
+    });
   const { openReminder, completeReminder } = useChatReminderActions({
     navigateToReminder: (entry) => {
       void navigate(buildChatReminderNavigation(entry));
@@ -658,9 +659,7 @@ export function DesktopChatWorkspace({
                     <span>消息提醒</span>
                   </div>
                   <div className="text-[11px] text-[color:var(--text-dim)]">
-                    {dueReminderCount > 0
-                      ? `${dueReminderCount} 条已到时间`
-                      : `${filteredReminderEntries.length} 条待提醒`}
+                    {filteredReminderSummary}
                   </div>
                 </div>
 

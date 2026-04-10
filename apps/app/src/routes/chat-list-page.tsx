@@ -153,7 +153,7 @@ function MobileChatListPage() {
     () => conversationsQuery.data ?? [],
     [conversationsQuery.data],
   );
-  const { reminderEntries, dueReminderCount } = useChatReminderEntries({
+  const { reminderEntries, filteredReminderSummary } = useChatReminderEntries({
     reminders: localMessageActionState.reminders,
     conversations,
   });
@@ -542,9 +542,7 @@ function MobileChatListPage() {
                 <span>消息提醒</span>
               </div>
               <div className="text-[12px] text-[#8c8c8c]">
-                {dueReminderCount > 0
-                  ? `${dueReminderCount} 条已到时间`
-                  : `${reminderEntries.length} 条待提醒`}
+                {filteredReminderSummary}
               </div>
             </div>
             {reminderEntries.map((entry, index) => (

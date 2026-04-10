@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import type { ConversationListItem } from "@yinjie/contracts";
 import {
   buildChatReminderEntries,
+  countChatReminderStatuses,
+  formatChatReminderSummary,
   filterChatReminderEntries,
 } from "./chat-reminder-entries";
 import type { LocalChatMessageReminderRecord } from "./local-chat-message-actions";
@@ -32,12 +34,22 @@ export function useChatReminderEntries({
     () => filteredReminderEntries.filter((entry) => entry.isDue),
     [filteredReminderEntries],
   );
+  const filteredReminderStatusCounts = useMemo(
+    () => countChatReminderStatuses(filteredReminderEntries),
+    [filteredReminderEntries],
+  );
+  const filteredReminderSummary = useMemo(
+    () => formatChatReminderSummary(filteredReminderStatusCounts),
+    [filteredReminderStatusCounts],
+  );
 
   return {
     nowTimestamp,
     reminderEntries,
     filteredReminderEntries,
     dueReminderEntries,
+    filteredReminderStatusCounts,
+    filteredReminderSummary,
     dueReminderCount: dueReminderEntries.length,
   };
 }

@@ -21,6 +21,13 @@ export type ChatReminderTarget = Pick<
 
 export type ChatReminderStatus = "pending" | "due" | "notified";
 
+export type ChatReminderStatusCounts = {
+  totalCount: number;
+  dueCount: number;
+  notifiedCount: number;
+  pendingCount: number;
+};
+
 export function buildChatReminderEntries(
   reminders: readonly LocalChatMessageReminderRecord[],
   conversations: readonly ConversationListItem[],
@@ -146,4 +153,42 @@ export function formatReminderListTimestamp(
 
   const label = formatMessageTimestamp(remindAt);
   return isDue ? `提醒时间 ${label}` : `将在 ${label} 提醒`;
+}
+
+export function countChatReminderStatuses(
+  entries: readonly Pick<ChatReminderEntry, "isDue" | "notifiedAt">[],
+): ChatReminderStatusCounts {
+  const counts: ChatReminderStatusCounts = {
+    totalCount: entries.length,
+    dueCount: 0,
+    notifiedCount: 0,
+    pendingCount: 0,
+  };
+
+  entries.forEach((entry) => {
+    const status = getChatReminderStatus(entry);
+    if (status === "notified") {
+      counts.notifiedCount += 1;
+      return;
+    }
+
+    if (status === "due") {
+      counts.dueCount += 1;
+      return;
+    }
+
+    counts.pendingCount += 1;
+  });
+
+  return counts;
+}
+
+export function formatChatReminderSummary(counts: ChatReminderStatusCounts) {
+  const parts = [
+    counts.dueCount > 0 ? `${counts.dueCount} 条已到时间` : null,
+    counts.notifiedCount > 0 ? `${counts.notifiedCount} 条已通知` : null,
+    counts.pendingCount > 0 ? `${counts.pendingCount} 条待提醒` : null,
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(" · ") : "暂无提醒";
 }
