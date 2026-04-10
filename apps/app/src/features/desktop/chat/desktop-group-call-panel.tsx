@@ -21,6 +21,10 @@ type DesktopGroupCallPanelProps = {
   groupId: string;
   groupName: string;
   members: GroupMember[];
+  lastSyncedCounts?: {
+    activeCount: number;
+    totalCount: number;
+  } | null;
   inviteNoticePending?: boolean;
   endNoticePending?: boolean;
   onClose: () => void;
@@ -41,6 +45,7 @@ export function DesktopGroupCallPanel({
   groupId,
   groupName,
   members,
+  lastSyncedCounts = null,
   inviteNoticePending = false,
   endNoticePending = false,
   onClose,
@@ -75,6 +80,9 @@ export function DesktopGroupCallPanel({
   const callKindLabel = kind === "voice" ? "群语音" : "群视频";
   const activeCount = activeMembers.length;
   const waitingCount = Math.max(members.length - activeCount, 0);
+  const hasSyncedStatus =
+    lastSyncedCounts?.activeCount === activeCount &&
+    lastSyncedCounts?.totalCount === members.length;
 
   useEffect(() => {
     if (panelOpenedReported) {
@@ -186,6 +194,13 @@ export function DesktopGroupCallPanel({
               桌面端先承接群通话工作台和成员调度，必要时仍可一键接力到手机继续。
             </InlineNotice>
           </div>
+          {!hasSyncedStatus ? (
+            <div className="mt-3">
+              <InlineNotice tone="warning">
+                成员状态刚刚有变化，记得同步到聊天消息流，避免群通话卡片信息过旧。
+              </InlineNotice>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
@@ -202,7 +217,11 @@ export function DesktopGroupCallPanel({
             className="rounded-full"
           >
             <UserPlus size={16} />
-            {inviteNoticePending ? "同步中..." : "同步群状态"}
+            {inviteNoticePending
+              ? "同步中..."
+              : hasSyncedStatus
+                ? "已同步群状态"
+                : "同步最新状态"}
           </Button>
           <Button
             type="button"
