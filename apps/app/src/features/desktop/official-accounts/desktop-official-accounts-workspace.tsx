@@ -29,7 +29,9 @@ export function DesktopOfficialAccountsWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [accountFilter, setAccountFilter] = useState<"all" | "following">("all");
+  const [accountFilter, setAccountFilter] = useState<"all" | "following">(
+    "all",
+  );
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
@@ -95,15 +97,20 @@ export function DesktopOfficialAccountsWorkspace({
   });
 
   const activeArticle = selectedArticleId
-    ? pinnedArticleQuery.data ?? articleDetailQuery.data
+    ? (pinnedArticleQuery.data ?? articleDetailQuery.data)
     : articleDetailQuery.data;
   const account = accountDetailQuery.data;
 
   const followMutation = useMutation({
-    mutationFn: () =>
-      account?.isFollowing
+    mutationFn: () => {
+      if (!account) {
+        throw new Error("当前公众号资料尚未加载完成。");
+      }
+
+      return account.isFollowing
         ? unfollowOfficialAccount(account.id, baseUrl)
-        : followOfficialAccount(account.id, baseUrl),
+        : followOfficialAccount(account.id, baseUrl);
+    },
     onSuccess: async (updatedAccount) => {
       queryClient.setQueryData(
         ["app-official-account", baseUrl, updatedAccount.id],
@@ -131,7 +138,11 @@ export function DesktopOfficialAccountsWorkspace({
 
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["app-official-account", baseUrl, updatedArticle.account.id],
+          queryKey: [
+            "app-official-account",
+            baseUrl,
+            updatedArticle.account.id,
+          ],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-official-accounts", baseUrl],
@@ -141,7 +152,10 @@ export function DesktopOfficialAccountsWorkspace({
   });
 
   useEffect(() => {
-    if (!activeArticle?.id || lastMarkedArticleIdRef.current === activeArticle.id) {
+    if (
+      !activeArticle?.id ||
+      lastMarkedArticleIdRef.current === activeArticle.id
+    ) {
       return;
     }
 
@@ -188,7 +202,9 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto">
-          {accountsQuery.isLoading ? <LoadingBlock label="正在读取公众号..." /> : null}
+          {accountsQuery.isLoading ? (
+            <LoadingBlock label="正在读取公众号..." />
+          ) : null}
           {accountsQuery.isError && accountsQuery.error instanceof Error ? (
             <ErrorBlock message={accountsQuery.error.message} />
           ) : null}
@@ -231,8 +247,7 @@ export function DesktopOfficialAccountsWorkspace({
             {account?.name ?? "公众号"}
           </div>
           <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-            {account?.description ??
-              "这里会展示账号资料、最近文章和历史推送。"}
+            {account?.description ?? "这里会展示账号资料、最近文章和历史推送。"}
           </div>
           {account ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -272,7 +287,8 @@ export function DesktopOfficialAccountsWorkspace({
           {accountDetailQuery.isLoading ? (
             <LoadingBlock label="正在读取公众号主页..." />
           ) : null}
-          {accountDetailQuery.isError && accountDetailQuery.error instanceof Error ? (
+          {accountDetailQuery.isError &&
+          accountDetailQuery.error instanceof Error ? (
             <ErrorBlock message={accountDetailQuery.error.message} />
           ) : null}
           {followMutation.isError && followMutation.error instanceof Error ? (
@@ -299,7 +315,8 @@ export function DesktopOfficialAccountsWorkspace({
         {articleDetailQuery.isLoading && !activeArticle ? (
           <LoadingBlock label="正在读取文章..." />
         ) : null}
-        {articleDetailQuery.isError && articleDetailQuery.error instanceof Error ? (
+        {articleDetailQuery.isError &&
+        articleDetailQuery.error instanceof Error ? (
           <ErrorBlock message={articleDetailQuery.error.message} />
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import {
   clearWorldOwnerApiKey,
@@ -20,6 +20,8 @@ import {
   cn,
 } from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -28,6 +30,10 @@ type LegalTab = "privacy" | "terms" | "community";
 
 export function ProfileSettingsPage() {
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const username = useWorldOwnerStore((state) => state.username);
@@ -108,26 +114,14 @@ export function ProfileSettingsPage() {
   });
 
   const canSaveProfile = draftName.trim().length > 0;
-  const aiSettingsBusy = saveApiKeyMutation.isPending || clearApiKeyMutation.isPending;
+  const aiSettingsBusy =
+    saveApiKeyMutation.isPending || clearApiKeyMutation.isPending;
+  const desktopMode =
+    isDesktopLayout && pathname.startsWith("/desktop/settings");
+  const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
 
-  return (
-    <AppPage className="space-y-4">
-      <TabPageTopBar
-        title="设置"
-        titleAlign="center"
-        leftActions={
-          <Button
-            onClick={() => navigate({ to: "/tabs/profile" })}
-            variant="ghost"
-            size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-          >
-            <ArrowLeft size={18} />
-          </Button>
-        }
-      />
-
-      {/* 主 Tab 切换 */}
+  const content = (
+    <>
       <div className="flex gap-1 rounded-[20px] bg-black/5 p-1">
         {(
           [
@@ -152,8 +146,7 @@ export function ProfileSettingsPage() {
         ))}
       </div>
 
-      {/* 个人资料 Tab */}
-      {activeTab === "profile" && (
+      {activeTab === "profile" ? (
         <AppSection className="space-y-4">
           <div className="space-y-3">
             <TextField
@@ -176,15 +169,17 @@ export function ProfileSettingsPage() {
           >
             {saveProfileMutation.isPending ? "保存中..." : "保存资料"}
           </Button>
-          {saveProfileMutation.isError && saveProfileMutation.error instanceof Error ? (
+          {saveProfileMutation.isError &&
+          saveProfileMutation.error instanceof Error ? (
             <ErrorBlock message={saveProfileMutation.error.message} />
           ) : null}
-          {saveProfileMutation.isSuccess ? <InlineNotice tone="success">资料已更新。</InlineNotice> : null}
+          {saveProfileMutation.isSuccess ? (
+            <InlineNotice tone="success">资料已更新。</InlineNotice>
+          ) : null}
         </AppSection>
-      )}
+      ) : null}
 
-      {/* AI 设置 Tab */}
-      {activeTab === "ai" && (
+      {activeTab === "ai" ? (
         <AppSection className="space-y-4">
           <div className="space-y-3">
             <TextField
@@ -221,30 +216,40 @@ export function ProfileSettingsPage() {
             </Button>
           </div>
 
-          {ownerQuery.isLoading ? <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." /> : null}
-          {ownerQuery.isError && ownerQuery.error instanceof Error ? <ErrorBlock message={ownerQuery.error.message} /> : null}
-          {saveApiKeyMutation.isError && saveApiKeyMutation.error instanceof Error ? (
+          {ownerQuery.isLoading ? (
+            <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
+          ) : null}
+          {ownerQuery.isError && ownerQuery.error instanceof Error ? (
+            <ErrorBlock message={ownerQuery.error.message} />
+          ) : null}
+          {saveApiKeyMutation.isError &&
+          saveApiKeyMutation.error instanceof Error ? (
             <ErrorBlock message={saveApiKeyMutation.error.message} />
           ) : null}
-          {clearApiKeyMutation.isError && clearApiKeyMutation.error instanceof Error ? (
+          {clearApiKeyMutation.isError &&
+          clearApiKeyMutation.error instanceof Error ? (
             <ErrorBlock message={clearApiKeyMutation.error.message} />
           ) : null}
-          {saveApiKeyMutation.isSuccess ? <InlineNotice tone="success">专属 API Key 已保存。</InlineNotice> : null}
-          {clearApiKeyMutation.isSuccess ? <InlineNotice tone="success">专属 API Key 已清除。</InlineNotice> : null}
+          {saveApiKeyMutation.isSuccess ? (
+            <InlineNotice tone="success">专属 API Key 已保存。</InlineNotice>
+          ) : null}
+          {clearApiKeyMutation.isSuccess ? (
+            <InlineNotice tone="success">专属 API Key 已清除。</InlineNotice>
+          ) : null}
           {ownerQuery.data ? (
-            <InlineNotice tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}>
+            <InlineNotice
+              tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
+            >
               {ownerQuery.data.hasCustomApiKey
                 ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
                 : "当前使用实例级 Provider。"}
             </InlineNotice>
           ) : null}
         </AppSection>
-      )}
+      ) : null}
 
-      {/* 协议与规范 Tab */}
-      {activeTab === "legal" && (
+      {activeTab === "legal" ? (
         <AppSection className="space-y-4">
-          {/* 子 Tab */}
           <div className="flex gap-1 rounded-[16px] bg-black/5 p-1">
             {(
               [
@@ -258,7 +263,7 @@ export function ProfileSettingsPage() {
                 type="button"
                 onClick={() => setActiveLegalTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-[12px] py-1.5 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
+                  "flex-1 rounded-[12px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
                   activeLegalTab === tab.id
                     ? "bg-white text-[color:var(--text-primary)] shadow-sm"
                     : "text-[color:var(--text-muted)]",
@@ -269,40 +274,104 @@ export function ProfileSettingsPage() {
             ))}
           </div>
 
-          {activeLegalTab === "privacy" && (
-            <div className="space-y-3">
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、会话同步和安全审计。
-              </p>
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                远程模式下，数据会发送到 Core API 与推理网关；桌面自托管模式下，数据主要保存在本地运行目录。你可以在资料页退出会话、删除账号，并通过安全入口举报或屏蔽角色。
-              </p>
-            </div>
-          )}
-
-          {activeLegalTab === "terms" && (
-            <div className="space-y-3">
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                你需要对自己发布的文字、评论、动态和举报内容负责，不得利用隐界发布违法、骚扰、仇恨、侵权或误导性内容。
-              </p>
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                平台保留对违规内容做降级、限制互动、封禁角色关系和保留审计记录的权利。若你删除账号，当前会话会立即失效。
-              </p>
-            </div>
-          )}
-
-          {activeLegalTab === "community" && (
-            <div className="space-y-3">
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                如果你遇到骚扰、不适、误导或越界内容，可以在角色详情页、聊天页和资料页发起举报，也可以直接屏蔽角色。
-              </p>
-              <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-                屏蔽后，对应角色将不再出现在新的好友申请和发现路径中；举报会保留在安全记录里，供后续审核与处理。
-              </p>
-            </div>
-          )}
+          <div className="space-y-3">
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void navigate({
+                  to:
+                    activeLegalTab === "privacy"
+                      ? "/legal/privacy"
+                      : activeLegalTab === "terms"
+                        ? "/legal/terms"
+                        : "/legal/community",
+                })
+              }
+            >
+              打开当前文档
+            </Button>
+            <InlineNotice tone="muted">
+              {activeLegalTab === "privacy"
+                ? "查看世界隐私政策和数据使用说明。"
+                : activeLegalTab === "terms"
+                  ? "查看世界服务使用协议。"
+                  : "查看世界社区规范和反馈口径。"}
+            </InlineNotice>
+          </div>
         </AppSection>
-      )}
+      ) : null}
+    </>
+  );
+
+  if (desktopMode) {
+    return (
+      <div className="h-full overflow-auto px-6 py-6">
+        <DesktopEntryShell
+          badge="Settings"
+          title="桌面设置统一收口世界资料和 AI 配置"
+          description="更多菜单进入设置后，不再跳回手机式页面，而是在桌面工作区内完成资料编辑、专属 API Key 管理和协议查看。"
+          aside={
+            <div className="space-y-3">
+              <DesktopStatCard
+                label="当前世界主人"
+                value={username ?? "世界主人"}
+              />
+              <DesktopStatCard
+                label="配置状态"
+                value={
+                  ownerQuery.data?.hasCustomApiKey
+                    ? "已配置专属 API Key"
+                    : "使用实例级 Provider"
+                }
+              />
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <Button
+                onClick={() => navigate({ to: backTo })}
+                variant="ghost"
+                className="rounded-full border border-[color:var(--border-faint)] bg-white/84"
+              >
+                返回消息
+              </Button>
+            </div>
+            {content}
+          </div>
+        </DesktopEntryShell>
+      </div>
+    );
+  }
+
+  return (
+    <AppPage className="space-y-4">
+      <TabPageTopBar
+        title="设置"
+        titleAlign="center"
+        leftActions={
+          <Button
+            onClick={() => navigate({ to: backTo })}
+            variant="ghost"
+            size="icon"
+            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+          >
+            <ArrowLeft size={18} />
+          </Button>
+        }
+      />
+      {content}
     </AppPage>
+  );
+}
+
+function DesktopStatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
+      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
   );
 }
