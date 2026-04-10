@@ -1,10 +1,11 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   getOfficialAccount,
   getOfficialAccountArticle,
   listOfficialAccounts,
+  markOfficialAccountArticleRead,
 } from "@yinjie/contracts";
 import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../../../components/official-account-list-item";
@@ -21,8 +22,10 @@ export function DesktopOfficialAccountsWorkspace({
   selectedArticleId?: string;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const lastMarkedArticleIdRef = useRef<string | null>(null);
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
@@ -66,6 +69,39 @@ export function DesktopOfficialAccountsWorkspace({
     ? pinnedArticleQuery.data ?? articleDetailQuery.data
     : articleDetailQuery.data;
   const account = accountDetailQuery.data;
+
+  const markReadMutation = useMutation({
+    mutationFn: (targetArticleId: string) =>
+      markOfficialAccountArticleRead(targetArticleId, baseUrl),
+    onSuccess: async (updatedArticle) => {
+      queryClient.setQueryData(
+        ["app-official-account-article", baseUrl, updatedArticle.id],
+        updatedArticle,
+      );
+      queryClient.setQueryData(
+        ["app-official-account-reader", baseUrl, updatedArticle.id],
+        updatedArticle,
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-official-account", baseUrl, updatedArticle.account.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-official-accounts", baseUrl],
+        }),
+      ]);
+    },
+  });
+
+  useEffect(() => {
+    if (!activeArticle?.id || lastMarkedArticleIdRef.current === activeArticle.id) {
+      return;
+    }
+
+    lastMarkedArticleIdRef.current = activeArticle.id;
+    markReadMutation.mutate(activeArticle.id);
+  }, [activeArticle?.id, markReadMutation]);
 
   return (
     <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))]">
@@ -161,9 +197,26 @@ export function DesktopOfficialAccountsWorkspace({
         {articleDetailQuery.isError && articleDetailQuery.error instanceof Error ? (
           <ErrorBlock message={articleDetailQuery.error.message} />
         ) : null}
+        {markReadMutation.isError && markReadMutation.error instanceof Error ? (
+          <ErrorBlock message={markReadMutation.error.message} />
+        ) : null}
 
         {activeArticle ? (
-          <OfficialArticleViewer article={activeArticle} />
+          <OfficialArticleViewer
+            article={activeArticle}
+            onOpenAccount={(accountId) => {
+              void navigate({
+                to: "/official-accounts/$accountId",
+                params: { accountId },
+              });
+            }}
+            onOpenArticle={(nextArticleId) => {
+              void navigate({
+                to: "/official-accounts/articles/$articleId",
+                params: { articleId: nextArticleId },
+              });
+            }}
+          />
         ) : (
           <EmptyState
             title="还没有可读内容"

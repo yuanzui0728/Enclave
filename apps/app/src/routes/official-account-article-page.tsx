@@ -1,7 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { getOfficialAccountArticle } from "@yinjie/contracts";
+import {
+  getOfficialAccountArticle,
+  markOfficialAccountArticleRead,
+} from "@yinjie/contracts";
 import {
   AppPage,
   Button,
@@ -30,15 +34,50 @@ export function OfficialAccountArticlePage() {
 
 function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const lastMarkedArticleIdRef = useRef<string | null>(null);
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, articleId],
     queryFn: () => getOfficialAccountArticle(articleId, baseUrl),
   });
 
+  const markReadMutation = useMutation({
+    mutationFn: (targetArticleId: string) =>
+      markOfficialAccountArticleRead(targetArticleId, baseUrl),
+    onSuccess: async (updatedArticle) => {
+      queryClient.setQueryData(
+        ["app-official-account-article", baseUrl, updatedArticle.id],
+        updatedArticle,
+      );
+      queryClient.setQueryData(
+        ["app-official-account-reader", baseUrl, updatedArticle.id],
+        updatedArticle,
+      );
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-official-account", baseUrl, updatedArticle.account.id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-official-accounts", baseUrl],
+        }),
+      ]);
+    },
+  });
+
   const article = articleQuery.data;
+
+  useEffect(() => {
+    if (!article?.id || lastMarkedArticleIdRef.current === article.id) {
+      return;
+    }
+
+    lastMarkedArticleIdRef.current = article.id;
+    markReadMutation.mutate(article.id);
+  }, [article?.id, markReadMutation]);
 
   return (
     <AppPage className="space-y-5">
@@ -67,8 +106,27 @@ function MobileOfficialAccountArticlePage({ articleId }: { articleId: string }) 
       {articleQuery.isError && articleQuery.error instanceof Error ? (
         <ErrorBlock message={articleQuery.error.message} />
       ) : null}
+      {markReadMutation.isError && markReadMutation.error instanceof Error ? (
+        <ErrorBlock message={markReadMutation.error.message} />
+      ) : null}
 
-      {article ? <OfficialArticleViewer article={article} /> : null}
+      {article ? (
+        <OfficialArticleViewer
+          article={article}
+          onOpenAccount={(accountId) => {
+            void navigate({
+              to: "/official-accounts/$accountId",
+              params: { accountId },
+            });
+          }}
+          onOpenArticle={(nextArticleId) => {
+            void navigate({
+              to: "/official-accounts/articles/$articleId",
+              params: { articleId: nextArticleId },
+            });
+          }}
+        />
+      ) : null}
     </AppPage>
   );
 }
