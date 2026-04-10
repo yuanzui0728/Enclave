@@ -132,6 +132,28 @@ export function GroupQrPage() {
       conversationTitle,
     };
   }, [search]);
+  const currentReturnSourceConversation = useMemo(() => {
+    if (!currentReturnSource) {
+      return null;
+    }
+
+    return (
+      (conversationsQuery.data ?? []).find(
+        (conversation) =>
+          buildConversationPath(conversation) ===
+          currentReturnSource.conversationPath,
+      ) ?? null
+    );
+  }, [conversationsQuery.data, currentReturnSource]);
+  const prioritizedRecentConversations = useMemo(() => {
+    if (!currentReturnSourceConversation) {
+      return recentConversations;
+    }
+
+    return recentConversations.filter(
+      (conversation) => conversation.id !== currentReturnSourceConversation.id,
+    );
+  }, [currentReturnSourceConversation, recentConversations]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -335,6 +357,17 @@ export function GroupQrPage() {
               >
                 回到会话
               </Button>
+              {currentReturnSourceConversation ? (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    void sendToConversation(currentReturnSourceConversation);
+                  }}
+                  className="shrink-0 rounded-full"
+                >
+                  再发回这个会话
+                </Button>
+              ) : null}
             </section>
           ) : null}
 
@@ -469,9 +502,33 @@ export function GroupQrPage() {
                 还没有可投递的最近会话。
               </div>
             ) : null}
-            {recentConversations.length ? (
+            {currentReturnSourceConversation ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void sendToConversation(currentReturnSourceConversation);
+                }}
+                className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.18)] bg-[rgba(255,250,244,0.9)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                    优先回发给来源会话
+                  </div>
+                  <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
+                    {currentReturnSourceConversation.title}
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    回流后可直接把当前群邀请再发回这条来源会话。
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                  立即回发
+                </span>
+              </button>
+            ) : null}
+            {prioritizedRecentConversations.length ? (
               <div className="space-y-2">
-                {recentConversations.map((conversation) => (
+                {prioritizedRecentConversations.map((conversation) => (
                   <button
                     key={conversation.id}
                     type="button"
@@ -595,6 +652,12 @@ function ActionCard({
       </div>
     </button>
   );
+}
+
+function buildConversationPath(conversation: ConversationListItem) {
+  return isPersistedGroupConversation(conversation)
+    ? `/group/${conversation.id}`
+    : `/chat/${conversation.id}`;
 }
 
 function buildInviteMatrixSvg({
