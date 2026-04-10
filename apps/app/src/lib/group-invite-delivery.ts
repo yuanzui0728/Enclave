@@ -19,6 +19,8 @@ export type GroupInviteDeliveryTarget = {
   conversationPath: string;
   conversationTitle: string;
   deliveredAt: string;
+  batchId: string;
+  batchStartedAt: string;
 };
 
 export type GroupInviteReopenRecord = {
@@ -68,6 +70,8 @@ export function writeGroupInviteDeliveryRecord(
     conversationPath: string;
     conversationTitle: string;
     groupName?: string;
+    batchId?: string;
+    batchStartedAt?: string;
   },
 ) {
   if (typeof window === "undefined") {
@@ -92,6 +96,8 @@ export function writeGroupInviteDeliveryRecord(
     conversationId: input.conversationId,
     conversationPath: input.conversationPath,
     conversationTitle: input.conversationTitle,
+    batchId: input.batchId,
+    batchStartedAt: input.batchStartedAt,
   });
 
   return nextRecord;
@@ -174,7 +180,9 @@ export function readGroupInviteDeliveryTargets(groupId: string) {
             typeof record.conversationId === "string" &&
             typeof record.conversationPath === "string" &&
             typeof record.conversationTitle === "string" &&
-            typeof record.deliveredAt === "string",
+            typeof record.deliveredAt === "string" &&
+            typeof record.batchId === "string" &&
+            typeof record.batchStartedAt === "string",
         ),
     );
   } catch {
@@ -252,6 +260,8 @@ function writeGroupInviteDeliveryTarget(
     conversationId: string;
     conversationPath: string;
     conversationTitle: string;
+    batchId?: string;
+    batchStartedAt?: string;
   },
 ) {
   if (typeof window === "undefined") {
@@ -263,6 +273,8 @@ function writeGroupInviteDeliveryTarget(
     conversationPath: input.conversationPath,
     conversationTitle: input.conversationTitle,
     deliveredAt: new Date().toISOString(),
+    batchId: input.batchId?.trim() || createGroupInviteDeliveryBatchId(),
+    batchStartedAt: input.batchStartedAt?.trim() || new Date().toISOString(),
   };
   const nextState = readAllGroupInviteDeliveryTargets();
   const currentRecords = nextState[groupId] ?? [];
@@ -279,6 +291,12 @@ function writeGroupInviteDeliveryTarget(
   );
 
   return nextState[groupId];
+}
+
+export function createGroupInviteDeliveryBatchId() {
+  return `group-invite-batch-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
 }
 
 function readAllGroupInviteReopenRecords() {
