@@ -14,12 +14,15 @@ import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ClipboardEvent,
+  type KeyboardEvent,
   type ReactNode,
 } from "react";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
+import { AvatarChip } from "./avatar-chip";
 import { MobileSpeechInputSheet } from "./mobile-speech-input-sheet";
 import { MobileChatPlusPanel } from "./mobile-chat-plus-panel";
 import { MobileChatAttachmentPreview } from "./mobile-chat-attachment-preview";
@@ -45,6 +48,12 @@ type ChatComposerProps = {
   onSendAttachment?: (
     payload: ChatComposerAttachmentPayload,
   ) => void | Promise<void>;
+  mentionCandidates?: Array<{
+    id: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string | null;
+  }>;
   replyPreview?: {
     senderName: string;
     text: string;
@@ -84,6 +93,7 @@ export function ChatComposer({
   speechInput,
   onSendSticker,
   onSendAttachment,
+  mentionCandidates,
   replyPreview = null,
   onCancelReply,
   onChange,
@@ -110,6 +120,9 @@ export function ChatComposer({
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [desktopPlusMenuOpen, setDesktopPlusMenuOpen] = useState(false);
+  const [inputCursor, setInputCursor] = useState(0);
+  const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
+  const [pendingSelection, setPendingSelection] = useState<number | null>(null);
   const showSpeechEntry = Boolean(
     speechInput?.enabled && speechInput?.conversationId,
   );
@@ -130,6 +143,42 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
+  const activeMention = useMemo(
+    () =>
+      isDesktop
+        ? findActiveMentionToken(value, inputCursor || value.length)
+        : null,
+    [inputCursor, isDesktop, value],
+  );
+  const filteredMentionCandidates = useMemo(() => {
+    if (!isDesktop || !activeMention || !mentionCandidates?.length) {
+      return [];
+    }
+
+    const query = activeMention.query.trim().toLowerCase();
+    const normalized = mentionCandidates.filter((candidate) => {
+      if (!query) {
+        return true;
+      }
+
+      return (
+        candidate.name.toLowerCase().includes(query) ||
+        (candidate.subtitle ?? "").toLowerCase().includes(query)
+      );
+    });
+
+    return normalized
+      .sort((left, right) => {
+        const leftStartsWith = left.name.toLowerCase().startsWith(query);
+        const rightStartsWith = right.name.toLowerCase().startsWith(query);
+        if (leftStartsWith === rightStartsWith) {
+          return left.name.localeCompare(right.name, "zh-CN");
+        }
+        return leftStartsWith ? -1 : 1;
+      })
+      .slice(0, 6);
+  }, [activeMention, isDesktop, mentionCandidates]);
+  const mentionPickerOpen = Boolean(filteredMentionCandidates.length);
 
   const focusInput = () => {
     if (typeof window === "undefined") {
@@ -146,6 +195,15 @@ export function ChatComposer({
       const selection = input.value.length;
       input.setSelectionRange(selection, selection);
     });
+  };
+
+  const syncInputCursor = () => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    setInputCursor(input.selectionStart ?? value.length);
   };
 
   const closeMobileTransientSurfaces = () => {
@@ -216,6 +274,38 @@ export function ChatComposer({
       releaseAttachmentDraft(attachmentDraft);
     };
   }, [attachmentDraft]);
+
+  useEffect(() => {
+    if (!mentionPickerOpen) {
+      setMentionActiveIndex(0);
+      return;
+    }
+
+    setMentionActiveIndex((current) =>
+      Math.min(current, filteredMentionCandidates.length - 1),
+    );
+  }, [filteredMentionCandidates.length, mentionPickerOpen]);
+
+  useEffect(() => {
+    if (pendingSelection === null) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) {
+        setPendingSelection(null);
+        return;
+      }
+
+      input.focus();
+      input.setSelectionRange(pendingSelection, pendingSelection);
+      setInputCursor(pendingSelection);
+      setPendingSelection(null);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [pendingSelection, value]);
 
   const toggleStickerPanel = () => {
     if (!onSendSticker) {
@@ -380,6 +470,59 @@ export function ChatComposer({
   const handleCancelAttachmentDraft = () => {
     releaseAttachmentDraft(attachmentDraft);
     setAttachmentDraft(null);
+  };
+
+  const applyMentionCandidate = (candidate: {
+    id: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string | null;
+  }) => {
+    if (!activeMention) {
+      return;
+    }
+
+    const mentionText = `@${candidate.name} `;
+    const nextValue = `${value.slice(0, activeMention.start)}${mentionText}${value.slice(activeMention.end)}`;
+    onChange(nextValue);
+    setMentionActiveIndex(0);
+    setPendingSelection(activeMention.start + mentionText.length);
+  };
+
+  const handleDesktopInputKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (mentionPickerOpen) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setMentionActiveIndex((current) =>
+          current >= filteredMentionCandidates.length - 1 ? 0 : current + 1,
+        );
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setMentionActiveIndex((current) =>
+          current <= 0 ? filteredMentionCandidates.length - 1 : current - 1,
+        );
+        return;
+      }
+
+      if (event.key === "Enter") {
+        const targetCandidate = filteredMentionCandidates[mentionActiveIndex];
+        if (targetCandidate) {
+          event.preventDefault();
+          applyMentionCandidate(targetCandidate);
+          return;
+        }
+      }
+    }
+
+    if (event.key === "Enter" && value.trim()) {
+      event.preventDefault();
+      onSubmit();
+    }
   };
 
   const handleRemoveDraftImage = (index: number) => {
@@ -554,6 +697,13 @@ export function ChatComposer({
             onClose={onCancelReply}
           />
         ) : null}
+        {isDesktop && mentionPickerOpen ? (
+          <DesktopMentionPicker
+            candidates={filteredMentionCandidates}
+            activeIndex={mentionActiveIndex}
+            onSelect={applyMentionCandidate}
+          />
+        ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
           className={`relative flex items-center gap-2 ${isDesktop ? "rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 shadow-[var(--shadow-soft)]" : ""}`}
@@ -642,17 +792,23 @@ export function ChatComposer({
             <input
               ref={inputRef}
               value={value}
-              onChange={(event) => onChange(event.target.value)}
+              onChange={(event) => {
+                onChange(event.target.value);
+                setInputCursor(
+                  event.target.selectionStart ?? event.target.value.length,
+                );
+              }}
               onPaste={(event) => {
                 void handleDesktopPaste(event);
               }}
-              onFocus={() => setPlusPanelOpen(false)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && value.trim()) {
-                  event.preventDefault();
-                  onSubmit();
-                }
+              onFocus={() => {
+                setPlusPanelOpen(false);
+                syncInputCursor();
               }}
+              onClick={syncInputCursor}
+              onKeyUp={syncInputCursor}
+              onSelect={syncInputCursor}
+              onKeyDown={handleDesktopInputKeyDown}
               placeholder={placeholder}
               className="min-w-0 flex-1 bg-transparent py-1 text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
@@ -1055,6 +1211,67 @@ function ReplyPreviewBar({
   );
 }
 
+function DesktopMentionPicker({
+  candidates,
+  activeIndex,
+  onSelect,
+}: {
+  candidates: Array<{
+    id: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string | null;
+  }>;
+  activeIndex: number;
+  onSelect: (candidate: {
+    id: string;
+    name: string;
+    subtitle?: string;
+    avatar?: string | null;
+  }) => void;
+}) {
+  return (
+    <div className="mb-3 overflow-hidden rounded-[18px] border border-black/6 bg-white/94 py-1.5 shadow-[0_18px_40px_rgba(15,23,42,0.10)]">
+      <div className="px-4 pb-1 pt-1 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+        选择要提到的成员
+      </div>
+      <div className="space-y-0.5">
+        {candidates.map((candidate, index) => (
+          <button
+            key={candidate.id}
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onSelect(candidate)}
+            className={cn(
+              "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
+              index === activeIndex ? "bg-[#f5f5f5]" : "hover:bg-[#fafafa]",
+            )}
+          >
+            <AvatarChip
+              name={candidate.name}
+              src={candidate.avatar}
+              size="sm"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                {candidate.name}
+              </div>
+              {candidate.subtitle ? (
+                <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                  {candidate.subtitle}
+                </div>
+              ) : null}
+            </div>
+            <div className="shrink-0 text-[13px] text-[color:var(--text-dim)]">
+              @
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 async function createImageDraft(file: File): Promise<ImageDraft> {
   if (!file.type.startsWith("image/")) {
     throw new Error("当前只支持图片附件。");
@@ -1127,6 +1344,47 @@ function extractClipboardFiles(clipboardData: DataTransfer | null) {
   }
 
   return [...clipboardData.files];
+}
+
+function findActiveMentionToken(value: string, cursor: number) {
+  const safeCursor = Math.max(0, Math.min(cursor, value.length));
+  let atIndex = safeCursor - 1;
+
+  while (atIndex >= 0) {
+    const current = value[atIndex];
+    if (current === "@") {
+      break;
+    }
+
+    if (/\s/.test(current)) {
+      return null;
+    }
+
+    atIndex -= 1;
+  }
+
+  if (atIndex < 0 || value[atIndex] !== "@") {
+    return null;
+  }
+
+  if (atIndex > 0 && !/\s/.test(value[atIndex - 1] ?? "")) {
+    return null;
+  }
+
+  let endIndex = atIndex + 1;
+  while (endIndex < value.length && !/\s/.test(value[endIndex] ?? "")) {
+    endIndex += 1;
+  }
+
+  if (safeCursor < atIndex + 1 || safeCursor > endIndex) {
+    return null;
+  }
+
+  return {
+    start: atIndex,
+    end: endIndex,
+    query: value.slice(atIndex + 1, safeCursor),
+  };
 }
 
 const MAX_ALBUM_IMAGE_COUNT = 9;

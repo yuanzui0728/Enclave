@@ -214,6 +214,42 @@ export function GroupChatThreadPanel({
         text: replyDraft.previewText,
       }
     : null;
+  const mentionCandidates = useMemo(() => {
+    const candidates: Array<{
+      id: string;
+      name: string;
+      subtitle?: string;
+      avatar?: string | null;
+    }> = [
+      {
+        id: "mention-all",
+        name: "所有人",
+        subtitle: "提醒全部群成员",
+        avatar: null,
+      },
+    ];
+    const seenIds = new Set<string>();
+
+    for (const member of membersQuery.data ?? []) {
+      if (member.memberType !== "character") {
+        continue;
+      }
+
+      if (seenIds.has(member.memberId)) {
+        continue;
+      }
+
+      seenIds.add(member.memberId);
+      candidates.push({
+        id: member.memberId,
+        name: member.memberName?.trim() || member.memberId,
+        subtitle: member.role === "admin" ? "管理员" : "群成员",
+        avatar: member.memberAvatar,
+      });
+    }
+
+    return candidates;
+  }, [membersQuery.data]);
 
   const handleReplyMessage = (message: ChatRenderableMessage) => {
     const senderName =
@@ -388,6 +424,7 @@ export function GroupChatThreadPanel({
         }}
         onChange={setText}
         onSendAttachment={sendAttachmentMessage}
+        mentionCandidates={isDesktop ? mentionCandidates : undefined}
         replyPreview={replyPreview}
         onCancelReply={() => setReplyDraft(null)}
         onSubmit={() =>
