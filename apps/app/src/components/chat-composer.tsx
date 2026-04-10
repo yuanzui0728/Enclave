@@ -150,7 +150,8 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
-  const mobileSpeechMode = !isDesktop && showSpeechEntry && mobileInputMode === "speech";
+  const mobileSpeechMode =
+    !isDesktop && showSpeechEntry && mobileInputMode === "speech";
   const activeMention = useMemo(
     () =>
       isDesktop
@@ -748,7 +749,7 @@ export function ChatComposer({
       <div
         className={
           isDesktop
-            ? "border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.98),rgba(255,248,239,0.98))] px-4 py-3"
+            ? "relative border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,249,0.98),rgba(255,248,239,0.98))] px-4 py-3"
             : "border-t border-black/6 bg-[#f7f7f7] px-2 pb-2 pt-1.5"
         }
         style={{
@@ -758,7 +759,18 @@ export function ChatComposer({
               ? "0.75rem"
               : "0.5rem",
         }}
+        onDragEnter={handleDesktopDragEnter}
+        onDragOver={handleDesktopDragOver}
+        onDragLeave={handleDesktopDragLeave}
+        onDrop={(event) => {
+          void handleDesktopDrop(event);
+        }}
       >
+        {isDesktop && desktopDropActive ? (
+          <div className="pointer-events-none absolute inset-2 z-20 flex items-center justify-center rounded-[24px] border border-dashed border-[rgba(249,115,22,0.38)] bg-[rgba(255,248,239,0.96)] text-sm font-medium text-[color:var(--brand-primary)] shadow-[0_18px_40px_rgba(160,90,10,0.14)]">
+            松开鼠标发送图片或文件
+          </div>
+        ) : null}
         {!isDesktop && attachmentDraft ? (
           <MobileChatAttachmentPreview
             kind={attachmentDraft.kind}
@@ -951,9 +963,15 @@ export function ChatComposer({
                   onClick={toggleMobileInputMode}
                   disabled={speechButtonDisabled && mobileSpeechMode}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5 disabled:opacity-45"
-                  aria-label={mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"}
+                  aria-label={
+                    mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"
+                  }
                 >
-                  {mobileSpeechMode ? <Keyboard size={20} /> : <Mic size={20} />}
+                  {mobileSpeechMode ? (
+                    <Keyboard size={20} />
+                  ) : (
+                    <Mic size={20} />
+                  )}
                 </button>
               ) : null}
 
@@ -961,7 +979,9 @@ export function ChatComposer({
                 <button
                   type="button"
                   onClick={() => void toggleMobileSpeech()}
-                  disabled={speechButtonDisabled && speech.status !== "listening"}
+                  disabled={
+                    speechButtonDisabled && speech.status !== "listening"
+                  }
                   title={speechDisabledReason ?? undefined}
                   className={cn(
                     "flex min-h-[40px] min-w-0 flex-1 items-center justify-center rounded-[7px] border border-black/8 bg-white px-4 py-2 text-[15px] text-[#7a7a7a]",
@@ -983,7 +1003,8 @@ export function ChatComposer({
                     onChange={(event) => {
                       onChange(event.target.value);
                       setInputCursor(
-                        event.target.selectionStart ?? event.target.value.length,
+                        event.target.selectionStart ??
+                          event.target.value.length,
                       );
                     }}
                     onFocus={() => {
