@@ -840,15 +840,29 @@ export function DesktopCreateGroupDialog({
                                 <div className="absolute bottom-3 left-[33px] top-3 w-px bg-[rgba(15,23,42,0.08)]" />
                                 {section.items.map((message, index) => {
                                   const previousMessage = section.items[index - 1];
+                                  const nextMessage = section.items[index + 1];
                                   const continuedFromPrevious =
                                     isShareableMessageContinuation(
                                       message,
                                       previousMessage,
                                     );
+                                  const continuedToNext =
+                                    isShareableMessageContinuation(
+                                      nextMessage,
+                                      message,
+                                    );
+                                  const messageGroupPosition =
+                                    getShareableMessageGroupPosition(
+                                      continuedFromPrevious,
+                                      continuedToNext,
+                                    );
                                   const checked = selectedMessageIds.includes(message.id);
                                   const focused =
                                     shareableMessagePositionMap.get(message.id) ===
                                     focusedMessageIndex;
+                                  const timeLabel = formatShareableMessageTime(
+                                    message.createdAt,
+                                  );
                                   return (
                                     <button
                                       key={message.id}
@@ -890,17 +904,32 @@ export function DesktopCreateGroupDialog({
                                       <div
                                         className={cn(
                                           "w-10 shrink-0 text-[11px] text-[color:var(--text-dim)]",
-                                          continuedFromPrevious ? "pt-0.5 text-transparent" : "pt-1",
+                                          continuedFromPrevious ? "pt-0.5" : "pt-1",
                                         )}
                                       >
-                                        {continuedFromPrevious
-                                          ? "00:00"
-                                          : formatShareableMessageTime(message.createdAt)}
+                                        <span
+                                          aria-hidden={continuedFromPrevious}
+                                          className={continuedFromPrevious ? "invisible" : undefined}
+                                        >
+                                          {timeLabel}
+                                        </span>
                                       </div>
                                       <div
                                         className={cn(
-                                          "min-w-0 flex-1 rounded-[10px] border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
+                                          "min-w-0 flex-1 border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
                                           continuedFromPrevious ? "py-2" : "py-2.5",
+                                          messageGroupPosition === "single"
+                                            ? "rounded-[10px]"
+                                            : "",
+                                          messageGroupPosition === "start"
+                                            ? "rounded-[10px] rounded-bl-[6px]"
+                                            : "",
+                                          messageGroupPosition === "middle"
+                                            ? "rounded-[6px]"
+                                            : "",
+                                          messageGroupPosition === "end"
+                                            ? "rounded-[10px] rounded-tl-[6px]"
+                                            : "",
                                           checked
                                             ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
                                             : "border-black/6 bg-white group-hover:border-black/10",
@@ -1367,6 +1396,25 @@ function isShareableMessageContinuation(
   }
 
   return currentTimestamp - previousTimestamp <= 5 * 60 * 1000;
+}
+
+function getShareableMessageGroupPosition(
+  continuedFromPrevious: boolean,
+  continuedToNext: boolean,
+) {
+  if (!continuedFromPrevious && !continuedToNext) {
+    return "single";
+  }
+
+  if (!continuedFromPrevious && continuedToNext) {
+    return "start";
+  }
+
+  if (continuedFromPrevious && continuedToNext) {
+    return "middle";
+  }
+
+  return "end";
 }
 
 function isSameCalendarDay(left: Date, right: Date) {
