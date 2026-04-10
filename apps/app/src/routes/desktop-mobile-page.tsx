@@ -48,6 +48,10 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
+import {
+  readGroupInviteDeliveryRecord,
+  type GroupInviteDeliveryRecord,
+} from "../lib/group-invite-delivery";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -160,6 +164,8 @@ export function DesktopMobilePage() {
   const [miniProgramsState, setMiniProgramsState] = useState(() =>
     readMiniProgramsState(),
   );
+  const [currentGroupInviteDelivery, setCurrentGroupInviteDelivery] =
+    useState<GroupInviteDeliveryRecord | null>(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -254,6 +260,9 @@ export function DesktopMobilePage() {
   );
   const currentGroupInviteHandoff = recentGroupInviteHandoffs[0] ?? null;
   const archivedGroupInviteHandoffs = recentGroupInviteHandoffs.slice(1);
+  const currentGroupInviteId = currentGroupInviteHandoff
+    ? resolveGroupIdFromHandoffPath(currentGroupInviteHandoff.path)
+    : null;
 
   useEffect(() => {
     if (!notice) {
@@ -263,6 +272,27 @@ export function DesktopMobilePage() {
     const timer = window.setTimeout(() => setNotice(null), 2200);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!currentGroupInviteId) {
+      setCurrentGroupInviteDelivery(null);
+      return;
+    }
+
+    const syncDelivery = () => {
+      setCurrentGroupInviteDelivery(
+        readGroupInviteDeliveryRecord(currentGroupInviteId),
+      );
+    };
+
+    syncDelivery();
+    window.addEventListener("focus", syncDelivery);
+    window.addEventListener("storage", syncDelivery);
+    return () => {
+      window.removeEventListener("focus", syncDelivery);
+      window.removeEventListener("storage", syncDelivery);
+    };
+  }, [currentGroupInviteId]);
 
   if (!isDesktopLayout) {
     return null;
@@ -364,6 +394,33 @@ export function DesktopMobilePage() {
                       >
                         桌面打开
                       </Link>
+                    </div>
+
+                    <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
+                      {currentGroupInviteDelivery ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                              最近投递到 {currentGroupInviteDelivery.conversationTitle}
+                            </div>
+                            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                              {formatConversationTimestamp(
+                                currentGroupInviteDelivery.deliveredAt,
+                              )}
+                            </div>
+                          </div>
+                          <Link
+                            to={currentGroupInviteDelivery.conversationPath as never}
+                            className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                          >
+                            回到会话
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+                          这条群邀请还没有投递到聊天会话。去群二维码页发到最近会话后，这里会直接显示回跳入口。
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1279,6 +1336,11 @@ function resolveMobileHandoffCategory(
   }
 
   return "other";
+}
+
+function resolveGroupIdFromHandoffPath(path: string) {
+  const match = path.match(/^\/group\/([^/?#]+)/);
+  return match?.[1] ?? null;
 }
 
 async function handleCopyHandoff({
