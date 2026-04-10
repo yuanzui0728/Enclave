@@ -23,9 +23,13 @@ import {
 } from "lucide-react";
 import {
   getConversations,
+  recallConversationMessage,
+  recallGroupMessage,
   sendGroupMessage,
   type ConversationListItem,
+  type GroupMessage,
   type MessageAttachment,
+  type Message,
   type SendGroupMessageRequest,
   type SendMessagePayload,
 } from "@yinjie/contracts";
@@ -34,9 +38,15 @@ import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import {
   hideLocalChatMessage,
+  type LocalChatMessageReminderRecord,
   readLocalChatMessageActionState,
   recallLocalChatMessage,
+  upsertLocalChatMessageReminder,
 } from "../features/chat/local-chat-message-actions";
+import {
+  MobileMessageReminderSheet,
+  type MobileMessageReminderOption,
+} from "../features/chat/mobile-message-reminder-sheet";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
 import {
   DesktopMessageForwardDialog,
@@ -77,6 +87,10 @@ type OpenableAttachment =
 
 type ChatMessageListProps = {
   messages: ChatRenderableMessage[];
+  threadContext?: {
+    id: string;
+    type: "direct" | "group";
+  };
   groupMode?: boolean;
   showGroupMemberNicknames?: boolean;
   variant?: "mobile" | "desktop";
@@ -88,6 +102,7 @@ type ChatMessageListProps = {
 
 export function ChatMessageList({
   messages,
+  threadContext,
   groupMode = false,
   showGroupMemberNicknames = true,
   variant = "mobile",
@@ -114,6 +129,8 @@ export function ChatMessageList({
   } | null>(null);
   const [mobileActionMessage, setMobileActionMessage] =
     useState<ChatRenderableMessage | null>(null);
+  const [reminderTargetMessage, setReminderTargetMessage] =
+    useState<ChatRenderableMessage | null>(null);
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
@@ -133,6 +150,9 @@ export function ChatMessageList({
   const [recalledMessageIds, setRecalledMessageIds] = useState<string[]>(
     () => readLocalChatMessageActionState().recalledMessageIds,
   );
+  const [messageReminders, setMessageReminders] = useState<
+    LocalChatMessageReminderRecord[]
+  >(() => readLocalChatMessageActionState().reminders);
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
     readDetailedTimestampMode(),
   );
@@ -182,6 +202,11 @@ export function ChatMessageList({
   useEffect(() => {
     setContextMenuState(null);
     setMobileActionMessage(null);
+    setReminderTargetMessage((current) =>
+      current && messages.some((message) => message.id === current.id)
+        ? current
+        : null,
+    );
     setSelectedMessageIds((current) =>
       current.filter((item) => messages.some((message) => message.id === item)),
     );
@@ -291,6 +316,82 @@ export function ChatMessageList({
       setActionNotice({
         message:
           error instanceof Error ? error.message : "转发失败，请稍后再试。",
+        tone: "danger",
+      });
+    },
+  });
+
+  const recallMutation = useMutation({
+    mutationFn: async (message: ChatRenderableMessage) => {
+      if (!threadContext) {
+        throw new Error("当前线程暂不支持撤回消息。");
+      }
+
+      if (threadContext.type === "group") {
+        const recalledMessage = await recallGroupMessage(
+          threadContext.id,
+          message.id,
+          baseUrl,
+        );
+
+        return {
+          threadType: "group" as const,
+          recalledMessage,
+        };
+      }
+
+      const recalledMessage = await recallConversationMessage(
+        threadContext.id,
+        message.id,
+        baseUrl,
+      );
+
+      return {
+        threadType: "direct" as const,
+        recalledMessage,
+      };
+    },
+    onSuccess: async (result, message) => {
+      if (!threadContext) {
+        return;
+      }
+
+      if (result.threadType === "group") {
+        queryClient.setQueryData<GroupMessage[] | undefined>(
+          ["app-group-messages", baseUrl, threadContext.id],
+          (current) =>
+            current?.map((item) =>
+              item.id === result.recalledMessage.id
+                ? result.recalledMessage
+                : item,
+            ) ?? current,
+        );
+      } else {
+        queryClient.setQueryData<Message[] | undefined>(
+          ["app-conversation-messages", baseUrl, threadContext.id],
+          (current) =>
+            current?.map((item) =>
+              item.id === result.recalledMessage.id
+                ? result.recalledMessage
+                : item,
+            ) ?? current,
+        );
+      }
+
+      setViewerMessageId((current) => (current === message.id ? null : current));
+      setActionNotice({
+        message: "已撤回这条消息。",
+        tone: "success",
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+    onError: (error) => {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "撤回失败，请稍后再试。",
         tone: "danger",
       });
     },
@@ -412,6 +513,10 @@ export function ChatMessageList({
   const recalledMessageIdSet = useMemo(
     () => new Set(recalledMessageIds),
     [recalledMessageIds],
+  );
+  const messageReminderMap = useMemo(
+    () => new Map(messageReminders.map((item) => [item.messageId, item])),
+    [messageReminders],
   );
   const visibleMessages = useMemo(
     () => messages.filter((message) => !hiddenMessageIdSet.has(message.id)),
@@ -571,6 +676,7 @@ export function ChatMessageList({
   ) => {
     setHiddenMessageIds(nextState.hiddenMessageIds);
     setRecalledMessageIds(nextState.recalledMessageIds);
+    setMessageReminders(nextState.reminders);
     setSelectedMessageIds((current) =>
       current.filter((item) => item !== targetMessageId),
     );
@@ -597,6 +703,32 @@ export function ChatMessageList({
     applyLocalMessageActionState(nextState, message.id);
     setActionNotice({
       message: "已撤回这条消息。",
+      tone: "success",
+    });
+  };
+
+  const reminderOptions = useMemo(
+    () => buildReminderOptions(new Date()),
+    [reminderTargetMessage?.id],
+  );
+
+  const handleSetReminder = (message: ChatRenderableMessage) => {
+    setReminderTargetMessage(message);
+  };
+
+  const handleSelectReminder = (option: MobileMessageReminderOption) => {
+    if (!reminderTargetMessage) {
+      return;
+    }
+
+    const nextState = upsertLocalChatMessageReminder({
+      messageId: reminderTargetMessage.id,
+      remindAt: option.remindAt,
+    });
+    setMessageReminders(nextState.reminders);
+    setReminderTargetMessage(null);
+    setActionNotice({
+      message: `已设为本机提醒 · ${formatReminderSummary(option.remindAt)}。`,
       tone: "success",
     });
   };
@@ -751,7 +883,8 @@ export function ChatMessageList({
           previousMessage?.createdAt,
         );
         const isUser = message.senderType === "user";
-        const isRecalled = recalledMessageIdSet.has(message.id);
+        const isRecalled =
+          message.senderType === "user" && recalledMessageIdSet.has(message.id);
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
@@ -995,9 +1128,9 @@ export function ChatMessageList({
             setContextMenuState(null);
           }}
           onRecall={
-            contextMenuState.message.senderType === "user"
+            canRecallMessage(contextMenuState.message, threadContext)
               ? () => {
-                  handleRecallMessage(contextMenuState.message);
+                  recallMutation.mutate(contextMenuState.message);
                   setContextMenuState(null);
                 }
               : undefined
@@ -1125,10 +1258,10 @@ export function ChatMessageList({
           mobileActionMessage?.type === "image" ? "保存图片" : "保存文件"
         }
         onRecall={
-          mobileActionMessage?.senderType === "user" &&
-          !recalledMessageIdSet.has(mobileActionMessage.id)
+          mobileActionMessage &&
+          canRecallMessage(mobileActionMessage, threadContext)
             ? () => {
-                handleRecallMessage(mobileActionMessage);
+                recallMutation.mutate(mobileActionMessage);
                 setMobileActionMessage(null);
               }
             : undefined
@@ -1435,6 +1568,20 @@ function getOpenableAttachment(
 
 function canForwardMessage(message: ChatRenderableMessage) {
   return message.type !== "sticker";
+}
+
+function canRecallMessage(
+  message: ChatRenderableMessage,
+  threadContext?: {
+    id: string;
+    type: "direct" | "group";
+  },
+) {
+  return Boolean(
+    threadContext &&
+      message.senderType === "user" &&
+      !message.id.startsWith("local_"),
+  );
 }
 
 async function forwardMessageToConversation(input: {

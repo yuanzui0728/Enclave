@@ -394,6 +394,7 @@ export function GroupChatThreadPanel({
 
           <ChatMessageList
             messages={orderedMessages}
+            threadContext={{ id: groupId, type: "group" }}
             groupMode
             showGroupMemberNicknames={
               groupQuery.data?.showMemberNicknames ?? true

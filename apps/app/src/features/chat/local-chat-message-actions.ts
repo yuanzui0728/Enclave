@@ -1,6 +1,12 @@
 export type LocalChatMessageActionState = {
   hiddenMessageIds: string[];
   recalledMessageIds: string[];
+  reminders: LocalChatMessageReminderRecord[];
+};
+
+export type LocalChatMessageReminderRecord = {
+  messageId: string;
+  remindAt: string;
 };
 
 const STORAGE_KEY = "yinjie-chat-local-message-actions";
@@ -8,6 +14,7 @@ const STORAGE_KEY = "yinjie-chat-local-message-actions";
 const EMPTY_STATE: LocalChatMessageActionState = {
   hiddenMessageIds: [],
   recalledMessageIds: [],
+  reminders: [],
 };
 
 export function readLocalChatMessageActionState(): LocalChatMessageActionState {
@@ -39,6 +46,7 @@ export function hideLocalChatMessage(messageId: string) {
     recalledMessageIds: current.recalledMessageIds.filter(
       (item) => item !== messageId,
     ),
+    reminders: current.reminders.filter((item) => item.messageId !== messageId),
   });
   writeState(nextState);
   return nextState;
@@ -55,6 +63,23 @@ export function recallLocalChatMessage(messageId: string) {
       (item) => item !== messageId,
     ),
     recalledMessageIds: [...current.recalledMessageIds, messageId],
+    reminders: current.reminders.filter((item) => item.messageId !== messageId),
+  });
+  writeState(nextState);
+  return nextState;
+}
+
+export function upsertLocalChatMessageReminder(
+  reminder: LocalChatMessageReminderRecord,
+) {
+  const current = readLocalChatMessageActionState();
+  const nextState = normalizeState({
+    hiddenMessageIds: current.hiddenMessageIds,
+    recalledMessageIds: current.recalledMessageIds,
+    reminders: [
+      reminder,
+      ...current.reminders.filter((item) => item.messageId !== reminder.messageId),
+    ],
   });
   writeState(nextState);
   return nextState;
@@ -74,6 +99,7 @@ function normalizeState(
   return {
     hiddenMessageIds: normalizeIdList(input?.hiddenMessageIds),
     recalledMessageIds: normalizeIdList(input?.recalledMessageIds),
+    reminders: normalizeReminderList(input?.reminders),
   };
 }
 
@@ -85,4 +111,28 @@ function normalizeIdList(input: unknown) {
   return Array.from(
     new Set(input.filter((item): item is string => typeof item === "string")),
   );
+}
+
+function normalizeReminderList(input: unknown) {
+  if (!Array.isArray(input)) {
+    return [] as LocalChatMessageReminderRecord[];
+  }
+
+  const reminders = input.filter(
+    (item): item is LocalChatMessageReminderRecord =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof item.messageId === "string" &&
+      typeof item.remindAt === "string",
+  );
+
+  const seenMessageIds = new Set<string>();
+  return reminders.filter((item) => {
+    if (seenMessageIds.has(item.messageId)) {
+      return false;
+    }
+
+    seenMessageIds.add(item.messageId);
+    return true;
+  });
 }
