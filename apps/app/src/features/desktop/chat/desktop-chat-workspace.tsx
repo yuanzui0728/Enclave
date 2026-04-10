@@ -1,11 +1,27 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BellOff, FileText, Plus, UserPlus, Users } from "lucide-react";
 import {
+  clearConversationHistory,
+  clearGroupMessages,
   getBlockedCharacters,
   getConversations,
   getOfficialAccountMessageEntries,
+  hideConversation,
+  hideGroup,
+  markConversationRead,
+  markGroupRead,
+  setConversationMuted,
+  setConversationPinned,
+  setGroupPinned,
+  updateGroupPreferences,
   type ConversationListItem,
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock, TextField } from "@yinjie/ui";
@@ -34,6 +50,7 @@ import {
   type DesktopChatCallKind,
   type DesktopChatSidePanelMode,
 } from "./desktop-chat-header-actions";
+import { DesktopConversationContextMenu } from "./desktop-conversation-context-menu";
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
@@ -79,6 +96,7 @@ export function DesktopChatWorkspace({
   selectedSpecialView,
 }: DesktopChatWorkspaceProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -87,6 +105,11 @@ export function DesktopChatWorkspace({
     useState<DesktopChatSidePanelMode>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [conversationContextMenu, setConversationContextMenu] = useState<{
+    conversation: ConversationListItem;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -214,6 +237,118 @@ export function DesktopChatWorkspace({
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (!conversationContextMenu) {
+      return;
+    }
+
+    const closeMenu = () => setConversationContextMenu(null);
+    window.addEventListener("pointerdown", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [conversationContextMenu]);
+
+  const conversationActionMutation = useMutation({
+    mutationFn: async ({
+      action,
+      conversation,
+    }: {
+      action: "pin" | "mute" | "read" | "hide" | "clear";
+      conversation: ConversationListItem;
+    }) => {
+      if (isPersistedGroupConversation(conversation)) {
+        switch (action) {
+          case "pin":
+            return setGroupPinned(
+              conversation.id,
+              { pinned: !conversation.isPinned },
+              baseUrl,
+            );
+          case "mute":
+            return updateGroupPreferences(
+              conversation.id,
+              { isMuted: !conversation.isMuted },
+              baseUrl,
+            );
+          case "read":
+            return markGroupRead(conversation.id, baseUrl);
+          case "hide":
+            return hideGroup(conversation.id, baseUrl);
+          case "clear":
+            return clearGroupMessages(conversation.id, baseUrl);
+        }
+      }
+
+      switch (action) {
+        case "pin":
+          return setConversationPinned(
+            conversation.id,
+            { pinned: !conversation.isPinned },
+            baseUrl,
+          );
+        case "mute":
+          return setConversationMuted(
+            conversation.id,
+            { muted: !conversation.isMuted },
+            baseUrl,
+          );
+        case "read":
+          return markConversationRead(conversation.id, baseUrl);
+        case "hide":
+          return hideConversation(conversation.id, baseUrl);
+        case "clear":
+          return clearConversationHistory(conversation.id, baseUrl);
+      }
+    },
+    onSuccess: async (_, variables) => {
+      const { action, conversation } = variables;
+      const isGroupConversation = isPersistedGroupConversation(conversation);
+
+      setConversationContextMenu(null);
+      setNotice(buildConversationActionNotice(action, conversation));
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+        isGroupConversation
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-group", baseUrl, conversation.id],
+            })
+          : Promise.resolve(),
+        action === "clear" && isGroupConversation
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-group-messages", baseUrl, conversation.id],
+            })
+          : Promise.resolve(),
+        action === "clear" && !isGroupConversation
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-conversation-messages", baseUrl, conversation.id],
+            })
+          : Promise.resolve(),
+      ]);
+
+      if (
+        action === "hide" &&
+        (selectedConversationId === conversation.id ||
+          activeConversation?.id === conversation.id)
+      ) {
+        setRightPanelMode(null);
+        void navigate({ to: "/tabs/chat" });
+      }
+    },
+    onError: (error) => {
+      setConversationContextMenu(null);
+      setNotice(error instanceof Error ? error.message : "会话操作失败。");
+    },
+  });
+
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
     setIsQuickMenuOpen(false);
     setNotice(null);
@@ -244,6 +379,18 @@ export function DesktopChatWorkspace({
         ? "视频通话入口已保留，真实通话能力后续补齐。"
         : "语音通话入口已保留，真实通话能力后续补齐。",
     );
+  }
+
+  function handleConversationContextMenu(
+    event: MouseEvent<HTMLElement>,
+    conversation: ConversationListItem,
+  ) {
+    event.preventDefault();
+    setConversationContextMenu({
+      conversation,
+      x: event.clientX,
+      y: event.clientY,
+    });
   }
 
   return (
@@ -354,6 +501,7 @@ export function DesktopChatWorkspace({
                 key={conversation.id}
                 active={conversation.id === activeConversation?.id}
                 conversation={conversation}
+                onContextMenu={handleConversationContextMenu}
               />
             ))}
           </div>
@@ -443,6 +591,48 @@ export function DesktopChatWorkspace({
           )}
         </DesktopChatSidePanel>
       ) : null}
+
+      {conversationContextMenu ? (
+        <DesktopConversationContextMenu
+          x={conversationContextMenu.x}
+          y={conversationContextMenu.y}
+          isPinned={conversationContextMenu.conversation.isPinned}
+          isMuted={conversationContextMenu.conversation.isMuted}
+          showMarkRead={conversationContextMenu.conversation.unreadCount > 0}
+          busy={conversationActionMutation.isPending}
+          onClose={() => setConversationContextMenu(null)}
+          onTogglePinned={() =>
+            conversationActionMutation.mutate({
+              action: "pin",
+              conversation: conversationContextMenu.conversation,
+            })
+          }
+          onToggleMuted={() =>
+            conversationActionMutation.mutate({
+              action: "mute",
+              conversation: conversationContextMenu.conversation,
+            })
+          }
+          onMarkRead={() =>
+            conversationActionMutation.mutate({
+              action: "read",
+              conversation: conversationContextMenu.conversation,
+            })
+          }
+          onHide={() =>
+            conversationActionMutation.mutate({
+              action: "hide",
+              conversation: conversationContextMenu.conversation,
+            })
+          }
+          onClear={() =>
+            conversationActionMutation.mutate({
+              action: "clear",
+              conversation: conversationContextMenu.conversation,
+            })
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -450,19 +640,35 @@ export function DesktopChatWorkspace({
 function ConversationCard({
   active,
   conversation,
+  onContextMenu,
 }: {
   active: boolean;
   conversation: ConversationListItem;
+  onContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    conversation: ConversationListItem,
+  ) => void;
 }) {
-  return <ConversationCardLink active={active} conversation={conversation} />;
+  return (
+    <ConversationCardLink
+      active={active}
+      conversation={conversation}
+      onContextMenu={onContextMenu}
+    />
+  );
 }
 
 function ConversationCardLink({
   active,
   conversation,
+  onContextMenu,
 }: {
   active: boolean;
   conversation: ConversationListItem;
+  onContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    conversation: ConversationListItem,
+  ) => void;
 }) {
   const className = active
     ? "flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
@@ -556,6 +762,7 @@ function ConversationCardLink({
         to="/group/$groupId"
         params={{ groupId: conversation.id }}
         className={className}
+        onContextMenu={(event) => onContextMenu(event, conversation)}
       >
         {content}
       </Link>
@@ -567,10 +774,33 @@ function ConversationCardLink({
       to="/chat/$conversationId"
       params={{ conversationId: conversation.id }}
       className={className}
+      onContextMenu={(event) => onContextMenu(event, conversation)}
     >
       {content}
     </Link>
   );
+}
+
+function buildConversationActionNotice(
+  action: "pin" | "mute" | "read" | "hide" | "clear",
+  conversation: ConversationListItem,
+) {
+  switch (action) {
+    case "pin":
+      return conversation.isPinned ? "已取消置顶聊天。" : "聊天已置顶。";
+    case "mute":
+      return conversation.isMuted ? "已关闭消息免打扰。" : "已开启消息免打扰。";
+    case "read":
+      return "已标记为已读。";
+    case "hide":
+      return isPersistedGroupConversation(conversation)
+        ? "群聊已隐藏。"
+        : "聊天已隐藏。";
+    case "clear":
+      return isPersistedGroupConversation(conversation)
+        ? "群聊记录已清空。"
+        : "聊天记录已清空。";
+  }
 }
 
 function buildConversationPreview(conversation: ConversationListItem) {
