@@ -3,6 +3,7 @@ import {
   dismissActiveMiniProgram,
   markMiniProgramOpened,
   readMiniProgramsState,
+  toggleMiniProgramTaskCompletion,
   togglePinnedMiniProgram,
   writeMiniProgramsState,
   type MiniProgramsStoredState,
@@ -24,6 +25,14 @@ export function useMiniProgramsState() {
     },
     togglePinned(miniProgramId: string) {
       setState((current) => togglePinnedMiniProgram(current, miniProgramId));
+    },
+    toggleTaskCompletion(miniProgramId: string, taskId: string) {
+      setState((current) =>
+        toggleMiniProgramTaskCompletion(current, {
+          miniProgramId,
+          taskId,
+        }),
+      );
     },
     dismissActiveMiniProgram() {
       setState((current) => dismissActiveMiniProgram(current));

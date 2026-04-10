@@ -13,6 +13,7 @@ import {
   featuredMiniProgramIds,
   getMiniProgramEntry,
   getMiniProgramToneStyle,
+  getMiniProgramWorkspaceTasks,
   miniProgramCampaigns,
   miniProgramCategoryTabs,
   resolveMiniProgramEntries,
@@ -25,6 +26,7 @@ import { MiniProgramOpenPanel } from "./mini-program-open-panel";
 type MobileMiniProgramsWorkspaceProps = {
   activeCategory: MiniProgramCategoryId;
   activeMiniProgramId: string | null;
+  completedTaskIdsByMiniProgramId: Record<string, string[]>;
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
   pinnedMiniProgramIds: string[];
@@ -39,12 +41,14 @@ type MobileMiniProgramsWorkspaceProps = {
   onOpenMiniProgram: (miniProgramId: string) => void;
   onSearchTextChange: (value: string) => void;
   onSelectMiniProgram: (miniProgramId: string) => void;
+  onToggleMiniProgramTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinnedMiniProgram: (miniProgramId: string) => void;
 };
 
 export function MobileMiniProgramsWorkspace({
   activeCategory,
   activeMiniProgramId,
+  completedTaskIdsByMiniProgramId,
   launchCountById,
   lastOpenedAtById,
   pinnedMiniProgramIds,
@@ -59,6 +63,7 @@ export function MobileMiniProgramsWorkspace({
   onOpenMiniProgram,
   onSearchTextChange,
   onSelectMiniProgram,
+  onToggleMiniProgramTask,
   onTogglePinnedMiniProgram,
 }: MobileMiniProgramsWorkspaceProps) {
   const selectedMiniProgram =
@@ -68,6 +73,11 @@ export function MobileMiniProgramsWorkspace({
   const activeMiniProgram = activeMiniProgramId
     ? getMiniProgramEntry(activeMiniProgramId)
     : null;
+  const panelMiniProgram = activeMiniProgram ?? selectedMiniProgram;
+  const panelTasks = getMiniProgramWorkspaceTasks(
+    panelMiniProgram.id,
+    completedTaskIdsByMiniProgramId[panelMiniProgram.id] ?? [],
+  );
   const recentMiniPrograms = resolveMiniProgramEntries(recentMiniProgramIds);
   const pinnedMiniPrograms = resolveMiniProgramEntries(pinnedMiniProgramIds);
 
@@ -211,18 +221,18 @@ export function MobileMiniProgramsWorkspace({
       </section>
 
       <MiniProgramOpenPanel
-        miniProgram={activeMiniProgram ?? selectedMiniProgram}
+        miniProgram={panelMiniProgram}
         isActive={Boolean(activeMiniProgram)}
         isPinned={pinnedMiniProgramIds.includes(
-          (activeMiniProgram ?? selectedMiniProgram).id,
+          panelMiniProgram.id,
         )}
-        launchCount={
-          launchCountById[(activeMiniProgram ?? selectedMiniProgram).id] ?? 0
-        }
-        lastOpenedAt={lastOpenedAtById[(activeMiniProgram ?? selectedMiniProgram).id]}
+        launchCount={launchCountById[panelMiniProgram.id] ?? 0}
+        lastOpenedAt={lastOpenedAtById[panelMiniProgram.id]}
+        tasks={panelTasks}
         compact
         onDismiss={activeMiniProgram ? onDismissActiveMiniProgram : undefined}
         onOpen={onOpenMiniProgram}
+        onToggleTask={onToggleMiniProgramTask}
         onTogglePinned={onTogglePinnedMiniProgram}
       />
 

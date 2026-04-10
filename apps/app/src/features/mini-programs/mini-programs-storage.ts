@@ -4,6 +4,7 @@ export type MiniProgramsStoredState = {
   pinnedMiniProgramIds: string[];
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
+  completedTaskIdsByMiniProgramId: Record<string, string[]>;
 };
 
 const MINI_PROGRAMS_STORAGE_KEY = "yinjie-mini-programs-state";
@@ -38,6 +39,27 @@ function sanitizeTimestampRecord(value: unknown) {
   );
 }
 
+function sanitizeStringArrayRecord(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return {} as Record<string, string[]>;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).flatMap((entry) => {
+      if (typeof entry[0] !== "string" || !Array.isArray(entry[1])) {
+        return [];
+      }
+
+      return [
+        [
+          entry[0],
+          entry[1].filter((item): item is string => typeof item === "string"),
+        ] as const,
+      ];
+    }),
+  );
+}
+
 export function getDefaultMiniProgramsState(): MiniProgramsStoredState {
   return {
     activeMiniProgramId: "schedule-assistant",
@@ -68,6 +90,11 @@ export function getDefaultMiniProgramsState(): MiniProgramsStoredState {
       "file-drop": "2026-04-09T21:05:00.000Z",
       "world-map": "2026-04-09T18:42:00.000Z",
       "read-later": "2026-04-09T14:20:00.000Z",
+    },
+    completedTaskIdsByMiniProgramId: {
+      "schedule-assistant": ["review-today"],
+      "file-drop": ["sort-temp-files"],
+      "read-later": ["sort-by-source"],
     },
   };
 }
@@ -102,6 +129,9 @@ export function readMiniProgramsState() {
         ),
       ),
       lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
+      completedTaskIdsByMiniProgramId: sanitizeStringArrayRecord(
+        parsed.completedTaskIdsByMiniProgramId,
+      ),
     };
   } catch {
     return getDefaultMiniProgramsState();
@@ -138,6 +168,7 @@ export function markMiniProgramOpened(
       ...state.lastOpenedAtById,
       [miniProgramId]: openedAt,
     },
+    completedTaskIdsByMiniProgramId: state.completedTaskIdsByMiniProgramId,
   };
 }
 
@@ -161,5 +192,27 @@ export function dismissActiveMiniProgram(
   return {
     ...state,
     activeMiniProgramId: null,
+  };
+}
+
+export function toggleMiniProgramTaskCompletion(
+  state: MiniProgramsStoredState,
+  input: {
+    miniProgramId: string;
+    taskId: string;
+  },
+): MiniProgramsStoredState {
+  const currentTaskIds =
+    state.completedTaskIdsByMiniProgramId[input.miniProgramId] ?? [];
+  const completed = currentTaskIds.includes(input.taskId);
+
+  return {
+    ...state,
+    completedTaskIdsByMiniProgramId: {
+      ...state.completedTaskIdsByMiniProgramId,
+      [input.miniProgramId]: completed
+        ? currentTaskIds.filter((taskId) => taskId !== input.taskId)
+        : [...currentTaskIds, input.taskId],
+    },
   };
 }

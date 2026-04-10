@@ -42,6 +42,17 @@ export type MiniProgramCampaign = {
   tone: MiniProgramTone;
 };
 
+export type MiniProgramWorkspaceTask = {
+  id: string;
+  title: string;
+  detail: string;
+  actionLabel: string;
+};
+
+export type ResolvedMiniProgramWorkspaceTask = MiniProgramWorkspaceTask & {
+  completed: boolean;
+};
+
 export type MiniProgramToneStyle = {
   badgeClassName: string;
   heroCardClassName: string;
@@ -329,6 +340,152 @@ export const miniProgramCampaigns: MiniProgramCampaign[] = [
   },
 ];
 
+export const miniProgramWorkspaceTaskTemplatesById: Record<
+  string,
+  MiniProgramWorkspaceTask[]
+> = {
+  "schedule-assistant": [
+    {
+      id: "review-today",
+      title: "确认今天待办",
+      detail: "把聊天里提到的安排过一遍，决定哪些要留在今天。",
+      actionLabel: "已确认",
+    },
+    {
+      id: "sync-afternoon",
+      title: "同步下午安排",
+      detail: "把下午还没处理完的聊天事项补进时间轴。",
+      actionLabel: "已同步",
+    },
+  ],
+  "group-relay": [
+    {
+      id: "check-unconfirmed",
+      title: "查看未确认成员",
+      detail: "优先把还没回复的成员名单筛出来，补一轮提醒。",
+      actionLabel: "已查看",
+    },
+    {
+      id: "publish-result",
+      title: "回填接龙结果",
+      detail: "把当前统计结果同步回群聊，避免大家反复追问。",
+      actionLabel: "已回填",
+    },
+  ],
+  "file-drop": [
+    {
+      id: "sort-temp-files",
+      title: "整理临时附件",
+      detail: "先把最近暂存的文件区分成待发送和待归档两类。",
+      actionLabel: "已整理",
+    },
+    {
+      id: "return-last-chat",
+      title: "定位最近会话",
+      detail: "回到刚才发文件的会话，继续把附件送出去。",
+      actionLabel: "已定位",
+    },
+  ],
+  "world-map": [
+    {
+      id: "open-hot-area",
+      title: "查看热点区域",
+      detail: "先展开最近有居民和活动变化的区域。",
+      actionLabel: "已展开",
+    },
+    {
+      id: "check-place-card",
+      title: "回看地点卡片",
+      detail: "继续浏览上次停留的地点卡片和关联活动。",
+      actionLabel: "已查看",
+    },
+  ],
+  "idea-notes": [
+    {
+      id: "collect-drafts",
+      title: "收拢未整理草稿",
+      detail: "把刚冒出来的想法先落成一条条可继续补的短笔记。",
+      actionLabel: "已收拢",
+    },
+    {
+      id: "tag-images",
+      title: "补图片备注",
+      detail: "给需要继续扩写的图片草稿加上标签和备注。",
+      actionLabel: "已补充",
+    },
+  ],
+  "live-clips": [
+    {
+      id: "mark-highlights",
+      title: "标记直播高光",
+      detail: "先把最近直播里值得回看的片段时间点记下来。",
+      actionLabel: "已标记",
+    },
+    {
+      id: "prep-summary",
+      title: "整理片段摘要",
+      detail: "把重点片段转成后续可发视频号的摘要素材。",
+      actionLabel: "已整理",
+    },
+  ],
+  "resident-services": [
+    {
+      id: "review-active-applications",
+      title: "查看办理中事项",
+      detail: "先确认还有哪些申请和办事单据没处理完。",
+      actionLabel: "已查看",
+    },
+    {
+      id: "check-latest-receipt",
+      title: "回看最新回执",
+      detail: "确认今天新回来的回执结果，避免漏掉进度变化。",
+      actionLabel: "已回看",
+    },
+  ],
+  "event-board": [
+    {
+      id: "review-signups",
+      title: "查看报名情况",
+      detail: "先看最近活动还差多少人，决定是否需要继续扩散。",
+      actionLabel: "已查看",
+    },
+    {
+      id: "send-receipts",
+      title: "补发报名回执",
+      detail: "把已经报名成功的结果同步给还没收到提示的人。",
+      actionLabel: "已补发",
+    },
+  ],
+  "read-later": [
+    {
+      id: "clear-unread-queue",
+      title: "处理未读队列",
+      detail: "优先清掉今天刚积压进来的文章、动态和链接。",
+      actionLabel: "已处理",
+    },
+    {
+      id: "sort-by-source",
+      title: "按来源整理",
+      detail: "把公众号、广场动态和聊天链接分开，方便集中处理。",
+      actionLabel: "已整理",
+    },
+  ],
+  "photo-wall": [
+    {
+      id: "group-latest-photos",
+      title: "整理最近图片",
+      detail: "把聊天图片、活动图和朋友圈素材拆成几个相册分组。",
+      actionLabel: "已分组",
+    },
+    {
+      id: "review-source-filter",
+      title: "回看来源筛选",
+      detail: "用聊天来源筛选把最近回看过的一批图片再扫一遍。",
+      actionLabel: "已回看",
+    },
+  ],
+};
+
 export function getMiniProgramEntry(id: string) {
   return miniProgramEntries.find((item) => item.id === id);
 }
@@ -400,4 +557,18 @@ export function getMiniProgramToneStyle(
         softTextClassName: "text-[#475569]",
       };
   }
+}
+
+export function getMiniProgramWorkspaceTasks(
+  miniProgramId: string,
+  completedTaskIds: string[],
+): ResolvedMiniProgramWorkspaceTask[] {
+  const completedSet = new Set(completedTaskIds);
+
+  return (miniProgramWorkspaceTaskTemplatesById[miniProgramId] ?? []).map(
+    (task) => ({
+      ...task,
+      completed: completedSet.has(task.id),
+    }),
+  );
 }

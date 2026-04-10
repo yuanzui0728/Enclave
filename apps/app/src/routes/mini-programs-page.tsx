@@ -5,6 +5,7 @@ import {
   featuredMiniProgramIds,
   getMiniProgramEntry,
   miniProgramEntries,
+  getMiniProgramWorkspaceTasks,
   type MiniProgramCategoryId,
 } from "../features/mini-programs/mini-programs-data";
 import { MobileMiniProgramsWorkspace } from "../features/mini-programs/mobile-mini-programs-workspace";
@@ -20,12 +21,14 @@ export function MiniProgramsPage() {
   const isDesktopLayout = useDesktopLayout();
   const {
     activeMiniProgramId,
+    completedTaskIdsByMiniProgramId,
     launchCountById,
     lastOpenedAtById,
     pinnedMiniProgramIds,
     recentMiniProgramIds,
     dismissActiveMiniProgram,
     openMiniProgram,
+    toggleTaskCompletion,
     togglePinned,
   } = useMiniProgramsState();
   const [activeCategory, setActiveCategory] =
@@ -108,6 +111,20 @@ export function MiniProgramsPage() {
     );
   }
 
+  function handleToggleMiniProgramTask(miniProgramId: string, taskId: string) {
+    const miniProgram = getMiniProgramEntry(miniProgramId);
+    const currentTasks = getMiniProgramWorkspaceTasks(
+      miniProgramId,
+      completedTaskIdsByMiniProgramId[miniProgramId] ?? [],
+    );
+    const task = currentTasks.find((item) => item.id === taskId);
+    const completed = Boolean(task?.completed);
+    toggleTaskCompletion(miniProgramId, taskId);
+    setSuccessNotice(
+      `${miniProgram?.name ?? "该小程序"} 已${completed ? "恢复" : "完成"}“${task?.title ?? "当前待办"}”。`,
+    );
+  }
+
   function handleBack() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       window.history.back();
@@ -122,6 +139,7 @@ export function MiniProgramsPage() {
       <DesktopMiniProgramsWorkspace
         activeCategory={activeCategory}
         activeMiniProgramId={activeMiniProgramId}
+        completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
         launchCountById={launchCountById}
         lastOpenedAtById={lastOpenedAtById}
         pinnedMiniProgramIds={pinnedMiniProgramIds}
@@ -135,6 +153,7 @@ export function MiniProgramsPage() {
         onOpenMiniProgram={handleOpenMiniProgram}
         onSearchTextChange={setSearchText}
         onSelectMiniProgram={setSelectedMiniProgramId}
+        onToggleMiniProgramTask={handleToggleMiniProgramTask}
         onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
       />
     );
@@ -144,6 +163,7 @@ export function MiniProgramsPage() {
     <MobileMiniProgramsWorkspace
       activeCategory={activeCategory}
       activeMiniProgramId={activeMiniProgramId}
+      completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
       launchCountById={launchCountById}
       lastOpenedAtById={lastOpenedAtById}
       pinnedMiniProgramIds={pinnedMiniProgramIds}
@@ -158,6 +178,7 @@ export function MiniProgramsPage() {
       onOpenMiniProgram={handleOpenMiniProgram}
       onSearchTextChange={setSearchText}
       onSelectMiniProgram={setSelectedMiniProgramId}
+      onToggleMiniProgramTask={handleToggleMiniProgramTask}
       onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
     />
   );

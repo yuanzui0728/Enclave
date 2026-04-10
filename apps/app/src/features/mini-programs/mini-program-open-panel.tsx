@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { Button, cn } from "@yinjie/ui";
-import { Clock3, Pin, Sparkles, X } from "lucide-react";
+import { CheckCircle2, Clock3, Pin, Sparkles, X } from "lucide-react";
 import { formatConversationTimestamp } from "../../lib/format";
 import {
   getMiniProgramToneStyle,
+  type ResolvedMiniProgramWorkspaceTask,
   type MiniProgramEntry,
 } from "./mini-programs-data";
 import { MiniProgramGlyph } from "./mini-program-glyph";
@@ -14,9 +15,11 @@ type MiniProgramOpenPanelProps = {
   isPinned: boolean;
   launchCount: number;
   lastOpenedAt?: string;
+  tasks: ResolvedMiniProgramWorkspaceTask[];
   compact?: boolean;
   onDismiss?: () => void;
   onOpen: (miniProgramId: string) => void;
+  onToggleTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinned: (miniProgramId: string) => void;
 };
 
@@ -26,9 +29,11 @@ export function MiniProgramOpenPanel({
   isPinned,
   launchCount,
   lastOpenedAt,
+  tasks,
   compact = false,
   onDismiss,
   onOpen,
+  onToggleTask,
   onTogglePinned,
 }: MiniProgramOpenPanelProps) {
   const tone = getMiniProgramToneStyle(miniProgram.tone);
@@ -115,6 +120,53 @@ export function MiniProgramOpenPanel({
           </span>
         ))}
       </div>
+
+      {tasks.length ? (
+        <div className="mt-5 rounded-[24px] border border-white/80 bg-white/78 p-4">
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            当前工作台
+          </div>
+          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+            打开后先承接一组本地待办，让这个面板不只是一次“已打开”的记录。
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {tasks.map((task) => (
+              <div
+                key={task.id}
+                className="rounded-[20px] border border-[rgba(15,23,42,0.06)] bg-white/86 px-4 py-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {task.title}
+                      </div>
+                      {task.completed ? (
+                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2.5 py-1 text-[10px] text-[#2f7a3f]">
+                          已完成
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {task.detail}
+                    </div>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onToggleTask(miniProgram.id, task.id)}
+                    className="shrink-0 border-white/80 bg-white"
+                  >
+                    <CheckCircle2 size={14} />
+                    {task.completed ? "撤销" : task.actionLabel}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap gap-3">
         <Button variant="primary" onClick={() => onOpen(miniProgram.id)}>
