@@ -252,6 +252,8 @@ export function DesktopMobilePage() {
         .slice(0, 3),
     [handoffHistory],
   );
+  const currentGroupInviteHandoff = recentGroupInviteHandoffs[0] ?? null;
+  const archivedGroupInviteHandoffs = recentGroupInviteHandoffs.slice(1);
 
   useEffect(() => {
     if (!notice) {
@@ -846,32 +848,43 @@ export function DesktopMobilePage() {
             </div>
 
             <div className="mt-4 space-y-3">
-              {recentGroupInviteHandoffs.length ? (
-                recentGroupInviteHandoffs.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                        {item.label}
+              {currentGroupInviteHandoff ? (
+                <>
+                  <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,rgba(255,247,236,0.98),rgba(255,255,255,0.92))] p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-medium tracking-[0.18em] text-[color:var(--brand-primary)]">
+                          当前群邀请
+                        </div>
+                        <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
+                          {currentGroupInviteHandoff.label}
+                        </div>
+                        <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                          {currentGroupInviteHandoff.description}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+                          <span>
+                            最近发送于{" "}
+                            {formatTimestamp(currentGroupInviteHandoff.sentAt)}
+                          </span>
+                          <span>
+                            已纳入手机接力固定入口
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                        {item.description}
-                      </div>
-                      <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
-                        最近发送于 {formatTimestamp(item.sentAt)}
+                      <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                        群邀请入口
                       </div>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2">
+
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <Button
-                        variant="secondary"
                         size="sm"
                         onClick={() =>
                           void handleCopyHandoff({
-                            description: item.description,
-                            label: item.label,
-                            path: item.path,
+                            description: currentGroupInviteHandoff.description,
+                            label: currentGroupInviteHandoff.label,
+                            path: currentGroupInviteHandoff.path,
                             setHistory: setHandoffHistory,
                             setNotice,
                           })
@@ -882,14 +895,65 @@ export function DesktopMobilePage() {
                         再发一次
                       </Button>
                       <Link
-                        to={item.path as never}
+                        to={currentGroupInviteHandoff.path as never}
                         className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
                       >
                         桌面打开
                       </Link>
                     </div>
                   </div>
-                ))
+
+                  {archivedGroupInviteHandoffs.length ? (
+                    <div className="space-y-3">
+                      <div className="text-xs font-medium text-[color:var(--text-muted)]">
+                        最近群邀请记录
+                      </div>
+                      {archivedGroupInviteHandoffs.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                              {item.label}
+                            </div>
+                            <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                              {item.description}
+                            </div>
+                            <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+                              最近发送于 {formatTimestamp(item.sentAt)}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() =>
+                                void handleCopyHandoff({
+                                  description: item.description,
+                                  label: item.label,
+                                  path: item.path,
+                                  setHistory: setHandoffHistory,
+                                  setNotice,
+                                })
+                              }
+                              className="rounded-full"
+                            >
+                              <Copy size={14} />
+                              再发一次
+                            </Button>
+                            <Link
+                              to={item.path as never}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            >
+                              桌面打开
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <EmptyState
                   title="还没有群聊邀请接力"
