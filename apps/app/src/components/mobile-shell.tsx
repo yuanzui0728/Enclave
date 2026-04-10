@@ -9,6 +9,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const tabs = [
@@ -57,6 +58,7 @@ export function MobileShell({ children }: PropsWithChildren) {
       >
         <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[40px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,253,248,0.92),rgba(255,250,240,0.90))] shadow-[var(--shadow-shell)] backdrop-blur-[22px]">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0))]" />
+          <MobileReminderToastHost />
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {children}
           </div>
