@@ -359,7 +359,7 @@ export function CharacterEditorPage() {
             />
             <div className="mt-4 space-y-3">
               <Toggle
-                label="启用 CoT"
+                label="启用链路推理"
                 checked={profile.reasoningConfig?.enableCoT ?? true}
                 onChange={(checked) =>
                   setDraft((current) => ({

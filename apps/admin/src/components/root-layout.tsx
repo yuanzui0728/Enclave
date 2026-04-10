@@ -45,7 +45,7 @@ export function RootLayout() {
                   type="password"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="输入 ADMIN_SECRET"
+                  placeholder="输入后台密钥"
                   className="rounded-lg border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-1.5 text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none focus:border-[color:var(--border-brand)]"
                   onKeyDown={(e) => e.key === "Enter" && saveSecret()}
                 />

@@ -86,7 +86,7 @@ export function useProviderSetup({
     const parsed = validateProviderConfig(providerDraft);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
-      setProviderValidationMessage(issue?.message ?? "Provider configuration is invalid.");
+      setProviderValidationMessage(issue?.message ?? "推理服务配置无效。");
       return null;
     }
 

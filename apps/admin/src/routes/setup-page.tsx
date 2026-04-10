@@ -4,6 +4,18 @@ import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
+function formatProviderMode(mode?: string | null) {
+  if (mode === "cloud") {
+    return "云端模式";
+  }
+
+  if (mode === "local-compatible") {
+    return "本地兼容";
+  }
+
+  return mode ?? "未知";
+}
+
 export function SetupPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
 
@@ -61,7 +73,7 @@ export function SetupPage() {
     <SetupScaffold
       badge="后台设置"
       title="为当前世界实例完成运维准备"
-      description="管理后台现在面向单用户世界实例。先确认远程 API 可达，再配置当前世界使用的推理服务。"
+      description="管理后台现在面向单用户世界实例。先确认远程接口可达，再配置当前世界使用的推理服务。"
       heroAside={<SetupStepList steps={setupSteps} />}
       left={
         <section className="space-y-4 rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
@@ -71,7 +83,7 @@ export function SetupPage() {
               value={systemStatusQuery.data?.coreApi.version ?? "离线"}
               detail={
                 systemStatusQuery.data?.coreApi.message ??
-                "管理后台连接的是远程世界实例，而不是本地托管 Core API。"
+                "管理后台连接的是远程世界实例，而不是本地托管核心接口。"
               }
               ok={coreApiReady}
             />
@@ -110,9 +122,9 @@ export function SetupPage() {
           <InlineNotice tone={coreApiReady ? "success" : "warning"}>
             {coreApiReady
               ? providerReady
-                ? "远程 API 和推理服务均已就绪。当前世界已经可以运行聊天、广场、朋友圈和调度流程。"
-                : "远程 API 已可访问，下一步请完成推理服务配置。"
-              : "管理后台暂时还未连接到远程世界 API。"}
+                ? "远程接口和推理服务均已就绪。当前世界已经可以运行聊天、广场、朋友圈和调度流程。"
+                : "远程接口已可访问，下一步请完成推理服务配置。"
+              : "管理后台暂时还未连接到远程世界接口。"}
           </InlineNotice>
         </section>
       }
@@ -120,7 +132,7 @@ export function SetupPage() {
         <ProviderSetupForm
           className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]"
           title="推理服务配置"
-          description="当世界主人没有配置个人 API Key 时，这里保存实例级推理服务配置供当前世界兜底使用。"
+          description="当世界主人没有配置个人 API 密钥时，这里保存实例级推理服务配置供当前世界兜底使用。"
           statusLabel={providerReady ? "已配置" : "待配置"}
           endpointLabel="接口地址"
           modeLabel="模式"
@@ -128,7 +140,7 @@ export function SetupPage() {
           apiKeyLabel="API 密钥"
           endpointPlaceholder="https://api.openai.com/v1"
           modelPlaceholder="gpt-4.1-mini"
-          apiKeyPlaceholder="输入实例级推理服务 API Key"
+          apiKeyPlaceholder="输入实例级推理服务 API 密钥"
           probeLabel="测试连接"
           saveLabel="保存配置"
           draft={providerSetup.providerDraft}
@@ -144,7 +156,7 @@ export function SetupPage() {
               : providerSetup.providerProbeMutation.data
                 ? providerSetup.providerProbeMutation.data.message
                 : providerSetup.providerSaveMutation.data
-                  ? `已保存推理服务 ${providerSetup.providerSaveMutation.data.model}（${providerSetup.providerSaveMutation.data.mode}）`
+                  ? `已保存推理服务 ${providerSetup.providerSaveMutation.data.model}（${formatProviderMode(providerSetup.providerSaveMutation.data.mode)}）`
                   : "这里保存的是当前世界的实例级推理服务配置。"
           }
           onSubmit={providerSetup.submitProviderSave}

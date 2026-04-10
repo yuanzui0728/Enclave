@@ -62,14 +62,14 @@ export function DesktopRuntimeGuard() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(6,9,16,0.96),rgba(9,12,20,0.98))] px-6">
       <div className="w-full max-w-xl rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
         <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">桌面启动中</div>
-        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">本地控制台正在等待 Core API</div>
+        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">本地控制台正在等待核心接口</div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)]">
           桌面壳正在检查本地 Rust 运行时是否可达。如果尚未就绪，壳层会先尝试自动拉起，再继续进入管理后台。
         </p>
 
         <div className="mt-5 grid gap-3">
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-            状态：{startMutation.isPending ? "正在启动 Core API..." : status?.message ?? "等待桌面状态..."}
+            状态：{startMutation.isPending ? "正在启动核心接口..." : status?.message ?? "等待桌面状态..."}
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             地址：{status?.baseUrl ?? runtimeContextQuery.data?.coreApiBaseUrl ?? "加载中"}

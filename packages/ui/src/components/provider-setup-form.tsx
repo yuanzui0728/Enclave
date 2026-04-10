@@ -77,7 +77,7 @@ export function ProviderSetupForm({
           </div>
         </div>
         <div
-          className={`rounded-full px-3 py-1 text-[11px] ${statusLabel === "configured" ? "bg-emerald-500/15 text-emerald-700" : "bg-amber-500/15 text-amber-700"}`}
+          className={`rounded-full px-3 py-1 text-[11px] ${statusLabel === "configured" || statusLabel === "已配置" ? "bg-emerald-500/15 text-emerald-700" : "bg-amber-500/15 text-amber-700"}`}
         >
           {statusLabel}
         </div>
@@ -115,8 +115,8 @@ export function ProviderSetupForm({
               disabled={disabled}
               className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none focus:border-[color:var(--border-brand)] focus:bg-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="local-compatible">local-compatible</option>
-              <option value="cloud">cloud</option>
+              <option value="local-compatible">本地兼容</option>
+              <option value="cloud">云端模式</option>
             </select>
           </label>
 

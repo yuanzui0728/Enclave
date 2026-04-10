@@ -208,12 +208,12 @@ export function DashboardPage() {
   const primaryActionHref = !desktopRuntimeReady || !providerConfigured ? "/setup" : "/evals";
   const primaryActionLabel = !desktopRuntimeReady || !providerConfigured ? "打开运行设置" : "前往评测验证";
   const nextActionMessage = !desktopRuntimeReady
-    ? "本地运行时尚未完全恢复。先进入设置页恢复 Core API、运行数据和推理服务。"
+    ? "本地运行时尚未完全恢复。先进入设置页恢复核心接口、运行数据和推理服务。"
     : !providerConfigured
-      ? "Core API 已在线，但推理服务还未配置。下一步应完成设置。"
+      ? "核心接口已在线，但推理服务还未配置。下一步应完成设置。"
       : systemHealthy
         ? "系统已进入可运维状态。建议下一步进入评测页验证当前生成链质量。"
-        : "Core API 仍未健康，优先排查设置页和运维操作区。";
+        : "核心接口仍未健康，优先排查设置页和运维操作区。";
 
   useEffect(() => {
     if (!successNotice) {
@@ -269,7 +269,7 @@ export function DashboardPage() {
           <MetricCard label="世界主人" value={String(adminStatsQuery.data.ownerCount)} meta={<StatusPill tone="healthy">单世界</StatusPill>} />
                 <MetricCard label="角色" value={String(adminStatsQuery.data.characterCount)} meta={<StatusPill tone="healthy">角色</StatusPill>} />
                 <MetricCard label="消息总数" value={String(adminStatsQuery.data.totalMessages)} meta={<StatusPill tone="healthy">消息</StatusPill>} />
-                <MetricCard label="AI 回复" value={String(adminStatsQuery.data.aiMessages)} meta={<StatusPill tone="healthy">AI</StatusPill>} />
+                <MetricCard label="智能回复" value={String(adminStatsQuery.data.aiMessages)} meta={<StatusPill tone="healthy">智能</StatusPill>} />
               </>
             )}
           </div>
@@ -277,8 +277,8 @@ export function DashboardPage() {
             <div className="mt-4 flex flex-wrap gap-4 text-xs text-[color:var(--text-muted)]">
               <span>版本 {adminSystemQuery.data.version}</span>
               <span>运行 {Math.floor(adminSystemQuery.data.uptimeSeconds / 3600)} 小时 {Math.floor((adminSystemQuery.data.uptimeSeconds % 3600) / 60)} 分钟</span>
-              <span>DB {(adminSystemQuery.data.dbSizeBytes / 1024 / 1024).toFixed(1)} MB</span>
-              <span>Node {adminSystemQuery.data.nodeVersion}</span>
+              <span>数据库 {(adminSystemQuery.data.dbSizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+              <span>运行时 {adminSystemQuery.data.nodeVersion}</span>
             </div>
           )}
         </section>
@@ -288,7 +288,7 @@ export function DashboardPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <MetricCard
             className="border-0 bg-transparent p-0"
-            label="核心 API"
+            label="核心接口"
             value={statusQuery.data?.coreApi.version ?? "离线"}
             meta={
               <StatusPill tone={systemHealthy ? "healthy" : "warning"}>
@@ -335,7 +335,7 @@ export function DashboardPage() {
             <>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <MetricCard
-                  label="受管 Core API"
+                  label="受管核心接口"
                   value={desktopStatusQuery.data?.baseUrl ?? "加载中"}
                   meta={
                     <StatusPill tone={desktopStatusQuery.data?.reachable ? "healthy" : "warning"}>
@@ -353,7 +353,7 @@ export function DashboardPage() {
 
               <InlineNotice className="mt-4" tone={desktopRuntimeReady ? "success" : "warning"}>
                 {desktopRuntimeReady
-                  ? "桌面运行时已就绪。恢复、provider 配置和手动管理入口已经统一收敛到 Setup 页面。"
+                  ? "桌面运行时已就绪。恢复、推理服务配置和手动管理入口已经统一收敛到设置页面。"
                   : desktopStatusQuery.data?.message ?? "桌面运行时尚未完成初始化，进入设置页可集中恢复。"}
               </InlineNotice>
 
@@ -387,7 +387,7 @@ export function DashboardPage() {
           <SectionHeading>系统概览</SectionHeading>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <MetricCard
-              label="核心 API"
+              label="核心接口"
               value={statusQuery.data?.coreApi.version ?? "离线"}
               meta={
                 <StatusPill tone={statusQuery.data?.coreApi.healthy ? "healthy" : "warning"}>
@@ -403,7 +403,7 @@ export function DashboardPage() {
             />
 
             <MetricCard
-              label="当前 AI 模型"
+              label="当前模型"
               value={aiModelQuery.data?.model ?? "待配置"}
               detail={
                 statusQuery.data?.inferenceGateway.activeProvider
@@ -427,7 +427,7 @@ export function DashboardPage() {
             <MetricCard
               label="行为日志"
               value={statusQuery.data?.worldSurface.behaviorLogsCount ?? 0}
-              detail="用于追踪 AI 生成的朋友圈、好友请求、广场互动和群聊回复"
+              detail="用于追踪智能生成的朋友圈、好友请求、广场互动和群聊回复"
             />
 
             <MetricCard
@@ -465,7 +465,7 @@ export function DashboardPage() {
 
           <div className="mt-6 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
             当前控制台已经与共享契约层对齐。已迁移的兼容面覆盖配置、角色、社交、聊天、朋友圈、广场和世界上下文。
-            调度器也已经接入实际 Rust 运行切片，运行时统计和手动触发都已纳入本页。叙事弧线与 AI 行为日志也已经同步纳入新运行时。
+            调度器也已经接入实际 Rust 运行切片，运行时统计和手动触发都已纳入本页。叙事弧线与智能行为日志也已经同步纳入新运行时。
           </div>
         </Card>
 
@@ -492,7 +492,7 @@ export function DashboardPage() {
                 message={
                   charactersQuery.error instanceof Error
                     ? charactersQuery.error.message
-                    : "新 Core API 进程启动后，角色增删改查兼容路由即可正常使用。"
+                    : "新核心接口进程启动后，角色增删改查兼容路由即可正常使用。"
                 }
               />
             )}
@@ -531,7 +531,7 @@ export function DashboardPage() {
                   message={
                     momentsQuery.error instanceof Error
                       ? momentsQuery.error.message
-                      : "新 Core API 进程启动后，朋友圈兼容路由即可正常使用。"
+                      : "新核心接口进程启动后，朋友圈兼容路由即可正常使用。"
                   }
                 />
               )}
@@ -569,7 +569,7 @@ export function DashboardPage() {
                   message={
                     feedQuery.error instanceof Error
                       ? feedQuery.error.message
-                      : "新 Core API 进程启动后，广场兼容路由即可正常使用。"
+                      : "新核心接口进程启动后，广场兼容路由即可正常使用。"
                   }
                 />
               )}
@@ -785,7 +785,7 @@ export function DashboardPage() {
                 value={previewMutation.data?.model ?? statusQuery.data?.inferenceGateway.activeProvider ?? "待执行"}
               />
               <MetricCard label="结束原因" value={previewMutation.data?.finishReason ?? "待执行"} />
-              <MetricCard label="Token 数" value={previewMutation.data?.usage?.totalTokens ?? 0} />
+              <MetricCard label="令牌数" value={previewMutation.data?.usage?.totalTokens ?? 0} />
             </div>
           </div>
         </Card>
