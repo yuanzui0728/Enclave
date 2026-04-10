@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { sendGroupMessage } from "@yinjie/contracts";
 import { DesktopMiniProgramsWorkspace } from "../features/desktop/mini-programs/desktop-mini-programs-workspace";
 import {
   featuredMiniProgramIds,
@@ -15,6 +17,7 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
@@ -53,9 +56,21 @@ function resolveMiniProgramLaunchContextFromLocation() {
   };
 }
 
+function buildGroupRelaySummaryMessage(sourceGroupName: string) {
+  return [
+    `[群接龙] ${sourceGroupName}`,
+    "1. 已从桌面端群聊打开群接龙工作台。",
+    "2. 当前正在整理接龙名单和未确认成员。",
+    "3. 请按顺序继续接龙，或直接在群里补充结果。",
+  ].join("\n");
+}
+
 export function MiniProgramsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const {
     activeMiniProgramId,
     completedTaskIdsByMiniProgramId,
@@ -80,6 +95,9 @@ export function MiniProgramsPage() {
   );
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
+  const relaySummaryMessage = launchContext
+    ? buildGroupRelaySummaryMessage(launchContext.sourceGroupName)
+    : "";
 
   const visibleMiniPrograms = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -210,6 +228,50 @@ export function MiniProgramsPage() {
     void navigate({ to: "/tabs/discover" });
   }
 
+  const sendRelaySummaryMutation = useMutation({
+    mutationFn: async () => {
+      if (!launchContext) {
+        return null;
+      }
+
+      return sendGroupMessage(
+        launchContext.sourceGroupId,
+        {
+          text: relaySummaryMessage,
+        },
+        baseUrl,
+      );
+    },
+    onSuccess: async () => {
+      if (!launchContext) {
+        return;
+      }
+
+      if (
+        !(completedTaskIdsByMiniProgramId["group-relay"] ?? []).includes(
+          "publish-result",
+        )
+      ) {
+        toggleTaskCompletion("group-relay", "publish-result");
+      }
+
+      setNoticeTone("success");
+      setSuccessNotice(`群接龙结果已回填到“${launchContext.sourceGroupName}”。`);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-messages", baseUrl, launchContext.sourceGroupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+    },
+    onError: () => {
+      setNoticeTone("info");
+      setSuccessNotice("群接龙结果回填失败，请稍后重试。");
+    },
+  });
+
   if (isDesktopLayout) {
     return (
       <DesktopMiniProgramsWorkspace
@@ -234,6 +296,15 @@ export function MiniProgramsPage() {
         onToggleMiniProgramTask={handleToggleMiniProgramTask}
         onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
         launchContext={launchContext}
+        relaySummaryMessage={relaySummaryMessage}
+        relaySummaryPending={sendRelaySummaryMutation.isPending}
+        onSendRelaySummaryToGroup={
+          launchContext
+            ? () => {
+                void sendRelaySummaryMutation.mutateAsync();
+              }
+            : undefined
+        }
         onReturnToGroup={
           launchContext
             ? () => {

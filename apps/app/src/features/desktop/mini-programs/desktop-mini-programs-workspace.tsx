@@ -42,7 +42,10 @@ type DesktopMiniProgramsWorkspaceProps = {
     sourceGroupId: string;
     sourceGroupName: string;
   } | null;
+  relaySummaryMessage?: string;
+  relaySummaryPending?: boolean;
   onReturnToGroup?: () => void;
+  onSendRelaySummaryToGroup?: () => void;
 };
 
 export function DesktopMiniProgramsWorkspace({
@@ -67,7 +70,10 @@ export function DesktopMiniProgramsWorkspace({
   onToggleMiniProgramTask,
   onTogglePinnedMiniProgram,
   launchContext = null,
+  relaySummaryMessage = "",
+  relaySummaryPending = false,
   onReturnToGroup,
+  onSendRelaySummaryToGroup,
 }: DesktopMiniProgramsWorkspaceProps) {
   const selectedMiniProgram =
     getMiniProgramEntry(selectedMiniProgramId) ??
@@ -402,6 +408,46 @@ export function DesktopMiniProgramsWorkspace({
                 onToggleTask={onToggleMiniProgramTask}
                 onTogglePinned={onTogglePinnedMiniProgram}
               />
+
+              {launchContext && panelMiniProgram.id === "group-relay" ? (
+                <section className="rounded-[30px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,0.94))] p-5 shadow-[var(--shadow-soft)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        回填到原群聊
+                      </div>
+                      <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                        把当前接龙进度同步回“{launchContext.sourceGroupName}”，减少群成员反复追问。
+                      </div>
+                    </div>
+                    <div className="rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[#b45309]">
+                      群接龙闭环
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-white/88 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                      发送预览
+                    </div>
+                    <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-7 text-[color:var(--text-secondary)]">
+                      {relaySummaryMessage}
+                    </pre>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <Button
+                      variant="primary"
+                      onClick={onSendRelaySummaryToGroup}
+                      disabled={relaySummaryPending || !onSendRelaySummaryToGroup}
+                    >
+                      {relaySummaryPending ? "回填中..." : "一键回填到群聊"}
+                    </Button>
+                    <div className="text-xs leading-6 text-[color:var(--text-muted)]">
+                      先用固定文案把工作台状态发回群聊，后续再补真实接龙结果卡片。
+                    </div>
+                  </div>
+                </section>
+              ) : null}
 
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
