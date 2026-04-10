@@ -119,6 +119,9 @@ export function parseDirectCallInviteMessage(text: string) {
   const sourceLabel = parseCallInviteSource(
     lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
   );
+  const source = parseCallInviteSourceValue(
+    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
+  );
   const summaryOffset =
     3 +
     Number(Boolean(timestampLabel)) +
@@ -131,6 +134,7 @@ export function parseDirectCallInviteMessage(text: string) {
     connectionStatus: parseDirectCallStatus(lines[2]),
     timestampLabel,
     durationLabel,
+    source,
     sourceLabel,
     summaryLines: lines.slice(summaryOffset),
   } satisfies {
@@ -139,6 +143,7 @@ export function parseDirectCallInviteMessage(text: string) {
     connectionStatus: DirectCallInviteStatus | null;
     timestampLabel: string | null;
     durationLabel: string | null;
+    source: DirectCallInviteSource | null;
     sourceLabel: string | null;
     summaryLines: string[];
   };
@@ -159,6 +164,7 @@ export function parseGroupCallInviteMessage(text: string) {
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
   const sourceLabel = parseCallInviteSource(lines[timestampLabel ? 4 : 3]);
+  const source = parseCallInviteSourceValue(lines[timestampLabel ? 4 : 3]);
   const snapshotLabel = parseGroupCallSnapshotLabel(
     lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(sourceLabel))],
   );
@@ -172,6 +178,7 @@ export function parseGroupCallInviteMessage(text: string) {
     groupName: lines[1] || "当前群聊",
     status: parseGroupCallStatus(lines[2]),
     timestampLabel,
+    source,
     sourceLabel,
     snapshotLabel,
     activeCount: parseGroupCallMetric(
@@ -185,6 +192,7 @@ export function parseGroupCallInviteMessage(text: string) {
     groupName: string;
     status: GroupCallInviteStatus;
     timestampLabel: string | null;
+    source: GroupCallInviteSource | null;
     sourceLabel: string | null;
     snapshotLabel: string | null;
     activeCount: { current: number; total: number } | null;
@@ -282,6 +290,21 @@ function parseCallInviteSource(line: string | undefined) {
 
   if (line.startsWith("发起设备 ")) {
     return line.replace(/^发起设备\s+/, "").trim() || null;
+  }
+
+  return null;
+}
+
+function parseCallInviteSourceValue(
+  line: string | undefined,
+): CallInviteSource | null {
+  const sourceLabel = parseCallInviteSource(line);
+  if (sourceLabel === "桌面端") {
+    return "desktop";
+  }
+
+  if (sourceLabel === "手机端") {
+    return "mobile";
   }
 
   return null;
