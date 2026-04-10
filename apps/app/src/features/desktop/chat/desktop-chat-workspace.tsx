@@ -1184,7 +1184,7 @@ function DesktopReminderCard({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-[16px] border px-3 py-2.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "flex items-center gap-2.5 rounded-[14px] border px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "border-[#07c160]/30 bg-white shadow-[0_8px_18px_rgba(7,193,96,0.08)]"
           : "border-white/70 bg-white/88 hover:bg-white",
@@ -1193,7 +1193,7 @@ function DesktopReminderCard({
       <button
         type="button"
         onClick={() => onOpen(entry)}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-2.5 text-left leading-tight"
       >
         {entry.threadType === "group" ? (
           <GroupAvatarChip
@@ -1206,27 +1206,27 @@ function DesktopReminderCard({
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <span
               className={cn(
-                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                 getChatReminderStatus(entry) === "notified"
                   ? "bg-[#fff7e6] text-[#d48806]"
                   : entry.isDue
                     ? "bg-[#fff1f0] text-[#d74b45]"
                     : "bg-[#eaf8ef] text-[#07c160]",
-              )}
-            >
+                )}
+              >
               {getChatReminderStatusLabel(entry)}
             </span>
-            <span className="min-w-0 truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+            <span className="min-w-0 truncate text-[12px] font-medium text-[color:var(--text-primary)]">
               {entry.title}
             </span>
           </div>
-          <div className="mt-1 truncate text-[12px] text-[color:var(--text-secondary)]">
+          <div className="mt-0.5 truncate text-[11px] leading-[1.35] text-[color:var(--text-secondary)]">
             {entry.previewText}
           </div>
-          <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+          <div className="mt-0.5 text-[10px] text-[color:var(--text-dim)]">
             {formatReminderListTimestamp(
               entry.remindAt,
               entry.isDue,
@@ -1240,7 +1240,7 @@ function DesktopReminderCard({
         type="button"
         onClick={() => onDismiss(entry)}
         className={cn(
-          "shrink-0 rounded-full px-3 py-1.5 text-[11px] transition-colors",
+          "shrink-0 self-center rounded-full px-2.5 py-1 text-[10px] leading-none transition-colors",
           getChatReminderActionTone(entry) === "warning"
             ? "border border-[#f1d5a6] bg-[#fff8ec] text-[#b76a08] hover:bg-[#fff1dc]"
             : "border border-transparent bg-[#f3f6f4] text-[#5f6b63] hover:bg-[#e9eeeb]",

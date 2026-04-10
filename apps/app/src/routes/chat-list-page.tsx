@@ -697,7 +697,7 @@ function MobileChatListPage() {
                             <div
                               key={entry.messageId}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-3",
+                                "flex items-center gap-2.5 px-4 py-2.5",
                                 index > 0
                                   ? "border-t border-[color:var(--border-faint)]"
                                   : "",
@@ -706,12 +706,12 @@ function MobileChatListPage() {
                               <button
                                 type="button"
                                 onClick={() => openReminder(entry)}
-                                className="min-w-0 flex-1 text-left"
+                                className="min-w-0 flex-1 text-left leading-tight"
                               >
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5">
                                   <span
                                     className={cn(
-                                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                      "rounded-full px-1.5 py-0.5 text-[10px] font-medium",
                                       getChatReminderStatus(entry) ===
                                         "notified"
                                         ? "bg-[#fff7e6] text-[#d48806]"
@@ -722,14 +722,14 @@ function MobileChatListPage() {
                                   >
                                     {getChatReminderStatusLabel(entry)}
                                   </span>
-                                  <span className="min-w-0 truncate text-[14px] font-medium text-[#111827]">
+                                  <span className="min-w-0 truncate text-[13px] font-medium text-[#111827]">
                                     {entry.title}
                                   </span>
                                 </div>
-                                <div className="mt-1 truncate text-[13px] text-[#5f6368]">
+                                <div className="mt-0.5 truncate text-[12px] leading-[1.35] text-[#5f6368]">
                                   {entry.previewText}
                                 </div>
-                                <div className="mt-1 text-[12px] text-[#8c8c8c]">
+                                <div className="mt-0.5 text-[11px] text-[#8c8c8c]">
                                   {formatReminderListTimestamp(
                                     entry.remindAt,
                                     entry.isDue,
@@ -743,7 +743,7 @@ function MobileChatListPage() {
                                   void completeReminder(entry);
                                 }}
                                 className={cn(
-                                  "shrink-0 rounded-full px-3 py-1.5 text-[12px] transition-colors",
+                                  "shrink-0 self-center rounded-full px-2.5 py-1 text-[11px] leading-none transition-colors",
                                   getChatReminderActionTone(entry) === "warning"
                                     ? "border border-[#f1d5a6] bg-[#fff8ec] text-[#b76a08] hover:bg-[#fff1dc]"
                                     : "border border-transparent bg-[#f3f6f4] text-[#5f6b63] hover:bg-[#e9eeeb]",
