@@ -3576,13 +3576,7 @@ function GroupCallInviteMessage({
   );
 }
 
-function CallInviteMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function CallInviteMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[14px] bg-white/72 px-3 py-2">
       <div className="text-[10px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
@@ -3632,6 +3626,14 @@ function DirectCallInviteMessage({
       </div>
 
       <div className="mt-3 space-y-2">
+        {invite.connectionStatus ? (
+          <CallInviteMetric
+            label="当前状态"
+            value={
+              invite.connectionStatus === "connected" ? "已接通" : "等待接听"
+            }
+          />
+        ) : null}
         {invite.summaryLines.map((line) => (
           <div
             key={line}

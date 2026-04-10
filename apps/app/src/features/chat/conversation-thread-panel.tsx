@@ -149,8 +149,12 @@ export function ConversationThreadPanel({
       }
     : null;
   const sendCallInviteMutation = useMutation({
-    mutationFn: (kind: DesktopChatCallKind) =>
-      sendTextMessage(buildDirectCallInviteMessage(kind, conversationTitle)),
+    mutationFn: (input: { kind: DesktopChatCallKind; remoteJoined: boolean }) =>
+      sendTextMessage(
+        buildDirectCallInviteMessage(input.kind, conversationTitle, {
+          remoteJoined: input.remoteJoined,
+        }),
+      ),
     onSuccess: async () => {
       scrollToBottom("smooth");
     },
@@ -443,8 +447,11 @@ export function ConversationThreadPanel({
                   }),
                 });
               }}
-              onSendInviteNotice={() => {
-                void sendCallInviteMutation.mutateAsync(desktopCallPanelKind);
+              onSendInviteNotice={(status) => {
+                void sendCallInviteMutation.mutateAsync({
+                  kind: desktopCallPanelKind,
+                  remoteJoined: status.remoteJoined,
+                });
               }}
             />
           </div>
