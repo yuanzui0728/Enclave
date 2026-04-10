@@ -148,9 +148,34 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             </div>
             <InlineNotice tone="info">
               {account.accountType === "service"
-                ? "当前阶段先补齐阅读链路，服务消息线程将在下一阶段接入。"
-                : "关注后，后续推送会汇总到订阅号消息聚合流。"}
+                ? account.isFollowing
+                  ? "已关注后，这个服务号会作为独立消息项出现在消息列表。"
+                  : "关注后，这个服务号会作为独立消息项出现在消息列表。"
+                : account.isFollowing
+                  ? "已关注后，后续推送会汇总到订阅号消息聚合流。"
+                  : "关注后，后续推送会汇总到订阅号消息聚合流。"}
             </InlineNotice>
+            {account.isFollowing ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  if (account.accountType === "service") {
+                    void navigate({
+                      to: "/official-accounts/service/$accountId",
+                      params: { accountId: account.id },
+                    });
+                    return;
+                  }
+
+                  void navigate({ to: "/chat/subscription-inbox" });
+                }}
+              >
+                {account.accountType === "service"
+                  ? "打开服务消息"
+                  : "打开订阅号消息"}
+              </Button>
+            ) : null}
           </AppSection>
 
           <AppSection className="space-y-4">

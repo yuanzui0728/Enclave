@@ -53,7 +53,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "消息",
     shortLabel: "消息",
     to: "/tabs/chat",
-    matches: ["/tabs/chat", "/chat/", "/notes"],
+    matches: ["/tabs/chat", "/chat/", "/official-accounts/service/", "/notes"],
   },
   {
     kind: "route",

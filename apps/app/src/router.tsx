@@ -103,6 +103,11 @@ const OfficialAccountArticlePage = lazy(async () => {
   return { default: mod.OfficialAccountArticlePage };
 });
 
+const OfficialAccountServicePage = lazy(async () => {
+  const mod = await import("./routes/official-account-service-page");
+  return { default: mod.OfficialAccountServicePage };
+});
+
 const SubscriptionInboxPage = lazy(async () => {
   const mod = await import("./routes/subscription-inbox-page");
   return { default: mod.SubscriptionInboxPage };
@@ -406,6 +411,13 @@ const officialAccountArticleRoute = createRoute({
   component: OfficialAccountArticlePage,
 });
 
+const officialAccountServiceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/official-accounts/service/$accountId",
+  beforeLoad: requireWorldReady,
+  component: OfficialAccountServicePage,
+});
+
 const groupChatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/group/$groupId",
@@ -565,6 +577,7 @@ const routeTree = rootRoute.addChildren([
   officialAccountsRoute,
   officialAccountDetailRoute,
   officialAccountArticleRoute,
+  officialAccountServiceRoute,
   groupChatRoute,
   groupChatDetailsRoute,
   groupMessageSearchRoute,

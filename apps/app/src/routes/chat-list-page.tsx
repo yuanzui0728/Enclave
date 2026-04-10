@@ -24,6 +24,7 @@ import {
 
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
@@ -100,6 +101,8 @@ function MobileChatListPage() {
     [conversationsQuery.data],
   );
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
+  const serviceConversations =
+    messageEntriesQuery.data?.serviceConversations ?? [];
   const normalizedSearchText = searchText.trim().toLowerCase();
   const filteredConversations = useMemo(() => {
     if (!normalizedSearchText) {
@@ -132,9 +135,27 @@ function MobileChatListPage() {
         .includes(normalizedSearchText)
     );
   }, [normalizedSearchText, subscriptionInboxSummary]);
+  const filteredServiceConversations = useMemo(() => {
+    if (!normalizedSearchText) {
+      return serviceConversations;
+    }
+
+    return serviceConversations.filter((conversation) => {
+      return (
+        conversation.account.name
+          .toLowerCase()
+          .includes(normalizedSearchText) ||
+        (conversation.preview ?? "")
+          .toLowerCase()
+          .includes(normalizedSearchText)
+      );
+    });
+  }, [normalizedSearchText, serviceConversations]);
 
   const hasConversations =
-    filteredConversations.length > 0 || showSubscriptionInboxItem;
+    filteredConversations.length > 0 ||
+    filteredServiceConversations.length > 0 ||
+    showSubscriptionInboxItem;
   const hasSearchResult = normalizedSearchText.length > 0;
 
   function handleUnavailableAction(message: string) {
@@ -271,13 +292,28 @@ function MobileChatListPage() {
                 />
               ) : null}
 
+              {filteredServiceConversations.map((conversation) => (
+                <OfficialServiceConversationCard
+                  key={conversation.accountId}
+                  conversation={conversation}
+                  onClick={() => {
+                    void navigate({
+                      to: "/official-accounts/service/$accountId",
+                      params: { accountId: conversation.accountId },
+                    });
+                  }}
+                />
+              ))}
+
               {filteredConversations.map((conversation, index) => (
                 <ConversationListItemLink
                   key={conversation.id}
                   conversation={conversation}
                   className={cn(
                     "block transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,138,61,0.05)]",
-                    index > 0 || showSubscriptionInboxItem
+                    index > 0 ||
+                      showSubscriptionInboxItem ||
+                      filteredServiceConversations.length > 0
                       ? "border-t border-[color:var(--border-faint)]"
                       : undefined,
                   )}
