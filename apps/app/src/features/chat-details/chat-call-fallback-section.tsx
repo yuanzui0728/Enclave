@@ -1,0 +1,81 @@
+import { ChatCallFallbackNotice } from "../chat/chat-call-fallback-notice";
+import { ChatDetailsSection } from "./chat-details-section";
+import { ChatSettingRow } from "./chat-setting-row";
+
+type ChatCallFallbackKind = "voice" | "video";
+
+type ChatCallFallbackSectionProps = {
+  activeKind: ChatCallFallbackKind | null;
+  onSelectKind: (kind: ChatCallFallbackKind) => void;
+  onDismiss: () => void;
+  onPrimaryAction: (kind: ChatCallFallbackKind) => void;
+  disabled?: boolean;
+  scope?: "direct" | "group";
+  variant?: "default" | "wechat";
+};
+
+export function ChatCallFallbackSection({
+  activeKind,
+  onSelectKind,
+  onDismiss,
+  onPrimaryAction,
+  disabled = false,
+  scope = "direct",
+  variant = "default",
+}: ChatCallFallbackSectionProps) {
+  const isGroup = scope === "group";
+
+  return (
+    <>
+      <ChatDetailsSection title="实时通话" variant={variant}>
+        <div className="divide-y divide-black/5">
+          <ChatSettingRow
+            label="语音通话"
+            value="暂未开放"
+            disabled={disabled}
+            variant={variant}
+            onClick={() => onSelectKind("voice")}
+          />
+          <ChatSettingRow
+            label="视频通话"
+            value="暂未开放"
+            disabled={disabled}
+            variant={variant}
+            onClick={() => onSelectKind("video")}
+          />
+        </div>
+      </ChatDetailsSection>
+
+      {activeKind ? (
+        <div className="px-3">
+          <ChatCallFallbackNotice
+            kind={activeKind}
+            scope={scope}
+            description={
+              isGroup
+                ? activeKind === "voice"
+                  ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
+                  : "先回到群聊继续，当前可以改用拍摄、图片或语音消息把内容发到群里。"
+                : activeKind === "voice"
+                  ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
+                  : "先回到聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
+            }
+            primaryLabel={
+              isGroup
+                ? activeKind === "voice"
+                  ? "返回群聊发语音"
+                  : "返回群聊发消息"
+                : activeKind === "voice"
+                  ? "返回聊天发语音"
+                  : "返回聊天发消息"
+            }
+            secondaryLabel="知道了"
+            onPrimaryAction={() => onPrimaryAction(activeKind)}
+            onSecondaryAction={onDismiss}
+            primaryVariant="primary"
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}

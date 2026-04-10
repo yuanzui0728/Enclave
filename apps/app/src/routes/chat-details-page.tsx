@@ -18,7 +18,6 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
 import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
@@ -26,6 +25,7 @@ import {
   formatConversationStrongReminderRemaining,
   isConversationStrongReminderActive,
 } from "../features/chat/conversation-strong-reminder";
+import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
@@ -405,61 +405,27 @@ export function ChatDetailsPage() {
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="实时通话">
-            <div className="divide-y divide-black/5">
-              <ChatSettingRow
-                label="语音通话"
-                value="暂未开放"
-                disabled={!targetCharacterId}
-                onClick={() => {
-                  setNotice(null);
-                  setPendingCallFallback("voice");
-                }}
-              />
-              <ChatSettingRow
-                label="视频通话"
-                value="暂未开放"
-                disabled={!targetCharacterId}
-                onClick={() => {
-                  setNotice(null);
-                  setPendingCallFallback("video");
-                }}
-              />
-            </div>
-          </ChatDetailsSection>
-
-          {pendingCallFallback ? (
-            <div className="px-3">
-              <ChatCallFallbackNotice
-                kind={pendingCallFallback}
-                description={
-                  pendingCallFallback === "voice"
-                    ? "先回到聊天页继续，用按住说话发送语音消息会更接近当前可用的体验。"
-                    : "先回到聊天页继续，当前可以改用图片、语音消息或文字把内容发过去。"
-                }
-                primaryLabel={
-                  pendingCallFallback === "voice"
-                    ? "返回聊天发语音"
-                    : "返回聊天发消息"
-                }
-                secondaryLabel="知道了"
-                onPrimaryAction={() => {
-                  void navigate({
-                    to: "/chat/$conversationId",
-                    params: { conversationId },
-                    search:
-                      pendingCallFallback === "voice"
-                        ? buildChatComposeShortcutSearch({
-                            action: "voice-message",
-                          })
-                        : undefined,
-                  });
-                }}
-                onSecondaryAction={() => setPendingCallFallback(null)}
-                primaryVariant="primary"
-              />
-            </div>
-          ) : null}
+          <ChatCallFallbackSection
+            activeKind={pendingCallFallback}
+            disabled={!targetCharacterId}
+            onSelectKind={(kind) => {
+              setNotice(null);
+              setPendingCallFallback(kind);
+            }}
+            onDismiss={() => setPendingCallFallback(null)}
+            onPrimaryAction={(kind) => {
+              void navigate({
+                to: "/chat/$conversationId",
+                params: { conversationId },
+                search:
+                  kind === "voice"
+                    ? buildChatComposeShortcutSearch({
+                        action: "voice-message",
+                      })
+                    : undefined,
+              });
+            }}
+          />
 
           <ChatDetailsSection title="聊天扩展">
             <div className="divide-y divide-black/5">

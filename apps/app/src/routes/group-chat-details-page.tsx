@@ -13,9 +13,9 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { ChatCallFallbackNotice } from "../features/chat/chat-call-fallback-notice";
 import { buildChatComposeShortcutSearch } from "../features/chat/chat-compose-shortcut-route";
 import { useDefaultChatBackground } from "../features/chat/backgrounds/use-conversation-background";
+import { ChatCallFallbackSection } from "../features/chat-details/chat-call-fallback-section";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
@@ -455,62 +455,28 @@ export function GroupChatDetailsPage() {
             </div>
           </ChatDetailsSection>
 
-          <ChatDetailsSection title="实时通话" variant="wechat">
-            <div className="divide-y divide-black/5">
-              <ChatSettingRow
-                label="语音通话"
-                value="暂未开放"
-                variant="wechat"
-                onClick={() => {
-                  setNotice(null);
-                  setPendingCallFallback("voice");
-                }}
-              />
-              <ChatSettingRow
-                label="视频通话"
-                value="暂未开放"
-                variant="wechat"
-                onClick={() => {
-                  setNotice(null);
-                  setPendingCallFallback("video");
-                }}
-              />
-            </div>
-          </ChatDetailsSection>
-
-          {pendingCallFallback ? (
-            <div className="px-3">
-              <ChatCallFallbackNotice
-                kind={pendingCallFallback}
-                scope="group"
-                description={
-                  pendingCallFallback === "voice"
-                    ? "先回到群聊继续，用语音消息同步大家的状态会更接近当前可用体验。"
-                    : "先回到群聊继续，当前可以改用拍摄、图片或语音消息把内容发到群里。"
-                }
-                primaryLabel={
-                  pendingCallFallback === "voice"
-                    ? "返回群聊发语音"
-                    : "返回群聊发消息"
-                }
-                secondaryLabel="知道了"
-                onPrimaryAction={() => {
-                  void navigate({
-                    to: "/group/$groupId",
-                    params: { groupId },
-                    search:
-                      pendingCallFallback === "voice"
-                        ? buildChatComposeShortcutSearch({
-                            action: "voice-message",
-                          })
-                        : undefined,
-                  });
-                }}
-                onSecondaryAction={() => setPendingCallFallback(null)}
-                primaryVariant="primary"
-              />
-            </div>
-          ) : null}
+          <ChatCallFallbackSection
+            activeKind={pendingCallFallback}
+            scope="group"
+            variant="wechat"
+            onSelectKind={(kind) => {
+              setNotice(null);
+              setPendingCallFallback(kind);
+            }}
+            onDismiss={() => setPendingCallFallback(null)}
+            onPrimaryAction={(kind) => {
+              void navigate({
+                to: "/group/$groupId",
+                params: { groupId },
+                search:
+                  kind === "voice"
+                    ? buildChatComposeShortcutSearch({
+                        action: "voice-message",
+                      })
+                    : undefined,
+              });
+            }}
+          />
 
           <ChatDetailsSection title="群内资料" variant="wechat">
             <div className="divide-y divide-black/5">
