@@ -17,6 +17,7 @@ import {
   formatTimestamp,
   parseTimestamp,
 } from "../../lib/format";
+import { isPersistedGroupConversation } from "../../lib/conversation-route";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
   emptySearchScopeCounts,
@@ -92,7 +93,7 @@ export function useSearchIndex(
       const settledResults = await Promise.allSettled(
         conversations.map(async (conversation) => {
           const messages =
-            conversation.type === "group"
+            isPersistedGroupConversation(conversation)
               ? await getGroupMessages(conversation.id, baseUrl)
               : await getConversationMessages(conversation.id, baseUrl);
 
@@ -142,7 +143,7 @@ export function useSearchIndex(
           .join(" ")
           .toLowerCase(),
         to:
-          conversation.type === "group"
+          isPersistedGroupConversation(conversation)
             ? `/group/${conversation.id}`
             : `/chat/${conversation.id}`,
         badge: conversation.type === "group" ? "群聊" : "会话",
@@ -183,7 +184,10 @@ export function useSearchIndex(
           .join(" ")
           .toLowerCase(),
         to:
-          message.conversationType === "group"
+          isPersistedGroupConversation({
+            id: message.conversationId,
+            type: message.conversationType,
+          })
             ? `/group/${message.conversationId}`
             : `/chat/${message.conversationId}`,
         hash: `chat-message-${message.messageId}`,

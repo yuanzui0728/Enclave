@@ -15,6 +15,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
   formatConversationTimestamp,
   formatMessageTimestamp,
@@ -76,7 +77,7 @@ export function DesktopChatHistoryPage() {
         return [];
       }
 
-      if (selectedConversation.type === "group") {
+      if (isPersistedGroupConversation(selectedConversation)) {
         return getGroupMessages(selectedConversation.id, baseUrl);
       }
 
@@ -87,7 +88,7 @@ export function DesktopChatHistoryPage() {
 
   const clearMutation = useMutation({
     mutationFn: async (conversation: ConversationListItem) => {
-      if (conversation.type === "group") {
+      if (isPersistedGroupConversation(conversation)) {
         return clearGroupMessages(conversation.id, baseUrl);
       }
 
