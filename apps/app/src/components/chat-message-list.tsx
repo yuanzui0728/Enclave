@@ -3771,6 +3771,9 @@ function DirectCallInviteMessage({
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
         ) : null}
+        {invite.durationLabel ? (
+          <CallInviteMetric label="最近一轮" value={invite.durationLabel} />
+        ) : null}
         {invite.summaryLines.map((line) => (
           <div
             key={line}

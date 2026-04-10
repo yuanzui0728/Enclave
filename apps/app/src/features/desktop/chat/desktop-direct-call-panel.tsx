@@ -18,6 +18,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, cn } from "@yinjie/ui";
+import type { VoiceCallTurnResult } from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { useVoiceCallSession } from "../../chat/use-voice-call-session";
 import type { DesktopChatCallKind } from "./desktop-chat-header-actions";
@@ -31,7 +32,7 @@ type DesktopDirectCallPanelProps = {
   conversationTitle: string;
   onClose: () => void;
   onPanelOpened?: () => Promise<void> | void;
-  onSessionConnected?: () => Promise<void> | void;
+  onSessionConnected?: (result: VoiceCallTurnResult) => Promise<void> | void;
   onEndCall?: () => Promise<void> | void;
 };
 
@@ -64,13 +65,13 @@ export function DesktopDirectCallPanel({
       runtimeConfig.appPlatform === "web" &&
       kind === "voice" &&
       Boolean(conversationId),
-    onTurnSuccess: async () => {
+    onTurnSuccess: async (result) => {
       if (sessionConnectedAnnounced || kind !== "voice") {
         return;
       }
 
       setSessionConnectedAnnounced(true);
-      await onSessionConnected?.();
+      await onSessionConnected?.(result);
     },
   });
   const speech = voiceCall.speech;

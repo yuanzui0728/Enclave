@@ -14,18 +14,26 @@ export function buildDirectCallInviteMessage(
   status:
     | DirectCallInviteStatus
     | {
+        status?: DirectCallInviteStatus;
         remoteJoined?: boolean;
         recordedAt?: string;
+        durationMs?: number;
       } = "waiting",
 ) {
   const normalizedStatus: DirectCallInviteStatus =
     typeof status === "string"
       ? status
+      : status.status
+        ? status.status
       : status.remoteJoined
         ? "connected"
         : "waiting";
   const recordedAt =
     typeof status === "string" ? new Date().toISOString() : status.recordedAt;
+  const durationLabel =
+    typeof status === "string"
+      ? null
+      : formatCallInviteDuration(status.durationMs ?? null);
   const statusLabel =
     normalizedStatus === "ended"
       ? "已结束"
@@ -38,6 +46,7 @@ export function buildDirectCallInviteMessage(
     conversationTitle.trim() || "当前聊天",
     `当前状态 ${statusLabel}`,
     `${normalizedStatus === "ended" ? "结束于" : "发起于"} ${recordedAt ?? new Date().toISOString()}`,
+    durationLabel ? `最近一轮 ${durationLabel}` : null,
     normalizedStatus === "ended"
       ? "本轮单聊通话已在桌面端结束，可继续在聊天里跟进。"
       : "已从桌面端打开单聊通话工作台，可直接查看当前通话状态。",
@@ -99,18 +108,22 @@ export function parseDirectCallInviteMessage(text: string) {
   }
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
+  const durationLabel = parseCallInviteDuration(lines[timestampLabel ? 4 : 3]);
+  const summaryOffset = 3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel));
 
   return {
     kind: header === DIRECT_VOICE_CALL_PREFIX ? "voice" : "video",
     title: lines[1] || "当前聊天",
     connectionStatus: parseDirectCallStatus(lines[2]),
     timestampLabel,
-    summaryLines: lines.slice(timestampLabel ? 4 : 3),
+    durationLabel,
+    summaryLines: lines.slice(summaryOffset),
   } satisfies {
     kind: DesktopChatCallKind;
     title: string;
     connectionStatus: DirectCallInviteStatus | null;
     timestampLabel: string | null;
+    durationLabel: string | null;
     summaryLines: string[];
   };
 }
@@ -213,6 +226,37 @@ function parseCallInviteTimestamp(line: string | undefined) {
   }
 
   return null;
+}
+
+function parseCallInviteDuration(line: string | undefined) {
+  if (!line) {
+    return null;
+  }
+
+  if (line.startsWith("最近一轮 ")) {
+    return line.replace(/^最近一轮\s+/, "").trim() || null;
+  }
+
+  return null;
+}
+
+function formatCallInviteDuration(durationMs: number | null) {
+  if (durationMs === null || Number.isNaN(durationMs)) {
+    return null;
+  }
+
+  const totalSeconds = Math.max(Math.round(durationMs / 1000), 0);
+  if (totalSeconds < 60) {
+    return `${totalSeconds} 秒`;
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (!seconds) {
+    return `${minutes} 分钟`;
+  }
+
+  return `${minutes} 分 ${seconds} 秒`;
 }
 
 function parseGroupCallWaitingMetric(line: string | undefined) {

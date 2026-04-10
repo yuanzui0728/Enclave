@@ -407,12 +407,15 @@ export function ConversationThreadPanel({
                 );
                 scrollToBottom("smooth");
               }}
-              onSessionConnected={async () => {
+              onSessionConnected={async (result) => {
                 await sendTextMessage(
                   buildDirectCallInviteMessage(
                     desktopCallPanelKind,
                     conversationTitle,
-                    "connected",
+                    {
+                      status: "connected",
+                      durationMs: result.totalDurationMs,
+                    },
                   ),
                 );
                 scrollToBottom("smooth");
