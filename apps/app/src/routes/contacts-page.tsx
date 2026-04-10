@@ -676,6 +676,9 @@ export function ContactsPage() {
       onClick: handleOpenWorldCharacters,
     },
   ];
+  const mobileShortcutItems = shortcutItems.filter(
+    (item) => item.key !== "starred-friends",
+  );
 
   if (isDesktopLayout) {
     return (
@@ -1067,7 +1070,7 @@ export function ContactsPage() {
           ) : null}
 
           <ContactShortcutList
-            items={shortcutItems}
+            items={mobileShortcutItems}
             className="mt-2 border-x-0 shadow-none"
           />
 
