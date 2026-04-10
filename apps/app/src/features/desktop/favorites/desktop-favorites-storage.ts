@@ -3,7 +3,8 @@ export type DesktopFavoriteCategory =
   | "contacts"
   | "officialAccounts"
   | "moments"
-  | "feed";
+  | "feed"
+  | "channels";
 
 export type DesktopFavoriteRecord = {
   id: string;
