@@ -179,3 +179,55 @@ export function AdminEmptyState({
     </div>
   );
 }
+
+export function AdminActionGroup({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]",
+        className,
+      )}
+    >
+      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
+      {description ? (
+        <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+      ) : null}
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}
+
+export function AdminDangerZone({
+  title = "谨慎操作",
+  description,
+  children,
+  className,
+}: {
+  title?: string;
+  description: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[20px] border border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))] p-4 shadow-[var(--shadow-soft)]",
+        className,
+      )}
+    >
+      <div className="text-xs uppercase tracking-[0.18em] text-amber-700">{title}</div>
+      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+}

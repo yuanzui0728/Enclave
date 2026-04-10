@@ -884,13 +884,13 @@ export function GroupQrPage() {
                       {pendingReturnOverview.coolingDownCount}
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                      刚补发过，建议先等一轮回流
+                      刚补发过，先等一轮回流
                     </div>
                   </div>
                 </div>
                 <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-4 py-3">
                   <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                    建议处理顺序
+                    处理顺序
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     {topPendingReturnConversation ? (
@@ -911,14 +911,14 @@ export function GroupQrPage() {
                   </div>
                   <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
                     {topPendingReturnConversation
-                      ? `先处理主推荐${
-                          fallbackPendingReturnConversation ? "，若不走第一条就切到备选" : ""
+                      ? `先走主推荐${
+                          fallbackPendingReturnConversation ? "，不走第一条就切备选" : ""
                         }${
                           deferredPendingReturnConversation
-                            ? "，冷却中的目标等恢复后再补。"
+                            ? "，冷却目标等恢复后再补。"
                             : "。"
                         }`
-                      : "当前没有可执行的补发顺序。"}
+                      : "当前没有可执行顺序。"}
                   </div>
                 </div>
                 {pendingReturnExpectedOutcome ? (
@@ -990,7 +990,7 @@ export function GroupQrPage() {
                           </>
                         ) : (
                           <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
-                            当前没有可对比的次优先备选。
+                            当前没有次优先备选。
                           </div>
                         )}
                       </div>
@@ -1718,13 +1718,13 @@ function resolvePendingReturnRecommendationSummary(
 
   if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
     return isGroupConversation
-      ? "群聊还活跃，适合继续扩散。"
-      : "单聊还活跃，适合趁热补发。";
+      ? "群聊还活跃，可以继续扩散。"
+      : "单聊还活跃，可以趁热补发。";
   }
 
   return isGroupConversation
-    ? "群聊触达更广，可作扩散位。"
-    : "这条更适合定向补发。";
+    ? "群聊触达更广，可以放扩散位。"
+    : "这条更适合做定向补发。";
 }
 
 function resolvePendingReturnFallbackReason(
@@ -1801,7 +1801,7 @@ function resolvePendingReturnOutcomeConclusion(
     | null,
 ) {
   if (!pendingReturnExpectedOutcome) {
-    return "当前没有可预测的处理结果。";
+    return "当前没有可预测结果。";
   }
 
   if (!topPendingReturnConversation) {
@@ -1809,7 +1809,7 @@ function resolvePendingReturnOutcomeConclusion(
   }
 
   if (!fallbackPendingReturnConversation || !fallbackPendingReturnExpectedOutcome) {
-    return `先处理 ${topPendingReturnConversation.conversation.title} 就是当前最顺的路径。`;
+    return `先处理 ${topPendingReturnConversation.conversation.title} 就行。`;
   }
 
   if (
@@ -1817,10 +1817,10 @@ function resolvePendingReturnOutcomeConclusion(
       fallbackPendingReturnConversation.target.deliveredAt,
     )
   ) {
-    return `主推荐更顺，因为备选 ${fallbackPendingReturnConversation.conversation.title} 还在冷却里，先动它不会立刻改善这一轮结构。`;
+    return `先走主推荐更合适，${fallbackPendingReturnConversation.conversation.title} 还在冷却里。`;
   }
 
-  return `主推荐更顺，因为先处理 ${topPendingReturnConversation.conversation.title} 后，前排阻塞会先被拿掉；如果改做 ${fallbackPendingReturnConversation.conversation.title}，主推荐仍会继续留在最前面等待处理。`;
+  return `先走主推荐更合适，先补 ${topPendingReturnConversation.conversation.title} 会先拿掉前排阻塞。`;
 }
 
 function resolvePendingReturnActionHint(
@@ -1996,7 +1996,7 @@ function resolveConversationActionDescription(
 
   if (!deliveredTarget) {
     if (context === "来源会话") {
-      return "这条就是刚刚回流过来的来源会话，适合优先接着补发。";
+      return "这条就是刚回流的来源会话，可以直接接着补。";
     }
 
     return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 还没发过这一轮邀请。`;
@@ -2013,10 +2013,10 @@ function resolveConversationActionDescription(
   }
 
   if (actionStatus.label === "可以稍放") {
-    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 已经触达过，可作为后手继续补。`;
+    return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 已经触达过，可放后手。`;
   }
 
-  return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 当前值得继续跟进这一轮。`;
+  return `${conversationKind} · 最近活跃 ${recentActivityLabel} · 这一轮可以继续跟进。`;
 }
 
 function resolveConversationMetaSummary(

@@ -1204,6 +1204,11 @@ function formatShareableMessageTime(createdAt: string) {
   }).format(new Date(timestamp));
 }
 
+function parseTimestamp(value: string) {
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? null : timestamp;
+}
+
 function isSameCalendarDay(left: Date, right: Date) {
   return (
     left.getFullYear() === right.getFullYear() &&

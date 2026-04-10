@@ -12,7 +12,12 @@ import {
   StatusPill,
   TextField,
 } from "@yinjie/ui";
-import { AdminCallout, AdminEmptyState } from "../components/admin-workbench";
+import {
+  AdminActionGroup,
+  AdminCallout,
+  AdminDangerZone,
+  AdminEmptyState,
+} from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function relationshipTone(type: Character["relationshipType"]) {
@@ -266,25 +271,44 @@ export function CharactersPage() {
           <Card className="bg-[color:var(--surface-console)]">
             <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">快捷动作</div>
             {selectedCharacter ? (
-              <div className="mt-4 grid gap-3">
-                <Link to="/characters/$characterId" params={{ characterId: selectedCharacter.id }}>
-                  <Button variant="primary" size="lg" className="w-full justify-center">编辑基础资料</Button>
-                </Link>
-                <Link to="/characters/$characterId/factory" params={{ characterId: selectedCharacter.id }}>
-                  <Button variant="secondary" size="lg" className="w-full justify-center">打开角色工厂</Button>
-                </Link>
-                <Link to="/characters/$characterId/runtime" params={{ characterId: selectedCharacter.id }}>
-                  <Button variant="secondary" size="lg" className="w-full justify-center">打开运行逻辑台</Button>
-                </Link>
-                <Button
-                  onClick={() => deleteMutation.mutate(selectedCharacter.id)}
-                  disabled={deleteMutation.isPending}
-                  variant="danger"
-                  size="lg"
-                  className="w-full justify-center"
+              <div className="mt-4 space-y-4">
+                <AdminActionGroup
+                  title="首选动作"
+                  description="优先维护角色资料，确保关系、提示词和基础设定处于可运营状态。"
                 >
-                  {deletingCharacterId === selectedCharacter.id ? "删除中..." : "删除角色"}
-                </Button>
+                  <Link to="/characters/$characterId" params={{ characterId: selectedCharacter.id }}>
+                    <Button variant="primary" size="lg" className="w-full justify-center">编辑基础资料</Button>
+                  </Link>
+                </AdminActionGroup>
+
+                <AdminActionGroup
+                  title="更多入口"
+                  description="需要排查制造链路或运行状态时，再进入下面两个工作区。"
+                >
+                  <div className="grid gap-3">
+                    <Link to="/characters/$characterId/factory" params={{ characterId: selectedCharacter.id }}>
+                      <Button variant="secondary" size="lg" className="w-full justify-center">打开角色工厂</Button>
+                    </Link>
+                    <Link to="/characters/$characterId/runtime" params={{ characterId: selectedCharacter.id }}>
+                      <Button variant="secondary" size="lg" className="w-full justify-center">打开运行逻辑台</Button>
+                    </Link>
+                  </div>
+                </AdminActionGroup>
+
+                <AdminDangerZone
+                  title="危险操作"
+                  description="删除角色会直接移除这个运营对象。确认不再需要后再执行。"
+                >
+                  <Button
+                    onClick={() => deleteMutation.mutate(selectedCharacter.id)}
+                    disabled={deleteMutation.isPending}
+                    variant="danger"
+                    size="lg"
+                    className="w-full justify-center"
+                  >
+                    {deletingCharacterId === selectedCharacter.id ? "删除中..." : "删除角色"}
+                  </Button>
+                </AdminDangerZone>
               </div>
             ) : (
               <div className="mt-4 text-sm text-[color:var(--text-secondary)]">当前没有可操作角色。</div>

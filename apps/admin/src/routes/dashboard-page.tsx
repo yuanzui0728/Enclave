@@ -38,7 +38,7 @@ import {
   TextAreaField,
   useDesktopRuntime,
 } from "@yinjie/ui";
-import { AdminCallout } from "../components/admin-workbench";
+import { AdminActionGroup, AdminCallout, AdminDangerZone } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type InferencePreviewForm = {
@@ -884,16 +884,29 @@ export function DashboardPage() {
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>运维操作</SectionHeading>
-          <div className="mt-4 grid gap-3">
-            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => exportDiagnosticsMutation.mutate()}>
-              {exportDiagnosticsMutation.isPending ? "正在导出诊断包..." : "导出诊断包"}
-            </Button>
-            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => createBackupMutation.mutate()}>
-              {createBackupMutation.isPending ? "正在创建备份..." : "创建本地备份"}
-            </Button>
-            <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => restoreBackupMutation.mutate()}>
-              {restoreBackupMutation.isPending ? "正在恢复备份..." : "恢复备份"}
-            </Button>
+          <div className="mt-4 space-y-4">
+            <AdminActionGroup
+              title="日常维护"
+              description="先导出诊断和创建备份，这两项更适合巡检和日常留档。"
+            >
+              <div className="grid gap-3">
+                <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => exportDiagnosticsMutation.mutate()}>
+                  {exportDiagnosticsMutation.isPending ? "正在导出诊断包..." : "导出诊断包"}
+                </Button>
+                <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => createBackupMutation.mutate()}>
+                  {createBackupMutation.isPending ? "正在创建备份..." : "创建本地备份"}
+                </Button>
+              </div>
+            </AdminActionGroup>
+
+            <AdminDangerZone
+              title="高风险恢复"
+              description="恢复备份会直接改写当前实例状态，只在确认需要回滚时执行。"
+            >
+              <Button variant="secondary" size="lg" className="w-full justify-center rounded-2xl" disabled={operationsBusy} onClick={() => restoreBackupMutation.mutate()}>
+                {restoreBackupMutation.isPending ? "正在恢复备份..." : "恢复备份"}
+              </Button>
+            </AdminDangerZone>
           </div>
 
           <div className="mt-4 space-y-3">
