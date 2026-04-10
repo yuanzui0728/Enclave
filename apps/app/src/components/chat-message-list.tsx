@@ -27,7 +27,7 @@ import {
   type SendGroupMessageRequest,
   type SendMessagePayload,
 } from "@yinjie/contracts";
-import { InlineNotice } from "@yinjie/ui";
+import { Button, InlineNotice } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import { MobileMessageActionSheet } from "../features/chat/mobile-message-action-sheet";
@@ -98,12 +98,14 @@ export function ChatMessageList({
   const [mobileActionMessage, setMobileActionMessage] =
     useState<ChatRenderableMessage | null>(null);
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
   >(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
-  const contextMenuEnabled = isDesktop;
+  const contextMenuEnabled = isDesktop && !selectionMode;
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -151,6 +153,9 @@ export function ChatMessageList({
   useEffect(() => {
     setContextMenuState(null);
     setMobileActionMessage(null);
+    setSelectedMessageIds((current) =>
+      current.filter((item) => messages.some((message) => message.id === item)),
+    );
     setForwardMessages((current) =>
       current?.length
         ? current.filter((item) =>
@@ -174,12 +179,24 @@ export function ChatMessageList({
   }, []);
 
   useEffect(() => {
-    setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
-
     if (!isDesktop) {
+      setFavoriteSourceIds([]);
+      setSelectionMode(false);
+      setSelectedMessageIds([]);
       setForwardMessages(null);
+      return;
     }
+
+    setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, [isDesktop]);
+
+  useEffect(() => {
+    if (selectionMode) {
+      return;
+    }
+
+    setSelectedMessageIds([]);
+  }, [selectionMode]);
 
   const forwardConversationsQuery = useQuery({
     queryKey: ["desktop-message-forward-conversations", baseUrl],
@@ -212,6 +229,8 @@ export function ChatMessageList({
     },
     onSuccess: async ({ conversationTitle, count }) => {
       setForwardMessages(null);
+      setSelectionMode(false);
+      setSelectedMessageIds([]);
       setActionNotice({
         message:
           count <= 1
@@ -267,6 +286,7 @@ export function ChatMessageList({
     message: ChatRenderableMessage,
   ) => {
     if (!contextMenuEnabled) {
+      event.preventDefault();
       return;
     }
 
@@ -469,6 +489,14 @@ export function ChatMessageList({
       tone: "success",
     });
   };
+  const selectedMessageIdSet = useMemo(
+    () => new Set(selectedMessageIds),
+    [selectedMessageIds],
+  );
+  const selectedMessages = useMemo(
+    () => messages.filter((message) => selectedMessageIdSet.has(message.id)),
+    [messages, selectedMessageIdSet],
+  );
   const forwardPreviewItems: DesktopMessageForwardPreviewItem[] = useMemo(
     () =>
       (forwardMessages ?? []).map((message) => ({
@@ -479,6 +507,13 @@ export function ChatMessageList({
       })),
     [forwardMessages],
   );
+  const toggleSelectedMessage = (messageId: string) => {
+    setSelectedMessageIds((current) =>
+      current.includes(messageId)
+        ? current.filter((item) => item !== messageId)
+        : [...current, messageId],
+    );
+  };
 
   return (
     <div className={isDesktop ? "space-y-5" : "space-y-4"}>
@@ -486,6 +521,33 @@ export function ChatMessageList({
         <InlineNotice className="text-xs" tone={actionNotice.tone}>
           {actionNotice.message}
         </InlineNotice>
+      ) : null}
+      {isDesktop && selectionMode ? (
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[20px] border border-black/6 bg-white/92 px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur">
+          <div className="text-sm text-[color:var(--text-primary)]">
+            已选择 {selectedMessageIds.length} 条消息
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectionMode(false)}
+              className="rounded-full"
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!selectedMessageIds.length}
+              onClick={() => setForwardMessages(selectedMessages)}
+              className="rounded-full"
+            >
+              逐条转发
+            </Button>
+          </div>
+        </div>
       ) : null}
       {messages.map((message, index) => {
         const previousMessage = index > 0 ? messages[index - 1] : undefined;
@@ -497,6 +559,7 @@ export function ChatMessageList({
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === activeHighlightedMessageId;
+        const isSelected = selectedMessageIdSet.has(message.id);
         const replyContent = extractChatReplyMetadata(message.text);
         const displayText =
           isUser && !isSystem
@@ -544,12 +607,20 @@ export function ChatMessageList({
               className={`space-y-1.5 rounded-[22px] px-2 py-1.5 transition-[background-color,box-shadow] duration-300 ${
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
-                  : ""
+                  : isSelected
+                    ? "bg-[rgba(7,193,96,0.08)] shadow-[0_0_0_1px_rgba(7,193,96,0.16)]"
+                    : ""
               }`}
             >
               <div
                 className={`flex items-start gap-2.5 ${isUser ? "justify-end" : "justify-start"}`}
               >
+                {!isUser && selectionMode ? (
+                  <SelectionToggle
+                    checked={isSelected}
+                    onClick={() => toggleSelectedMessage(message.id)}
+                  />
+                ) : null}
                 {!isUser ? (
                   <AvatarChip name={message.senderName} size="wechat" />
                 ) : null}
@@ -569,6 +640,7 @@ export function ChatMessageList({
                       align={isUser ? "right" : "left"}
                       variant={variant}
                       onJump={jumpToMessage}
+                      disabled={selectionMode}
                     />
                   ) : null}
                   {message.type === "sticker" &&
@@ -584,7 +656,11 @@ export function ChatMessageList({
                       url={message.attachment.url}
                       label={message.attachment.fileName || displayText}
                       maxSize={isDesktop ? 180 : 144}
-                      onOpen={() => setViewerMessageId(message.id)}
+                      onOpen={
+                        selectionMode
+                          ? undefined
+                          : () => setViewerMessageId(message.id)
+                      }
                     />
                   ) : message.type === "file" &&
                     message.attachment?.kind === "file" ? (
@@ -612,6 +688,12 @@ export function ChatMessageList({
                   )}
                 </div>
                 {isUser ? <AvatarChip name="我" size="wechat" /> : null}
+                {isUser && selectionMode ? (
+                  <SelectionToggle
+                    checked={isSelected}
+                    onClick={() => toggleSelectedMessage(message.id)}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -638,6 +720,11 @@ export function ChatMessageList({
                 }
               : undefined
           }
+          onMultiSelect={() => {
+            setSelectionMode(true);
+            setSelectedMessageIds([contextMenuState.message.id]);
+            setContextMenuState(null);
+          }}
           onCopyText={() => {
             void copyToClipboard(
               buildClipboardText(contextMenuState.message),
@@ -1172,6 +1259,7 @@ function ReplyQuoteCard({
   align,
   variant,
   onJump,
+  disabled = false,
 }: {
   messageId: string;
   senderName: string;
@@ -1179,19 +1267,24 @@ function ReplyQuoteCard({
   align: "left" | "right";
   variant: "mobile" | "desktop";
   onJump: (messageId: string) => void;
+  disabled?: boolean;
 }) {
   const isDesktop = variant === "desktop";
   return (
     <button
       type="button"
-      onClick={() => onJump(messageId)}
+      onClick={() => {
+        if (!disabled) {
+          onJump(messageId);
+        }
+      }}
       className={`mb-2 w-full overflow-hidden rounded-[14px] border px-3 py-2 ${
         align === "right"
           ? isDesktop
             ? "border-[rgba(160,90,10,0.14)] bg-[rgba(255,244,227,0.92)] text-[color:var(--text-primary)]"
             : "border-[rgba(22,163,74,0.16)] bg-[rgba(255,255,255,0.72)] text-[color:var(--text-primary)]"
           : "border-black/6 bg-[rgba(248,248,248,0.96)] text-[color:var(--text-primary)]"
-      } text-left transition hover:opacity-90`}
+      } text-left transition ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
       <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
         回复 {senderName}
@@ -1247,6 +1340,29 @@ function ImageMessage({
       aria-label={`查看图片 ${label}`}
     >
       {image}
+    </button>
+  );
+}
+
+function SelectionToggle({
+  checked,
+  onClick,
+}: {
+  checked: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs transition ${
+        checked
+          ? "border-[rgba(7,193,96,0.22)] bg-[#07c160] text-white shadow-[0_8px_18px_rgba(7,193,96,0.20)]"
+          : "border-black/10 bg-white text-transparent hover:border-[rgba(7,193,96,0.28)]"
+      }`}
+      aria-label={checked ? "取消选择消息" : "选择消息"}
+    >
+      ✓
     </button>
   );
 }

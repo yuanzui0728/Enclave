@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import {
+  CheckSquare,
   Copy,
   CornerUpLeft,
   Download,
@@ -15,6 +16,7 @@ type GroupMessageContextMenuProps = {
   onClose: () => void;
   onReply?: () => void;
   onForward?: () => void;
+  onMultiSelect?: () => void;
   onCopyText: () => void;
   onCopySender?: () => void;
   onToggleFavorite?: () => void;
@@ -34,6 +36,7 @@ export function GroupMessageContextMenu({
   onClose,
   onReply,
   onForward,
+  onMultiSelect,
   onCopyText,
   onCopySender,
   onToggleFavorite,
@@ -47,6 +50,7 @@ export function GroupMessageContextMenu({
     1 +
     Number(Boolean(onReply)) +
     Number(Boolean(onForward)) +
+    Number(Boolean(onMultiSelect)) +
     Number(Boolean(onCopySender)) +
     Number(Boolean(onToggleFavorite)) +
     Number(Boolean(onOpenAttachment)) +
@@ -94,6 +98,13 @@ export function GroupMessageContextMenu({
             label="转发消息"
             icon={<Forward size={15} />}
             onClick={onForward}
+          />
+        ) : null}
+        {onMultiSelect ? (
+          <ContextMenuButton
+            label="多选"
+            icon={<CheckSquare size={15} />}
+            onClick={onMultiSelect}
           />
         ) : null}
         <ContextMenuButton
