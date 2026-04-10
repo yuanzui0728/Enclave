@@ -344,6 +344,8 @@ export function GroupQrPage() {
   }, [conversationsQuery.data, deliveryTargetBatches, reopenedPaths]);
   const topPendingReturnConversation =
     pendingCurrentBatchConversations[0] ?? null;
+  const fallbackPendingReturnConversation =
+    pendingCurrentBatchConversations[1] ?? null;
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -848,6 +850,42 @@ export function GroupQrPage() {
                         )}
                       </span>
                     </div>
+                    {fallbackPendingReturnConversation ? (
+                      <div className="mt-3 rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-3 py-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                              次优先备选
+                            </div>
+                            <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
+                              {fallbackPendingReturnConversation.conversation.title}
+                            </div>
+                            <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+                              {resolvePendingReturnPrimaryReason(
+                                fallbackPendingReturnConversation.conversation,
+                                fallbackPendingReturnConversation.target.deliveredAt,
+                              ).label}
+                              {" · "}
+                              待回流{" "}
+                              {formatPendingReturnDuration(
+                                fallbackPendingReturnConversation.target.deliveredAt,
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void sendToConversation(
+                                fallbackPendingReturnConversation.conversation,
+                              );
+                            }}
+                            className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(249,115,22,0.18)] hover:text-[color:var(--brand-secondary)]"
+                          >
+                            看这条
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
                 {pendingCurrentBatchConversations.map(({ conversation, target }) => (
