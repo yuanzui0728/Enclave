@@ -20,7 +20,7 @@ import {
 } from "@yinjie/ui";
 import {
   AdminActionFeedback,
-  AdminCodeBlock,
+  AdminCodeBlock as CodeBlock,
   AdminInfoRows,
   AdminPageHero,
   AdminSectionNav,
@@ -649,10 +649,6 @@ function ValueCard({
       <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{value}</div>
     </div>
   );
-}
-
-function CodeBlock({ value, className }: { value: string; className?: string }) {
-  return <AdminCodeBlock value={value} className={className} />;
 }
 
 function csvToList(value: string) {
