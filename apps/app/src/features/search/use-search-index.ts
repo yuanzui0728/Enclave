@@ -20,6 +20,10 @@ import {
 import { isPersistedGroupConversation } from "../../lib/conversation-route";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import {
+  shouldHideSearchableChatMessage,
+  useLocalChatMessageActionState,
+} from "../chat/local-chat-message-actions";
+import {
   emptySearchScopeCounts,
   type SearchCategory,
   type SearchResultItem,
@@ -48,6 +52,7 @@ export function useSearchIndex(
 ) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const localMessageActionState = useLocalChatMessageActionState();
   const deferredSearchText = useDeferredValue(searchText);
   const normalizedSearchText = normalizeSearchKeyword(deferredSearchText);
 
@@ -92,10 +97,9 @@ export function useSearchIndex(
     queryFn: async () => {
       const settledResults = await Promise.allSettled(
         conversations.map(async (conversation) => {
-          const messages =
-            isPersistedGroupConversation(conversation)
-              ? await getGroupMessages(conversation.id, baseUrl)
-              : await getConversationMessages(conversation.id, baseUrl);
+          const messages = isPersistedGroupConversation(conversation)
+            ? await getGroupMessages(conversation.id, baseUrl)
+            : await getConversationMessages(conversation.id, baseUrl);
 
           return messages.map((message) => ({
             conversationId: conversation.id,
@@ -124,37 +128,53 @@ export function useSearchIndex(
     );
 
     const conversationResults: SearchResultItem[] = conversations.map(
-      (conversation) => ({
-        id: `conversation-${conversation.id}`,
-        category: "messages",
-        title: conversation.title,
-        description:
-          sanitizeDisplayedChatText(conversation.lastMessage?.text ?? "") ||
-          "打开这个会话查看最近聊天记录。",
-        meta: `${
-          conversation.type === "group" ? "群聊" : "会话"
-        } · ${formatConversationTimestamp(conversation.lastActivityAt)}`,
-        keywords: [
-          conversation.title,
-          conversation.lastMessage?.text,
-          conversation.lastMessage?.senderName,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase(),
-        to:
-          isPersistedGroupConversation(conversation)
+      (conversation) => {
+        const lastMessageVisible =
+          !conversation.lastMessage ||
+          !shouldHideSearchableChatMessage(
+            conversation.lastMessage.id,
+            localMessageActionState,
+          );
+        const lastMessageText = lastMessageVisible
+          ? sanitizeDisplayedChatText(conversation.lastMessage?.text ?? "")
+          : "";
+
+        return {
+          id: `conversation-${conversation.id}`,
+          category: "messages",
+          title: conversation.title,
+          description: lastMessageText || "打开这个会话查看最近聊天记录。",
+          meta: `${
+            conversation.type === "group" ? "群聊" : "会话"
+          } · ${formatConversationTimestamp(conversation.lastActivityAt)}`,
+          keywords: [
+            conversation.title,
+            lastMessageVisible ? conversation.lastMessage?.text : "",
+            lastMessageVisible ? conversation.lastMessage?.senderName : "",
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase(),
+          to: isPersistedGroupConversation(conversation)
             ? `/group/${conversation.id}`
             : `/chat/${conversation.id}`,
-        badge: conversation.type === "group" ? "群聊" : "会话",
-        avatarName: conversation.title,
-        sortTime: parseTimestamp(conversation.lastActivityAt) ?? 0,
-      }),
+          badge: conversation.type === "group" ? "群聊" : "会话",
+          avatarName: conversation.title,
+          sortTime: parseTimestamp(conversation.lastActivityAt) ?? 0,
+        };
+      },
     );
 
     const globalMessageResults: SearchResultItem[] = (
       messageSearchIndexQuery.data ?? []
     )
+      .filter(
+        (message) =>
+          !shouldHideSearchableChatMessage(
+            message.messageId,
+            localMessageActionState,
+          ),
+      )
       .filter((message) => {
         if (!normalizedSearchText) {
           return false;
@@ -175,70 +195,64 @@ export function useSearchIndex(
           normalizedSearchText,
         )}`,
         meta: `聊天记录 · ${formatMessageTimestamp(message.createdAt)}`,
-        keywords: [
-          message.conversationTitle,
-          message.senderName,
-          message.text,
-        ]
+        keywords: [message.conversationTitle, message.senderName, message.text]
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to:
-          isPersistedGroupConversation({
-            id: message.conversationId,
-            type: message.conversationType,
-          })
-            ? `/group/${message.conversationId}`
-            : `/chat/${message.conversationId}`,
+        to: isPersistedGroupConversation({
+          id: message.conversationId,
+          type: message.conversationType,
+        })
+          ? `/group/${message.conversationId}`
+          : `/chat/${message.conversationId}`,
         hash: `chat-message-${message.messageId}`,
-        badge:
-          message.conversationType === "group" ? "群聊记录" : "聊天记录",
+        badge: message.conversationType === "group" ? "群聊记录" : "聊天记录",
         avatarName: message.conversationTitle,
         sortTime: parseTimestamp(message.createdAt) ?? 0,
       }));
 
-    const contactResults: SearchResultItem[] = (
-      charactersQuery.data ?? []
-    ).map((character) => {
-      const friend = friendMap.get(character.id);
-      const remarkName = friend?.friendship.remarkName?.trim() ?? "";
-      const tagText = friend?.friendship.tags?.join(" ") ?? "";
-      const title = remarkName || character.name;
+    const contactResults: SearchResultItem[] = (charactersQuery.data ?? []).map(
+      (character) => {
+        const friend = friendMap.get(character.id);
+        const remarkName = friend?.friendship.remarkName?.trim() ?? "";
+        const tagText = friend?.friendship.tags?.join(" ") ?? "";
+        const title = remarkName || character.name;
 
-      return {
-        id: `contact-${character.id}`,
-        category: "contacts",
-        title,
-        description:
-          character.bio ||
-          character.currentActivity ||
-          character.relationship ||
-          "查看联系人资料与聊天入口。",
-        meta: friend
-          ? `通讯录联系人 · ${character.relationship}`
-          : `世界角色 · ${character.relationship}`,
-        keywords: [
+        return {
+          id: `contact-${character.id}`,
+          category: "contacts",
           title,
-          character.name,
-          remarkName,
-          character.relationship,
-          character.bio,
-          character.currentActivity,
-          character.currentStatus,
-          tagText,
-          friend?.friendship.region,
-          friend?.friendship.source,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase(),
-        to: `/character/${character.id}`,
-        badge: friend ? "联系人" : "角色",
-        avatarName: title,
-        avatarSrc: character.avatar,
-        sortTime: friend ? 2 : 1,
-      };
-    });
+          description:
+            character.bio ||
+            character.currentActivity ||
+            character.relationship ||
+            "查看联系人资料与聊天入口。",
+          meta: friend
+            ? `通讯录联系人 · ${character.relationship}`
+            : `世界角色 · ${character.relationship}`,
+          keywords: [
+            title,
+            character.name,
+            remarkName,
+            character.relationship,
+            character.bio,
+            character.currentActivity,
+            character.currentStatus,
+            tagText,
+            friend?.friendship.region,
+            friend?.friendship.source,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase(),
+          to: `/character/${character.id}`,
+          badge: friend ? "联系人" : "角色",
+          avatarName: title,
+          avatarSrc: character.avatar,
+          sortTime: friend ? 2 : 1,
+        };
+      },
+    );
 
     const officialAccountResults: SearchResultItem[] = (
       officialAccountsQuery.data ?? []
@@ -332,6 +346,7 @@ export function useSearchIndex(
     conversations,
     feedQuery.data?.posts,
     friendsQuery.data,
+    localMessageActionState,
     messageSearchIndexQuery.data,
     momentsQuery.data,
     normalizedSearchText,
@@ -340,11 +355,7 @@ export function useSearchIndex(
 
   const filteredResults = useMemo(
     () =>
-      filterSearchResults(
-        indexedResults,
-        normalizedSearchText,
-        activeCategory,
-      ),
+      filterSearchResults(indexedResults, normalizedSearchText, activeCategory),
     [activeCategory, indexedResults, normalizedSearchText],
   );
 

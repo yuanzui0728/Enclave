@@ -23,11 +23,12 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
-import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
-  formatMessageTimestamp,
-  parseTimestamp,
-} from "../lib/format";
+  filterSearchableChatMessages,
+  useLocalChatMessageActionState,
+} from "../features/chat/local-chat-message-actions";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatMessageTimestamp, parseTimestamp } from "../lib/format";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -57,6 +58,7 @@ export function DesktopChatFilesPage() {
   const [searchText, setSearchText] = useState("");
   const [filter, setFilter] = useState<FileFilter>("all");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
+  const localMessageActionState = useLocalChatMessageActionState();
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
@@ -144,25 +146,34 @@ export function DesktopChatFilesPage() {
   });
 
   const baseAttachmentRows = useMemo(() => {
-    const rows = allAttachmentsQuery.data ?? [];
+    const rows = filterSearchableChatMessages(
+      allAttachmentsQuery.data ?? [],
+      localMessageActionState,
+    );
 
     if (!selectedConversationId) {
       return rows;
     }
 
-    return rows.filter((item) => item.conversationId === selectedConversationId);
-  }, [allAttachmentsQuery.data, selectedConversationId]);
+    return rows.filter(
+      (item) => item.conversationId === selectedConversationId,
+    );
+  }, [
+    allAttachmentsQuery.data,
+    localMessageActionState,
+    selectedConversationId,
+  ]);
 
   const attachmentCounts = useMemo(
     () =>
-      (allAttachmentsQuery.data ?? []).reduce<Record<string, number>>(
-        (result, item) => {
-          result[item.conversationId] = (result[item.conversationId] ?? 0) + 1;
-          return result;
-        },
-        {},
-      ),
-    [allAttachmentsQuery.data],
+      filterSearchableChatMessages(
+        allAttachmentsQuery.data ?? [],
+        localMessageActionState,
+      ).reduce<Record<string, number>>((result, item) => {
+        result[item.conversationId] = (result[item.conversationId] ?? 0) + 1;
+        return result;
+      }, {}),
+    [allAttachmentsQuery.data, localMessageActionState],
   );
 
   const attachmentRows = useMemo(
@@ -176,6 +187,14 @@ export function DesktopChatFilesPage() {
             (parseTimestamp(left.createdAt) ?? 0),
         ),
     [baseAttachmentRows, filter, searchText],
+  );
+  const visibleAttachmentRowCount = useMemo(
+    () =>
+      filterSearchableChatMessages(
+        allAttachmentsQuery.data ?? [],
+        localMessageActionState,
+      ).length,
+    [allAttachmentsQuery.data, localMessageActionState],
   );
 
   if (!isDesktopLayout) {
@@ -246,7 +265,7 @@ export function DesktopChatFilesPage() {
                   全部会话
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {(allAttachmentsQuery.data ?? []).length} 项附件
+                  {visibleAttachmentRowCount} 项附件
                 </div>
               </div>
             </button>

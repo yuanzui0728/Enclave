@@ -149,7 +149,7 @@ export function shouldHideSearchableChatMessage(
 }
 
 export function filterSearchableChatMessages<T extends { id: string }>(
-  messages: T[],
+  messages: readonly T[],
   state: LocalChatMessageActionState,
 ) {
   return messages.filter(

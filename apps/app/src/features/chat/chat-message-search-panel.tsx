@@ -11,6 +11,10 @@ import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { EmptyState } from "../../components/empty-state";
 import { ChatDetailsSection } from "../chat-details/chat-details-section";
 import { ChatDetailsShell } from "../chat-details/chat-details-shell";
+import {
+  filterSearchableChatMessages,
+  useLocalChatMessageActionState,
+} from "./local-chat-message-actions";
 import { sanitizeDisplayedChatText } from "../../lib/chat-text";
 import { formatMessageTimestamp, parseTimestamp } from "../../lib/format";
 
@@ -91,18 +95,19 @@ export function ChatMessageSearchPanel({
 }: ChatMessageSearchPanelProps) {
   const [keyword, setKeyword] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
+  const localMessageActionState = useLocalChatMessageActionState();
 
   const trimmedKeyword = keyword.trim().toLowerCase();
   const indexedMessages = useMemo(
     () =>
-      [...(messages ?? [])]
+      [...filterSearchableChatMessages(messages ?? [], localMessageActionState)]
         .sort(
           (left, right) =>
             (parseTimestamp(right.createdAt) ?? 0) -
             (parseTimestamp(left.createdAt) ?? 0),
         )
         .map((message) => buildIndexedSearchMessage(message)),
-    [messages],
+    [localMessageActionState, messages],
   );
 
   const matchedMessages = useMemo(() => {
