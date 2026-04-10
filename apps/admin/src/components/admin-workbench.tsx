@@ -343,6 +343,21 @@ export function AdminHintCard({
   );
 }
 
+export function AdminFormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-4 border-t border-[color:var(--border-faint)] pt-5 first:border-t-0 first:pt-0">
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{title}</div>
+      {children}
+    </section>
+  );
+}
+
 export function AdminTextField({
   label,
   value,

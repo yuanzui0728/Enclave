@@ -23,9 +23,9 @@ import {
   AdminInfoRows,
   AdminPageHero,
   AdminSectionNav,
-  AdminSelectField,
-  AdminTextArea,
-  AdminTextField,
+  AdminSelectField as SelectFieldBlock,
+  AdminTextArea as TextAreaBlock,
+  AdminTextField as FieldBlock,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 
@@ -1120,76 +1120,6 @@ function ValueSnapshot({
       <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{value}</div>
     </div>
   );
-}
-
-function FieldBlock({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  min,
-  max,
-  disabled = false,
-}: {
-  label: string;
-  value: string | number;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-  min?: number;
-  max?: number;
-  disabled?: boolean;
-}) {
-  return (
-    <AdminTextField
-      label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      type={type}
-      min={min}
-      max={max}
-      disabled={disabled}
-    />
-  );
-}
-
-function TextAreaBlock({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <AdminTextArea
-      label={label}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="mt-4 block first:mt-0"
-      textareaClassName="min-h-28"
-    />
-  );
-}
-
-function SelectFieldBlock({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  return <AdminSelectField label={label} value={value} onChange={onChange} options={options} />;
 }
 
 function CodeBlock({ value, className }: { value: string; className?: string }) {
