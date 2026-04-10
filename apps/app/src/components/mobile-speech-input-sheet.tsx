@@ -9,6 +9,7 @@ type MobileSpeechInputSheetProps = {
   error?: string | null;
   holding: boolean;
   cancelIntent: boolean;
+  mode?: "dictation" | "voice";
   onClose: () => void;
   onCancel: () => void;
   onCommit: () => void;
@@ -16,12 +17,17 @@ type MobileSpeechInputSheetProps = {
 };
 
 function resolveStatusTitle(
+  mode: "dictation" | "voice",
   status: SpeechInputStatus,
   holding: boolean,
   cancelIntent: boolean,
 ) {
   if (holding) {
-    return cancelIntent ? "松开手指，取消转写" : "松开手指，转成文字";
+    return cancelIntent
+      ? "松开手指，取消发送"
+      : mode === "voice"
+        ? "松开手指，发送语音"
+        : "松开手指，转成文字";
   }
 
   switch (status) {
@@ -30,17 +36,18 @@ function resolveStatusTitle(
     case "listening":
       return "继续按住说话";
     case "processing":
-      return "正在转写语音...";
+      return mode === "voice" ? "正在整理语音..." : "正在转写语音...";
     case "ready":
-      return "识别完成";
+      return mode === "voice" ? "语音已准备发送" : "识别完成";
     case "error":
-      return "语音输入暂时不可用";
+      return mode === "voice" ? "语音发送暂时不可用" : "语音输入暂时不可用";
     default:
       return "按住说话";
   }
 }
 
 function resolveStatusHint(
+  mode: "dictation" | "voice",
   status: SpeechInputStatus,
   holding: boolean,
   cancelIntent: boolean,
@@ -48,7 +55,9 @@ function resolveStatusHint(
   if (holding) {
     return cancelIntent
       ? "向下移回按钮区域，可以继续保留本次语音。"
-      : "上滑取消，松开后只会转成文字，不会直接发送。";
+      : mode === "voice"
+        ? "上滑取消，松开后会直接发送这条语音。"
+        : "上滑取消，松开后只会转成文字，不会直接发送。";
   }
 
   switch (status) {
@@ -57,13 +66,19 @@ function resolveStatusHint(
     case "listening":
       return "继续按住说话，松开后结束本次输入。";
     case "processing":
-      return "录音已经结束，正在把语音整理成文字。";
+      return mode === "voice"
+        ? "录音已经结束，正在整理语音文件。"
+        : "录音已经结束，正在把语音整理成文字。";
     case "ready":
-      return "确认后插入输入框，你还可以继续修改。";
+      return mode === "voice"
+        ? "确认后会直接发到当前会话。"
+        : "确认后插入输入框，你还可以继续修改。";
     case "error":
       return "可以关闭后重试，或直接切回键盘输入。";
     default:
-      return "识别结果会先停留在这里，等待你决定是否插入。";
+      return mode === "voice"
+        ? "按住录一条语音，松开后就能直接发送。"
+        : "识别结果会先停留在这里，等待你决定是否插入。";
   }
 }
 
@@ -74,6 +89,7 @@ export function MobileSpeechInputSheet({
   error,
   holding,
   cancelIntent,
+  mode = "dictation",
   onClose,
   onCancel,
   onCommit,
@@ -86,8 +102,8 @@ export function MobileSpeechInputSheet({
   const listening = status === "listening";
   const processing =
     status === "processing" || status === "requesting-permission";
-  const title = resolveStatusTitle(status, holding, cancelIntent);
-  const hint = resolveStatusHint(status, holding, cancelIntent);
+  const title = resolveStatusTitle(mode, status, holding, cancelIntent);
+  const hint = resolveStatusHint(mode, status, holding, cancelIntent);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/22 backdrop-blur-[1.5px]">
@@ -115,11 +131,11 @@ export function MobileSpeechInputSheet({
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white/72 transition",
                 holding ? "opacity-0" : "opacity-100",
               )}
-            onClick={onClose}
-            aria-label="关闭"
-          >
-            <X size={16} />
-          </button>
+              onClick={onClose}
+              aria-label="关闭"
+            >
+              <X size={16} />
+            </button>
           </div>
 
           <div className="mt-5 flex items-center justify-center">
@@ -159,7 +175,10 @@ export function MobileSpeechInputSheet({
                 : "border-white/10 bg-white/[0.06] text-white/40",
             )}
           >
-            {text || "识别结果会显示在这里。"}
+            {text ||
+              (mode === "voice"
+                ? "录音时长会显示在这里。"
+                : "识别结果会显示在这里。")}
           </div>
 
           {error ? (
@@ -185,7 +204,7 @@ export function MobileSpeechInputSheet({
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />
-                  插入输入框
+                  {mode === "voice" ? "立即发送" : "插入输入框"}
                 </span>
               </button>
             </div>

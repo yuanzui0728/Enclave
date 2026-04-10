@@ -165,11 +165,14 @@ export function ChatComposer({
     baseUrl: speechInput?.baseUrl,
     conversationId: speechInput?.conversationId ?? "",
     enabled: showSpeechEntry,
+    mode: isDesktop ? "dictation" : "voice",
   });
   const speechSupported = showSpeechEntry && speech.supported;
   const speechDisabledReason =
     showSpeechEntry && !speechSupported
-      ? "当前浏览器不支持语音输入，请改用键盘输入。"
+      ? isDesktop
+        ? "当前浏览器不支持语音输入，请改用键盘输入。"
+        : "当前浏览器不支持语音发送，请改用键盘输入。"
       : null;
   const speechButtonDisabled =
     !speechSupported ||
@@ -285,6 +288,29 @@ export function ChatComposer({
     focusInput();
   };
 
+  const sendRecordedVoice = async () => {
+    if (!onSendAttachment || !speech.recordedAudio || attachmentBusy) {
+      return false;
+    }
+
+    const sent = await handleSendAttachment({
+      type: "voice",
+      file: speech.recordedAudio.blob,
+      fileName: speech.recordedAudio.fileName,
+      mimeType: speech.recordedAudio.mimeType,
+      size: speech.recordedAudio.size,
+      durationMs: speech.recordedAudio.durationMs,
+    });
+
+    if (!sent) {
+      return false;
+    }
+
+    speech.clearResult();
+    closeMobileSpeechSheet();
+    return true;
+  };
+
   const handleMobileSpeechPressStart = async (
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
@@ -298,6 +324,7 @@ export function ChatComposer({
 
     blurActiveElement();
     closeMobileTransientSurfaces();
+    setAttachmentError(null);
     if (speech.status !== "idle") {
       speech.cancel();
     }
@@ -423,6 +450,12 @@ export function ChatComposer({
     }
 
     if (speech.status === "ready" && speech.canCommit) {
+      mobileSpeechAutoCommitRef.current = false;
+      if (speech.mode === "voice") {
+        void sendRecordedVoice();
+        return;
+      }
+
       commitSpeechInput();
       return;
     }
@@ -436,7 +469,9 @@ export function ChatComposer({
     mobileSpeechPressing,
     mobileSpeechSheetOpen,
     speech.canCommit,
+    speech.mode,
     speech.status,
+    sendRecordedVoice,
   ]);
 
   useEffect(() => {
@@ -1193,7 +1228,9 @@ export function ChatComposer({
                           onBack={() => setDesktopPlusMenuView("root")}
                           onSelect={(item) => {
                             closeDesktopPlusMenu();
-                            void handleSendPresetText(buildFavoriteShareText(item));
+                            void handleSendPresetText(
+                              buildFavoriteShareText(item),
+                            );
                           }}
                         />
                       )}
@@ -1295,7 +1332,11 @@ export function ChatComposer({
                   onPointerMove={handleMobileSpeechPressMove}
                   onPointerUp={handleMobileSpeechPressEnd}
                   onPointerCancel={handleMobileSpeechPressCancel}
-                  disabled={!speechSupported || speech.status === "processing"}
+                  disabled={
+                    !speechSupported ||
+                    speech.status === "processing" ||
+                    attachmentBusy
+                  }
                   title={speechDisabledReason ?? undefined}
                   className={cn(
                     "flex min-h-[36px] min-w-0 flex-1 select-none items-center justify-center rounded-[6px] border border-black/[0.09] bg-white px-4 py-2 text-[15px] transition touch-none",
@@ -1308,14 +1349,14 @@ export function ChatComposer({
                       ? "border-black/12 bg-black/[0.03] text-[#8b8b8b]"
                       : "",
                   )}
-                  aria-label="按住说话，松开后转成文字"
+                  aria-label="按住说话，松开发送"
                 >
                   {mobileSpeechPressing
                     ? mobileSpeechCancelIntent
                       ? "松开取消"
-                      : "松开转文字"
+                      : "松开发送"
                     : speech.status === "processing"
-                      ? "正在转写..."
+                      ? "正在整理..."
                       : "按住说话"}
                 </button>
               ) : (
@@ -1453,7 +1494,10 @@ export function ChatComposer({
             {speechDisabledReason}
           </InlineNotice>
         ) : null}
-        {!isDesktop && speech.status === "ready" && speechDisplayText ? (
+        {!isDesktop &&
+        speech.mode !== "voice" &&
+        speech.status === "ready" &&
+        speechDisplayText ? (
           <InlineNotice
             className="mt-2 flex items-center justify-between gap-3 text-xs"
             tone="info"
@@ -1566,15 +1610,25 @@ export function ChatComposer({
       </div>
       <MobileSpeechInputSheet
         open={showSpeechEntry && mobileSpeechSheetOpen}
+        mode={speech.mode}
         status={speech.status}
         text={speechDisplayText}
-        error={speech.error}
+        error={composerError}
         holding={mobileSpeechPressing}
         cancelIntent={mobileSpeechCancelIntent}
-        onClose={cancelMobileSpeech}
+        onClose={
+          speech.mode === "voice" ? cancelMobileSpeech : closeMobileSpeechSheet
+        }
         onCancel={cancelMobileSpeech}
-        onCommit={commitSpeechInput}
-        canCommit={speech.canCommit}
+        onCommit={() => {
+          if (speech.mode === "voice") {
+            void sendRecordedVoice();
+            return;
+          }
+
+          commitSpeechInput();
+        }}
+        canCommit={speech.canCommit && !attachmentBusy}
       />
       {isDesktop && error ? (
         <div className="px-4 pb-3">

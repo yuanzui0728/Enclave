@@ -6,7 +6,11 @@ export type SpeechInputStatus =
   | "ready"
   | "error";
 
-export type SpeechInputEngine = "browser-recognition" | "server-transcription" | null;
+export type SpeechInputEngine =
+  | "browser-recognition"
+  | "server-transcription"
+  | "media-recorder"
+  | null;
 
 export interface BrowserSpeechRecognitionAlternative {
   transcript: string;
