@@ -39,6 +39,7 @@ type HistoryFilterType =
   | "sticker"
   | "image"
   | "file"
+  | "voice"
   | "contact_card"
   | "location_card";
 
@@ -56,6 +57,7 @@ const historyFilterLabels: Array<{
   { id: "text", label: "文本" },
   { id: "image", label: "图片" },
   { id: "file", label: "文件" },
+  { id: "voice", label: "语音" },
   { id: "sticker", label: "表情" },
   { id: "contact_card", label: "名片" },
   { id: "location_card", label: "位置" },
@@ -138,7 +140,9 @@ export function DesktopChatHistoryPanel({
       .sort((left, right) => left.localeCompare(right, "zh-CN"));
   }, [historyRows, isGroupConversation]);
   const availableTypeFilters = useMemo(() => {
-    const counts = historyRows.reduce<Record<Exclude<HistoryFilterType, "all">, number>>(
+    const counts = historyRows.reduce<
+      Record<Exclude<HistoryFilterType, "all">, number>
+    >(
       (result, row) => {
         result[row.type] += 1;
         return result;
@@ -147,6 +151,7 @@ export function DesktopChatHistoryPanel({
         text: 0,
         image: 0,
         file: 0,
+        voice: 0,
         sticker: 0,
         contact_card: 0,
         location_card: 0,
@@ -155,7 +160,7 @@ export function DesktopChatHistoryPanel({
     );
 
     return historyFilterLabels.filter(
-      (item) => item.id === "all" || counts[item.id] > 0,
+      (item) => item.id === "all" || counts[item.id as keyof typeof counts] > 0,
     );
   }, [historyRows]);
 
@@ -436,6 +441,10 @@ function resolveMessagePreview(message: Message | GroupMessage) {
     return message.text.trim() || `文件 · ${message.attachment.fileName}`;
   }
 
+  if (message.attachment?.kind === "voice") {
+    return message.text.trim() || "语音";
+  }
+
   if (message.attachment?.kind === "contact_card") {
     return message.text.trim() || `名片 · ${message.attachment.name}`;
   }
@@ -460,6 +469,10 @@ function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {
 
   if (type === "file") {
     return "文件";
+  }
+
+  if (type === "voice") {
+    return "语音";
   }
 
   if (type === "contact_card") {

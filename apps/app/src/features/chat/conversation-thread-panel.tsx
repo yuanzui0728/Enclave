@@ -389,6 +389,10 @@ function describeReplyPreview(message: ChatRenderableMessage) {
     return "[文件]";
   }
 
+  if (message.type === "voice") {
+    return "[语音]";
+  }
+
   if (message.type === "contact_card") {
     return "[名片]";
   }

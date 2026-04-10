@@ -230,23 +230,15 @@ export function DesktopChatHistoryPage() {
                     selectedConversation.lastActivityAt,
                   )}
                 />
-                <InfoCard
-                  label="已加载"
-                  value={`${historyRows.length} 条`}
-                />
+                <InfoCard label="已加载" value={`${historyRows.length} 条`} />
                 <InfoCard
                   label="本机提醒"
                   value={`${historyRows.filter((item) => item.reminderAt).length} 条`}
                 />
-                <InfoCard
-                  label="加载窗口"
-                  value={`最近 ${historyLimit} 条`}
-                />
+                <InfoCard label="加载窗口" value={`最近 ${historyLimit} 条`} />
                 <InfoCard
                   label="更早消息"
-                  value={
-                    mayHaveEarlierMessages ? "继续展开" : "已全部加载"
-                  }
+                  value={mayHaveEarlierMessages ? "继续展开" : "已全部加载"}
                 />
               </div>
             }
@@ -261,7 +253,9 @@ export function DesktopChatHistoryPage() {
                 size="sm"
                 onClick={() => {
                   void messagesQuery.refetch();
-                  setNotice(`已刷新当前会话最近 ${historyRows.length} 条记录。`);
+                  setNotice(
+                    `已刷新当前会话最近 ${historyRows.length} 条记录。`,
+                  );
                 }}
               >
                 刷新记录
@@ -404,6 +398,10 @@ function resolveMessagePreview(item: Message | GroupMessage) {
     return item.text.trim() || `文件 · ${item.attachment.fileName}`;
   }
 
+  if (item.attachment?.kind === "voice") {
+    return item.text.trim() || "语音";
+  }
+
   if (item.attachment?.kind === "contact_card") {
     return item.text.trim() || `名片 · ${item.attachment.name}`;
   }
@@ -431,6 +429,10 @@ function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {
 
   if (type === "file") {
     return "文件";
+  }
+
+  if (type === "voice") {
+    return "语音";
   }
 
   if (type === "contact_card") {

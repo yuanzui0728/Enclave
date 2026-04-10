@@ -73,6 +73,10 @@ export function getConversationPreviewParts(
     return { prefix, text: "[文件]" };
   }
 
+  if (lastMessage.type === "voice") {
+    return { prefix, text: "[语音]" };
+  }
+
   if (lastMessage.type === "contact_card") {
     return { prefix, text: "[名片]" };
   }

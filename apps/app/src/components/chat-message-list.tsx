@@ -21,6 +21,8 @@ import {
   Forward,
   LocateFixed,
   MapPin,
+  Pause,
+  Play,
   Printer,
   Star,
   Trash2,
@@ -1462,6 +1464,12 @@ export function ChatMessageList({
                           : () => openAttachment(message)
                       }
                     />
+                  ) : message.type === "voice" &&
+                    message.attachment?.kind === "voice" ? (
+                    <VoiceMessage
+                      attachment={message.attachment}
+                      own={isUser}
+                    />
                   ) : message.type === "contact_card" &&
                     message.attachment?.kind === "contact_card" ? (
                     <ContactCardMessage
@@ -2113,6 +2121,12 @@ function buildClipboardText(message: ChatRenderableMessage) {
       : "[文件]";
   }
 
+  if (message.type === "voice") {
+    return message.attachment?.kind === "voice"
+      ? `[语音] ${formatVoiceDurationLabel(message.attachment.durationMs)}`
+      : "[语音]";
+  }
+
   if (message.type === "contact_card") {
     return message.attachment?.kind === "contact_card"
       ? `[名片] ${message.attachment.name}`
@@ -2150,6 +2164,10 @@ function resolveForwardTypeLabel(message: ChatRenderableMessage) {
 
   if (message.type === "file") {
     return "文件";
+  }
+
+  if (message.type === "voice") {
+    return "语音";
   }
 
   if (message.type === "contact_card") {
@@ -2352,6 +2370,14 @@ function buildGroupForwardPayload(
     };
   }
 
+  if (message.type === "voice" && message.attachment?.kind === "voice") {
+    return {
+      type: "voice",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
   if (
     message.type === "contact_card" &&
     message.attachment?.kind === "contact_card"
@@ -2409,6 +2435,16 @@ function buildDirectForwardPayload(
       conversationId: conversation.id,
       characterId,
       type: "file",
+      text,
+      attachment: message.attachment,
+    };
+  }
+
+  if (message.type === "voice" && message.attachment?.kind === "voice") {
+    return {
+      conversationId: conversation.id,
+      characterId,
+      type: "voice",
       text,
       attachment: message.attachment,
     };
@@ -2818,6 +2854,94 @@ function LocationCardMessage({
   );
 }
 
+function VoiceMessage({
+  attachment,
+  own,
+}: {
+  attachment: Extract<MessageAttachment, { kind: "voice" }>;
+  own: boolean;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    const handlePlay = () => setPlaying(true);
+    const handlePause = () => setPlaying(false);
+    const handleEnded = () => setPlaying(false);
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  const togglePlayback = () => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    if (audio.paused) {
+      void audio.play().catch(() => setPlaying(false));
+      return;
+    }
+
+    audio.pause();
+  };
+
+  return (
+    <div
+      className={`flex min-w-[148px] max-w-[220px] items-center gap-3 rounded-[18px] px-3 py-2.5 ${
+        own
+          ? "bg-[#95ec69] text-[#111827]"
+          : "border border-black/5 bg-white text-[color:var(--text-primary)]"
+      }`}
+    >
+      <button
+        type="button"
+        onClick={togglePlayback}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          own ? "bg-white/55" : "bg-[#f3f4f6]"
+        }`}
+        aria-label={playing ? "暂停语音" : "播放语音"}
+      >
+        {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
+      </button>
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <span
+          className={`h-2.5 w-1 rounded-full ${playing ? "animate-pulse" : ""} ${
+            own ? "bg-[#3d7f1a]" : "bg-[#9ca3af]"
+          }`}
+        />
+        <span
+          className={`h-4 w-1 rounded-full ${playing ? "animate-pulse [animation-delay:90ms]" : ""} ${
+            own ? "bg-[#4a8f24]" : "bg-[#6b7280]"
+          }`}
+        />
+        <span
+          className={`h-6 w-1 rounded-full ${playing ? "animate-pulse [animation-delay:180ms]" : ""} ${
+            own ? "bg-[#5aa72c]" : "bg-[#4b5563]"
+          }`}
+        />
+      </div>
+      <span className="shrink-0 text-xs tabular-nums text-black/60">
+        {formatVoiceDurationLabel(attachment.durationMs)}
+      </span>
+      <audio ref={audioRef} src={attachment.url} preload="none" />
+    </div>
+  );
+}
+
 function StickerMessage({
   url,
   label,
@@ -3155,6 +3279,20 @@ function buildLocationAttachmentSummary(
   return attachment.subtitle?.trim()
     ? `${attachment.title}\n${attachment.subtitle.trim()}`
     : attachment.title;
+}
+
+function formatVoiceDurationLabel(durationMs?: number) {
+  if (!durationMs || !Number.isFinite(durationMs) || durationMs <= 0) {
+    return '1"';
+  }
+
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return minutes > 0
+    ? `${minutes}:${String(seconds).padStart(2, "0")}`
+    : `${seconds}"`;
 }
 
 function ViewerActionButton({

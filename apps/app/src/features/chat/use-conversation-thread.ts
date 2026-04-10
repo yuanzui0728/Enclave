@@ -230,8 +230,7 @@ export function useConversationThread(conversationId: string) {
       conversationId,
       characterId: targetCharacterId,
       type: "sticker",
-      text:
-        overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
+      text: overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
       sticker: {
         packId: sticker.packId,
         stickerId: sticker.stickerId,
@@ -395,6 +394,10 @@ function attachmentsEqual(
     return left.url === right.url && left.fileName === right.fileName;
   }
 
+  if (left.kind === "voice" && right.kind === "voice") {
+    return left.url === right.url && left.fileName === right.fileName;
+  }
+
   if (left.kind === "contact_card" && right.kind === "contact_card") {
     return left.characterId === right.characterId;
   }
@@ -443,6 +446,7 @@ function buildOptimisticMessage(
   if (
     payload.type === "image" ||
     payload.type === "file" ||
+    payload.type === "voice" ||
     payload.type === "contact_card" ||
     payload.type === "location_card"
   ) {
@@ -459,9 +463,11 @@ function buildOptimisticMessage(
           ? `[名片] ${payload.attachment.name}`
           : payload.type === "location_card"
             ? `[位置] ${payload.attachment.title}`
-            : payload.type === "file"
-              ? `[文件] ${payload.attachment.fileName}`
-              : `[图片] ${payload.attachment.fileName}`),
+            : payload.type === "voice"
+              ? "[语音]"
+              : payload.type === "file"
+                ? `[文件] ${payload.attachment.fileName}`
+                : `[图片] ${payload.attachment.fileName}`),
       attachment: payload.attachment,
       createdAt,
     };

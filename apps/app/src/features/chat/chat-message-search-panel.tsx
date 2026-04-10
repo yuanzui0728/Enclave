@@ -385,6 +385,10 @@ function resolveSupportText(message: SearchableChatMessage) {
       : "文件";
   }
 
+  if (message.attachment?.kind === "voice") {
+    return "语音";
+  }
+
   if (message.attachment?.kind === "contact_card") {
     return message.attachment.name
       ? `名片 · ${message.attachment.name}`
@@ -413,6 +417,10 @@ function resolveMessageTypeLabel(message: SearchableChatMessage) {
 
   if (message.type === "file") {
     return "文件";
+  }
+
+  if (message.type === "voice") {
+    return "语音";
   }
 
   if (message.type === "contact_card") {
