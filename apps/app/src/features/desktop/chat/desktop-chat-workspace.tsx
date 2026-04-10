@@ -62,6 +62,7 @@ import {
   removeLocalChatMessageReminder,
   useLocalChatMessageActionState,
 } from "../../chat/local-chat-message-actions";
+import { useChatReminderNowTimestamp } from "../../chat/use-chat-reminder-now-timestamp";
 import {
   splitChatTextSegments,
   summarizeChatMentions,
@@ -139,7 +140,9 @@ export function DesktopChatWorkspace({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
   const [searchTerm, setSearchTerm] = useState("");
-  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  const reminderNowTimestamp = useChatReminderNowTimestamp(
+    localMessageActionState.reminders.length,
+  );
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
@@ -208,9 +211,9 @@ export function DesktopChatWorkspace({
       buildChatReminderEntries(
         localMessageActionState.reminders,
         conversations,
-        nowTimestamp,
+        reminderNowTimestamp,
       ),
-    [conversations, localMessageActionState.reminders, nowTimestamp],
+    [conversations, localMessageActionState.reminders, reminderNowTimestamp],
   );
   const filteredReminderEntries = useMemo(
     () => filterChatReminderEntries(reminderEntries, searchTerm),
@@ -299,18 +302,6 @@ export function DesktopChatWorkspace({
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
-
-  useEffect(() => {
-    if (!reminderEntries.length) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setNowTimestamp(Date.now());
-    }, 30_000);
-
-    return () => window.clearInterval(timer);
-  }, [reminderEntries.length]);
 
   useEffect(() => {
     if (!conversationContextMenu) {
