@@ -226,7 +226,7 @@ export class GroupController {
         },
   ) {
     const message = await this.groupService.sendOwnerMessage(id, body);
-    this.groupService.triggerAiReplies(id, message.text, message.senderName);
+    this.groupService.triggerAiReplies(id, message);
     return message;
   }
 }

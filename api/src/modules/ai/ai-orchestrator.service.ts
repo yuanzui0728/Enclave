@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import OpenAI, { toFile } from 'openai';
 import {
+  AiMessagePart,
   GenerateReplyOptions,
   GenerateReplyResult,
   GenerateMomentOptions,
@@ -38,6 +39,15 @@ type UploadedAudioFile = {
   size: number;
 };
 
+type ResolvedProviderConfig = {
+  endpoint: string;
+  model: string;
+  apiKey: string;
+  transcriptionModel: string;
+  apiStyle: 'openai-chat-completions' | 'openai-responses';
+  mode: 'cloud' | 'local-compatible';
+};
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
@@ -57,19 +67,6 @@ export class AiOrchestratorService {
     });
   }
 
-  private getClient(override?: AiKeyOverride): OpenAI {
-    if (override?.apiKey) {
-      return new OpenAI({
-        apiKey: override.apiKey,
-        baseURL:
-          override.apiBase ??
-          this.config.get<string>('OPENAI_BASE_URL') ??
-          'https://api.deepseek.com',
-      });
-    }
-    return this.client;
-  }
-
   private normalizeProviderEndpoint(value: string) {
     const normalized = value.trim().replace(/\/+$/, '');
     if (normalized.endsWith('/chat/completions')) {
@@ -82,7 +79,7 @@ export class AiOrchestratorService {
     return normalized;
   }
 
-  private async resolveProviderConfig() {
+  private async resolveProviderConfig(): Promise<ResolvedProviderConfig> {
     const endpoint =
       (await this.configService.getConfig('provider_endpoint')) ??
       this.config.get<string>('OPENAI_BASE_URL') ??
@@ -98,20 +95,198 @@ export class AiOrchestratorService {
     const transcriptionModel =
       (await this.configService.getConfig('provider_transcription_model')) ??
       DEFAULT_TRANSCRIPTION_MODEL;
+    const apiStyle =
+      (await this.configService.getConfig('provider_api_style')) ??
+      'openai-chat-completions';
+    const mode =
+      (await this.configService.getConfig('provider_mode')) ?? 'cloud';
 
     return {
       endpoint: this.normalizeProviderEndpoint(endpoint),
       model,
-      apiKey,
+      apiKey: apiKey.trim(),
       transcriptionModel,
+      apiStyle:
+        apiStyle === 'openai-responses'
+          ? 'openai-responses'
+          : 'openai-chat-completions',
+      mode: mode === 'local-compatible' ? 'local-compatible' : 'cloud',
     };
   }
 
-  private hasAvailableApiKey(override?: AiKeyOverride): boolean {
-    return Boolean(
-      override?.apiKey?.trim() ||
-      this.config.get<string>('DEEPSEEK_API_KEY')?.trim(),
+  private async resolveRuntimeProvider(
+    override?: AiKeyOverride,
+  ): Promise<ResolvedProviderConfig> {
+    const provider = await this.resolveProviderConfig();
+
+    return {
+      ...provider,
+      endpoint: override?.apiBase
+        ? this.normalizeProviderEndpoint(override.apiBase)
+        : provider.endpoint,
+      apiKey: override?.apiKey?.trim() || provider.apiKey,
+      model: provider.model,
+      transcriptionModel: provider.transcriptionModel,
+      apiStyle: provider.apiStyle,
+      mode: provider.mode,
+    };
+  }
+
+  private createProviderClient(provider: ResolvedProviderConfig) {
+    return new OpenAI({
+      apiKey: provider.apiKey,
+      baseURL: provider.endpoint,
+    });
+  }
+
+  private modelSupportsImageInput(model: string) {
+    const normalized = model.toLowerCase();
+    return /(vision|gpt-4o|gpt-4\.1|gpt-5|gemini|claude|vl|multimodal)/.test(
+      normalized,
     );
+  }
+
+  private isPrivateHostname(hostname: string) {
+    const normalized = hostname.trim().toLowerCase();
+    if (
+      normalized === 'localhost' ||
+      normalized === '::1' ||
+      normalized.endsWith('.localhost')
+    ) {
+      return true;
+    }
+
+    if (
+      normalized.startsWith('127.') ||
+      normalized.startsWith('10.') ||
+      normalized.startsWith('192.168.')
+    ) {
+      return true;
+    }
+
+    const match = normalized.match(/^172\.(\d{1,2})\./);
+    if (match) {
+      const secondOctet = Number(match[1]);
+      return secondOctet >= 16 && secondOctet <= 31;
+    }
+
+    return false;
+  }
+
+  private isReachableImageUrl(url: string, provider: ResolvedProviderConfig) {
+    if (url.startsWith('data:')) {
+      return true;
+    }
+
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return false;
+      }
+
+      if (provider.mode === 'local-compatible') {
+        return true;
+      }
+
+      return !this.isPrivateHostname(parsed.hostname);
+    } catch {
+      return false;
+    }
+  }
+
+  private buildMessageText(
+    message: Pick<ChatMessage, 'content' | 'characterId'>,
+    isGroupChat?: boolean,
+  ) {
+    return isGroupChat && message.characterId
+      ? `[${message.characterId}]: ${message.content}`
+      : message.content;
+  }
+
+  private collectUsableImageParts(
+    parts: AiMessagePart[] | undefined,
+    provider: ResolvedProviderConfig,
+  ) {
+    if (!parts?.length || !this.modelSupportsImageInput(provider.model)) {
+      return [];
+    }
+
+    return parts.filter(
+      (part): part is Extract<AiMessagePart, { type: 'image' }> =>
+        part.type === 'image' &&
+        this.isReachableImageUrl(part.imageUrl, provider),
+    );
+  }
+
+  private buildChatCompletionMessage(
+    message: ChatMessage,
+    provider: ResolvedProviderConfig,
+    isGroupChat?: boolean,
+  ): OpenAI.Chat.ChatCompletionMessageParam {
+    const textContent = this.buildMessageText(message, isGroupChat);
+    const imageParts = this.collectUsableImageParts(message.parts, provider);
+    if (!imageParts.length || message.role !== 'user') {
+      return {
+        role: message.role as 'user' | 'assistant' | 'system',
+        content: textContent,
+      };
+    }
+
+    const contentParts: Array<
+      | OpenAI.Chat.ChatCompletionContentPartText
+      | OpenAI.Chat.ChatCompletionContentPartImage
+    > = [];
+    if (textContent.trim()) {
+      contentParts.push({ type: 'text', text: textContent });
+    }
+
+    imageParts.forEach((part) => {
+      contentParts.push({
+        type: 'image_url',
+        image_url: {
+          url: part.imageUrl,
+          detail: part.detail ?? 'auto',
+        },
+      });
+    });
+
+    return {
+      role: 'user',
+      content: contentParts,
+    };
+  }
+
+  private buildResponsesMessage(
+    message: ChatMessage,
+    provider: ResolvedProviderConfig,
+    isGroupChat?: boolean,
+  ): OpenAI.Responses.EasyInputMessage {
+    const textContent = this.buildMessageText(message, isGroupChat);
+    const imageParts = this.collectUsableImageParts(message.parts, provider);
+    if (!imageParts.length) {
+      return {
+        role: message.role as 'user' | 'assistant' | 'system' | 'developer',
+        content: textContent,
+      };
+    }
+
+    const contentParts: OpenAI.Responses.ResponseInputMessageContentList = [];
+    if (textContent.trim()) {
+      contentParts.push({ type: 'input_text', text: textContent });
+    }
+
+    imageParts.forEach((part) => {
+      contentParts.push({
+        type: 'input_image',
+        image_url: part.imageUrl,
+        detail: part.detail ?? 'auto',
+      });
+    });
+
+    return {
+      role: message.role as 'user' | 'assistant' | 'system' | 'developer',
+      content: contentParts,
+    };
   }
 
   private buildUnavailableReply(
@@ -130,16 +305,18 @@ export class AiOrchestratorService {
       profile,
       conversationHistory,
       userMessage,
+      userMessageParts,
       isGroupChat,
       otherParticipants,
       chatContext,
       aiKeyOverride,
     } = options;
-    if (!this.hasAvailableApiKey(aiKeyOverride)) {
+    const provider = await this.resolveRuntimeProvider(aiKeyOverride);
+    if (!provider.apiKey) {
       return this.buildUnavailableReply(profile);
     }
 
-    const client = this.getClient(aiKeyOverride);
+    const client = this.createProviderClient(provider);
 
     let systemPrompt =
       profile.systemPrompt ??
@@ -167,30 +344,56 @@ export class AiOrchestratorService {
     // Calculate history window size based on forgettingCurve
     const forgettingCurve = profile.memory?.forgettingCurve ?? 70;
     const historyWindow = Math.round(8 + (forgettingCurve / 100) * 22); // 8-30 条
-
-    // Build messages array: system + history (dynamic window) + new user message
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-historyWindow).map((m) => {
-        const content =
-          m.role === 'assistant' ? sanitizeAiText(m.content) : m.content;
-
-        return {
-          role: m.role as 'user' | 'assistant',
-          content:
-            isGroupChat && m.characterId
-              ? `[${m.characterId}]: ${content}`
-              : content,
-        };
-      }),
-      { role: 'user', content: userMessage },
-    ];
+    const sanitizedHistory = conversationHistory
+      .slice(-historyWindow)
+      .map((m) => ({
+        ...m,
+        content: m.role === 'assistant' ? sanitizeAiText(m.content) : m.content,
+      }));
+    const currentUserMessage: ChatMessage = {
+      role: 'user',
+      content: userMessage,
+      parts: userMessageParts,
+    };
 
     try {
-      const model = await this.configService.getAiModel();
+      if (provider.apiStyle === 'openai-responses') {
+        const response = await client.responses.create({
+          model: provider.model,
+          instructions: systemPrompt,
+          input: [
+            ...sanitizedHistory.map((message) =>
+              this.buildResponsesMessage(message, provider, isGroupChat),
+            ),
+            this.buildResponsesMessage(
+              currentUserMessage,
+              provider,
+              isGroupChat,
+            ),
+          ],
+          max_output_tokens: 500,
+          temperature: 0.85,
+        });
+
+        const rawText = response.output_text ?? '（无回复）';
+        const text = sanitizeAiText(rawText) || '（无回复）';
+        const tokensUsed = response.usage?.total_tokens ?? 0;
+        return { text, tokensUsed };
+      }
+
       const response = await client.chat.completions.create({
-        model,
-        messages,
+        model: provider.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...sanitizedHistory.map((message) =>
+            this.buildChatCompletionMessage(message, provider, isGroupChat),
+          ),
+          this.buildChatCompletionMessage(
+            currentUserMessage,
+            provider,
+            isGroupChat,
+          ),
+        ],
         max_tokens: 500,
         temperature: 0.85,
       });
@@ -201,7 +404,7 @@ export class AiOrchestratorService {
 
       return { text, tokensUsed };
     } catch (err) {
-      this.logger.error('DeepSeek API error', err);
+      this.logger.error('AI provider error', err);
       throw err;
     }
   }
@@ -295,7 +498,8 @@ ${chatHistory}
     reason: string;
     requiredDomains: string[];
   }> {
-    if (!this.hasAvailableApiKey()) {
+    const provider = await this.resolveRuntimeProvider();
+    if (!provider.apiKey) {
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
 
@@ -306,9 +510,9 @@ ${chatHistory}
     );
 
     try {
-      const model = await this.configService.getAiModel();
-      const response = await this.client.chat.completions.create({
-        model,
+      const client = this.createProviderClient(provider);
+      const response = await client.chat.completions.create({
+        model: provider.model,
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 200,
         temperature: 0.1,
