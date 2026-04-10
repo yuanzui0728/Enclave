@@ -136,7 +136,7 @@ export function DesktopChannelsWorkspace({
             <div className="mt-3 flex gap-2">
               <Button variant="secondary" size="sm" onClick={onRefresh}>
                 <RefreshCcw size={14} />
-                刷新
+                换一批
               </Button>
               <Button
                 variant="primary"

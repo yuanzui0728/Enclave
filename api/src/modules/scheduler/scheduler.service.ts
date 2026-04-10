@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, MoreThanOrEqual } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
@@ -183,6 +183,55 @@ export class SchedulerService {
       }
     } catch (err) {
       this.logger.error('Failed to process pending feed reactions', err);
+    }
+  }
+
+  // Every 20 minutes: keep channels populated with AI-generated short video posts
+  @Cron('*/20 * * * *')
+  async checkChannelsSchedule() {
+    try {
+      const now = new Date();
+      const hour = now.getHours();
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const blockedCharacterIds = new Set(
+        await this.socialService.getBlockedCharacterIds(),
+      );
+      const chars = (await this.characterRepo.find()).filter(
+        (char) => char.feedFrequency > 0 && !blockedCharacterIds.has(char.id),
+      );
+
+      for (const char of chars) {
+        const start = char.activeHoursStart ?? 9;
+        const end = char.activeHoursEnd ?? 22;
+        if (hour < start || hour > end) {
+          continue;
+        }
+
+        const weeklyChannelsCount = await this.feedPostRepo.count({
+          where: {
+            authorId: char.id,
+            createdAt: MoreThanOrEqual(weekStart),
+            surface: 'channels',
+          },
+        });
+
+        if (weeklyChannelsCount >= char.feedFrequency) {
+          continue;
+        }
+
+        if (Math.random() > 0.22) {
+          continue;
+        }
+
+        const post = await this.feedService.generateChannelPost(char.id);
+        if (post) {
+          this.logger.debug(`Generated channels post ${post.id} for ${char.name}`);
+        }
+      }
+
+      await this.feedService.topUpChannelsIfNeeded();
+    } catch (err) {
+      this.logger.error('Failed to check channels schedule', err);
     }
   }
 

@@ -36,6 +36,11 @@ export class FeedController {
     });
   }
 
+  @Post('channels/generate')
+  generateChannelPost() {
+    return this.feedService.generateChannelPost();
+  }
+
   @Post(':id/comment')
   addComment(
     @Param('id') postId: string,
