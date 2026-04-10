@@ -1640,40 +1640,6 @@ function formatPendingReturnDuration(deliveredAt: string) {
   return `${elapsedHours} 小时 ${remainderMinutes} 分钟`;
 }
 
-function resolvePendingReturnBadgeLabel(deliveredAt: string) {
-  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
-  if (elapsedMinutes === null) {
-    return "待回流";
-  }
-
-  if (elapsedMinutes >= 60) {
-    return "长时间未回流";
-  }
-
-  if (elapsedMinutes >= 15) {
-    return "待回流偏久";
-  }
-
-  return "刚发出待回流";
-}
-
-function resolvePendingReturnBadgeTone(deliveredAt: string) {
-  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
-  if (elapsedMinutes === null) {
-    return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
-  }
-
-  if (elapsedMinutes >= 60) {
-    return "bg-[rgba(220,38,38,0.12)] text-[#b91c1c]";
-  }
-
-  if (elapsedMinutes >= 15) {
-    return "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]";
-  }
-
-  return "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]";
-}
-
 function resolvePendingReturnPrimaryReason(
   conversation: ConversationListItem,
   deliveredAt: string,
@@ -1723,35 +1689,6 @@ function resolvePendingReturnPrimaryReason(
   };
 }
 
-function resolvePendingReturnSecondaryHints(
-  conversation: ConversationListItem,
-  deliveredAt: string,
-) {
-  const elapsedMinutes = resolvePendingReturnElapsedMinutes(deliveredAt);
-  const recentActivityMinutes = resolveConversationRecentActivityMinutes(
-    conversation.lastActivityAt,
-  );
-  const hints: string[] = [];
-
-  if (!isPendingReturnCoolingDown(deliveredAt) && elapsedMinutes !== null) {
-    if (elapsedMinutes >= 60) {
-      hints.push("超时优先");
-    } else if (elapsedMinutes >= 15) {
-      hints.push("可补一轮");
-    }
-  }
-
-  if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
-    hints.push("近期活跃");
-  }
-
-  hints.push(
-    isPersistedGroupConversation(conversation) ? "群聊扩散" : "单聊触达",
-  );
-
-  return hints;
-}
-
 function resolvePendingReturnRecommendationSummary(
   conversation: ConversationListItem,
   deliveredAt: string,
@@ -1763,7 +1700,7 @@ function resolvePendingReturnRecommendationSummary(
   const isGroupConversation = isPersistedGroupConversation(conversation);
 
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return "刚补发过，先给这条会话一点回流时间。";
+    return "刚补发过，先等回流。";
   }
 
   if (
@@ -1772,22 +1709,22 @@ function resolvePendingReturnRecommendationSummary(
     recentActivityMinutes !== null &&
     recentActivityMinutes <= 6 * 60
   ) {
-    return "已经拖久且这条会话还在活跃，建议优先追一轮回流。";
+    return "拖得久且还活跃，先追这条。";
   }
 
   if (elapsedMinutes !== null && elapsedMinutes >= 60) {
-    return "这条邀请已经长时间没有回流，适合优先补发。";
+    return "长时间未回流，先补这条。";
   }
 
   if (recentActivityMinutes !== null && recentActivityMinutes <= 6 * 60) {
     return isGroupConversation
-      ? "这条群聊最近还在活跃，适合继续扩散。"
-      : "这条单聊最近仍在互动，适合趁热再触达一次。";
+      ? "群聊还活跃，适合继续扩散。"
+      : "单聊还活跃，适合趁热补发。";
   }
 
   return isGroupConversation
-    ? "群聊触达面更大，可作为扩散补发目标。"
-    : "这条单聊更适合做定向补发。";
+    ? "群聊触达更广，可作扩散位。"
+    : "这条更适合定向补发。";
 }
 
 function resolvePendingReturnFallbackReason(
@@ -1891,7 +1828,7 @@ function resolvePendingReturnActionHint(
   deliveredAt: string,
 ) {
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return `这条现在还在冷却，先等一轮回流，再回到 ${conversation.title}。`;
+    return `还在冷却，先等回流再看 ${conversation.title}。`;
   }
 
   const primaryReason = resolvePendingReturnPrimaryReason(
@@ -1900,21 +1837,21 @@ function resolvePendingReturnActionHint(
   );
 
   if (primaryReason.label === "超时且活跃") {
-    return "这条既拖得久又还活跃，按当前排序先处理最划算。";
+    return "拖得久又还活跃，现在补最值。";
   }
 
   if (primaryReason.label === "长时间未回流") {
-    return "这条等待时间已经明显偏长，建议现在先补这一轮。";
+    return "等待已经偏长，现在补更顺。";
   }
 
   if (
     primaryReason.label === "活跃群聊扩散" ||
     primaryReason.label === "活跃单聊触达"
   ) {
-    return "这条还在活跃窗口里，趁现在补发更容易接住回流。";
+    return "还在活跃窗口里，适合现在补。";
   }
 
-  return "按当前排序先做这条，主路径会更顺。";
+  return "按当前排序先做这条。";
 }
 
 function resolvePendingReturnActionRiskHint(
@@ -1922,7 +1859,7 @@ function resolvePendingReturnActionRiskHint(
   deliveredAt: string,
 ) {
   if (isPendingReturnCoolingDown(deliveredAt)) {
-    return "现在继续追不会立刻改善结构，反而可能把这条会话重复压在前面。";
+    return "现在追也不会立刻改善结构。";
   }
 
   const primaryReason = resolvePendingReturnPrimaryReason(
@@ -1931,21 +1868,21 @@ function resolvePendingReturnActionRiskHint(
   );
 
   if (primaryReason.label === "超时且活跃") {
-    return "如果再拖，活跃窗口一过，这条最有价值的回流口可能就会变钝。";
+    return "再拖下去，最好的回流口会变钝。";
   }
 
   if (primaryReason.label === "长时间未回流") {
-    return "如果继续后放，这条会进一步积压，后面补发的收益只会更差。";
+    return "再后放，这条只会继续积压。";
   }
 
   if (
     primaryReason.label === "活跃群聊扩散" ||
     primaryReason.label === "活跃单聊触达"
   ) {
-    return "如果错过当前活跃窗口，下一轮想再接住回流会更难。";
+    return "错过活跃窗口，再补会更难接回流。";
   }
 
-  return `如果先不动 ${conversation.title}，当前主路径里的阻塞还会继续留在前面。`;
+  return `先不动 ${conversation.title}，主路径还会堵在前面。`;
 }
 
 function resolvePendingReturnActionStatus(
