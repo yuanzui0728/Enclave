@@ -1,8 +1,16 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { BookText, BookUser, Search, Tag, UserPlus, Users } from "lucide-react";
-import { getFriendRequests, getFriends, getOrCreateConversation, listCharacters } from "@yinjie/contracts";
+import {
+  blockCharacter,
+  getBlockedCharacters,
+  getFriendRequests,
+  getFriends,
+  getOrCreateConversation,
+  listCharacters,
+  unblockCharacter,
+} from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
@@ -41,6 +49,7 @@ export function ContactsPage() {
   const pageRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [searchText, setSearchText] = useState("");
@@ -63,6 +72,12 @@ export function ContactsPage() {
   const friendRequestsQuery = useQuery({
     queryKey: ["app-friend-requests", baseUrl],
     queryFn: () => getFriendRequests(baseUrl),
+  });
+
+  const blockedCharactersQuery = useQuery({
+    queryKey: ["app-contacts-blocked", baseUrl],
+    queryFn: () => getBlockedCharacters(baseUrl),
+    enabled: isDesktopLayout,
   });
 
   const startChatMutation = useMutation({
@@ -136,8 +151,39 @@ export function ContactsPage() {
     );
   }, [desktopSelection, filteredWorldCharacterItems, worldCharacterDirectoryItems]);
 
+  const selectedCharacterId = selectedFriendItem?.character.id ?? selectedWorldCharacterItem?.character.id ?? null;
+  const selectedFriendBlocked = useMemo(
+    () => Boolean(selectedFriendItem && (blockedCharactersQuery.data ?? []).some((item) => item.characterId === selectedFriendItem.character.id)),
+    [blockedCharactersQuery.data, selectedFriendItem],
+  );
+
   const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
+  });
+
+  const blockMutation = useMutation({
+    mutationFn: async ({ characterId, blocked }: { characterId: string; blocked: boolean }) => {
+      if (blocked) {
+        return unblockCharacter({ characterId }, baseUrl);
+      }
+
+      return blockCharacter(
+        {
+          characterId,
+          reason: "来自通讯录详情页加入黑名单",
+        },
+        baseUrl,
+      );
+    },
+    onSuccess: async (_, variables) => {
+      setNotice(variables.blocked ? "已移出黑名单。" : "已加入黑名单。");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["app-contacts-blocked", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-chat-details-blocked", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-chat-blocked-characters", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+      ]);
+    },
   });
 
   useEffect(() => {
@@ -281,6 +327,18 @@ export function ContactsPage() {
     void navigate({ to: "/character/$characterId", params: { characterId } });
   }
 
+  function handleToggleBlock() {
+    if (!selectedFriendItem) {
+      return;
+    }
+
+    setNotice(null);
+    blockMutation.mutate({
+      characterId: selectedFriendItem.character.id,
+      blocked: selectedFriendBlocked,
+    });
+  }
+
   function handleIndexJump(anchorId: string) {
     setActiveMobileIndexKey(anchorId);
 
@@ -394,9 +452,19 @@ export function ContactsPage() {
                     <ErrorBlock message={friendRequestsQuery.error.message} />
                   </div>
                 ) : null}
+                {blockedCharactersQuery.isError && blockedCharactersQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={blockedCharactersQuery.error.message} />
+                  </div>
+                ) : null}
                 {startChatMutation.isError && startChatMutation.error instanceof Error ? (
                   <div className="px-3 pb-3">
                     <ErrorBlock message={startChatMutation.error.message} />
+                  </div>
+                ) : null}
+                {blockMutation.isError && blockMutation.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={blockMutation.error.message} />
                   </div>
                 ) : null}
 
@@ -472,6 +540,9 @@ export function ContactsPage() {
                 friendship={selectedFriendItem?.friendship ?? null}
                 onStartChat={selectedFriendItem ? () => handleStartChat(selectedFriendItem.character.id) : undefined}
                 chatPending={selectedFriendItem?.character.id === pendingCharacterId}
+                isBlocked={selectedFriendBlocked}
+                blockPending={blockMutation.isPending && blockMutation.variables?.characterId === selectedCharacterId}
+                onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}
                 onOpenProfile={() => {
                   const characterId = selectedFriendItem?.character.id ?? selectedWorldCharacterItem?.character.id;
                   if (!characterId) {

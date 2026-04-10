@@ -11,6 +11,9 @@ type ContactDetailPaneProps = {
   onOpenProfile: () => void;
   onStartChat?: () => void;
   chatPending?: boolean;
+  isBlocked?: boolean;
+  blockPending?: boolean;
+  onToggleBlock?: () => void;
 };
 
 export function ContactDetailPane({
@@ -19,6 +22,9 @@ export function ContactDetailPane({
   onOpenProfile,
   onStartChat,
   chatPending = false,
+  isBlocked = false,
+  blockPending = false,
+  onToggleBlock,
 }: ContactDetailPaneProps) {
   if (!character) {
     return (
@@ -114,6 +120,15 @@ export function ContactDetailPane({
               <StaticDetailRow label="置顶聊天" value="后续接入" muted />
               <StaticDetailRow label="消息免打扰" value="后续接入" muted />
               <ActionDetailRow label="查看资料" value="进入角色资料详情页" onClick={onOpenProfile} />
+              {onToggleBlock ? (
+                <ActionDetailRow
+                  label={isBlocked ? "黑名单" : "联系人管理"}
+                  value={blockPending ? "正在更新..." : isBlocked ? "移出黑名单" : "加入黑名单"}
+                  onClick={onToggleBlock}
+                  danger
+                  disabled={blockPending}
+                />
+              ) : null}
               <StaticDetailRow label="删除联系人" value="后续接入" muted />
             </DetailSection>
           ) : null}
@@ -159,19 +174,38 @@ function ActionDetailRow({
   label,
   value,
   onClick,
+  danger = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onClick: () => void;
+  danger?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 px-8 py-4 text-left text-sm transition-colors hover:bg-[rgba(15,23,42,0.03)]"
+      disabled={disabled}
+      className={`flex w-full items-center gap-4 px-8 py-4 text-left text-sm transition-colors ${
+        danger
+          ? "text-[color:var(--state-danger-text)] hover:bg-[rgba(239,68,68,0.05)] disabled:text-[color:var(--text-dim)]"
+          : "hover:bg-[rgba(15,23,42,0.03)]"
+      }`}
     >
       <div className="w-24 shrink-0 text-[color:var(--text-muted)]">{label}</div>
-      <div className="min-w-0 flex-1 truncate text-[color:var(--text-primary)]">{value}</div>
+      <div
+        className={`min-w-0 flex-1 truncate ${
+          danger
+            ? disabled
+              ? "text-[color:var(--text-dim)]"
+              : "text-[color:var(--state-danger-text)]"
+            : "text-[color:var(--text-primary)]"
+        }`}
+      >
+        {value}
+      </div>
       <ChevronRight size={16} className="shrink-0 text-[color:var(--text-dim)]" />
     </button>
   );
