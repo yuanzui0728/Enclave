@@ -64,6 +64,8 @@
 - `chat/$conversationId/details`：单聊右上角三个点详情页，对齐微信式聊天信息页
 - `chat/$conversationId/search`：单聊聊天记录检索页，由聊天信息页进入
 - `group/$groupId/details`：群聊右上角三个点详情页，对齐微信式群聊信息页
+- `group/$groupId/edit/name`：群聊名称编辑页，承载微信式二级表单编辑而非浏览器原生 prompt
+- `group/$groupId/edit/nickname`：我在本群的昵称编辑页，承载微信式群内昵称二级编辑
 - `group/$groupId/background`：群聊聊天背景设置路由，对齐微信式“群聊信息 -> 聊天背景”
 - `group/$groupId/announcement`：群公告独立页，承载群公告阅读与编辑
 - `group/$groupId/qr`：群二维码页，承载群邀请卡、群链接与邀请码分享

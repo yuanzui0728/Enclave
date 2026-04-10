@@ -208,6 +208,16 @@ const GroupChatDetailsPage = lazy(async () => {
   return { default: mod.GroupChatDetailsPage };
 });
 
+const GroupChatNameEditPage = lazy(async () => {
+  const mod = await import("./routes/group-chat-edit-page");
+  return { default: mod.GroupChatNameEditPage };
+});
+
+const GroupChatNicknameEditPage = lazy(async () => {
+  const mod = await import("./routes/group-chat-edit-page");
+  return { default: mod.GroupChatNicknameEditPage };
+});
+
 const GroupAnnouncementPage = lazy(async () => {
   const mod = await import("./routes/group-announcement-page");
   return { default: mod.GroupAnnouncementPage };
@@ -474,6 +484,20 @@ const groupChatDetailsRoute = createRoute({
   component: GroupChatDetailsPage,
 });
 
+const groupChatNameEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/group/$groupId/edit/name",
+  beforeLoad: requireWorldReady,
+  component: GroupChatNameEditPage,
+});
+
+const groupChatNicknameEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/group/$groupId/edit/nickname",
+  beforeLoad: requireWorldReady,
+  component: GroupChatNicknameEditPage,
+});
+
 const groupChatBackgroundRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/group/$groupId/background",
@@ -679,6 +703,8 @@ const routeTree = rootRoute.addChildren([
   officialAccountServiceRoute,
   groupChatRoute,
   groupChatDetailsRoute,
+  groupChatNameEditRoute,
+  groupChatNicknameEditRoute,
   groupChatBackgroundRoute,
   groupAnnouncementRoute,
   groupQrRoute,
