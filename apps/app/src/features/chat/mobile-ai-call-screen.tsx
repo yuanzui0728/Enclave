@@ -19,7 +19,6 @@ import {
   Mic,
   PhoneOff,
   RotateCcw,
-  Video,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -29,6 +28,7 @@ import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
+import { DigitalHumanStage } from "./digital-human-stage";
 import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
 
@@ -386,102 +386,65 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
       <div className="flex min-h-[calc(100dvh-65px)] flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
         {isVideoMode ? (
-          <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(15,23,42,0.34)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.14),transparent_32%),radial-gradient(circle_at_bottom,rgba(96,165,250,0.18),transparent_36%)]" />
-            <div className="relative flex min-h-[420px] flex-col justify-between p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#bbf7d0]">
-                    <Video size={13} />
-                    AI 数字人视频通话
-                  </div>
-                  <div className="mt-3 text-[28px] font-semibold tracking-[0.01em]">
-                    {characterName}
-                  </div>
-                  <div className="mt-1 text-sm text-white/62">
-                    {characterStatus}
-                  </div>
-                </div>
-                <div className="max-w-[136px] rounded-[18px] border border-white/10 bg-white/8 px-3 py-2 text-right">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">
-                    状态
-                  </div>
-                  <div className="mt-1 text-sm font-medium text-[#bbf7d0]">
-                    {statusLabel}
-                  </div>
-                </div>
+          <section className="relative">
+            <DigitalHumanStage
+              variant="mobile"
+              name={characterName}
+              src={digitalSession?.posterUrl || characterAvatar}
+              talking={activeCall.playbackState === "playing"}
+              thinking={
+                digitalHumanCall.sessionState === "connecting" ||
+                activeCall.turnMutation.isPending
+              }
+              statusLabel={statusLabel}
+              statusHint={statusHint}
+              providerLabel={
+                digitalSession?.presentationMode === "mock_stage"
+                  ? "内置数字人舞台"
+                  : "数字人视频流"
+              }
+            />
+
+            <div className="absolute right-4 top-4 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
+              <div className="flex items-center justify-between border-b border-white/8 px-3 py-2">
+                <span className="text-[11px] uppercase tracking-[0.16em] text-white/48">
+                  我
+                </span>
+                <span className="text-[11px] text-white/48">
+                  {cameraEnabled ? "预览中" : "已关闭"}
+                </span>
               </div>
-
-              <div className="relative flex flex-1 items-center justify-center py-6">
-                <DigitalHumanPortrait
-                  name={characterName}
-                  src={digitalSession?.posterUrl || characterAvatar}
-                  talking={activeCall.playbackState === "playing"}
-                  thinking={
-                    digitalHumanCall.sessionState === "connecting" ||
-                    activeCall.turnMutation.isPending
-                  }
-                  providerLabel={
-                    digitalSession?.presentationMode === "mock_stage"
-                      ? "内置数字人舞台"
-                      : "数字人视频流"
-                  }
-                />
-
-                <div className="absolute right-0 top-0 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
-                  <div className="flex items-center justify-between border-b border-white/8 px-3 py-2">
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-white/48">
-                      我
-                    </span>
-                    <span className="text-[11px] text-white/48">
-                      {cameraEnabled ? "预览中" : "已关闭"}
-                    </span>
+              <div className="relative aspect-[3/4] bg-[linear-gradient(180deg,rgba(30,41,59,0.98),rgba(15,23,42,0.96))]">
+                {cameraEnabled && cameraPreview.status === "ready" ? (
+                  <video
+                    ref={cameraPreview.videoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="h-full w-full scale-x-[-1] object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80">
+                      {cameraEnabled ? (
+                        cameraPreview.status === "requesting-permission" ? (
+                          <LoaderCircle size={18} className="animate-spin" />
+                        ) : (
+                          <Camera size={18} />
+                        )
+                      ) : (
+                        <CameraOff size={18} />
+                      )}
+                    </div>
+                    <div className="px-3 text-[12px] leading-5 text-white/58">
+                      {cameraEnabled
+                        ? cameraPreview.status === "requesting-permission"
+                          ? "申请摄像头权限中"
+                          : cameraPreview.error || "等待接通本地画面"
+                        : "本地摄像头已关闭"}
+                    </div>
                   </div>
-                  <div className="relative aspect-[3/4] bg-[linear-gradient(180deg,rgba(30,41,59,0.98),rgba(15,23,42,0.96))]">
-                    {cameraEnabled && cameraPreview.status === "ready" ? (
-                      <video
-                        ref={cameraPreview.videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="h-full w-full scale-x-[-1] object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/80">
-                          {cameraEnabled ? (
-                            cameraPreview.status === "requesting-permission" ? (
-                              <LoaderCircle
-                                size={18}
-                                className="animate-spin"
-                              />
-                            ) : (
-                              <Camera size={18} />
-                            )
-                          ) : (
-                            <CameraOff size={18} />
-                          )}
-                        </div>
-                        <div className="px-3 text-[12px] leading-5 text-white/58">
-                          {cameraEnabled
-                            ? cameraPreview.status === "requesting-permission"
-                              ? "申请摄像头权限中"
-                              : cameraPreview.error || "等待接通本地画面"
-                            : "本地摄像头已关闭"}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[22px] border border-white/8 bg-white/6 px-4 py-3">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">
-                  通话提示
-                </div>
-                <div className="mt-1 text-[13px] leading-6 text-white/72">
-                  {statusHint}
-                </div>
+                )}
               </div>
             </div>
           </section>
@@ -661,77 +624,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         </div>
       </div>
     </AppPage>
-  );
-}
-
-function DigitalHumanPortrait({
-  name,
-  src,
-  talking,
-  thinking,
-  providerLabel,
-}: {
-  name: string;
-  src?: string;
-  talking: boolean;
-  thinking: boolean;
-  providerLabel?: string;
-}) {
-  const initial = name.trim().slice(0, 1) || "AI";
-
-  return (
-    <div className="relative flex flex-col items-center">
-      <div
-        className={cn(
-          "absolute inset-[-18px] rounded-full border",
-          talking
-            ? "animate-ping border-[#34d399]/28"
-            : thinking
-              ? "animate-pulse border-[#60a5fa]/24"
-              : "border-white/6",
-        )}
-      />
-      <div className="absolute inset-[-34px] rounded-full bg-[radial-gradient(circle,rgba(52,211,153,0.24),transparent_66%)] blur-3xl" />
-      <div className="relative flex h-[224px] w-[224px] items-center justify-center overflow-hidden rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(30,41,59,0.96),rgba(15,23,42,0.98))] shadow-[0_26px_80px_rgba(2,6,23,0.46)]">
-        {src ? (
-          <img src={src} alt={name} className="h-full w-full object-cover" />
-        ) : (
-          <span className="text-[64px] font-semibold text-white/86">
-            {initial}
-          </span>
-        )}
-      </div>
-      <div className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4">
-        <div className="flex items-end gap-1">
-          {[0, 1, 2].map((item) => (
-            <span
-              key={item}
-              className={cn(
-                "w-1.5 rounded-full transition-all",
-                talking
-                  ? "h-5 animate-pulse bg-[#34d399]"
-                  : thinking
-                    ? "h-4 animate-pulse bg-[#60a5fa]"
-                    : "h-2 bg-white/28",
-              )}
-              style={
-                talking || thinking
-                  ? { animationDelay: `${item * 120}ms` }
-                  : undefined
-              }
-            />
-          ))}
-        </div>
-        <span className="text-sm text-white/76">
-          {talking ? "数字人播报中" : thinking ? "数字人思考中" : "数字人在线"}
-        </span>
-        {providerLabel ? (
-          <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[11px] text-white/56">
-            {providerLabel}
-          </span>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
