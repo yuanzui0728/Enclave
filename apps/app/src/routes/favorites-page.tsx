@@ -21,6 +21,7 @@ const categoryLabels: Array<{
   { id: "officialAccounts", label: "公众号" },
   { id: "moments", label: "朋友圈" },
   { id: "feed", label: "广场动态" },
+  { id: "channels", label: "视频号" },
 ];
 
 export function FavoritesPage() {
@@ -61,6 +62,7 @@ export function FavoritesPage() {
       ).length,
       moments: favorites.filter((item) => item.category === "moments").length,
       feed: favorites.filter((item) => item.category === "feed").length,
+      channels: favorites.filter((item) => item.category === "channels").length,
     }),
     [favorites],
   );
@@ -74,13 +76,13 @@ export function FavoritesPage() {
       <DesktopEntryShell
         badge="Favorites"
         title="收藏把跨频道的重要内容统一收住"
-        description="桌面收藏已经接通搜索、聊天文件、朋友圈、广场动态和公众号阅读链路，把跨频道的重要内容统一收住。"
+        description="桌面收藏已经接通搜索、聊天文件、朋友圈、广场动态、视频号和公众号阅读链路，把跨频道的重要内容统一收住。"
         aside={
           <div className="space-y-3">
             <StatCard label="当前收藏" value={`${favorites.length} 项`} />
             <StatCard
               label="内容流"
-              value={`${counts.moments + counts.feed} 项`}
+              value={`${counts.moments + counts.feed + counts.channels} 项`}
             />
             <StatCard
               label="消息与联系人"
@@ -126,6 +128,7 @@ export function FavoritesPage() {
               <SummaryCard label="公众号" count={counts.officialAccounts} />
               <SummaryCard label="朋友圈" count={counts.moments} />
               <SummaryCard label="广场动态" count={counts.feed} />
+              <SummaryCard label="视频号" count={counts.channels} />
             </section>
 
             <section className="space-y-3 rounded-[28px] border border-[color:var(--border-faint)] bg-white/90 p-5 shadow-[var(--shadow-soft)]">

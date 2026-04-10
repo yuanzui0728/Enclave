@@ -29,7 +29,8 @@ type SearchCategory =
   | "contacts"
   | "officialAccounts"
   | "moments"
-  | "feed";
+  | "feed"
+  | "channels";
 
 type SearchResultItem = {
   id: string;
@@ -51,6 +52,7 @@ const categoryLabels: Array<{ id: SearchCategory; label: string }> = [
   { id: "officialAccounts", label: "公众号" },
   { id: "moments", label: "朋友圈" },
   { id: "feed", label: "广场动态" },
+  { id: "channels", label: "视频号" },
 ];
 
 export function SearchPage() {
@@ -89,6 +91,10 @@ export function SearchPage() {
   const feedQuery = useQuery({
     queryKey: ["app-feed", baseUrl],
     queryFn: () => getFeed(1, 20, baseUrl),
+  });
+  const channelsQuery = useQuery({
+    queryKey: ["app-channels", baseUrl],
+    queryFn: () => getFeed(1, 20, baseUrl, { surface: "channels" }),
   });
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
@@ -241,6 +247,27 @@ export function SearchPage() {
         avatarSrc: post.authorAvatar,
       }),
     );
+    const indexedChannels: SearchResultItem[] = (
+      channelsQuery.data?.posts ?? []
+    ).map((post) => ({
+      id: `channels-${post.id}`,
+      category: "channels",
+      title: post.authorName,
+      description: post.text,
+      meta: `视频号 · ${formatTimestamp(post.createdAt)}`,
+      keywords: [
+        post.authorName,
+        post.text,
+        ...post.commentsPreview.map((item) => `${item.authorName} ${item.text}`),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase(),
+      to: "/tabs/channels",
+      badge: "视频号",
+      avatarName: post.authorName,
+      avatarSrc: post.authorAvatar,
+    }));
 
     return [
       ...indexedConversations,
@@ -248,9 +275,11 @@ export function SearchPage() {
       ...indexedOfficialAccounts,
       ...indexedMoments,
       ...indexedFeed,
+      ...indexedChannels,
     ];
   }, [
     charactersQuery.data,
+    channelsQuery.data?.posts,
     conversationsQuery.data,
     feedQuery.data?.posts,
     friendsQuery.data,
@@ -288,6 +317,8 @@ export function SearchPage() {
       ).length,
       moments: searchIndex.filter((item) => item.category === "moments").length,
       feed: searchIndex.filter((item) => item.category === "feed").length,
+      channels: searchIndex.filter((item) => item.category === "channels")
+        .length,
     };
   }, [searchIndex]);
 
@@ -297,7 +328,8 @@ export function SearchPage() {
     charactersQuery.isLoading ||
     officialAccountsQuery.isLoading ||
     momentsQuery.isLoading ||
-    feedQuery.isLoading;
+    feedQuery.isLoading ||
+    channelsQuery.isLoading;
 
   const error =
     extractErrorMessage(conversationsQuery.error) ||
@@ -305,7 +337,8 @@ export function SearchPage() {
     extractErrorMessage(charactersQuery.error) ||
     extractErrorMessage(officialAccountsQuery.error) ||
     extractErrorMessage(momentsQuery.error) ||
-    extractErrorMessage(feedQuery.error);
+    extractErrorMessage(feedQuery.error) ||
+    extractErrorMessage(channelsQuery.error);
 
   if (!isDesktopLayout) {
     return null;
@@ -316,7 +349,7 @@ export function SearchPage() {
       <DesktopEntryShell
         badge="Search"
         title="搜一搜把消息和内容流放进同一个桌面检索面"
-        description="桌面版搜一搜先直接聚合现有会话、联系人、公众号、朋友圈和广场动态，不等独立搜索服务也能先对齐微信式搜索路径。"
+        description="桌面版搜一搜先直接聚合现有会话、联系人、公众号、朋友圈、广场动态和视频号，不等独立搜索服务也能先对齐微信式搜索路径。"
         aside={
           <div className="space-y-3">
             <StatCard label="消息索引" value={`${resultCounts.messages} 条`} />
@@ -326,7 +359,7 @@ export function SearchPage() {
             />
             <StatCard
               label="内容流"
-              value={`${resultCounts.moments + resultCounts.feed} 条`}
+              value={`${resultCounts.moments + resultCounts.feed + resultCounts.channels} 条`}
             />
           </div>
         }
@@ -336,7 +369,7 @@ export function SearchPage() {
             <TextField
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索消息、联系人、公众号、朋友圈或广场动态"
+              placeholder="搜索消息、联系人、公众号、朋友圈、广场动态或视频号"
               className="rounded-[18px] border-[color:var(--border-faint)] bg-[rgba(255,249,241,0.88)] px-4 py-3 shadow-none"
             />
             <div className="mt-4 flex flex-wrap gap-2">
@@ -377,6 +410,7 @@ export function SearchPage() {
                 count={resultCounts.moments}
               />
               <CategorySummaryCard label="广场动态" count={resultCounts.feed} />
+              <CategorySummaryCard label="视频号" count={resultCounts.channels} />
             </section>
 
             <section className="space-y-4 rounded-[28px] border border-[color:var(--border-faint)] bg-white/90 p-5 shadow-[var(--shadow-soft)]">
