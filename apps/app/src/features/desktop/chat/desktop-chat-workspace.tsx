@@ -85,6 +85,7 @@ import { DesktopConversationContextMenu } from "./desktop-conversation-context-m
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
+import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
 import { createDesktopNote } from "./desktop-notes-storage";
 
 type DesktopChatWorkspaceProps = {
@@ -462,11 +463,22 @@ export function DesktopChatWorkspace({
   }
 
   function handleDesktopCallAction(kind: DesktopChatCallKind) {
-    setNotice(
-      kind === "video"
-        ? "视频通话入口已保留，真实通话能力后续补齐。"
-        : "语音通话入口已保留，真实通话能力后续补齐。",
-    );
+    if (!activeConversation) {
+      setNotice("当前会话暂时不可用，请回到消息列表再试一次。");
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/mobile",
+      hash: buildDesktopMobileCallHandoffHash({
+        kind,
+        conversationId: activeConversation.id,
+        conversationType: isPersistedGroupConversation(activeConversation)
+          ? "group"
+          : "direct",
+        title: activeConversation.title,
+      }),
+    });
   }
 
   function handleConversationContextMenu(
