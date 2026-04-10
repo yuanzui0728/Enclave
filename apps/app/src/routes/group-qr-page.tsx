@@ -1110,6 +1110,21 @@ export function GroupQrPage() {
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
                               次优先备选
                             </div>
+                            <div className="mt-2">
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
+                                  fallbackPendingReturnConversation.conversation,
+                                  fallbackPendingReturnConversation.target.deliveredAt,
+                                ).tone}`}
+                              >
+                                {
+                                  resolvePendingReturnActionStatus(
+                                    fallbackPendingReturnConversation.conversation,
+                                    fallbackPendingReturnConversation.target.deliveredAt,
+                                  ).label
+                                }
+                              </span>
+                            </div>
                             <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
                               {fallbackPendingReturnConversation.conversation.title}
                             </div>
@@ -1153,6 +1168,21 @@ export function GroupQrPage() {
                           <div className="min-w-0 flex-1">
                             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
                               暂缓处理
+                            </div>
+                            <div className="mt-2">
+                              <span
+                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${resolvePendingReturnActionStatus(
+                                  deferredPendingReturnConversation.conversation,
+                                  deferredPendingReturnConversation.target.deliveredAt,
+                                ).tone}`}
+                              >
+                                {
+                                  resolvePendingReturnActionStatus(
+                                    deferredPendingReturnConversation.conversation,
+                                    deferredPendingReturnConversation.target.deliveredAt,
+                                  ).label
+                                }
+                              </span>
                             </div>
                             <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
                               {deferredPendingReturnConversation.conversation.title}
