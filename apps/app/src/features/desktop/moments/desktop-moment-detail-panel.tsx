@@ -35,13 +35,13 @@ export function DesktopMomentDetailPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-start justify-between gap-3 border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
+      <div className="flex items-start justify-between gap-3 border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
         <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
             动态详情
           </div>
-          <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
-            保持阅读，不离开当前页
+          <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+            在当前工作区继续看完
           </div>
         </div>
         <button
@@ -55,7 +55,7 @@ export function DesktopMomentDetailPanel({
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-        <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+        <div className="rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
           <div className="flex items-start gap-4">
             <button
               type="button"
@@ -106,26 +106,25 @@ export function DesktopMomentDetailPanel({
             </div>
           </div>
 
-          <div className="mt-5 text-[15px] leading-8 text-[color:var(--text-primary)]">
+          <div className="mt-4 text-[15px] leading-7 text-[color:var(--text-primary)]">
             {moment.text}
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <StatCard label="点赞" value={String(moment.likeCount)} />
-            <StatCard label="评论" value={String(moment.commentCount)} />
-            <StatCard
-              label="作者类型"
-              value={moment.authorType === "character" ? "角色" : "我"}
-            />
+          <div className="mt-4 rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+            <span>{moment.likeCount} 赞</span>
+            <span className="mx-2 text-[color:var(--text-dim)]">/</span>
+            <span>{moment.commentCount} 评论</span>
+            <span className="mx-2 text-[color:var(--text-dim)]">/</span>
+            <span>{moment.authorType === "character" ? "角色动态" : "我的动态"}</span>
           </div>
 
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2">
             <Button
-              variant={likedByOwner ? "primary" : "secondary"}
+              variant="secondary"
               size="sm"
               disabled={likeLoading}
               onClick={onLike}
-              className={likedByOwner ? "shadow-none" : undefined}
+              className={likedByOwner ? "bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)] shadow-none" : undefined}
             >
               <Heart size={14} className={likedByOwner ? "fill-current" : ""} />
               {likeLoading ? "处理中..." : likedByOwner ? "已点赞" : "点赞"}
@@ -137,7 +136,7 @@ export function DesktopMomentDetailPanel({
         </div>
 
         {moment.likes.length > 0 ? (
-          <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+          <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
             <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
               点赞的人
             </div>
@@ -154,19 +153,19 @@ export function DesktopMomentDetailPanel({
           </div>
         ) : null}
 
-        <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+        <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
           <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
             <MessageCircle size={14} />
             评论区
           </div>
 
           {moment.comments.length > 0 ? (
-            <div className="mt-4 space-y-4">
-              {moment.comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="rounded-[18px] bg-[rgba(248,250,252,0.98)] px-4 py-3"
-                >
+              <div className="mt-4 space-y-3">
+                {moment.comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3"
+                  >
                   <div className="flex items-center gap-2 text-[12px]">
                     <span className="font-medium text-[color:var(--text-primary)]">
                       {comment.authorName}
@@ -187,7 +186,7 @@ export function DesktopMomentDetailPanel({
             </div>
           )}
 
-          <div className="mt-5 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2">
             <TextField
               value={commentDraft}
               onChange={(event) => onCommentChange(event.target.value)}
@@ -195,7 +194,7 @@ export function DesktopMomentDetailPanel({
               className="min-w-0 flex-1 rounded-full border-[rgba(15,23,42,0.08)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
             />
             <Button
-              variant="primary"
+              variant="secondary"
               size="sm"
               disabled={!commentDraft.trim() || commentLoading}
               onClick={onCommentSubmit}
@@ -204,19 +203,6 @@ export function DesktopMomentDetailPanel({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] bg-[rgba(248,250,252,0.98)] px-4 py-4">
-      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
-        {label}
-      </div>
-      <div className="mt-2 text-[15px] font-semibold text-[color:var(--text-primary)]">
-        {value}
       </div>
     </div>
   );

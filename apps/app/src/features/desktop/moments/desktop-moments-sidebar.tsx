@@ -86,20 +86,20 @@ export function DesktopMomentsSidebar({
     return (
       <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
+          <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
               作者时间线
             </div>
-            <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+            <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
               {activeAuthorSummary.authorName} 的朋友圈
             </div>
-            <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-              先用按作者过滤的连续时间线替代桌面相册视图。
+            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              当前先用连续时间线替代桌面相册页。
             </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-            <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
               <div className="flex items-center gap-4">
                 <AvatarChip
                   name={activeAuthorSummary.authorName}
@@ -133,7 +133,7 @@ export function DesktopMomentsSidebar({
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-4 grid grid-cols-2 gap-3">
                 <SidebarMetric label="动态" value={String(activeAuthorSummary.count)} />
                 <SidebarMetric
                   label="评论"
@@ -141,7 +141,7 @@ export function DesktopMomentsSidebar({
                 />
               </div>
 
-              <div className="mt-5 flex gap-2">
+              <div className="mt-4 flex gap-2">
                 <Button variant="secondary" className="flex-1" onClick={onClearAuthor}>
                   查看全部
                 </Button>
@@ -152,7 +152,7 @@ export function DesktopMomentsSidebar({
               </div>
             </div>
 
-            <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+            <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
               <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                 最近动态
               </div>
@@ -181,19 +181,19 @@ export function DesktopMomentsSidebar({
   }
 
   return (
-    <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
+      <aside className="flex w-[360px] shrink-0 flex-col bg-[rgba(255,252,247,0.96)]">
+        <div className="flex h-full min-h-0 flex-col">
+        <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-4">
           <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
             概览
           </div>
-          <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
-            像微信电脑端一样，把常用入口留在侧边
+          <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+            右侧保留当前上下文
           </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-          <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
             <div className="flex items-center gap-4">
               <AvatarChip name={ownerUsername} src={ownerAvatar} size="lg" />
               <div className="min-w-0">
@@ -206,13 +206,13 @@ export function DesktopMomentsSidebar({
               </div>
             </div>
 
-            <Button variant="primary" className="mt-5 w-full" onClick={onOpenCompose}>
+            <Button variant="primary" className="mt-4 w-full" onClick={onOpenCompose}>
               <PenSquare size={15} />
               现在发一条
             </Button>
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-[var(--shadow-soft)]">
+          <div className="mt-4 rounded-[18px] border border-[rgba(15,23,42,0.06)] bg-white p-4 shadow-[var(--shadow-soft)]">
             <div className="flex items-center justify-between gap-3">
               <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                 最近作者
@@ -266,7 +266,7 @@ export function DesktopMomentsSidebar({
 
 function SidebarMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] bg-[rgba(248,250,252,0.98)] px-4 py-4">
+    <div className="rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-4">
       <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
         {label}
       </div>

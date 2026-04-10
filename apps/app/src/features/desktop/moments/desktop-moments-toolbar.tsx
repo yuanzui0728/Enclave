@@ -43,17 +43,17 @@ export function DesktopMomentsToolbar({
   onSearchChange,
 }: DesktopMomentsToolbarProps) {
   return (
-    <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
             朋友圈
           </div>
-          <div className="mt-2 text-[26px] font-semibold tracking-[0.02em] text-[color:var(--text-primary)]">
-            桌面里连续浏览，右边看详情
+          <div className="mt-1 text-[18px] font-semibold text-[color:var(--text-primary)]">
+            连续浏览，右侧承接上下文
           </div>
-          <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-secondary)]">
-            把发帖、浏览、筛选和评论放进一个工作区里，不再是移动页的放大版。
+          <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            桌面态先聚焦文本动态、点赞、评论和作者时间线。
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export function DesktopMomentsToolbar({
         </div>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         {filterOptions.map((option) => (
           <button
             key={option.key}
@@ -102,7 +102,7 @@ export function DesktopMomentsToolbar({
         ) : null}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <label className="relative block min-w-[240px] max-w-[420px] flex-1">
           <Search
             size={15}

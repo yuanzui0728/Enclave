@@ -44,6 +44,12 @@ export function DesktopMomentRow({
     }
   }, [commentDraft]);
 
+  useEffect(() => {
+    if (!commentLoading && !commentDraft.trim()) {
+      setShowComposer(false);
+    }
+  }, [commentDraft, commentLoading]);
+
   return (
     <article
       onClick={onOpenDetail}
@@ -180,15 +186,15 @@ export function DesktopMomentRow({
                     moment.likes.length > 0 ? "mt-3 border-t border-[rgba(15,23,42,0.06)] pt-3" : "",
                   )}
                 >
-                {commentsPreview.map((comment) => (
-                  <div key={comment.id}>
-                    <span className="font-medium text-[color:var(--text-primary)]">
-                      {comment.authorName}
-                    </span>
-                    <span className="text-[color:var(--text-dim)]">：</span>
-                    <span>{comment.text}</span>
-                  </div>
-                ))}
+                  {commentsPreview.map((comment) => (
+                    <div key={comment.id}>
+                      <span className="font-medium text-[color:var(--text-primary)]">
+                        {comment.authorName}
+                      </span>
+                      <span className="text-[color:var(--text-dim)]">：</span>
+                      <span>{comment.text}</span>
+                    </div>
+                  ))}
                 </div>
               ) : null}
               {moment.comments.length > commentsPreview.length ? (
