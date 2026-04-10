@@ -54,6 +54,7 @@ export function SetupPage() {
 
   const coreApiReady = Boolean(systemStatusQuery.data?.coreApi.healthy);
   const providerReady = providerSetup.providerReady;
+  const speechReady = Boolean(systemStatusQuery.data?.inferenceGateway.speechReady);
   const worldOwnerReady = (systemStatusQuery.data?.worldSurface.ownerCount ?? 0) === 1;
   const schedulerReady = Boolean(systemStatusQuery.data?.scheduler.healthy);
   const setupSteps = [
@@ -66,6 +67,13 @@ export function SetupPage() {
       label: "推理服务",
       ok: providerReady,
       hint: providerReady ? "推理服务已配置" : "先保存推理服务，才能启用真实生成",
+    },
+    {
+      label: "语音转写",
+      ok: speechReady,
+      hint: speechReady
+        ? systemStatusQuery.data?.inferenceGateway.speechMessage ?? "语音转写已就绪"
+        : "补齐主推理或独立转写密钥，才能启用 AI 语音通话",
     },
     {
       label: "后台就绪",
@@ -101,6 +109,12 @@ export function SetupPage() {
       label: "推理服务",
       value: providerReady
         ? `${providerSetup.providerDraft.model || "已配置"} · ${formatProviderMode(providerSetup.providerDraft.mode)}`
+        : "待配置",
+    },
+    {
+      label: "语音转写",
+      value: speechReady
+        ? `${systemStatusQuery.data?.inferenceGateway.activeTranscriptionProvider ?? "已配置"} · ${systemStatusQuery.data?.inferenceGateway.transcriptionMode === "dedicated" ? "独立网关" : "跟随主推理"}`
         : "待配置",
     },
     {
@@ -183,6 +197,15 @@ export function SetupPage() {
                 tone={providerReady ? "healthy" : "warning"}
                 statusLabel={providerReady ? "完成" : "待处理"}
               />
+              <AdminStatusCard
+                title="确认语音转写链路"
+                description={
+                  systemStatusQuery.data?.inferenceGateway.speechMessage ??
+                  "语音通话依赖语音转写，独立配置时要单独验证 STT 网关。"
+                }
+                tone={speechReady ? "healthy" : "warning"}
+                statusLabel={speechReady ? "完成" : "待处理"}
+              />
             </div>
           </Card>
 
@@ -217,6 +240,16 @@ export function SetupPage() {
                     : "等待调度器状态..."
                 }
                 ok={schedulerReady}
+              />
+              <SetupStatusCard
+                title="语音转写"
+                value={systemStatusQuery.data?.inferenceGateway.activeTranscriptionProvider ?? "未配置"}
+                detail={
+                  systemStatusQuery.data
+                    ? `${systemStatusQuery.data.inferenceGateway.transcriptionMode === "dedicated" ? "独立网关" : "跟随主推理"} · ${systemStatusQuery.data.inferenceGateway.speechMessage ?? "等待语音配置..."}`
+                    : "等待语音配置状态..."
+                }
+                ok={speechReady}
               />
               <SetupStatusCard
                 title="世界主人"

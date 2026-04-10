@@ -25,6 +25,8 @@ type ProviderPayload = {
   transcriptionApiKey?: string;
 };
 
+const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
+
 function normalizeProviderEndpoint(value: string) {
   const normalized = value.trim().replace(/\/+$/, '');
   if (normalized.endsWith('/chat/completions')) {
@@ -154,6 +156,16 @@ export class SystemService {
     const publicBaseUrl = this.config.get<string>('PUBLIC_API_BASE_URL')?.trim();
 
     const scheduler = await this.getSchedulerPayload();
+    const hasDedicatedTranscriptionProvider = Boolean(
+      providerConfig.transcriptionEndpoint ||
+        providerConfig.transcriptionModel ||
+        providerConfig.transcriptionApiKey,
+    );
+    const activeTranscriptionProvider =
+      providerConfig.transcriptionModel || DEFAULT_TRANSCRIPTION_MODEL;
+    const speechReady = Boolean(
+      providerConfig.transcriptionApiKey || providerConfig.apiKey,
+    );
 
     return {
       coreApi: {
@@ -178,6 +190,16 @@ export class SystemService {
       inferenceGateway: {
         healthy: Boolean(providerConfig.model),
         activeProvider: providerConfig.model || undefined,
+        activeTranscriptionProvider,
+        transcriptionMode: hasDedicatedTranscriptionProvider
+          ? 'dedicated'
+          : 'fallback',
+        speechReady,
+        speechMessage: speechReady
+          ? hasDedicatedTranscriptionProvider
+            ? '语音转写走独立网关。'
+            : '语音转写跟随主推理服务。'
+          : '当前缺少可用语音转写密钥。',
         queueDepth: 0,
         maxConcurrency: 1,
         inFlightRequests: 0,

@@ -14,6 +14,10 @@ export interface DatabaseStatus {
 export interface InferenceStatus {
   healthy: boolean;
   activeProvider?: string;
+  activeTranscriptionProvider?: string;
+  transcriptionMode?: "fallback" | "dedicated";
+  speechReady: boolean;
+  speechMessage?: string;
   queueDepth: number;
   maxConcurrency: number;
   inFlightRequests: number;
