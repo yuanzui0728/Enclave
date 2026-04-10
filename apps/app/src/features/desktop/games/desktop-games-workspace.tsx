@@ -20,6 +20,7 @@ import {
   formatConversationTimestamp,
   formatTimestamp,
 } from "../../../lib/format";
+import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
 import {
   gameCenterCategoryTabs,
   gameCenterEvents,
@@ -34,12 +35,15 @@ import {
 
 type DesktopGamesWorkspaceProps = {
   activeCategory: GameCenterCategoryId;
+  activeGameId: string | null;
+  launchCountById: Record<string, number>;
   pinnedGameIds: string[];
   recentGameIds: string[];
   selectedGameId: string;
   lastOpenedAtById: Record<string, string>;
   successNotice?: string;
   onCategoryChange: (categoryId: GameCenterCategoryId) => void;
+  onDismissActiveGame: () => void;
   onLaunchGame: (gameId: string) => void;
   onSelectGame: (gameId: string) => void;
   onTogglePinnedGame: (gameId: string) => void;
@@ -53,12 +57,15 @@ function resolveGames(ids: string[]) {
 
 export function DesktopGamesWorkspace({
   activeCategory,
+  activeGameId,
+  launchCountById,
   pinnedGameIds,
   recentGameIds,
   selectedGameId,
   lastOpenedAtById,
   successNotice,
   onCategoryChange,
+  onDismissActiveGame,
   onLaunchGame,
   onSelectGame,
   onTogglePinnedGame,
@@ -404,6 +411,15 @@ export function DesktopGamesWorkspace({
             </div>
 
             <div className="space-y-5">
+              <GameCenterSessionPanel
+                game={selectedGame}
+                isActive={activeGameId === selectedGame.id}
+                launchCount={launchCountById[selectedGame.id] ?? 0}
+                lastOpenedAt={lastOpenedAtById[selectedGame.id]}
+                onDismiss={activeGameId === selectedGame.id ? onDismissActiveGame : undefined}
+                onLaunch={onLaunchGame}
+              />
+
               <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <UsersRound size={16} className="text-[color:var(--brand-secondary)]" />

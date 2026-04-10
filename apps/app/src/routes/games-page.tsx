@@ -33,6 +33,7 @@ import {
   type GameCenterCategoryId,
   type GameCenterGame,
 } from "../features/games/game-center-data";
+import { GameCenterSessionPanel } from "../features/games/game-center-session-panel";
 import { useGameCenterState } from "../features/games/use-game-center-state";
 import { AvatarChip } from "../components/avatar-chip";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -48,9 +49,12 @@ export function GamesPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
   const {
+    activeGameId,
+    launchCountById,
     lastOpenedAtById,
     pinnedGameIds,
     recentGameIds,
+    dismissActiveGame,
     launchGame,
     togglePinned,
   } = useGameCenterState();
@@ -107,12 +111,15 @@ export function GamesPage() {
     return (
       <DesktopGamesWorkspace
         activeCategory={activeCategory}
+        activeGameId={activeGameId}
+        launchCountById={launchCountById}
         pinnedGameIds={pinnedGameIds}
         recentGameIds={recentGameIds}
         selectedGameId={selectedGameId}
         lastOpenedAtById={lastOpenedAtById}
         successNotice={successNotice}
         onCategoryChange={setActiveCategory}
+        onDismissActiveGame={dismissActiveGame}
         onLaunchGame={handleLaunchGame}
         onSelectGame={setSelectedGameId}
         onTogglePinnedGame={handleTogglePinnedGame}
@@ -235,6 +242,16 @@ export function GamesPage() {
       </div>
 
       {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+
+      <GameCenterSessionPanel
+        game={selectedGame}
+        isActive={activeGameId === selectedGame.id}
+        launchCount={launchCountById[selectedGame.id] ?? 0}
+        lastOpenedAt={lastOpenedAtById[selectedGame.id]}
+        compact
+        onDismiss={activeGameId === selectedGame.id ? dismissActiveGame : undefined}
+        onLaunch={handleLaunchGame}
+      />
 
       <AppSection className="space-y-4 bg-white/92">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
