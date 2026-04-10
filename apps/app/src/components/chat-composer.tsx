@@ -377,6 +377,9 @@ export function ChatComposer({
         speech.cancel();
       }
       closeMobileSpeechSheet();
+      setMobileInputMode(nextMode);
+      focusInput();
+      return;
     }
     setMobileInputMode(nextMode);
   };
@@ -522,6 +525,27 @@ export function ChatComposer({
       return;
     }
 
+    if (!isDesktop) {
+      if (speech.status !== "idle") {
+        speech.cancel();
+      }
+      closeMobileSpeechSheet();
+      setMobileInputMode("text");
+      setAttachmentError(null);
+      setMobilePlusNotice(null);
+      setPlusPanelOpen(false);
+
+      if (stickerPanelOpen) {
+        setStickerPanelOpen(false);
+        focusInput();
+        return;
+      }
+
+      blurActiveElement();
+      setStickerPanelOpen(true);
+      return;
+    }
+
     if (speech.status === "listening") {
       speech.stop();
     }
@@ -538,9 +562,11 @@ export function ChatComposer({
     }
 
     blurActiveElement();
-    if (speech.status === "listening") {
-      speech.stop();
+    if (speech.status !== "idle") {
+      speech.cancel();
     }
+    closeMobileSpeechSheet();
+    setMobileInputMode("text");
     setStickerPanelOpen(false);
     setAttachmentError(null);
     setMobilePlusNotice(null);
@@ -1222,10 +1248,17 @@ export function ChatComposer({
               <button
                 type="button"
                 onClick={toggleStickerPanel}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5"
-                aria-label="表情"
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#606266] transition active:bg-black/5",
+                  stickerPanelOpen ? "bg-black/5 text-[#111827]" : "",
+                )}
+                aria-label={stickerPanelOpen ? "切换到键盘输入" : "表情"}
               >
-                <Smile size={20} />
+                {stickerPanelOpen ? (
+                  <Keyboard size={20} />
+                ) : (
+                  <Smile size={20} />
+                )}
               </button>
 
               {!mobileSpeechMode && value.trim() ? (
