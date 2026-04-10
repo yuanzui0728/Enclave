@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Card, MetricCard, SectionHeading, cn } from "@yinjie/ui";
+import { Link } from "@tanstack/react-router";
+import { Card, MetricCard, SectionHeading, StatusPill, cn } from "@yinjie/ui";
 
 export type AdminSectionNavItem = {
   label: string;
@@ -12,6 +13,8 @@ export type AdminInfoRowItem = {
   label: string;
   value: ReactNode;
 };
+
+type AdminWorkbenchLink = "/" | "/setup" | "/characters" | "/evals" | "/reply-logic";
 
 type AdminCalloutTone = "warning" | "success" | "info" | "muted";
 type AdminActionFeedbackTone = "busy" | "success" | "warning" | "info";
@@ -260,6 +263,73 @@ export function AdminActionFeedback({
     >
       <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
       <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+    </div>
+  );
+}
+
+export function AdminStatusCard({
+  title,
+  description,
+  tone,
+  statusLabel,
+}: {
+  title: string;
+  description: ReactNode;
+  tone: "healthy" | "warning" | "muted";
+  statusLabel: string;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+        <StatusPill tone={tone}>{statusLabel}</StatusPill>
+      </div>
+      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
+    </div>
+  );
+}
+
+export function AdminJumpCard({
+  to,
+  title,
+  detail,
+  emphasis = "secondary",
+  disabled,
+}: {
+  to: AdminWorkbenchLink;
+  title: string;
+  detail: ReactNode;
+  emphasis?: "primary" | "secondary";
+  disabled?: boolean;
+}) {
+  return (
+    <Link to={to} disabled={disabled} className={disabled ? "pointer-events-none opacity-50" : "block"}>
+      <div className="h-full rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+            <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
+          </div>
+          <StatusPill tone={emphasis === "primary" ? "healthy" : "muted"}>
+            {emphasis === "primary" ? "优先" : "入口"}
+          </StatusPill>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function AdminHintCard({
+  title,
+  detail,
+}: {
+  title: string;
+  detail: ReactNode;
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
+      <div className="font-semibold text-[color:var(--text-primary)]">{title}</div>
+      <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{detail}</div>
     </div>
   );
 }
