@@ -29,6 +29,16 @@ crates/*/target/
 # Database
 api/database.sqlite
 api/database.sqlite-journal
+api/database.sqlite-wal
+api/database.sqlite-shm
+api/data/database.sqlite
+api/data/database.sqlite-journal
+api/data/database.sqlite-wal
+api/data/database.sqlite-shm
+data/database.sqlite
+data/database.sqlite-journal
+data/database.sqlite-wal
+data/database.sqlite-shm
 cloud-platform.sqlite
 cloud-platform.sqlite-journal
 

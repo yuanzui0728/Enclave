@@ -153,3 +153,4 @@ docker compose up -d
 ```
 
 默认数据库位于 `./data/database.sqlite`，升级不会自动清空数据。
+如果旧环境曾把数据库写到 `api/database.sqlite` 或 `api/data/database.sqlite`，新版本启动时会自动迁移到 `./data/database.sqlite`。
