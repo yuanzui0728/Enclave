@@ -13,6 +13,12 @@ type ContactDetailPaneProps = {
   onOpenProfile: () => void;
   onStartChat?: () => void;
   chatPending?: boolean;
+  isPinned?: boolean;
+  pinPending?: boolean;
+  onTogglePinned?: () => void;
+  isMuted?: boolean;
+  mutePending?: boolean;
+  onToggleMuted?: () => void;
   isStarred?: boolean;
   starPending?: boolean;
   onToggleStarred?: () => void;
@@ -34,6 +40,12 @@ export function ContactDetailPane({
   onOpenProfile,
   onStartChat,
   chatPending = false,
+  isPinned = false,
+  pinPending = false,
+  onTogglePinned,
+  isMuted = false,
+  mutePending = false,
+  onToggleMuted,
   isStarred = false,
   starPending = false,
   onToggleStarred,
@@ -274,13 +286,23 @@ export function ContactDetailPane({
           {isFriend ? (
             <DetailSection title="聊天与管理">
               <ToggleDetailRow
+                label="置顶聊天"
+                checked={isPinned}
+                disabled={pinPending}
+                onToggle={onTogglePinned}
+              />
+              <ToggleDetailRow
+                label="消息免打扰"
+                checked={isMuted}
+                disabled={mutePending}
+                onToggle={onToggleMuted}
+              />
+              <ToggleDetailRow
                 label="星标朋友"
                 checked={isStarred}
                 disabled={starPending}
                 onToggle={onToggleStarred}
               />
-              <StaticDetailRow label="置顶聊天" value="后续接入" muted />
-              <StaticDetailRow label="消息免打扰" value="后续接入" muted />
               <ActionDetailRow label="查看资料" value="进入角色资料详情页" onClick={onOpenProfile} />
               {onToggleBlock ? (
                 <ActionDetailRow

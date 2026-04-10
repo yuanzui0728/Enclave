@@ -5,13 +5,15 @@ import { BookText, BookUser, Search, Star, Tag, UserPlus, Users } from "lucide-r
 import {
   blockCharacter,
   getBlockedCharacters,
+  getConversations,
   getFriendRequests,
   getFriends,
   getOrCreateConversation,
   listCharacters,
+  setConversationMuted,
+  setConversationPinned,
   setFriendStarred,
   unblockCharacter,
-  updateFriendProfile,
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -80,6 +82,12 @@ export function ContactsPage() {
   const blockedCharactersQuery = useQuery({
     queryKey: ["app-contacts-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
+    enabled: isDesktopLayout,
+  });
+
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
     enabled: isDesktopLayout,
   });
 
@@ -163,6 +171,16 @@ export function ContactsPage() {
     () => Boolean(selectedFriendItem && (blockedCharactersQuery.data ?? []).some((item) => item.characterId === selectedFriendItem.character.id)),
     [blockedCharactersQuery.data, selectedFriendItem],
   );
+  const selectedConversation = useMemo(
+    () =>
+      selectedFriendItem
+        ? (conversationsQuery.data ?? []).find(
+            (conversation) =>
+              conversation.type === "direct" && conversation.participants.includes(selectedFriendItem.character.id),
+          ) ?? null
+        : null,
+    [conversationsQuery.data, selectedFriendItem],
+  );
 
   const resetStartChatMutation = useEffectEvent(() => {
     startChatMutation.reset();
@@ -200,22 +218,32 @@ export function ContactsPage() {
       await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
     },
   });
-  const updateProfileMutation = useMutation({
-    mutationFn: ({
-      characterId,
-      payload,
-    }: {
-      characterId: string;
-      payload: {
-        remarkName?: string | null;
-        region?: string | null;
-        source?: string | null;
-        tags?: string[] | null;
-      };
-    }) => updateFriendProfile(characterId, payload, baseUrl),
-    onSuccess: async () => {
-      setNotice("联系人资料已更新。");
-      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
+  const pinMutation = useMutation({
+    mutationFn: async ({ characterId, pinned }: { characterId: string; pinned: boolean }) => {
+      const conversationId =
+        selectedConversation?.participants.includes(characterId) && selectedConversation.type === "direct"
+          ? selectedConversation.id
+          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+
+      return setConversationPinned(conversationId, { pinned }, baseUrl);
+    },
+    onSuccess: async (_, variables) => {
+      setNotice(variables.pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      await queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
+    },
+  });
+  const muteMutation = useMutation({
+    mutationFn: async ({ characterId, muted }: { characterId: string; muted: boolean }) => {
+      const conversationId =
+        selectedConversation?.participants.includes(characterId) && selectedConversation.type === "direct"
+          ? selectedConversation.id
+          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+
+      return setConversationMuted(conversationId, { muted }, baseUrl);
+    },
+    onSuccess: async (_, variables) => {
+      setNotice(variables.muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      await queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] });
     },
   });
 
@@ -498,6 +526,11 @@ export function ContactsPage() {
                     <ErrorBlock message={blockedCharactersQuery.error.message} />
                   </div>
                 ) : null}
+                {conversationsQuery.isError && conversationsQuery.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={conversationsQuery.error.message} />
+                  </div>
+                ) : null}
                 {startChatMutation.isError && startChatMutation.error instanceof Error ? (
                   <div className="px-3 pb-3">
                     <ErrorBlock message={startChatMutation.error.message} />
@@ -513,9 +546,14 @@ export function ContactsPage() {
                     <ErrorBlock message={blockMutation.error.message} />
                   </div>
                 ) : null}
-                {updateProfileMutation.isError && updateProfileMutation.error instanceof Error ? (
+                {pinMutation.isError && pinMutation.error instanceof Error ? (
                   <div className="px-3 pb-3">
-                    <ErrorBlock message={updateProfileMutation.error.message} />
+                    <ErrorBlock message={pinMutation.error.message} />
+                  </div>
+                ) : null}
+                {muteMutation.isError && muteMutation.error instanceof Error ? (
+                  <div className="px-3 pb-3">
+                    <ErrorBlock message={muteMutation.error.message} />
                   </div>
                 ) : null}
 
@@ -591,6 +629,28 @@ export function ContactsPage() {
                 friendship={selectedFriendItem?.friendship ?? null}
                 onStartChat={selectedFriendItem ? () => handleStartChat(selectedFriendItem.character.id) : undefined}
                 chatPending={selectedFriendItem?.character.id === pendingCharacterId}
+                isPinned={selectedConversation?.isPinned ?? false}
+                pinPending={pinMutation.isPending && pinMutation.variables?.characterId === selectedCharacterId}
+                onTogglePinned={
+                  selectedFriendItem
+                    ? () =>
+                        pinMutation.mutate({
+                          characterId: selectedFriendItem.character.id,
+                          pinned: !(selectedConversation?.isPinned ?? false),
+                        })
+                    : undefined
+                }
+                isMuted={selectedConversation?.isMuted ?? false}
+                mutePending={muteMutation.isPending && muteMutation.variables?.characterId === selectedCharacterId}
+                onToggleMuted={
+                  selectedFriendItem
+                    ? () =>
+                        muteMutation.mutate({
+                          characterId: selectedFriendItem.character.id,
+                          muted: !(selectedConversation?.isMuted ?? false),
+                        })
+                    : undefined
+                }
                 isStarred={selectedFriendItem?.friendship.isStarred ?? false}
                 starPending={setStarredMutation.isPending && setStarredMutation.variables?.characterId === selectedCharacterId}
                 onToggleStarred={
@@ -599,16 +659,6 @@ export function ContactsPage() {
                         setStarredMutation.mutate({
                           characterId: selectedFriendItem.character.id,
                           starred: !selectedFriendItem.friendship.isStarred,
-                        })
-                    : undefined
-                }
-                profilePending={updateProfileMutation.isPending && updateProfileMutation.variables?.characterId === selectedCharacterId}
-                onSaveProfile={
-                  selectedFriendItem
-                    ? (payload) =>
-                        updateProfileMutation.mutateAsync({
-                          characterId: selectedFriendItem.character.id,
-                          payload,
                         })
                     : undefined
                 }
