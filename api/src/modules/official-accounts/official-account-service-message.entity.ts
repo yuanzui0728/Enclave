@@ -17,7 +17,7 @@ export class OfficialAccountServiceMessageEntity {
   @Column({ type: 'text', default: '' })
   text: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   attachmentKind?: string | null;
 
   @Column({ type: 'text', nullable: true })

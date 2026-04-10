@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { OfficialAccountEntity } from './official-account.entity';
 import { OfficialAccountArticleEntity } from './official-account-article.entity';
@@ -245,20 +245,15 @@ export class OfficialAccountsService {
     ]);
 
     return accounts
-      .map((account) =>
-        this.serializeServiceConversationSummary(
+      .flatMap((account) => {
+        const summary = this.serializeServiceConversationSummary(
           account,
           messages.filter((message) => message.accountId === account.id),
           recentArticles.get(account.id)?.[0],
-        ),
-      )
-      .filter(
-        (
-          summary,
-        ): summary is ReturnType<
-          OfficialAccountsService['serializeServiceConversationSummary']
-        > => Boolean(summary),
-      )
+        );
+
+        return summary ? [summary] : [];
+      })
       .sort((left, right) => {
         const leftTime = left.lastDeliveredAt
           ? new Date(left.lastDeliveredAt).getTime()
@@ -304,7 +299,7 @@ export class OfficialAccountsService {
       where: {
         ownerId: owner.id,
         accountId,
-        readAt: null,
+        readAt: IsNull(),
       },
     });
 
@@ -357,7 +352,7 @@ export class OfficialAccountsService {
         ownerId: owner.id,
         accountId: In(subscriptionAccountIds),
         deliveryKind: 'subscription_digest',
-        readAt: null,
+        readAt: IsNull(),
       },
     });
 
@@ -456,8 +451,7 @@ export class OfficialAccountsService {
     });
     const articleMap = new Map(articles.map((article) => [article.id, article]));
 
-    const groups = accounts
-      .map((account) => {
+    const groups = accounts.flatMap((account) => {
         const serializedDeliveries = deliveries
           .filter((delivery) => delivery.accountId === account.id)
           .map((delivery) => {
@@ -473,18 +467,13 @@ export class OfficialAccountsService {
               recentArticles.get(account.id)?.[0],
             );
           })
-          .filter(
-            (
-              delivery,
-            ): delivery is ReturnType<OfficialAccountsService['serializeDeliveryItem']> =>
-              Boolean(delivery),
-          );
+          .flatMap((delivery) => (delivery ? [delivery] : []));
 
         if (!serializedDeliveries.length) {
-          return null;
+          return [];
         }
 
-        return {
+        return [{
           account: this.serializeAccountSummary(
             account,
             true,
@@ -494,18 +483,8 @@ export class OfficialAccountsService {
           unreadCount: serializedDeliveries.filter((delivery) => !delivery.readAt)
             .length,
           lastDeliveredAt: serializedDeliveries[0]?.deliveredAt,
-        };
-      })
-      .filter(
-        (
-          group,
-        ): group is {
-          account: ReturnType<OfficialAccountsService['serializeAccountSummary']>;
-          deliveries: ReturnType<OfficialAccountsService['serializeDeliveryItem']>[];
-          unreadCount: number;
-          lastDeliveredAt?: string;
-        } => Boolean(group),
-      );
+        }];
+      });
 
     const latestDelivery = groups[0]?.deliveries[0];
 
