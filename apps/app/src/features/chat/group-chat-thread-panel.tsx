@@ -196,9 +196,7 @@ export function GroupChatThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop
-          ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
-          : "bg-[#ededed]"
+        isDesktop ? "bg-[#f5f5f5]" : "bg-[#ededed]"
       }`}
     >
       {isDesktop ? (
@@ -259,7 +257,7 @@ export function GroupChatThreadPanel({
         <div
           className={
             isDesktop
-              ? "border-b border-black/6 bg-white/70 px-5 py-3"
+              ? "border-b border-black/6 bg-[#f7f7f7] px-5 py-3"
               : "border-b border-black/6 bg-white/82 px-3 py-2.5"
           }
         >
@@ -284,16 +282,14 @@ export function GroupChatThreadPanel({
       <div className="relative flex-1 overflow-hidden">
         <div
           className={`absolute inset-0 ${
-            isDesktop
-              ? "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
-              : "bg-[#ededed]"
+            isDesktop ? "bg-[#f5f5f5]" : "bg-[#ededed]"
           }`}
           style={buildChatBackgroundStyle(defaultBackground)}
         />
         <div
           className={`absolute inset-0 ${
             isDesktop
-              ? "bg-[rgba(255,250,244,0.30)]"
+              ? "bg-[rgba(255,255,255,0.72)]"
               : "bg-[rgba(237,237,237,0.72)]"
           }`}
         />
@@ -301,7 +297,7 @@ export function GroupChatThreadPanel({
         <div
           ref={scrollAnchorRef}
           className={`relative flex h-full flex-col overflow-auto ${
-            isDesktop ? "px-8 py-6" : "px-3 py-4"
+            isDesktop ? "px-6 py-5" : "px-3 py-4"
           }`}
         >
           {groupQuery.isError && groupQuery.error instanceof Error ? (
