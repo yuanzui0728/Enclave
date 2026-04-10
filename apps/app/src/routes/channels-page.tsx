@@ -1,17 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Bookmark,
   MessageCircleMore,
+  Pause,
+  Play,
   ThumbsUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import {
   addFeedComment,
   getBlockedCharacters,
   getFeed,
   likeFeedPost,
+  type FeedPostListItem,
 } from "@yinjie/contracts";
 import {
   AppPage,
@@ -242,147 +247,343 @@ export function ChannelsPage() {
             description="等系统注入第一批 AI 演示内容后，这里会出现沉浸式推荐流。"
           />
         ) : null}
-
-        {visiblePosts.map((post) => (
-          <article
-            key={post.id}
-            className="overflow-hidden rounded-[32px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(255,247,239,0.94))] shadow-[var(--shadow-card)]"
-          >
-            <div className="relative bg-[#0f1115]">
-              <video
-                src={post.mediaUrl}
-                controls
-                playsInline
-                preload="metadata"
-                loop
-                className="block h-[420px] w-full bg-black object-cover"
-              />
-              <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-[rgba(15,23,42,0.65)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-white">
-                视频号推荐
-              </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.78))] px-4 pb-4 pt-10">
-                <div className="flex items-center gap-3">
-                  <AvatarChip
-                    name={post.authorName}
-                    src={post.authorAvatar}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1 text-white">
-                    <div className="truncate text-sm font-medium">
-                      {post.authorName}
-                    </div>
-                    <div className="mt-1 text-xs text-white/72">
-                      {formatTimestamp(post.createdAt)} · AI 世界内容
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 text-sm leading-7 text-white">
-                  {post.text}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-[1fr_auto] gap-4 px-4 py-4">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-xs text-[color:var(--text-muted)]">
-                  <span>{post.likeCount} 赞</span>
-                  <span>{post.commentCount} 评论</span>
-                  <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
-                </div>
-
-                <div className="space-y-2 rounded-[24px] bg-[rgba(255,248,239,0.82)] p-3">
-                  {post.commentsPreview.length ? (
-                    post.commentsPreview.map((comment) => (
-                      <div key={comment.id} className="text-xs leading-6 text-[color:var(--text-secondary)]">
-                        <span className="font-medium text-[color:var(--text-primary)]">
-                          {comment.authorName}
-                        </span>
-                        {`：${comment.text}`}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                      这条内容还没有评论，先说点什么。
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 rounded-[24px] bg-[rgba(255,248,239,0.82)] p-2.5">
-                  <TextField
-                    value={commentDrafts[post.id] ?? ""}
-                    onChange={(event) =>
-                      setCommentDrafts((current) => ({
-                        ...current,
-                        [post.id]: event.target.value,
-                      }))
-                    }
-                    placeholder="写评论..."
-                    className="min-w-0 flex-1 rounded-full bg-white/90"
-                  />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={
-                      !(commentDrafts[post.id] ?? "").trim() ||
-                      pendingCommentPostId === post.id
-                    }
-                    onClick={() => commentMutation.mutate(post.id)}
-                  >
-                    {pendingCommentPostId === post.id ? "发送中..." : "发送"}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => likeMutation.mutate(post.id)}
-                  disabled={pendingLikePostId === post.id}
-                >
-                  <ThumbsUp size={18} />
-                </Button>
-                <div className="text-[11px] text-[color:var(--text-muted)]">
-                  {pendingLikePostId === post.id ? "处理中" : post.likeCount}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() =>
-                    document
-                      .getElementById(`channel-comment-${post.id}`)
-                      ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                  }
-                >
-                  <MessageCircleMore size={18} />
-                </Button>
-                <div className="text-[11px] text-[color:var(--text-muted)]">
-                  {post.commentCount}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="h-12 w-12 rounded-full"
-                  onClick={() => toggleFavorite(post)}
-                >
-                  {favoriteSourceIds.includes(`channels-${post.id}`) ? (
-                    <Bookmark size={18} className="fill-current" />
-                  ) : (
-                    <Bookmark size={18} />
-                  )}
-                </Button>
-                <div className="text-[11px] text-[color:var(--text-muted)]">
-                  收藏
-                </div>
-              </div>
-            </div>
-
-            <div id={`channel-comment-${post.id}`} className="sr-only" />
-          </article>
-        ))}
+        {!channelsQuery.isLoading && visiblePosts.length ? (
+          <MobileChannelsViewport
+            commentDrafts={commentDrafts}
+            commentPendingPostId={pendingCommentPostId}
+            favoriteSourceIds={favoriteSourceIds}
+            likePendingPostId={pendingLikePostId}
+            posts={visiblePosts}
+            onCommentChange={(postId, value) =>
+              setCommentDrafts((current) => ({
+                ...current,
+                [postId]: value,
+              }))
+            }
+            onCommentSubmit={(postId) => commentMutation.mutate(postId)}
+            onLike={(postId) => likeMutation.mutate(postId)}
+            onToggleFavorite={toggleFavorite}
+          />
+        ) : null}
       </div>
     </AppPage>
+  );
+}
+
+type MobileChannelsViewportProps = {
+  commentDrafts: Record<string, string>;
+  commentPendingPostId: string | null;
+  favoriteSourceIds: string[];
+  likePendingPostId: string | null;
+  posts: FeedPostListItem[];
+  onCommentChange: (postId: string, value: string) => void;
+  onCommentSubmit: (postId: string) => void;
+  onLike: (postId: string) => void;
+  onToggleFavorite: (post: FeedPostListItem) => void;
+};
+
+function MobileChannelsViewport({
+  commentDrafts,
+  commentPendingPostId,
+  favoriteSourceIds,
+  likePendingPostId,
+  posts,
+  onCommentChange,
+  onCommentSubmit,
+  onLike,
+  onToggleFavorite,
+}: MobileChannelsViewportProps) {
+  const [activePostId, setActivePostId] = useState<string | null>(null);
+  const cardRefs = useRef(new Map<string, HTMLElement>());
+
+  useEffect(() => {
+    if (!posts.length) {
+      setActivePostId(null);
+      return;
+    }
+
+    if (!activePostId || !posts.some((post) => post.id === activePostId)) {
+      setActivePostId(posts[0]?.id ?? null);
+    }
+  }, [activePostId, posts]);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const nextEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+        const nextPostId = nextEntry?.target.getAttribute("data-post-id");
+        if (nextPostId) {
+          setActivePostId(nextPostId);
+        }
+      },
+      {
+        threshold: [0.45, 0.65, 0.85],
+        rootMargin: "-10% 0px -14% 0px",
+      },
+    );
+
+    cardRefs.current.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [posts]);
+
+  return (
+    <div className="h-[calc(100dvh-11rem)] snap-y snap-mandatory space-y-4 overflow-y-auto overscroll-contain pb-4">
+      {posts.map((post) => (
+        <MobileChannelsCard
+          key={post.id}
+          active={activePostId === post.id}
+          commentDraft={commentDrafts[post.id] ?? ""}
+          commentPending={commentPendingPostId === post.id}
+          favorite={favoriteSourceIds.includes(`channels-${post.id}`)}
+          likePending={likePendingPostId === post.id}
+          post={post}
+          setCardRef={(node) => {
+            if (node) {
+              cardRefs.current.set(post.id, node);
+              return;
+            }
+
+            cardRefs.current.delete(post.id);
+          }}
+          onCommentChange={(value) => onCommentChange(post.id, value)}
+          onCommentSubmit={() => onCommentSubmit(post.id)}
+          onLike={() => onLike(post.id)}
+          onToggleFavorite={() => onToggleFavorite(post)}
+        />
+      ))}
+    </div>
+  );
+}
+
+type MobileChannelsCardProps = {
+  active: boolean;
+  commentDraft: string;
+  commentPending: boolean;
+  favorite: boolean;
+  likePending: boolean;
+  post: FeedPostListItem;
+  setCardRef: (node: HTMLElement | null) => void;
+  onCommentChange: (value: string) => void;
+  onCommentSubmit: () => void;
+  onLike: () => void;
+  onToggleFavorite: () => void;
+};
+
+function MobileChannelsCard({
+  active,
+  commentDraft,
+  commentPending,
+  favorite,
+  likePending,
+  post,
+  setCardRef,
+  onCommentChange,
+  onCommentSubmit,
+  onLike,
+  onToggleFavorite,
+}: MobileChannelsCardProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const composerRef = useRef<HTMLDivElement | null>(null);
+  const [muted, setMuted] = useState(true);
+  const [manuallyPaused, setManuallyPaused] = useState(false);
+
+  useEffect(() => {
+    if (!videoRef.current) {
+      return;
+    }
+
+    videoRef.current.muted = muted;
+  }, [muted]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    if (!active) {
+      video.pause();
+      setManuallyPaused(false);
+      return;
+    }
+
+    if (manuallyPaused) {
+      video.pause();
+      return;
+    }
+
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {});
+    }
+  }, [active, manuallyPaused]);
+
+  return (
+    <article
+      ref={setCardRef}
+      data-post-id={post.id}
+      className="snap-start overflow-hidden rounded-[34px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,247,239,0.94))] shadow-[var(--shadow-card)]"
+    >
+      <div className="relative min-h-[calc(100dvh-13rem)] bg-[#0f1115]">
+        <video
+          ref={videoRef}
+          src={post.mediaUrl}
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="block h-[66dvh] w-full bg-black object-cover"
+          onClick={() => setManuallyPaused((current) => !current)}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0))]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
+
+        <div className="absolute left-4 top-4 flex items-center gap-2">
+          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-white">
+            视频号推荐
+          </div>
+          {active ? (
+            <div className="rounded-full bg-[rgba(255,138,61,0.92)] px-3 py-1 text-[11px] font-medium text-white">
+              当前播放
+            </div>
+          ) : null}
+        </div>
+
+        <div className="absolute right-4 top-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMuted((current) => !current)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+          >
+            {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setManuallyPaused((current) => !current)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+          >
+            {manuallyPaused ? <Play size={17} /> : <Pause size={17} />}
+          </button>
+        </div>
+
+        <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+          <div className="flex flex-col items-center gap-3">
+            <ActionRailButton
+              label={likePending ? "处理中" : String(post.likeCount)}
+              onClick={onLike}
+            >
+              <ThumbsUp size={18} />
+            </ActionRailButton>
+            <ActionRailButton
+              label={String(post.commentCount)}
+              onClick={() =>
+                composerRef.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                })
+              }
+            >
+              <MessageCircleMore size={18} />
+            </ActionRailButton>
+            <ActionRailButton label="收藏" onClick={onToggleFavorite}>
+              {favorite ? (
+                <Bookmark size={18} className="fill-current" />
+              ) : (
+                <Bookmark size={18} />
+              )}
+            </ActionRailButton>
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-4">
+          <div className="max-w-[calc(100%-5rem)]">
+            <div className="flex items-center gap-3">
+              <AvatarChip
+                name={post.authorName}
+                src={post.authorAvatar}
+                size="wechat"
+              />
+              <div className="min-w-0 flex-1 text-white">
+                <div className="truncate text-sm font-medium">
+                  {post.authorName}
+                </div>
+                <div className="mt-1 text-xs text-white/72">
+                  {formatTimestamp(post.createdAt)} · AI 世界内容
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 text-sm leading-7 text-white">{post.text}</div>
+            <div className="mt-3 rounded-[22px] bg-[rgba(255,255,255,0.12)] px-3 py-2 text-xs leading-6 text-white/86 backdrop-blur">
+              {post.commentsPreview.length ? (
+                post.commentsPreview.slice(0, 2).map((comment) => (
+                  <div key={comment.id}>
+                    <span className="font-medium">{comment.authorName}</span>
+                    {`：${comment.text}`}
+                  </div>
+                ))
+              ) : (
+                <span>还没有评论，先和这条 AI 视频聊一句。</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        ref={composerRef}
+        className="grid gap-3 border-t border-white/70 bg-[rgba(255,249,241,0.94)] px-4 py-4"
+      >
+        <div className="flex items-center gap-3 text-xs text-[color:var(--text-muted)]">
+          <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
+          <span>{post.likeCount} 赞</span>
+          <span>{post.commentCount} 评论</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-[24px] bg-white/88 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <TextField
+            value={commentDraft}
+            onChange={(event) => onCommentChange(event.target.value)}
+            placeholder="写下你对这条视频号内容的评论..."
+            className="min-w-0 flex-1 rounded-full border-white/70 bg-white"
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!commentDraft.trim() || commentPending}
+            onClick={onCommentSubmit}
+          >
+            {commentPending ? "发送中..." : "发送"}
+          </Button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function ActionRailButton({
+  children,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 text-white"
+    >
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur">
+        {children}
+      </span>
+      <span className="text-[11px]">{label}</span>
+    </button>
   );
 }
