@@ -200,8 +200,11 @@
   - `POST /api/social/block`
   - `POST /api/social/unblock`
 - `Friendship` 表现已扩展字段：`isStarred`、`starredAt`，用于承载好友星标状态
+- `Friendship` 表现已扩展联系人资料字段：`remarkName`、`region`、`source`、`tags`，用于承载微信式联系人备注/地区/来源/标签资料
 - 社交星标路由已提供：
   - `POST /api/social/friends/:characterId/star`
+- 社交联系人资料路由已提供：
+  - `PATCH /api/social/friends/:characterId/profile`
 - `packages/contracts/src/evals.ts` now uses `ownerId` for trace owner semantics.
 - `ConversationEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.

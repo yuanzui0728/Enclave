@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { SocialService } from './social.service';
 
 @Controller('social')
@@ -31,6 +31,20 @@ export class SocialController {
     @Body() body: { starred: boolean },
   ) {
     return this.socialService.setFriendStarred(characterId, body.starred);
+  }
+
+  @Patch('friends/:characterId/profile')
+  updateFriendProfile(
+    @Param('characterId') characterId: string,
+    @Body()
+    body: {
+      remarkName?: string | null;
+      region?: string | null;
+      source?: string | null;
+      tags?: string[] | null;
+    },
+  ) {
+    return this.socialService.updateFriendProfile(characterId, body);
   }
 
   @Get('blocks')

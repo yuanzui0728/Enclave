@@ -93,6 +93,30 @@ export class SocialService {
     return this.friendshipRepo.save(friendship);
   }
 
+  async updateFriendProfile(
+    characterId: string,
+    payload: {
+      remarkName?: string | null;
+      region?: string | null;
+      source?: string | null;
+      tags?: string[] | null;
+    },
+  ): Promise<FriendshipEntity> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const friendship = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
+
+    if (!friendship || friendship.status === 'blocked') {
+      throw new Error('Friend not found');
+    }
+
+    friendship.remarkName = normalizeOptionalText(payload.remarkName);
+    friendship.region = normalizeOptionalText(payload.region);
+    friendship.source = normalizeOptionalText(payload.source);
+    friendship.tags = normalizeTags(payload.tags);
+
+    return this.friendshipRepo.save(friendship);
+  }
+
   async getFriendCharacterIds(ownerId?: string): Promise<string[]> {
     const resolvedOwnerId = ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
     await this.ensureDefaultFriendships(resolvedOwnerId);
@@ -319,4 +343,18 @@ export class SocialService {
     friendship.lastInteractedAt = new Date();
     await this.friendshipRepo.save(friendship);
   }
+}
+
+function normalizeOptionalText(value?: string | null) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeTags(tags?: string[] | null) {
+  if (!tags?.length) {
+    return null;
+  }
+
+  const normalized = [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
+  return normalized.length ? normalized : null;
 }

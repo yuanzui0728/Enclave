@@ -73,6 +73,7 @@ import type {
   ShakeResult,
   TriggerSceneRequest,
   UnblockCharacterRequest,
+  UpdateFriendProfileRequest,
 } from "./social";
 import type { SpeechTranscriptionResult } from "./speech";
 import type {
@@ -1115,6 +1116,21 @@ export function setFriendStarred(
     `/social/friends/${characterId}/star`,
     {
       method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function updateFriendProfile(
+  characterId: string,
+  payload: UpdateFriendProfileRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FriendListItem["friendship"]>(
+    `/social/friends/${characterId}/profile`,
+    {
+      method: "PATCH",
       body: JSON.stringify(payload),
     },
     baseUrl,

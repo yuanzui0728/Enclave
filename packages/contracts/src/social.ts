@@ -19,6 +19,10 @@ export interface Friendship {
   status: string;
   isStarred: boolean;
   starredAt?: string;
+  remarkName?: string | null;
+  region?: string | null;
+  source?: string | null;
+  tags?: string[] | null;
   createdAt: string;
   lastInteractedAt?: string;
 }
@@ -42,6 +46,13 @@ export interface SendFriendRequestRequest {
 
 export interface SetFriendStarredRequest {
   starred: boolean;
+}
+
+export interface UpdateFriendProfileRequest {
+  remarkName?: string | null;
+  region?: string | null;
+  source?: string | null;
+  tags?: string[] | null;
 }
 
 export interface TriggerSceneRequest {

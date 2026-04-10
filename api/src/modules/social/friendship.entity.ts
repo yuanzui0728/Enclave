@@ -23,6 +23,18 @@ export class FriendshipEntity {
   @Column({ nullable: true })
   starredAt?: Date | null;
 
+  @Column({ nullable: true })
+  remarkName?: string | null;
+
+  @Column({ nullable: true })
+  region?: string | null;
+
+  @Column({ nullable: true })
+  source?: string | null;
+
+  @Column('simple-json', { nullable: true })
+  tags?: string[] | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
