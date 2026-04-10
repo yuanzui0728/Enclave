@@ -29,6 +29,7 @@ import { type ChatRenderableMessage } from "../../components/chat-message-list";
 import { type ChatRouteContextNotice } from "./conversation-thread-panel";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
+import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useGroupBackground } from "./backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
@@ -83,9 +84,12 @@ export function GroupChatThreadPanel({
     queryFn: () => getGroupMessages(groupId, baseUrl),
     refetchInterval: 3_000,
   });
-  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>(
-    `${groupId}:${messagesQuery.data?.length ?? 0}`,
-  );
+  const {
+    ref: scrollAnchorRef,
+    isAtBottom,
+    pendingCount,
+    scrollToBottom,
+  } = useScrollAnchor<HTMLDivElement>(messagesQuery.data?.length ?? 0);
 
   useEffect(() => {
     setText("");
@@ -175,6 +179,7 @@ export function GroupChatThreadPanel({
         text: replyText || undefined,
         attachment: result.attachment,
       });
+      scrollToBottom("smooth");
       return;
     }
 
@@ -192,6 +197,7 @@ export function GroupChatThreadPanel({
         text: replyText || undefined,
         attachment: result.attachment,
       });
+      scrollToBottom("smooth");
       return;
     }
 
@@ -201,6 +207,7 @@ export function GroupChatThreadPanel({
         text: replyText || undefined,
         attachment: payload.attachment,
       });
+      scrollToBottom("smooth");
       return;
     }
 
@@ -209,6 +216,7 @@ export function GroupChatThreadPanel({
       text: replyText || undefined,
       attachment: payload.attachment,
     });
+    scrollToBottom("smooth");
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
@@ -217,6 +225,7 @@ export function GroupChatThreadPanel({
       text: replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
       attachment: sticker,
     });
+    scrollToBottom("smooth");
   };
 
   const handleSendPresetText = async (presetText: string) => {
@@ -225,7 +234,15 @@ export function GroupChatThreadPanel({
         ? encodeChatReplyText(presetText, replyDraft)
         : presetText.trim(),
     });
+    scrollToBottom("smooth");
     setReplyDraft(null);
+  };
+
+  const handleSubmit = async () => {
+    await sendMutation.mutateAsync({
+      text: replyDraft ? encodeChatReplyText(text, replyDraft) : text.trim(),
+    });
+    scrollToBottom("smooth");
   };
 
   const replyPreview = replyDraft
@@ -459,6 +476,18 @@ export function GroupChatThreadPanel({
             }
           />
         </div>
+        {!isDesktop &&
+        !selectionModeActive &&
+        (!isAtBottom || pendingCount > 0) ? (
+          <div className="pointer-events-none absolute bottom-4 right-3 z-10">
+            <div className="pointer-events-auto">
+              <MobileChatScrollBottomButton
+                pendingCount={pendingCount}
+                onClick={() => scrollToBottom("smooth")}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {!selectionModeActive ? (
@@ -483,13 +512,7 @@ export function GroupChatThreadPanel({
           mentionCandidates={mentionCandidates}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
-          onSubmit={() =>
-            sendMutation.mutate({
-              text: replyDraft
-                ? encodeChatReplyText(text, replyDraft)
-                : text.trim(),
-            })
-          }
+          onSubmit={() => void handleSubmit()}
         />
       ) : null}
     </div>

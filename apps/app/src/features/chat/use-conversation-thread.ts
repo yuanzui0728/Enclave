@@ -42,9 +42,7 @@ export function useConversationThread(conversationId: string) {
     "direct",
   );
   const [participants, setParticipants] = useState<string[]>([]);
-  const scrollAnchorRef = useScrollAnchor<HTMLDivElement>(
-    `${conversationId}:${messages.length}:${typingCharacterId ?? ""}`,
-  );
+  const scrollAnchor = useScrollAnchor<HTMLDivElement>(messages.length);
 
   const messagesQuery = useQuery({
     queryKey: ["app-conversation-messages", baseUrl, conversationId],
@@ -336,7 +334,7 @@ export function useConversationThread(conversationId: string) {
     messagesQuery,
     participants,
     renderedMessages,
-    scrollAnchorRef,
+    scrollAnchor,
     sendMutation,
     sendStickerMessage,
     sendAttachmentMessage,

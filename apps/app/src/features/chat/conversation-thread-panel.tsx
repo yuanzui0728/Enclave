@@ -22,6 +22,7 @@ import { buildDesktopMobileCallHandoffHash } from "../desktop/chat/desktop-mobil
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
+import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
@@ -66,7 +67,7 @@ export function ConversationThreadPanel({
     messagesQuery,
     participants,
     renderedMessages,
-    scrollAnchorRef,
+    scrollAnchor,
     sendMutation,
     sendAttachmentMessage,
     sendStickerMessage,
@@ -80,6 +81,12 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
+  const {
+    ref: scrollAnchorRef,
+    isAtBottom,
+    pendingCount,
+    scrollToBottom,
+  } = scrollAnchor;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
   const subtitle =
     conversationType === "group"
@@ -142,6 +149,7 @@ export function ConversationThreadPanel({
     await sendTextMessage(
       replyDraft ? encodeChatReplyText(text, replyDraft) : undefined,
     );
+    scrollToBottom("smooth");
     setReplyDraft(null);
   };
 
@@ -149,6 +157,7 @@ export function ConversationThreadPanel({
     await sendTextMessage(
       replyDraft ? encodeChatReplyText(presetText, replyDraft) : presetText,
     );
+    scrollToBottom("smooth");
     setReplyDraft(null);
   };
 
@@ -157,6 +166,7 @@ export function ConversationThreadPanel({
       sticker,
       replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
     );
+    scrollToBottom("smooth");
     setReplyDraft(null);
   };
 
@@ -167,6 +177,7 @@ export function ConversationThreadPanel({
       payload,
       replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
     );
+    scrollToBottom("smooth");
     setReplyDraft(null);
   };
 
@@ -324,6 +335,18 @@ export function ConversationThreadPanel({
             }
           />
         </div>
+        {!isDesktop &&
+        !selectionModeActive &&
+        (!isAtBottom || pendingCount > 0) ? (
+          <div className="pointer-events-none absolute bottom-4 right-3 z-10">
+            <div className="pointer-events-auto">
+              <MobileChatScrollBottomButton
+                pendingCount={pendingCount}
+                onClick={() => scrollToBottom("smooth")}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {!selectionModeActive ? (
