@@ -13,6 +13,7 @@ import {
   AppSection,
   Button,
   ErrorBlock,
+  InlineNotice,
   LoadingBlock,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -134,6 +135,22 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             {followMutation.isError && followMutation.error instanceof Error ? (
               <ErrorBlock message={followMutation.error.message} />
             ) : null}
+          </AppSection>
+
+          <AppSection className="space-y-3">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              {account.accountType === "service" ? "服务消息" : "订阅号消息"}
+            </div>
+            <div className="text-sm leading-7 text-[color:var(--text-secondary)]">
+              {account.accountType === "service"
+                ? "服务号后续会作为独立消息项进入消息页，承接通知、文章卡片和菜单回复。"
+                : "订阅号后续会收口到“消息 -> 订阅号消息”聚合入口，不会长期占据普通私聊列表。"}
+            </div>
+            <InlineNotice tone="info">
+              {account.accountType === "service"
+                ? "当前阶段先补齐阅读链路，服务消息线程将在下一阶段接入。"
+                : "关注后，后续推送会汇总到订阅号消息聚合流。"}
+            </InlineNotice>
           </AppSection>
 
           <AppSection className="space-y-4">

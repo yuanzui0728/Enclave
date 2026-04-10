@@ -48,6 +48,14 @@ function MobileOfficialAccountsPage() {
       }),
     [accountsQuery.data, normalizedSearchText],
   );
+  const followedAccounts = useMemo(
+    () => filteredAccounts.filter((account) => account.isFollowing),
+    [filteredAccounts],
+  );
+  const otherAccounts = useMemo(
+    () => filteredAccounts.filter((account) => !account.isFollowing),
+    [filteredAccounts],
+  );
 
   return (
     <AppPage className="space-y-0 px-0 py-0">
@@ -87,19 +95,61 @@ function MobileOfficialAccountsPage() {
           <ErrorBlock message={accountsQuery.error.message} />
         ) : null}
 
-        {filteredAccounts.map((account) => (
-          <OfficialAccountListItem
-            key={account.id}
-            account={account}
-            compact
-            onClick={() => {
-              void navigate({
-                to: "/official-accounts/$accountId",
-                params: { accountId: account.id },
-              });
-            }}
-          />
-        ))}
+        {followedAccounts.length ? (
+          <section className="space-y-2">
+            <div className="px-1">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                最近关注
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                已关注的公众号会优先出现在这里。
+              </div>
+            </div>
+
+            {followedAccounts.map((account) => (
+              <OfficialAccountListItem
+                key={account.id}
+                account={account}
+                compact
+                onClick={() => {
+                  void navigate({
+                    to: "/official-accounts/$accountId",
+                    params: { accountId: account.id },
+                  });
+                }}
+              />
+            ))}
+          </section>
+        ) : null}
+
+        {filteredAccounts.length ? (
+          <section className="space-y-2">
+            <div className="px-1 pt-1">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                {followedAccounts.length ? "更多公众号" : "全部公众号"}
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                {followedAccounts.length
+                  ? "还没关注的账号继续在这里浏览。"
+                  : "内容账号与服务账号统一收口在通讯录内浏览。"}
+              </div>
+            </div>
+
+            {(otherAccounts.length ? otherAccounts : followedAccounts).map((account) => (
+              <OfficialAccountListItem
+                key={`all-${account.id}`}
+                account={account}
+                compact
+                onClick={() => {
+                  void navigate({
+                    to: "/official-accounts/$accountId",
+                    params: { accountId: account.id },
+                  });
+                }}
+              />
+            ))}
+          </section>
+        ) : null}
 
         {!accountsQuery.isLoading &&
         !accountsQuery.isError &&
