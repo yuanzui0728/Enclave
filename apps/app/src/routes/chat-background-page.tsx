@@ -408,12 +408,12 @@ export function ChatBackgroundPage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="min-h-full bg-[linear-gradient(180deg,#f7efe1,#f2f6ee)] px-5 py-5">
+      <AppPage className="min-h-full bg-[#f3f3f3] px-4 py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
-          <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.84)] px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
+          <div className="flex items-center justify-between rounded-[14px] border border-black/6 bg-[#f7f7f7] px-5 py-4">
             <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-secondary)]">
-                Chat Background
+              <div className="text-xs tracking-[0.12em] text-[color:var(--text-dim)]">
+                聊天背景
               </div>
               <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
                 {conversation?.title ?? "聊天背景"}
@@ -427,6 +427,7 @@ export function ChatBackgroundPage() {
                   params: { conversationId },
                 });
               }}
+              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
             >
               返回聊天
             </Button>
@@ -476,7 +477,7 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.86)] p-5 shadow-[var(--shadow-section)] backdrop-blur">
+    <section className="space-y-4 rounded-[12px] border border-black/6 bg-white p-5">
       <div>
         <div className="text-lg font-semibold text-[color:var(--text-primary)]">
           {title}
@@ -484,7 +485,7 @@ function SectionCard({
         <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
           {description}
         </div>
-        <div className="mt-3 inline-flex rounded-full bg-[rgba(255,248,238,0.9)] px-3 py-1 text-xs text-[color:var(--text-muted)]">
+        <div className="mt-3 inline-flex rounded-[8px] bg-[#f3f3f3] px-3 py-1 text-xs text-[color:var(--text-muted)]">
           当前：{status}
         </div>
       </div>
@@ -507,21 +508,21 @@ function PresetGrid({
           key={preset.assetId}
           type="button"
           onClick={() => onSelect(preset)}
-          className={`overflow-hidden rounded-[22px] border text-left transition ${
+          className={`overflow-hidden rounded-[12px] border text-left transition ${
             preset.assetId === selectedAssetId
-              ? "border-[color:var(--border-brand)] shadow-[0_12px_24px_rgba(180,100,20,0.14)]"
-              : "border-white/75 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+              ? "border-[#07c160] bg-white"
+              : "border-black/6 bg-white hover:bg-[#fafafa]"
           }`}
         >
           <div
-            className="h-28 bg-[linear-gradient(180deg,#fff7ec,#f5ebda)]"
+            className="h-28 bg-[#f3f3f3]"
             style={{
               backgroundImage: `url("${preset.thumbnailUrl ?? preset.url}")`,
               backgroundPosition: "center",
               backgroundSize: "cover",
             }}
           />
-          <div className="bg-white/92 px-3 py-3 text-sm text-[color:var(--text-primary)]">
+          <div className="bg-white px-3 py-3 text-sm text-[color:var(--text-primary)]">
             {preset.label}
           </div>
         </button>
@@ -546,10 +547,10 @@ function ModeChip({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-full px-4 py-2 text-sm transition ${
+      className={`rounded-[8px] border px-4 py-2 text-sm transition ${
         active
-          ? "bg-[linear-gradient(135deg,#fbbf24,#f97316)] text-[color:var(--text-on-brand)] shadow-[0_8px_18px_rgba(249,115,22,0.25)]"
-          : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]"
+          ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
+          : "border-transparent bg-[#ececec] text-[color:var(--text-secondary)]"
       } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {label}
@@ -565,7 +566,7 @@ function EmptyPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-[28px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.7)] px-5 py-8 text-center">
+    <div className="rounded-[12px] border border-dashed border-black/8 bg-white px-5 py-8 text-center">
       <div className="text-lg font-semibold text-[color:var(--text-primary)]">
         {title}
       </div>
