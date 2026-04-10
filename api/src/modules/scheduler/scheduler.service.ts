@@ -443,15 +443,7 @@ export class SchedulerService {
       };
     }
 
-    const scenes = [
-      'coffee_shop',
-      'gym',
-      'library',
-      'bookstore',
-      'park',
-      'restaurant',
-      'cafe',
-    ];
+    const scenes = runtimeRules.sceneFriendRequestScenes;
     const scene = scenes[Math.floor(Math.random() * scenes.length)];
     const req = await this.socialService.triggerSceneFriendRequest(scene);
     if (!req) {
@@ -823,7 +815,13 @@ export class SchedulerService {
             characterIdB,
             relationshipType: 'acquaintance',
             strength: 18,
-            backstory: 'They often overlap online and slowly become familiar.',
+            backstory: renderTemplate(
+              runtimeRules.relationshipInitialBackstory,
+              {
+                leftName: left.name,
+                rightName: right.name,
+              },
+            ),
           }),
         );
         updates += 1;

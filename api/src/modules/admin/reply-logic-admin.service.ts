@@ -757,7 +757,7 @@ export class ReplyLogicAdminService {
       conversationHistory: history,
       userMessage:
         input.previewUserMessage?.trim() ||
-        '【预览】如果此刻用户发送一条新消息，请基于当前设定准备回复。',
+        runtimeRules.inspectorTemplates.previewDefaultUserMessage,
       isGroupChat: input.isGroupChat,
       chatContext: input.isGroupChat
         ? undefined

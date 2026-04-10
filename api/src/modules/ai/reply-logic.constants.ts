@@ -106,6 +106,7 @@ export type ReplyLogicInspectorTemplates = {
   previewStoredGroup: string;
   previewDirectConversation: string;
   previewFormalGroup: string;
+  previewDefaultUserMessage: string;
 };
 
 export type ReplyLogicProviderTemplates = {
@@ -208,8 +209,10 @@ export type ReplyLogicRuntimeRules = {
   momentGenerateChance: number;
   channelGenerateChance: number;
   sceneFriendRequestChance: number;
+  sceneFriendRequestScenes: string[];
   activityBaseWeight: number;
   proactiveReminderHour: number;
+  relationshipInitialBackstory: string;
   historyWindow: {
     base: number;
     range: number;
@@ -281,10 +284,21 @@ export const MEMORY_COMPRESSION_INTERVAL = 10;
 export const MOMENT_GENERATE_CHANCE = 0.15;
 export const CHANNEL_GENERATE_CHANCE = 0.22;
 export const SCENE_FRIEND_REQUEST_CHANCE = 0.4;
+export const SCENE_FRIEND_REQUEST_SCENES = [
+  'coffee_shop',
+  'gym',
+  'library',
+  'bookstore',
+  'park',
+  'restaurant',
+  'cafe',
+] as const;
 export const ACTIVITY_BASE_WEIGHT = 0.8;
 export const PROACTIVE_REMINDER_HOUR = 20;
 export const HISTORY_WINDOW_BASE = 8;
 export const HISTORY_WINDOW_RANGE = 22;
+export const RELATIONSHIP_INITIAL_BACKSTORY_TEMPLATE =
+  '{{leftName}} and {{rightName}} often overlap online and slowly become familiar.';
 
 export const NARRATIVE_PROGRESS_STEPS = [
   { threshold: 4, label: 'first_breakthrough', progress: 15 },
@@ -477,6 +491,8 @@ export const DEFAULT_REPLY_LOGIC_INSPECTOR_TEMPLATES: ReplyLogicInspectorTemplat
       '这是单聊分支下，按当前选中角色进行的候选消息预演。',
     previewFormalGroup:
       '这是正式群聊异步回复分支下，按当前选中角色进行的候选消息预演。',
+    previewDefaultUserMessage:
+      '【预演】如果此刻用户发送一条新消息，请基于当前设定准备回复。',
   });
 
 export const DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES: ReplyLogicProviderTemplates =
@@ -600,8 +616,10 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     momentGenerateChance: MOMENT_GENERATE_CHANCE,
     channelGenerateChance: CHANNEL_GENERATE_CHANCE,
     sceneFriendRequestChance: SCENE_FRIEND_REQUEST_CHANCE,
+    sceneFriendRequestScenes: [...SCENE_FRIEND_REQUEST_SCENES],
     activityBaseWeight: ACTIVITY_BASE_WEIGHT,
     proactiveReminderHour: PROACTIVE_REMINDER_HOUR,
+    relationshipInitialBackstory: RELATIONSHIP_INITIAL_BACKSTORY_TEMPLATE,
     historyWindow: {
       base: HISTORY_WINDOW_BASE,
       range: HISTORY_WINDOW_RANGE,
@@ -1023,6 +1041,10 @@ function normalizeInspectorTemplates(
     previewFormalGroup: sanitizeTemplate(
       value?.previewFormalGroup,
       defaults.previewFormalGroup,
+    ),
+    previewDefaultUserMessage: sanitizeTemplate(
+      value?.previewDefaultUserMessage,
+      defaults.previewDefaultUserMessage,
     ),
   };
 }
@@ -1504,6 +1526,10 @@ export function normalizeReplyLogicRuntimeRules(
       0,
       1,
     ),
+    sceneFriendRequestScenes: sanitizeMessages(
+      input?.sceneFriendRequestScenes,
+      defaults.sceneFriendRequestScenes,
+    ),
     activityBaseWeight: clamp(
       Number(input?.activityBaseWeight ?? defaults.activityBaseWeight),
       0,
@@ -1515,6 +1541,10 @@ export function normalizeReplyLogicRuntimeRules(
       ),
       0,
       23,
+    ),
+    relationshipInitialBackstory: sanitizeTemplate(
+      input?.relationshipInitialBackstory,
+      defaults.relationshipInitialBackstory,
     ),
     historyWindow: {
       base,

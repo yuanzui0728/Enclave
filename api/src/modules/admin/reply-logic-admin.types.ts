@@ -159,6 +159,7 @@ export interface ReplyLogicInspectorTemplates {
   previewStoredGroup: string;
   previewDirectConversation: string;
   previewFormalGroup: string;
+  previewDefaultUserMessage: string;
 }
 
 export interface ReplyLogicProviderTemplates {
@@ -285,8 +286,10 @@ export interface ReplyLogicOverview {
     momentGenerateChance: number;
     channelGenerateChance: number;
     sceneFriendRequestChance: number;
+    sceneFriendRequestScenes: string[];
     activityBaseWeight: number;
     proactiveReminderHour: number;
+    relationshipInitialBackstory: string;
     historyWindow: {
       base: number;
       range: number;
