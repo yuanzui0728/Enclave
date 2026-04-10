@@ -3,6 +3,8 @@ type MobileMessageActionSheetProps = {
   onClose: () => void;
   title?: string;
   onReply?: () => void;
+  onForward?: () => void;
+  onMultiSelect?: () => void;
   onToggleFavorite?: () => void;
   favoriteLabel?: string;
   onCopy: () => void;
@@ -18,6 +20,8 @@ export function MobileMessageActionSheet({
   onClose,
   title = "消息操作",
   onReply,
+  onForward,
+  onMultiSelect,
   onToggleFavorite,
   favoriteLabel = "收藏",
   onCopy,
@@ -45,6 +49,10 @@ export function MobileMessageActionSheet({
         </div>
         <div className="overflow-hidden rounded-[14px] bg-white">
           {onReply ? <ActionButton label="回复" onClick={onReply} /> : null}
+          {onForward ? <ActionButton label="转发" onClick={onForward} /> : null}
+          {onMultiSelect ? (
+            <ActionButton label="多选" onClick={onMultiSelect} />
+          ) : null}
           {onToggleFavorite ? (
             <ActionButton label={favoriteLabel} onClick={onToggleFavorite} />
           ) : null}
