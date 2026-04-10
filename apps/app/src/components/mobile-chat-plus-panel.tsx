@@ -23,6 +23,7 @@ import {
   buildLocationCardAttachment,
 } from "../features/chat/chat-location-scenes";
 import {
+  buildFavoriteShareText,
   readDesktopFavorites,
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
@@ -455,20 +456,4 @@ function chunkRootActions<T>(items: readonly T[], size: number) {
   }
 
   return result;
-}
-
-function buildFavoriteShareText(item: DesktopFavoriteRecord) {
-  const lines = [`[收藏] ${item.title}`];
-
-  if (item.description.trim()) {
-    lines.push(item.description.trim());
-  }
-
-  lines.push(`来自 ${item.badge}`);
-
-  if (item.meta.trim()) {
-    lines.push(item.meta.trim());
-  }
-
-  return lines.join("\n");
 }

@@ -1,4 +1,5 @@
 import {
+  ChevronLeft,
   FileText,
   ImageIcon,
   Keyboard,
@@ -6,6 +7,7 @@ import {
   Plus,
   SendHorizontal,
   Smile,
+  Star,
   Square,
   WandSparkles,
   X,
@@ -31,6 +33,11 @@ import { MobileChatPlusPanel } from "./mobile-chat-plus-panel";
 import { MobileChatAttachmentPreview } from "./mobile-chat-attachment-preview";
 import { MobileMentionPickerSheet } from "../features/chat/mobile-mention-picker-sheet";
 import { useSpeechInput } from "../features/chat/use-speech-input";
+import {
+  buildFavoriteShareText,
+  readDesktopFavorites,
+  type DesktopFavoriteRecord,
+} from "../features/desktop/favorites/desktop-favorites-storage";
 import {
   loadRecentStickers,
   pushRecentSticker,
@@ -134,6 +141,12 @@ export function ChatComposer({
   const mobileSpeechAutoCommitRef = useRef(false);
   const mobileSpeechCancelIntentRef = useRef(false);
   const [desktopPlusMenuOpen, setDesktopPlusMenuOpen] = useState(false);
+  const [desktopPlusMenuView, setDesktopPlusMenuView] = useState<
+    "root" | "favorites"
+  >("root");
+  const [desktopFavoriteRecords, setDesktopFavoriteRecords] = useState<
+    DesktopFavoriteRecord[]
+  >([]);
   const [desktopDropActive, setDesktopDropActive] = useState(false);
   const [inputCursor, setInputCursor] = useState(0);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
@@ -471,6 +484,19 @@ export function ChatComposer({
   }, [desktopPlusMenuOpen, isDesktop]);
 
   useEffect(() => {
+    if (!desktopPlusMenuOpen) {
+      setDesktopPlusMenuView("root");
+      return;
+    }
+
+    if (desktopPlusMenuView !== "favorites") {
+      return;
+    }
+
+    setDesktopFavoriteRecords(readDesktopFavorites());
+  }, [desktopPlusMenuOpen, desktopPlusMenuView]);
+
+  useEffect(() => {
     return () => {
       releaseAttachmentDraft(attachmentDraft);
     };
@@ -591,6 +617,11 @@ export function ChatComposer({
     setAttachmentError(null);
     setMobilePlusNotice(null);
     setDesktopPlusMenuOpen((current) => !current);
+  };
+
+  const closeDesktopPlusMenu = () => {
+    setDesktopPlusMenuOpen(false);
+    setDesktopPlusMenuView("root");
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
@@ -1122,23 +1153,50 @@ export function ChatComposer({
                   </button>
 
                   {desktopPlusMenuOpen ? (
-                    <div className="absolute left-0 top-[calc(100%+0.55rem)] z-30 w-40 overflow-hidden rounded-[16px] border border-black/6 bg-white py-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
-                      <DesktopPlusMenuButton
-                        label="发送图片"
-                        icon={<ImageIcon size={15} />}
-                        onClick={() => {
-                          setDesktopPlusMenuOpen(false);
-                          pickAlbum();
-                        }}
-                      />
-                      <DesktopPlusMenuButton
-                        label="发送文件"
-                        icon={<FileText size={15} />}
-                        onClick={() => {
-                          setDesktopPlusMenuOpen(false);
-                          pickFile();
-                        }}
-                      />
+                    <div
+                      className={cn(
+                        "absolute left-0 top-[calc(100%+0.55rem)] z-30 overflow-hidden rounded-[16px] border border-black/6 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.12)]",
+                        desktopPlusMenuView === "favorites" ? "w-80" : "w-44",
+                      )}
+                    >
+                      {desktopPlusMenuView === "root" ? (
+                        <div className="py-1.5">
+                          <DesktopPlusMenuButton
+                            label="发送图片"
+                            icon={<ImageIcon size={15} />}
+                            onClick={() => {
+                              closeDesktopPlusMenu();
+                              pickAlbum();
+                            }}
+                          />
+                          <DesktopPlusMenuButton
+                            label="发送文件"
+                            icon={<FileText size={15} />}
+                            onClick={() => {
+                              closeDesktopPlusMenu();
+                              pickFile();
+                            }}
+                          />
+                          <DesktopPlusMenuButton
+                            label="发送收藏"
+                            icon={<Star size={15} />}
+                            onClick={() => {
+                              setDesktopFavoriteRecords(readDesktopFavorites());
+                              setDesktopPlusMenuView("favorites");
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <DesktopFavoritePicker
+                          favorites={desktopFavoriteRecords}
+                          busy={composerPending}
+                          onBack={() => setDesktopPlusMenuView("root")}
+                          onSelect={(item) => {
+                            closeDesktopPlusMenu();
+                            void handleSendPresetText(buildFavoriteShareText(item));
+                          }}
+                        />
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -1547,6 +1605,79 @@ function DesktopPlusMenuButton({
       <span className="text-[color:var(--text-secondary)]">{icon}</span>
       <span>{label}</span>
     </button>
+  );
+}
+
+function DesktopFavoritePicker({
+  favorites,
+  busy,
+  onBack,
+  onSelect,
+}: {
+  favorites: DesktopFavoriteRecord[];
+  busy: boolean;
+  onBack: () => void;
+  onSelect: (item: DesktopFavoriteRecord) => void;
+}) {
+  return (
+    <div className="flex max-h-[360px] min-h-[220px] flex-col">
+      <div className="relative border-b border-black/6 px-4 py-3 text-center">
+        <button
+          type="button"
+          onClick={onBack}
+          className="absolute left-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
+          aria-label="返回更多功能"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          发送收藏
+        </div>
+      </div>
+
+      {favorites.length ? (
+        <div className="min-h-0 flex-1 overflow-auto py-1.5">
+          {favorites.map((item, index) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelect(item)}
+              disabled={busy}
+              className={cn(
+                "flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60",
+                index > 0 ? "border-t border-black/[0.06]" : "",
+              )}
+            >
+              <AvatarChip
+                name={item.avatarName ?? item.title}
+                src={item.avatarSrc}
+                size="wechat"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="truncate text-sm text-[color:var(--text-primary)]">
+                    {item.title}
+                  </div>
+                  <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
+                    {item.badge}
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                  {item.meta}
+                </div>
+                <div className="mt-2 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                  {item.description}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-sm leading-6 text-[color:var(--text-muted)]">
+          还没有可发送的收藏内容，先把消息或内容加入收藏。
+        </div>
+      )}
+    </div>
   );
 }
 

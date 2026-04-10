@@ -105,3 +105,19 @@ export function removeDesktopFavorite(sourceId: string) {
   writeDesktopFavorites(nextFavorites);
   return nextFavorites;
 }
+
+export function buildFavoriteShareText(item: DesktopFavoriteRecord) {
+  const lines = [`[收藏] ${item.title}`];
+
+  if (item.description.trim()) {
+    lines.push(item.description.trim());
+  }
+
+  lines.push(`来自 ${item.badge}`);
+
+  if (item.meta.trim()) {
+    lines.push(item.meta.trim());
+  }
+
+  return lines.join("\n");
+}
