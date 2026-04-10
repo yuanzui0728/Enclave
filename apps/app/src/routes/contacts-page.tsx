@@ -1121,8 +1121,7 @@ export function ContactsPage() {
                     key={item.character.id}
                     item={item}
                     index={index}
-                    pendingCharacterId={pendingCharacterId}
-                    onClick={() => handleStartChat(item.character.id)}
+                    onClick={() => handleOpenProfile(item.character.id)}
                   />
                 ))}
               </div>
@@ -1215,7 +1214,7 @@ function FriendListRow({
               "保持联系"}
         </div>
       </div>
-      {item.friendship.isStarred ? (
+      {desktop && item.friendship.isStarred ? (
         <Star
           size={15}
           className="shrink-0 text-[#f59e0b]"
