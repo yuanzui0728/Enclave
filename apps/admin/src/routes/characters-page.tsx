@@ -6,14 +6,13 @@ import {
   Button,
   Card,
   ErrorBlock,
-  InlineNotice,
   LoadingBlock,
   MetricCard,
-  PanelEmpty,
   SelectField,
   StatusPill,
   TextField,
 } from "@yinjie/ui";
+import { AdminCallout, AdminEmptyState } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function relationshipTone(type: Character["relationshipType"]) {
@@ -99,16 +98,27 @@ export function CharactersPage() {
 
   return (
     <div className="space-y-6">
-      <InlineNotice tone="muted">
-        先筛角色，再在中间看摘要，右侧直接进入编辑、工厂和运行逻辑台。
-      </InlineNotice>
+      <AdminCallout
+        title="角色运营路径"
+        description="先筛角色，再在中间看摘要，右侧直接进入编辑、工厂和运行逻辑台。"
+        tone="muted"
+      />
 
       {charactersQuery.isLoading ? <LoadingBlock label="正在加载角色名册..." /> : null}
       {charactersQuery.isError && charactersQuery.error instanceof Error ? <ErrorBlock message={charactersQuery.error.message} /> : null}
       {deleteMutation.isError && deleteMutation.error instanceof Error ? <ErrorBlock message={deleteMutation.error.message} /> : null}
 
       {!charactersQuery.isLoading && !charactersQuery.isError && (charactersQuery.data?.length ?? 0) === 0 ? (
-        <InlineNotice tone="warning">当前还没有角色。先创建第一个角色，才能启用私聊、朋友圈和场景触发能力。</InlineNotice>
+        <AdminCallout
+          title="当前还没有角色"
+          description="先创建第一个角色，才能启用私聊、朋友圈和场景触发能力。"
+          tone="warning"
+          actions={
+            <Link to="/characters/$characterId" params={{ characterId: "new" }}>
+              <Button variant="primary">新建第一个角色</Button>
+            </Link>
+          }
+        />
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
@@ -172,9 +182,9 @@ export function CharactersPage() {
             ))}
 
             {!filteredCharacters.length && !charactersQuery.isLoading ? (
-              <PanelEmpty
-                className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
-                message="当前筛选条件下没有匹配角色。"
+              <AdminEmptyState
+                title="当前筛选没有匹配角色"
+                description="调整关键词、在线状态或关系类型后，再继续筛选。"
               />
             ) : null}
           </div>
@@ -239,7 +249,11 @@ export function CharactersPage() {
               </Card>
             </>
           ) : (
-            <PanelEmpty className="bg-[color:var(--surface-console)]" message="先从左侧选择一个角色，再查看详情和快捷操作。" />
+            <AdminEmptyState
+              className="bg-[color:var(--surface-console)]"
+              title="先从左侧选择一个角色"
+              description="选中后就能查看角色摘要，并直接进入编辑、工厂和运行逻辑台。"
+            />
           )}
         </div>
 

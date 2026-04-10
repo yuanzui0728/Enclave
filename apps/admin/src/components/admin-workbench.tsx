@@ -13,6 +13,8 @@ export type AdminInfoRowItem = {
   value: ReactNode;
 };
 
+type AdminCalloutTone = "warning" | "success" | "info" | "muted";
+
 type AdminPageHeroProps = {
   eyebrow: string;
   title: string;
@@ -107,5 +109,68 @@ export function AdminInfoRows({
         ))}
       </div>
     </Card>
+  );
+}
+
+export function AdminCallout({
+  title,
+  description,
+  tone = "muted",
+  actions,
+  className,
+}: {
+  title: string;
+  description: ReactNode;
+  tone?: AdminCalloutTone;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[24px] border px-4 py-4 shadow-[var(--shadow-soft)]",
+        tone === "warning"
+          ? "border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))]"
+          : tone === "success"
+            ? "border-emerald-200 bg-[linear-gradient(160deg,rgba(236,253,245,0.98),rgba(220,252,231,0.92))]"
+            : tone === "info"
+              ? "border-sky-200 bg-[linear-gradient(160deg,rgba(239,246,255,0.98),rgba(224,242,254,0.92))]"
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
+        className,
+      )}
+    >
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-[color:var(--text-primary)]">{title}</div>
+          <div className="mt-1 text-sm leading-7 text-[color:var(--text-secondary)]">{description}</div>
+        </div>
+        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+export function AdminEmptyState({
+  title,
+  description,
+  actions,
+  className,
+}: {
+  title: string;
+  description: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[24px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-5 py-6 text-center shadow-[var(--shadow-soft)]",
+        className,
+      )}
+    >
+      <div className="text-base font-semibold text-[color:var(--text-primary)]">{title}</div>
+      <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">{description}</div>
+      {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
+    </div>
   );
 }

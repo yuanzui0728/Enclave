@@ -38,6 +38,7 @@ import {
   TextAreaField,
   useDesktopRuntime,
 } from "@yinjie/ui";
+import { AdminCallout } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 type InferencePreviewForm = {
@@ -393,9 +394,16 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <InlineNotice tone={desktopRuntimeReady && providerConfigured && systemHealthy ? "success" : "warning"}>
-        {nextActionMessage}
-      </InlineNotice>
+      <AdminCallout
+        tone={desktopRuntimeReady && providerConfigured && systemHealthy ? "success" : "warning"}
+        title={desktopRuntimeReady && providerConfigured && systemHealthy ? "实例已进入可运营状态" : "当前优先动作"}
+        description={nextActionMessage}
+        actions={
+          <Link to={primaryActionHref}>
+            <Button variant="primary">{primaryActionLabel}</Button>
+          </Link>
+        }
+      />
 
       <div className="grid gap-6 xl:grid-cols-[1.25fr_1fr]">
       <div className="space-y-6">
@@ -447,9 +455,12 @@ export function DashboardPage() {
               </div>
             </>
           ) : (
-            <InlineNotice className="mt-4 border-dashed" tone="muted">
-              只有在 Tauri 桌面壳内打开本后台时，桌面运行时相关命令才可用。
-            </InlineNotice>
+            <AdminCallout
+              className="mt-4"
+              tone="muted"
+              title="当前不是桌面壳环境"
+              description="只有在 Tauri 桌面壳内打开本后台时，桌面运行时相关命令才可用。"
+            />
           )}
         </Card>
 

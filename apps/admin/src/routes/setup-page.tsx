@@ -2,7 +2,6 @@ import {
   useProviderSetup,
   Button,
   Card,
-  InlineNotice,
   ProviderSetupForm,
   SectionHeading,
   SetupStatusCard,
@@ -12,7 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
-import { AdminInfoRows, AdminPageHero } from "../components/admin-workbench";
+import { AdminCallout, AdminInfoRows, AdminPageHero } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function formatProviderMode(mode?: string | null) {
@@ -151,7 +150,12 @@ export function SetupPage() {
             </div>
 
             {systemStatusQuery.isError && systemStatusQuery.error instanceof Error ? (
-              <InlineNotice className="mt-4" tone="warning">{systemStatusQuery.error.message}</InlineNotice>
+              <AdminCallout
+                className="mt-4"
+                tone="warning"
+                title="实例状态读取失败"
+                description={systemStatusQuery.error.message}
+              />
             ) : null}
 
             <div className="mt-4 space-y-3">
