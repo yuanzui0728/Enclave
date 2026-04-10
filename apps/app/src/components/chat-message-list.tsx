@@ -9,10 +9,12 @@ import {
   type TouchEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronLeft,
   ChevronRight,
   ContactRound,
+  Copy,
   Download,
   ExternalLink,
   FileText,
@@ -91,6 +93,12 @@ export type ChatRenderableMessage = {
 
 type OpenableAttachment =
   | Extract<MessageAttachment, { kind: "image" }>
+  | Extract<MessageAttachment, { kind: "file" }>
+  | Extract<MessageAttachment, { kind: "contact_card" }>
+  | Extract<MessageAttachment, { kind: "location_card" }>;
+
+type SaveableAttachment =
+  | Extract<MessageAttachment, { kind: "image" }>
   | Extract<MessageAttachment, { kind: "file" }>;
 
 type ChatMessageListProps = {
@@ -154,6 +162,7 @@ export function ChatMessageList({
   onSelectionModeChange,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "";
@@ -176,6 +185,9 @@ export function ChatMessageList({
   const [quoteSelectionMessage, setQuoteSelectionMessage] =
     useState<ChatRenderableMessage | null>(null);
   const [viewerMessageId, setViewerMessageId] = useState<string | null>(null);
+  const [locationViewerMessageId, setLocationViewerMessageId] = useState<
+    string | null
+  >(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
   const [selectionAnchorMessageId, setSelectionAnchorMessageId] = useState<
@@ -275,6 +287,11 @@ export function ChatMessageList({
         : null,
     );
     setViewerMessageId((current) =>
+      current && messages.some((message) => message.id === current)
+        ? current
+        : null,
+    );
+    setLocationViewerMessageId((current) =>
       current && messages.some((message) => message.id === current)
         ? current
         : null,
@@ -668,6 +685,18 @@ export function ChatMessageList({
     : -1;
   const activeImage =
     activeImageIndex >= 0 ? imageMessages[activeImageIndex] : null;
+  const activeLocationMessage = locationViewerMessageId
+    ? visibleMessages.find((message) => message.id === locationViewerMessageId)
+    : null;
+  const activeLocation =
+    activeLocationMessage?.type === "location_card" &&
+    activeLocationMessage.attachment?.kind === "location_card" &&
+    !recalledMessageIdSet.has(activeLocationMessage.id)
+      ? {
+          id: activeLocationMessage.id,
+          attachment: activeLocationMessage.attachment,
+        }
+      : null;
 
   const openImageByIndex = (nextIndex: number) => {
     const target = imageMessages[nextIndex];
@@ -747,19 +776,36 @@ export function ChatMessageList({
     }
 
     const attachment = getOpenableAttachment(message);
-    if (!attachment || attachment.kind !== "file") {
+    if (!attachment) {
       return;
     }
 
-    window.open(attachment.url, "_blank", "noopener,noreferrer");
-    setActionNotice({
-      message: "已打开文件。",
-      tone: "success",
-    });
+    if (attachment.kind === "contact_card") {
+      void navigate({
+        to: "/character/$characterId",
+        params: {
+          characterId: attachment.characterId,
+        },
+      });
+      return;
+    }
+
+    if (attachment.kind === "location_card") {
+      setLocationViewerMessageId(message.id);
+      return;
+    }
+
+    if (attachment.kind === "file") {
+      window.open(attachment.url, "_blank", "noopener,noreferrer");
+      setActionNotice({
+        message: "已打开文件。",
+        tone: "success",
+      });
+    }
   };
 
   const saveAttachment = (message: ChatRenderableMessage) => {
-    const attachment = getOpenableAttachment(message);
+    const attachment = getSaveableAttachment(message);
     if (!attachment || typeof document === "undefined") {
       return;
     }
@@ -794,6 +840,9 @@ export function ChatMessageList({
         current?.filter((item) => item.id !== targetMessageId) ?? null,
     );
     setViewerMessageId((current) =>
+      current === targetMessageId ? null : current,
+    );
+    setLocationViewerMessageId((current) =>
       current === targetMessageId ? null : current,
     );
   };
@@ -1375,13 +1424,34 @@ export function ChatMessageList({
                     />
                   ) : message.type === "file" &&
                     message.attachment?.kind === "file" ? (
-                    <FileAttachmentMessage attachment={message.attachment} />
+                    <FileAttachmentMessage
+                      attachment={message.attachment}
+                      onOpen={
+                        selectionMode
+                          ? undefined
+                          : () => openAttachment(message)
+                      }
+                    />
                   ) : message.type === "contact_card" &&
                     message.attachment?.kind === "contact_card" ? (
-                    <ContactCardMessage attachment={message.attachment} />
+                    <ContactCardMessage
+                      attachment={message.attachment}
+                      onOpen={
+                        selectionMode
+                          ? undefined
+                          : () => openAttachment(message)
+                      }
+                    />
                   ) : message.type === "location_card" &&
                     message.attachment?.kind === "location_card" ? (
-                    <LocationCardMessage attachment={message.attachment} />
+                    <LocationCardMessage
+                      attachment={message.attachment}
+                      onOpen={
+                        selectionMode
+                          ? undefined
+                          : () => openAttachment(message)
+                      }
+                    />
                   ) : (
                     <div
                       className={`rounded-[18px] px-3.5 py-2.5 text-[15px] leading-6 ${
@@ -1518,11 +1588,11 @@ export function ChatMessageList({
                 }
               : undefined
           }
-          openAttachmentLabel={
-            contextMenuState.message.type === "image" ? "打开图片" : "打开文件"
-          }
+          openAttachmentLabel={resolveOpenAttachmentLabel(
+            contextMenuState.message,
+          )}
           onSaveAttachment={
-            getOpenableAttachment(contextMenuState.message)
+            getSaveableAttachment(contextMenuState.message)
               ? () => {
                   saveAttachment(contextMenuState.message);
                   setContextMenuState(null);
@@ -1680,10 +1750,12 @@ export function ChatMessageList({
             : undefined
         }
         openAttachmentLabel={
-          mobileActionMessage?.type === "image" ? "查看图片" : "打开文件"
+          mobileActionMessage
+            ? resolveOpenAttachmentLabel(mobileActionMessage)
+            : "打开附件"
         }
         onSaveAttachment={
-          mobileActionMessage && getOpenableAttachment(mobileActionMessage)
+          mobileActionMessage && getSaveableAttachment(mobileActionMessage)
             ? () => {
                 saveAttachment(mobileActionMessage);
                 setMobileActionMessage(null);
@@ -1826,6 +1898,23 @@ export function ChatMessageList({
                 }
               : undefined
           }
+        />
+      ) : null}
+      {activeLocation ? (
+        <LocationViewerOverlay
+          variant={variant}
+          attachment={activeLocation.attachment}
+          onClose={() => setLocationViewerMessageId(null)}
+          onLocate={() => {
+            setLocationViewerMessageId(null);
+            jumpToMessage(activeLocation.id);
+          }}
+          onCopy={() => {
+            void copyToClipboard(
+              buildLocationAttachmentSummary(activeLocation.attachment),
+              "位置内容已复制。",
+            );
+          }}
         />
       ) : null}
       <DesktopMessageForwardDialog
@@ -2055,6 +2144,26 @@ function resolveForwardTypeLabel(message: ChatRenderableMessage) {
   return "消息";
 }
 
+function resolveOpenAttachmentLabel(message: ChatRenderableMessage) {
+  if (message.type === "image") {
+    return "查看图片";
+  }
+
+  if (message.type === "file") {
+    return "打开文件";
+  }
+
+  if (message.type === "contact_card") {
+    return "查看名片";
+  }
+
+  if (message.type === "location_card") {
+    return "查看位置";
+  }
+
+  return "打开附件";
+}
+
 function getForwardMessageText(message: ChatRenderableMessage) {
   const replyContent = extractChatReplyMetadata(message.text);
   const displayedText =
@@ -2096,6 +2205,42 @@ function buildMessageFavoriteRecord(
 function getOpenableAttachment(
   message: ChatRenderableMessage,
 ): OpenableAttachment | null {
+  if (
+    message.type === "image" &&
+    message.attachment?.kind === "image" &&
+    message.attachment.url
+  ) {
+    return message.attachment;
+  }
+
+  if (
+    message.type === "file" &&
+    message.attachment?.kind === "file" &&
+    message.attachment.url
+  ) {
+    return message.attachment;
+  }
+
+  if (
+    message.type === "contact_card" &&
+    message.attachment?.kind === "contact_card"
+  ) {
+    return message.attachment;
+  }
+
+  if (
+    message.type === "location_card" &&
+    message.attachment?.kind === "location_card"
+  ) {
+    return message.attachment;
+  }
+
+  return null;
+}
+
+function getSaveableAttachment(
+  message: ChatRenderableMessage,
+): SaveableAttachment | null {
   if (
     message.type === "image" &&
     message.attachment?.kind === "image" &&
@@ -2521,10 +2666,12 @@ function SelectionToggle({
 
 function ContactCardMessage({
   attachment,
+  onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "contact_card" }>;
+  onOpen?: () => void;
 }) {
-  return (
+  const card = (
     <div className="w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-3">
         <AvatarChip
@@ -2547,20 +2694,32 @@ function ContactCardMessage({
       </div>
     </div>
   );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`查看名片 ${attachment.name}`}
+    >
+      {card}
+    </button>
+  );
 }
 
 function FileAttachmentMessage({
   attachment,
+  onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "file" }>;
+  onOpen?: () => void;
 }) {
-  return (
-    <a
-      href={attachment.url}
-      target="_blank"
-      rel="noreferrer"
-      className="block w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none transition-colors hover:bg-[#fafafa]"
-    >
+  const card = (
+    <div className="w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,rgba(196,181,253,0.25),rgba(129,140,248,0.2))] text-[color:var(--brand-primary)]">
           <FileText size={20} />
@@ -2577,16 +2736,33 @@ function FileAttachmentMessage({
       <div className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
         文件
       </div>
-    </a>
+    </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`打开文件 ${attachment.fileName}`}
+    >
+      {card}
+    </button>
   );
 }
 
 function LocationCardMessage({
   attachment,
+  onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "location_card" }>;
+  onOpen?: () => void;
 }) {
-  return (
+  const card = (
     <div className="w-[220px] rounded-[18px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
         <MapPin size={12} />
@@ -2601,6 +2777,21 @@ function LocationCardMessage({
         </div>
       ) : null}
     </div>
+  );
+
+  if (!onOpen) {
+    return card;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="text-left transition hover:opacity-95"
+      aria-label={`查看位置 ${attachment.title}`}
+    >
+      {card}
+    </button>
   );
 }
 
@@ -2838,6 +3029,109 @@ function ImageViewerOverlay({
       </div>
     </div>
   );
+}
+
+function LocationViewerOverlay({
+  variant,
+  attachment,
+  onClose,
+  onLocate,
+  onCopy,
+}: {
+  variant: "mobile" | "desktop";
+  attachment: Extract<MessageAttachment, { kind: "location_card" }>;
+  onClose: () => void;
+  onLocate: () => void;
+  onCopy: () => void;
+}) {
+  const isDesktop = variant === "desktop";
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+        aria-label="关闭位置查看器"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.12),rgba(15,23,42,0.72))]" />
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
+          <div>
+            <div className="text-[12px] uppercase tracking-[0.18em] text-white/60">
+              聊天位置
+            </div>
+            <div className="mt-1 text-[18px] font-medium">
+              {attachment.title}
+            </div>
+          </div>
+          <ViewerActionButton compact label="关闭位置查看器" onClick={onClose}>
+            <X size={18} />
+          </ViewerActionButton>
+        </div>
+
+        <div className="relative flex-1 px-4 pb-5 pt-2">
+          <div
+            className={`relative h-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
+              isDesktop ? "mx-auto max-w-4xl" : ""
+            }`}
+          >
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(15,23,42,0.3))]" />
+            <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:36px_36px]" />
+            <div className="absolute inset-x-[14%] top-[18%] h-24 rounded-full bg-[rgba(74,222,128,0.12)] blur-3xl" />
+            <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[rgba(59,130,246,0.12)] blur-3xl" />
+
+            <div className="relative flex h-full flex-col justify-between p-5">
+              <div className="self-start rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] tracking-[0.12em] text-white/72">
+                来自聊天中的位置卡片
+              </div>
+
+              <div className="flex flex-1 items-center justify-center">
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(15,23,42,0.32)]">
+                  <div className="absolute inset-3 rounded-full border border-white/12" />
+                  <MapPin size={34} className="text-white" />
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/12 bg-[rgba(10,15,28,0.56)] p-4 text-white shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-full bg-[rgba(74,222,128,0.18)] p-2 text-[#bbf7d0]">
+                    <LocateFixed size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[18px] font-medium leading-7">
+                      {attachment.title}
+                    </div>
+                    <div className="mt-1 text-[13px] leading-6 text-white/72">
+                      {attachment.subtitle?.trim() ||
+                        "这条位置消息来自当前聊天场景，可继续回到消息定位。"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2">
+          <ViewerActionButton label="复制位置" onClick={onCopy}>
+            <Copy size={16} />
+          </ViewerActionButton>
+          <ViewerActionButton label="定位消息" onClick={onLocate}>
+            <LocateFixed size={16} />
+          </ViewerActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildLocationAttachmentSummary(
+  attachment: Extract<MessageAttachment, { kind: "location_card" }>,
+) {
+  return attachment.subtitle?.trim()
+    ? `${attachment.title}\n${attachment.subtitle.trim()}`
+    : attachment.title;
 }
 
 function ViewerActionButton({
