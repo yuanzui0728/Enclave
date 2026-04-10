@@ -108,6 +108,22 @@ export type ReplyLogicInspectorTemplates = {
   previewFormalGroup: string;
 };
 
+export type ReplyLogicProviderTemplates = {
+  endpointPriorityNote: string;
+  modelPriorityNote: string;
+};
+
+export type ReplyLogicRuntimeNoteTemplates = {
+  manualOnlineMode: string;
+  manualActivityMode: string;
+  zeroMomentFrequency: string;
+  zeroChannelFrequency: string;
+  missingTriggerScenes: string;
+  missingMemorySeed: string;
+  memoryProactiveEnabled: string;
+  memoryProactiveDisabled: string;
+};
+
 export type ReplyLogicSchedulerDescriptions = {
   world_context_snapshot: string;
   expire_friend_requests: string;
@@ -118,6 +134,40 @@ export type ReplyLogicSchedulerDescriptions = {
   check_channels_schedule: string;
   update_character_status: string;
   trigger_memory_proactive_messages: string;
+};
+
+export type ReplyLogicSchedulerTextTemplates = {
+  eventTitleOnlineStatusChanged: string;
+  eventTitleActivityChanged: string;
+  eventTitleMomentPosted: string;
+  eventTitleSceneFriendRequest: string;
+  eventTitleChannelPosted: string;
+  eventTitleProactiveMessage: string;
+  eventTitleRelationshipUpdated: string;
+  eventSummaryDefaultOnlineKept: string;
+  eventSummaryDefaultActivityReset: string;
+  eventSummaryOnlineWindowEntered: string;
+  eventSummaryOnlineWindowExited: string;
+  eventSummaryMomentPosted: string;
+  eventSummarySceneFriendRequest: string;
+  eventSummaryChannelPosted: string;
+  eventSummaryActivityChanged: string;
+  eventSummaryProactiveMessage: string;
+  eventSummaryRelationshipUpdated: string;
+  jobSummaryWorldContextUpdated: string;
+  jobSummaryExpiredFriendRequests: string;
+  jobSummaryUpdateAiActiveStatus: string;
+  jobSummaryNoFriendCharactersForMoments: string;
+  jobSummaryCheckMomentSchedule: string;
+  jobSummarySceneRequestSkipped: string;
+  jobSummarySceneRequestNoMatch: string;
+  jobSummarySceneRequestTriggered: string;
+  jobSummaryProcessPendingFeedReactions: string;
+  jobSummaryCheckChannelsSchedule: string;
+  jobSummaryUpdateCharacterStatus: string;
+  jobSummaryProactiveReminderSkipped: string;
+  jobSummaryTriggerMemoryProactiveMessages: string;
+  proactiveReminderCheckPrompt: string;
 };
 
 export type ReplyLogicSchedulerNames = {
@@ -176,9 +226,12 @@ export type ReplyLogicRuntimeRules = {
   observabilityTemplates: ReplyLogicObservabilityTemplates;
   worldContextRules: ReplyLogicWorldContextRules;
   inspectorTemplates: ReplyLogicInspectorTemplates;
+  providerTemplates: ReplyLogicProviderTemplates;
+  runtimeNoteTemplates: ReplyLogicRuntimeNoteTemplates;
   schedulerDescriptions: ReplyLogicSchedulerDescriptions;
   schedulerNames: ReplyLogicSchedulerNames;
   schedulerNextRunHints: ReplyLogicSchedulerNextRunHints;
+  schedulerTextTemplates: ReplyLogicSchedulerTextTemplates;
 };
 
 export const REPLY_LOGIC_RUNTIME_RULES_CONFIG_KEY =
@@ -426,6 +479,26 @@ export const DEFAULT_REPLY_LOGIC_INSPECTOR_TEMPLATES: ReplyLogicInspectorTemplat
       '这是正式群聊异步回复分支下，按当前选中角色进行的候选消息预演。',
   });
 
+export const DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES: ReplyLogicProviderTemplates =
+  Object.freeze({
+    endpointPriorityNote:
+      '系统接口地址已配置，但当前聊天主链路仍优先使用世界主人的自定义地址或环境变量 OPENAI_BASE_URL。',
+    modelPriorityNote:
+      '系统配置模型与聊天主链路实际使用的 ai_model 不一致，页面展示的是当前 generateReply() 实际会拿到的模型。',
+  });
+
+export const DEFAULT_REPLY_LOGIC_RUNTIME_NOTE_TEMPLATES: ReplyLogicRuntimeNoteTemplates =
+  Object.freeze({
+    manualOnlineMode: '在线状态处于人工锁定，在线状态调度不会覆盖后台手动值。',
+    manualActivityMode: '当前活动处于人工锁定，活动状态调度不会覆盖后台手动值。',
+    zeroMomentFrequency: '朋友圈频率为 0，朋友圈调度会持续跳过该角色。',
+    zeroChannelFrequency: '视频号频率为 0，视频号调度会持续跳过该角色。',
+    missingTriggerScenes: '未配置触发场景，场景加好友调度不会命中该角色。',
+    missingMemorySeed: '缺少核心记忆或近期摘要，主动提醒调度不会为该角色生成消息。',
+    memoryProactiveEnabled: '已具备记忆种子，晚间主动提醒调度会判断是否需要发消息。',
+    memoryProactiveDisabled: '当前缺少足够的记忆种子，主动提醒不会触发。',
+  });
+
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS: ReplyLogicSchedulerDescriptions =
   Object.freeze({
     world_context_snapshot: '刷新 WorldContext 快照，供回复链路读取当前世界状态。',
@@ -437,6 +510,53 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS: ReplyLogicSchedulerDesc
     check_channels_schedule: '按频率生成视频号内容，并补足基础内容池。',
     update_character_status: '根据时间段刷新角色当前活动状态。',
     trigger_memory_proactive_messages: '扫描角色记忆，在合适时机主动给用户发提醒。',
+  });
+
+export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTextTemplates =
+  Object.freeze({
+    eventTitleOnlineStatusChanged: '在线状态切换',
+    eventTitleActivityChanged: '活动状态刷新',
+    eventTitleMomentPosted: '朋友圈已生成',
+    eventTitleSceneFriendRequest: '场景好友请求',
+    eventTitleChannelPosted: '视频号内容生成',
+    eventTitleProactiveMessage: '主动提醒已发送',
+    eventTitleRelationshipUpdated: 'AI 关系更新',
+    eventSummaryDefaultOnlineKept: '默认角色已强制保持在线。',
+    eventSummaryDefaultActivityReset: '默认角色活动已重置为空闲。',
+    eventSummaryOnlineWindowEntered: '已进入活跃时间窗 {{startHour}}:00-{{endHour}}:00，切换为在线。',
+    eventSummaryOnlineWindowExited: '已离开活跃时间窗 {{startHour}}:00-{{endHour}}:00，切换为离线。',
+    eventSummaryMomentPosted: '调度器为该角色生成了新的朋友圈内容 {{postId}}。',
+    eventSummarySceneFriendRequest: '在 {{scene}} 场景触发了新的好友请求。',
+    eventSummaryChannelPosted: '调度器为该角色生成了视频号内容 {{postId}}。',
+    eventSummaryActivityChanged: '当前活动已更新为 {{activity}}。',
+    eventSummaryProactiveMessage: '基于记忆向用户发出了 {{sentCount}} 条主动提醒。',
+    eventSummaryRelationshipUpdated: '与 {{otherName}} 的 AI 关系强度已提升到 {{strength}}。',
+    jobSummaryWorldContextUpdated: 'WorldContext 快照已更新。',
+    jobSummaryExpiredFriendRequests: '已过期 {{count}} 条好友请求。',
+    jobSummaryUpdateAiActiveStatus:
+      '检查 {{characterCount}} 个角色，在线状态变更 {{changedCount}} 次，人工锁定 {{manualLockedCount}} 个，角色关系更新 {{relationshipUpdates}} 次。',
+    jobSummaryNoFriendCharactersForMoments: '当前没有已建立好友关系的角色，跳过朋友圈调度。',
+    jobSummaryCheckMomentSchedule:
+      '检查 {{characterCount}} 个好友角色，本轮生成 {{generatedCount}} 条朋友圈内容。',
+    jobSummarySceneRequestSkipped: '场景加好友命中概率门控，本轮未触发。',
+    jobSummarySceneRequestNoMatch: '场景 {{scene}} 本轮没有生成新的好友请求。',
+    jobSummarySceneRequestTriggered: '已在 {{scene}} 场景触发 {{characterName}} 的好友请求。',
+    jobSummaryProcessPendingFeedReactions: '已处理 {{processedCount}} 条待执行广场互动。',
+    jobSummaryCheckChannelsSchedule:
+      '检查 {{characterCount}} 个角色，生成 {{generatedCount}} 条视频号内容，并执行内容池补足。',
+    jobSummaryUpdateCharacterStatus:
+      '检查 {{characterCount}} 个角色，活动状态变更 {{updatedCount}} 次，人工锁定 {{manualLockedCount}} 个。',
+    jobSummaryProactiveReminderSkipped:
+      '当前小时 {{currentHour}} 不等于主动提醒小时 {{targetHour}}，跳过本轮。',
+    jobSummaryTriggerMemoryProactiveMessages:
+      '检查 {{memorySeededCount}} 个有记忆种子的角色，发送 {{sentMessages}} 条主动提醒消息。',
+    proactiveReminderCheckPrompt: `以下是{{characterName}}对用户的记忆：
+{{memoryText}}
+
+今天是{{today}}。判断是否有值得主动提醒用户的事项（如考试、面试、生日、重要约定等）。
+
+如果有，输出一条自然的提醒消息（以{{characterName}}的口吻，不超过50字）。
+如果没有，只输出：NO_ACTION`,
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
@@ -552,6 +672,12 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     inspectorTemplates: {
       ...DEFAULT_REPLY_LOGIC_INSPECTOR_TEMPLATES,
     },
+    providerTemplates: {
+      ...DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES,
+    },
+    runtimeNoteTemplates: {
+      ...DEFAULT_REPLY_LOGIC_RUNTIME_NOTE_TEMPLATES,
+    },
     schedulerDescriptions: {
       ...DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS,
     },
@@ -560,6 +686,9 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     },
     schedulerNextRunHints: {
       ...DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS,
+    },
+    schedulerTextTemplates: {
+      ...DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES,
     },
   });
 
@@ -898,6 +1027,62 @@ function normalizeInspectorTemplates(
   };
 }
 
+function normalizeProviderTemplates(
+  value: Partial<ReplyLogicProviderTemplates> | undefined,
+): ReplyLogicProviderTemplates {
+  const defaults = DEFAULT_REPLY_LOGIC_PROVIDER_TEMPLATES;
+  return {
+    endpointPriorityNote: sanitizeTemplate(
+      value?.endpointPriorityNote,
+      defaults.endpointPriorityNote,
+    ),
+    modelPriorityNote: sanitizeTemplate(
+      value?.modelPriorityNote,
+      defaults.modelPriorityNote,
+    ),
+  };
+}
+
+function normalizeRuntimeNoteTemplates(
+  value: Partial<ReplyLogicRuntimeNoteTemplates> | undefined,
+): ReplyLogicRuntimeNoteTemplates {
+  const defaults = DEFAULT_REPLY_LOGIC_RUNTIME_NOTE_TEMPLATES;
+  return {
+    manualOnlineMode: sanitizeTemplate(
+      value?.manualOnlineMode,
+      defaults.manualOnlineMode,
+    ),
+    manualActivityMode: sanitizeTemplate(
+      value?.manualActivityMode,
+      defaults.manualActivityMode,
+    ),
+    zeroMomentFrequency: sanitizeTemplate(
+      value?.zeroMomentFrequency,
+      defaults.zeroMomentFrequency,
+    ),
+    zeroChannelFrequency: sanitizeTemplate(
+      value?.zeroChannelFrequency,
+      defaults.zeroChannelFrequency,
+    ),
+    missingTriggerScenes: sanitizeTemplate(
+      value?.missingTriggerScenes,
+      defaults.missingTriggerScenes,
+    ),
+    missingMemorySeed: sanitizeTemplate(
+      value?.missingMemorySeed,
+      defaults.missingMemorySeed,
+    ),
+    memoryProactiveEnabled: sanitizeTemplate(
+      value?.memoryProactiveEnabled,
+      defaults.memoryProactiveEnabled,
+    ),
+    memoryProactiveDisabled: sanitizeTemplate(
+      value?.memoryProactiveDisabled,
+      defaults.memoryProactiveDisabled,
+    ),
+  };
+}
+
 function normalizeSchedulerDescriptions(
   value: Partial<ReplyLogicSchedulerDescriptions> | undefined,
 ): ReplyLogicSchedulerDescriptions {
@@ -938,6 +1123,138 @@ function normalizeSchedulerDescriptions(
     trigger_memory_proactive_messages: sanitizeTemplate(
       value?.trigger_memory_proactive_messages,
       defaults.trigger_memory_proactive_messages,
+    ),
+  };
+}
+
+function normalizeSchedulerTextTemplates(
+  value: Partial<ReplyLogicSchedulerTextTemplates> | undefined,
+): ReplyLogicSchedulerTextTemplates {
+  const defaults = DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES;
+  return {
+    eventTitleOnlineStatusChanged: sanitizeTemplate(
+      value?.eventTitleOnlineStatusChanged,
+      defaults.eventTitleOnlineStatusChanged,
+    ),
+    eventTitleActivityChanged: sanitizeTemplate(
+      value?.eventTitleActivityChanged,
+      defaults.eventTitleActivityChanged,
+    ),
+    eventTitleMomentPosted: sanitizeTemplate(
+      value?.eventTitleMomentPosted,
+      defaults.eventTitleMomentPosted,
+    ),
+    eventTitleSceneFriendRequest: sanitizeTemplate(
+      value?.eventTitleSceneFriendRequest,
+      defaults.eventTitleSceneFriendRequest,
+    ),
+    eventTitleChannelPosted: sanitizeTemplate(
+      value?.eventTitleChannelPosted,
+      defaults.eventTitleChannelPosted,
+    ),
+    eventTitleProactiveMessage: sanitizeTemplate(
+      value?.eventTitleProactiveMessage,
+      defaults.eventTitleProactiveMessage,
+    ),
+    eventTitleRelationshipUpdated: sanitizeTemplate(
+      value?.eventTitleRelationshipUpdated,
+      defaults.eventTitleRelationshipUpdated,
+    ),
+    eventSummaryDefaultOnlineKept: sanitizeTemplate(
+      value?.eventSummaryDefaultOnlineKept,
+      defaults.eventSummaryDefaultOnlineKept,
+    ),
+    eventSummaryDefaultActivityReset: sanitizeTemplate(
+      value?.eventSummaryDefaultActivityReset,
+      defaults.eventSummaryDefaultActivityReset,
+    ),
+    eventSummaryOnlineWindowEntered: sanitizeTemplate(
+      value?.eventSummaryOnlineWindowEntered,
+      defaults.eventSummaryOnlineWindowEntered,
+    ),
+    eventSummaryOnlineWindowExited: sanitizeTemplate(
+      value?.eventSummaryOnlineWindowExited,
+      defaults.eventSummaryOnlineWindowExited,
+    ),
+    eventSummaryMomentPosted: sanitizeTemplate(
+      value?.eventSummaryMomentPosted,
+      defaults.eventSummaryMomentPosted,
+    ),
+    eventSummarySceneFriendRequest: sanitizeTemplate(
+      value?.eventSummarySceneFriendRequest,
+      defaults.eventSummarySceneFriendRequest,
+    ),
+    eventSummaryChannelPosted: sanitizeTemplate(
+      value?.eventSummaryChannelPosted,
+      defaults.eventSummaryChannelPosted,
+    ),
+    eventSummaryActivityChanged: sanitizeTemplate(
+      value?.eventSummaryActivityChanged,
+      defaults.eventSummaryActivityChanged,
+    ),
+    eventSummaryProactiveMessage: sanitizeTemplate(
+      value?.eventSummaryProactiveMessage,
+      defaults.eventSummaryProactiveMessage,
+    ),
+    eventSummaryRelationshipUpdated: sanitizeTemplate(
+      value?.eventSummaryRelationshipUpdated,
+      defaults.eventSummaryRelationshipUpdated,
+    ),
+    jobSummaryWorldContextUpdated: sanitizeTemplate(
+      value?.jobSummaryWorldContextUpdated,
+      defaults.jobSummaryWorldContextUpdated,
+    ),
+    jobSummaryExpiredFriendRequests: sanitizeTemplate(
+      value?.jobSummaryExpiredFriendRequests,
+      defaults.jobSummaryExpiredFriendRequests,
+    ),
+    jobSummaryUpdateAiActiveStatus: sanitizeTemplate(
+      value?.jobSummaryUpdateAiActiveStatus,
+      defaults.jobSummaryUpdateAiActiveStatus,
+    ),
+    jobSummaryNoFriendCharactersForMoments: sanitizeTemplate(
+      value?.jobSummaryNoFriendCharactersForMoments,
+      defaults.jobSummaryNoFriendCharactersForMoments,
+    ),
+    jobSummaryCheckMomentSchedule: sanitizeTemplate(
+      value?.jobSummaryCheckMomentSchedule,
+      defaults.jobSummaryCheckMomentSchedule,
+    ),
+    jobSummarySceneRequestSkipped: sanitizeTemplate(
+      value?.jobSummarySceneRequestSkipped,
+      defaults.jobSummarySceneRequestSkipped,
+    ),
+    jobSummarySceneRequestNoMatch: sanitizeTemplate(
+      value?.jobSummarySceneRequestNoMatch,
+      defaults.jobSummarySceneRequestNoMatch,
+    ),
+    jobSummarySceneRequestTriggered: sanitizeTemplate(
+      value?.jobSummarySceneRequestTriggered,
+      defaults.jobSummarySceneRequestTriggered,
+    ),
+    jobSummaryProcessPendingFeedReactions: sanitizeTemplate(
+      value?.jobSummaryProcessPendingFeedReactions,
+      defaults.jobSummaryProcessPendingFeedReactions,
+    ),
+    jobSummaryCheckChannelsSchedule: sanitizeTemplate(
+      value?.jobSummaryCheckChannelsSchedule,
+      defaults.jobSummaryCheckChannelsSchedule,
+    ),
+    jobSummaryUpdateCharacterStatus: sanitizeTemplate(
+      value?.jobSummaryUpdateCharacterStatus,
+      defaults.jobSummaryUpdateCharacterStatus,
+    ),
+    jobSummaryProactiveReminderSkipped: sanitizeTemplate(
+      value?.jobSummaryProactiveReminderSkipped,
+      defaults.jobSummaryProactiveReminderSkipped,
+    ),
+    jobSummaryTriggerMemoryProactiveMessages: sanitizeTemplate(
+      value?.jobSummaryTriggerMemoryProactiveMessages,
+      defaults.jobSummaryTriggerMemoryProactiveMessages,
+    ),
+    proactiveReminderCheckPrompt: sanitizeTemplate(
+      value?.proactiveReminderCheckPrompt,
+      defaults.proactiveReminderCheckPrompt,
     ),
   };
 }
@@ -1215,12 +1532,19 @@ export function normalizeReplyLogicRuntimeRules(
     ),
     worldContextRules: normalizeWorldContextRules(input?.worldContextRules),
     inspectorTemplates: normalizeInspectorTemplates(input?.inspectorTemplates),
+    providerTemplates: normalizeProviderTemplates(input?.providerTemplates),
+    runtimeNoteTemplates: normalizeRuntimeNoteTemplates(
+      input?.runtimeNoteTemplates,
+    ),
     schedulerDescriptions: normalizeSchedulerDescriptions(
       input?.schedulerDescriptions,
     ),
     schedulerNames: normalizeSchedulerNames(input?.schedulerNames),
     schedulerNextRunHints: normalizeSchedulerNextRunHints(
       input?.schedulerNextRunHints,
+    ),
+    schedulerTextTemplates: normalizeSchedulerTextTemplates(
+      input?.schedulerTextTemplates,
     ),
   };
 }

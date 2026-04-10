@@ -157,6 +157,22 @@ export interface ReplyLogicInspectorTemplates {
   previewFormalGroup: string;
 }
 
+export interface ReplyLogicProviderTemplates {
+  endpointPriorityNote: string;
+  modelPriorityNote: string;
+}
+
+export interface ReplyLogicRuntimeNoteTemplates {
+  manualOnlineMode: string;
+  manualActivityMode: string;
+  zeroMomentFrequency: string;
+  zeroChannelFrequency: string;
+  missingTriggerScenes: string;
+  missingMemorySeed: string;
+  memoryProactiveEnabled: string;
+  memoryProactiveDisabled: string;
+}
+
 export interface ReplyLogicSchedulerDescriptions {
   world_context_snapshot: string;
   expire_friend_requests: string;
@@ -193,6 +209,40 @@ export interface ReplyLogicSchedulerNextRunHints {
   trigger_memory_proactive_messages: string;
 }
 
+export interface ReplyLogicSchedulerTextTemplates {
+  eventTitleOnlineStatusChanged: string;
+  eventTitleActivityChanged: string;
+  eventTitleMomentPosted: string;
+  eventTitleSceneFriendRequest: string;
+  eventTitleChannelPosted: string;
+  eventTitleProactiveMessage: string;
+  eventTitleRelationshipUpdated: string;
+  eventSummaryDefaultOnlineKept: string;
+  eventSummaryDefaultActivityReset: string;
+  eventSummaryOnlineWindowEntered: string;
+  eventSummaryOnlineWindowExited: string;
+  eventSummaryMomentPosted: string;
+  eventSummarySceneFriendRequest: string;
+  eventSummaryChannelPosted: string;
+  eventSummaryActivityChanged: string;
+  eventSummaryProactiveMessage: string;
+  eventSummaryRelationshipUpdated: string;
+  jobSummaryWorldContextUpdated: string;
+  jobSummaryExpiredFriendRequests: string;
+  jobSummaryUpdateAiActiveStatus: string;
+  jobSummaryNoFriendCharactersForMoments: string;
+  jobSummaryCheckMomentSchedule: string;
+  jobSummarySceneRequestSkipped: string;
+  jobSummarySceneRequestNoMatch: string;
+  jobSummarySceneRequestTriggered: string;
+  jobSummaryProcessPendingFeedReactions: string;
+  jobSummaryCheckChannelsSchedule: string;
+  jobSummaryUpdateCharacterStatus: string;
+  jobSummaryProactiveReminderSkipped: string;
+  jobSummaryTriggerMemoryProactiveMessages: string;
+  proactiveReminderCheckPrompt: string;
+}
+
 export interface ReplyLogicConstantSummary {
   sleepHintMessages: string[];
   busyHintMessages: Record<string, string[]>;
@@ -222,9 +272,12 @@ export interface ReplyLogicConstantSummary {
   observabilityTemplates: ReplyLogicObservabilityTemplates;
   worldContextRules: ReplyLogicWorldContextRules;
   inspectorTemplates: ReplyLogicInspectorTemplates;
+  providerTemplates: ReplyLogicProviderTemplates;
+  runtimeNoteTemplates: ReplyLogicRuntimeNoteTemplates;
   schedulerDescriptions: ReplyLogicSchedulerDescriptions;
   schedulerNames: ReplyLogicSchedulerNames;
   schedulerNextRunHints: ReplyLogicSchedulerNextRunHints;
+  schedulerTextTemplates: ReplyLogicSchedulerTextTemplates;
 }
 
 export interface ReplyLogicOverviewCharacterItem {

@@ -184,7 +184,7 @@ export class ReplyLogicAdminService {
         storedConversation,
       );
       const visibleHistory = visibleMessages.map((message) =>
-        this.toHistoryItemFromConversationMessage(message, false),
+        this.toHistoryItemFromConversationMessage(message, false, runtimeRules),
       );
       const characters = (
         await this.characterRepo.find({
@@ -296,6 +296,7 @@ export class ReplyLogicAdminService {
         this.toHistoryItemFromGroupMessage(
           message,
           actors[0]?.windowMessages.some((item) => item.id === message.id) ?? false,
+          runtimeRules,
         ),
       ),
       actors,
@@ -557,6 +558,7 @@ export class ReplyLogicAdminService {
   }
 
   private async resolveProviderSummary(owner: UserEntity): Promise<ReplyLogicProviderSummary> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const configuredProviderEndpoint =
       await this.systemConfig.getConfig('provider_endpoint');
     const configuredProviderModel =
@@ -595,14 +597,10 @@ export class ReplyLogicAdminService {
       configuredProviderEndpoint?.trim() &&
       configuredProviderEndpoint.trim().replace(/\/+$/, '') !== endpoint.replace(/\/+$/, '')
     ) {
-      notes.push(
-        '系统 Provider Endpoint 已配置，但当前聊天主链路仍优先使用世界主人自定义 Base 或环境变量 OPENAI_BASE_URL。',
-      );
+      notes.push(runtimeRules.providerTemplates.endpointPriorityNote);
     }
     if (configuredProviderModel?.trim() && configuredProviderModel.trim() !== model) {
-      notes.push(
-        'Provider Model 与聊天主链路实际使用的 ai_model 不一致，页面展示的是当前 generateReply() 真正会拿到的模型。',
-      );
+      notes.push(runtimeRules.providerTemplates.modelPriorityNote);
     }
 
     return {
@@ -648,6 +646,7 @@ export class ReplyLogicAdminService {
   private async buildCharacterObservability(
     character: CharacterEntity,
   ): Promise<ReplyLogicCharacterObservability> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const now = new Date();
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
@@ -689,22 +688,22 @@ export class ReplyLogicAdminService {
     const notes: string[] = [];
 
     if (character.onlineMode === 'manual') {
-      notes.push('在线状态处于人工锁定，在线状态调度不会覆盖后台手动值。');
+      notes.push(runtimeRules.runtimeNoteTemplates.manualOnlineMode);
     }
     if (character.activityMode === 'manual') {
-      notes.push('当前活动处于人工锁定，活动状态调度不会覆盖后台手动值。');
+      notes.push(runtimeRules.runtimeNoteTemplates.manualActivityMode);
     }
     if ((character.momentsFrequency ?? 0) < 1) {
-      notes.push('朋友圈频率为 0，朋友圈调度会持续跳过该角色。');
+      notes.push(runtimeRules.runtimeNoteTemplates.zeroMomentFrequency);
     }
     if ((character.feedFrequency ?? 0) < 1) {
-      notes.push('视频号频率为 0，视频号调度会持续跳过该角色。');
+      notes.push(runtimeRules.runtimeNoteTemplates.zeroChannelFrequency);
     }
     if (!triggerScenes.length) {
-      notes.push('未配置触发场景，场景加好友调度不会命中该角色。');
+      notes.push(runtimeRules.runtimeNoteTemplates.missingTriggerScenes);
     }
     if (!memoryEnabled) {
-      notes.push('缺少核心记忆或近期摘要，主动提醒调度不会为该角色生成消息。');
+      notes.push(runtimeRules.runtimeNoteTemplates.missingMemorySeed);
     }
 
     return {
@@ -725,8 +724,8 @@ export class ReplyLogicAdminService {
       memoryProactive: {
         enabled: memoryEnabled,
         reason: memoryEnabled
-          ? '已具备记忆种子，晚间主动提醒调度会判断是否需要发消息。'
-          : '当前缺少足够的记忆种子，主动提醒不会触发。',
+          ? runtimeRules.runtimeNoteTemplates.memoryProactiveEnabled
+          : runtimeRules.runtimeNoteTemplates.memoryProactiveDisabled,
       },
       relevantJobs: (await this.schedulerTelemetry.listJobs()).filter((job) =>
         relevantJobIds.includes(job.id),
@@ -802,7 +801,7 @@ export class ReplyLogicAdminService {
       visibleHistoryCount: input.visibleMessages.length,
       windowMessages: input.visibleMessages
         .slice(-inspection.historyWindow)
-        .map((message) => this.toHistoryItem(message, true)),
+        .map((message) => this.toHistoryItem(message, true, runtimeRules)),
       requestMessages: inspection.requestMessages,
       promptSections,
       effectivePrompt: inspection.systemPrompt,
@@ -882,17 +881,27 @@ export class ReplyLogicAdminService {
   private toHistoryItem(
     message: MessageEntity | GroupMessageEntity,
     includedInWindow: boolean,
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>,
   ): ReplyLogicHistoryItem {
     if ('conversationId' in message) {
-      return this.toHistoryItemFromConversationMessage(message, includedInWindow);
+      return this.toHistoryItemFromConversationMessage(
+        message,
+        includedInWindow,
+        runtimeRules,
+      );
     }
 
-    return this.toHistoryItemFromGroupMessage(message, includedInWindow);
+    return this.toHistoryItemFromGroupMessage(
+      message,
+      includedInWindow,
+      runtimeRules,
+    );
   }
 
   private toHistoryItemFromConversationMessage(
     message: MessageEntity,
     includedInWindow: boolean,
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>,
   ): ReplyLogicHistoryItem {
     return {
       id: message.id,
@@ -907,13 +916,16 @@ export class ReplyLogicAdminService {
       attachmentKind: message.attachmentKind ?? null,
       createdAt: message.createdAt.toISOString(),
       includedInWindow,
-      note: includedInWindow ? '进入当前窗口' : '未进入当前窗口',
+      note: includedInWindow
+        ? runtimeRules.inspectorTemplates.historyIncludedNote
+        : runtimeRules.inspectorTemplates.historyExcludedNote,
     };
   }
 
   private toHistoryItemFromGroupMessage(
     message: GroupMessageEntity,
     includedInWindow: boolean,
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>,
   ): ReplyLogicHistoryItem {
     return {
       id: message.id,
@@ -928,7 +940,9 @@ export class ReplyLogicAdminService {
       attachmentKind: message.attachmentKind ?? null,
       createdAt: message.createdAt.toISOString(),
       includedInWindow,
-      note: includedInWindow ? '进入当前窗口' : '未进入当前窗口',
+      note: includedInWindow
+        ? runtimeRules.inspectorTemplates.historyIncludedNote
+        : runtimeRules.inspectorTemplates.historyExcludedNote,
     };
   }
 

@@ -24,6 +24,15 @@ type TrackedJobResult = {
   summary: string;
 };
 
+function renderTemplate(
+  template: string,
+  variables: Record<string, string | number | undefined | null>,
+) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) =>
+    variables[key] == null ? '' : String(variables[key]),
+  );
+}
+
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
@@ -225,14 +234,19 @@ export class SchedulerService {
   }
 
   private async handleUpdateWorldContext(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     await this.worldService.snapshot();
     this.logger.debug('WorldContext snapshot updated');
     return {
-      summary: 'WorldContext 快照已更新。',
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryWorldContextUpdated,
+        {},
+      ),
     };
   }
 
   private async handleExpireFriendRequests(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const now = new Date();
     const result = await this.friendRequestRepo.update(
       { status: 'pending', expiresAt: LessThan(now) },
@@ -240,11 +254,15 @@ export class SchedulerService {
     );
     this.logger.debug('Expired old friend requests');
     return {
-      summary: `已过期 ${(result.affected ?? 0).toString()} 条好友请求。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryExpiredFriendRequests,
+        { count: result.affected ?? 0 },
+      ),
     };
   }
 
   private async handleUpdateAiActiveStatus(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const chars = await this.characterRepo.find();
     const hour = new Date().getHours();
     let changedCount = 0;
@@ -270,8 +288,11 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'online_status_changed',
-              title: '在线状态切换',
-              summary: '默认角色已强制保持在线。',
+              title: runtimeRules.schedulerTextTemplates.eventTitleOnlineStatusChanged,
+              summary: renderTemplate(
+                runtimeRules.schedulerTextTemplates.eventSummaryDefaultOnlineKept,
+                {},
+              ),
               jobId: 'update_ai_active_status',
             });
           }
@@ -280,8 +301,11 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'activity_changed',
-              title: '活动状态刷新',
-              summary: '默认角色活动已重置为空闲。',
+              title: runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
+              summary: renderTemplate(
+                runtimeRules.schedulerTextTemplates.eventSummaryDefaultActivityReset,
+                {},
+              ),
               jobId: 'update_ai_active_status',
             });
           }
@@ -306,10 +330,16 @@ export class SchedulerService {
           characterId: char.id,
           characterName: char.name,
           kind: 'online_status_changed',
-          title: '在线状态切换',
-          summary: shouldBeOnline
-            ? `已进入活跃时间窗 ${start}:00-${end}:00，切换为在线。`
-            : `已离开活跃时间窗 ${start}:00-${end}:00，切换为离线。`,
+          title: runtimeRules.schedulerTextTemplates.eventTitleOnlineStatusChanged,
+          summary: renderTemplate(
+            shouldBeOnline
+              ? runtimeRules.schedulerTextTemplates.eventSummaryOnlineWindowEntered
+              : runtimeRules.schedulerTextTemplates.eventSummaryOnlineWindowExited,
+            {
+              startHour: start,
+              endHour: end,
+            },
+          ),
           jobId: 'update_ai_active_status',
         });
       }
@@ -317,10 +347,19 @@ export class SchedulerService {
 
     const relationshipUpdates = await this.maybeStrengthenAiRelationships(
       chars.filter((char) => char.isOnline),
+      runtimeRules,
     );
 
     return {
-      summary: `检查 ${chars.length} 个角色，在线状态变更 ${changedCount} 次，人工锁定 ${manualLockedCount} 个，角色关系更新 ${relationshipUpdates} 次。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryUpdateAiActiveStatus,
+        {
+          characterCount: chars.length,
+          changedCount,
+          manualLockedCount,
+          relationshipUpdates,
+        },
+      ),
     };
   }
 
@@ -331,7 +370,10 @@ export class SchedulerService {
     );
     if (!friendCharacterIds.size) {
       return {
-        summary: '当前没有已建立好友关系的角色，跳过朋友圈调度。',
+        summary: renderTemplate(
+          runtimeRules.schedulerTextTemplates.jobSummaryNoFriendCharactersForMoments,
+          {},
+        ),
       };
     }
 
@@ -368,8 +410,11 @@ export class SchedulerService {
             characterId: char.id,
             characterName: char.name,
             kind: 'moment_posted',
-            title: '朋友圈已生成',
-            summary: `调度器为该角色生成了新的朋友圈内容 ${post.id}。`,
+            title: runtimeRules.schedulerTextTemplates.eventTitleMomentPosted,
+            summary: renderTemplate(
+              runtimeRules.schedulerTextTemplates.eventSummaryMomentPosted,
+              { postId: post.id },
+            ),
             jobId: 'check_moment_schedule',
           });
         }
@@ -377,7 +422,13 @@ export class SchedulerService {
     }
 
     return {
-      summary: `检查 ${chars.length} 个好友角色，本轮生成 ${generatedCount} 条朋友圈内容。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryCheckMomentSchedule,
+        {
+          characterCount: chars.length,
+          generatedCount,
+        },
+      ),
     };
   }
 
@@ -385,7 +436,10 @@ export class SchedulerService {
     const runtimeRules = await this.replyLogicRules.getRules();
     if (Math.random() > runtimeRules.sceneFriendRequestChance) {
       return {
-        summary: '场景加好友命中概率门控，本轮未触发。',
+        summary: renderTemplate(
+          runtimeRules.schedulerTextTemplates.jobSummarySceneRequestSkipped,
+          {},
+        ),
       };
     }
 
@@ -402,7 +456,10 @@ export class SchedulerService {
     const req = await this.socialService.triggerSceneFriendRequest(scene);
     if (!req) {
       return {
-        summary: `场景 ${scene} 本轮没有生成新的好友请求。`,
+        summary: renderTemplate(
+          runtimeRules.schedulerTextTemplates.jobSummarySceneRequestNoMatch,
+          { scene },
+        ),
       };
     }
 
@@ -410,18 +467,28 @@ export class SchedulerService {
       characterId: req.characterId,
       characterName: req.characterName,
       kind: 'scene_friend_request',
-      title: '场景好友请求',
-      summary: `在 ${scene} 场景触发了新的好友请求。`,
+      title: runtimeRules.schedulerTextTemplates.eventTitleSceneFriendRequest,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.eventSummarySceneFriendRequest,
+        { scene },
+      ),
       jobId: 'trigger_scene_friend_requests',
     });
     this.logger.debug(`Triggered scene friend request from scene ${scene}`);
 
     return {
-      summary: `已在 ${scene} 场景触发 ${req.characterName} 的好友请求。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummarySceneRequestTriggered,
+        {
+          scene,
+          characterName: req.characterName,
+        },
+      ),
     };
   }
 
   private async handleProcessPendingFeedReactions(): Promise<TrackedJobResult> {
+    const runtimeRules = await this.replyLogicRules.getRules();
     const pending = await this.feedService.getPendingAiReaction(30);
     let processedCount = 0;
     for (const post of pending) {
@@ -431,7 +498,10 @@ export class SchedulerService {
     }
 
     return {
-      summary: `已处理 ${processedCount} 条待执行广场互动。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryProcessPendingFeedReactions,
+        { processedCount },
+      ),
     };
   }
 
@@ -477,8 +547,11 @@ export class SchedulerService {
           characterId: char.id,
           characterName: char.name,
           kind: 'channel_posted',
-          title: '视频号内容生成',
-          summary: `调度器为该角色生成了视频号内容 ${post.id}。`,
+          title: runtimeRules.schedulerTextTemplates.eventTitleChannelPosted,
+          summary: renderTemplate(
+            runtimeRules.schedulerTextTemplates.eventSummaryChannelPosted,
+            { postId: post.id },
+          ),
           jobId: 'check_channels_schedule',
         });
         this.logger.debug(`Generated channels post ${post.id} for ${char.name}`);
@@ -488,7 +561,13 @@ export class SchedulerService {
     await this.feedService.topUpChannelsIfNeeded();
 
     return {
-      summary: `检查 ${chars.length} 个角色，生成 ${generatedCount} 条视频号内容，并执行内容池补足。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryCheckChannelsSchedule,
+        {
+          characterCount: chars.length,
+          generatedCount,
+        },
+      ),
     };
   }
 
@@ -540,8 +619,11 @@ export class SchedulerService {
               characterId: char.id,
               characterName: char.name,
               kind: 'activity_changed',
-              title: '活动状态刷新',
-              summary: '默认角色活动已重置为空闲。',
+              title: runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
+              summary: renderTemplate(
+                runtimeRules.schedulerTextTemplates.eventSummaryDefaultActivityReset,
+                {},
+              ),
               jobId: 'update_character_status',
             });
           }
@@ -564,19 +646,33 @@ export class SchedulerService {
 
       await this.characterRepo.update(char.id, { currentActivity: activity });
       updatedCount += 1;
+      const activityLabel =
+        runtimeRules.semanticLabels.activityLabels[
+          activity as keyof typeof runtimeRules.semanticLabels.activityLabels
+        ] ?? activity;
       this.telemetry.recordCharacterEvent({
         characterId: char.id,
         characterName: char.name,
         kind: 'activity_changed',
-        title: '活动状态刷新',
-        summary: `当前活动已更新为 ${activity}。`,
+        title: runtimeRules.schedulerTextTemplates.eventTitleActivityChanged,
+        summary: renderTemplate(
+          runtimeRules.schedulerTextTemplates.eventSummaryActivityChanged,
+          { activity: activityLabel },
+        ),
         jobId: 'update_character_status',
       });
       this.logger.debug(`Updated activity for ${char.name}: ${activity}`);
     }
 
     return {
-      summary: `检查 ${chars.length} 个角色，活动状态变更 ${updatedCount} 次，人工锁定 ${manualLockedCount} 个。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryUpdateCharacterStatus,
+        {
+          characterCount: chars.length,
+          updatedCount,
+          manualLockedCount,
+        },
+      ),
     };
   }
 
@@ -585,7 +681,13 @@ export class SchedulerService {
     const now = new Date();
     if (now.getHours() !== runtimeRules.proactiveReminderHour) {
       return {
-        summary: `当前小时 ${now.getHours()} 不等于主动提醒小时 ${runtimeRules.proactiveReminderHour}，跳过本轮。`,
+        summary: renderTemplate(
+          runtimeRules.schedulerTextTemplates.jobSummaryProactiveReminderSkipped,
+          {
+            currentHour: now.getHours(),
+            targetHour: runtimeRules.proactiveReminderHour,
+          },
+        ),
       };
     }
 
@@ -604,7 +706,14 @@ export class SchedulerService {
         }
 
         memorySeededCount += 1;
-        const checkPrompt = `以下是${char.name}对用户的记忆：\n${memoryText}\n\n今天是${now.toLocaleDateString('zh-CN')}。判断是否有值得主动提醒用户的事项（如考试、面试、生日、重要约定等）。\n\n如果有，输出一条自然的提醒消息（以${char.name}的口吻，不超过50字）。\n如果没有，只输出：NO_ACTION`;
+        const checkPrompt = renderTemplate(
+          runtimeRules.schedulerTextTemplates.proactiveReminderCheckPrompt,
+          {
+            characterName: char.name,
+            memoryText,
+            today: now.toLocaleDateString('zh-CN'),
+          },
+        );
         const model = await this.ai['configService'].getAiModel();
         const client = this.ai['client'] as import('openai').default;
         const resp = await client.chat.completions.create({
@@ -642,8 +751,11 @@ export class SchedulerService {
             characterId: char.id,
             characterName: char.name,
             kind: 'proactive_message',
-            title: '主动提醒已发送',
-            summary: `基于记忆向用户发出了 ${sentForCharacter} 条主动提醒。`,
+            title: runtimeRules.schedulerTextTemplates.eventTitleProactiveMessage,
+            summary: renderTemplate(
+              runtimeRules.schedulerTextTemplates.eventSummaryProactiveMessage,
+              { sentCount: sentForCharacter },
+            ),
             jobId: 'trigger_memory_proactive_messages',
           });
         }
@@ -657,11 +769,20 @@ export class SchedulerService {
     }
 
     return {
-      summary: `检查 ${memorySeededCount} 个有记忆种子的角色，发送 ${sentMessages} 条主动提醒消息。`,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.jobSummaryTriggerMemoryProactiveMessages,
+        {
+          memorySeededCount,
+          sentMessages,
+        },
+      ),
     };
   }
 
-  private async maybeStrengthenAiRelationships(chars: CharacterEntity[]) {
+  private async maybeStrengthenAiRelationships(
+    chars: CharacterEntity[],
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>,
+  ) {
     if (chars.length < 2) {
       return 0;
     }
@@ -692,7 +813,7 @@ export class SchedulerService {
           existing.strength = Math.min(100, existing.strength + 4);
           await this.aiRelationshipRepo.save(existing);
           updates += 1;
-          this.recordRelationshipEvent(left, right, existing.strength);
+          this.recordRelationshipEvent(left, right, existing.strength, runtimeRules);
           continue;
         }
 
@@ -706,7 +827,7 @@ export class SchedulerService {
           }),
         );
         updates += 1;
-        this.recordRelationshipEvent(left, right, 18);
+        this.recordRelationshipEvent(left, right, 18, runtimeRules);
       }
     }
 
@@ -717,22 +838,35 @@ export class SchedulerService {
     left: CharacterEntity,
     right: CharacterEntity,
     strength: number,
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>,
   ) {
-    const summary = `与 ${right.name} 的 AI 关系强度已提升到 ${strength}。`;
+    const leftSummary = renderTemplate(
+      runtimeRules.schedulerTextTemplates.eventSummaryRelationshipUpdated,
+      {
+        otherName: right.name,
+        strength,
+      },
+    );
     this.telemetry.recordCharacterEvent({
       characterId: left.id,
       characterName: left.name,
       kind: 'relationship_updated',
-      title: 'AI 关系更新',
-      summary,
+      title: runtimeRules.schedulerTextTemplates.eventTitleRelationshipUpdated,
+      summary: leftSummary,
       jobId: 'update_ai_active_status',
     });
     this.telemetry.recordCharacterEvent({
       characterId: right.id,
       characterName: right.name,
       kind: 'relationship_updated',
-      title: 'AI 关系更新',
-      summary: `与 ${left.name} 的 AI 关系强度已提升到 ${strength}。`,
+      title: runtimeRules.schedulerTextTemplates.eventTitleRelationshipUpdated,
+      summary: renderTemplate(
+        runtimeRules.schedulerTextTemplates.eventSummaryRelationshipUpdated,
+        {
+          otherName: left.name,
+          strength,
+        },
+      ),
       jobId: 'update_ai_active_status',
     });
   }
