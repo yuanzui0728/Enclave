@@ -17,6 +17,11 @@ const CharacterEditorPage = lazy(async () => {
   return { default: mod.CharacterEditorPage };
 });
 
+const CharacterFactoryPage = lazy(async () => {
+  const mod = await import("./routes/character-factory-page");
+  return { default: mod.CharacterFactoryPage };
+});
+
 const EvalsPage = lazy(async () => {
   const mod = await import("./routes/evals-page");
   return { default: mod.EvalsPage };
@@ -54,6 +59,12 @@ const characterEditorRoute = createRoute({
   component: CharacterEditorPage,
 });
 
+const characterFactoryRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/characters/$characterId/factory",
+  component: CharacterFactoryPage,
+});
+
 const evalsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/evals",
@@ -72,7 +83,15 @@ const setupRoute = createRoute({
   component: SetupPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, charactersRoute, characterEditorRoute, evalsRoute, replyLogicRoute, setupRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  charactersRoute,
+  characterEditorRoute,
+  characterFactoryRoute,
+  evalsRoute,
+  replyLogicRoute,
+  setupRoute,
+]);
 
 export const router = createRouter({
   routeTree,

@@ -1,4 +1,6 @@
 import type {
+  CharacterBlueprintRevision,
+  CharacterFactorySnapshot,
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
@@ -88,6 +90,25 @@ export const adminApi = {
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
+  getCharacterFactory: (id: string) =>
+    adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory`),
+  updateCharacterFactory: (id: string, payload: Record<string, unknown>) =>
+    adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  publishCharacterFactory: (id: string, summary?: string) =>
+    adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory/publish`, {
+      method: "POST",
+      body: JSON.stringify({ summary: summary?.trim() || null }),
+    }),
+  listCharacterFactoryRevisions: (id: string) =>
+    adminFetch<CharacterBlueprintRevision[]>(`/characters/${id}/factory/revisions`),
+  restoreCharacterFactoryRevision: (id: string, revisionId: string) =>
+    adminFetch<CharacterFactorySnapshot>(
+      `/characters/${id}/factory/revisions/${revisionId}/restore`,
+      { method: "POST" },
+    ),
   getReplyLogicOverview: () => adminFetch<ReplyLogicOverview>("/reply-logic/overview"),
   getReplyLogicRules: () => adminFetch<ReplyLogicConstantSummary>("/reply-logic/rules"),
   setReplyLogicRules: (payload: ReplyLogicConstantSummary) =>
