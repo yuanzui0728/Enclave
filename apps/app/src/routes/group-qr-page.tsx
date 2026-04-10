@@ -118,6 +118,20 @@ export function GroupQrPage() {
       ].join(" "),
     [groupQuery.data?.name, inviteCode, inviteLink],
   );
+  const currentReturnSource = useMemo(() => {
+    const params = new URLSearchParams(search);
+    const conversationPath = params.get("from")?.trim();
+    const conversationTitle = params.get("title")?.trim();
+
+    if (!conversationPath || !conversationTitle) {
+      return null;
+    }
+
+    return {
+      conversationPath,
+      conversationTitle,
+    };
+  }, [search]);
 
   useEffect(() => {
     setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
@@ -298,6 +312,32 @@ export function GroupQrPage() {
             </div>
           </div>
 
+          {currentReturnSource ? (
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.78)] px-4 py-4">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium tracking-[0.16em] text-[color:var(--brand-secondary)]">
+                  当前回流来源
+                </div>
+                <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  来自 {currentReturnSource.conversationTitle}
+                </div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void navigate({ to: currentReturnSource.conversationPath });
+                }}
+                className="shrink-0 rounded-full"
+              >
+                回到会话
+              </Button>
+            </section>
+          ) : null}
+
           <div className="overflow-hidden rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-[linear-gradient(180deg,#fffdf8,#f8efe1)] p-5 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
             <div
               className="mx-auto w-full max-w-[420px]"
@@ -468,27 +508,45 @@ export function GroupQrPage() {
   if (isDesktopLayout) {
     return (
       <AppPage className="min-h-full bg-[linear-gradient(180deg,#f8f1e6,#f4f7ef)] px-5 py-5">
-        <div className="mx-auto flex max-w-5xl flex-col gap-5">
-          <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.84)] px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
-            <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-secondary)]">
-                Group Invite
+          <div className="mx-auto flex max-w-5xl flex-col gap-5">
+            <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.84)] px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
+              <div className="min-w-0">
+                <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-secondary)]">
+                  Group Invite
+                </div>
+                <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
+                  群二维码
+                </div>
+                {currentReturnSource ? (
+                  <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
+                    当前来自 {currentReturnSource.conversationTitle}
+                  </div>
+                ) : null}
               </div>
-              <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                群二维码
+              <div className="flex items-center gap-2">
+                {currentReturnSource ? (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      void navigate({ to: currentReturnSource.conversationPath });
+                    }}
+                    className="rounded-full"
+                  >
+                    回到来源会话
+                  </Button>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    void navigate({ to: "/group/$groupId", params: { groupId } });
+                  }}
+                >
+                  返回群聊
+                </Button>
               </div>
             </div>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                void navigate({ to: "/group/$groupId", params: { groupId } });
-              }}
-            >
-              返回群聊
-            </Button>
+            {content}
           </div>
-          {content}
-        </div>
       </AppPage>
     );
   }
