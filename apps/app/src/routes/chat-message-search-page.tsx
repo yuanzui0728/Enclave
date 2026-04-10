@@ -112,6 +112,7 @@ export function ChatMessageSearchPage() {
                   void navigate({
                     to: "/chat/$conversationId",
                     params: { conversationId },
+                    hash: `chat-message-${message.id}`,
                   });
                 }}
                 className="block w-full px-4 py-3 text-left"

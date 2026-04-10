@@ -1,4 +1,8 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
+import {
+  useNavigate,
+  useParams,
+  useRouterState,
+} from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
@@ -8,9 +12,16 @@ export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const highlightedMessageId = parseHighlightedMessageId(hash);
 
   if (isDesktopLayout) {
-    return <DesktopChatWorkspace selectedConversationId={conversationId} />;
+    return (
+      <DesktopChatWorkspace
+        selectedConversationId={conversationId}
+        highlightedMessageId={highlightedMessageId}
+      />
+    );
   }
 
   return (
@@ -18,6 +29,7 @@ export function ChatRoomPage() {
       <div className="h-full min-h-0 flex-1">
         <ConversationThreadPanel
           conversationId={conversationId}
+          highlightedMessageId={highlightedMessageId}
           onBack={() => {
             void navigate({ to: "/tabs/chat" });
           }}
@@ -25,4 +37,12 @@ export function ChatRoomPage() {
       </div>
     </AppPage>
   );
+}
+
+function parseHighlightedMessageId(hash: string) {
+  const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
+  const prefix = "chat-message-";
+  return normalized.startsWith(prefix)
+    ? normalized.slice(prefix.length)
+    : undefined;
 }

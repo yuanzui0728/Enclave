@@ -18,10 +18,12 @@ import GroupChatThreadPanel from "../../chat/group-chat-thread-panel-view";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
+  highlightedMessageId?: string;
 };
 
 export function DesktopChatWorkspace({
   selectedConversationId,
+  highlightedMessageId,
 }: DesktopChatWorkspaceProps) {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
@@ -163,11 +165,21 @@ export function DesktopChatWorkspace({
             <GroupChatThreadPanel
               groupId={activeConversation.id}
               variant="desktop"
+              highlightedMessageId={
+                activeConversation.id === selectedConversationId
+                  ? highlightedMessageId
+                  : undefined
+              }
             />
           ) : (
             <ConversationThreadPanel
               conversationId={activeConversation.id}
               variant="desktop"
+              highlightedMessageId={
+                activeConversation.id === selectedConversationId
+                  ? highlightedMessageId
+                  : undefined
+              }
               inspectorOpen={inspectorOpen}
               onToggleInspector={() => setInspectorOpen((current) => !current)}
             />

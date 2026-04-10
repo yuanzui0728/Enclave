@@ -19,6 +19,7 @@ type ChatMessageListProps = {
   messages: ChatRenderableMessage[];
   groupMode?: boolean;
   variant?: "mobile" | "desktop";
+  highlightedMessageId?: string;
   emptyState?: React.ReactNode;
 };
 
@@ -26,6 +27,7 @@ export function ChatMessageList({
   messages,
   groupMode = false,
   variant = "mobile",
+  highlightedMessageId,
   emptyState,
 }: ChatMessageListProps) {
   const isDesktop = variant === "desktop";
@@ -40,16 +42,18 @@ export function ChatMessageList({
         const isUser = message.senderType === "user";
         const isSystem =
           message.type === "system" || message.senderType === "system";
+        const isHighlighted = message.id === highlightedMessageId;
 
         if (isSystem) {
           return (
             <InlineNotice
               key={message.id}
+              id={`chat-message-${message.id}`}
               className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
                 isDesktop
                   ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
                   : "border border-white/70 bg-white/82 shadow-[var(--shadow-soft)]"
-              }`}
+              } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.42)] ring-offset-2 ring-offset-transparent" : ""}`}
               tone="muted"
             >
               {message.text}
@@ -58,7 +62,15 @@ export function ChatMessageList({
         }
 
         return (
-          <div key={message.id} className="space-y-1.5">
+          <div
+            key={message.id}
+            id={`chat-message-${message.id}`}
+            className={`space-y-1.5 rounded-[24px] px-2 py-2 transition-[background-color,box-shadow] duration-300 ${
+              isHighlighted
+                ? "bg-[rgba(255,224,120,0.18)] shadow-[0_0_0_1px_rgba(255,191,0,0.18)]"
+                : ""
+            }`}
+          >
             <div className="text-center text-[11px] text-[color:var(--text-dim)]">
               {formatMessageTimestamp(message.createdAt)}
             </div>

@@ -26,12 +26,14 @@ type GroupChatThreadPanelProps = {
   groupId: string;
   variant?: "mobile" | "desktop";
   onBack?: () => void;
+  highlightedMessageId?: string;
 };
 
 export function GroupChatThreadPanel({
   groupId,
   variant = "mobile",
   onBack,
+  highlightedMessageId,
 }: GroupChatThreadPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -101,10 +103,28 @@ export function GroupChatThreadPanel({
       ),
     [messagesQuery.data],
   );
+  const hasHighlightedMessage = orderedMessages.some(
+    (message) => message.id === highlightedMessageId,
+  );
 
   const sendError =
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const defaultBackground = ownerQuery.data?.defaultChatBackground ?? null;
+
+  useEffect(() => {
+    if (!highlightedMessageId || !hasHighlightedMessage) {
+      return;
+    }
+
+    const target = document.getElementById(
+      `chat-message-${highlightedMessageId}`,
+    );
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [hasHighlightedMessage, highlightedMessageId]);
 
   const sendAttachmentMessage = async (
     payload: ChatComposerAttachmentPayload,
@@ -264,6 +284,7 @@ export function GroupChatThreadPanel({
             messages={orderedMessages}
             groupMode
             variant={isDesktop ? "desktop" : "mobile"}
+            highlightedMessageId={highlightedMessageId}
             emptyState={
               !messagesQuery.isLoading && !messagesQuery.isError ? (
                 <EmptyState

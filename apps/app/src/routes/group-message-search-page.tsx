@@ -104,6 +104,7 @@ export function GroupMessageSearchPage() {
                   void navigate({
                     to: "/group/$groupId",
                     params: { groupId },
+                    hash: `chat-message-${message.id}`,
                   });
                 }}
                 className="block w-full px-4 py-3 text-left"

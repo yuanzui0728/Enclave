@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Ellipsis, Phone, Search, Users, Video } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
@@ -16,6 +17,7 @@ type ConversationThreadPanelProps = {
   onBack?: () => void;
   inspectorOpen?: boolean;
   onToggleInspector?: () => void;
+  highlightedMessageId?: string;
 };
 
 export function ConversationThreadPanel({
@@ -24,6 +26,7 @@ export function ConversationThreadPanel({
   onBack,
   inspectorOpen = false,
   onToggleInspector,
+  highlightedMessageId,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
   const {
@@ -54,6 +57,25 @@ export function ConversationThreadPanel({
       : typingCharacterId
         ? "对方正在输入..."
         : "连接顺畅";
+
+  const hasHighlightedMessage = renderedMessages.some(
+    (message) => message.id === highlightedMessageId,
+  );
+
+  useEffect(() => {
+    if (!highlightedMessageId || !hasHighlightedMessage) {
+      return;
+    }
+
+    const target = document.getElementById(
+      `chat-message-${highlightedMessageId}`,
+    );
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [hasHighlightedMessage, highlightedMessageId]);
 
   return (
     <div
@@ -178,6 +200,7 @@ export function ConversationThreadPanel({
             messages={renderedMessages}
             groupMode={conversationType === "group"}
             variant={isDesktop ? "desktop" : "mobile"}
+            highlightedMessageId={highlightedMessageId}
             emptyState={
               !messagesQuery.isLoading && !messagesQuery.isError ? (
                 <EmptyState
