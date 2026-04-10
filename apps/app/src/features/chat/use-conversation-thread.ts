@@ -267,7 +267,6 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "image",
-        text: `[图片] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -286,7 +285,6 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "file",
-        text: `[文件] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -297,7 +295,6 @@ export function useConversationThread(conversationId: string) {
         conversationId,
         characterId: targetCharacterId,
         type: "contact_card",
-        text: `[名片] ${payload.attachment.name}`,
         attachment: payload.attachment,
       });
       return;
@@ -307,7 +304,6 @@ export function useConversationThread(conversationId: string) {
       conversationId,
       characterId: targetCharacterId,
       type: "location_card",
-      text: `[位置] ${payload.attachment.title}`,
       attachment: payload.attachment,
     });
   };

@@ -142,7 +142,6 @@ export function GroupChatThreadPanel({
 
       await sendMutation.mutateAsync({
         type: "image",
-        text: `[图片] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -159,7 +158,6 @@ export function GroupChatThreadPanel({
 
       await sendMutation.mutateAsync({
         type: "file",
-        text: `[文件] ${result.attachment.fileName}`,
         attachment: result.attachment,
       });
       return;
@@ -168,7 +166,6 @@ export function GroupChatThreadPanel({
     if (payload.type === "contact_card") {
       await sendMutation.mutateAsync({
         type: "contact_card",
-        text: `[名片] ${payload.attachment.name}`,
         attachment: payload.attachment,
       });
       return;
@@ -176,7 +173,6 @@ export function GroupChatThreadPanel({
 
     await sendMutation.mutateAsync({
       type: "location_card",
-      text: `[位置] ${payload.attachment.title}`,
       attachment: payload.attachment,
     });
   };
@@ -286,7 +282,9 @@ export function GroupChatThreadPanel({
             variant={isDesktop ? "desktop" : "mobile"}
             highlightedMessageId={highlightedMessageId}
             emptyState={
-              !isDesktop && !messagesQuery.isLoading && !messagesQuery.isError ? (
+              !isDesktop &&
+              !messagesQuery.isLoading &&
+              !messagesQuery.isError ? (
                 <EmptyState
                   title="群里还没有消息"
                   description="发一条消息，让这个群先热起来。"
