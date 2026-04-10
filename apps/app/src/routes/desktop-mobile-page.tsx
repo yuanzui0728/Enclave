@@ -58,6 +58,51 @@ type QuickEntry = {
   to: string;
 };
 
+type MobileHandoffCategory =
+  | "messages"
+  | "official"
+  | "mini_program"
+  | "channel"
+  | "shortcut"
+  | "other";
+
+const mobileHandoffCategoryMeta: Array<{
+  id: MobileHandoffCategory;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "messages",
+    label: "消息",
+    description: "单聊、群聊和消息列表入口。",
+  },
+  {
+    id: "official",
+    label: "公众号",
+    description: "公众号主页和文章阅读入口。",
+  },
+  {
+    id: "mini_program",
+    label: "小程序",
+    description: "小程序工作台和最近使用入口。",
+  },
+  {
+    id: "channel",
+    label: "视频号 / 直播",
+    description: "频道内容和直播接力入口。",
+  },
+  {
+    id: "shortcut",
+    label: "快捷入口",
+    description: "通讯录、发现、设置等全局入口。",
+  },
+  {
+    id: "other",
+    label: "其他",
+    description: "未归入主链路的补充接力入口。",
+  },
+];
+
 const quickEntries: QuickEntry[] = [
   {
     id: "chat",
@@ -176,6 +221,18 @@ export function DesktopMobilePage() {
   const handoffLabel = handoffHistory[0]
     ? formatTimestamp(handoffHistory[0].sentAt)
     : "还没有发送记录";
+  const groupedHandoffHistory = useMemo(
+    () =>
+      mobileHandoffCategoryMeta
+        .map((group) => ({
+          ...group,
+          items: handoffHistory.filter(
+            (item) => resolveMobileHandoffCategory(item) === group.id,
+          ),
+        }))
+        .filter((group) => group.items.length),
+    [handoffHistory],
+  );
 
   useEffect(() => {
     if (!notice) {
@@ -759,44 +816,62 @@ export function DesktopMobilePage() {
               <span>最近发往手机</span>
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-              当前版本先记录桌面已经发出的手机接力链接，后续接真设备状态时可以直接沿用这块列表。
+              当前把手机接力记录按内容类型拆开，方便区分消息、公众号、小程序和直播链路。
             </div>
 
-            <div className="mt-4 space-y-3">
-              {handoffHistory.length ? (
-                handoffHistory.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                        {item.label}
+            <div className="mt-4 space-y-5">
+              {groupedHandoffHistory.length ? (
+                groupedHandoffHistory.map((group) => (
+                  <section key={group.id} className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                          {group.label}
+                        </div>
+                        <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                          {group.description}
+                        </div>
                       </div>
-                      <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                        {item.description}
-                      </div>
-                      <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
-                        {formatTimestamp(item.sentAt)}
+                      <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                        {group.items.length} 条
                       </div>
                     </div>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() =>
-                        void handleCopyHandoff({
-                          description: item.description,
-                          label: item.label,
-                          path: item.path,
-                          setHistory: setHandoffHistory,
-                          setNotice,
-                        })
-                      }
-                      className="rounded-full"
-                    >
-                      再发一次
-                    </Button>
-                  </div>
+
+                    {group.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                            {item.label}
+                          </div>
+                          <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                            {item.description}
+                          </div>
+                          <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+                            {formatTimestamp(item.sentAt)}
+                          </div>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            void handleCopyHandoff({
+                              description: item.description,
+                              label: item.label,
+                              path: item.path,
+                              setHistory: setHandoffHistory,
+                              setNotice,
+                            })
+                          }
+                          className="rounded-full"
+                        >
+                          再发一次
+                        </Button>
+                      </div>
+                    ))}
+                  </section>
                 ))
               ) : (
                 <EmptyState
@@ -1000,6 +1075,43 @@ function resolveLiveQualityLabel(quality: LiveSessionRecord["quality"]) {
   }
 
   return "高清";
+}
+
+function resolveMobileHandoffCategory(
+  item: MobileHandoffRecord,
+): MobileHandoffCategory {
+  if (
+    item.path === "/tabs/chat" ||
+    item.path.startsWith("/chat/") ||
+    item.path.startsWith("/group/")
+  ) {
+    return "messages";
+  }
+
+  if (item.path.startsWith("/official-accounts")) {
+    return "official";
+  }
+
+  if (
+    item.path === "/tabs/mini-programs" ||
+    item.path.startsWith("/discover/mini-programs")
+  ) {
+    return "mini_program";
+  }
+
+  if (item.path === "/tabs/channels" || item.path.startsWith("/desktop/channels")) {
+    return "channel";
+  }
+
+  if (
+    item.path === "/tabs/contacts" ||
+    item.path === "/tabs/discover" ||
+    item.path === "/profile/settings"
+  ) {
+    return "shortcut";
+  }
+
+  return "other";
 }
 
 async function handleCopyHandoff({
