@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   InlineNotice,
-  MetricCard,
   ProviderSetupForm,
   SectionHeading,
   SetupStatusCard,
@@ -13,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
+import { AdminInfoRows, AdminPageHero } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 
 function formatProviderMode(mode?: string | null) {
@@ -87,87 +87,92 @@ export function SetupPage() {
     : coreApiReady
       ? "远程接口已连通，当前只差推理服务配置。"
       : "先恢复远程世界接口，再继续配置推理服务。";
+  const setupFocusRows = [
+    {
+      label: "远程 API",
+      value: `${coreApiReady ? "已连通" : "待恢复"}${systemStatusQuery.data?.coreApi.version ? ` · ${systemStatusQuery.data.coreApi.version}` : ""}`,
+    },
+    {
+      label: "推理服务",
+      value: providerReady
+        ? `${providerSetup.providerDraft.model || "已配置"} · ${formatProviderMode(providerSetup.providerDraft.mode)}`
+        : "待配置",
+    },
+    {
+      label: "世界主人",
+      value: worldOwnerReady
+        ? "1 个，状态正确"
+        : `${systemStatusQuery.data?.worldSurface.ownerCount ?? 0} 个，需要处理`,
+    },
+    {
+      label: "下一步",
+      value: !coreApiReady
+        ? "先恢复远程 API"
+        : !providerReady
+          ? "保存并测试推理服务"
+          : "进入角色 / 回复逻辑 / 评测工作区",
+    },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className="bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(255,247,235,0.92)_45%,rgba(237,250,244,0.95))]">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-2xl">
-              <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">运维准备</div>
-              <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">先打通实例，再补齐模型。</h2>
-              <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{readinessSummary}</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
+        <AdminPageHero
+          eyebrow="运维准备"
+          title="先打通实例，再补齐模型。"
+          description={readinessSummary}
+          actions={
+            <>
               <Link to="/">
-                <Button variant="secondary">返回总览</Button>
+                <Button variant="secondary" size="lg">返回总览</Button>
               </Link>
               <Link to="/reply-logic">
-                <Button variant="secondary" disabled={!coreApiReady}>查看回复逻辑</Button>
+                <Button variant="secondary" size="lg" disabled={!coreApiReady}>查看回复逻辑</Button>
               </Link>
-            </div>
-          </div>
+            </>
+          }
+          metrics={[
+            { label: "远程 API", value: coreApiReady ? "已连通" : "待恢复" },
+            { label: "推理服务", value: providerReady ? "已配置" : "待配置" },
+            { label: "调度器", value: schedulerReady ? "健康" : "待关注" },
+            { label: "世界主人", value: String(systemStatusQuery.data?.worldSurface.ownerCount ?? 0) },
+          ]}
+        />
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="远程 API"
-              value={coreApiReady ? "已连通" : "待恢复"}
-              detail={systemStatusQuery.data?.coreApi.version ?? "等待探测"}
-              meta={<StatusPill tone={coreApiReady ? "healthy" : "warning"}>{coreApiReady ? "在线" : "离线"}</StatusPill>}
-            />
-            <MetricCard
-              label="推理服务"
-              value={providerReady ? "已配置" : "待配置"}
-              detail={providerSetup.providerDraft.model || "当前未填写模型"}
-              meta={<StatusPill tone={providerReady ? "healthy" : "warning"}>{providerReady ? "可用" : "缺失"}</StatusPill>}
-            />
-            <MetricCard
-              label="调度器"
-              value={schedulerReady ? "健康" : "待关注"}
-              detail={systemStatusQuery.data?.scheduler.mode ?? "未知"}
-              meta={<StatusPill tone={schedulerReady ? "healthy" : "warning"}>{schedulerReady ? "正常" : "异常"}</StatusPill>}
-            />
-            <MetricCard
-              label="世界主人"
-              value={String(systemStatusQuery.data?.worldSurface.ownerCount ?? 0)}
-              detail="单世界实例应当且仅应有一个世界主人"
-              meta={<StatusPill tone={worldOwnerReady ? "healthy" : "warning"}>{worldOwnerReady ? "正确" : "异常"}</StatusPill>}
-            />
-          </div>
-        </Card>
-
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>接入检查</SectionHeading>
-          <div className="mt-4">
-            <SetupStepList steps={setupSteps} />
-          </div>
-
-          {systemStatusQuery.isError && systemStatusQuery.error instanceof Error ? (
-            <InlineNotice className="mt-4" tone="warning">{systemStatusQuery.error.message}</InlineNotice>
-          ) : null}
-
-          <div className="mt-4 space-y-3">
-            <ChecklistItem
-              title="先确认远程 API 可达"
-              description="如果接口离线，先检查世界实例地址、反向代理和服务进程。"
-              ok={coreApiReady}
-            />
-            <ChecklistItem
-              title="确认世界主人数量正确"
-              description="当前实例必须保持单世界主人语义，数量不为 1 时先处理数据状态。"
-              ok={worldOwnerReady}
-            />
-            <ChecklistItem
-              title="保存并测试推理服务"
-              description="模型、接口地址和 API Key 都正确后，再进入回复逻辑和评测工作区。"
-              ok={providerReady}
-            />
-          </div>
-        </Card>
+        <AdminInfoRows title="当前聚焦" rows={setupFocusRows} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="space-y-6">
+          <Card className="bg-[color:var(--surface-console)]">
+            <SectionHeading>接入检查</SectionHeading>
+            <div className="mt-4">
+              <SetupStepList steps={setupSteps} />
+            </div>
+
+            {systemStatusQuery.isError && systemStatusQuery.error instanceof Error ? (
+              <InlineNotice className="mt-4" tone="warning">{systemStatusQuery.error.message}</InlineNotice>
+            ) : null}
+
+            <div className="mt-4 space-y-3">
+              <ChecklistItem
+                title="先确认远程 API 可达"
+                description="如果接口离线，先检查世界实例地址、反向代理和服务进程。"
+                ok={coreApiReady}
+              />
+              <ChecklistItem
+                title="确认世界主人数量正确"
+                description="当前实例必须保持单世界主人语义，数量不为 1 时先处理数据状态。"
+                ok={worldOwnerReady}
+              />
+              <ChecklistItem
+                title="保存并测试推理服务"
+                description="模型、接口地址和 API Key 都正确后，再进入回复逻辑和评测工作区。"
+                ok={providerReady}
+              />
+            </div>
+          </Card>
+
           <Card className="bg-[color:var(--surface-console)]">
             <SectionHeading>实例状态详情</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
