@@ -811,6 +811,13 @@ export function ChatMessageList({
             setSelectedMessageIds([contextMenuState.message.id]);
             setContextMenuState(null);
           }}
+          onSetReminder={() => {
+            showUnavailableActionNotice(
+              "消息提醒能力待接服务端提醒接口，当前先保留微信式入口。",
+            );
+            setContextMenuState(null);
+          }}
+          reminderLabel="提醒"
           onCopyText={() => {
             void copyToClipboard(
               buildClipboardText(contextMenuState.message),
@@ -858,6 +865,24 @@ export function ChatMessageList({
             );
             setContextMenuState(null);
           }}
+          onRecall={
+            contextMenuState.message.senderType === "user"
+              ? () => {
+                  showUnavailableActionNotice(
+                    "撤回消息能力待接消息级接口，当前先保留微信式入口。",
+                  );
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
+          recallLabel="撤回"
+          onDelete={() => {
+            showUnavailableActionNotice(
+              "删除消息能力待接消息级接口，当前先保留微信式入口。",
+            );
+            setContextMenuState(null);
+          }}
+          deleteLabel="删除"
         />
       ) : null}
       <MobileMessageActionSheet

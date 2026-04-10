@@ -1,12 +1,15 @@
 import { type ReactNode } from "react";
 import {
+  BellRing,
   CheckSquare,
   Copy,
   CornerUpLeft,
   Download,
   ExternalLink,
   Forward,
+  RotateCcw,
   Star,
+  Trash2,
   UserRound,
 } from "lucide-react";
 
@@ -17,6 +20,8 @@ type GroupMessageContextMenuProps = {
   onReply?: () => void;
   onForward?: () => void;
   onMultiSelect?: () => void;
+  onSetReminder?: () => void;
+  reminderLabel?: string;
   onCopyText: () => void;
   onCopySender?: () => void;
   onToggleFavorite?: () => void;
@@ -25,6 +30,10 @@ type GroupMessageContextMenuProps = {
   openAttachmentLabel?: string;
   onSaveAttachment?: () => void;
   saveAttachmentLabel?: string;
+  onRecall?: () => void;
+  recallLabel?: string;
+  onDelete?: () => void;
+  deleteLabel?: string;
 };
 
 const MENU_WIDTH = 188;
@@ -37,6 +46,8 @@ export function GroupMessageContextMenu({
   onReply,
   onForward,
   onMultiSelect,
+  onSetReminder,
+  reminderLabel = "提醒",
   onCopyText,
   onCopySender,
   onToggleFavorite,
@@ -45,16 +56,23 @@ export function GroupMessageContextMenu({
   openAttachmentLabel = "打开附件",
   onSaveAttachment,
   saveAttachmentLabel = "另存为",
+  onRecall,
+  recallLabel = "撤回",
+  onDelete,
+  deleteLabel = "删除",
 }: GroupMessageContextMenuProps) {
   const actionCount =
     1 +
     Number(Boolean(onReply)) +
     Number(Boolean(onForward)) +
     Number(Boolean(onMultiSelect)) +
+    Number(Boolean(onSetReminder)) +
     Number(Boolean(onCopySender)) +
     Number(Boolean(onToggleFavorite)) +
     Number(Boolean(onOpenAttachment)) +
-    Number(Boolean(onSaveAttachment));
+    Number(Boolean(onSaveAttachment)) +
+    Number(Boolean(onRecall)) +
+    Number(Boolean(onDelete));
   const menuHeight = actionCount * 42 + 16;
   const viewportWidth =
     typeof window === "undefined" ? MENU_WIDTH : window.innerWidth;
@@ -107,6 +125,13 @@ export function GroupMessageContextMenu({
             onClick={onMultiSelect}
           />
         ) : null}
+        {onSetReminder ? (
+          <ContextMenuButton
+            label={reminderLabel}
+            icon={<BellRing size={15} />}
+            onClick={onSetReminder}
+          />
+        ) : null}
         <ContextMenuButton
           label="复制消息"
           icon={<Copy size={15} />}
@@ -140,6 +165,22 @@ export function GroupMessageContextMenu({
             onClick={onCopySender}
           />
         ) : null}
+        {onRecall ? (
+          <ContextMenuButton
+            danger
+            label={recallLabel}
+            icon={<RotateCcw size={15} />}
+            onClick={onRecall}
+          />
+        ) : null}
+        {onDelete ? (
+          <ContextMenuButton
+            danger
+            label={deleteLabel}
+            icon={<Trash2 size={15} />}
+            onClick={onDelete}
+          />
+        ) : null}
       </div>
     </div>
   );
@@ -149,18 +190,32 @@ function ContextMenuButton({
   icon,
   label,
   onClick,
+  danger = false,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
+  danger?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[#f5f5f5]"
+      className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition hover:bg-[#f5f5f5] ${
+        danger
+          ? "text-[color:var(--state-danger-text)]"
+          : "text-[color:var(--text-primary)]"
+      }`}
     >
-      <span className="text-[color:var(--text-secondary)]">{icon}</span>
+      <span
+        className={
+          danger
+            ? "text-[color:var(--state-danger-text)]"
+            : "text-[color:var(--text-secondary)]"
+        }
+      >
+        {icon}
+      </span>
       <span>{label}</span>
     </button>
   );
