@@ -168,7 +168,10 @@ function buildSearchPreview(text: string, keyword: string) {
 
   const contextRadius = 18;
   const previewStart = Math.max(0, start - contextRadius);
-  const previewEnd = Math.min(text.length, start + keyword.length + contextRadius);
+  const previewEnd = Math.min(
+    text.length,
+    start + keyword.length + contextRadius,
+  );
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
