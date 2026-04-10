@@ -630,8 +630,10 @@ function ConversationListItemLink({
     (showReadAction ? 4 : 3) * SWIPE_ACTION_BUTTON_WIDTH;
   const readActionLabel = conversation.unreadCount > 0 ? "标已读" : "标未读";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
+  const hasUnreadMessages = conversation.unreadCount > 0;
   const isPinned = conversation.isPinned;
   const isGroupConversation = isPersistedGroupConversation(conversation);
+  const showMutedUnreadDot = conversation.isMuted && hasUnreadMessages;
 
   useEffect(() => {
     if (!gestureRef.current?.dragging) {
@@ -733,21 +735,30 @@ function ConversationListItemLink({
                   aria-label="消息免打扰"
                 />
               ) : null}
-              {conversation.unreadCount > 0 ? (
-                <div
-                  className={cn(
-                    "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
-                    conversation.unreadCount > 9 ? "min-w-6" : undefined,
-                  )}
-                >
-                  {conversation.unreadCount > 99
-                    ? "99+"
-                    : conversation.unreadCount}
-                </div>
+              {hasUnreadMessages ? (
+                showMutedUnreadDot ? (
+                  <div
+                    className="h-2.5 w-2.5 rounded-full bg-[#b8b8b8]"
+                    aria-label="有未读消息"
+                  />
+                ) : (
+                  <div
+                    className={cn(
+                      "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
+                      conversation.unreadCount > 9 ? "min-w-6" : undefined,
+                    )}
+                  >
+                    {conversation.unreadCount > 99
+                      ? "99+"
+                      : conversation.unreadCount}
+                  </div>
+                )
               ) : isPinned ? (
-                <div className="text-[10px] text-[color:var(--text-dim)]">
-                  置顶
-                </div>
+                <Pin
+                  size={11}
+                  className="text-[color:var(--text-dim)]"
+                  aria-label="置顶聊天"
+                />
               ) : null}
             </div>
           </div>
