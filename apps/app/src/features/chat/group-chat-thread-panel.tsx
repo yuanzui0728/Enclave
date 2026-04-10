@@ -329,13 +329,11 @@ export function GroupChatThreadPanel({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop
-          ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
-          : "bg-[#ededed]"
+        isDesktop ? "bg-[#f5f5f5]" : "bg-[#ededed]"
       }`}
     >
       {isDesktop ? (
-        <header className="flex items-center gap-3 border-b border-black/6 bg-[#f7f7f7] px-5 py-3.5">
+        <header className="flex items-center gap-3 border-b border-black/5 bg-[#f3f3f3] px-6 py-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {groupQuery.data?.name ?? "群聊"}
@@ -391,11 +389,11 @@ export function GroupChatThreadPanel({
         <div
           className={
             isDesktop
-              ? "border-b border-black/6 bg-white/70 px-5 py-3"
+              ? "border-b border-black/5 bg-[#f7f7f7] px-6 py-3"
               : "border-b border-black/6 bg-white/82 px-3 py-2.5"
           }
         >
-          <InlineNotice tone="info" className="border-white/70 bg-white/90">
+          <InlineNotice tone="info" className="border-black/6 bg-white">
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs leading-6 text-[color:var(--text-secondary)]">
                 {routeContextNotice.description}
@@ -416,24 +414,20 @@ export function GroupChatThreadPanel({
       <div className="relative flex-1 overflow-hidden">
         <div
           className={`absolute inset-0 ${
-            isDesktop
-              ? "bg-[linear-gradient(180deg,#fffdf7,#fff9ee)]"
-              : "bg-[#ededed]"
+            isDesktop ? "bg-[#e9e9e9]" : "bg-[#ededed]"
           }`}
           style={buildChatBackgroundStyle(effectiveBackground)}
         />
         <div
           className={`absolute inset-0 ${
-            isDesktop
-              ? "bg-[rgba(255,250,244,0.30)]"
-              : "bg-[rgba(237,237,237,0.72)]"
+            isDesktop ? "bg-[rgba(245,245,245,0.64)]" : "bg-[rgba(237,237,237,0.72)]"
           }`}
         />
 
         <div
           ref={scrollAnchorRef}
           className={`relative flex h-full flex-col overflow-auto ${
-            isDesktop ? "px-8 py-6" : "px-3 py-4"
+            isDesktop ? "px-7 py-5" : "px-3 py-4"
           }`}
         >
           {groupQuery.isError && groupQuery.error instanceof Error ? (

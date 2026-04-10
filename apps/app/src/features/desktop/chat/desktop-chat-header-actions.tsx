@@ -37,7 +37,7 @@ export function DesktopChatHeaderActions({
   }, [callMenuOpen]);
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       <DesktopChatHeaderButton
         active={activePanelMode === "history"}
         label="聊天记录"
@@ -56,7 +56,7 @@ export function DesktopChatHeaderActions({
         </DesktopChatHeaderButton>
 
         {callMenuOpen ? (
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-36 overflow-hidden rounded-xl border border-black/6 bg-white py-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.12)]">
+          <div className="absolute right-0 top-[calc(100%+0.4rem)] z-30 w-36 overflow-hidden rounded-[12px] border border-black/8 bg-white py-1.5 shadow-[0_10px_24px_rgba(15,23,42,0.10)]">
             <CallMenuButton
               label="语音通话"
               icon={<Phone size={15} />}
@@ -106,10 +106,10 @@ function DesktopChatHeaderButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-[10px] border border-transparent text-[color:var(--text-secondary)] transition-colors",
+        "flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-transparent text-[color:var(--text-secondary)] transition-colors",
         active
-          ? "border-black/6 bg-[#ebebeb] text-[color:var(--text-primary)]"
-          : "hover:bg-[#f2f2f2] hover:text-[color:var(--text-primary)]",
+          ? "border-black/8 bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+          : "hover:border-black/6 hover:bg-white/80 hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}
