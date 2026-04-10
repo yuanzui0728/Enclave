@@ -333,6 +333,12 @@ export function getMiniProgramEntry(id: string) {
   return miniProgramEntries.find((item) => item.id === id);
 }
 
+export function resolveMiniProgramEntries(ids: string[]) {
+  return ids
+    .map((id) => getMiniProgramEntry(id))
+    .filter((item): item is MiniProgramEntry => Boolean(item));
+}
+
 export function getMiniProgramToneStyle(
   tone: MiniProgramTone,
 ): MiniProgramToneStyle {

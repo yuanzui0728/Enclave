@@ -12,6 +12,7 @@ import {
   triggerSceneFriendRequest,
 } from "@yinjie/contracts";
 import {
+  Blocks,
   ChevronRight,
   Gamepad2,
   Newspaper,
@@ -47,7 +48,14 @@ const scenes = [
 ];
 
 type MobileDiscoverEntry = {
-  key: "moments" | "encounter" | "scene" | "feed" | "channels" | "games";
+  key:
+    | "moments"
+    | "encounter"
+    | "scene"
+    | "feed"
+    | "channels"
+    | "games"
+    | "miniPrograms";
   label: string;
   description: string;
   detail: string;
@@ -59,7 +67,8 @@ type MobileDiscoverEntry = {
     | "/discover/scene"
     | "/discover/feed"
     | "/discover/channels"
-    | "/discover/games";
+    | "/discover/games"
+    | "/discover/mini-programs";
 };
 
 const mobileDiscoverEntries: MobileDiscoverEntry[] = [
@@ -109,6 +118,17 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
     icon: Gamepad2,
     iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
     to: "/discover/games",
+  },
+  {
+    key: "miniPrograms",
+    label: "小程序",
+    description: "最近使用与我的小程序",
+    detail:
+      "把最近使用、我的小程序、推荐位和分类浏览收在一起，移动端按微信一样从发现页进入。",
+    icon: Blocks,
+    iconClassName:
+      "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
+    to: "/discover/mini-programs",
   },
 ];
 

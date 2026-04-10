@@ -500,6 +500,13 @@ const discoverGamesRoute = createRoute({
   component: GamesPage,
 });
 
+const discoverMiniProgramsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/mini-programs",
+  beforeLoad: requireWorldReady,
+  component: MiniProgramsPage,
+});
+
 const profileSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/settings",
@@ -608,6 +615,7 @@ const routeTree = rootRoute.addChildren([
   discoverFeedRoute,
   discoverChannelsRoute,
   discoverGamesRoute,
+  discoverMiniProgramsRoute,
   profileSettingsRoute,
   desktopMobileRoute,
   desktopChatFilesRoute,
