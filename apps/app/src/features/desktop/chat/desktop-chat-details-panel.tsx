@@ -124,7 +124,6 @@ function DirectChatDetailsPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
-  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] =
     useState<DirectDetailsConfirmAction | null>(null);
@@ -329,41 +328,6 @@ function DirectChatDetailsPanel({
     },
   });
 
-  const memberItems: DesktopMemberGridItem[] = [
-    {
-      key: "owner",
-      label: ownerName,
-      src: ownerAvatar,
-    },
-    {
-      key: targetCharacterId || conversation.title,
-      label: targetCharacter?.name ?? conversation.title,
-      src: targetCharacter?.avatar,
-    },
-    {
-      key: "add",
-      label: "发起群聊",
-      kind: "add",
-      onClick: () => {
-        if (onCreateGroup) {
-          onCreateGroup({
-            conversationId: conversation.id,
-            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
-          });
-          return;
-        }
-
-        void navigate({
-          to: "/group/new",
-          hash: buildCreateGroupRouteHash({
-            source: "desktop-chat",
-            conversationId: conversation.id,
-            seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
-          }),
-        });
-      },
-    },
-  ];
   const busy =
     pinMutation.isPending ||
     muteMutation.isPending ||
@@ -562,6 +526,28 @@ function DirectChatDetailsPanel({
         </DesktopContactProfileSection>
 
         <DesktopContactProfileSection title="内容与关系">
+          <DesktopContactProfileActionRow
+            label="发起群聊"
+            value="和对方创建新群"
+            onClick={() => {
+              if (onCreateGroup) {
+                onCreateGroup({
+                  conversationId: conversation.id,
+                  seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+                });
+                return;
+              }
+
+              void navigate({
+                to: "/group/new",
+                hash: buildCreateGroupRouteHash({
+                  source: "desktop-chat",
+                  conversationId: conversation.id,
+                  seedMemberIds: targetCharacterId ? [targetCharacterId] : [],
+                }),
+              });
+            }}
+          />
           <DesktopContactProfileRow
             label="共同群聊"
             value={
@@ -1157,7 +1143,7 @@ function GroupChatDetailsPanel({
               {groupQuery.data?.name ?? conversation.title}
             </div>
             <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-              {(membersQuery.data ?? []).length} 人群聊
+              {(membersQuery.data ?? []).length} 人 · 群聊
             </div>
           </div>
         </div>
@@ -1182,7 +1168,7 @@ function GroupChatDetailsPanel({
         )}
       </DesktopPanelSection>
 
-      <DesktopPanelSection title="群资料">
+      <DesktopPanelSection title="群聊信息">
         <DesktopPanelRow
           label="群聊名称"
           value={groupQuery.data?.name ?? conversation.title}
@@ -1191,13 +1177,23 @@ function GroupChatDetailsPanel({
         />
         <DesktopPanelRow
           label="群公告"
-          value={groupQuery.data?.announcement?.trim() || "未设置"}
+          value={groupQuery.data?.announcement?.trim() || "查看或编辑"}
           disabled={busy}
           onClick={() => setEditorMode("announcement")}
         />
         <DesktopPanelInfoRow
           label="群主"
           value={ownerMember?.memberName?.trim() || "我"}
+        />
+        <DesktopPanelRow
+          label="群二维码"
+          value="查看邀请卡"
+          onClick={() => {
+            void navigate({
+              to: "/group/$groupId/qr",
+              params: { groupId: conversation.id },
+            });
+          }}
         />
         <DesktopPanelRow
           label="全部成员"
@@ -1236,16 +1232,6 @@ function GroupChatDetailsPanel({
       </DesktopPanelSection>
 
       <DesktopPanelSection title="群工具">
-        <DesktopPanelRow
-          label="群二维码"
-          value="查看邀请卡"
-          onClick={() => {
-            void navigate({
-              to: "/group/$groupId/qr",
-              params: { groupId: conversation.id },
-            });
-          }}
-        />
         <DesktopPanelRow
           label="群接龙"
           value="发起或查看"
@@ -1353,17 +1339,20 @@ function GroupChatDetailsPanel({
       <DesktopPanelSection title="更多">
         <DesktopPanelRow
           label="隐藏聊天"
+          value="从消息列表移除"
           disabled={busy}
           onClick={() => setConfirmAction("hide")}
         />
         <DesktopPanelRow
           label="清空聊天记录"
+          value="删除当前会话内容"
           danger
           disabled={busy}
           onClick={() => setConfirmAction("clear")}
         />
         <DesktopPanelRow
           label="删除并退出"
+          value="退出并移除该群"
           danger
           disabled={busy}
           onClick={() => setConfirmAction("leave")}
@@ -1477,9 +1466,9 @@ function DesktopPanelSection({
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[14px] border border-black/6 bg-white">
+    <section className="overflow-hidden rounded-[12px] border border-black/6 bg-white">
       {title ? (
-        <div className="border-b border-black/6 px-4 py-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+        <div className="border-b border-black/6 bg-[#f7f7f7] px-4 py-2 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
           {title}
         </div>
       ) : null}
@@ -1526,9 +1515,9 @@ function DesktopPanelRow({
         onClick?.();
       }}
       className={cn(
-        "flex min-h-12 w-full items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0",
+        "flex min-h-11 w-full items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0",
         danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
-        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#fafafa]",
+        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-[#f8f8f8]",
       )}
       role={isSwitch ? "switch" : undefined}
       aria-checked={isSwitch ? checked : undefined}
@@ -1548,14 +1537,14 @@ function DesktopPanelRow({
         {isSwitch ? (
           <span
             className={cn(
-              "relative h-7 w-11 rounded-full transition-colors",
+              "relative h-6 w-10 rounded-full transition-colors",
               checked ? "bg-[#07c160]" : "bg-[#d8d8d8]",
             )}
           >
             <span
               className={cn(
-                "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-                checked ? "left-4" : "left-0.5",
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+                checked ? "left-[18px]" : "left-0.5",
               )}
             />
           </span>
@@ -1575,7 +1564,7 @@ function DesktopPanelInfoRow({
   value: string;
 }) {
   return (
-    <div className="flex min-h-12 items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0">
+    <div className="flex min-h-11 items-center justify-between gap-3 border-b border-black/6 px-4 py-3 text-left last:border-b-0">
       <span className="min-w-0 text-[14px] text-[color:var(--text-primary)]">
         {label}
       </span>
@@ -1601,7 +1590,7 @@ function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
             {isAction ? (
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-[14px] border text-2xl transition-colors",
+                  "flex h-12 w-12 items-center justify-center rounded-[12px] border text-2xl transition-colors",
                   item.kind === "remove"
                     ? "border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.88)] text-red-500"
                     : "border-black/8 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
