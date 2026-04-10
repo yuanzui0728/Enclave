@@ -836,6 +836,39 @@ export function GroupQrPage() {
                     </div>
                   </div>
                 </div>
+                <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/72 px-4 py-3">
+                  <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                    建议处理顺序
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    {topPendingReturnConversation ? (
+                      <span className="rounded-full bg-[rgba(249,115,22,0.12)] px-2.5 py-1 font-medium text-[color:var(--brand-secondary)]">
+                        1. 先补 {topPendingReturnConversation.conversation.title}
+                      </span>
+                    ) : null}
+                    {fallbackPendingReturnConversation ? (
+                      <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 font-medium text-[color:var(--text-secondary)]">
+                        2. 再看 {fallbackPendingReturnConversation.conversation.title}
+                      </span>
+                    ) : null}
+                    {deferredPendingReturnConversation ? (
+                      <span className="rounded-full bg-[rgba(15,23,42,0.04)] px-2.5 py-1 font-medium text-[color:var(--text-muted)]">
+                        3. 冷却后处理 {deferredPendingReturnConversation.conversation.title}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    {topPendingReturnConversation
+                      ? `先处理主推荐${
+                          fallbackPendingReturnConversation ? "，若不走第一条就切到备选" : ""
+                        }${
+                          deferredPendingReturnConversation
+                            ? "，冷却中的目标等恢复后再补。"
+                            : "。"
+                        }`
+                      : "当前没有可执行的补发顺序。"}
+                  </div>
+                </div>
                 {topPendingReturnConversation ? (
                   <div className="rounded-[18px] border border-[rgba(249,115,22,0.22)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,244,232,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
