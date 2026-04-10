@@ -645,10 +645,9 @@ function FriendListRow({
         <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
           {pendingCharacterId === item.character.id
             ? "正在打开会话..."
-            : item.character.currentStatus?.trim() || `${item.character.relationship} · 亲密度 ${item.friendship.intimacyLevel}`}
+            : item.character.currentStatus?.trim() || item.character.relationship || "保持联系"}
         </div>
       </div>
-      {item.character.isOnline ? <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#22c55e]" /> : null}
     </button>
   );
 }

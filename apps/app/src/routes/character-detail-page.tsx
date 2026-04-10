@@ -83,7 +83,7 @@ export function CharacterDetailPage() {
               专长：{character.expertDomains.join("、") || "未设置"}
             </div>
             <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              当前状态：{character.currentActivity ?? (character.isOnline ? "在线" : "离线")}
+              当前状态：{(character.currentActivity ?? character.currentStatus ?? character.relationship) || "暂无状态"}
             </div>
             <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
               语气：{character.profile.traits.emotionalTone}

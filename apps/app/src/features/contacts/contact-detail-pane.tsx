@@ -30,12 +30,12 @@ export function ContactDetailPane({
   const detailItems = friendship
     ? [
         { label: "关系", value: character.relationship || "联系人" },
-        { label: "在线状态", value: character.isOnline ? "在线" : "离线" },
+        { label: "当前状态", value: character.currentStatus?.trim() || character.relationship || "保持联系" },
         { label: "最近互动", value: formatTimestamp(friendship.lastInteractedAt ?? character.lastActiveAt ?? null) },
       ]
     : [
         { label: "身份", value: character.relationship || "世界角色" },
-        { label: "在线状态", value: character.isOnline ? "在线" : "离线" },
+        { label: "当前状态", value: character.currentStatus?.trim() || character.relationship || "查看角色资料" },
         { label: "擅长领域", value: character.expertDomains.slice(0, 3).join(" / ") || "查看角色资料" },
         { label: "最近活跃", value: formatTimestamp(character.lastActiveAt ?? null) },
       ];
