@@ -245,6 +245,13 @@ export function DesktopMobilePage() {
         .filter((group) => group.items.length),
     [handoffHistory],
   );
+  const recentGroupInviteHandoffs = useMemo(
+    () =>
+      handoffHistory
+        .filter((item) => resolveMobileHandoffCategory(item) === "group_invite")
+        .slice(0, 3),
+    [handoffHistory],
+  );
 
   useEffect(() => {
     if (!notice) {
@@ -816,6 +823,79 @@ export function DesktopMobilePage() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  <CheckCircle2
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
+                  <span>群聊邀请接力</span>
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。
+                </div>
+              </div>
+              <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                {recentGroupInviteHandoffs.length} 条最近邀请
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {recentGroupInviteHandoffs.length ? (
+                recentGroupInviteHandoffs.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        {item.label}
+                      </div>
+                      <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                        {item.description}
+                      </div>
+                      <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+                        最近发送于 {formatTimestamp(item.sentAt)}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          void handleCopyHandoff({
+                            description: item.description,
+                            label: item.label,
+                            path: item.path,
+                            setHistory: setHandoffHistory,
+                            setNotice,
+                          })
+                        }
+                        className="rounded-full"
+                      >
+                        <Copy size={14} />
+                        再发一次
+                      </Button>
+                      <Link
+                        to={item.path as never}
+                        className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                      >
+                        桌面打开
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <EmptyState
+                  title="还没有群聊邀请接力"
+                  description="先去群二维码页发一条邀请到手机，这里就会变成固定入口。"
+                />
+              )}
             </div>
           </section>
 
