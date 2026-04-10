@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { type ConversationListItem } from "@yinjie/contracts";
-import {
-  Button,
-  ErrorBlock,
-  LoadingBlock,
-  TextField,
-} from "@yinjie/ui";
+import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
@@ -73,7 +68,7 @@ export function DesktopMessageForwardDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-6 backdrop-blur-[4px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(22,18,14,0.38)] p-3 backdrop-blur-[4px] sm:p-4 lg:p-6">
       <button
         type="button"
         aria-label="关闭转发消息弹层"
@@ -85,9 +80,9 @@ export function DesktopMessageForwardDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative flex h-[min(760px,80vh)] w-full max-w-[1080px] overflow-hidden rounded-[30px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)]">
-        <section className="flex w-[360px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-          <div className="border-b border-black/6 px-5 py-5">
+      <div className="relative flex h-[min(820px,92vh)] w-full max-w-[1080px] flex-col overflow-hidden rounded-[22px] border border-white/20 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.30)] lg:h-[min(760px,80vh)] lg:flex-row lg:rounded-[30px]">
+        <section className="flex max-h-[38vh] w-full shrink-0 flex-col border-b border-black/6 bg-[#f7f7f7] lg:max-h-none lg:w-[360px] lg:border-b-0 lg:border-r">
+          <div className="border-b border-black/6 px-4 py-4 lg:px-5 lg:py-5">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               转发消息
             </div>
@@ -98,7 +93,7 @@ export function DesktopMessageForwardDialog({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-auto px-3 py-3 lg:px-4 lg:py-4">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -121,7 +116,7 @@ export function DesktopMessageForwardDialog({
         </section>
 
         <section className="flex min-w-0 flex-1 flex-col bg-[linear-gradient(180deg,#fcfcfc,#f6f6f6)]">
-          <div className="flex items-start justify-between gap-4 border-b border-black/6 px-6 py-5">
+          <div className="flex items-start justify-between gap-4 border-b border-black/6 px-4 py-4 lg:px-6 lg:py-5">
             <div className="min-w-0">
               <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
                 最近会话
@@ -141,7 +136,7 @@ export function DesktopMessageForwardDialog({
             </button>
           </div>
 
-          <div className="border-b border-black/6 px-6 py-4">
+          <div className="border-b border-black/6 px-4 py-4 lg:px-6">
             <label className="relative block">
               <Search
                 size={16}
@@ -157,7 +152,7 @@ export function DesktopMessageForwardDialog({
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
+          <div className="min-h-0 flex-1 overflow-auto px-4 py-4 lg:px-6 lg:py-6">
             {loading ? <LoadingBlock label="正在读取最近会话..." /> : null}
             {error ? <ErrorBlock message={error} /> : null}
             {!loading && !error && !conversations.length ? (
@@ -166,7 +161,10 @@ export function DesktopMessageForwardDialog({
                 description="先去消息列表里建立一些聊天线程，再回来转发消息。"
               />
             ) : null}
-            {!loading && !error && conversations.length > 0 && !filteredConversations.length ? (
+            {!loading &&
+            !error &&
+            conversations.length > 0 &&
+            !filteredConversations.length ? (
               <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/78 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
                 没有匹配的最近会话。
               </div>
@@ -212,7 +210,7 @@ export function DesktopMessageForwardDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-black/6 px-6 py-4">
+          <div className="flex flex-col items-stretch gap-3 border-t border-black/6 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6">
             <div className="text-[12px] text-[color:var(--text-muted)]">
               会按照原消息顺序依次投递到目标会话。
             </div>
