@@ -49,11 +49,10 @@ import {
 } from "../features/chat/local-chat-message-actions";
 import {
   buildChatReminderNavigation,
-  buildChatReminderEntries,
-  formatReminderListTimestamp,
   type ChatReminderEntry,
+  formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
-import { useChatReminderNowTimestamp } from "../features/chat/use-chat-reminder-now-timestamp";
+import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
@@ -137,9 +136,6 @@ function MobileChatListPage() {
   >(null);
   const [pendingHideConversation, setPendingHideConversation] =
     useState<PendingHideConversation | null>(null);
-  const nowTimestamp = useChatReminderNowTimestamp(
-    localMessageActionState.reminders.length,
-  );
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
 
@@ -158,19 +154,10 @@ function MobileChatListPage() {
     () => conversationsQuery.data ?? [],
     [conversationsQuery.data],
   );
-  const reminderEntries = useMemo(
-    () =>
-      buildChatReminderEntries(
-        localMessageActionState.reminders,
-        conversations,
-        nowTimestamp,
-      ),
-    [conversations, localMessageActionState.reminders, nowTimestamp],
-  );
-  const dueReminderCount = useMemo(
-    () => reminderEntries.filter((item) => item.isDue).length,
-    [reminderEntries],
-  );
+  const { reminderEntries, dueReminderCount } = useChatReminderEntries({
+    reminders: localMessageActionState.reminders,
+    conversations,
+  });
   const visibleConversations = useMemo(
     () =>
       pendingHideConversation

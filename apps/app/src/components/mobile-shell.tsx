@@ -9,9 +9,8 @@ import {
   UsersRound,
 } from "lucide-react";
 import { cn } from "@yinjie/ui";
-import { buildDueChatReminderEntries } from "../features/chat/chat-reminder-entries";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
-import { useChatReminderNowTimestamp } from "../features/chat/use-chat-reminder-now-timestamp";
+import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -29,7 +28,6 @@ export function MobileShell({ children }: PropsWithChildren) {
   const showTabs = pathname.startsWith("/tabs/") && pathname !== "/tabs/search";
   const runtimeConfig = useAppRuntimeConfig();
   const { reminders } = useLocalChatMessageActionState();
-  const nowTimestamp = useChatReminderNowTimestamp(reminders.length);
 
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
@@ -44,12 +42,10 @@ export function MobileShell({ children }: PropsWithChildren) {
         .reduce((sum, c) => sum + c.unreadCount, 0),
     [conversations],
   );
-  const dueReminderCount = useMemo(
-    () =>
-      buildDueChatReminderEntries(reminders, conversations ?? [], nowTimestamp)
-        .length,
-    [conversations, nowTimestamp, reminders],
-  );
+  const { dueReminderCount } = useChatReminderEntries({
+    reminders,
+    conversations: conversations ?? [],
+  });
 
   return (
     <div className="relative h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
