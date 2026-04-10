@@ -87,6 +87,20 @@ export function ContactDetailPane({
     });
   }, [character?.id, friendship?.id, friendship?.region, friendship?.remarkName, friendship?.source, friendship?.tags]);
 
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload: UpdateFriendProfileRequest) => {
+      if (!character || !friendship) {
+        throw new Error("Friend not found");
+      }
+
+      return updateFriendProfile(character.id, payload, baseUrl);
+    },
+    onSuccess: async () => {
+      setProfileNotice("联系人资料已更新。");
+      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
+    },
+  });
+
   if (!character) {
     return (
       <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
@@ -125,20 +139,6 @@ export function ContactDetailPane({
         { label: "隐界号", value: `yinjie_${character.id.slice(0, 8)}` },
         { label: "个性签名", value: character.currentStatus?.trim() || "这个角色还没有签名。" },
       ];
-
-  const updateProfileMutation = useMutation({
-    mutationFn: async (payload: UpdateFriendProfileRequest) => {
-      if (!character || !isFriend) {
-        throw new Error("Friend not found");
-      }
-
-      return updateFriendProfile(character.id, payload, baseUrl);
-    },
-    onSuccess: async () => {
-      setProfileNotice("联系人资料已更新。");
-      await queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] });
-    },
-  });
 
   async function handleProfileSave() {
     await updateProfileMutation.mutateAsync({
