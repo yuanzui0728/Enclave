@@ -15,7 +15,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  ImageIcon,
   X,
 } from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
