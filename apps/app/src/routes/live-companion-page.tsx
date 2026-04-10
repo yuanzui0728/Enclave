@@ -1,19 +1,891 @@
-import { DesktopPlaceholderWorkspace } from "../features/desktop/desktop-placeholder-workspace";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import {
+  generateChannelPost,
+  getFeed,
+  getSystemStatus,
+  type FeedPostListItem,
+} from "@yinjie/contracts";
+import {
+  AlertCircle,
+  BadgeCheck,
+  Clapperboard,
+  MonitorUp,
+  RadioTower,
+  RefreshCcw,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
+import {
+  Button,
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+  TextField,
+  cn,
+} from "@yinjie/ui";
+import { AvatarChip } from "../components/avatar-chip";
+import { EmptyState } from "../components/empty-state";
+import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatTimestamp } from "../lib/format";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
+
+type LiveDraft = {
+  title: string;
+  topic: string;
+  coverHook: string;
+  quality: "standard" | "hd" | "ultra";
+  mode: "solo" | "product" | "story";
+  syncComments: boolean;
+  autoClip: boolean;
+};
+
+type LiveSessionRecord = {
+  id: string;
+  title: string;
+  topic: string;
+  quality: LiveDraft["quality"];
+  mode: LiveDraft["mode"];
+  startedAt: string;
+  endedAt?: string;
+  status: "live" | "ended";
+  channelPostId?: string;
+};
+
+const LIVE_DRAFT_STORAGE_KEY = "yinjie-desktop-live-companion-draft";
+const LIVE_HISTORY_STORAGE_KEY = "yinjie-desktop-live-companion-history";
+const MAX_LIVE_HISTORY = 12;
+
+const defaultDraft: LiveDraft = {
+  title: "",
+  topic: "",
+  coverHook: "",
+  quality: "hd",
+  mode: "solo",
+  syncComments: true,
+  autoClip: true,
+};
 
 export function LiveCompanionPage() {
-  return (
-    <DesktopPlaceholderWorkspace
-      badge="Live Companion"
-      title="视频号直播伴侣先提供桌面承接位"
-      description="直播伴侣应该从更多菜单快速进入，并保持独立工具语义，不和视频号主频道内容流混排。"
-      spotlightTitle="先稳定工具入口，再补直播控制能力"
-      spotlightBody="当前先把桌面工具面板和跳转路径固定下来，后续再补直播状态、推流配置和互动控台。"
-      highlights={[
-        { label: "入口路径", value: "更多菜单直达，不挤占左栏主频道顺序。" },
-        { label: "工具定位", value: "独立于视频号内容流的创作工具工作区。" },
-        { label: "后续能力", value: "推流控制、状态看板、评论与通知承接。" },
-        { label: "当前阶段", value: "先确保路径稳定，避免后续入口变动。" },
-      ]}
-    />
+  const isDesktopLayout = useDesktopLayout();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const ownerName = useWorldOwnerStore((state) => state.username);
+  const [draft, setDraft] = useState<LiveDraft>(() => readLiveDraft());
+  const [liveHistory, setLiveHistory] = useState<LiveSessionRecord[]>(() =>
+    readLiveHistory(),
   );
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const statusQuery = useQuery({
+    queryKey: ["desktop-live-companion-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
+
+  const channelsQuery = useQuery({
+    queryKey: ["desktop-live-companion-channels", baseUrl],
+    queryFn: () => getFeed(1, 8, baseUrl, { surface: "channels" }),
+  });
+
+  useEffect(() => {
+    writeLiveDraft(draft);
+  }, [draft]);
+
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setNotice(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const recentPosts = channelsQuery.data?.posts ?? [];
+  const activeSession =
+    liveHistory.find((item) => item.status === "live") ?? null;
+  const preflightChecks = useMemo(
+    () => [
+      {
+        label: "世界实例在线",
+        passed: Boolean(statusQuery.data?.coreApi.healthy),
+      },
+      {
+        label: "推理网关可用",
+        passed: Boolean(statusQuery.data?.inferenceGateway.healthy),
+      },
+      {
+        label: "已有视频号内容参考",
+        passed: recentPosts.length > 0,
+      },
+      {
+        label: "直播标题已准备",
+        passed: draft.title.trim().length > 0,
+      },
+    ],
+    [
+      draft.title,
+      recentPosts.length,
+      statusQuery.data?.coreApi.healthy,
+      statusQuery.data?.inferenceGateway.healthy,
+    ],
+  );
+  const passedCheckCount = preflightChecks.filter((item) => item.passed).length;
+
+  if (!isDesktopLayout) {
+    return null;
+  }
+
+  return (
+    <div className="h-full overflow-auto px-6 py-6">
+      <DesktopEntryShell
+        badge="Live Companion"
+        title="直播伴侣把开播前准备和桌面控台收在一起"
+        description="这版先不碰真实推流接口，先把桌面直播伴侣做成一个可运营工具台：能准备直播主题、检查实例状态、记录开播历史，并直接从视频号内容流拿参考素材。"
+        aside={
+          <div className="space-y-3">
+            <MetricCard
+              label="当前状态"
+              value={activeSession ? "直播中" : "待开播"}
+            />
+            <MetricCard
+              label="开播检查"
+              value={`${passedCheckCount} / ${preflightChecks.length} 项通过`}
+            />
+            <MetricCard
+              label="最近直播"
+              value={
+                liveHistory[0]?.startedAt
+                  ? formatTimestamp(liveHistory[0].startedAt)
+                  : "暂无记录"
+              }
+            />
+            <MetricCard label="操作者" value={ownerName ?? "世界主人"} />
+          </div>
+        }
+      >
+        <div className="space-y-5">
+          {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+          {error ? <InlineNotice tone="info">{error}</InlineNotice> : null}
+          {statusQuery.isError && statusQuery.error instanceof Error ? (
+            <ErrorBlock message={statusQuery.error.message} />
+          ) : null}
+          {channelsQuery.isError && channelsQuery.error instanceof Error ? (
+            <ErrorBlock message={channelsQuery.error.message} />
+          ) : null}
+
+          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                <RadioTower
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
+                />
+                <span>开播准备</span>
+              </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                先把直播标题、主题、封面钩子和桌面策略准备好，后面接真推流时这层不用再推倒。
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                      直播标题
+                    </div>
+                    <TextField
+                      value={draft.title}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                      placeholder="例如：今晚一起看 AI 世界的视频号精选"
+                    />
+                  </div>
+                  <div>
+                    <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                      直播主题
+                    </div>
+                    <TextField
+                      value={draft.topic}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          topic: event.target.value,
+                        }))
+                      }
+                      placeholder="例如：晚间内容共看 / AI 角色导览"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                    封面钩子
+                  </div>
+                  <TextField
+                    value={draft.coverHook}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        coverHook: event.target.value,
+                      }))
+                    }
+                    placeholder="例如：今晚只讲 3 条最值得扩写成直播的 AI 视频"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <SelectorCard
+                    label="直播模式"
+                    options={[
+                      { id: "solo", label: "单人控台" },
+                      { id: "product", label: "产品讲解" },
+                      { id: "story", label: "剧情陪看" },
+                    ]}
+                    value={draft.mode}
+                    onChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        mode: value as LiveDraft["mode"],
+                      }))
+                    }
+                  />
+                  <SelectorCard
+                    label="推流质量"
+                    options={[
+                      { id: "standard", label: "标准" },
+                      { id: "hd", label: "高清" },
+                      { id: "ultra", label: "超清" },
+                    ]}
+                    value={draft.quality}
+                    onChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        quality: value as LiveDraft["quality"],
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <ToggleCard
+                    checked={draft.syncComments}
+                    label="同步评论控台"
+                    description="保留后续承接弹幕、评论和通知的桌面右栏入口。"
+                    onChange={(checked) =>
+                      setDraft((current) => ({
+                        ...current,
+                        syncComments: checked,
+                      }))
+                    }
+                  />
+                  <ToggleCard
+                    checked={draft.autoClip}
+                    label="自动标记切片"
+                    description="为后续回放与直播精彩片段整理预留标记位。"
+                    onChange={(checked) =>
+                      setDraft((current) => ({
+                        ...current,
+                        autoClip: checked,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!draft.title.trim()) {
+                        setError("请先填写直播标题。");
+                        return;
+                      }
+
+                      const nextHistory = startLocalLiveSession({
+                        draft,
+                        previous: liveHistory,
+                      });
+                      setLiveHistory(nextHistory);
+                      setError(null);
+                      setNotice("直播伴侣已切到直播中状态。");
+                    }}
+                    disabled={Boolean(activeSession)}
+                    className="rounded-2xl"
+                  >
+                    <MonitorUp size={15} />
+                    {activeSession ? "直播进行中" : "开始本场直播"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      if (!activeSession) {
+                        setError("当前没有进行中的直播。");
+                        return;
+                      }
+
+                      const nextHistory = endLocalLiveSession(liveHistory);
+                      setLiveHistory(nextHistory);
+                      setError(null);
+                      setNotice("直播已结束，并记录到本地历史。");
+                    }}
+                    className="rounded-2xl"
+                  >
+                    <Clapperboard size={15} />
+                    结束直播
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setDraft({ ...defaultDraft });
+                      writeLiveDraft({ ...defaultDraft });
+                      setNotice("直播准备草稿已清空。");
+                      setError(null);
+                    }}
+                    className="rounded-2xl"
+                  >
+                    <RefreshCcw size={15} />
+                    清空准备
+                  </Button>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-5">
+              <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  <BadgeCheck
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
+                  <span>开播检查</span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {preflightChecks.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] px-4 py-3"
+                    >
+                      <div className="text-sm text-[color:var(--text-primary)]">
+                        {item.label}
+                      </div>
+                      <div
+                        className={cn(
+                          "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                          item.passed
+                            ? "bg-[rgba(34,197,94,0.10)] text-[#15803d]"
+                            : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
+                        )}
+                      >
+                        {item.passed ? "通过" : "待处理"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  当前实例状态
+                </div>
+                <div className="mt-4">
+                  {statusQuery.isLoading ? (
+                    <LoadingBlock label="正在读取状态..." />
+                  ) : (
+                    <div className="space-y-3">
+                      <StatusRow
+                        label="Core API"
+                        value={
+                          statusQuery.data?.coreApi.healthy ? "在线" : "异常"
+                        }
+                      />
+                      <StatusRow
+                        label="推理网关"
+                        value={
+                          statusQuery.data?.inferenceGateway.healthy
+                            ? "可用"
+                            : "待恢复"
+                        }
+                      />
+                      <StatusRow
+                        label="世界模式"
+                        value={statusQuery.data?.appMode ?? "未知"}
+                      />
+                      <StatusRow
+                        label="最近快照"
+                        value={
+                          statusQuery.data?.scheduler.lastWorldSnapshotAt
+                            ? formatTimestamp(
+                                statusQuery.data.scheduler.lastWorldSnapshotAt,
+                              )
+                            : "暂无"
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    最近视频号内容
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                    直接从现有视频号内容流里拿直播参考，不和主频道内容割裂。
+                  </div>
+                </div>
+                <Link
+                  to="/tabs/channels"
+                  className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                >
+                  打开视频号
+                </Link>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {channelsQuery.isLoading ? (
+                  <LoadingBlock label="正在读取视频号内容..." />
+                ) : recentPosts.length ? (
+                  recentPosts.map((post) => (
+                    <PostReferenceCard
+                      key={post.id}
+                      post={post}
+                      onUse={() => {
+                        setDraft((current) => ({
+                          ...current,
+                          title:
+                            current.title.trim() ||
+                            `${post.authorName} 主题直播`,
+                          topic:
+                            current.topic.trim() || createTopicFromPost(post),
+                          coverHook:
+                            current.coverHook.trim() ||
+                            createCoverHookFromPost(post),
+                        }));
+                        setNotice("已把这条视频号内容带入直播准备草稿。");
+                        setError(null);
+                      }}
+                    />
+                  ))
+                ) : (
+                  <EmptyState
+                    title="还没有视频号内容"
+                    description="先去视频号生成几条内容，这里才能作为直播参考池。"
+                  />
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    直播记录
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                    当前先保留桌面本地历史，后面接真直播接口时继续沿用这块时间线。
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await generateChannelPost(baseUrl);
+                      await channelsQuery.refetch();
+                      setNotice(
+                        "已生成一条新的视频号内容，可继续作为直播参考。",
+                      );
+                      setError(null);
+                    } catch (reason) {
+                      setError(
+                        reason instanceof Error
+                          ? reason.message
+                          : "生成视频号内容失败。",
+                      );
+                    }
+                  }}
+                  className="rounded-full"
+                >
+                  <Wand2 size={14} />
+                  生成预热内容
+                </Button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {liveHistory.length ? (
+                  liveHistory.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                          {item.title}
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                            item.status === "live"
+                              ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
+                              : "bg-[rgba(34,197,94,0.10)] text-[#15803d]",
+                          )}
+                        >
+                          {item.status === "live" ? "直播中" : "已结束"}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                        {item.topic || "未填写直播主题"}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-muted)]">
+                        <span>开播 {formatTimestamp(item.startedAt)}</span>
+                        <span>模式 {resolveModeLabel(item.mode)}</span>
+                        <span>质量 {resolveQualityLabel(item.quality)}</span>
+                        {item.endedAt ? (
+                          <span>下播 {formatTimestamp(item.endedAt)}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[22px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.58)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    还没有直播记录。先准备一场直播并切到“直播中”，这里就会开始积累桌面伴侣历史。
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+      </DesktopEntryShell>
+    </div>
+  );
+}
+
+function SelectorCard({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ id: string; label: string }>;
+  value: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+        {label}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onChange(item.id)}
+            className={cn(
+              "rounded-full border px-3 py-2 text-xs font-medium transition",
+              value === item.id
+                ? "border-[rgba(249,115,22,0.24)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
+                : "border-[color:var(--border-faint)] bg-white/90 text-[color:var(--text-secondary)]",
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ToggleCard({
+  checked,
+  description,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  description: string;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "rounded-[22px] border px-4 py-4 text-left transition",
+        checked
+          ? "border-[rgba(249,115,22,0.24)] bg-[rgba(249,115,22,0.10)]"
+          : "border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)]",
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          {label}
+        </div>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[11px] font-medium",
+            checked
+              ? "bg-white text-[color:var(--brand-primary)]"
+              : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+          )}
+        >
+          {checked ? "开启" : "关闭"}
+        </span>
+      </div>
+      <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
+    </button>
+  );
+}
+
+function PostReferenceCard({
+  onUse,
+  post,
+}: {
+  onUse: () => void;
+  post: FeedPostListItem;
+}) {
+  return (
+    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+      <div className="flex items-start gap-3">
+        <AvatarChip
+          name={post.authorName}
+          src={post.authorAvatar}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            {post.authorName}
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {formatTimestamp(post.createdAt)} ·{" "}
+            {post.mediaType === "video" ? "短片" : "内容卡片"}
+          </div>
+          <div className="mt-2 line-clamp-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+            {post.text}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={onUse} className="rounded-full">
+              <Sparkles size={14} />
+              带入直播准备
+            </Button>
+            <span className="inline-flex items-center rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
+              {post.commentCount} 评论 · {post.likeCount} 赞
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] px-4 py-3">
+      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4 shadow-[var(--shadow-soft)]">
+      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function readLiveDraft() {
+  if (typeof window === "undefined") {
+    return { ...defaultDraft };
+  }
+
+  const raw = window.localStorage.getItem(LIVE_DRAFT_STORAGE_KEY);
+  if (!raw) {
+    return { ...defaultDraft };
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<LiveDraft>;
+    return {
+      title: typeof parsed.title === "string" ? parsed.title : "",
+      topic: typeof parsed.topic === "string" ? parsed.topic : "",
+      coverHook: typeof parsed.coverHook === "string" ? parsed.coverHook : "",
+      quality: isLiveQuality(parsed.quality) ? parsed.quality : "hd",
+      mode: isLiveMode(parsed.mode) ? parsed.mode : "solo",
+      syncComments:
+        typeof parsed.syncComments === "boolean"
+          ? parsed.syncComments
+          : defaultDraft.syncComments,
+      autoClip:
+        typeof parsed.autoClip === "boolean"
+          ? parsed.autoClip
+          : defaultDraft.autoClip,
+    };
+  } catch {
+    return { ...defaultDraft };
+  }
+}
+
+function writeLiveDraft(draft: LiveDraft) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+}
+
+function readLiveHistory() {
+  if (typeof window === "undefined") {
+    return [] as LiveSessionRecord[];
+  }
+
+  const raw = window.localStorage.getItem(LIVE_HISTORY_STORAGE_KEY);
+  if (!raw) {
+    return [] as LiveSessionRecord[];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as LiveSessionRecord[];
+    if (!Array.isArray(parsed)) {
+      return [] as LiveSessionRecord[];
+    }
+
+    return parsed.filter(
+      (item) =>
+        typeof item?.id === "string" &&
+        typeof item.title === "string" &&
+        typeof item.topic === "string" &&
+        isLiveQuality(item.quality) &&
+        isLiveMode(item.mode) &&
+        typeof item.startedAt === "string" &&
+        (item.endedAt === undefined || typeof item.endedAt === "string") &&
+        (item.status === "live" || item.status === "ended"),
+    );
+  } catch {
+    return [] as LiveSessionRecord[];
+  }
+}
+
+function writeLiveHistory(history: LiveSessionRecord[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(
+    LIVE_HISTORY_STORAGE_KEY,
+    JSON.stringify(history),
+  );
+}
+
+function startLocalLiveSession({
+  draft,
+  previous,
+}: {
+  draft: LiveDraft;
+  previous: LiveSessionRecord[];
+}) {
+  const nextSession: LiveSessionRecord = {
+    id: `live-session-${Date.now()}`,
+    title: draft.title.trim(),
+    topic: draft.topic.trim(),
+    quality: draft.quality,
+    mode: draft.mode,
+    startedAt: new Date().toISOString(),
+    status: "live",
+  };
+  const nextHistory = [
+    nextSession,
+    ...previous.map((item) =>
+      item.status === "live"
+        ? {
+            ...item,
+            status: "ended" as const,
+            endedAt: item.endedAt ?? new Date().toISOString(),
+          }
+        : item,
+    ),
+  ].slice(0, MAX_LIVE_HISTORY);
+
+  writeLiveHistory(nextHistory);
+  return nextHistory;
+}
+
+function endLocalLiveSession(previous: LiveSessionRecord[]) {
+  const endedAt = new Date().toISOString();
+  const nextHistory = previous.map((item) =>
+    item.status === "live"
+      ? {
+          ...item,
+          status: "ended" as const,
+          endedAt,
+        }
+      : item,
+  );
+
+  writeLiveHistory(nextHistory);
+  return nextHistory;
+}
+
+function createTopicFromPost(post: FeedPostListItem) {
+  return post.text.trim().slice(0, 24) || `${post.authorName} 的视频号内容`;
+}
+
+function createCoverHookFromPost(post: FeedPostListItem) {
+  return `从「${post.authorName}」这条视频号内容展开今晚的直播节奏`;
+}
+
+function resolveModeLabel(mode: LiveDraft["mode"]) {
+  if (mode === "product") {
+    return "产品讲解";
+  }
+
+  if (mode === "story") {
+    return "剧情陪看";
+  }
+
+  return "单人控台";
+}
+
+function resolveQualityLabel(quality: LiveDraft["quality"]) {
+  if (quality === "standard") {
+    return "标准";
+  }
+
+  if (quality === "ultra") {
+    return "超清";
+  }
+
+  return "高清";
+}
+
+function isLiveMode(value: unknown): value is LiveDraft["mode"] {
+  return value === "solo" || value === "product" || value === "story";
+}
+
+function isLiveQuality(value: unknown): value is LiveDraft["quality"] {
+  return value === "standard" || value === "hd" || value === "ultra";
 }
