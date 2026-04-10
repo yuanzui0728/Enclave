@@ -1,22 +1,516 @@
-import { DesktopPlaceholderWorkspace } from "../features/desktop/desktop-placeholder-workspace";
+import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+  AppPage,
+  AppSection,
+  Button,
+  InlineNotice,
+  cn,
+} from "@yinjie/ui";
+import {
+  ArrowLeft,
+  Clock3,
+  Flame,
+  Gift,
+  Pin,
+  Play,
+  Sparkles,
+  Trophy,
+  UsersRound,
+} from "lucide-react";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { DesktopGamesWorkspace } from "../features/desktop/games/desktop-games-workspace";
+import {
+  gameCenterCategoryTabs,
+  gameCenterEvents,
+  gameCenterFeaturedGameIds,
+  gameCenterFriendActivities,
+  gameCenterGames,
+  gameCenterHotRankings,
+  gameCenterNewRankings,
+  getGameCenterGame,
+  getGameCenterToneStyle,
+  type GameCenterCategoryId,
+  type GameCenterGame,
+} from "../features/games/game-center-data";
+import { useGameCenterState } from "../features/games/use-game-center-state";
+import { AvatarChip } from "../components/avatar-chip";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatConversationTimestamp, formatTimestamp } from "../lib/format";
+
+function resolveGames(ids: string[]) {
+  return ids
+    .map((id) => getGameCenterGame(id))
+    .filter((game): game is GameCenterGame => Boolean(game));
+}
 
 export function GamesPage() {
+  const navigate = useNavigate();
+  const isDesktopLayout = useDesktopLayout();
+  const {
+    lastOpenedAtById,
+    pinnedGameIds,
+    recentGameIds,
+    launchGame,
+    togglePinned,
+  } = useGameCenterState();
+  const [activeCategory, setActiveCategory] =
+    useState<GameCenterCategoryId>("featured");
+  const [selectedGameId, setSelectedGameId] = useState(
+    gameCenterFeaturedGameIds[0] ?? "signal-squad",
+  );
+  const [successNotice, setSuccessNotice] = useState("");
+
+  useEffect(() => {
+    if (!getGameCenterGame(selectedGameId)) {
+      setSelectedGameId(gameCenterFeaturedGameIds[0] ?? "signal-squad");
+    }
+  }, [selectedGameId]);
+
+  useEffect(() => {
+    if (!successNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setSuccessNotice(""), 2800);
+    return () => window.clearTimeout(timer);
+  }, [successNotice]);
+
+  const featuredGames = resolveGames(gameCenterFeaturedGameIds);
+  const selectedGame =
+    getGameCenterGame(selectedGameId) ?? featuredGames[0] ?? gameCenterGames[0];
+  const mobileBrowseGames =
+    activeCategory === "featured"
+      ? gameCenterGames.slice(0, 5)
+      : gameCenterGames.filter((game) => game.category === activeCategory);
+  const recentGames = resolveGames(recentGameIds);
+
+  function handleLaunchGame(gameId: string) {
+    const game = getGameCenterGame(gameId);
+    launchGame(gameId);
+    setSelectedGameId(gameId);
+    setSuccessNotice(
+      `${game?.name ?? "该游戏"} 已加入最近玩过。首期先以游戏中心内容工作区承接，后续再接小游戏容器。`,
+    );
+  }
+
+  function handleTogglePinnedGame(gameId: string) {
+    const game = getGameCenterGame(gameId);
+    const pinned = pinnedGameIds.includes(gameId);
+    togglePinned(gameId);
+    setSuccessNotice(
+      `${game?.name ?? "该游戏"} 已${pinned ? "取消固定常玩" : "固定到常玩"}。`,
+    );
+  }
+
+  if (isDesktopLayout) {
+    return (
+      <DesktopGamesWorkspace
+        activeCategory={activeCategory}
+        pinnedGameIds={pinnedGameIds}
+        recentGameIds={recentGameIds}
+        selectedGameId={selectedGameId}
+        lastOpenedAtById={lastOpenedAtById}
+        successNotice={successNotice}
+        onCategoryChange={setActiveCategory}
+        onLaunchGame={handleLaunchGame}
+        onSelectGame={setSelectedGameId}
+        onTogglePinnedGame={handleTogglePinnedGame}
+      />
+    );
+  }
+
+  if (!selectedGame) {
+    return null;
+  }
+
+  const selectedTone = getGameCenterToneStyle(selectedGame.tone);
+
   return (
-    <DesktopPlaceholderWorkspace
-      badge="Games"
-      title="游戏中心先做桌面入口面板"
-      description="这一层先对齐微信电脑版的固定频道入口，后续再补最近玩过、推荐位和活动位，不把导航改造和复杂游戏平台绑定。"
-      spotlightTitle="首期优先固定入口和承接面板"
-      spotlightBody="先给桌面端留出稳定的游戏中心位置，后续按配置驱动接入活动、入口和状态。"
-      highlights={[
-        { label: "最近玩过", value: "后续从本地使用记录或服务端配置生成。" },
-        { label: "推荐位", value: "适合接官方活动或世界内互动玩法。" },
-        {
-          label: "承接方式",
-          value: "首期可从卡片面板打开，不必先做复杂运行容器。",
-        },
-        { label: "下一步", value: "补配置源和游戏卡片协议。" },
-      ]}
-    />
+    <AppPage className="space-y-5">
+      <TabPageTopBar
+        eyebrow="Discover"
+        title="游戏"
+        subtitle="像微信一样从发现进入游戏中心"
+        titleAlign="center"
+        leftActions={
+          <Button
+            onClick={() => navigate({ to: "/tabs/discover" })}
+            variant="ghost"
+            size="icon"
+            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+          >
+            <ArrowLeft size={18} />
+          </Button>
+        }
+      />
+
+      <section
+        className={cn(
+          "relative overflow-hidden rounded-[32px] p-5 shadow-[var(--shadow-section)]",
+          selectedTone.heroCardClassName,
+        )}
+      >
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-white/12 blur-3xl" />
+          <div className="absolute bottom-0 left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
+        </div>
+        <div className="relative">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-white/82">
+                {selectedGame.badge}
+              </div>
+              <div className="mt-4 text-[28px] font-semibold leading-tight text-white">
+                {selectedGame.name}
+              </div>
+              <div className="mt-2 text-sm leading-7 text-white/82">
+                {selectedGame.slogan}
+              </div>
+            </div>
+            <div className="rounded-[22px] border border-white/18 bg-white/12 px-4 py-3 text-right backdrop-blur-sm">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-white/68">
+                热度
+              </div>
+              <div className="mt-2 text-sm font-medium text-white">
+                {selectedGame.playersLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <MobileMetric label="好友在玩" value={selectedGame.friendsLabel} />
+            <MobileMetric label="更新状态" value={selectedGame.updateNote} />
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {selectedGame.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs text-white/82"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-5 flex gap-3">
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => handleLaunchGame(selectedGame.id)}
+              className="flex-1 border-white/18 bg-white text-[color:var(--text-primary)] hover:bg-white/92"
+            >
+              <Play size={16} />
+              开始游戏
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => handleTogglePinnedGame(selectedGame.id)}
+              className="border-white/18 bg-white/10 text-white hover:bg-white/18"
+            >
+              <Pin size={16} />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {gameCenterCategoryTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveCategory(tab.id)}
+            className={cn(
+              "shrink-0 rounded-full border px-4 py-2 text-sm transition",
+              activeCategory === tab.id
+                ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]"
+                : "border-white/80 bg-white/88 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+
+      <AppSection className="space-y-4 bg-white/92">
+        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+          <Clock3 size={16} className="text-[color:var(--brand-secondary)]" />
+          最近玩过
+        </div>
+        <div className="flex gap-3 overflow-x-auto pb-1">
+          {recentGames.map((game) => {
+            const tone = getGameCenterToneStyle(game.tone);
+            return (
+              <button
+                key={game.id}
+                type="button"
+                onClick={() => setSelectedGameId(game.id)}
+                className={cn(
+                  "w-[220px] shrink-0 rounded-[24px] border p-4 text-left shadow-[var(--shadow-soft)]",
+                  tone.mutedPanelClassName,
+                )}
+              >
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                  {game.name}
+                </div>
+                <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  {game.slogan}
+                </div>
+                <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+                  {lastOpenedAtById[game.id]
+                    ? `上次打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
+                    : "尚未打开"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </AppSection>
+
+      <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(255,250,245,0.98),rgba(255,255,255,0.95))]">
+        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+          <UsersRound size={16} className="text-[color:var(--brand-secondary)]" />
+          好友在玩
+        </div>
+        <div className="space-y-3">
+          {gameCenterFriendActivities.map((activity) => {
+            const game = getGameCenterGame(activity.gameId);
+            if (!game) {
+              return null;
+            }
+
+            return (
+              <button
+                key={activity.id}
+                type="button"
+                onClick={() => setSelectedGameId(game.id)}
+                className="flex w-full items-start gap-3 rounded-[24px] border border-white/80 bg-white/88 px-4 py-4 text-left shadow-[var(--shadow-soft)]"
+              >
+                <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                      {activity.friendName}
+                    </span>
+                    <span className="text-xs text-[color:var(--text-muted)]">
+                      正在玩 {game.name}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    {activity.status}
+                  </div>
+                  <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                    {formatTimestamp(activity.updatedAt)}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </AppSection>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <MobileRankingSection
+          title="热门榜"
+          entries={gameCenterHotRankings}
+          icon={<Flame size={16} className="text-[color:var(--brand-primary)]" />}
+          onSelectGame={setSelectedGameId}
+        />
+        <MobileRankingSection
+          title="新游榜"
+          entries={gameCenterNewRankings}
+          icon={<Sparkles size={16} className="text-[color:var(--brand-secondary)]" />}
+          onSelectGame={setSelectedGameId}
+        />
+      </div>
+
+      <AppSection className="space-y-4 bg-white/92">
+        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+          <Play size={16} className="text-[color:var(--brand-secondary)]" />
+          为你推荐
+        </div>
+        <div className="space-y-3">
+          {mobileBrowseGames.map((game) => {
+            const tone = getGameCenterToneStyle(game.tone);
+            const pinned = pinnedGameIds.includes(game.id);
+            return (
+              <article
+                key={game.id}
+                className={cn(
+                  "rounded-[26px] border p-4 shadow-[var(--shadow-soft)]",
+                  tone.mutedPanelClassName,
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGameId(game.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "rounded-full border px-2 py-1 text-[10px] font-medium",
+                          tone.badgeClassName,
+                        )}
+                      >
+                        {game.deckLabel}
+                      </div>
+                      {pinned ? (
+                        <div className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-1 text-[10px] text-[#2f7a3f]">
+                          常玩
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 text-[15px] font-semibold text-[color:var(--text-primary)]">
+                      {game.name}
+                    </div>
+                    <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+                      {game.description}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {game.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-white/84 px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleLaunchGame(game.id)}
+                    className="shrink-0"
+                  >
+                    秒开
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </AppSection>
+
+      <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
+        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+          <Gift size={16} className="text-[color:var(--brand-primary)]" />
+          福利活动
+        </div>
+        <div className="space-y-3">
+          {gameCenterEvents.map((event) => {
+            const tone = getGameCenterToneStyle(event.tone);
+            return (
+              <article
+                key={event.id}
+                className={cn(
+                  "rounded-[24px] border p-4 shadow-[var(--shadow-soft)]",
+                  tone.mutedPanelClassName,
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                      {event.title}
+                    </div>
+                    <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {event.description}
+                    </div>
+                    <div className={cn("mt-2 text-[11px]", tone.softTextClassName)}>
+                      {event.meta}
+                    </div>
+                  </div>
+                  <Button variant="secondary" size="sm">
+                    {event.ctaLabel}
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </AppSection>
+    </AppPage>
+  );
+}
+
+function MobileMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-white/18 bg-white/10 px-4 py-4">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-white/68">
+        {label}
+      </div>
+      <div className="mt-2 text-sm font-medium text-white">{value}</div>
+    </div>
+  );
+}
+
+function MobileRankingSection({
+  title,
+  entries,
+  icon,
+  onSelectGame,
+}: {
+  title: string;
+  entries: typeof gameCenterHotRankings;
+  icon: ReactNode;
+  onSelectGame: (gameId: string) => void;
+}) {
+  return (
+    <AppSection className="space-y-4 bg-white/92">
+      <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+        {icon}
+        {title}
+      </div>
+      <div className="space-y-3">
+        {entries.map((entry) => {
+          const game = getGameCenterGame(entry.gameId);
+          if (!game) {
+            return null;
+          }
+
+          const tone = getGameCenterToneStyle(game.tone);
+
+          return (
+            <button
+              key={`${title}-${entry.gameId}`}
+              type="button"
+              onClick={() => onSelectGame(entry.gameId)}
+              className="flex w-full items-start gap-3 rounded-[22px] border border-white/80 bg-[rgba(248,250,252,0.9)] px-4 py-4 text-left shadow-[var(--shadow-soft)]"
+            >
+              <div
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border text-sm font-semibold",
+                  tone.badgeClassName,
+                )}
+              >
+                {entry.rank}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                    {game.name}
+                  </div>
+                  {entry.rank === 1 ? (
+                    <Trophy size={14} className="text-[color:var(--brand-primary)]" />
+                  ) : null}
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {game.playersLabel}
+                </div>
+                <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                  {entry.note}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </AppSection>
   );
 }

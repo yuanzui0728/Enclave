@@ -493,6 +493,13 @@ const discoverChannelsRoute = createRoute({
   component: DiscoverChannelsPage,
 });
 
+const discoverGamesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/games",
+  beforeLoad: requireWorldReady,
+  component: GamesPage,
+});
+
 const profileSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/settings",
@@ -600,6 +607,7 @@ const routeTree = rootRoute.addChildren([
   discoverSceneRoute,
   discoverFeedRoute,
   discoverChannelsRoute,
+  discoverGamesRoute,
   profileSettingsRoute,
   desktopMobileRoute,
   desktopChatFilesRoute,

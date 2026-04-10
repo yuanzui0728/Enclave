@@ -27,7 +27,7 @@
 
 ## 主 App 结构（`apps/app/src/`）
 
-`routes/` · `features/desktop/` · `features/mobile/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
+`routes/` · `features/desktop/` · `features/mobile/` · `features/games/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
 
 ## 主 App 页面（`apps/app/src/routes/`）
 
@@ -38,12 +38,12 @@
 - 底部 Tab：`tabs/chat-list-page` · `contacts-page` · `discover-page` · `profile-page`
 - 桌面端一级 Tab：`tabs/chat` · `tabs/contacts` · `tabs/favorites` · `tabs/moments` · `tabs/feed` · `tabs/channels` · `tabs/search` · `tabs/games` · `tabs/mini-programs`
 - `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
-- `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed` · `discover/channels`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态 / 视频号
+- `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed` · `discover/channels` · `discover/games`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态 / 视频号 / 游戏中心
 - `favorites-page.tsx`：桌面端收藏工作区入口，后续承接跨聊天与内容流收藏
 - `feed-page.tsx`：桌面端广场动态一级入口，承载居民公开动态流
 - `channels-page.tsx`：桌面端视频号一级入口，后续承接短视频与直播内容流
 - `search-page.tsx`：桌面端搜一搜一级入口，后续承接全局聚合搜索
-- `games-page.tsx`：桌面端游戏中心一级入口
+- `games-page.tsx`：桌面端游戏中心一级入口；移动端复用为发现页内“游戏”二级页
 - `mini-programs-page.tsx`：桌面端小程序面板一级入口
 - `starred-friends-page.tsx`：星标朋友页，移动端承载通讯录内“星标朋友”入口，桌面端承载双栏星标好友工作区
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
@@ -194,7 +194,7 @@
 - 世界主人可在 App 内设置自己的 API Key，服务端仅加密存储
 - 移动端底部导航当前对齐微信四项：`消息 / 通讯录 / 发现 / 我`
 - 桌面端左侧导航当前收口为：`消息 / 通讯录 / 收藏 / 朋友圈 / 广场动态 / 视频号 / 搜一搜 / 游戏中心 / 小程序面板`，底部为 `手机 / 更多`
-- 移动端“发现”聚合朋友圈、摇一摇、场景相遇、广场动态、视频号等入口；点击入口后进入独立二级页，朋友圈不再占用独立底部 Tab
+- 移动端“发现”聚合朋友圈、摇一摇、场景相遇、广场动态、视频号、游戏中心等入口；点击入口后进入独立二级页，朋友圈不再占用独立底部 Tab
 - 移动端“公众号”当前收口在“通讯录”固定服务项内，不单独占用底部 Tab，也不放进“发现”
 - 移动端“我”页当前对齐微信式个人主页，资料编辑与 API Key 配置收口到“设置”二级页，不在主页直接裸露
 - Setup 页先选择云世界或本地世界：本地世界手动填写地址，云世界通过手机号进入
