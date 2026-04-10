@@ -12,7 +12,13 @@ import {
 import { type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type ReactNode,
+} from "react";
 import { type ChatComposerAttachmentPayload } from "../features/chat/chat-plus-types";
 import { MobileSpeechInputSheet } from "./mobile-speech-input-sheet";
 import { MobileChatPlusPanel } from "./mobile-chat-plus-panel";
@@ -289,6 +295,10 @@ export function ChatComposer({
       return;
     }
 
+    await applyImageDraftFiles(files);
+  };
+
+  const applyImageDraftFiles = async (files: File[]) => {
     try {
       const draftItems = await Promise.all(
         files.map((file) => createImageDraft(file)),
@@ -316,6 +326,10 @@ export function ChatComposer({
       return;
     }
 
+    applyGenericFileDraft(file);
+  };
+
+  const applyGenericFileDraft = (file: File) => {
     releaseAttachmentDraft(attachmentDraft);
 
     setAttachmentError(null);
@@ -328,6 +342,32 @@ export function ChatComposer({
       mimeType: file.type || "application/octet-stream",
       size: file.size,
     });
+  };
+
+  const handleDesktopPaste = async (
+    event: ClipboardEvent<HTMLInputElement>,
+  ) => {
+    if (!isDesktop || !onSendAttachment || attachmentBusy) {
+      return;
+    }
+
+    const pastedFiles = extractClipboardFiles(event.clipboardData);
+    if (!pastedFiles.length) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const imageFiles = pastedFiles.filter((file) =>
+      file.type.startsWith("image/"),
+    );
+
+    if (imageFiles.length === pastedFiles.length) {
+      await applyImageDraftFiles(imageFiles.slice(0, MAX_ALBUM_IMAGE_COUNT));
+      return;
+    }
+
+    applyGenericFileDraft(pastedFiles[0]);
   };
 
   const handleCancelAttachmentDraft = () => {
@@ -589,6 +629,9 @@ export function ChatComposer({
               ref={inputRef}
               value={value}
               onChange={(event) => onChange(event.target.value)}
+              onPaste={(event) => {
+                void handleDesktopPaste(event);
+              }}
               onFocus={() => setPlusPanelOpen(false)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && value.trim()) {
@@ -1020,6 +1063,23 @@ function releaseAttachmentDraft(draft: AttachmentDraft | null) {
   for (const item of draft.items) {
     URL.revokeObjectURL(item.previewUrl);
   }
+}
+
+function extractClipboardFiles(clipboardData: DataTransfer | null) {
+  if (!clipboardData) {
+    return [];
+  }
+
+  const filesFromItems = [...clipboardData.items]
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+
+  if (filesFromItems.length) {
+    return filesFromItems;
+  }
+
+  return [...clipboardData.files];
 }
 
 const MAX_ALBUM_IMAGE_COUNT = 9;
