@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
-import { ChatMessage } from '../ai/ai.types';
+import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
 import { NarrativeService } from '../narrative/narrative.service';
@@ -387,6 +387,7 @@ export class ChatService {
     history.push({
       role: 'assistant',
       content: sanitizeAiText(text),
+      parts: this.buildTextAiParts(sanitizeAiText(text)),
       characterId,
     });
     this.conversationHistory.set(conversationId, history);
@@ -456,7 +457,11 @@ export class ChatService {
 
     const userMsg = this._entityToMessage(userMsgEntity);
     const history = await this.ensureConversationHistory(entity);
-    history.push({ role: 'user', content: normalizedInput.promptText });
+    history.push({
+      role: 'user',
+      content: normalizedInput.promptText,
+      parts: normalizedInput.aiParts,
+    });
 
     const results: Message[] = [userMsg];
 
@@ -510,6 +515,7 @@ export class ChatService {
             profile,
             conversationHistory: history,
             userMessage: coordPrompt,
+            userMessageParts: this.buildTextAiParts(coordPrompt),
             aiKeyOverride,
           });
           const coordEntity = this.msgRepo.create({
@@ -529,6 +535,7 @@ export class ChatService {
           history.push({
             role: 'assistant',
             content: coordReply.text,
+            parts: this.buildTextAiParts(coordReply.text),
             characterId: charId,
           });
           results.push(this._entityToMessage(coordEntity));
@@ -561,6 +568,7 @@ export class ChatService {
               profile: invitedProfile,
               conversationHistory: history,
               userMessage: normalizedInput.promptText,
+              userMessageParts: normalizedInput.aiParts,
               isGroupChat: true,
               aiKeyOverride,
             });
@@ -581,6 +589,7 @@ export class ChatService {
             history.push({
               role: 'assistant',
               content: reply.text,
+              parts: this.buildTextAiParts(reply.text),
               characterId: invited.id,
             });
             results.push(this._entityToMessage(aiEntity));
@@ -608,6 +617,7 @@ export class ChatService {
         profile,
         conversationHistory: history,
         userMessage: normalizedInput.promptText,
+        userMessageParts: normalizedInput.aiParts,
         chatContext,
         aiKeyOverride,
       });
@@ -628,6 +638,7 @@ export class ChatService {
       history.push({
         role: 'assistant',
         content: reply.text,
+        parts: this.buildTextAiParts(reply.text),
         characterId: charId,
       });
       this.conversationHistory.set(convId, history);
@@ -643,6 +654,7 @@ export class ChatService {
           profile,
           conversationHistory: history,
           userMessage: normalizedInput.promptText,
+          userMessageParts: normalizedInput.aiParts,
           isGroupChat: true,
           aiKeyOverride,
         });
@@ -663,6 +675,7 @@ export class ChatService {
         history.push({
           role: 'assistant',
           content: reply.text,
+          parts: this.buildTextAiParts(reply.text),
           characterId: charId,
         });
         results.push(this._entityToMessage(aiEntity));
@@ -735,18 +748,21 @@ export class ChatService {
       ),
       order: { createdAt: 'ASC' },
     });
-    const rebuiltHistory = allMsgs.map(
-      (message) =>
-        ({
-          role: message.senderType === 'user' ? 'user' : 'assistant',
-          content:
-            message.senderType === 'user'
-              ? message.text
-              : sanitizeAiText(message.text),
-          characterId:
-            message.senderType === 'character' ? message.senderId : undefined,
-        }) satisfies ChatMessage,
-    );
+    const rebuiltHistory = allMsgs.map((message) => {
+      const attachment = this.parseAttachment(message);
+      const baseText =
+        message.senderType === 'user'
+          ? message.text
+          : sanitizeAiText(message.text);
+
+      return {
+        role: message.senderType === 'user' ? 'user' : 'assistant',
+        content: this.buildMessagePromptText(baseText, attachment),
+        parts: this.buildAiParts(baseText, attachment),
+        characterId:
+          message.senderType === 'character' ? message.senderId : undefined,
+      } satisfies ChatMessage;
+    });
 
     this.conversationHistory.set(conversation.id, rebuiltHistory);
     return rebuiltHistory;
@@ -981,6 +997,7 @@ export class ChatService {
       | 'location_card';
     text: string;
     promptText: string;
+    aiParts: AiMessagePart[];
     attachment?: MessageAttachment;
   } {
     if (input.type === 'sticker') {
@@ -999,6 +1016,7 @@ export class ChatService {
         type: 'sticker',
         text: fallbackText,
         promptText: fallbackText,
+        aiParts: this.buildAiParts(fallbackText, attachment),
         attachment,
       };
     }
@@ -1015,10 +1033,15 @@ export class ChatService {
 
       const fallbackText =
         input.text?.trim() || this.getAttachmentFallbackText(input.attachment);
+      const promptText = this.buildMessagePromptText(
+        fallbackText,
+        input.attachment,
+      );
       return {
         type: input.type,
         text: fallbackText,
-        promptText: fallbackText,
+        promptText,
+        aiParts: this.buildAiParts(fallbackText, input.attachment),
         attachment: input.attachment,
       };
     }
@@ -1032,7 +1055,117 @@ export class ChatService {
       type: 'text',
       text,
       promptText: text,
+      aiParts: this.buildTextAiParts(text),
     };
+  }
+
+  private buildAiParts(
+    text: string,
+    attachment?: MessageAttachment,
+  ): AiMessagePart[] {
+    if (!attachment) {
+      return this.buildTextAiParts(text);
+    }
+
+    const promptText = this.buildMessagePromptText(text, attachment);
+
+    if (attachment.kind === 'image') {
+      return [
+        {
+          type: 'image',
+          imageUrl: attachment.url,
+          detail: 'auto',
+          altText: promptText,
+        },
+      ];
+    }
+
+    if (attachment.kind === 'file') {
+      return [
+        {
+          type: 'file',
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          url: attachment.url,
+          summaryText: promptText,
+        },
+      ];
+    }
+
+    if (attachment.kind === 'contact_card') {
+      return [
+        {
+          type: 'contact_card',
+          name: attachment.name,
+          relationship: attachment.relationship,
+          bio: attachment.bio,
+          summaryText: promptText,
+        },
+      ];
+    }
+
+    if (attachment.kind === 'location_card') {
+      return [
+        {
+          type: 'location_card',
+          title: attachment.title,
+          subtitle: attachment.subtitle,
+          summaryText: promptText,
+        },
+      ];
+    }
+
+    return [
+      {
+        type: 'sticker',
+        label: attachment.label,
+        summaryText: promptText,
+      },
+    ];
+  }
+
+  private buildTextAiParts(text: string): AiMessagePart[] {
+    return [{ type: 'text', text }];
+  }
+
+  private buildMessagePromptText(
+    text: string,
+    attachment?: MessageAttachment,
+  ): string {
+    if (!attachment) {
+      return text;
+    }
+
+    const fallbackText = this.getAttachmentFallbackText(attachment);
+    const caption =
+      text.trim() && text.trim() !== fallbackText ? text.trim() : undefined;
+
+    if (attachment.kind === 'image') {
+      const dimensions =
+        attachment.width && attachment.height
+          ? `，尺寸 ${attachment.width}x${attachment.height}`
+          : '';
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
+    }
+
+    if (attachment.kind === 'file') {
+      const sizeText = formatAttachmentSize(attachment.size);
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();
+    }
+
+    if (attachment.kind === 'contact_card') {
+      return `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();
+    }
+
+    if (attachment.kind === 'location_card') {
+      return `分享了一个位置：${attachment.title}${attachment.subtitle ? `，${attachment.subtitle}` : ''}`.trim();
+    }
+
+    return caption
+      ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`
+      : `发送了一个表情包：${attachment.label ?? attachment.stickerId}`;
   }
 
   private getAttachmentFallbackText(attachment: MessageAttachment): string {
@@ -1100,6 +1233,22 @@ function sanitizeAttachmentFileName(value: string) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .toLowerCase();
+}
+
+function formatAttachmentSize(size: number) {
+  if (!Number.isFinite(size) || size <= 0) {
+    return '';
+  }
+
+  if (size >= 1024 * 1024) {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (size >= 1024) {
+    return `${Math.round(size / 1024)} KB`;
+  }
+
+  return `${size} B`;
 }
 
 function guessAttachmentExtension(mimeType: string) {
