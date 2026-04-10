@@ -16,6 +16,7 @@ import {
   AiKeyOverride,
 } from './ai.types';
 import { PromptBuilderService } from './prompt-builder.service';
+import { sanitizeAiText } from './ai-text-sanitizer';
 import { SystemConfigService } from '../config/config.service';
 import { WorldService } from '../world/world.service';
 
@@ -50,7 +51,9 @@ export class AiOrchestratorService {
   ) {
     this.client = new OpenAI({
       apiKey: this.config.get<string>('DEEPSEEK_API_KEY'),
-      baseURL: this.config.get<string>('OPENAI_BASE_URL') ?? 'https://api.deepseek.com',
+      baseURL:
+        this.config.get<string>('OPENAI_BASE_URL') ??
+        'https://api.deepseek.com',
     });
   }
 
@@ -58,7 +61,10 @@ export class AiOrchestratorService {
     if (override?.apiKey) {
       return new OpenAI({
         apiKey: override.apiKey,
-        baseURL: override.apiBase ?? this.config.get<string>('OPENAI_BASE_URL') ?? 'https://api.deepseek.com',
+        baseURL:
+          override.apiBase ??
+          this.config.get<string>('OPENAI_BASE_URL') ??
+          'https://api.deepseek.com',
       });
     }
     return this.client;
@@ -102,36 +108,53 @@ export class AiOrchestratorService {
   }
 
   private hasAvailableApiKey(override?: AiKeyOverride): boolean {
-    return Boolean(override?.apiKey?.trim() || this.config.get<string>('DEEPSEEK_API_KEY')?.trim());
+    return Boolean(
+      override?.apiKey?.trim() ||
+      this.config.get<string>('DEEPSEEK_API_KEY')?.trim(),
+    );
   }
 
-  private buildUnavailableReply(profile: PersonalityProfile): GenerateReplyResult {
+  private buildUnavailableReply(
+    profile: PersonalityProfile,
+  ): GenerateReplyResult {
     return {
       text: `${profile.name}看到了你的消息，但这个世界还没有配置可用的 AI Key。先去“我 > 设置”里补上 API Key，我就能继续回复你。`,
       tokensUsed: 0,
     };
   }
 
-  async generateReply(options: GenerateReplyOptions): Promise<GenerateReplyResult> {
-    const { profile, conversationHistory, userMessage, isGroupChat, otherParticipants, chatContext, aiKeyOverride } = options;
+  async generateReply(
+    options: GenerateReplyOptions,
+  ): Promise<GenerateReplyResult> {
+    const {
+      profile,
+      conversationHistory,
+      userMessage,
+      isGroupChat,
+      otherParticipants,
+      chatContext,
+      aiKeyOverride,
+    } = options;
     if (!this.hasAvailableApiKey(aiKeyOverride)) {
       return this.buildUnavailableReply(profile);
     }
 
     const client = this.getClient(aiKeyOverride);
 
-    let systemPrompt = profile.systemPrompt
-      ?? this.promptBuilder.buildChatSystemPrompt(profile, isGroupChat, chatContext);
+    let systemPrompt =
+      profile.systemPrompt ??
+      this.promptBuilder.buildChatSystemPrompt(
+        profile,
+        isGroupChat,
+        chatContext,
+      );
 
     // Inject WorldContext (current time/season/holiday)
     try {
       const worldCtx = await this.worldService.getLatest();
       const ctxStr = this.worldService.buildContextString(worldCtx);
       if (ctxStr) {
-        systemPrompt = systemPrompt.replace(
-          /当前时间：[^\n]*/,
-          ctxStr,
-        );
+        systemPrompt = systemPrompt.replace(/当前时间：[^\n]*/, ctxStr);
         // If no existing time line, append
         if (!systemPrompt.includes(ctxStr)) {
           systemPrompt += `\n\n【当前世界状态】${ctxStr}`;
@@ -150,9 +173,7 @@ export class AiOrchestratorService {
       { role: 'system', content: systemPrompt },
       ...conversationHistory.slice(-historyWindow).map((m) => ({
         role: m.role as 'user' | 'assistant',
-        content: m.characterId
-          ? `[${m.characterId}]: ${m.content}`
-          : m.content,
+        content: m.characterId ? `[${m.characterId}]: ${m.content}` : m.content,
       })),
       { role: 'user', content: userMessage },
     ];
@@ -166,7 +187,8 @@ export class AiOrchestratorService {
         temperature: 0.85,
       });
 
-      const text = response.choices[0]?.message?.content ?? '（无回复）';
+      const rawText = response.choices[0]?.message?.content ?? '（无回复）';
+      const text = sanitizeAiText(rawText) || '（无回复）';
       const tokensUsed = response.usage?.total_tokens ?? 0;
 
       return { text, tokensUsed };
@@ -178,7 +200,11 @@ export class AiOrchestratorService {
 
   async generateMoment(options: GenerateMomentOptions): Promise<string> {
     const { profile, currentTime, recentTopics } = options;
-    const prompt = this.promptBuilder.buildMomentPrompt(profile, currentTime, recentTopics);
+    const prompt = this.promptBuilder.buildMomentPrompt(
+      profile,
+      currentTime,
+      recentTopics,
+    );
 
     const model = await this.configService.getAiModel();
     const response = await this.client.chat.completions.create({
@@ -191,8 +217,14 @@ export class AiOrchestratorService {
     return response.choices[0]?.message?.content?.trim() ?? '';
   }
 
-  async extractPersonality(chatSample: string, personName: string): Promise<Record<string, unknown>> {
-    const prompt = this.promptBuilder.buildPersonalityExtractionPrompt(chatSample, personName);
+  async extractPersonality(
+    chatSample: string,
+    personName: string,
+  ): Promise<Record<string, unknown>> {
+    const prompt = this.promptBuilder.buildPersonalityExtractionPrompt(
+      chatSample,
+      personName,
+    );
 
     const model = await this.configService.getAiModel();
     const response = await this.client.chat.completions.create({
@@ -212,7 +244,10 @@ export class AiOrchestratorService {
     }
   }
 
-  async compressMemory(history: ChatMessage[], profile: PersonalityProfile): Promise<string> {
+  async compressMemory(
+    history: ChatMessage[],
+    profile: PersonalityProfile,
+  ): Promise<string> {
     const chatHistory = history
       .filter((m) => m.role !== 'system')
       .map((m) => `${m.role === 'user' ? '用户' : profile.name}：${m.content}`)
@@ -247,7 +282,11 @@ ${chatHistory}
     userMessage: string,
     characterName: string,
     characterDomains: string[],
-  ): Promise<{ needsGroupChat: boolean; reason: string; requiredDomains: string[] }> {
+  ): Promise<{
+    needsGroupChat: boolean;
+    reason: string;
+    requiredDomains: string[];
+  }> {
     if (!this.hasAvailableApiKey()) {
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
@@ -269,7 +308,11 @@ ${chatHistory}
       });
 
       const raw = response.choices[0]?.message?.content ?? '{}';
-      return JSON.parse(raw) as { needsGroupChat: boolean; reason: string; requiredDomains: string[] };
+      return JSON.parse(raw) as {
+        needsGroupChat: boolean;
+        reason: string;
+        requiredDomains: string[];
+      };
     } catch {
       return { needsGroupChat: false, reason: '', requiredDomains: [] };
     }
@@ -288,12 +331,16 @@ ${chatHistory}
     }
 
     if (file.mimetype && !ACCEPTED_AUDIO_MIME_TYPES.has(file.mimetype)) {
-      throw new BadRequestException('当前录音格式暂不支持，请改用系统默认录音格式。');
+      throw new BadRequestException(
+        '当前录音格式暂不支持，请改用系统默认录音格式。',
+      );
     }
 
     const provider = await this.resolveProviderConfig();
     if (!provider.apiKey.trim()) {
-      throw new ServiceUnavailableException('当前实例未配置可用的 AI Key，暂时无法转写语音。');
+      throw new ServiceUnavailableException(
+        '当前实例未配置可用的 AI Key，暂时无法转写语音。',
+      );
     }
 
     const client = new OpenAI({
@@ -304,9 +351,13 @@ ${chatHistory}
 
     try {
       const response = await client.audio.transcriptions.create({
-        file: await toFile(file.buffer, file.originalname || 'speech-input.webm', {
-          type: file.mimetype || 'audio/webm',
-        }),
+        file: await toFile(
+          file.buffer,
+          file.originalname || 'speech-input.webm',
+          {
+            type: file.mimetype || 'audio/webm',
+          },
+        ),
         model: provider.transcriptionModel,
         language: 'zh',
         prompt: '这是聊天输入语音转文字，请输出自然、简洁的中文口语内容。',
@@ -314,7 +365,9 @@ ${chatHistory}
       const text = response.text.trim();
 
       if (!text) {
-        throw new BadGatewayException('这段语音没有识别出有效文字，请再说一遍。');
+        throw new BadGatewayException(
+          '这段语音没有识别出有效文字，请再说一遍。',
+        );
       }
 
       return {
@@ -334,7 +387,9 @@ ${chatHistory}
         size: file.size,
         error,
       });
-      throw new BadGatewayException('当前 Provider 不支持语音转写，或本次转写请求失败。');
+      throw new BadGatewayException(
+        '当前 Provider 不支持语音转写，或本次转写请求失败。',
+      );
     }
   }
 }

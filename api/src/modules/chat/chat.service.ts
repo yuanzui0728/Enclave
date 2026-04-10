@@ -6,6 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
+import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { ChatMessage } from '../ai/ai.types';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { CharactersService } from '../characters/characters.service';
@@ -242,7 +243,10 @@ export class ChatService {
     return this._entityToConversation(updated);
   }
 
-  async setConversationMuted(convId: string, muted: boolean): Promise<Conversation> {
+  async setConversationMuted(
+    convId: string,
+    muted: boolean,
+  ): Promise<Conversation> {
     const entity = await this.requireOwnedConversation(convId);
     const updated = await this.convRepo.save({
       ...entity,
@@ -731,7 +735,7 @@ export class ChatService {
       (message) =>
         ({
           role: message.senderType === 'user' ? 'user' : 'assistant',
-          content: message.text,
+          content: sanitizeAiText(message.text),
           characterId:
             message.senderType === 'character' ? message.senderId : undefined,
         }) satisfies ChatMessage,
@@ -844,7 +848,7 @@ export class ChatService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: entity.text,
+      text: sanitizeAiText(entity.text),
       attachment: this.parseAttachment(entity),
       createdAt: entity.createdAt,
     };
@@ -901,7 +905,7 @@ export class ChatService {
         | 'file'
         | 'contact_card'
         | 'location_card',
-      text: entity.text,
+      text: sanitizeAiText(entity.text),
       attachment: this.parseGroupAttachment(entity),
       createdAt: entity.createdAt,
     };
@@ -929,7 +933,9 @@ export class ChatService {
   private buildGroupMessageWhere(
     groupId: string,
     since?: Date,
-    extra: Partial<Pick<GroupMessageEntity, 'senderType' | 'senderId' | 'type'>> = {},
+    extra: Partial<
+      Pick<GroupMessageEntity, 'senderType' | 'senderId' | 'type'>
+    > = {},
   ): FindOptionsWhere<GroupMessageEntity> {
     return {
       groupId,
