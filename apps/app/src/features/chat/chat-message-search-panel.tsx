@@ -48,6 +48,7 @@ const MAX_VISIBLE_RESULTS = 80;
 type ChatMessageSearchPanelProps = {
   subtitle: string;
   messages: SearchableChatMessage[] | undefined;
+  enableSenderFilter?: boolean;
   isLoading: boolean;
   error?: Error | null;
   loadingLabel: string;
@@ -99,6 +100,7 @@ const SEARCH_CATEGORIES = [
 export function ChatMessageSearchPanel({
   subtitle,
   messages,
+  enableSenderFilter = false,
   isLoading,
   error,
   loadingLabel,
@@ -109,6 +111,7 @@ export function ChatMessageSearchPanel({
 }: ChatMessageSearchPanelProps) {
   const [keyword, setKeyword] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
+  const [senderFilter, setSenderFilter] = useState("all");
   const localMessageActionState = useLocalChatMessageActionState();
   const reminderMap = useMemo(
     () =>
@@ -134,14 +137,31 @@ export function ChatMessageSearchPanel({
   );
 
   const matchedMessages = useMemo(() => {
-    if (!trimmedKeyword) {
-      return indexedMessages;
+    return indexedMessages.filter((item) => {
+      if (
+        enableSenderFilter &&
+        senderFilter !== "all" &&
+        (item.message.senderName || "消息") !== senderFilter
+      ) {
+        return false;
+      }
+
+      if (!trimmedKeyword) {
+        return true;
+      }
+
+      return item.searchableText.includes(trimmedKeyword);
+    });
+  }, [enableSenderFilter, indexedMessages, senderFilter, trimmedKeyword]);
+  const senderOptions = useMemo(() => {
+    if (!enableSenderFilter) {
+      return [];
     }
 
-    return indexedMessages.filter((item) =>
-      item.searchableText.includes(trimmedKeyword),
-    );
-  }, [indexedMessages, trimmedKeyword]);
+    return Array.from(
+      new Set(indexedMessages.map((item) => item.message.senderName || "消息")),
+    ).sort((left, right) => left.localeCompare(right, "zh-CN"));
+  }, [enableSenderFilter, indexedMessages]);
 
   const categoryCounts = useMemo(() => {
     return SEARCH_CATEGORIES.reduce<Record<SearchCategoryId, number>>(
@@ -178,6 +198,8 @@ export function ChatMessageSearchPanel({
   ).length;
   const isKeywordSearch = Boolean(trimmedKeyword);
   const isPartialResult = results.length > visibleResults.length;
+  const activeFilterCount =
+    (trimmedKeyword ? 1 : 0) + (senderFilter !== "all" ? 1 : 0);
 
   const activeCategoryMeta =
     SEARCH_CATEGORIES.find((item) => item.id === activeCategory) ??
@@ -213,8 +235,41 @@ export function ChatMessageSearchPanel({
             {reminderCount ? (
               <SearchStatPill label={`提醒 ${reminderCount} 条`} tone="blue" />
             ) : null}
+            {senderFilter !== "all" ? (
+              <SearchStatPill label={`成员 ${senderFilter}`} />
+            ) : null}
           </div>
-          {keyword ? (
+          {enableSenderFilter ? (
+            <div className="mt-3 flex items-center gap-2">
+              <select
+                value={senderFilter}
+                onChange={(event) => setSenderFilter(event.target.value)}
+                className="min-w-0 flex-1 rounded-[14px] border border-black/8 bg-[#f5f5f5] px-3 py-2.5 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12 focus:bg-white"
+              >
+                <option value="all">全部成员</option>
+                {senderOptions.map((senderName) => (
+                  <option key={senderName} value={senderName}>
+                    {senderName}
+                  </option>
+                ))}
+              </select>
+              {activeFilterCount ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setKeyword("");
+                    setSenderFilter("all");
+                  }}
+                  className="shrink-0 rounded-full"
+                >
+                  清空筛选
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          {!enableSenderFilter && keyword ? (
             <div className="mt-3">
               <Button
                 type="button"
@@ -303,6 +358,7 @@ export function ChatMessageSearchPanel({
 
           {!trimmedKeyword &&
           indexedMessages.length > 0 &&
+          senderFilter === "all" &&
           activeCategory !== "all" &&
           categoryCounts[activeCategory] === 0 ? (
             <div className="px-3">
@@ -318,6 +374,15 @@ export function ChatMessageSearchPanel({
               <EmptyState
                 title={emptyResultTitle}
                 description={emptyResultDescription}
+              />
+            </div>
+          ) : null}
+
+          {!trimmedKeyword && senderFilter !== "all" && !results.length ? (
+            <div className="px-3">
+              <EmptyState
+                title={`没有来自 ${senderFilter} 的${activeCategoryMeta.shortLabel}`}
+                description="换个成员试试，或者切回全部成员继续浏览。"
               />
             </div>
           ) : null}

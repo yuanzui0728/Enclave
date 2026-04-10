@@ -24,6 +24,7 @@ export function GroupMessageSearchPage() {
     <ChatMessageSearchPanel
       subtitle={groupQuery.data?.name ?? "群聊"}
       messages={messagesQuery.data}
+      enableSenderFilter
       isLoading={messagesQuery.isLoading}
       error={
         messagesQuery.isError && messagesQuery.error instanceof Error
