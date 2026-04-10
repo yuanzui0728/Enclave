@@ -406,7 +406,7 @@ function ConversationCardLink({
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
           <div className="truncate text-sm text-[color:var(--text-secondary)]">
-            {conversation.lastMessage?.text ?? "从这里开始第一句问候"}
+            {conversation.lastMessage?.text ?? ""}
           </div>
           {conversation.unreadCount > 0 ? (
             <div className="min-w-6 rounded-full bg-[var(--brand-gradient)] px-2 py-0.5 text-center text-[11px] text-white shadow-[var(--shadow-soft)]">
