@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { BellOff, FileText, Plus, UserPlus, Users } from "lucide-react";
@@ -16,7 +16,10 @@ import { OfficialServiceConversationCard } from "../../../components/official-se
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
-import { sanitizeDisplayedChatText } from "../../../lib/chat-text";
+import {
+  sanitizeDisplayedChatText,
+  splitChatTextSegments,
+} from "../../../lib/chat-text";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -503,7 +506,7 @@ function ConversationCardLink({
                 {preview.prefix}
               </span>
             ) : null}
-            <span>{preview.text}</span>
+            <span>{renderConversationPreviewText(preview.text)}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {conversation.isMuted ? (
@@ -620,4 +623,30 @@ function formatMessagePreviewText(type: string | undefined, text: string) {
   }
 
   return "打开会话查看最新消息。";
+}
+
+function renderConversationPreviewText(text: string): ReactNode {
+  const segments = splitChatTextSegments(text);
+  if (!segments.length) {
+    return text;
+  }
+
+  return segments.map((segment, index) => {
+    if (segment.kind === "text") {
+      return <span key={`text-${index}`}>{segment.text}</span>;
+    }
+
+    return (
+      <span
+        key={`mention-${index}-${segment.text}`}
+        className={
+          segment.tone === "all"
+            ? "rounded-[7px] bg-[rgba(249,115,22,0.14)] px-1 py-0.5 text-[#c2410c]"
+            : "rounded-[7px] bg-[rgba(59,130,246,0.12)] px-1 py-0.5 text-[#2563eb]"
+        }
+      >
+        {segment.text}
+      </span>
+    );
+  });
 }
