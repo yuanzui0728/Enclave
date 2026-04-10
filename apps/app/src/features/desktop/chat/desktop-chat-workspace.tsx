@@ -70,10 +70,11 @@ import { useLocalChatMessageActionState } from "../../chat/local-chat-message-ac
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
 import {
-  ChatReminderCollapseIcon,
-  ChatReminderCollapseLabel,
+  ChatReminderControlButton,
   ChatReminderCountText,
+  ChatReminderMetaPill,
   ChatReminderSummaryText,
+  ChatReminderToggleButton,
 } from "../../chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../../chat/use-message-reminders";
 import {
@@ -828,50 +829,42 @@ export function DesktopChatWorkspace({
                                 >
                                   {group.title}
                                 </span>
-                                <span className="flex items-center gap-2">
+                                <span className="flex items-center gap-1.5">
                                   {isChatReminderGroupClearable(
                                     group.status,
                                   ) ? (
-                                    <button
-                                      type="button"
+                                    <ChatReminderControlButton
                                       onClick={() => {
                                         void handleClearReminderGroup(
                                           group.status,
                                           group.entries.map(
                                             (entry) => entry.messageId,
-                                          ),
-                                        );
+                                            ),
+                                          );
                                       }}
-                                      className="rounded-full border border-transparent bg-[#f3f6f4] px-2.5 py-1 text-[10px] text-[#5f6b63] transition-colors hover:bg-[#e9eeeb]"
+                                      className="px-2.5 text-[10px] text-[#717b75]"
                                     >
                                       {getChatReminderGroupClearLabel(
                                         group.status,
                                       )}
-                                    </button>
+                                    </ChatReminderControlButton>
                                   ) : null}
-                                  <button
-                                    type="button"
+                                  <ChatReminderToggleButton
                                     onClick={() =>
                                       setIsNotifiedReminderGroupExpanded(
                                         (current) => !current,
                                       )
                                     }
-                                    className="group flex items-center gap-1.5 text-[10px] text-[color:var(--text-dim)] opacity-80 transition-opacity hover:opacity-100"
+                                    className="px-2.5 text-[10px] text-[color:var(--text-dim)]"
                                     aria-label={
                                       collapsed ? "展开已通知提醒" : "收起已通知提醒"
                                     }
                                     aria-expanded={!collapsed}
-                                  >
-                                    <ChatReminderCountText count={group.count} />
-                                    <ChatReminderCollapseLabel
-                                      collapsed={collapsed}
-                                    />
-                                    <ChatReminderCollapseIcon
-                                      collapsed={collapsed}
-                                      size={12}
-                                      className="opacity-80"
-                                    />
-                                  </button>
+                                    collapsed={collapsed}
+                                    count={group.count}
+                                    iconSize={12}
+                                    iconClassName="opacity-75"
+                                  />
                                 </span>
                               </div>
                             ) : (
@@ -888,9 +881,9 @@ export function DesktopChatWorkspace({
                                 >
                                   {group.title}
                                 </span>
-                                <span className="text-[10px] text-[color:var(--text-dim)]">
+                                <ChatReminderMetaPill className="px-2 text-[10px] text-[color:var(--text-dim)]">
                                   <ChatReminderCountText count={group.count} />
-                                </span>
+                                </ChatReminderMetaPill>
                               </div>
                             )}
                             <div

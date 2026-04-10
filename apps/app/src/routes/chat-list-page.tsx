@@ -58,10 +58,11 @@ import {
   formatReminderListTimestamp,
 } from "../features/chat/chat-reminder-entries";
 import {
-  ChatReminderCollapseIcon,
-  ChatReminderCollapseLabel,
+  ChatReminderControlButton,
   ChatReminderCountText,
+  ChatReminderMetaPill,
   ChatReminderSummaryText,
+  ChatReminderToggleButton,
 } from "../features/chat/chat-reminder-summary-text";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
@@ -628,10 +629,9 @@ function MobileChatListPage() {
                               {group.title}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
                             {isChatReminderGroupClearable(group.status) ? (
-                              <button
-                                type="button"
+                              <ChatReminderControlButton
                                 onClick={() => {
                                   void handleClearReminderGroup(
                                     group.status,
@@ -640,32 +640,27 @@ function MobileChatListPage() {
                                     ),
                                   );
                                 }}
-                                className="rounded-full border border-transparent bg-[#f3f6f4] px-2.5 py-1 text-[11px] text-[#5f6b63] transition-colors hover:bg-[#e9eeeb]"
+                                className="px-2.5 text-[11px] text-[#7b847e]"
                               >
                                 {getChatReminderGroupClearLabel(group.status)}
-                              </button>
+                              </ChatReminderControlButton>
                             ) : null}
-                            <button
-                              type="button"
+                            <ChatReminderToggleButton
                               onClick={() =>
                                 setIsNotifiedReminderGroupExpanded(
                                   (current) => !current,
                                 )
                               }
-                              className="group flex items-center gap-1.5 text-[11px] text-[#9aa29d] transition-colors hover:text-[#727b75]"
+                              className="px-2.5 text-[11px] text-[#8f9992]"
                               aria-label={
                                 collapsed ? "展开已通知提醒" : "收起已通知提醒"
                               }
                               aria-expanded={!collapsed}
-                            >
-                              <ChatReminderCountText count={group.count} />
-                              <ChatReminderCollapseLabel collapsed={collapsed} />
-                              <ChatReminderCollapseIcon
-                                collapsed={collapsed}
-                                size={13}
-                                className="opacity-80"
-                              />
-                            </button>
+                              collapsed={collapsed}
+                              count={group.count}
+                              iconSize={13}
+                              iconClassName="opacity-75"
+                            />
                           </div>
                         </div>
                       ) : (
@@ -684,9 +679,9 @@ function MobileChatListPage() {
                               {group.title}
                             </span>
                           </div>
-                          <div className="text-[11px] text-[#8c8c8c]">
+                          <ChatReminderMetaPill className="px-2 text-[11px] text-[#8f9992]">
                             <ChatReminderCountText count={group.count} />
-                          </div>
+                          </ChatReminderMetaPill>
                         </div>
                       )}
                       <div
