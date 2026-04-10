@@ -69,6 +69,7 @@ import type {
   FriendListItem,
   FriendRequest,
   SendFriendRequestRequest,
+  SetFriendStarredRequest,
   ShakeResult,
   TriggerSceneRequest,
   UnblockCharacterRequest,
@@ -1101,6 +1102,21 @@ export function getFriends(baseUrl?: string) {
   return requestLegacyApi<FriendListItem[]>(
     "/social/friends",
     undefined,
+    baseUrl,
+  );
+}
+
+export function setFriendStarred(
+  characterId: string,
+  payload: SetFriendStarredRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FriendListItem["friendship"]>(
+    `/social/friends/${characterId}/star`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
     baseUrl,
   );
 }

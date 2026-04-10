@@ -80,6 +80,19 @@ export class SocialService {
     return result.filter((entry) => entry.character !== null);
   }
 
+  async setFriendStarred(characterId: string, starred: boolean): Promise<FriendshipEntity> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const friendship = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
+
+    if (!friendship || friendship.status === 'blocked') {
+      throw new Error('Friend not found');
+    }
+
+    friendship.isStarred = starred;
+    friendship.starredAt = starred ? new Date() : null;
+    return this.friendshipRepo.save(friendship);
+  }
+
   async getFriendCharacterIds(ownerId?: string): Promise<string[]> {
     const resolvedOwnerId = ownerId ?? (await this.worldOwnerService.getOwnerOrThrow()).id;
     await this.ensureDefaultFriendships(resolvedOwnerId);
@@ -254,6 +267,8 @@ export class SocialService {
 
     if (existing) {
       existing.status = 'blocked';
+      existing.isStarred = false;
+      existing.starredAt = null;
       const saved = await this.friendshipRepo.save(existing);
       return {
         id: saved.id,
