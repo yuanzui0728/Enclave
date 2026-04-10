@@ -85,7 +85,14 @@ const quickActionItems: QuickActionItem[] = [
 ];
 
 type ConversationListEntry = Awaited<ReturnType<typeof getConversations>>[number];
+type PendingHideConversation = {
+  conversationId: string;
+  isGroup: boolean;
+  title: string;
+};
+
 const SWIPE_ACTION_BUTTON_WIDTH = 72;
+const HIDE_UNDO_WINDOW_MS = 5_000;
 
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -107,6 +114,10 @@ function MobileChatListPage() {
   const [openSwipeConversationId, setOpenSwipeConversationId] = useState<
     string | null
   >(null);
+  const [pendingHideConversation, setPendingHideConversation] =
+    useState<PendingHideConversation | null>(null);
+  const hideTimeoutRef = useRef<number | null>(null);
+  const pendingHideRef = useRef<PendingHideConversation | null>(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -123,13 +134,23 @@ function MobileChatListPage() {
     () => conversationsQuery.data ?? [],
     [conversationsQuery.data],
   );
+  const visibleConversations = useMemo(
+    () =>
+      pendingHideConversation
+        ? conversations.filter(
+            (conversation) =>
+              conversation.id !== pendingHideConversation.conversationId,
+          )
+        : conversations,
+    [conversations, pendingHideConversation],
+  );
   const subscriptionInboxSummary = messageEntriesQuery.data?.subscriptionInbox;
   const serviceConversations =
     messageEntriesQuery.data?.serviceConversations ?? [];
   const showSubscriptionInboxItem = Boolean(subscriptionInboxSummary);
 
   const hasConversations =
-    conversations.length > 0 ||
+    visibleConversations.length > 0 ||
     serviceConversations.length > 0 ||
     showSubscriptionInboxItem;
 
@@ -183,24 +204,6 @@ function MobileChatListPage() {
       ]);
     },
   });
-  const hideMutation = useMutation({
-    mutationFn: async ({
-      conversationId,
-      isGroup,
-    }: {
-      conversationId: string;
-      isGroup: boolean;
-    }) =>
-      isGroup
-        ? hideGroup(conversationId, baseUrl)
-        : hideConversation(conversationId, baseUrl),
-    onSuccess: async () => {
-      setNotice("聊天已从列表移除。");
-      await queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    },
-  });
   const readStateMutation = useMutation({
     mutationFn: async ({
       conversationId,
@@ -233,14 +236,85 @@ function MobileChatListPage() {
     },
   });
 
+  const persistHiddenConversation = async (
+    entry: PendingHideConversation,
+    showSuccessNotice: boolean,
+  ) => {
+    try {
+      if (entry.isGroup) {
+        await hideGroup(entry.conversationId, baseUrl);
+      } else {
+        await hideConversation(entry.conversationId, baseUrl);
+      }
+
+      if (showSuccessNotice) {
+        setNotice("聊天已从列表移除。");
+      }
+    } catch (error) {
+      setNotice(
+        error instanceof Error ? error.message : "聊天移除失败，请稍后再试。",
+      );
+    } finally {
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    }
+  };
+
+  const clearPendingHideTimer = () => {
+    if (hideTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(hideTimeoutRef.current);
+    hideTimeoutRef.current = null;
+  };
+
+  const commitPendingHideConversation = async (
+    entry: PendingHideConversation,
+    showSuccessNotice: boolean,
+  ) => {
+    clearPendingHideTimer();
+    if (pendingHideRef.current?.conversationId === entry.conversationId) {
+      pendingHideRef.current = null;
+      setPendingHideConversation(null);
+    }
+
+    await persistHiddenConversation(entry, showSuccessNotice);
+  };
+
   useEffect(() => {
     if (
       openSwipeConversationId &&
-      !conversations.some((conversation) => conversation.id === openSwipeConversationId)
+      !visibleConversations.some(
+        (conversation) => conversation.id === openSwipeConversationId,
+      )
     ) {
       setOpenSwipeConversationId(null);
     }
-  }, [conversations, openSwipeConversationId]);
+  }, [openSwipeConversationId, visibleConversations]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingHideTimer();
+
+      const pending = pendingHideRef.current;
+      pendingHideRef.current = null;
+      if (!pending) {
+        return;
+      }
+
+      void (
+        pending.isGroup
+          ? hideGroup(pending.conversationId, baseUrl)
+          : hideConversation(pending.conversationId, baseUrl)
+      ).finally(() => {
+        void queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      });
+    };
+  }, [baseUrl, queryClient]);
 
   function handleUnavailableAction(message: string) {
     setIsQuickMenuOpen(false);
@@ -251,6 +325,43 @@ function MobileChatListPage() {
     setIsQuickMenuOpen(false);
     setNotice(null);
     void navigate({ to });
+  }
+
+  function handleScheduleHideConversation(conversation: ConversationListEntry) {
+    setOpenSwipeConversationId(null);
+    setNotice(null);
+
+    const currentPending = pendingHideRef.current;
+    if (currentPending) {
+      void commitPendingHideConversation(currentPending, false);
+    }
+
+    const nextPending: PendingHideConversation = {
+      conversationId: conversation.id,
+      isGroup: isPersistedGroupConversation(conversation),
+      title: conversation.title,
+    };
+
+    pendingHideRef.current = nextPending;
+    setPendingHideConversation(nextPending);
+    hideTimeoutRef.current = window.setTimeout(() => {
+      const latestPending = pendingHideRef.current;
+      if (
+        !latestPending ||
+        latestPending.conversationId !== nextPending.conversationId
+      ) {
+        return;
+      }
+
+      void commitPendingHideConversation(nextPending, true);
+    }, HIDE_UNDO_WINDOW_MS);
+  }
+
+  function handleUndoHideConversation() {
+    clearPendingHideTimer();
+    pendingHideRef.current = null;
+    setPendingHideConversation(null);
+    setNotice("已撤销删除。");
   }
 
   return (
@@ -344,7 +455,24 @@ function MobileChatListPage() {
       </TabPageTopBar>
 
       <div className="pb-6">
-        {notice ? (
+        {pendingHideConversation ? (
+          <div className="px-3 pt-3">
+            <InlineNotice tone="info">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="min-w-0 flex-1 truncate">
+                  {pendingHideConversation.title} 已从列表移除，5 秒内可撤销。
+                </span>
+                <button
+                  type="button"
+                  onClick={handleUndoHideConversation}
+                  className="shrink-0 font-medium text-[#07c160]"
+                >
+                  撤销
+                </button>
+              </div>
+            </InlineNotice>
+          </div>
+        ) : notice ? (
           <div className="px-3 pt-3">
             <InlineNotice tone="info">{notice}</InlineNotice>
           </div>
@@ -392,7 +520,7 @@ function MobileChatListPage() {
                 />
               ))}
 
-              {conversations.map((conversation, index) => (
+              {visibleConversations.map((conversation, index) => (
                 <ConversationListItemLink
                   key={conversation.id}
                   conversation={conversation}
@@ -404,9 +532,7 @@ function MobileChatListPage() {
                       muteMutation.variables?.conversationId === conversation.id) ||
                     (readStateMutation.isPending &&
                       readStateMutation.variables?.conversationId ===
-                        conversation.id) ||
-                    (hideMutation.isPending &&
-                      hideMutation.variables?.conversationId === conversation.id)
+                        conversation.id)
                   }
                   onOpenChange={(nextOpen) => {
                     setOpenSwipeConversationId(
@@ -444,11 +570,7 @@ function MobileChatListPage() {
                       : undefined
                   }
                   onHide={() => {
-                    setOpenSwipeConversationId(null);
-                    hideMutation.mutate({
-                      conversationId: conversation.id,
-                      isGroup: isPersistedGroupConversation(conversation),
-                    });
+                    handleScheduleHideConversation(conversation);
                   }}
                   className={cn(
                     "transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
