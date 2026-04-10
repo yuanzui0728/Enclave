@@ -28,19 +28,19 @@ export function SetupPage() {
   const providerReady = providerSetup.providerReady;
   const setupSteps = [
     {
-      label: "Remote API",
+      label: "远程 API",
       ok: coreApiReady,
-      hint: coreApiReady ? "world instance reachable" : "remote world API not reachable yet",
+      hint: coreApiReady ? "世界实例可访问" : "远程世界 API 暂不可访问",
     },
     {
-      label: "Provider",
+      label: "推理服务",
       ok: providerReady,
-      hint: providerReady ? "inference provider configured" : "save a provider to enable real generation",
+      hint: providerReady ? "推理服务已配置" : "先保存推理服务，才能启用真实生成",
     },
     {
-      label: "Admin ready",
+      label: "后台就绪",
       ok: coreApiReady && providerReady,
-      hint: coreApiReady && providerReady ? "instance ops ready" : "finish API + provider setup first",
+      hint: coreApiReady && providerReady ? "实例运维已就绪" : "请先完成 API 和推理服务配置",
     },
   ];
 
@@ -59,46 +59,46 @@ export function SetupPage() {
 
   return (
     <SetupScaffold
-      badge="Admin Setup"
-      title="Prepare this world instance for operations"
-      description="The admin console now manages a single-user world instance. Verify the remote API, then configure the provider used by this world."
+      badge="后台设置"
+      title="为当前世界实例完成运维准备"
+      description="管理后台现在面向单用户世界实例。先确认远程 API 可达，再配置当前世界使用的推理服务。"
       heroAside={<SetupStepList steps={setupSteps} />}
       left={
         <section className="space-y-4 rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
           <div className="grid gap-4 md:grid-cols-2">
             <SetupStatusCard
-              title="Remote API"
-              value={systemStatusQuery.data?.coreApi.version ?? "offline"}
+              title="远程 API"
+              value={systemStatusQuery.data?.coreApi.version ?? "离线"}
               detail={
                 systemStatusQuery.data?.coreApi.message ??
-                "The admin console connects to a remote world instance rather than managing a local Core API."
+                "管理后台连接的是远程世界实例，而不是本地托管 Core API。"
               }
               ok={coreApiReady}
             />
             <SetupStatusCard
-              title="Database"
-              value={systemStatusQuery.data?.database.path ?? "unknown"}
+              title="数据库"
+              value={systemStatusQuery.data?.database.path ?? "未知"}
               detail={
                 systemStatusQuery.data
-                  ? `connected=${systemStatusQuery.data.database.connected} wal=${systemStatusQuery.data.database.walEnabled}`
-                  : "Waiting for instance status."
+                  ? `已连接=${systemStatusQuery.data.database.connected} · WAL=${systemStatusQuery.data.database.walEnabled}`
+                  : "等待实例状态..."
               }
               ok={Boolean(systemStatusQuery.data?.database.connected)}
             />
             <SetupStatusCard
-              title="Scheduler"
-              value={systemStatusQuery.data?.scheduler.mode ?? "unknown"}
+              title="调度器"
+              value={systemStatusQuery.data?.scheduler.mode ?? "未知"}
               detail={
                 systemStatusQuery.data
-                  ? `${systemStatusQuery.data.scheduler.jobs.length} jobs · snapshots=${systemStatusQuery.data.scheduler.worldSnapshots}`
-                  : "Waiting for scheduler status."
+                  ? `${systemStatusQuery.data.scheduler.jobs.length} 个任务 · 快照=${systemStatusQuery.data.scheduler.worldSnapshots}`
+                  : "等待调度器状态..."
               }
               ok={Boolean(systemStatusQuery.data?.scheduler.healthy)}
             />
             <SetupStatusCard
-              title="World Owner"
+              title="世界主人"
               value={String(systemStatusQuery.data?.worldSurface.ownerCount ?? 0)}
-              detail="A healthy single-world instance should expose exactly one owner at runtime."
+              detail="健康的单世界实例在运行时应当且仅应暴露一个世界主人。"
               ok={(systemStatusQuery.data?.worldSurface.ownerCount ?? 0) === 1}
             />
           </div>
@@ -110,27 +110,27 @@ export function SetupPage() {
           <InlineNotice tone={coreApiReady ? "success" : "warning"}>
             {coreApiReady
               ? providerReady
-                ? "Remote API and provider are ready. This world can now run chats, feed, moments, and scheduler flows."
-                : "Remote API is reachable. Configure the provider next."
-              : "The admin console has not reached the remote world API yet."}
+                ? "远程 API 和推理服务均已就绪。当前世界已经可以运行聊天、广场、朋友圈和调度流程。"
+                : "远程 API 已可访问，下一步请完成推理服务配置。"
+              : "管理后台暂时还未连接到远程世界 API。"}
           </InlineNotice>
         </section>
       }
       right={
         <ProviderSetupForm
           className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]"
-          title="Provider Setup"
-          description="Save the instance-level provider used by this world when the owner has not configured a personal API Key."
-          statusLabel={providerReady ? "configured" : "pending"}
-          endpointLabel="Endpoint"
-          modeLabel="Mode"
-          modelLabel="Model"
-          apiKeyLabel="API Key"
+          title="推理服务配置"
+          description="当世界主人没有配置个人 API Key 时，这里保存实例级推理服务配置供当前世界兜底使用。"
+          statusLabel={providerReady ? "已配置" : "待配置"}
+          endpointLabel="接口地址"
+          modeLabel="模式"
+          modelLabel="模型"
+          apiKeyLabel="API 密钥"
           endpointPlaceholder="https://api.openai.com/v1"
           modelPlaceholder="gpt-4.1-mini"
-          apiKeyPlaceholder="Enter the instance provider API Key"
-          probeLabel="Test Provider"
-          saveLabel="Save Provider"
+          apiKeyPlaceholder="输入实例级推理服务 API Key"
+          probeLabel="测试连接"
+          saveLabel="保存配置"
           draft={providerSetup.providerDraft}
           availableModels={providerSetup.availableModelsQuery.data?.models ?? []}
           availableModelsId="admin-setup-available-models"
@@ -140,12 +140,12 @@ export function SetupPage() {
           actionErrorMessage={providerActionError}
           footerMessage={
             !coreApiReady
-              ? "Reach the remote world API first."
+              ? "请先连通远程世界 API。"
               : providerSetup.providerProbeMutation.data
                 ? providerSetup.providerProbeMutation.data.message
                 : providerSetup.providerSaveMutation.data
-                  ? `Saved provider ${providerSetup.providerSaveMutation.data.model} (${providerSetup.providerSaveMutation.data.mode})`
-                  : "Saving here updates the instance-level provider for this world."
+                  ? `已保存推理服务 ${providerSetup.providerSaveMutation.data.model}（${providerSetup.providerSaveMutation.data.mode}）`
+                  : "这里保存的是当前世界的实例级推理服务配置。"
           }
           onSubmit={providerSetup.submitProviderSave}
           onProbe={providerSetup.submitProviderProbe}
@@ -157,7 +157,7 @@ export function SetupPage() {
       footer={
         <section className="flex flex-wrap gap-3">
           <Link to="/">
-            <Button variant="secondary">Back to Dashboard</Button>
+            <Button variant="secondary">返回总览</Button>
           </Link>
         </section>
       }

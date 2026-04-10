@@ -34,7 +34,7 @@ export function RootLayout() {
       <DesktopRuntimeGuard />
       <div className="relative mx-auto max-w-7xl">
         <div className="mb-6 rounded-[30px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-6 py-5 shadow-[var(--shadow-overlay)]">
-          <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">隐界 Admin</div>
+          <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--text-muted)]">隐界管理后台</div>
           <div className="mt-2 text-3xl font-semibold">管理控制台</div>
 
           {/* Admin Secret 配置 */}
@@ -58,7 +58,7 @@ export function RootLayout() {
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-[color:var(--text-muted)]">
-                <span>Admin Secret: {secret ? "••••••••" : <span className="text-amber-600">未配置</span>}</span>
+                <span>管理密钥：{secret ? "••••••••" : <span className="text-amber-600">未配置</span>}</span>
                 <button className="text-xs underline hover:text-[color:var(--text-primary)]" onClick={() => setEditingSecret(true)}>
                   修改
                 </button>
@@ -68,19 +68,19 @@ export function RootLayout() {
 
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <Link to="/" className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-              Dashboard
+              总览
             </Link>
             <Link to="/characters" className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-              Characters
+              角色
             </Link>
             <Link to="/setup" className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-              Setup
+              设置
             </Link>
             <Link to="/evals" className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-              Evals
+              评测
             </Link>
             <Link to="/reply-logic" className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-              Reply Logic
+              回复逻辑
             </Link>
           </div>
         </div>

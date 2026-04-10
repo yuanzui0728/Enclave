@@ -49,28 +49,28 @@ export function CharactersPage() {
   return (
     <div className="space-y-6">
       <AppHeader
-        eyebrow="Registry"
-        title="Character Registry"
-        description="Edit the social cast that drives direct chats, group consultations, moments, feed reactions, and scene triggers."
+        eyebrow="角色管理"
+        title="角色名册"
+        description="在这里维护驱动私聊、群聊、朋友圈、广场互动和场景触发的角色集合。"
         actions={
           <Link to="/characters/$characterId" params={{ characterId: "new" }}>
-            <Button variant="primary" size="lg">New Character</Button>
+            <Button variant="primary" size="lg">新建角色</Button>
           </Link>
         }
       />
 
       <InlineNotice tone="muted">
-        先补齐角色身份、关系和 expert domains，再进入 Character Editor 细化 prompt、memory 和 reasoning。
+        先补齐角色身份、关系和擅长领域，再进入角色编辑页细化提示词、记忆和推理配置。
       </InlineNotice>
 
-      {charactersQuery.isLoading ? <LoadingBlock label="Loading character registry..." /> : null}
+      {charactersQuery.isLoading ? <LoadingBlock label="正在加载角色名册..." /> : null}
 
       {charactersQuery.isError && charactersQuery.error instanceof Error ? <ErrorBlock message={charactersQuery.error.message} /> : null}
 
       {deleteMutation.isError && deleteMutation.error instanceof Error ? <ErrorBlock message={deleteMutation.error.message} /> : null}
 
       {!charactersQuery.isLoading && !charactersQuery.isError && (charactersQuery.data?.length ?? 0) === 0 ? (
-        <InlineNotice tone="warning">No characters yet. Create the first persona to unlock direct chat, moments, and scene triggers.</InlineNotice>
+        <InlineNotice tone="warning">当前还没有角色。先创建第一个角色，才能启用私聊、朋友圈和场景触发能力。</InlineNotice>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -85,9 +85,9 @@ export function CharactersPage() {
                     <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
                   </div>
                 </div>
-                <p className="mt-4 line-clamp-3 text-sm leading-7 text-[color:var(--text-secondary)]">{character.bio || "No bio yet."}</p>
+                <p className="mt-4 line-clamp-3 text-sm leading-7 text-[color:var(--text-secondary)]">{character.bio || "暂无角色简介。"}</p>
               </div>
-              <StatusPill tone={relationshipTone(character.relationshipType)}>{character.relationshipType}</StatusPill>
+              <StatusPill tone={relationshipTone(character.relationshipType)}>{formatRelationshipType(character.relationshipType)}</StatusPill>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -96,14 +96,14 @@ export function CharactersPage() {
                   key={domain}
                   className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1 text-xs text-[color:var(--text-secondary)]"
                 >
-                  {domain}
+                  {domain === "general" ? "通用" : domain}
                 </span>
               ))}
             </div>
 
             <div className="mt-5 flex items-center justify-between text-xs text-[color:var(--text-muted)]">
-              <div>online: {character.isOnline ? "yes" : "no"}</div>
-              <div>activity: {character.currentActivity ?? "unset"}</div>
+              <div>在线状态：{character.isOnline ? "在线" : "离线"}</div>
+              <div>当前活动：{character.currentActivity ?? "未设置"}</div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-3">
@@ -112,7 +112,7 @@ export function CharactersPage() {
                 params={{ characterId: character.id }}
                 className="inline-flex"
               >
-                <Button variant="secondary" size="sm">Edit</Button>
+                <Button variant="secondary" size="sm">编辑</Button>
               </Link>
               <Button
                 onClick={() => deleteMutation.mutate(character.id)}
@@ -120,7 +120,7 @@ export function CharactersPage() {
                 variant="danger"
                 size="sm"
               >
-                {deletingCharacterId === character.id ? "Deleting..." : "Delete"}
+                {deletingCharacterId === character.id ? "删除中..." : "删除"}
               </Button>
             </div>
           </Card>
@@ -128,6 +128,23 @@ export function CharactersPage() {
       </div>
     </div>
   );
+}
+
+function formatRelationshipType(type: Character["relationshipType"]) {
+  switch (type) {
+    case "family":
+      return "家人";
+    case "friend":
+      return "朋友";
+    case "expert":
+      return "专家";
+    case "mentor":
+      return "导师";
+    case "custom":
+      return "自定义";
+    default:
+      return type;
+  }
 }
 
 function CharacterAvatar({ name, src }: { name: string; src?: string | null }) {

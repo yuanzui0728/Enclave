@@ -160,73 +160,79 @@ export function CharacterEditorPage() {
   return (
     <div className="space-y-6">
       <AppHeader
-        eyebrow="Character Editor"
-        title={isNew ? "New Character" : draft.name || "Edit Character"}
-        description="先补齐基础身份和关系，再完善 prompt、traits、memory 与边界。"
+        eyebrow="角色编辑"
+        title={isNew ? "新建角色" : draft.name || "编辑角色"}
+        description="先补齐基础身份和关系，再完善提示词、特征、记忆与边界。"
         actions={
           <div className="flex flex-wrap gap-3">
             <Link to="/characters">
-              <Button variant="secondary" size="lg">Back</Button>
+              <Button variant="secondary" size="lg">返回</Button>
             </Link>
             <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending} variant="primary" size="lg">
-              {saveMutation.isPending ? "Saving..." : "Save"}
+              {saveMutation.isPending ? "保存中..." : "保存"}
             </Button>
           </div>
         }
       />
 
-      {!isNew && characterQuery.isLoading ? <LoadingBlock label="Loading character draft..." /> : null}
+      {!isNew && characterQuery.isLoading ? <LoadingBlock label="正在加载角色草稿..." /> : null}
 
       {!isNew && characterQuery.isError && characterQuery.error instanceof Error ? <ErrorBlock message={characterQuery.error.message} /> : null}
 
-      {!canSave ? <InlineNotice tone="warning">Name and relationship are required before saving this character.</InlineNotice> : null}
+      {!canSave ? <InlineNotice tone="warning">保存角色前，名称和关系描述为必填项。</InlineNotice> : null}
 
       {saveMutation.isError && saveMutation.error instanceof Error ? <ErrorBlock message={saveMutation.error.message} /> : null}
 
-      {saveMutation.isSuccess ? <InlineNotice tone="success">Character saved. Redirecting back to the registry...</InlineNotice> : null}
+      {saveMutation.isSuccess ? <InlineNotice tone="success">角色已保存，正在返回角色名册...</InlineNotice> : null}
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Basic</SectionHeading>
+            <SectionHeading>基础信息</SectionHeading>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field label="Name" value={draft.name ?? ""} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} />
-              <Field label="Avatar" value={draft.avatar ?? ""} onChange={(value) => setDraft((current) => ({ ...current, avatar: value }))} />
+              <Field label="名称" value={draft.name ?? ""} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} />
+              <Field label="头像" value={draft.avatar ?? ""} onChange={(value) => setDraft((current) => ({ ...current, avatar: value }))} />
               <Field
-                label="Relationship"
+                label="关系描述"
                 value={draft.relationship ?? ""}
                 onChange={(value) => setDraft((current) => ({ ...current, relationship: value }))}
               />
               <SelectField
-                label="Relationship Type"
+                label="关系类型"
                 value={draft.relationshipType ?? "expert"}
                 onChange={(value) => setDraft((current) => ({ ...current, relationshipType: value as Character["relationshipType"] }))}
-                options={["family", "friend", "expert", "mentor", "custom"]}
+                options={[
+                  { value: "family", label: "家人" },
+                  { value: "friend", label: "朋友" },
+                  { value: "expert", label: "专家" },
+                  { value: "mentor", label: "导师" },
+                  { value: "custom", label: "自定义" },
+                ]}
               />
               <Field
-                label="Expert Domains"
+                label="擅长领域"
                 value={listToCsv(draft.expertDomains)}
                 onChange={(value) => setDraft((current) => ({ ...current, expertDomains: csvToList(value) }))}
               />
               <Field
-                label="Trigger Scenes"
+                label="触发场景"
                 value={listToCsv(draft.triggerScenes)}
                 onChange={(value) => setDraft((current) => ({ ...current, triggerScenes: csvToList(value) }))}
               />
             </div>
             <TextAreaField
-              label="Bio"
+              label="简介"
               value={draft.bio ?? ""}
               onChange={(value) => setDraft((current) => ({ ...current, bio: value }))}
             />
             <div className="mt-4 flex flex-wrap gap-3">
               <Toggle
-                label="Online"
+                label="在线"
                 checked={draft.isOnline ?? false}
                 onChange={(checked) => setDraft((current) => ({ ...current, isOnline: checked }))}
               />
               <Toggle
-                label="Template"
+                label="模板"
                 checked={draft.isTemplate ?? false}
                 onChange={(checked) => setDraft((current) => ({ ...current, isTemplate: checked }))}
               />
@@ -234,20 +240,20 @@ export function CharacterEditorPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Prompt and Traits</SectionHeading>
+            <SectionHeading>提示词与特征</SectionHeading>
             <TextAreaField
-              label="Base Prompt"
+              label="基础提示词"
               value={profile.basePrompt ?? ""}
               onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, basePrompt: value } }))}
             />
             <TextAreaField
-              label="System Prompt"
+              label="系统提示词"
               value={profile.systemPrompt ?? ""}
               onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, systemPrompt: value } }))}
             />
             <div className="grid gap-4 md:grid-cols-2">
               <Field
-                label="Speech Patterns"
+                label="说话习惯"
                 value={listToCsv(profile.traits.speechPatterns)}
                 onChange={(value) =>
                   setDraft((current) => ({
@@ -260,7 +266,7 @@ export function CharacterEditorPage() {
                 }
               />
               <Field
-                label="Catchphrases"
+                label="口头禅"
                 value={listToCsv(profile.traits.catchphrases)}
                 onChange={(value) =>
                   setDraft((current) => ({
@@ -273,7 +279,7 @@ export function CharacterEditorPage() {
                 }
               />
               <Field
-                label="Topics of Interest"
+                label="兴趣话题"
                 value={listToCsv(profile.traits.topicsOfInterest)}
                 onChange={(value) =>
                   setDraft((current) => ({
@@ -286,7 +292,7 @@ export function CharacterEditorPage() {
                 }
               />
               <Field
-                label="Emotional Tone"
+                label="情绪基调"
                 value={profile.traits.emotionalTone}
                 onChange={(value) =>
                   setDraft((current) => ({
@@ -304,23 +310,23 @@ export function CharacterEditorPage() {
 
         <div className="space-y-6">
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Save State</SectionHeading>
+            <SectionHeading>保存状态</SectionHeading>
             <div className="mt-4 space-y-3">
-              <MetricCard label="Ready To Save" value={canSave ? "yes" : "no"} />
-              <MetricCard label="Relationship Type" value={draft.relationshipType ?? "expert"} />
-              <MetricCard label="Expert Domains" value={(draft.expertDomains?.length ?? 0) || 0} />
+              <MetricCard label="可保存" value={canSave ? "是" : "否"} />
+              <MetricCard label="关系类型" value={formatRelationshipType(draft.relationshipType ?? "expert")} />
+              <MetricCard label="擅长领域数" value={(draft.expertDomains?.length ?? 0) || 0} />
             </div>
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Reasoning and Memory</SectionHeading>
+            <SectionHeading>推理与记忆</SectionHeading>
             <TextAreaField
-              label="Memory Summary"
+              label="记忆摘要"
               value={profile.memorySummary}
               onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, memorySummary: value } }))}
             />
             <TextAreaField
-              label="Core Memory"
+              label="核心记忆"
               value={profile.memory?.coreMemory ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -336,7 +342,7 @@ export function CharacterEditorPage() {
               }
             />
             <Field
-              label="Forgetting Curve"
+              label="遗忘曲线"
               value={String(profile.memory?.forgettingCurve ?? 70)}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -353,7 +359,7 @@ export function CharacterEditorPage() {
             />
             <div className="mt-4 space-y-3">
               <Toggle
-                label="Enable CoT"
+                label="启用 CoT"
                 checked={profile.reasoningConfig?.enableCoT ?? true}
                 onChange={(checked) =>
                   setDraft((current) => ({
@@ -366,7 +372,7 @@ export function CharacterEditorPage() {
                 }
               />
               <Toggle
-                label="Enable Reflection"
+                label="启用反思"
                 checked={profile.reasoningConfig?.enableReflection ?? true}
                 onChange={(checked) =>
                   setDraft((current) => ({
@@ -379,7 +385,7 @@ export function CharacterEditorPage() {
                 }
               />
               <Toggle
-                label="Enable Routing"
+                label="启用路由"
                 checked={profile.reasoningConfig?.enableRouting ?? true}
                 onChange={(checked) =>
                   setDraft((current) => ({
@@ -395,9 +401,9 @@ export function CharacterEditorPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Identity and Boundaries</SectionHeading>
+            <SectionHeading>身份与边界</SectionHeading>
             <Field
-              label="Occupation"
+              label="职业"
               value={profile.identity?.occupation ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -407,7 +413,7 @@ export function CharacterEditorPage() {
               }
             />
             <TextAreaField
-              label="Background"
+              label="背景"
               value={profile.identity?.background ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -417,7 +423,7 @@ export function CharacterEditorPage() {
               }
             />
             <Field
-              label="Work Style"
+              label="工作风格"
               value={profile.behavioralPatterns?.workStyle ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -430,7 +436,7 @@ export function CharacterEditorPage() {
               }
             />
             <Field
-              label="Social Style"
+              label="社交风格"
               value={profile.behavioralPatterns?.socialStyle ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -443,7 +449,7 @@ export function CharacterEditorPage() {
               }
             />
             <TextAreaField
-              label="Expertise Description"
+              label="能力边界说明"
               value={profile.cognitiveBoundaries?.expertiseDescription ?? ""}
               onChange={(value) =>
                 setDraft((current) => ({
@@ -458,22 +464,22 @@ export function CharacterEditorPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>Preview</SectionHeading>
+            <SectionHeading>预览</SectionHeading>
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--surface-secondary)] text-xl">
                 {draft.avatar || draft.name?.slice(0, 1) || "?"}
               </div>
               <div>
-                <div className="text-lg font-semibold text-[color:var(--text-primary)]">{draft.name || "Unnamed Character"}</div>
-                <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{draft.relationship || "Relationship pending"}</div>
+                <div className="text-lg font-semibold text-[color:var(--text-primary)]">{draft.name || "未命名角色"}</div>
+                <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{draft.relationship || "关系待填写"}</div>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {(draft.expertDomains?.length ? draft.expertDomains : ["general"]).map((domain) => (
-                <StatusPill key={domain}>{domain}</StatusPill>
+                <StatusPill key={domain}>{domain === "general" ? "通用" : domain}</StatusPill>
               ))}
             </div>
-            <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">{draft.bio || "Add a bio to describe how this character should appear in the world."}</p>
+            <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">{draft.bio || "补充角色简介，说明它应当如何出现在这个世界里。"}</p>
           </Card>
         </div>
       </div>
@@ -589,7 +595,7 @@ function SelectField({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  options: string[];
+  options: Array<string | { value: string; label: string }>;
 }) {
   return (
     <label className="block">
@@ -599,8 +605,8 @@ function SelectField({
         onChange={(event) => onChange(event.target.value)}
       >
         {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+          <option key={typeof option === "string" ? option : option.value} value={typeof option === "string" ? option : option.value}>
+            {typeof option === "string" ? option : option.label}
           </option>
         ))}
       </UiSelectField>
@@ -618,4 +624,21 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return <ToggleChip label={label} checked={checked} onChange={(event) => onChange(event.target.checked)} />;
+}
+
+function formatRelationshipType(type: Character["relationshipType"]) {
+  switch (type) {
+    case "family":
+      return "家人";
+    case "friend":
+      return "朋友";
+    case "expert":
+      return "专家";
+    case "mentor":
+      return "导师";
+    case "custom":
+      return "自定义";
+    default:
+      return type;
+  }
 }

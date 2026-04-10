@@ -61,10 +61,10 @@ export function DesktopRuntimeGuard() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(6,9,16,0.96),rgba(9,12,20,0.98))] px-6">
       <div className="w-full max-w-xl rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
-        <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">Desktop Boot</div>
-        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">Local Control Plane Is Waiting For Core API</div>
+        <div className="text-xs uppercase tracking-[0.28em] text-[color:var(--brand-secondary)]">桌面启动中</div>
+        <div className="mt-4 text-3xl font-semibold text-[color:var(--text-primary)]">本地控制台正在等待 Core API</div>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-[color:var(--text-secondary)]">
-          The desktop shell is checking whether the local Rust runtime is reachable. If it is not ready yet, the shell will try to launch it automatically before this admin surface continues.
+          桌面壳正在检查本地 Rust 运行时是否可达。如果尚未就绪，壳层会先尝试自动拉起，再继续进入管理后台。
         </p>
 
         <div className="mt-5 grid gap-3">
@@ -72,10 +72,10 @@ export function DesktopRuntimeGuard() {
             状态：{startMutation.isPending ? "正在启动 Core API..." : status?.message ?? "等待桌面状态..."}
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-            地址：{status?.baseUrl ?? runtimeContextQuery.data?.coreApiBaseUrl ?? "loading"}
+            地址：{status?.baseUrl ?? runtimeContextQuery.data?.coreApiBaseUrl ?? "加载中"}
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-            目录：{runtimeContextQuery.data?.runtimeDataDir ?? "loading"}
+            目录：{runtimeContextQuery.data?.runtimeDataDir ?? "加载中"}
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
             诊断：{runtimeDiagnosticsQuery.data ? formatDesktopDiagnostics(runtimeDiagnosticsQuery.data) : "正在读取桌面诊断..."}
@@ -103,7 +103,7 @@ export function DesktopRuntimeGuard() {
             to="/setup"
             className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
-            打开 Setup
+            打开设置页
           </Link>
         </div>
 
@@ -133,38 +133,38 @@ function formatDesktopDiagnostics(values: {
   summary: string;
 }) {
   const packageStatus = values.linuxMissingPackages.length
-    ? `missing=${values.linuxMissingPackages.join(", ")}`
-    : "linux deps ok";
+    ? `缺失依赖=${values.linuxMissingPackages.join(", ")}`
+    : "Linux 依赖正常";
   const sidecarStatus = formatCommandSource(values.coreApiCommandSource, values.bundledCoreApiExists);
   const failureStatus =
     values.diagnosticsStatus === "port-occupied"
-      ? "port occupied"
+      ? "端口已占用"
       : values.diagnosticsStatus === "bundled-sidecar-missing"
-        ? "bundled sidecar missing"
+        ? "内置 sidecar 缺失"
         : values.diagnosticsStatus === "spawn-failed"
-          ? "spawn failed"
+          ? "拉起失败"
           : values.diagnosticsStatus === "health-probe-failed"
-            ? "health probe failed"
-            : values.diagnosticsStatus ?? "unknown";
+            ? "健康探测失败"
+            : values.diagnosticsStatus ?? "未知";
   const managedStatus = values.managedByDesktopShell
-    ? `managed${values.managedChildPid ? ` pid=${values.managedChildPid}` : ""}`
-    : "unmanaged";
-  const logPath = values.desktopLogPath ? ` · log=${values.desktopLogPath}` : "";
-  const lastError = values.lastCoreApiError ? ` · last-error=${values.lastCoreApiError}` : "";
+    ? `由桌面壳托管${values.managedChildPid ? ` pid=${values.managedChildPid}` : ""}`
+    : "未由桌面壳托管";
+  const logPath = values.desktopLogPath ? ` · 日志=${values.desktopLogPath}` : "";
+  const lastError = values.lastCoreApiError ? ` · 最近错误=${values.lastCoreApiError}` : "";
 
-  return `${values.platform} · ${values.summary} · ${values.coreApiCommandResolved ? "command ok" : "command missing"} · ${sidecarStatus} · ${failureStatus} · ${managedStatus} · ${packageStatus}${values.coreApiPortOccupied ? " · port-in-use" : ""}${logPath}${lastError}`;
+  return `${values.platform} · ${values.summary} · ${values.coreApiCommandResolved ? "命令正常" : "命令缺失"} · ${sidecarStatus} · ${failureStatus} · ${managedStatus} · ${packageStatus}${values.coreApiPortOccupied ? " · 端口占用中" : ""}${logPath}${lastError}`;
 }
 
 function formatCommandSource(source?: string, bundledExists?: boolean) {
   if (source === "bundled" || source === "bundled-sidecar") {
-    return "bundled sidecar";
+    return "内置 sidecar";
   }
   if (source === "env" || source === "env-override") {
-    return "env override";
+    return "环境变量覆盖";
   }
   if (source === "path" || source === "path-lookup") {
-    return bundledExists ? "path lookup (bundled missing)" : "path lookup";
+    return bundledExists ? "PATH 查找（内置 sidecar 缺失）" : "PATH 查找";
   }
 
-  return bundledExists ? "sidecar ready" : "sidecar missing";
+  return bundledExists ? "sidecar 已就绪" : "sidecar 缺失";
 }
