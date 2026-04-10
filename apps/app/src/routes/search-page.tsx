@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { DesktopSearchWorkspace } from "../features/search/desktop-search-workspace";
 import {
   clearSearchHistory,
@@ -7,6 +7,10 @@ import {
   pushSearchHistory,
   removeSearchHistory,
 } from "../features/search/search-history";
+import {
+  buildSearchRouteHash,
+  parseSearchRouteState,
+} from "../features/search/search-route-state";
 import { MobileSearchWorkspace } from "../features/search/mobile-search-workspace";
 import type {
   SearchCategory,
@@ -18,8 +22,12 @@ import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 export function SearchPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
-  const [searchText, setSearchText] = useState("");
-  const [activeCategory, setActiveCategory] = useState<SearchCategory>("all");
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const routeState = parseSearchRouteState(hash);
+  const [searchText, setSearchText] = useState(routeState.keyword);
+  const [activeCategory, setActiveCategory] = useState<SearchCategory>(
+    routeState.category,
+  );
   const [history, setHistory] = useState(() => loadSearchHistory());
   const {
     error,
@@ -31,6 +39,33 @@ export function SearchPage() {
     scopeCounts,
     searchingMessages,
   } = useSearchIndex(searchText, activeCategory);
+
+  useEffect(() => {
+    if (searchText !== routeState.keyword) {
+      setSearchText(routeState.keyword);
+    }
+    if (activeCategory !== routeState.category) {
+      setActiveCategory(routeState.category);
+    }
+  }, [activeCategory, routeState.category, routeState.keyword, searchText]);
+
+  useEffect(() => {
+    const nextHash = buildSearchRouteHash({
+      category: activeCategory,
+      keyword: searchText,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === (nextHash ?? "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/search",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [activeCategory, hash, navigate, searchText]);
 
   function handleCommitSearch(keyword: string) {
     setHistory(pushSearchHistory(keyword));
