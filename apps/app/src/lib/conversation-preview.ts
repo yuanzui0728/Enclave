@@ -36,6 +36,21 @@ export function getConversationPreviewParts(
   );
 
   if (!lastMessage) {
+    if (
+      conversation.lastMessage &&
+      localMessageActionState.recalledMessageIds.includes(
+        conversation.lastMessage.id,
+      )
+    ) {
+      return {
+        prefix: "",
+        text: getConversationRecalledPreviewText(
+          conversation,
+          conversation.lastMessage,
+        ),
+      };
+    }
+
     return {
       prefix: "",
       text: conversation.lastMessage
@@ -90,4 +105,19 @@ export function getConversationOpenFallback(
   return isPersistedGroupConversation(conversation)
     ? "打开群聊查看最近消息。"
     : "打开这个会话查看最近聊天记录。";
+}
+
+function getConversationRecalledPreviewText(
+  conversation: ConversationListItem,
+  lastMessage: NonNullable<ConversationListItem["lastMessage"]>,
+) {
+  if (lastMessage.senderType === "user") {
+    return "你撤回了一条消息";
+  }
+
+  if (isPersistedGroupConversation(conversation)) {
+    return `${lastMessage.senderName || "群成员"}撤回了一条消息`;
+  }
+
+  return "对方撤回了一条消息";
 }
