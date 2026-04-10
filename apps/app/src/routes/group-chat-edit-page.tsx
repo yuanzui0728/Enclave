@@ -147,6 +147,17 @@ function GroupChatEditPage({
       {groupQuery.data ? (
         <>
           <ChatDetailsSection
+            title={mode === "name" ? "当前内容" : "当前昵称"}
+            variant="wechat"
+          >
+            <div className="px-4 py-4">
+              <div className="rounded-[10px] border border-black/6 bg-[#f7f7f7] px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)]">
+                {initialValue.trim() || "暂未设置"}
+              </div>
+            </div>
+          </ChatDetailsSection>
+
+          <ChatDetailsSection
             title={mode === "name" ? "修改群聊名称" : "修改群昵称"}
             variant="wechat"
           >
@@ -157,12 +168,15 @@ function GroupChatEditPage({
                 placeholder={
                   mode === "name" ? "请输入群聊名称" : "请输入我在本群的昵称"
                 }
-                className="h-12 w-full rounded-[12px] border border-black/8 bg-[#f7f7f7] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="h-11 w-full rounded-[10px] border border-black/8 bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
-              <div className="mt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
-                {mode === "name"
-                  ? "群聊名称会同步显示在聊天顶部、消息列表和群信息页。"
-                  : "这个昵称会显示在群成员资料里，也会影响群聊里的昵称展示。"}
+              <div className="mt-3 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+                <span>
+                  {mode === "name"
+                    ? "群聊名称会同步显示在聊天顶部、消息列表和群信息页。"
+                    : "这个昵称会显示在群成员资料里，也会影响群聊里的昵称展示。"}
+                </span>
+                <span>{trimmedDraft.length} 字</span>
               </div>
             </div>
           </ChatDetailsSection>
@@ -181,7 +195,7 @@ function GroupChatEditPage({
 
                 saveNicknameMutation.mutate(trimmedDraft);
               }}
-              className="w-full rounded-2xl"
+              className="h-10 w-full rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
             >
               {saveMutation.isPending ? "正在保存..." : "保存"}
             </Button>
