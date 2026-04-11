@@ -108,7 +108,7 @@ type NormalizedCropRect = {
 };
 
 type ScreenshotSelectionDraft = {
-  mode: "crop" | "rect" | "arrow";
+  mode: "crop" | "rect" | "arrow" | "text";
   anchorX: number;
   anchorY: number;
   currentX: number;
@@ -121,12 +121,13 @@ type ScreenshotAnnotationColor = "amber" | "cyan" | "rose" | "lime";
 
 type ScreenshotAnnotation = {
   id: string;
-  kind: "rect" | "arrow";
+  kind: "rect" | "arrow" | "text";
   color: ScreenshotAnnotationColor;
   x1: number;
   y1: number;
   x2: number;
   y2: number;
+  text?: string;
 };
 
 const SCREENSHOT_ANNOTATION_PALETTE = [
@@ -227,7 +228,7 @@ export function ChatComposer({
   const [desktopScreenshotCrop, setDesktopScreenshotCrop] =
     useState<NormalizedCropRect | null>(null);
   const [desktopScreenshotTool, setDesktopScreenshotTool] = useState<
-    "crop" | "rect" | "arrow"
+    "crop" | "rect" | "arrow" | "text"
   >("crop");
   const [desktopScreenshotAnnotationColor, setDesktopScreenshotAnnotationColor] =
     useState<ScreenshotAnnotationColor>("amber");
@@ -1460,20 +1461,26 @@ export function ChatComposer({
       if (current.mode === "crop") {
         setDesktopScreenshotCrop(validSelection);
       } else if (
-        (current.mode === "rect" && validSelection) ||
+        ((current.mode === "rect" || current.mode === "text") &&
+          validSelection) ||
         (current.mode === "arrow" && validArrow)
       ) {
         const rectSelection = validSelection;
         const nextAnnotation =
-          current.mode === "rect" && rectSelection
+          (current.mode === "rect" || current.mode === "text") && rectSelection
             ? {
                 id: createScreenshotAnnotationId(),
-                kind: "rect" as const,
+                kind:
+                  current.mode === "text"
+                    ? ("text" as const)
+                    : ("rect" as const),
                 color: desktopScreenshotAnnotationColor,
                 x1: rectSelection.x,
                 y1: rectSelection.y,
                 x2: rectSelection.x + rectSelection.width,
                 y2: rectSelection.y + rectSelection.height,
+                text:
+                  current.mode === "text" ? "输入文字" : undefined,
               }
             : {
                 id: createScreenshotAnnotationId(),
@@ -1614,6 +1621,32 @@ export function ChatComposer({
       ),
       {
         selectedAnnotationId: null,
+      },
+    );
+  };
+
+  const selectedScreenshotTextAnnotation = desktopScreenshotAnnotations.find(
+    (annotation) =>
+      annotation.id === desktopScreenshotSelectedAnnotationId &&
+      annotation.kind === "text",
+  );
+
+  const handleUpdateSelectedScreenshotText = (text: string) => {
+    if (!selectedScreenshotTextAnnotation) {
+      return;
+    }
+
+    commitDesktopScreenshotAnnotations(
+      desktopScreenshotAnnotations.map((annotation) =>
+        annotation.id === selectedScreenshotTextAnnotation.id
+          ? {
+              ...annotation,
+              text,
+            }
+          : annotation,
+      ),
+      {
+        selectedAnnotationId: selectedScreenshotTextAnnotation.id,
       },
     );
   };
@@ -1938,6 +1971,7 @@ export function ChatComposer({
             onDeleteSelectedAnnotation={handleDeleteSelectedScreenshotAnnotation}
             onRedoAnnotation={handleRedoScreenshotAnnotation}
             onSelectAnnotation={handleSelectScreenshotAnnotation}
+            onSelectedTextChange={handleUpdateSelectedScreenshotText}
             onUndoAnnotation={handleUndoScreenshotAnnotation}
             onPointerDown={handleDesktopScreenshotPointerDown}
             onPointerMove={handleDesktopScreenshotPointerMove}
@@ -1961,6 +1995,7 @@ export function ChatComposer({
             onCopyCropped={() => {
               void handleCopyDesktopScreenshot("cropped");
             }}
+            selectedTextValue={selectedScreenshotTextAnnotation?.text ?? ""}
           />
         ) : null}
         {replyPreview ? (
@@ -2707,8 +2742,10 @@ function DesktopScreenshotEditor({
   onDeleteSelectedAnnotation,
   onRedoAnnotation,
   onSelectAnnotation,
+  onSelectedTextChange,
   onUndoAnnotation,
   selectedAnnotationId,
+  selectedTextValue,
 }: {
   annotationColor: ScreenshotAnnotationColor;
   annotations: ScreenshotAnnotation[];
@@ -2720,7 +2757,7 @@ function DesktopScreenshotEditor({
   notice: string | null;
   pending: boolean;
   selection: ScreenshotSelectionDraft | null;
-  tool: "crop" | "rect" | "arrow";
+  tool: "crop" | "rect" | "arrow" | "text";
   onCancel: () => void;
   onClearAnnotations: () => void;
   onClearCrop: () => void;
@@ -2742,12 +2779,14 @@ function DesktopScreenshotEditor({
   onSendCropped: () => void;
   onSendOriginal: () => void;
   onAnnotationColorChange: (color: ScreenshotAnnotationColor) => void;
-  onToolChange: (tool: "crop" | "rect" | "arrow") => void;
+  onToolChange: (tool: "crop" | "rect" | "arrow" | "text") => void;
   onDeleteSelectedAnnotation: () => void;
   onRedoAnnotation: () => void;
   onSelectAnnotation: (annotationId: string) => void;
+  onSelectedTextChange: (text: string) => void;
   onUndoAnnotation: () => void;
   selectedAnnotationId: string | null;
+  selectedTextValue: string;
 }) {
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const [previewViewportSize, setPreviewViewportSize] = useState<{
@@ -2797,6 +2836,13 @@ function DesktopScreenshotEditor({
     previewZoom > 1 && Boolean(previewSpacePressed || previewPanDrag);
   const activeAnnotationPalette = getScreenshotAnnotationPaletteEntry(
     annotationColor,
+  );
+  const selectedTextAnnotationActive = Boolean(
+    selectedAnnotationId &&
+      annotations.some(
+        (annotation) =>
+          annotation.id === selectedAnnotationId && annotation.kind === "text",
+      ),
   );
 
   useEffect(() => {
@@ -3074,6 +3120,11 @@ function DesktopScreenshotEditor({
                   active={tool === "arrow"}
                   onClick={() => onToolChange("arrow")}
                 />
+                <DesktopScreenshotToolButton
+                  label="文字"
+                  active={tool === "text"}
+                  onClick={() => onToolChange("text")}
+                />
                 {tool !== "crop" ? (
                   <div className="ml-1 flex items-center gap-2 rounded-full bg-white/6 px-2 py-1">
                     {SCREENSHOT_ANNOTATION_PALETTE.map((palette) => (
@@ -3092,6 +3143,15 @@ function DesktopScreenshotEditor({
                       />
                     ))}
                   </div>
+                ) : null}
+                {selectedTextAnnotationActive ? (
+                  <input
+                    type="text"
+                    value={selectedTextValue}
+                    onChange={(event) => onSelectedTextChange(event.target.value)}
+                    placeholder="输入标注文字"
+                    className="ml-2 h-9 min-w-[180px] rounded-[10px] border border-white/12 bg-white/8 px-3 text-[12px] text-white outline-none placeholder:text-white/28 focus:border-white/30"
+                  />
                 ) : null}
               </div>
 
@@ -3339,6 +3399,41 @@ function DesktopScreenshotEditor({
                             }
                             strokeWidth="0.006"
                           />
+                        ) : annotation.kind === "text" ? (
+                          <g key={annotation.id}>
+                            <rect
+                              x={Math.min(annotation.x1, annotation.x2)}
+                              y={Math.min(annotation.y1, annotation.y2)}
+                              width={Math.abs(annotation.x2 - annotation.x1)}
+                              height={Math.abs(annotation.y2 - annotation.y1)}
+                              rx="0.01"
+                              fill={
+                                getScreenshotAnnotationPaletteEntry(
+                                  annotation.color,
+                                ).fill
+                              }
+                              stroke="rgba(255,255,255,0.12)"
+                              strokeWidth="0.003"
+                            />
+                            {buildScreenshotTextPreviewLines(annotation).map(
+                              (line, index) => (
+                                <text
+                                  key={`${annotation.id}-${index}`}
+                                  x={line.x}
+                                  y={line.y}
+                                  fill={
+                                    getScreenshotAnnotationPaletteEntry(
+                                      annotation.color,
+                                    ).stroke
+                                  }
+                                  fontSize={line.fontSize}
+                                  fontWeight="600"
+                                >
+                                  {line.text}
+                                </text>
+                              ),
+                            )}
+                          </g>
                         ) : (
                           <g key={annotation.id}>
                             <line
@@ -3399,7 +3494,7 @@ function DesktopScreenshotEditor({
                       className="absolute inset-0 h-full w-full"
                     >
                       {annotations.map((annotation) =>
-                        annotation.kind === "rect" ? (
+                        annotation.kind === "rect" || annotation.kind === "text" ? (
                           <rect
                             key={`hit-${annotation.id}`}
                             x={Math.min(annotation.x1, annotation.x2)}
@@ -3450,7 +3545,10 @@ function DesktopScreenshotEditor({
                           return null;
                         }
 
-                        if (annotation.kind === "rect") {
+                        if (
+                          annotation.kind === "rect" ||
+                          annotation.kind === "text"
+                        ) {
                           return (
                             <rect
                               key={`selected-${annotation.id}`}
@@ -3531,7 +3629,9 @@ function DesktopScreenshotEditor({
                 : "拖拽图片区域即可创建裁剪选区。"
               : tool === "rect"
                 ? "拖拽即可添加高亮矩形框。"
-                : "拖拽即可添加箭头标注。"}
+                : tool === "arrow"
+                  ? "拖拽即可添加箭头标注。"
+                  : "拖拽框选文字区域，随后在工具栏输入内容。"}
           </div>
 
           <div className="flex items-center gap-2">
@@ -4026,6 +4126,44 @@ function drawScreenshotAnnotations(
       continue;
     }
 
+    if (annotation.kind === "text") {
+      const rect = projectNormalizedRectToCanvas(annotation, options);
+      if (!rect) {
+        continue;
+      }
+
+      const lines = buildScreenshotTextCanvasLines(annotation, rect.width);
+      const fontSize = resolveScreenshotTextCanvasFontSize(rect);
+      const lineHeight = fontSize * 1.35;
+      const paddingX = Math.max(10, fontSize * 0.45);
+      const paddingY = Math.max(8, fontSize * 0.35);
+      const boxHeight = Math.max(
+        rect.height,
+        paddingY * 2 + lineHeight * Math.max(1, lines.length),
+      );
+
+      context.save();
+      context.fillStyle = palette.fill;
+      context.strokeStyle = "rgba(255,255,255,0.18)";
+      context.lineWidth = Math.max(1.5, Math.round(options.width * 0.0016));
+      roundRect(context, rect.x, rect.y, rect.width, boxHeight, 12);
+      context.fill();
+      context.stroke();
+      context.fillStyle = palette.stroke;
+      context.font = `600 ${fontSize}px sans-serif`;
+      context.textBaseline = "top";
+      for (const [index, line] of lines.entries()) {
+        context.fillText(
+          line,
+          rect.x + paddingX,
+          rect.y + paddingY + index * lineHeight,
+          Math.max(0, rect.width - paddingX * 2),
+        );
+      }
+      context.restore();
+      continue;
+    }
+
     const arrow = projectNormalizedLineToCanvas(annotation, options);
     if (!arrow) {
       continue;
@@ -4079,9 +4217,122 @@ function areScreenshotAnnotationsEqual(
         annotation.x1 === right[index]?.x1 &&
         annotation.y1 === right[index]?.y1 &&
         annotation.x2 === right[index]?.x2 &&
-        annotation.y2 === right[index]?.y2,
+        annotation.y2 === right[index]?.y2 &&
+        annotation.text === right[index]?.text,
     )
   );
+}
+
+function buildScreenshotTextPreviewLines(annotation: ScreenshotAnnotation) {
+  const rect = getScreenshotAnnotationRect(annotation);
+  const fontSize = resolveScreenshotTextPreviewFontSize(rect);
+  const paddingX = Math.max(0.012, fontSize * 0.42);
+  const paddingY = Math.max(0.01, fontSize * 0.35);
+  const maxWidth = Math.max(0.04, rect.width - paddingX * 2);
+  const maxLines = Math.max(
+    1,
+    Math.floor((rect.height - paddingY * 2) / (fontSize * 1.32)),
+  );
+
+  return buildWrappedScreenshotText(annotation.text ?? "输入文字", maxWidth, {
+    averageCharWidth: fontSize * 0.62,
+    maxLines,
+  }).map((line, index) => ({
+    text: line,
+    x: rect.x + paddingX,
+    y: rect.y + paddingY + fontSize + index * fontSize * 1.32,
+    fontSize,
+  }));
+}
+
+function buildScreenshotTextCanvasLines(
+  annotation: ScreenshotAnnotation,
+  width: number,
+) {
+  const fontSize = resolveScreenshotTextCanvasFontSize({
+    width,
+    height: Math.abs(annotation.y2 - annotation.y1) * 1000,
+  });
+  const maxWidth = Math.max(24, width - Math.max(20, fontSize * 0.9));
+  const maxLines = Math.max(
+    1,
+    Math.floor(
+      (Math.abs(annotation.y2 - annotation.y1) * 1000 - fontSize * 0.7) /
+        (fontSize * 1.35),
+    ),
+  );
+
+  return buildWrappedScreenshotText(annotation.text ?? "输入文字", maxWidth, {
+    averageCharWidth: fontSize * 0.62,
+    maxLines,
+  });
+}
+
+function buildWrappedScreenshotText(
+  value: string,
+  maxWidth: number,
+  options: {
+    averageCharWidth: number;
+    maxLines: number;
+  },
+) {
+  const source = value.trim() || "输入文字";
+  const maxCharsPerLine = Math.max(
+    1,
+    Math.floor(maxWidth / Math.max(1, options.averageCharWidth)),
+  );
+  const rawLines = source.split("\n");
+  const wrapped: string[] = [];
+
+  for (const rawLine of rawLines) {
+    const line = rawLine || " ";
+    for (let index = 0; index < line.length; index += maxCharsPerLine) {
+      wrapped.push(line.slice(index, index + maxCharsPerLine));
+      if (wrapped.length >= options.maxLines) {
+        return wrapped;
+      }
+    }
+  }
+
+  return wrapped.slice(0, options.maxLines);
+}
+
+function getScreenshotAnnotationRect(annotation: ScreenshotAnnotation) {
+  return {
+    x: Math.min(annotation.x1, annotation.x2),
+    y: Math.min(annotation.y1, annotation.y2),
+    width: Math.abs(annotation.x2 - annotation.x1),
+    height: Math.abs(annotation.y2 - annotation.y1),
+  };
+}
+
+function resolveScreenshotTextPreviewFontSize(rect: NormalizedCropRect) {
+  return clamp(Math.min(rect.height * 0.45, 0.04), 0.016, 0.04);
+}
+
+function resolveScreenshotTextCanvasFontSize(rect: {
+  width: number;
+  height: number;
+}) {
+  return clamp(Math.min(rect.height * 0.42, 30), 14, 30);
+}
+
+function roundRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const nextRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + nextRadius, y);
+  context.arcTo(x + width, y, x + width, y + height, nextRadius);
+  context.arcTo(x + width, y + height, x, y + height, nextRadius);
+  context.arcTo(x, y + height, x, y, nextRadius);
+  context.arcTo(x, y, x + width, y, nextRadius);
+  context.closePath();
 }
 
 function projectNormalizedRectToCanvas(
