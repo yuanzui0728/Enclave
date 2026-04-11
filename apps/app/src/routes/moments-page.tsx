@@ -11,15 +11,14 @@ import {
 } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
-  TextAreaField,
   TextField,
 } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import { SocialPostCard } from "../components/social-post-card";
 import {
   readDesktopFavorites,
@@ -249,12 +248,13 @@ export function MomentsPage() {
   }
 
   return (
-    <AppPage>
+    <AppPage className="space-y-0 px-0 pb-0 pt-0">
       {isDiscoverSubPage ? (
         <TabPageTopBar
           title="朋友圈"
           subtitle="仅好友可见"
           titleAlign="center"
+          className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
           leftActions={
             <Button
               onClick={() =>
@@ -264,188 +264,184 @@ export function MomentsPage() {
               }
               variant="ghost"
               size="icon"
-              className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+              className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
             >
               <ArrowLeft size={18} />
             </Button>
           }
         />
       ) : (
-        <TabPageTopBar title="朋友圈" subtitle="仅好友可见" />
-      )}
-      <AppSection className="space-y-4">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            发一条朋友圈
-          </div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            发到朋友圈，只有好友能看到这条内容，适合留住更近一点的生活片段。
-          </div>
-        </div>
-        <TextAreaField
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="写点只想留给好友看的内容..."
-          className="min-h-28 resize-none"
+        <TabPageTopBar
+          title="朋友圈"
+          subtitle="仅好友可见"
+          className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         />
-        <Button
+      )}
+
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        <MobileSocialComposerCard
+          title="发一条朋友圈"
+          description="只让好友看到这一刻，比公开动态更近一点，也更像日常分享。"
+          scopeLabel="好友可见"
+          scopeClassName="bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]"
+          value={text}
+          onChange={setText}
+          placeholder="写点只想留给好友看的内容..."
+          helperText="发出后仅好友可见，适合留住更私密一点的生活片段。"
+          submitLabel="发布"
+          submittingLabel="正在发布..."
+          pending={createMutation.isPending}
           disabled={!text.trim() || createMutation.isPending}
-          onClick={() => createMutation.mutate()}
-          variant="primary"
-        >
-          {createMutation.isPending ? "正在发布..." : "发布"}
-        </Button>
-        {createMutation.isError && createMutation.error instanceof Error ? (
-          <ErrorBlock message={createMutation.error.message} />
-        ) : null}
-        <InlineNotice tone="muted">仅好友可见。</InlineNotice>
-      </AppSection>
+          errorMessage={
+            createMutation.isError && createMutation.error instanceof Error
+              ? createMutation.error.message
+              : null
+          }
+          onSubmit={() => createMutation.mutate()}
+        />
 
-      <AppSection className="space-y-4">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            最近动态
+        <section className="space-y-3">
+          <div className="px-1">
+            <div className="text-[13px] text-[#8c8c8c]">最近动态</div>
+            <div className="mt-1 text-[12px] leading-5 text-[#8c8c8c]">
+              这里只展示你和好友之间的朋友圈内容，互动也留在熟人范围里。
+            </div>
           </div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            这里只展示你和好友之间的朋友圈内容，评论和互动都留在熟人范围里。
-          </div>
-        </div>
-        {successNotice ? (
-          <InlineNotice tone="success">{successNotice}</InlineNotice>
-        ) : null}
-        {momentsQuery.isLoading ? (
-          <LoadingBlock label="正在读取朋友圈..." />
-        ) : null}
+          {successNotice ? (
+            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          ) : null}
+          {momentsQuery.isLoading ? (
+            <LoadingBlock label="正在读取朋友圈..." />
+          ) : null}
+          {momentsQuery.isError && momentsQuery.error instanceof Error ? (
+            <ErrorBlock message={momentsQuery.error.message} />
+          ) : null}
 
-        {momentsQuery.isError && momentsQuery.error instanceof Error ? (
-          <ErrorBlock message={momentsQuery.error.message} />
-        ) : null}
+          {visibleMoments.map((moment) => {
+            const sourceId = `moment-${moment.id}`;
+            const collected = favoriteSourceIds.includes(sourceId);
 
-        {visibleMoments.map((moment) => {
-          const sourceId = `moment-${moment.id}`;
-          const collected = favoriteSourceIds.includes(sourceId);
-
-          return (
-            <SocialPostCard
-              key={moment.id}
-              authorName={moment.authorName}
-              authorAvatar={moment.authorAvatar}
-              meta={formatTimestamp(moment.postedAt)}
-              body={
-                <>
-                  {moment.authorType === "user" ? (
-                    <div className="mb-3 inline-flex rounded-full bg-[rgba(47,122,63,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#2f7a3f]">
-                      好友可见
-                    </div>
-                  ) : null}
-                  <div>{moment.text}</div>
-                </>
-              }
-              summary={`${moment.likeCount} 赞 · ${moment.commentCount} 评论`}
-              actions={
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    disabled={likeMutation.isPending}
-                    onClick={() => likeMutation.mutate(moment.id)}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    {pendingLikeMomentId === moment.id ? "处理中..." : "点赞"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      const nextFavorites = collected
-                        ? removeDesktopFavorite(sourceId)
-                        : upsertDesktopFavorite({
-                            id: `favorite-${sourceId}`,
-                            sourceId,
-                            category: "moments",
-                            title: moment.authorName,
-                            description: moment.text,
-                            meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
-                            to: "/tabs/moments",
-                            badge: "朋友圈",
-                            avatarName: moment.authorName,
-                            avatarSrc: moment.authorAvatar,
-                          });
-
-                      setFavoriteSourceIds(
-                        nextFavorites.map((favorite) => favorite.sourceId),
-                      );
-                    }}
-                  >
-                    {collected ? "取消收藏" : "收藏"}
-                  </Button>
-                </div>
-              }
-              secondary={
-                moment.comments.length > 0 ? (
-                  <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
-                    {moment.comments.slice(-3).map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="text-xs leading-6 text-[color:var(--text-secondary)]"
-                      >
-                        <span className="text-[color:var(--text-primary)]">
-                          {comment.authorName}
-                        </span>
-                        {`：${comment.text}`}
+            return (
+              <SocialPostCard
+                key={moment.id}
+                authorName={moment.authorName}
+                authorAvatar={moment.authorAvatar}
+                meta={formatTimestamp(moment.postedAt)}
+                body={
+                  <>
+                    {moment.authorType === "user" ? (
+                      <div className="mb-3 inline-flex rounded-full bg-[rgba(47,122,63,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#2f7a3f]">
+                        好友可见
                       </div>
-                    ))}
+                    ) : null}
+                    <div>{moment.text}</div>
+                  </>
+                }
+                summary={`${moment.likeCount} 赞 · ${moment.commentCount} 评论`}
+                actions={
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      disabled={likeMutation.isPending}
+                      onClick={() => likeMutation.mutate(moment.id)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {pendingLikeMomentId === moment.id ? "处理中..." : "点赞"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const nextFavorites = collected
+                          ? removeDesktopFavorite(sourceId)
+                          : upsertDesktopFavorite({
+                              id: `favorite-${sourceId}`,
+                              sourceId,
+                              category: "moments",
+                              title: moment.authorName,
+                              description: moment.text,
+                              meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
+                              to: "/tabs/moments",
+                              badge: "朋友圈",
+                              avatarName: moment.authorName,
+                              avatarSrc: moment.authorAvatar,
+                            });
+
+                        setFavoriteSourceIds(
+                          nextFavorites.map((favorite) => favorite.sourceId),
+                        );
+                      }}
+                    >
+                      {collected ? "取消收藏" : "收藏"}
+                    </Button>
                   </div>
-                ) : null
-              }
-              composer={
-                <>
-                  <TextField
-                    value={commentDrafts[moment.id] ?? ""}
-                    onChange={(event) =>
-                      setCommentDrafts((current) => ({
-                        ...current,
-                        [moment.id]: event.target.value,
-                      }))
-                    }
-                    placeholder="写评论..."
-                    className="min-w-0 flex-1 rounded-full py-2 text-xs"
-                  />
-                  <Button
-                    disabled={
-                      !(commentDrafts[moment.id] ?? "").trim() ||
-                      commentMutation.isPending
-                    }
-                    onClick={() => commentMutation.mutate(moment.id)}
-                    variant="primary"
-                    size="sm"
-                  >
-                    {pendingCommentMomentId === moment.id
-                      ? "发送中..."
-                      : "发送"}
-                  </Button>
-                </>
-              }
+                }
+                secondary={
+                  moment.comments.length > 0 ? (
+                    <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
+                      {moment.comments.slice(-3).map((comment) => (
+                        <div
+                          key={comment.id}
+                          className="text-xs leading-6 text-[color:var(--text-secondary)]"
+                        >
+                          <span className="text-[color:var(--text-primary)]">
+                            {comment.authorName}
+                          </span>
+                          {`：${comment.text}`}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null
+                }
+                composer={
+                  <>
+                    <TextField
+                      value={commentDrafts[moment.id] ?? ""}
+                      onChange={(event) =>
+                        setCommentDrafts((current) => ({
+                          ...current,
+                          [moment.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="写评论..."
+                      className="min-w-0 flex-1 rounded-full py-2 text-xs"
+                    />
+                    <Button
+                      disabled={
+                        !(commentDrafts[moment.id] ?? "").trim() ||
+                        commentMutation.isPending
+                      }
+                      onClick={() => commentMutation.mutate(moment.id)}
+                      variant="primary"
+                      size="sm"
+                    >
+                      {pendingCommentMomentId === moment.id
+                        ? "发送中..."
+                        : "发送"}
+                    </Button>
+                  </>
+                }
+              />
+            );
+          })}
+
+          {likeMutation.isError && likeMutation.error instanceof Error ? (
+            <ErrorBlock message={likeMutation.error.message} />
+          ) : null}
+          {commentMutation.isError && commentMutation.error instanceof Error ? (
+            <ErrorBlock message={commentMutation.error.message} />
+          ) : null}
+
+          {!momentsQuery.isLoading &&
+          !momentsQuery.isError &&
+          !visibleMoments.length ? (
+            <EmptyState
+              title="朋友圈还很安静"
+              description="你先发一条仅好友可见的动态，或者等好友们先开口。"
             />
-          );
-        })}
-
-        {likeMutation.isError && likeMutation.error instanceof Error ? (
-          <ErrorBlock message={likeMutation.error.message} />
-        ) : null}
-
-        {commentMutation.isError && commentMutation.error instanceof Error ? (
-          <ErrorBlock message={commentMutation.error.message} />
-        ) : null}
-
-        {!momentsQuery.isLoading &&
-        !momentsQuery.isError &&
-        !visibleMoments.length ? (
-          <EmptyState
-            title="朋友圈还很安静"
-            description="你先发一条仅好友可见的动态，或者等好友们先开口。"
-          />
-        ) : null}
-      </AppSection>
+          ) : null}
+        </section>
+      </div>
     </AppPage>
   );
 }
