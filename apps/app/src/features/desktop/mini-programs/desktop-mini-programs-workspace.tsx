@@ -23,6 +23,7 @@ type DesktopMiniProgramsWorkspaceProps = {
   completedTaskIdsByMiniProgramId: Record<string, string[]>;
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
+  panelMiniProgramId?: string | null;
   pinnedMiniProgramIds: string[];
   recentMiniProgramIds: string[];
   searchText: string;
@@ -54,6 +55,7 @@ export function DesktopMiniProgramsWorkspace({
   completedTaskIdsByMiniProgramId,
   launchCountById,
   lastOpenedAtById,
+  panelMiniProgramId = null,
   pinnedMiniProgramIds,
   recentMiniProgramIds,
   searchText,
@@ -82,7 +84,12 @@ export function DesktopMiniProgramsWorkspace({
   const activeMiniProgram = activeMiniProgramId
     ? getMiniProgramEntry(activeMiniProgramId)
     : null;
-  const panelMiniProgram = activeMiniProgram ?? selectedMiniProgram;
+  const routePanelMiniProgram = panelMiniProgramId
+    ? getMiniProgramEntry(panelMiniProgramId)
+    : null;
+  const panelMiniProgram =
+    routePanelMiniProgram ?? activeMiniProgram ?? selectedMiniProgram;
+  const panelIsActive = activeMiniProgram?.id === panelMiniProgram.id;
   const panelTasks = getMiniProgramWorkspaceTasks(
     panelMiniProgram.id,
     completedTaskIdsByMiniProgramId[panelMiniProgram.id] ?? [],
@@ -395,14 +402,14 @@ export function DesktopMiniProgramsWorkspace({
             <div className="space-y-6">
               <MiniProgramOpenPanel
                 miniProgram={panelMiniProgram}
-                isActive={Boolean(activeMiniProgram)}
+                isActive={panelIsActive}
                 isPinned={pinnedMiniProgramIds.includes(
                   panelMiniProgram.id,
                 )}
                 launchCount={launchCountById[panelMiniProgram.id] ?? 0}
                 lastOpenedAt={lastOpenedAtById[panelMiniProgram.id]}
                 tasks={panelTasks}
-                onDismiss={activeMiniProgram ? onDismissActiveMiniProgram : undefined}
+                onDismiss={panelIsActive ? onDismissActiveMiniProgram : undefined}
                 onCopyToMobile={onCopyMiniProgramToMobile}
                 onOpen={onOpenMiniProgram}
                 onToggleTask={onToggleMiniProgramTask}

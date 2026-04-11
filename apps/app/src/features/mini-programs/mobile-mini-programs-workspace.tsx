@@ -29,6 +29,7 @@ type MobileMiniProgramsWorkspaceProps = {
   completedTaskIdsByMiniProgramId: Record<string, string[]>;
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
+  panelMiniProgramId?: string | null;
   pinnedMiniProgramIds: string[];
   recentMiniProgramIds: string[];
   searchText: string;
@@ -52,6 +53,7 @@ export function MobileMiniProgramsWorkspace({
   completedTaskIdsByMiniProgramId,
   launchCountById,
   lastOpenedAtById,
+  panelMiniProgramId = null,
   pinnedMiniProgramIds,
   recentMiniProgramIds,
   searchText,
@@ -75,7 +77,12 @@ export function MobileMiniProgramsWorkspace({
   const activeMiniProgram = activeMiniProgramId
     ? getMiniProgramEntry(activeMiniProgramId)
     : null;
-  const panelMiniProgram = activeMiniProgram ?? selectedMiniProgram;
+  const routePanelMiniProgram = panelMiniProgramId
+    ? getMiniProgramEntry(panelMiniProgramId)
+    : null;
+  const panelMiniProgram =
+    routePanelMiniProgram ?? activeMiniProgram ?? selectedMiniProgram;
+  const panelIsActive = activeMiniProgram?.id === panelMiniProgram.id;
   const panelTasks = getMiniProgramWorkspaceTasks(
     panelMiniProgram.id,
     completedTaskIdsByMiniProgramId[panelMiniProgram.id] ?? [],
@@ -224,7 +231,7 @@ export function MobileMiniProgramsWorkspace({
 
       <MiniProgramOpenPanel
         miniProgram={panelMiniProgram}
-        isActive={Boolean(activeMiniProgram)}
+        isActive={panelIsActive}
         isPinned={pinnedMiniProgramIds.includes(
           panelMiniProgram.id,
         )}
@@ -232,7 +239,7 @@ export function MobileMiniProgramsWorkspace({
         lastOpenedAt={lastOpenedAtById[panelMiniProgram.id]}
         tasks={panelTasks}
         compact
-        onDismiss={activeMiniProgram ? onDismissActiveMiniProgram : undefined}
+        onDismiss={panelIsActive ? onDismissActiveMiniProgram : undefined}
         onOpen={onOpenMiniProgram}
         onToggleTask={onToggleMiniProgramTask}
         onTogglePinned={onTogglePinnedMiniProgram}

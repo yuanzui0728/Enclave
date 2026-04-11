@@ -90,6 +90,13 @@ export function MiniProgramsPage() {
     () => resolveMiniProgramLaunchContextFromSearch(locationSearch),
     [locationSearch],
   );
+  const routeMiniProgramId = useMemo(() => {
+    if (selectedMiniProgramFromSearch) {
+      return selectedMiniProgramFromSearch;
+    }
+
+    return launchContext ? "group-relay" : null;
+  }, [launchContext, selectedMiniProgramFromSearch]);
   const groupRelayEntry = getMiniProgramEntry("group-relay");
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
@@ -151,16 +158,16 @@ export function MiniProgramsPage() {
   }, [launchContext?.sourceGroupId]);
 
   useEffect(() => {
-    if (!selectedMiniProgramFromSearch) {
+    if (!routeMiniProgramId) {
       return;
     }
 
     setSelectedMiniProgramId((current) =>
-      current === selectedMiniProgramFromSearch
+      current === routeMiniProgramId
         ? current
-        : selectedMiniProgramFromSearch,
+        : routeMiniProgramId,
     );
-  }, [selectedMiniProgramFromSearch]);
+  }, [routeMiniProgramId]);
 
   useEffect(() => {
     if (!getMiniProgramEntry(selectedMiniProgramId)) {
@@ -317,6 +324,7 @@ export function MiniProgramsPage() {
         completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
         launchCountById={launchCountById}
         lastOpenedAtById={lastOpenedAtById}
+        panelMiniProgramId={routeMiniProgramId}
         pinnedMiniProgramIds={pinnedMiniProgramIds}
         recentMiniProgramIds={recentMiniProgramIds}
         searchText={searchText}
@@ -363,6 +371,7 @@ export function MiniProgramsPage() {
       completedTaskIdsByMiniProgramId={completedTaskIdsByMiniProgramId}
       launchCountById={launchCountById}
       lastOpenedAtById={lastOpenedAtById}
+      panelMiniProgramId={routeMiniProgramId}
       pinnedMiniProgramIds={pinnedMiniProgramIds}
       recentMiniProgramIds={recentMiniProgramIds}
       searchText={searchText}
