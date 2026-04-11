@@ -874,6 +874,8 @@ export function DesktopCreateGroupDialog({
                                       onClick={() =>
                                         toggleMessageSelection(message.id)
                                       }
+                                      aria-pressed={checked}
+                                      aria-current={focused ? "true" : undefined}
                                       className={cn(
                                         "group relative flex w-full items-start gap-3 rounded-[12px] px-2 text-left transition duration-150 active:translate-y-[1px]",
                                         continuedFromPrevious ? "py-0.5" : "py-1.5",
@@ -896,8 +898,8 @@ export function DesktopCreateGroupDialog({
                                             "h-3 w-3 rounded-full border-2 bg-white transition-colors duration-150",
                                             checked
                                               ? "border-[#07c160] bg-[#07c160]"
-                                              : focused
-                                                ? "border-[rgba(7,193,96,0.5)]"
+                                            : focused
+                                                ? "border-[rgba(7,193,96,0.58)] bg-[rgba(7,193,96,0.10)]"
                                                 : "border-[rgba(15,23,42,0.14)] group-hover:border-[rgba(15,23,42,0.22)]",
                                           )}
                                         />
@@ -948,6 +950,9 @@ export function DesktopCreateGroupDialog({
                                             : "",
                                         )}
                                       >
+                                        {focused ? (
+                                          <div className="absolute inset-y-1 left-1 w-[3px] rounded-full bg-[rgba(7,193,96,0.24)]" />
+                                        ) : null}
                                         {!continuedFromPrevious ? (
                                           <div className="flex items-center gap-2">
                                             <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
@@ -956,6 +961,11 @@ export function DesktopCreateGroupDialog({
                                             <span className="rounded-full bg-[#f4f4f4] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
                                               {formatMessageTypeLabel(message)}
                                             </span>
+                                            {focused ? (
+                                              <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                                                键盘焦点
+                                              </span>
+                                            ) : null}
                                             <div
                                               className={cn(
                                                 "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
