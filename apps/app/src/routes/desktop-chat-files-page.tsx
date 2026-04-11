@@ -28,7 +28,7 @@ import {
   openDesktopChatImageViewerWindow,
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
-import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -254,160 +254,156 @@ export function DesktopChatFilesPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <section className="flex w-[300px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
-        <div className="border-b border-black/6 px-4 py-4">
-          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-            聊天文件
+    <>
+      <DesktopUtilityShell
+        title={selectedConversation?.title ?? "全部聊天文件"}
+        subtitle={
+          selectedConversation
+            ? "当前会话里的图片和文件会集中显示在这里。"
+            : "按会话聚合最近发送的图片和文件。"
+        }
+        toolbar={
+          <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+            {resolveFileFilterLabel(filter)} · {attachmentRows.length} 项
           </div>
-          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            按会话聚合最近发送的图片和文件。
-          </div>
-          <TextField
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="搜索文件名或消息内容"
-            className="mt-4 h-9 rounded-[10px] border-black/8 bg-white px-3 text-sm shadow-none"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 px-4 py-3">
-          {(["all", "image", "file"] as FileFilter[]).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setFilter(item)}
-              className={cn(
-                "rounded-[9px] border px-3 py-1.5 text-xs transition",
-                filter === item
-                  ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                  : "border-transparent bg-[#e3e3e3] text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#e9e9e9]",
-              )}
-            >
-              {item === "all" ? "全部" : item === "image" ? "图片" : "文件"}
-            </button>
-          ))}
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-auto px-2 pb-2">
-          {conversationsQuery.isLoading ? (
-            <LoadingBlock label="正在读取会话..." />
-          ) : null}
-          {conversationsQuery.isError &&
-          conversationsQuery.error instanceof Error ? (
-            <ErrorBlock message={conversationsQuery.error.message} />
-          ) : null}
-
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={() => setSelectedConversationId(null)}
-              className={cn(
-                "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
-                !selectedConversationId
-                  ? "border-black/8 bg-white"
-                  : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
-              )}
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-sm font-medium text-[color:var(--text-secondary)]">
-                全部
+        }
+        sidebarClassName="w-[300px]"
+        sidebar={
+          <>
+            <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
+              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                聊天文件
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                  全部会话
-                </div>
-                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {visibleAttachmentRowCount} 项附件
-                </div>
+              <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                按会话聚合最近发送的图片和文件。
               </div>
-            </button>
-
-            {conversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                type="button"
-                onClick={() => setSelectedConversationId(conversation.id)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
-                  conversation.id === selectedConversationId
-                    ? "border-black/8 bg-white"
-                    : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
-                )}
-              >
-                <AvatarChip name={conversation.title} size="wechat" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                    {conversation.title}
-                  </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {conversation.type === "group" ? "群聊" : "单聊"} ·{" "}
-                    {attachmentCounts[conversation.id] ?? 0} 项附件
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {!conversationsQuery.isLoading && !conversations.length ? (
-            <div className="pt-4">
-              <EmptyState
-                title="还没有可聚合的会话"
-                description="先在消息里发一些图片或文件，这里就会开始出现内容。"
+              <TextField
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="搜索文件名或消息内容"
+                className="mt-4 h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
               />
             </div>
-          ) : null}
-        </div>
-      </section>
 
-      <section className="min-w-0 flex-1 overflow-auto p-4">
-        {conversations.length ? (
-          <DesktopEntryShell
-            badge="聊天文件"
-            title={selectedConversation?.title ?? "全部聊天文件"}
-            description={
-              selectedConversation
-                ? "当前会话里的图片和文件会集中显示在这里。"
-                : "这里会按会话聚合最近的聊天图片和文件。"
-            }
-            aside={
-              <div className="space-y-3">
-                <InfoCard
-                  label="会话类型"
-                  value={
-                    selectedConversation
-                      ? selectedConversation.type === "group"
-                        ? "群聊"
-                        : "单聊"
-                      : "全部会话"
-                  }
-                />
-                <InfoCard
-                  label="筛选范围"
-                  value={
-                    filter === "all"
-                      ? "图片与文件"
-                      : filter === "image"
-                        ? "仅图片"
-                        : "仅文件"
-                  }
-                />
-                <InfoCard
-                  label="当前结果"
-                  value={`${attachmentRows.length} 项`}
-                />
+            <div className="flex items-center gap-2 border-b border-[color:var(--border-faint)] px-4 py-3">
+              {(["all", "image", "file"] as FileFilter[]).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setFilter(item)}
+                  className={cn(
+                    "rounded-[10px] border px-3 py-1.5 text-xs transition",
+                    filter === item
+                      ? "border-[rgba(7,193,96,0.16)] bg-white text-[color:var(--text-primary)] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
+                      : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.12)] hover:bg-white",
+                  )}
+                >
+                  {item === "all" ? "全部" : item === "image" ? "图片" : "文件"}
+                </button>
+              ))}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-2 py-2">
+              {conversationsQuery.isLoading ? (
+                <LoadingBlock label="正在读取会话..." />
+              ) : null}
+              {conversationsQuery.isError &&
+              conversationsQuery.error instanceof Error ? (
+                <ErrorBlock message={conversationsQuery.error.message} />
+              ) : null}
+
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedConversationId(null)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
+                    !selectedConversationId
+                      ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                      : "border-transparent bg-transparent hover:border-[rgba(7,193,96,0.12)] hover:bg-white/86",
+                  )}
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-sm font-medium text-[color:var(--text-secondary)]">
+                    全部
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                      全部会话
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {visibleAttachmentRowCount} 项附件
+                    </div>
+                  </div>
+                </button>
+
+                {conversations.map((conversation) => (
+                  <button
+                    key={conversation.id}
+                    type="button"
+                    onClick={() => setSelectedConversationId(conversation.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
+                      conversation.id === selectedConversationId
+                        ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                        : "border-transparent bg-transparent hover:border-[rgba(7,193,96,0.12)] hover:bg-white/86",
+                    )}
+                  >
+                    <AvatarChip name={conversation.title} size="wechat" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {conversation.title}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {conversation.type === "group" ? "群聊" : "单聊"} ·{" "}
+                        {attachmentCounts[conversation.id] ?? 0} 项附件
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
-            }
-          >
-            <div className="space-y-3">
-              {allAttachmentsQuery.isLoading ? (
-                <LoadingBlock label="正在读取附件..." />
-              ) : null}
-              {allAttachmentsQuery.isError &&
-              allAttachmentsQuery.error instanceof Error ? (
-                <ErrorBlock message={allAttachmentsQuery.error.message} />
-              ) : null}
 
-              {attachmentRows.map((item) => {
+              {!conversationsQuery.isLoading && !conversations.length ? (
+                <div className="pt-4">
+                  <EmptyState
+                    title="还没有可聚合的会话"
+                    description="先在消息里发一些图片或文件，这里就会开始出现内容。"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </>
+        }
+        aside={
+          <div className="flex h-full flex-col gap-3 px-4 py-4">
+            <InfoCard
+              label="会话类型"
+              value={
+                selectedConversation
+                  ? selectedConversation.type === "group"
+                    ? "群聊"
+                    : "单聊"
+                  : "全部会话"
+              }
+            />
+            <InfoCard
+              label="筛选范围"
+              value={resolveFileFilterLabel(filter)}
+            />
+            <InfoCard label="当前结果" value={`${attachmentRows.length} 项`} />
+          </div>
+        }
+      >
+        <div className="space-y-3 p-4">
+          {allAttachmentsQuery.isLoading ? (
+            <LoadingBlock label="正在读取附件..." />
+          ) : null}
+          {allAttachmentsQuery.isError &&
+          allAttachmentsQuery.error instanceof Error ? (
+            <ErrorBlock message={allAttachmentsQuery.error.message} />
+          ) : null}
+
+          {conversations.length
+            ? attachmentRows.map((item) => {
                 const sourceId = `chat-file-${item.id}`;
                 const collected = favoriteSourceIds.includes(sourceId);
                 const favoriteRouteHash = buildDesktopChatFilesRouteHash(
@@ -418,14 +414,14 @@ export function DesktopChatFilesPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[14px] border border-black/6 bg-white p-4 transition hover:border-black/10 hover:bg-[#fcfcfc]"
+                    className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)] transition hover:border-[rgba(7,193,96,0.12)] hover:bg-white"
                   >
                     <div className="flex items-start gap-4">
                       {isImage ? (
                         <button
                           type="button"
                           onClick={() => setViewerAttachmentId(item.id)}
-                          className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[12px] border border-black/6 bg-[#f5f5f5]"
+                          className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
                         >
                           <img
                             src={item.attachment.url}
@@ -433,13 +429,13 @@ export function DesktopChatFilesPage() {
                             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
                           />
-                          <div className="absolute inset-x-0 bottom-0 border-t border-black/6 bg-black/40 px-2 py-1.5 text-left text-[10px] text-white">
+                          <div className="absolute inset-x-0 bottom-0 border-t border-white/12 bg-black/36 px-2 py-1.5 text-left text-[10px] text-white">
                             点击预览
                           </div>
                         </button>
                       ) : (
-                        <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[12px] border border-black/6 bg-[#f4f4f4] px-4 text-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white text-[#4b5563]">
+                        <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white text-[#4b5563] shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
                             <FileText size={18} />
                           </div>
                           <div className="mt-3 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
@@ -464,7 +460,7 @@ export function DesktopChatFilesPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => setViewerAttachmentId(item.id)}
-                              className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
                             >
                               预览图片
                             </Button>
@@ -473,7 +469,7 @@ export function DesktopChatFilesPage() {
                             href={item.attachment.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex h-8 items-center justify-center rounded-[8px] bg-[#07c160] px-3 text-[12px] font-medium text-white transition hover:bg-[#06ad56]"
+                            className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[#07c160] px-3 text-[12px] font-medium text-white transition hover:bg-[#06ad56]"
                           >
                             打开附件
                           </a>
@@ -486,7 +482,7 @@ export function DesktopChatFilesPage() {
                                 item.attachment.fileName,
                               )
                             }
-                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
                           >
                             保存附件
                           </Button>
@@ -511,7 +507,7 @@ export function DesktopChatFilesPage() {
                                 hash: `chat-message-${item.id}`,
                               });
                             }}
-                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
                           >
                             定位到原消息
                           </Button>
@@ -541,41 +537,42 @@ export function DesktopChatFilesPage() {
                                 ),
                               );
                             }}
-                            className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
                           >
                             {collected ? "取消收藏" : "收藏"}
                           </Button>
                         </div>
                       </div>
-                      <div className="shrink-0 rounded-[8px] bg-[#f5f5f5] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
+                      <div className="shrink-0 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
                         {formatAttachmentMeta(item.attachment)}
                       </div>
                     </div>
                   </div>
                 );
-              })}
+              })
+            : null}
 
-              {!allAttachmentsQuery.isLoading && !attachmentRows.length ? (
-                <EmptyState
-                  title="当前筛选下没有附件"
-                  description={
-                    selectedConversation
-                      ? "换一个会话、筛选类型，或者先在聊天里发一张图片或文件。"
-                      : "试试筛选图片或文件，或者先在聊天里发一张图片或文件。"
-                  }
-                />
-              ) : null}
+          {!allAttachmentsQuery.isLoading && !conversations.length ? (
+            <div className="flex min-h-[320px] items-center justify-center">
+              <EmptyState
+                title="还没有聊天文件"
+                description="先在消息里发一张图片或文件，这里就会开始按会话和跨会话聚合。"
+              />
             </div>
-          </DesktopEntryShell>
-        ) : (
-          <div className="flex h-full items-center justify-center">
+          ) : null}
+
+          {!allAttachmentsQuery.isLoading && conversations.length && !attachmentRows.length ? (
             <EmptyState
-              title="还没有聊天文件"
-              description="先在消息里发一张图片或文件，这里就会开始按会话和跨会话聚合。"
+              title="当前筛选下没有附件"
+              description={
+                selectedConversation
+                  ? "换一个会话、筛选类型，或者先在聊天里发一张图片或文件。"
+                  : "试试筛选图片或文件，或者先在聊天里发一张图片或文件。"
+              }
             />
-          </div>
-        )}
-      </section>
+          ) : null}
+        </div>
+      </DesktopUtilityShell>
       {activeImage ? (
         <DesktopChatFilesImageViewer
           item={activeImage}
@@ -610,7 +607,7 @@ export function DesktopChatFilesPage() {
           }
         />
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -743,7 +740,7 @@ function saveUrlAsFile(url: string, fileName: string) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-[#f7f7f7] p-4">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -756,6 +753,18 @@ function buildAttachmentMessagePath(item: AttachmentRow) {
   return item.conversationType === "group"
     ? `/group/${item.conversationId}#chat-message-${item.id}`
     : `/chat/${item.conversationId}#chat-message-${item.id}`;
+}
+
+function resolveFileFilterLabel(filter: FileFilter) {
+  if (filter === "image") {
+    return "仅图片";
+  }
+
+  if (filter === "file") {
+    return "仅文件";
+  }
+
+  return "图片与文件";
 }
 
 function DesktopChatFilesImageViewer({
