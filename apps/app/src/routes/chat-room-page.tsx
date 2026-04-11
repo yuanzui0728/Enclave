@@ -110,6 +110,9 @@ export function ChatRoomPage() {
           onSecondaryAction: () => {
             setRouteCallReturnKind(null);
           },
+          onDismiss: () => {
+            setRouteCallReturnKind(null);
+          },
         };
 
   if (isDesktopLayout) {

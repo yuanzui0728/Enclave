@@ -109,6 +109,9 @@ export function GroupChatPage() {
           onSecondaryAction: () => {
             setRouteCallReturnKind(null);
           },
+          onDismiss: () => {
+            setRouteCallReturnKind(null);
+          },
         };
 
   if (isDesktopLayout) {

@@ -58,6 +58,7 @@ export type ChatRouteContextNotice = {
   onAction: () => void;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
+  onDismiss?: () => void;
 };
 
 export function ConversationThreadPanel({
@@ -276,6 +277,10 @@ export function ConversationThreadPanel({
     onDesktopCallAction?.(kind);
   };
 
+  const handleDismissRouteContextNotice = () => {
+    routeContextNotice?.onDismiss?.();
+  };
+
   useEffect(() => {
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
@@ -470,6 +475,7 @@ export function ConversationThreadPanel({
                 ? "relative flex h-full flex-col space-y-4 overflow-auto px-7 py-5"
                 : "relative flex h-full flex-col overflow-auto px-3 py-4"
             }
+            onScrollCapture={handleDismissRouteContextNotice}
           >
             {messagesQuery.isLoading ? (
               <LoadingBlock label="正在读取会话..." />
@@ -548,6 +554,7 @@ export function ConversationThreadPanel({
             enabled: runtimeConfig.appPlatform === "web",
           }}
           onChange={(value) => {
+            handleDismissRouteContextNotice();
             if (socketError) {
               setSocketError(null);
             }

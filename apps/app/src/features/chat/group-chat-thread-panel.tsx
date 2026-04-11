@@ -145,6 +145,9 @@ export function GroupChatThreadPanel({
     pendingCount,
     scrollToBottom,
   } = useScrollAnchor<HTMLDivElement>(messagesQuery.data?.length ?? 0);
+  const handleDismissRouteContextNotice = () => {
+    routeContextNotice?.onDismiss?.();
+  };
 
   useEffect(() => {
     setText("");
@@ -890,6 +893,7 @@ export function GroupChatThreadPanel({
             className={`relative flex h-full flex-col overflow-auto ${
               isDesktop ? "px-7 py-5" : "px-3 py-4"
             }`}
+            onScrollCapture={handleDismissRouteContextNotice}
           >
             {groupQuery.isError && groupQuery.error instanceof Error ? (
               <ErrorBlock className="mb-3" message={groupQuery.error.message} />
@@ -991,7 +995,10 @@ export function GroupChatThreadPanel({
             conversationId: groupId,
             enabled: runtimeConfig.appPlatform === "web",
           }}
-          onChange={setText}
+          onChange={(value) => {
+            handleDismissRouteContextNotice();
+            setText(value);
+          }}
           onSendSticker={async (sticker) => {
             await handleSendSticker(sticker);
             setReplyDraft(null);
