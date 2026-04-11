@@ -53,6 +53,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [recordButtonHolding, setRecordButtonHolding] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
+  const [callTipsDismissed, setCallTipsDismissed] = useState(false);
   const waitingNoticeSentRef = useRef(false);
   const connectedNoticeSentRef = useRef(false);
   const endedNoticeSentRef = useRef(false);
@@ -174,6 +175,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           : "跟随主推理",
       ].join(" · ")
     : null;
+  const showPermissionPrimer =
+    !callTipsDismissed &&
+    !isVideoMode &&
+    speech.status === "idle" &&
+    !lastUserTranscript &&
+    !activeCall.turnMutation.isPending &&
+    !speech.error;
+  const showPermissionRequestHint =
+    speech.status === "requesting-permission" && !speech.error;
 
   const characterName =
     characterQuery.data?.name?.trim() ||
@@ -269,6 +279,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       return;
     }
 
+    setCallTipsDismissed(true);
     setRecordButtonHolding(true);
     await activeCall.startRecordingTurn();
   };
@@ -490,6 +501,16 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               {speechProviderSummary ? ` 当前链路：${speechProviderSummary}。` : ""}
             </InlineNotice>
           ) : null}
+          {showPermissionPrimer ? (
+            <InlineNotice tone="info">
+              首次使用请先允许浏览器访问麦克风。若系统拦截自动播报，下面可以直接点“点按播放回复”。
+            </InlineNotice>
+          ) : null}
+          {showPermissionRequestHint ? (
+            <InlineNotice tone="info">
+              正在请求麦克风权限，请在浏览器弹窗里点允许。
+            </InlineNotice>
+          ) : null}
           {isVideoMode && !cameraEnabled ? (
             <InlineNotice tone="info">
               你已关闭本地摄像头，仍可继续进行 AI 数字人视频通话。
@@ -553,6 +574,18 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
         <div className="mt-auto pt-6">
           <div className="flex flex-wrap items-center justify-center gap-3">
+            {activeCall.playerError && lastAssistantText ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void activeCall.replayLastTurn();
+                }}
+                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition"
+              >
+                <Volume2 size={16} />
+                点按播放回复
+              </button>
+            ) : null}
             {isVideoMode ? (
               <button
                 type="button"
