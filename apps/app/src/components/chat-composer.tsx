@@ -726,12 +726,22 @@ export function ChatComposer({
       }
 
       event.preventDefault();
+      if (desktopScreenshotSelectedAnnotationId) {
+        setDesktopScreenshotSelectedAnnotationId(null);
+        return;
+      }
+
       closeDesktopScreenshotEditor();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [attachmentBusy, desktopScreenshotDraft, isDesktop]);
+  }, [
+    attachmentBusy,
+    desktopScreenshotDraft,
+    desktopScreenshotSelectedAnnotationId,
+    isDesktop,
+  ]);
 
   useEffect(() => {
     if (
@@ -3599,7 +3609,7 @@ function DesktopScreenshotEditor({
                   清空标注
                 </Button>
                 <span className="text-[11px] text-white/42">
-                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除
+                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除，Esc 取消选中
                 </span>
               </div>
             </div>
