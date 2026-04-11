@@ -27,7 +27,7 @@ export function buildGroupRelaySummaryMessage(
     activeRelayCountLabel ? `进行中 ${activeRelayCountLabel}` : null,
     pendingMemberCountLabel ? `待确认 ${pendingMemberCountLabel}` : null,
     publishCountLabel ? `回填次数 ${publishCountLabel}` : null,
-    `结果摘要 ${formatGroupRelayResultSummary(status)}`,
+    `结果摘要 ${formatGroupRelayResultSummary(status, pendingMemberCountLabel)}`,
     ...buildGroupRelaySummaryLines(status, launchSource, publishCountLabel),
   ]
     .filter(Boolean)
@@ -240,8 +240,15 @@ function formatGroupRelaySourceLabel(source: GroupRelaySummarySource) {
   return source === "mobile" ? "手机端" : "桌面端";
 }
 
-function formatGroupRelayResultSummary(status: GroupRelaySummaryStatus) {
+function formatGroupRelayResultSummary(
+  status: GroupRelaySummaryStatus,
+  pendingMemberCountLabel?: string | null,
+) {
   if (status === "published") {
+    if (parseGroupRelayPublishCount(pendingMemberCountLabel) === 0) {
+      return "结果已回填，当前已全部确认";
+    }
+
     return "结果已回填，可继续覆盖";
   }
 
