@@ -54,8 +54,8 @@ export function DesktopFeedRow({
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[#b7e4c7] bg-[#edf8f0] shadow-[0_12px_28px_rgba(22,163,74,0.08)]"
-          : "border-black/6 bg-white hover:border-black/10 hover:bg-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] shadow-[var(--shadow-section)]"
+          : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:shadow-[var(--shadow-section)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -90,10 +90,10 @@ export function DesktopFeedRow({
               </button>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium",
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                   post.authorType === "character"
-                    ? "bg-[rgba(56,189,248,0.12)] text-sky-700"
-                    : "bg-[rgba(93,103,201,0.10)] text-[#4951a3]",
+                    ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
                 {post.authorType === "character" ? (
@@ -104,7 +104,7 @@ export function DesktopFeedRow({
                 {post.authorType === "character" ? "居民" : "世界主人"}
               </span>
               {post.aiReacted ? (
-                <span className="rounded-md bg-[#eaf8ef] px-2 py-1 text-[10px] font-medium text-[#15803d]">
+                <span className="rounded-md border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2 py-1 text-[10px] font-medium text-[#15803d]">
                   AI 已回应
                 </span>
               ) : null}
@@ -133,7 +133,7 @@ export function DesktopFeedRow({
                   event.stopPropagation();
                   onLike();
                 }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color] hover:bg-[#f3f4f6] hover:text-[color:var(--text-primary)] disabled:opacity-55"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:opacity-55"
               >
                 <Heart size={14} />
                 {likeLoading ? "处理中..." : "点赞"}
@@ -144,7 +144,7 @@ export function DesktopFeedRow({
                   event.stopPropagation();
                   setShowComposer((current) => !current);
                 }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color] hover:bg-[#f3f4f6] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 <MessageCircle size={14} />
                 评论
@@ -156,10 +156,10 @@ export function DesktopFeedRow({
                   onToggleFavorite();
                 }}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-[12px] transition-[background-color,color]",
+                  "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] transition-[background-color,color,border-color]",
                   favorite
-                    ? "bg-[rgba(250,204,21,0.16)] text-amber-700"
-                    : "text-[color:var(--text-secondary)] hover:bg-[#f3f4f6] hover:text-[color:var(--text-primary)]",
+                    ? "border-[#ead9a6] bg-[#fbf7e8] text-amber-700"
+                    : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:border-[#ead9a6] hover:bg-[#fffaf0] hover:text-[color:var(--text-primary)]",
                 )}
               >
                 <Star size={14} className={favorite ? "fill-current" : ""} />
@@ -170,7 +170,7 @@ export function DesktopFeedRow({
 
           {post.commentsPreview.length > 0 ? (
             <div
-              className="mt-3 rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-3"
+              className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3"
               onClick={(event) => {
                 event.stopPropagation();
                 onOpenDetail();
@@ -211,16 +211,17 @@ export function DesktopFeedRow({
                 value={commentDraft}
                 onChange={(event) => onCommentChange(event.target.value)}
                 placeholder="写评论..."
-                className="min-w-0 flex-1 rounded-xl border-[rgba(15,23,42,0.08)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+                className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
               />
               <Button
-                variant="secondary"
+                variant="primary"
                 size="sm"
                 disabled={!commentDraft.trim() || commentLoading}
                 onClick={(event) => {
                   event.stopPropagation();
                   onCommentSubmit();
                 }}
+                className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
               >
                 {commentLoading ? "发送中..." : "发送"}
               </Button>
