@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { EmptyState } from "../../components/empty-state";
+import { DesktopUtilityShell } from "../desktop/desktop-utility-shell";
 import { SearchResultCard } from "./search-result-card";
 import {
   searchCategoryLabels,
@@ -44,9 +45,9 @@ type DesktopSearchWorkspaceProps = {
 };
 
 const searchTips = [
-  "聊天记录已经接入全局消息索引，输入关键词后会自动补齐所有会话的历史文本。",
-  "联系人结果会优先命中备注名，再补充角色名、地区、来源和标签。",
-  "朋友圈、广场动态和公众号先按现有内容流聚合，不额外引入后端搜索服务。",
+  "聊天记录结果会随着索引补全继续刷新。",
+  "联系人优先匹配备注名、角色名和标签。",
+  "内容流结果按现有公开内容聚合展示。",
 ];
 
 export function DesktopSearchWorkspace({
@@ -77,134 +78,176 @@ export function DesktopSearchWorkspace({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 bg-[#efefef]">
-      <aside className="flex w-[260px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6] p-4">
-        <div>
-          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-            Search
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-            搜一搜
-          </div>
-          <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-            桌面端按微信式工作区组织搜索范围、结果列表和最近记录。
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-2">
-          {searchCategoryLabels.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActiveCategory(item.id)}
-              className={cn(
-                "flex w-full items-center justify-between rounded-[16px] border px-3 py-3 text-left text-sm transition",
-                activeCategory === item.id
-                  ? "border-[#cfe8d6] bg-[#f7fbf8] text-[color:var(--text-primary)] shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
-                  : "border-transparent bg-white text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#fcfcfc]",
-              )}
-            >
-              <span>{item.label}</span>
-              {item.id !== "all" && hasKeyword ? (
-                <span className="text-xs text-[color:var(--text-muted)]">
-                  {matchedCounts[item.id]}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-6 flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-xs font-medium text-[color:var(--text-primary)]">
-              最近搜索
+    <DesktopUtilityShell
+      title="搜一搜"
+      subtitle={
+        hasKeyword
+          ? `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条结果`
+          : "搜索聊天记录、联系人、公众号和内容流"
+      }
+      sidebar={
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              搜索范围
             </div>
-            {history.length ? (
-              <button
-                type="button"
-                onClick={onClearHistory}
-                className="text-xs text-[color:var(--text-muted)]"
-              >
-                清空
-              </button>
-            ) : null}
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              左侧切换分类，结果会在中间工作区立即收敛。
+            </div>
           </div>
 
-          {history.length ? (
-            <div className="mt-3 space-y-2">
-              {history.map((item) => (
-                <div
-                  key={item.keyword}
-                  className="flex items-center gap-2 rounded-[14px] border border-black/6 bg-white px-3 py-2.5"
+          <div className="min-h-0 flex-1 overflow-auto p-3">
+            <div className="space-y-1">
+              {searchCategoryLabels.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveCategory(item.id)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
+                    activeCategory === item.id
+                      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
+                      : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
+                  )}
                 >
-                  <button
-                    type="button"
-                    onClick={() => onApplyHistory(item.keyword)}
-                    className="inline-flex min-w-0 flex-1 items-center gap-2 text-left text-xs text-[color:var(--text-secondary)]"
-                  >
-                    <Clock3
-                      size={13}
-                      className="shrink-0 text-[color:var(--text-dim)]"
-                    />
-                    <span className="truncate">{item.keyword}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveHistory(item.keyword)}
-                    className="text-[10px] text-[color:var(--text-dim)]"
-                  >
-                    删除
-                  </button>
-                </div>
+                  <span>{item.label}</span>
+                  <span className="rounded-full bg-white/88 px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]">
+                    {item.id === "all" || !hasKeyword
+                      ? "全部"
+                      : matchedCounts[item.id]}
+                  </span>
+                </button>
               ))}
             </div>
-          ) : (
-            <div className="mt-3 rounded-[16px] border border-black/6 bg-white px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
-              还没有最近搜索，桌面端会把你真正使用过的关键词放在这里。
-            </div>
-          )}
-        </div>
-      </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col border-r border-black/6 bg-[#f6f6f6]">
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
-          <form
-            className="relative"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onCommitSearch(searchText);
-            }}
-          >
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
-            />
-            <input
-              ref={inputRef}
-              type="search"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索聊天记录、联系人、公众号、朋友圈和广场动态"
-              className="h-12 w-full rounded-[18px] border border-black/6 bg-white pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-black/10"
-            />
-            {searchText ? (
-              <button
-                type="button"
-                onClick={onClearKeyword}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
-              >
-                清空
-              </button>
-            ) : null}
-          </form>
-          <div className="mt-3 text-xs leading-6 text-[color:var(--text-muted)]">
-            {hasKeyword
-              ? `关键词“${searchText.trim()}”当前命中 ${visibleResults.length} 条结果。`
-              : "输入关键词后会同时检索会话、全局聊天记录、联系人、公众号和内容流。"}
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                  最近搜索
+                </div>
+                {history.length ? (
+                  <button
+                    type="button"
+                    onClick={onClearHistory}
+                    className="text-xs text-[color:var(--text-muted)]"
+                  >
+                    清空
+                  </button>
+                ) : null}
+              </div>
+
+              {history.length ? (
+                <div className="mt-3 space-y-2">
+                  {history.map((item) => (
+                    <div
+                      key={item.keyword}
+                      className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => onApplyHistory(item.keyword)}
+                        className="inline-flex min-w-0 flex-1 items-center gap-2 text-left text-xs text-[color:var(--text-secondary)]"
+                      >
+                        <Clock3
+                          size={13}
+                          className="shrink-0 text-[color:var(--text-dim)]"
+                        />
+                        <span className="truncate">{item.keyword}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveHistory(item.keyword)}
+                        className="text-[10px] text-[color:var(--text-dim)]"
+                      >
+                        删除
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
+                  还没有最近搜索，桌面端会在你真正使用后记录关键词。
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      }
+      aside={
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+              <Sparkles size={16} className="text-[#15803d]" />
+              <span>搜索概览</span>
+            </div>
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              右侧汇总当前索引覆盖范围和搜索提示。
+            </div>
+          </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          <div className="min-h-0 flex-1 overflow-auto p-5">
+            <div className="grid gap-3">
+              <ScopeCard label="会话" value={`${scopeCounts.conversations}`} />
+              <ScopeCard label="联系人" value={`${scopeCounts.contacts}`} />
+              <ScopeCard
+                label="公众号"
+                value={`${scopeCounts.officialAccounts}`}
+              />
+              <ScopeCard label="朋友圈" value={`${scopeCounts.moments}`} />
+              <ScopeCard label="广场动态" value={`${scopeCounts.feed}`} />
+            </div>
+
+            <div className="mt-5 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                搜索提示
+              </div>
+              <div className="mt-3 space-y-2">
+                {searchTips.map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <div className="p-5">
+        <form
+          className="relative rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onCommitSearch(searchText);
+          }}
+        >
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-8 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
+          />
+          <input
+            ref={inputRef}
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="搜索聊天记录、联系人、公众号、朋友圈和广场动态"
+            className="h-12 w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,background-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)] focus:bg-white"
+          />
+          {searchText ? (
+            <button
+              type="button"
+              onClick={onClearKeyword}
+              className="absolute right-8 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
+            >
+              清空
+            </button>
+          ) : null}
+        </form>
+
+        <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
           {loading ? <LoadingBlock label="正在准备桌面搜索索引..." /> : null}
           {error ? <ErrorBlock message={error} /> : null}
 
@@ -218,34 +261,35 @@ export function DesktopSearchWorkspace({
 
           {!loading && !error && !hasKeyword ? (
             <div className="space-y-4">
-              <div className="grid gap-4 xl:grid-cols-3">
-                <QuickPanel
+              <div className="grid gap-3 md:grid-cols-3">
+                <QuickScopeTile
                   icon={MessageSquareText}
                   title="聊天记录"
-                  description="支持搜会话标题、群聊名称和历史消息正文。"
+                  description="支持搜历史消息正文。"
                 />
-                <QuickPanel
+                <QuickScopeTile
                   icon={UsersRound}
                   title="联系人"
-                  description="支持搜备注名、角色名、地区、来源和标签。"
+                  description="支持搜备注名和标签。"
                 />
-                <QuickPanel
+                <QuickScopeTile
                   icon={Newspaper}
                   title="内容流"
-                  description="支持搜朋友圈、广场动态和公众号最近内容。"
+                  description="支持搜朋友圈和广场动态。"
                 />
               </div>
-              <div className="pt-2">
+
+              <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
                 <EmptyState
                   title="输入关键词开始搜索"
-                  description="桌面端搜一搜已经接入全局聊天记录索引，首条消息命中也能找到。"
+                  description="桌面搜一搜会同时检索消息、联系人、公众号和内容流。"
                 />
               </div>
             </div>
           ) : null}
 
           {!loading && !error && hasKeyword && !visibleResults.length ? (
-            <div className="mx-auto max-w-[560px] py-10">
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
               <EmptyState
                 title="没有找到匹配结果"
                 description="换个关键词，或者切换左侧分类后再试。"
@@ -258,16 +302,16 @@ export function DesktopSearchWorkspace({
               <div className="space-y-6">
                 {groupedResults.map((section) => (
                   <section key={section.category} className="space-y-3">
-                    <div className="flex items-center justify-between gap-3 rounded-[16px] border border-black/6 bg-white px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
                       <div>
-                        <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                        <div className="text-[11px] text-[color:var(--text-muted)]">
                           搜索结果
                         </div>
                         <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
                           {section.label}
                         </div>
                       </div>
-                      <div className="rounded-md bg-[#f3f3f3] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
+                      <div className="rounded-md bg-[color:var(--surface-console)] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
                         {section.results.length} 条
                       </div>
                     </div>
@@ -287,16 +331,16 @@ export function DesktopSearchWorkspace({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3 rounded-[16px] border border-black/6 bg-white px-4 py-3">
+                <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
                   <div>
-                    <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                    <div className="text-[11px] text-[color:var(--text-muted)]">
                       搜索结果
                     </div>
                     <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
                       {searchCategoryTitles[activeCategory]}
                     </div>
                   </div>
-                  <div className="rounded-md bg-[#f3f3f3] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
+                  <div className="rounded-md bg-[color:var(--surface-console)] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
                     {visibleResults.length} 条
                   </div>
                 </div>
@@ -313,43 +357,14 @@ export function DesktopSearchWorkspace({
             )
           ) : null}
         </div>
-      </section>
-
-      <aside className="flex w-[300px] shrink-0 flex-col bg-[#f3f3f3] p-5">
-        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Sparkles size={16} className="text-[#15803d]" />
-          <span>搜索概览</span>
-        </div>
-
-        <div className="mt-4 grid gap-3">
-          <ScopeCard label="会话" value={`${scopeCounts.conversations}`} />
-          <ScopeCard label="联系人" value={`${scopeCounts.contacts}`} />
-          <ScopeCard label="公众号" value={`${scopeCounts.officialAccounts}`} />
-          <ScopeCard label="朋友圈" value={`${scopeCounts.moments}`} />
-          <ScopeCard label="广场动态" value={`${scopeCounts.feed}`} />
-        </div>
-
-        <div className="mt-6 text-sm font-medium text-[color:var(--text-primary)]">
-          搜索提示
-        </div>
-        <div className="mt-3 space-y-3">
-          {searchTips.map((item) => (
-            <div
-              key={item}
-              className="rounded-[18px] border border-black/6 bg-white px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
-            >
-              {item}
-            </div>
-          ))}
-        </div>
-      </aside>
-    </div>
+      </div>
+    </DesktopUtilityShell>
   );
 }
 
 function ScopeCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] border border-black/6 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
         {value}
@@ -358,7 +373,7 @@ function ScopeCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function QuickPanel({
+function QuickScopeTile({
   description,
   icon: Icon,
   title,
@@ -368,8 +383,8 @@ function QuickPanel({
   title: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-black/6 bg-white px-4 py-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#eef7f0] text-[#15803d]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
+      <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
         <Icon size={18} />
       </div>
       <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
