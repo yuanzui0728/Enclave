@@ -486,9 +486,7 @@ export function ConversationThreadPanel({
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
               onOpenDirectCallInvite={(input) => {
-                if (isDesktop) {
-                  setDesktopCallPanelState(input);
-                }
+                handleDesktopCallAction(input.kind);
               }}
               onSelectionModeChange={setSelectionModeActive}
               emptyState={

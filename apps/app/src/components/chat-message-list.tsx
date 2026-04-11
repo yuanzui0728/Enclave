@@ -3893,6 +3893,36 @@ function DirectCallInviteMessage({
     return null;
   }
 
+  const canReopenCall = Boolean(onOpen);
+  const footerDescription =
+    invite.connectionStatus === "ended"
+      ? canReopenCall
+        ? invite.kind === "video"
+          ? "点击可基于这张卡片重新发起当前单聊视频通话。"
+          : "点击可基于这张卡片重新发起当前单聊语音通话。"
+        : invite.kind === "video"
+          ? "这轮单聊视频通话已经结束，当前保留为状态记录卡片。"
+          : "这轮单聊语音通话已经结束，当前保留为状态记录卡片。"
+      : canReopenCall
+        ? invite.kind === "video"
+          ? "点击可回到当前单聊视频通话工作台。"
+          : "点击可回到当前单聊语音通话工作台。"
+        : invite.kind === "video"
+          ? "当前消息已转成单聊视频通话卡片，方便快速识别状态。"
+          : "当前消息已转成单聊语音通话卡片，方便快速识别状态。";
+  const footerActionLabel =
+    invite.connectionStatus === "ended"
+      ? canReopenCall
+        ? "重新发起"
+        : "查看记录"
+      : canReopenCall
+        ? invite.kind === "voice"
+          ? "回到语音"
+          : "回到视频"
+        : invite.kind === "voice"
+          ? "语音中"
+          : "视频中";
+
   const card = (
     <div
       className={cn(
@@ -3965,34 +3995,10 @@ function DirectCallInviteMessage({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-          {invite.connectionStatus === "ended"
-            ? onOpen
-              ? invite.kind === "video"
-                ? "点击可重新打开当前单聊视频通话工作台。"
-                : "点击可重新打开当前单聊语音通话工作台。"
-              : invite.kind === "video"
-                ? "这轮单聊视频通话已经结束，当前保留为状态记录卡片。"
-                : "这轮单聊语音通话已经结束，当前保留为状态记录卡片。"
-            : onOpen
-              ? invite.kind === "video"
-                ? "点击可回到当前单聊视频通话工作台。"
-                : "点击可回到当前单聊语音通话工作台。"
-              : invite.kind === "video"
-                ? "当前消息已转成单聊视频通话卡片，方便快速识别状态。"
-                : "当前消息已转成单聊语音通话卡片，方便快速识别状态。"}
+          {footerDescription}
         </div>
         <div className="text-[11px] font-medium text-[#2563eb]">
-          {invite.connectionStatus === "ended"
-            ? onOpen
-              ? "重新发起"
-              : "通话结束"
-            : onOpen
-              ? invite.kind === "voice"
-                ? "回到语音"
-                : "回到视频"
-              : invite.kind === "voice"
-                ? "语音中"
-                : "视频中"}
+          {footerActionLabel}
         </div>
       </div>
     </div>
@@ -4007,7 +4013,11 @@ function DirectCallInviteMessage({
       type="button"
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={`回到 ${invite.title} 的单聊通话工作台`}
+      aria-label={
+        invite.connectionStatus === "ended"
+          ? `重新发起 ${invite.title} 的单聊通话`
+          : `回到 ${invite.title} 的单聊通话工作台`
+      }
     >
       {card}
     </button>
