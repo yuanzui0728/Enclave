@@ -185,6 +185,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const showPermissionRequestHint =
     speech.status === "requesting-permission" && !speech.error;
 
+  useEffect(() => {
+    if (
+      speech.status === "listening" ||
+      speech.status === "requesting-permission"
+    ) {
+      return;
+    }
+
+    setRecordButtonHolding(false);
+  }, [speech.status]);
+
   const characterName =
     characterQuery.data?.name?.trim() ||
     conversation?.title?.trim() ||
