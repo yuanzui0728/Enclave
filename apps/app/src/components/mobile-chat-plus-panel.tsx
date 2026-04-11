@@ -209,6 +209,7 @@ export function MobileChatPlusPanel({
     null,
   );
   const rootPagerRef = useRef<HTMLDivElement | null>(null);
+  const activeRootPageRef = useRef(0);
 
   const friendsQuery = useQuery({
     queryKey: ["app-chat-plus-friends", baseUrl],
@@ -230,6 +231,10 @@ export function MobileChatPlusPanel({
   }, [open]);
 
   useEffect(() => {
+    activeRootPageRef.current = activeRootPage;
+  }, [activeRootPage]);
+
+  useEffect(() => {
     if (!open || activeView !== "root") {
       return;
     }
@@ -241,13 +246,13 @@ export function MobileChatPlusPanel({
 
     const frame = window.requestAnimationFrame(() => {
       pager.scrollTo({
-        left: pager.clientWidth * activeRootPage,
+        left: pager.clientWidth * activeRootPageRef.current,
         behavior: "auto",
       });
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [activeRootPage, activeView, open]);
+  }, [activeView, open]);
 
   useEffect(() => {
     if (!open || activeView !== "favorites") {
