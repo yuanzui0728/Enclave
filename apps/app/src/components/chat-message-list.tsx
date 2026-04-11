@@ -3716,25 +3716,25 @@ function GroupRelaySummaryMessage({
 
       <div className="mt-3 space-y-2">
         {summary.timestampLabel ? (
-          <CallInviteMetric label="时间" value={summary.timestampLabel} />
+          <ResultCardMetric label="时间" value={summary.timestampLabel} />
         ) : null}
         {completionTimeLabel ? (
-          <CallInviteMetric label="完成时间" value={completionTimeLabel} />
+          <ResultCardMetric label="完成时间" value={completionTimeLabel} />
         ) : null}
         {typeof publishRangeLabel === "string" ? (
-          <CallInviteMetric label="起止时间" value={publishRangeLabel} />
+          <ResultCardMetric label="起止时间" value={publishRangeLabel} />
         ) : null}
         {summary.activeRelayCountLabel ? (
-          <CallInviteMetric label="进行中" value={summary.activeRelayCountLabel} />
+          <ResultCardMetric label="进行中" value={summary.activeRelayCountLabel} />
         ) : null}
         {summary.pendingMemberCountLabel ? (
-          <CallInviteMetric label="待确认" value={summary.pendingMemberCountLabel} />
+          <ResultCardMetric label="待确认" value={summary.pendingMemberCountLabel} />
         ) : null}
         {summary.publishCountLabel ? (
-          <CallInviteMetric label="回填次数" value={summary.publishCountLabel} />
+          <ResultCardMetric label="回填次数" value={summary.publishCountLabel} />
         ) : null}
         {summary.resultSummaryLabel ? (
-          <CallInviteMetric label="结果摘要" value={summary.resultSummaryLabel} />
+          <ResultCardMetric label="结果摘要" value={summary.resultSummaryLabel} />
         ) : null}
         {summary.summaryLines.map((line) => (
           <div
@@ -3946,37 +3946,37 @@ function GroupCallInviteMessage({
       </div>
 
       <div className="mt-3 space-y-2">
-        <CallInviteMetric
+        <ResultCardMetric
           label="当前状态"
           value={formatGroupCallStatusLabel(invite.kind, invite.status)}
         />
         {invite.timestampLabel ? (
-          <CallInviteMetric label="时间" value={invite.timestampLabel} />
+          <ResultCardMetric label="时间" value={invite.timestampLabel} />
         ) : null}
         {invite.status === "ended" &&
         invite.startedAt &&
         invite.recordedAt ? (
-          <CallInviteMetric
+          <ResultCardMetric
             label="起止时间"
             value={formatGroupCallRangeSummary(invite.startedAt, invite.recordedAt)}
           />
         ) : null}
         {invite.durationLabel ? (
-          <CallInviteMetric label="本轮时长" value={invite.durationLabel} />
+          <ResultCardMetric label="本轮时长" value={invite.durationLabel} />
         ) : null}
         {invite.sourceLabel ? (
-          <CallInviteMetric label="发起端" value={invite.sourceLabel} />
+          <ResultCardMetric label="发起端" value={invite.sourceLabel} />
         ) : null}
         {invite.snapshotLabel ? (
-          <CallInviteMetric label="人数快照" value={invite.snapshotLabel} />
+          <ResultCardMetric label="人数快照" value={invite.snapshotLabel} />
         ) : null}
         {invite.activeCount ? (
           <div className="grid grid-cols-2 gap-2">
-            <CallInviteMetric
+            <ResultCardMetric
               label="当前在线"
               value={`${invite.activeCount.current}/${invite.activeCount.total}`}
             />
-            <CallInviteMetric
+            <ResultCardMetric
               label="待加入"
               value={`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} 人`}
             />
@@ -4026,7 +4026,7 @@ function GroupCallInviteMessage({
   );
 }
 
-function CallInviteMetric({ label, value }: { label: string; value: string }) {
+function ResultCardMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[14px] bg-white/72 px-3 py-2">
       <div className="text-[10px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
@@ -4088,19 +4088,19 @@ function DirectCallInviteMessage({
 
       <div className="mt-3 space-y-2">
         {invite.connectionStatus ? (
-          <CallInviteMetric
+          <ResultCardMetric
             label="当前状态"
             value={resolveDirectCallStatusLabel(invite)}
           />
         ) : null}
         {invite.timestampLabel ? (
-          <CallInviteMetric label="时间" value={invite.timestampLabel} />
+          <ResultCardMetric label="时间" value={invite.timestampLabel} />
         ) : null}
         {invite.durationLabel ? (
-          <CallInviteMetric label="最近一轮" value={invite.durationLabel} />
+          <ResultCardMetric label="最近一轮" value={invite.durationLabel} />
         ) : null}
         {invite.sourceLabel ? (
-          <CallInviteMetric label="发起端" value={invite.sourceLabel} />
+          <ResultCardMetric label="发起端" value={invite.sourceLabel} />
         ) : null}
         {invite.summaryLines.map((line) => (
           <div
