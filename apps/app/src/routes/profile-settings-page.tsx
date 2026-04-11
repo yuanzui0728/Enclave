@@ -122,7 +122,7 @@ export function ProfileSettingsPage() {
 
   const content = (
     <>
-      <div className="flex gap-1 rounded-[20px] bg-black/5 p-1">
+      <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
         {(
           [
             { id: "profile", label: "个人资料" },
@@ -135,10 +135,10 @@ export function ProfileSettingsPage() {
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex-1 rounded-[16px] py-2 text-[13px] font-medium transition-all duration-[var(--motion-fast)]",
+              "flex-1 rounded-[10px] py-2 text-[13px] font-medium transition-all duration-[var(--motion-fast)]",
               activeTab === tab.id
                 ? "bg-white text-[color:var(--text-primary)] shadow-sm"
-                : "text-[color:var(--text-muted)]",
+                : "text-[color:var(--text-muted)] hover:bg-white/70",
             )}
           >
             {tab.label}
@@ -250,7 +250,7 @@ export function ProfileSettingsPage() {
 
       {activeTab === "legal" ? (
         <AppSection className="space-y-4">
-          <div className="flex gap-1 rounded-[16px] bg-black/5 p-1">
+          <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
             {(
               [
                 { id: "privacy", label: "隐私政策" },
@@ -263,10 +263,10 @@ export function ProfileSettingsPage() {
                 type="button"
                 onClick={() => setActiveLegalTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-[12px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
+                  "flex-1 rounded-[10px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
                   activeLegalTab === tab.id
                     ? "bg-white text-[color:var(--text-primary)] shadow-sm"
-                    : "text-[color:var(--text-muted)]",
+                    : "text-[color:var(--text-muted)] hover:bg-white/70",
                 )}
               >
                 {tab.label}
@@ -305,7 +305,7 @@ export function ProfileSettingsPage() {
 
   if (desktopMode) {
     return (
-      <div className="h-full overflow-auto px-6 py-6">
+      <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
         <DesktopEntryShell
           badge="Settings"
           title="桌面设置统一收口世界资料和 AI 配置"
@@ -332,7 +332,7 @@ export function ProfileSettingsPage() {
               <Button
                 onClick={() => navigate({ to: backTo })}
                 variant="ghost"
-                className="rounded-full border border-[color:var(--border-faint)] bg-white/84"
+                className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
               >
                 返回消息
               </Button>
@@ -367,7 +367,7 @@ export function ProfileSettingsPage() {
 
 function DesktopStatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
+    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
