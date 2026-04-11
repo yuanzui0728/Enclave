@@ -2147,8 +2147,7 @@ export function EvalsPage() {
                       <div>分差：{comparison.scoreDelta >= 0 ? "+" : ""}{comparison.scoreDelta.toFixed(2)}</div>
                     </div>
                     <div className="mt-4 grid gap-3 xl:grid-cols-2">
-                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">基线输出</div>
+                      <AdminMiniPanel title="基线输出">
                         <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                           {comparison.baselineOutput || "空"}
                         </div>
@@ -2196,9 +2195,8 @@ export function EvalsPage() {
                             ))}
                           </div>
                         ) : null}
-                      </div>
-                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">候选输出</div>
+                      </AdminMiniPanel>
+                      <AdminMiniPanel title="候选输出">
                         <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">
                           {comparison.candidateOutput || "空"}
                         </div>
@@ -2246,7 +2244,7 @@ export function EvalsPage() {
                             ))}
                           </div>
                         ) : null}
-                      </div>
+                      </AdminMiniPanel>
                     </div>
                   </div>
                 ))}
@@ -2421,8 +2419,7 @@ export function EvalsPage() {
                   <div>模型：{traceDetailQuery.data.provider?.model ?? "无"}</div>
                   <div>耗时：{traceDetailQuery.data.latencyMs ?? 0} ms</div>
                 </div>
-                <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                  <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">筛选命中</div>
+                <AdminMiniPanel title="筛选命中">
                   <div className="mt-2 flex flex-wrap gap-2">
                     <TagBadge>
                       范围：{formatTraceScope(traceScopeFilter)}
@@ -2468,7 +2465,7 @@ export function EvalsPage() {
                       </TagBadge>
                     ) : null}
                   </div>
-                </div>
+                </AdminMiniPanel>
                 <div>
                   <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提示词消息</div>
                   <div className="mt-2 space-y-2">
