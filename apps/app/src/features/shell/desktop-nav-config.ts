@@ -24,6 +24,7 @@ export type DesktopNavRouteItem = {
   shortLabel: string;
   to: string;
   matches: string[];
+  excludedMatches?: string[];
 };
 
 export type DesktopNavActionItem = {
@@ -42,6 +43,7 @@ export type DesktopNavActionItem = {
     | "open-feedback"
     | "open-settings";
   matches?: string[];
+  excludedMatches?: string[];
 };
 
 export type DesktopNavItem = DesktopNavRouteItem | DesktopNavActionItem;
@@ -76,6 +78,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
       "/character/",
       "/friend-requests",
     ],
+    excludedMatches: ["/official-accounts/service/"],
   },
   {
     kind: "route",
@@ -214,7 +217,16 @@ export const desktopMoreMenuItems: DesktopNavActionItem[] = [
 
 export function isDesktopNavItemActive(
   pathname: string,
-  item: Pick<DesktopNavItem, "matches">,
+  item: Pick<DesktopNavItem, "excludedMatches" | "matches">,
 ) {
-  return item.matches?.some((prefix) => pathname.startsWith(prefix)) ?? false;
+  const matches =
+    item.matches?.some((prefix) => pathname.startsWith(prefix)) ?? false;
+  if (!matches) {
+    return false;
+  }
+
+  return !(
+    item.excludedMatches?.some((prefix) => pathname.startsWith(prefix)) ??
+    false
+  );
 }
