@@ -37,6 +37,7 @@ type MobileChatPlusPanelProps = {
   open: boolean;
   busy?: boolean;
   onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
   onPickAlbum: () => void;
   onPickCamera: () => void;
   onPickFile: () => void;
@@ -187,6 +188,7 @@ export function MobileChatPlusPanel({
   open,
   busy = false,
   onStartVoiceCall,
+  onStartVideoCall,
   onPickAlbum,
   onPickCamera,
   onPickFile,
@@ -299,11 +301,15 @@ export function MobileChatPlusPanel({
                     const itemDisabled =
                       item.key === "voice-call"
                         ? !onStartVoiceCall
-                        : (item.disabled ?? false);
+                        : item.key === "video-call"
+                          ? !onStartVideoCall
+                          : (item.disabled ?? false);
                     const itemDisabledLabel =
                       item.key === "voice-call" && onStartVoiceCall
                         ? undefined
-                        : item.disabledLabel;
+                        : item.key === "video-call" && onStartVideoCall
+                          ? undefined
+                          : item.disabledLabel;
                     const Icon = item.icon;
                     const handleClick = itemDisabled
                       ? () => {
@@ -343,6 +349,11 @@ export function MobileChatPlusPanel({
                                       setUnavailableAction(null);
                                       onStartVoiceCall?.();
                                     }
+                                  : item.key === "video-call"
+                                    ? () => {
+                                        setUnavailableAction(null);
+                                        onStartVideoCall?.();
+                                      }
                                   : () => {
                                       setUnavailableAction(null);
                                       setActiveView("locations");

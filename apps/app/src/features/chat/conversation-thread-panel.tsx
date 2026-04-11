@@ -639,6 +639,12 @@ export function ConversationThreadPanel({
               params: { conversationId },
             });
           }}
+          onStartVideoCall={() => {
+            void navigate({
+              to: "/chat/$conversationId/video-call",
+              params: { conversationId },
+            });
+          }}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
           onSubmit={() => void handleSubmit()}

@@ -86,6 +86,7 @@ type ChatComposerProps = {
   } | null;
   onMobileShortcutHandled?: () => void;
   onStartVoiceCall?: () => void;
+  onStartVideoCall?: () => void;
   onCancelReply?: () => void;
   onOpenDesktopHistory?: () => void;
   onChange: (value: string) => void;
@@ -263,6 +264,7 @@ export function ChatComposer({
   mobileShortcutRequest = null,
   onMobileShortcutHandled,
   onStartVoiceCall,
+  onStartVideoCall,
   onCancelReply,
   onOpenDesktopHistory,
   onChange,
@@ -2587,6 +2589,7 @@ export function ChatComposer({
             open={plusPanelOpen}
             busy={attachmentBusy}
             onStartVoiceCall={onStartVoiceCall}
+            onStartVideoCall={onStartVideoCall}
             onPickAlbum={pickAlbum}
             onPickCamera={pickCamera}
             onPickFile={pickFile}
