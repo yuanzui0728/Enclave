@@ -22,6 +22,7 @@ import {
 import {
   AppPage,
   Button,
+  cn,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
@@ -381,7 +382,7 @@ function MobileChannelsViewport({
   }, [posts]);
 
   return (
-    <div className="h-[calc(100dvh-11rem)] snap-y snap-mandatory space-y-4 overflow-y-auto overscroll-contain pb-4">
+    <div className="h-[calc(100dvh-10.75rem)] snap-y snap-mandatory space-y-3 overflow-y-auto overscroll-contain pb-4">
       {posts.map((post) => (
         <MobileChannelsCard
           key={post.id}
@@ -476,7 +477,7 @@ function MobileChannelsCard({
     <article
       ref={setCardRef}
       data-post-id={post.id}
-      className="snap-start overflow-hidden rounded-[34px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,247,239,0.94))] shadow-[var(--shadow-card)]"
+      className="snap-start overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-none"
     >
       <div className="relative min-h-[calc(100dvh-13rem)] bg-[#0f1115]">
         <video
@@ -493,11 +494,16 @@ function MobileChannelsCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
         <div className="absolute left-4 top-4 flex items-center gap-2">
-          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-white">
+          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-3 py-1 text-[11px] font-medium tracking-[0.08em] text-white">
             视频号推荐
           </div>
+          {post.aiReacted ? (
+            <div className="rounded-full bg-[rgba(7,193,96,0.9)] px-3 py-1 text-[11px] font-medium text-white">
+              AI 已互动
+            </div>
+          ) : null}
           {active ? (
-            <div className="rounded-full bg-[rgba(255,138,61,0.92)] px-3 py-1 text-[11px] font-medium text-white">
+            <div className="rounded-full bg-[rgba(7,193,96,0.82)] px-3 py-1 text-[11px] font-medium text-white">
               当前播放
             </div>
           ) : null}
@@ -539,7 +545,11 @@ function MobileChannelsCard({
             >
               <MessageCircleMore size={18} />
             </ActionRailButton>
-            <ActionRailButton label="收藏" onClick={onToggleFavorite}>
+            <ActionRailButton
+              active={favorite}
+              label={favorite ? "已收藏" : "收藏"}
+              onClick={onToggleFavorite}
+            >
               {favorite ? (
                 <Bookmark size={18} className="fill-current" />
               ) : (
@@ -562,21 +572,26 @@ function MobileChannelsCard({
                   {post.authorName}
                 </div>
                 <div className="mt-1 text-xs text-white/72">
-                  {formatTimestamp(post.createdAt)} · AI 世界内容
+                  {formatTimestamp(post.createdAt)} · 视频号动态
                 </div>
               </div>
             </div>
             <div className="mt-3 text-sm leading-7 text-white">{post.text}</div>
             <div className="mt-3 rounded-[22px] bg-[rgba(255,255,255,0.12)] px-3 py-2 text-xs leading-6 text-white/86 backdrop-blur">
               {post.commentsPreview.length ? (
-                post.commentsPreview.slice(0, 2).map((comment) => (
-                  <div key={comment.id}>
-                    <span className="font-medium">{comment.authorName}</span>
-                    {`：${comment.text}`}
+                <>
+                  <div className="mb-1 text-[11px] uppercase tracking-[0.08em] text-white/62">
+                    最近评论
                   </div>
-                ))
+                  {post.commentsPreview.slice(0, 2).map((comment) => (
+                    <div key={comment.id}>
+                      <span className="font-medium">{comment.authorName}</span>
+                      {`：${comment.text}`}
+                    </div>
+                  ))}
+                </>
               ) : (
-                <span>还没有评论，先和这条 AI 视频聊一句。</span>
+                <span>还没有评论，先和这条视频号内容聊一句。</span>
               )}
             </div>
           </div>
@@ -585,25 +600,26 @@ function MobileChannelsCard({
 
       <div
         ref={composerRef}
-        className="grid gap-3 border-t border-white/70 bg-[rgba(255,249,241,0.94)] px-4 py-4"
+        className="grid gap-3 border-t border-black/5 bg-white px-4 py-4"
       >
-        <div className="flex items-center gap-3 text-xs text-[color:var(--text-muted)]">
+        <div className="flex items-center gap-3 text-[12px] text-[color:var(--text-muted)]">
           <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
           <span>{post.likeCount} 赞</span>
           <span>{post.commentCount} 评论</span>
         </div>
-        <div className="flex items-center gap-2 rounded-[24px] bg-white/88 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <div className="flex items-center gap-2 rounded-[18px] bg-[#f5f5f5] p-2.5">
           <TextField
             value={commentDraft}
             onChange={(event) => onCommentChange(event.target.value)}
             placeholder="写下你对这条视频号内容的评论..."
-            className="min-w-0 flex-1 rounded-full border-white/70 bg-white"
+            className="min-w-0 flex-1 rounded-full border-black/5 bg-white"
           />
           <Button
             variant="primary"
             size="sm"
             disabled={!commentDraft.trim() || commentPending}
             onClick={onCommentSubmit}
+            className="bg-[#07c160] text-white hover:bg-[#06ad56]"
           >
             {commentPending ? "发送中..." : "发送"}
           </Button>
@@ -616,10 +632,12 @@ function MobileChannelsCard({
 function ActionRailButton({
   children,
   label,
+  active = false,
   onClick,
 }: {
   children: ReactNode;
   label: string;
+  active?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -628,7 +646,12 @@ function ActionRailButton({
       onClick={onClick}
       className="flex flex-col items-center gap-1 text-white"
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur">
+      <span
+        className={cn(
+          "flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur",
+          active && "bg-[rgba(7,193,96,0.85)]",
+        )}
+      >
         {children}
       </span>
       <span className="text-[11px]">{label}</span>
