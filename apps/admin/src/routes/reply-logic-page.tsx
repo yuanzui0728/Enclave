@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getSystemStatus,
@@ -225,6 +225,22 @@ export function ReplyLogicPage() {
     () => (overview?.constants ? JSON.stringify(overview.constants) : ""),
     [overview?.constants],
   );
+  const stableEditableCharacterSeedRef = useRef<EditableCharacter | null>(null);
+  const stableEditableCharacterSeedSignatureRef = useRef("");
+  if (stableEditableCharacterSeedSignatureRef.current !== editableCharacterSeedSignature) {
+    stableEditableCharacterSeedRef.current = editableCharacterSeed;
+    stableEditableCharacterSeedSignatureRef.current = editableCharacterSeedSignature;
+  }
+
+  const stableRuntimeRulesSeedRef = useRef<ReplyLogicConstantSummary | null>(null);
+  const stableRuntimeRulesSeedSignatureRef = useRef("");
+  if (stableRuntimeRulesSeedSignatureRef.current !== runtimeRulesSeedSignature) {
+    stableRuntimeRulesSeedRef.current = overview?.constants ?? null;
+    stableRuntimeRulesSeedSignatureRef.current = runtimeRulesSeedSignature;
+  }
+
+  const stableEditableCharacterSeed = stableEditableCharacterSeedRef.current;
+  const stableRuntimeRulesSeed = stableRuntimeRulesSeedRef.current;
   const narrativePresentation =
     runtimeRulesDraft?.narrativePresentationTemplates ??
     overview?.constants.narrativePresentationTemplates ??
@@ -283,19 +299,37 @@ export function ReplyLogicPage() {
     },
   });
 
-  useEffect(() => {
-    setCharacterDraft(editableCharacterSeed);
+  const resetCharacterSaveMutation = useEffectEvent(() => {
     characterSaveMutation.reset();
-  }, [editableCharacterSeedSignature]);
+  });
 
-  useEffect(() => {
-    setRuntimeRulesDraft(overview?.constants ?? null);
+  const resetRuntimeRulesSaveMutation = useEffectEvent(() => {
     runtimeRulesSaveMutation.reset();
-  }, [runtimeRulesSeedSignature]);
+  });
+
+  const resetPreviewMutation = useEffectEvent(() => {
+    previewMutation.reset();
+  });
 
   useEffect(() => {
-    previewMutation.reset();
-  }, [activeCharacterId, activeConversationId, configuredConversationActorId, scope]);
+    setCharacterDraft(stableEditableCharacterSeed);
+    resetCharacterSaveMutation();
+  }, [resetCharacterSaveMutation, stableEditableCharacterSeed]);
+
+  useEffect(() => {
+    setRuntimeRulesDraft(stableRuntimeRulesSeed);
+    resetRuntimeRulesSaveMutation();
+  }, [resetRuntimeRulesSaveMutation, stableRuntimeRulesSeed]);
+
+  useEffect(() => {
+    resetPreviewMutation();
+  }, [
+    activeCharacterId,
+    activeConversationId,
+    configuredConversationActorId,
+    resetPreviewMutation,
+    scope,
+  ]);
 
   const isCharacterDraftDirty = useMemo(() => {
     if (!characterDraft || !editableCharacterSeedSignature) {
