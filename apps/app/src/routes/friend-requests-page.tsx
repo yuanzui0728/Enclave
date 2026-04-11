@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@yinjie/contracts";
-import { AppHeader, AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -56,12 +57,12 @@ export function FriendRequestsPage() {
   }, [successNotice]);
 
   return (
-    <AppPage>
-      <AppHeader
-        eyebrow="社交"
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
+      <TabPageTopBar
         title="新的朋友"
-        description="这个世界不会只等你去找人，它也会主动把相遇推到你面前。"
-        actions={
+        titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        leftActions={
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
@@ -77,27 +78,31 @@ export function FriendRequestsPage() {
         }
       />
 
-      <div className="space-y-4">
-        {requestsQuery.isLoading ? <LoadingBlock label="正在读取好友请求..." /> : null}
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        {requestsQuery.isLoading ? (
+          <LoadingBlock label="正在读取好友请求..." />
+        ) : null}
         {requestsQuery.isError && requestsQuery.error instanceof Error ? (
           <ErrorBlock message={requestsQuery.error.message} />
         ) : null}
-        {successNotice ? <InlineNotice tone="success">{successNotice}</InlineNotice> : null}
+        {successNotice ? (
+          <InlineNotice tone="success">{successNotice}</InlineNotice>
+        ) : null}
 
         {(requestsQuery.data ?? []).map((request) => (
           <div
             key={request.id}
-            className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-card)]"
+            className="rounded-[28px] border border-black/5 bg-white p-4 shadow-none"
           >
             <div className="flex items-start gap-3">
               <AvatarChip name={request.characterName} src={request.characterAvatar} />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">{request.characterName}</div>
-                <div className="mt-3 rounded-[22px] bg-[color:var(--surface-soft)] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                <div className="mt-3 rounded-[18px] border border-black/5 bg-[#f5f5f5] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
                   {request.greeting || "想认识你。"}
                 </div>
                 {request.triggerScene ? (
-                  <div className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                  <div className="mt-2 inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[11px] font-medium text-[#15803d]">
                     来自场景 {request.triggerScene}
                   </div>
                 ) : null}
@@ -110,7 +115,7 @@ export function FriendRequestsPage() {
                 onClick={() => acceptMutation.mutate(request.id)}
                 variant="primary"
                 size="lg"
-                className="rounded-2xl"
+                className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
               >
                 {acceptMutation.isPending && acceptMutation.variables === request.id ? "接受中..." : "接受"}
               </Button>
@@ -119,7 +124,7 @@ export function FriendRequestsPage() {
                 onClick={() => declineMutation.mutate(request.id)}
                 variant="secondary"
                 size="lg"
-                className="rounded-2xl"
+                className="rounded-2xl border-black/5 bg-[#f5f5f5] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
                 {declineMutation.isPending && declineMutation.variables === request.id ? "处理中..." : "拒绝"}
               </Button>
