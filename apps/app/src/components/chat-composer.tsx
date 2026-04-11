@@ -162,6 +162,21 @@ const SCREENSHOT_ANNOTATION_PALETTE = [
   fill: string;
 }>;
 
+const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
+  {
+    label: "发送",
+    value: "Enter / ⌘/Ctrl + Enter",
+  },
+  {
+    label: "视图",
+    value: "⌘/Ctrl + 滚轮 / 双击 / Space / ?",
+  },
+  {
+    label: "编辑",
+    value: "C / R / A / T / 1-4 / Delete / Esc",
+  },
+] as const;
+
 type ScreenshotCropResizeDraft = {
   pointerId: number;
   handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -280,6 +295,8 @@ export function ChatComposer({
   const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
     string | null
   >(null);
+  const [desktopScreenshotShortcutHelpOpen, setDesktopScreenshotShortcutHelpOpen] =
+    useState(false);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [mobilePlusNotice, setMobilePlusNotice] = useState<string | null>(null);
@@ -726,6 +743,11 @@ export function ChatComposer({
       }
 
       event.preventDefault();
+      if (desktopScreenshotShortcutHelpOpen) {
+        setDesktopScreenshotShortcutHelpOpen(false);
+        return;
+      }
+
       if (desktopScreenshotSelectedAnnotationId) {
         setDesktopScreenshotSelectedAnnotationId(null);
         return;
@@ -739,6 +761,7 @@ export function ChatComposer({
   }, [
     attachmentBusy,
     desktopScreenshotDraft,
+    desktopScreenshotShortcutHelpOpen,
     desktopScreenshotSelectedAnnotationId,
     isDesktop,
   ]);
@@ -1276,6 +1299,7 @@ export function ChatComposer({
     setDesktopScreenshotAnnotationResize(null);
     setDesktopScreenshotAnnotationMove(null);
     setDesktopScreenshotNotice(null);
+    setDesktopScreenshotShortcutHelpOpen(false);
   };
 
   const handleDesktopScreenshotPointerDown = (
@@ -2183,9 +2207,11 @@ export function ChatComposer({
             onCancel={closeDesktopScreenshotEditor}
             onToolChange={setDesktopScreenshotTool}
             annotationColor={desktopScreenshotAnnotationColor}
+            shortcutHelpOpen={desktopScreenshotShortcutHelpOpen}
             selectedAnnotationId={desktopScreenshotSelectedAnnotationId}
             canRedoAnnotations={desktopScreenshotAnnotationFuture.length > 0}
             onAnnotationColorChange={setDesktopScreenshotAnnotationColor}
+            onShortcutHelpOpenChange={setDesktopScreenshotShortcutHelpOpen}
             onClearCrop={() => {
               setDesktopScreenshotCrop(null);
               setDesktopScreenshotCropResize(null);
@@ -2964,6 +2990,7 @@ function DesktopScreenshotEditor({
   notice,
   pending,
   selection,
+  shortcutHelpOpen,
   tool,
   onCancel,
   onClearAnnotations,
@@ -2983,6 +3010,7 @@ function DesktopScreenshotEditor({
   onSendCropped,
   onSendOriginal,
   onAnnotationColorChange,
+  onShortcutHelpOpenChange,
   onToolChange,
   onDeleteSelectedAnnotation,
   onRedoAnnotation,
@@ -3008,6 +3036,7 @@ function DesktopScreenshotEditor({
   notice: string | null;
   pending: boolean;
   selection: ScreenshotSelectionDraft | null;
+  shortcutHelpOpen: boolean;
   tool: "crop" | "rect" | "arrow" | "text";
   onCancel: () => void;
   onClearAnnotations: () => void;
@@ -3030,6 +3059,7 @@ function DesktopScreenshotEditor({
   onSendCropped: () => void;
   onSendOriginal: () => void;
   onAnnotationColorChange: (color: ScreenshotAnnotationColor) => void;
+  onShortcutHelpOpenChange: (open: boolean) => void;
   onToolChange: (tool: "crop" | "rect" | "arrow" | "text") => void;
   onDeleteSelectedAnnotation: () => void;
   onRedoAnnotation: () => void;
@@ -3061,7 +3091,6 @@ function DesktopScreenshotEditor({
   } | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewSpacePressed, setPreviewSpacePressed] = useState(false);
-  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [previewPanDrag, setPreviewPanDrag] = useState<{
     pointerId: number;
     startX: number;
@@ -3145,8 +3174,8 @@ function DesktopScreenshotEditor({
     setPreviewViewportSize(null);
     setPreviewSpacePressed(false);
     setPreviewPanDrag(null);
-    setShortcutHelpOpen(false);
-  }, [draft.previewUrl]);
+    onShortcutHelpOpenChange(false);
+  }, [draft.previewUrl, onShortcutHelpOpenChange]);
 
   useEffect(() => {
     if (!shortcutHelpOpen) {
@@ -3160,7 +3189,7 @@ function DesktopScreenshotEditor({
         target instanceof Node &&
         !shortcutHelpRef.current.contains(target)
       ) {
-        setShortcutHelpOpen(false);
+        onShortcutHelpOpenChange(false);
       }
     };
 
@@ -3168,7 +3197,7 @@ function DesktopScreenshotEditor({
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [shortcutHelpOpen]);
+  }, [onShortcutHelpOpenChange, shortcutHelpOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -3221,6 +3250,12 @@ function DesktopScreenshotEditor({
       const key = event.key.toLowerCase();
       const commandKey = event.metaKey || event.ctrlKey;
 
+      if (event.key === "Escape" && shortcutHelpOpen) {
+        event.preventDefault();
+        onShortcutHelpOpenChange(false);
+        return;
+      }
+
       if (key === "enter" && !event.altKey) {
         event.preventDefault();
         if (commandKey) {
@@ -3234,6 +3269,18 @@ function DesktopScreenshotEditor({
         }
 
         onSendOriginal();
+        return;
+      }
+
+      if (
+        !interactive &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        event.key === "?"
+      ) {
+        event.preventDefault();
+        onShortcutHelpOpenChange(!shortcutHelpOpen);
         return;
       }
 
@@ -3680,50 +3727,46 @@ function DesktopScreenshotEditor({
                 <div ref={shortcutHelpRef} className="relative">
                   <button
                     type="button"
-                    onClick={() => setShortcutHelpOpen((open) => !open)}
+                    onClick={() => onShortcutHelpOpenChange(!shortcutHelpOpen)}
                     className={cn(
                       "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition",
                       shortcutHelpOpen
                         ? "border-white/26 bg-white/12 text-white"
                         : "border-white/10 bg-white/6 text-white/58 hover:border-white/18 hover:bg-white/10 hover:text-white/80",
                     )}
-                    title="查看截图快捷键"
+                    title="查看截图快捷键 (?)"
                   >
                     <Keyboard size={12} />
                     <span>快捷键</span>
+                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/58">
+                      ?
+                    </span>
                   </button>
                   {shortcutHelpOpen ? (
                     <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
-                      <div className="mb-2 text-[12px] font-medium text-white">
-                        截图快捷键
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <div className="text-[12px] font-medium text-white">
+                          截图快捷键
+                        </div>
+                        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-white/52">
+                          按 ? 开关
+                        </span>
+                      </div>
+                      <div className="mb-2 text-[11px] text-white/46">
+                        视图和编辑操作都在这里，不再常驻挤占工具条。
                       </div>
                       <div className="grid gap-2">
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>发送截图</span>
-                          <span className="text-white/92">Enter</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>按原图发送</span>
-                          <span className="text-white/92">⌘/Ctrl + Enter</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>缩放 / 视图</span>
-                          <span className="text-right text-white/92">
-                            ⌘/Ctrl + 滚轮 / 双击 / Space
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>切换工具</span>
-                          <span className="text-white/92">C / R / A / T</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>切换颜色</span>
-                          <span className="text-white/92">1 / 2 / 3 / 4</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
-                          <span>删除 / 取消选中</span>
-                          <span className="text-white/92">Delete / Esc</span>
-                        </div>
+                        {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
+                          <div
+                            key={item.label}
+                            className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2"
+                          >
+                            <span>{item.label}</span>
+                            <span className="text-right text-white/92">
+                              {item.value}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : null}
