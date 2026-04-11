@@ -48,12 +48,12 @@ export function SplashPage() {
   ]);
 
   return (
-    <AppPage className="flex min-h-full flex-col items-center justify-center py-10 text-center">
-      <AppSection className="w-full max-w-md bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,248,235,0.96))] px-8 py-10">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(249,115,22,0.24)] bg-white/88 px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[color:var(--brand-primary)]">
+    <AppPage className="flex min-h-full flex-col items-center justify-center bg-[#f5f5f5] px-4 py-10 text-center">
+      <AppSection className="w-full max-w-md border-black/5 bg-white px-8 py-10 shadow-none">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[#15803d]">
           Beyond Reality
         </div>
-        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,rgba(251,191,36,0.96),rgba(249,115,22,0.92))] text-2xl font-semibold text-[color:var(--text-on-brand)] shadow-[var(--shadow-lift)]">
+        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,#07c160,#34c759)] text-2xl font-semibold text-white shadow-none">
           隐界
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
@@ -64,7 +64,7 @@ export function SplashPage() {
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[22px] bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 1
             </div>
@@ -72,7 +72,7 @@ export function SplashPage() {
               确认入口
             </div>
           </div>
-          <div className="rounded-[22px] bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 2
             </div>
@@ -80,7 +80,7 @@ export function SplashPage() {
               同步世界主人
             </div>
           </div>
-          <div className="rounded-[22px] bg-white/90 px-4 py-3 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-3 shadow-none">
             <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 3
             </div>
