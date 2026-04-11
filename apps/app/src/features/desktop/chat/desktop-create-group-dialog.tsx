@@ -109,6 +109,7 @@ export function DesktopCreateGroupDialog({
     () => seedMemberIds.map((id) => friendMap.get(id)).find(Boolean) ?? null,
     [friendMap, seedMemberIds],
   );
+  const sourceFriendId = sourceFriend?.character.id ?? null;
   const sourceFriendName = sourceFriend ? getFriendDisplayName(sourceFriend) : null;
   const filteredFriends = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -713,12 +714,18 @@ export function DesktopCreateGroupDialog({
               <div className="flex flex-wrap gap-2">
                 {selectedFriends.map((item) => {
                   const displayName = getFriendDisplayName(item);
+                  const isSourceFriend = item.character.id === sourceFriendId;
                   return (
                     <button
                       key={item.character.id}
                       type="button"
                       onClick={() => toggleSelection(item.character.id)}
-                      className="flex items-center gap-2 rounded-[8px] border border-black/6 bg-[#f5f5f5] px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition hover:bg-[#ededed]"
+                      className={cn(
+                        "flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition",
+                        isSourceFriend
+                          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] hover:bg-[rgba(7,193,96,0.12)]"
+                          : "border-black/6 bg-[#f5f5f5] hover:bg-[#ededed]",
+                      )}
                     >
                       <AvatarChip
                         name={displayName}
@@ -726,6 +733,11 @@ export function DesktopCreateGroupDialog({
                         size="sm"
                       />
                       <span className="max-w-24 truncate">{displayName}</span>
+                      {isSourceFriend ? (
+                        <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                          当前聊天
+                        </span>
+                      ) : null}
                       <X size={12} className="text-[color:var(--text-muted)]" />
                     </button>
                   );
