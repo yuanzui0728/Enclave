@@ -28,7 +28,7 @@ export function buildGroupRelaySummaryMessage(
     pendingMemberCountLabel ? `待确认 ${pendingMemberCountLabel}` : null,
     publishCountLabel ? `回填次数 ${publishCountLabel}` : null,
     `结果摘要 ${formatGroupRelayResultSummary(status)}`,
-    ...buildGroupRelaySummaryLines(status, launchSource),
+    ...buildGroupRelaySummaryLines(status, launchSource, publishCountLabel),
   ]
     .filter(Boolean)
     .join("\n");
@@ -188,6 +188,20 @@ function parseGroupRelayPublishCountLabel(line: string | undefined) {
   return line.replace(/^回填次数\s+/, "").trim() || null;
 }
 
+function parseGroupRelayPublishCount(label: string | null | undefined) {
+  if (!label) {
+    return null;
+  }
+
+  const matched = label.match(/\d+/);
+  if (!matched) {
+    return null;
+  }
+
+  const count = Number(matched[0]);
+  return Number.isFinite(count) ? count : null;
+}
+
 function parseGroupRelayResultSummaryLabel(line: string | undefined) {
   if (!line || !line.startsWith("结果摘要 ")) {
     return null;
@@ -241,10 +255,20 @@ function formatGroupRelayResultSummary(status: GroupRelaySummaryStatus) {
 function buildGroupRelaySummaryLines(
   status: GroupRelaySummaryStatus,
   source: GroupRelaySummarySource,
+  publishCountLabel?: string | null,
 ) {
   const sourceLabel = formatGroupRelaySourceLabel(source);
+  const publishCount = parseGroupRelayPublishCount(publishCountLabel);
 
   if (status === "published") {
+    if (publishCount !== null && publishCount > 1) {
+      return [
+        `1. 已从${sourceLabel}群聊再次打开群接龙工作台。`,
+        "2. 当前统计结果已经再次回填到原群聊，正文说明和人数状态已按最新一轮覆盖。",
+        "3. 如需继续调整，后续回填会继续覆盖这轮结果，不再保留过期版本。",
+      ];
+    }
+
     return [
       `1. 已从${sourceLabel}群聊打开群接龙工作台。`,
       "2. 当前统计结果已经回填到原群聊，可继续在群里跟进补充名单。",
