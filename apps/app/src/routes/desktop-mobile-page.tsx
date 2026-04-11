@@ -35,7 +35,7 @@ import {
   type MiniProgramEntry,
 } from "../features/mini-programs/mini-programs-data";
 import { readMiniProgramsState } from "../features/mini-programs/mini-programs-storage";
-import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { parseDesktopMobileCallHandoffHash } from "../features/desktop/chat/desktop-mobile-call-handoff-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationPreviewParts } from "../lib/conversation-preview";
@@ -399,42 +399,94 @@ export function DesktopMobilePage() {
   }
 
   return (
-    <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
-      <DesktopEntryShell
-        badge="Mobile"
-        title="手机接力把桌面内容带到移动端"
-        description="手机入口先收口真实的跨端继续能力：用当前远程世界的会话、公众号和系统状态做面板内容，再把目标链接复制给手机端继续查看。"
-        aside={
-          <div className="space-y-4">
-            <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center gap-4">
-                <AvatarChip
-                  name={ownerName ?? "世界主人"}
-                  src={ownerAvatar}
-                  size="xl"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {ownerName ?? "世界主人"}
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                    {ownerSignature?.trim() || "这台桌面端正在承接你的世界。"}
+    <DesktopUtilityShell
+      title="手机接力"
+      subtitle="把桌面内容带到移动端继续处理。"
+      toolbar={
+        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+          {activeHandoffHistory.length} 条最近接力
+        </div>
+      }
+      sidebarClassName="w-[300px]"
+      sidebar={
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
+            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+              手机接力
+            </div>
+            <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+              用当前世界的真实会话、公众号和运行状态做跨端继续。
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
+            <div className="space-y-4">
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+                <div className="flex items-center gap-4">
+                  <AvatarChip
+                    name={ownerName ?? "世界主人"}
+                    src={ownerAvatar}
+                    size="xl"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      {ownerName ?? "世界主人"}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                      {ownerSignature?.trim() || "这台桌面端正在承接你的世界。"}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <MetricCard label="连接状态" value={connectedLabel} />
+              <MetricCard label="最近同步" value={syncLabel} />
+              <MetricCard label="最近接力" value={handoffLabel} />
+
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                <div className="text-xs font-medium text-[color:var(--text-muted)]">
+                  活跃接力链路
+                </div>
+                <div className="mt-3 space-y-2">
+                  {groupedHandoffHistory.length ? (
+                    groupedHandoffHistory.slice(0, 4).map((group) => (
+                      <div
+                        key={group.id}
+                        className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5"
+                      >
+                        <div className="text-xs text-[color:var(--text-secondary)]">
+                          {group.label}
+                        </div>
+                        <div className="text-xs font-medium text-[color:var(--text-primary)]">
+                          {group.items.length} 条
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-5 text-[color:var(--text-muted)]">
+                      还没有形成稳定的手机接力记录。
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-
-            <MetricCard label="连接状态" value={connectedLabel} />
-            <MetricCard label="最近同步" value={syncLabel} />
-            <MetricCard label="最近接力" value={handoffLabel} />
           </div>
-        }
-      >
-        <div className="space-y-5">
-          {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        </div>
+      }
+      contentClassName="bg-[rgba(255,255,255,0.62)]"
+    >
+      <div className="space-y-5 p-5">
+        {notice ? (
+          <InlineNotice
+            tone="success"
+            className="border-[color:var(--border-faint)] bg-white"
+          >
+            {notice}
+          </InlineNotice>
+        ) : null}
 
-          {callHandoffState && callHandoffPath && callHandoffConversationExists ? (
-            <section className="rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        {callHandoffState && callHandoffPath && callHandoffConversationExists ? (
+          <section className="rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -461,7 +513,7 @@ export function DesktopMobilePage() {
                       replace: true,
                     })
                   }
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-[#f7f7f7] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef]"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                 >
                   收起
                 </button>
@@ -486,13 +538,13 @@ export function DesktopMobilePage() {
                 </Button>
                 <Link
                   to={callHandoffPath as never}
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                 >
                   桌面打开聊天
                 </Link>
               </div>
             </section>
-          ) : null}
+        ) : null}
 
           {conversationsQuery.isError &&
           conversationsQuery.error instanceof Error ? (
@@ -507,8 +559,8 @@ export function DesktopMobilePage() {
             <ErrorBlock message={systemStatusQuery.error.message} />
           ) : null}
 
-          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <Smartphone
                   size={16}
@@ -524,7 +576,7 @@ export function DesktopMobilePage() {
                 {quickEntries.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
+                    className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                   >
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
                       {item.label}
@@ -551,7 +603,7 @@ export function DesktopMobilePage() {
                       </Button>
                       <Link
                         to={item.to as never}
-                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                       >
                         桌面打开
                       </Link>
@@ -561,7 +613,7 @@ export function DesktopMobilePage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <Wifi size={16} className="text-[color:var(--brand-primary)]" />
                 <span>同步概览</span>
@@ -621,7 +673,7 @@ export function DesktopMobilePage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -635,7 +687,7 @@ export function DesktopMobilePage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => void conversationsQuery.refetch()}
-                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -681,7 +733,7 @@ export function DesktopMobilePage() {
               </div>
             </section>
 
-            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -695,7 +747,7 @@ export function DesktopMobilePage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => void officialAccountsQuery.refetch()}
-                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -742,7 +794,7 @@ export function DesktopMobilePage() {
             </section>
           </div>
 
-          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -759,7 +811,7 @@ export function DesktopMobilePage() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to="/tabs/mini-programs"
-                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                 >
                   打开小程序面板
                 </Link>
@@ -775,7 +827,7 @@ export function DesktopMobilePage() {
                         : "小程序面板里还没有可同步到手机的最近使用。",
                     );
                   }}
-                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -784,7 +836,7 @@ export function DesktopMobilePage() {
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   当前小程序工作台
                 </div>
@@ -838,7 +890,7 @@ export function DesktopMobilePage() {
                 )}
               </div>
 
-              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近使用小程序
                 </div>
@@ -900,7 +952,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -916,14 +968,14 @@ export function DesktopMobilePage() {
               </div>
               <Link
                 to="/desktop/channels/live-companion"
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
               >
                 打开直播伴侣
               </Link>
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   当前直播准备
                 </div>
@@ -970,7 +1022,7 @@ export function DesktopMobilePage() {
                           : "直播伴侣还没有可同步到手机的内容。",
                       );
                     }}
-                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                   >
                     <RefreshCw size={14} />
                     刷新直播状态
@@ -978,7 +1030,7 @@ export function DesktopMobilePage() {
                 </div>
               </div>
 
-              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近直播状态
                 </div>
@@ -1015,7 +1067,7 @@ export function DesktopMobilePage() {
                         setNotice,
                       })
                     }
-                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                   >
                     <ArrowUpRight size={14} />
                     发直播状态到手机
@@ -1025,7 +1077,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1047,7 +1099,7 @@ export function DesktopMobilePage() {
             <div className="mt-4 space-y-3">
               {currentGroupInviteHandoff ? (
                 <>
-                  <div className="rounded-[14px] border border-black/6 bg-[#fafafa] p-5">
+                  <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-medium tracking-[0.14em] text-[#1f8f4f]">
@@ -1091,14 +1143,14 @@ export function DesktopMobilePage() {
                       </Button>
                       <Link
                         to={currentGroupInviteHandoff.path as never}
-                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                       >
                         桌面打开
                       </Link>
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      <div className="rounded-[12px] border border-black/6 bg-white px-4 py-3">
+                      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
                         {activeGroupInviteDelivery ? (
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="min-w-0 flex-1">
@@ -1114,7 +1166,7 @@ export function DesktopMobilePage() {
                             </div>
                             <Link
                               to={activeGroupInviteDelivery.conversationPath as never}
-                              className="inline-flex h-8 items-center justify-center rounded-[8px] border border-black/8 bg-[#f7f7f7] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                              className="inline-flex h-8 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                             >
                               回到会话
                             </Link>
@@ -1127,7 +1179,7 @@ export function DesktopMobilePage() {
                       </div>
 
                       {activeGroupInviteReopens.length ? (
-                        <div className="rounded-[12px] border border-black/6 bg-white px-4 py-3">
+                        <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
                           <div className="text-xs font-medium text-[color:var(--text-primary)]">
                             最近从这些会话回到邀请页
                           </div>
@@ -1137,7 +1189,7 @@ export function DesktopMobilePage() {
                               .map((record) => (
                                 <div
                                   key={`${record.conversationPath}:${record.reopenedAt}`}
-                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-black/6 bg-[#fafafa] px-3 py-2"
+                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2"
                                 >
                                   <div className="min-w-0 flex-1">
                                     <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
@@ -1152,7 +1204,7 @@ export function DesktopMobilePage() {
                                   </div>
                                   <Link
                                     to={record.conversationPath as never}
-                                    className="inline-flex h-7 items-center justify-center rounded-[8px] border border-black/8 bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                                    className="inline-flex h-7 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                                   >
                                     回到会话
                                   </Link>
@@ -1172,7 +1224,7 @@ export function DesktopMobilePage() {
                       {archivedGroupInviteHandoffs.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-start justify-between gap-4 rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
+                          className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                         >
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1198,14 +1250,14 @@ export function DesktopMobilePage() {
                                   setNotice,
                                 })
                               }
-                              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                             >
                               <Copy size={14} />
                               再发一次
                             </Button>
                             <Link
                               to={item.path as never}
-                              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+                              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
                             >
                               桌面打开
                             </Link>
@@ -1224,7 +1276,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <CheckCircle2
                 size={16}
@@ -1257,7 +1309,7 @@ export function DesktopMobilePage() {
                     {group.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-start justify-between gap-4 rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
+                        className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1282,7 +1334,7 @@ export function DesktopMobilePage() {
                               setNotice,
                             })
                           }
-                          className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                          className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                         >
                           再发一次
                         </Button>
@@ -1298,9 +1350,8 @@ export function DesktopMobilePage() {
               )}
             </div>
           </section>
-        </div>
-      </DesktopEntryShell>
-    </div>
+      </div>
+    </DesktopUtilityShell>
   );
 }
 
@@ -1314,7 +1365,7 @@ function RecentConversationRow({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip name={item.title} size="wechat" />
         <div className="min-w-0 flex-1">
@@ -1358,7 +1409,7 @@ function RecentArticleRow({
   }
 
   return (
-    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
+    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip name={account.name} src={account.avatar} size="wechat" />
         <div className="min-w-0 flex-1">
@@ -1385,7 +1436,7 @@ function RecentArticleRow({
               variant="secondary"
               size="sm"
               onClick={onCopyAccount}
-              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
             >
               <ArrowUpRight size={14} />
               发主页到手机
@@ -1417,7 +1468,7 @@ function MiniProgramHandoffCard({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-white p-4">
+    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1464,7 +1515,7 @@ function MiniProgramHandoffCard({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -1475,7 +1526,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {value}
