@@ -385,10 +385,14 @@ export function CharacterDetailPage() {
                 openCallMutation.mutate("voice");
               }}
               continueLabel={
-                openCallMutation.isPending ? "正在接通视频..." : "继续视频通话"
+                openCallMutation.isPending
+                  ? "正在接通视频..."
+                  : entryNotice.continueLabel
               }
               voiceLabel={
-                openCallMutation.isPending ? "正在接通语音..." : "改用语音通话"
+                openCallMutation.isPending
+                  ? "正在接通语音..."
+                  : entryNotice.voiceLabel
               }
             />
           ) : null}

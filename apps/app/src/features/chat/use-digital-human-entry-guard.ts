@@ -15,7 +15,7 @@ export function useDigitalHumanEntryGuard({
   enabled?: boolean;
 }) {
   const [entryNotice, setEntryNotice] = useState<DigitalHumanEntryNotice>(null);
-  const [videoGuardMessage, setVideoGuardMessage] = useState<string | null>(
+  const [videoGuardKey, setVideoGuardKey] = useState<string | null>(
     null,
   );
   const systemStatusQuery = useQuery({
@@ -26,7 +26,7 @@ export function useDigitalHumanEntryGuard({
 
   const resetEntryGuard = useCallback(() => {
     setEntryNotice(null);
-    setVideoGuardMessage(null);
+    setVideoGuardKey(null);
   }, []);
 
   const clearEntryNotice = useCallback(() => {
@@ -40,15 +40,15 @@ export function useDigitalHumanEntryGuard({
       systemStatusQuery.data?.digitalHumanGateway,
     );
 
-    if (guardCopy && videoGuardMessage !== guardCopy.message) {
-      setVideoGuardMessage(guardCopy.message);
+    if (guardCopy && videoGuardKey !== guardCopy.key) {
+      setVideoGuardKey(guardCopy.key);
       setEntryNotice(guardCopy);
       return false;
     }
 
-    setVideoGuardMessage(null);
+    setVideoGuardKey(null);
     return true;
-  }, [systemStatusQuery.data?.digitalHumanGateway, videoGuardMessage]);
+  }, [systemStatusQuery.data?.digitalHumanGateway, videoGuardKey]);
 
   return {
     entryNotice,

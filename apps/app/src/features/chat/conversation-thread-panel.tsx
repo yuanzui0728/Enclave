@@ -425,6 +425,8 @@ export function ConversationThreadPanel({
           <DigitalHumanEntryNotice
             tone={entryNotice.tone}
             message={entryNotice.message}
+            continueLabel={entryNotice.continueLabel}
+            voiceLabel={entryNotice.voiceLabel}
             onContinue={() => {
               resetEntryGuard();
               startDirectCall("video");

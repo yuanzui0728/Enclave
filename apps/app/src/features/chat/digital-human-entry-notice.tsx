@@ -18,7 +18,7 @@ export function DigitalHumanEntryNotice({
   return (
     <InlineNotice tone={tone}>
       <div className="flex flex-col gap-3">
-        <div>{message}</div>
+        <div className="text-sm leading-6">{message}</div>
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"

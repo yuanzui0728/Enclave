@@ -395,6 +395,8 @@ export function ChatDetailsPage() {
           <DigitalHumanEntryNotice
             tone={entryNotice.tone}
             message={entryNotice.message}
+            continueLabel={entryNotice.continueLabel}
+            voiceLabel={entryNotice.voiceLabel}
             onContinue={() => {
               resetEntryGuard();
               void navigate({
