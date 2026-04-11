@@ -10,7 +10,6 @@ import {
 } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
   InlineNotice,
@@ -137,48 +136,64 @@ export function ProfileSettingsPage() {
   const content = (
     <>
       {desktopMode ? null : (
-        <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
-          {settingsTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex-1 rounded-[10px] py-2 text-[13px] font-medium transition-all duration-[var(--motion-fast)]",
-                activeTab === tab.id
-                  ? "bg-white text-[color:var(--text-primary)] shadow-sm"
-                  : "text-[color:var(--text-muted)] hover:bg-white/70",
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
+          <div className="mb-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+            管理你的资料、专属 AI 配置和协议说明。
+          </div>
+          <div className="flex gap-1 rounded-[12px] bg-[#f5f5f5] p-1">
+            {settingsTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex-1 rounded-[10px] py-2 text-[13px] font-medium transition-all duration-[var(--motion-fast)]",
+                  activeTab === tab.id
+                    ? "bg-white text-[color:var(--text-primary)] shadow-sm"
+                    : "text-[color:var(--text-muted)] hover:bg-white/70",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {activeTab === "profile" ? (
-        <AppSection className="space-y-4">
+        <MobileSettingsSection
+          title="个人资料"
+          description="这里的名称和签名会用于移动端资料页和世界主人展示。"
+        >
           <div className="space-y-3">
-            <TextField
-              value={draftName}
-              onChange={(event) => setDraftName(event.target.value)}
-              placeholder="显示名称"
-            />
-            <TextAreaField
-              value={draftSignature}
-              onChange={(event) => setDraftSignature(event.target.value)}
-              className="min-h-24 resize-none"
-              placeholder="签名"
-            />
+            <MobileFieldGroup label="显示名称">
+              <TextField
+                value={draftName}
+                onChange={(event) => setDraftName(event.target.value)}
+                placeholder="输入显示名称"
+                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+              />
+            </MobileFieldGroup>
+            <MobileFieldGroup label="签名">
+              <TextAreaField
+                value={draftSignature}
+                onChange={(event) => setDraftSignature(event.target.value)}
+                className="min-h-24 resize-none rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 leading-6 shadow-none focus:translate-y-0"
+                placeholder="介绍一下你自己，或者写一句当前状态"
+              />
+            </MobileFieldGroup>
           </div>
 
-          <Button
-            onClick={() => saveProfileMutation.mutate()}
-            disabled={!canSaveProfile || saveProfileMutation.isPending}
-            variant="primary"
-          >
-            {saveProfileMutation.isPending ? "保存中..." : "保存资料"}
-          </Button>
+          <div className="pt-1">
+            <Button
+              onClick={() => saveProfileMutation.mutate()}
+              disabled={!canSaveProfile || saveProfileMutation.isPending}
+              variant="primary"
+              className="h-10 w-full rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+            >
+              {saveProfileMutation.isPending ? "保存中..." : "保存资料"}
+            </Button>
+          </div>
           {saveProfileMutation.isError &&
           saveProfileMutation.error instanceof Error ? (
             <ErrorBlock message={saveProfileMutation.error.message} />
@@ -186,34 +201,60 @@ export function ProfileSettingsPage() {
           {saveProfileMutation.isSuccess ? (
             <InlineNotice tone="success">资料已更新。</InlineNotice>
           ) : null}
-        </AppSection>
+        </MobileSettingsSection>
       ) : null}
 
       {activeTab === "ai" ? (
-        <AppSection className="space-y-4">
+        <MobileSettingsSection
+          title="AI 设置"
+          description="你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。"
+        >
+          {ownerQuery.isLoading ? (
+            <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
+          ) : null}
+          {ownerQuery.isError && ownerQuery.error instanceof Error ? (
+            <ErrorBlock message={ownerQuery.error.message} />
+          ) : null}
+          {ownerQuery.data ? (
+            <InlineNotice
+              tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
+            >
+              {ownerQuery.data.hasCustomApiKey
+                ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
+                : "当前使用实例级 Provider。"}
+            </InlineNotice>
+          ) : null}
+
           <div className="space-y-3">
-            <TextField
-              type="password"
-              value={apiKeyDraft}
-              onChange={(event) => setApiKeyDraft(event.target.value)}
-              placeholder={
-                ownerQuery.data?.hasCustomApiKey
-                  ? "已保存专属 API Key，输入新的值可替换"
-                  : "输入你的专属 API Key"
-              }
-            />
-            <TextField
-              value={apiBaseDraft}
-              onChange={(event) => setApiBaseDraft(event.target.value)}
-              placeholder="可选兼容 Base URL，例如 https://api.openai.com/v1"
-            />
+            <MobileFieldGroup label="专属 API Key">
+              <TextField
+                type="password"
+                value={apiKeyDraft}
+                onChange={(event) => setApiKeyDraft(event.target.value)}
+                placeholder={
+                  ownerQuery.data?.hasCustomApiKey
+                    ? "已保存专属 API Key，输入新的值可替换"
+                    : "输入你的专属 API Key"
+                }
+                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+              />
+            </MobileFieldGroup>
+            <MobileFieldGroup label="兼容 Base URL">
+              <TextField
+                value={apiBaseDraft}
+                onChange={(event) => setApiBaseDraft(event.target.value)}
+                placeholder="可选，例如 https://api.openai.com/v1"
+                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+              />
+            </MobileFieldGroup>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="space-y-2 pt-1">
             <Button
               onClick={() => saveApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !apiKeyDraft.trim()}
               variant="primary"
+              className="h-10 w-full rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
             >
               {saveApiKeyMutation.isPending ? "保存中..." : "保存专属 API Key"}
             </Button>
@@ -221,17 +262,12 @@ export function ProfileSettingsPage() {
               onClick={() => clearApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !ownerQuery.data?.hasCustomApiKey}
               variant="secondary"
+              className="h-10 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
             >
               {clearApiKeyMutation.isPending ? "清除中..." : "清除专属 API Key"}
             </Button>
           </div>
 
-          {ownerQuery.isLoading ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
-          ) : null}
-          {ownerQuery.isError && ownerQuery.error instanceof Error ? (
-            <ErrorBlock message={ownerQuery.error.message} />
-          ) : null}
           {saveApiKeyMutation.isError &&
           saveApiKeyMutation.error instanceof Error ? (
             <ErrorBlock message={saveApiKeyMutation.error.message} />
@@ -246,63 +282,101 @@ export function ProfileSettingsPage() {
           {clearApiKeyMutation.isSuccess ? (
             <InlineNotice tone="success">专属 API Key 已清除。</InlineNotice>
           ) : null}
-          {ownerQuery.data ? (
-            <InlineNotice
-              tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
-            >
-              {ownerQuery.data.hasCustomApiKey
-                ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
-                : "当前使用实例级 Provider。"}
-            </InlineNotice>
-          ) : null}
-        </AppSection>
+        </MobileSettingsSection>
       ) : null}
 
       {activeTab === "legal" ? (
-        <AppSection className="space-y-4">
-          <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
-            {legalTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveLegalTab(tab.id)}
-                className={cn(
-                  "flex-1 rounded-[10px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
-                  activeLegalTab === tab.id
-                    ? "bg-white text-[color:var(--text-primary)] shadow-sm"
-                    : "text-[color:var(--text-muted)] hover:bg-white/70",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <>
+          {desktopMode ? null : (
+            <section className="mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+              <div className="px-4 py-4">
+                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                  协议与规范
+                </div>
+                <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                  查看当前世界的隐私、服务条款和社区规范说明。
+                </div>
+              </div>
+              <MobileLinkRow
+                label="隐私政策"
+                subtitle="了解资料、会话和运行数据如何被处理"
+                onClick={() =>
+                  void navigate({
+                    to: "/legal/privacy",
+                  })
+                }
+              />
+              <MobileLinkRow
+                label="服务条款"
+                subtitle="查看使用规则、责任边界和服务约定"
+                onClick={() =>
+                  void navigate({
+                    to: "/legal/terms",
+                  })
+                }
+              />
+              <MobileLinkRow
+                label="社区规范"
+                subtitle="查看举报、屏蔽和社区互动边界"
+                onClick={() =>
+                  void navigate({
+                    to: "/legal/community",
+                  })
+                }
+              />
+            </section>
+          )}
 
-          <div className="space-y-3">
-            <Button
-              variant="secondary"
-              onClick={() =>
-                void navigate({
-                  to:
-                    activeLegalTab === "privacy"
-                      ? "/legal/privacy"
-                      : activeLegalTab === "terms"
-                        ? "/legal/terms"
-                        : "/legal/community",
-                })
-              }
+          {desktopMode ? (
+            <MobileSettingsSection
+              title="协议与规范"
+              description="桌面端保留当前文档切换和独立打开入口。"
             >
-              打开当前文档
-            </Button>
-            <InlineNotice tone="muted">
-              {activeLegalTab === "privacy"
-                ? "查看世界隐私政策和数据使用说明。"
-                : activeLegalTab === "terms"
-                  ? "查看世界服务使用协议。"
-                  : "查看世界社区规范和反馈口径。"}
-            </InlineNotice>
-          </div>
-        </AppSection>
+              <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
+                {legalTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveLegalTab(tab.id)}
+                    className={cn(
+                      "flex-1 rounded-[10px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
+                      activeLegalTab === tab.id
+                        ? "bg-white text-[color:var(--text-primary)] shadow-sm"
+                        : "text-[color:var(--text-muted)] hover:bg-white/70",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    void navigate({
+                      to:
+                        activeLegalTab === "privacy"
+                          ? "/legal/privacy"
+                          : activeLegalTab === "terms"
+                            ? "/legal/terms"
+                            : "/legal/community",
+                    })
+                  }
+                >
+                  打开当前文档
+                </Button>
+                <InlineNotice tone="muted">
+                  {activeLegalTab === "privacy"
+                    ? "查看世界隐私政策和数据使用说明。"
+                    : activeLegalTab === "terms"
+                      ? "查看世界服务使用协议。"
+                      : "查看世界社区规范和反馈口径。"}
+                </InlineNotice>
+              </div>
+            </MobileSettingsSection>
+          ) : null}
+        </>
       ) : null}
     </>
   );
@@ -414,7 +488,7 @@ export function ProfileSettingsPage() {
   }
 
   return (
-    <AppPage className="space-y-4">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title="设置"
         titleAlign="center"
@@ -423,13 +497,13 @@ export function ProfileSettingsPage() {
             onClick={() => navigate({ to: backTo })}
             variant="ghost"
             size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
-      {content}
+      <div className="space-y-2 pb-8">{content}</div>
     </AppPage>
   );
 }
@@ -442,5 +516,76 @@ function DesktopStatCard({ label, value }: { label: string; value: string }) {
         {value}
       </div>
     </div>
+  );
+}
+
+function MobileSettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-2 space-y-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4">
+      <div>
+        <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        {description ? (
+          <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+            {description}
+          </div>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function MobileFieldGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <div className="mb-2 text-[13px] font-medium text-[color:var(--text-secondary)]">
+        {label}
+      </div>
+      {children}
+    </label>
+  );
+}
+
+function MobileLinkRow({
+  label,
+  subtitle,
+  onClick,
+}: {
+  label: string;
+  subtitle: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 border-t border-[color:var(--border-faint)] px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[16px] text-[color:var(--text-primary)]">
+          {label}
+        </div>
+        <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          {subtitle}
+        </div>
+      </div>
+      <div className="text-[color:var(--text-dim)]">›</div>
+    </button>
   );
 }

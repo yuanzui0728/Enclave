@@ -1,35 +1,27 @@
-import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import { AppPage, AppSection, Button } from "@yinjie/ui";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { MobileDocumentShell } from "../components/mobile-document-shell";
 
 export function LegalTermsPage() {
-  const navigate = useNavigate();
-
   return (
-    <AppPage>
-      <Button
-        onClick={() =>
-          navigateBackOrFallback(() => {
-            void navigate({ to: "/profile/settings" });
-          })
-        }
-        variant="ghost"
-        size="icon"
-        className="text-[color:var(--text-secondary)]"
-      >
-        <ArrowLeft size={18} />
-      </Button>
-      <AppSection className="mt-4 space-y-4 p-6">
-        <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--text-muted)]">Terms</div>
-        <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">用户协议</h1>
-        <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-          你需要对自己发布的文字、评论、动态和举报内容负责，不得利用隐界发布违法、骚扰、仇恨、侵权或误导性内容。
-        </p>
-        <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-          平台保留对违规内容做降级、限制互动、封禁角色关系和保留审计记录的权利。若你删除账号，当前会话会立即失效。
-        </p>
-      </AppSection>
-    </AppPage>
+    <MobileDocumentShell
+      title="服务条款"
+      eyebrow="Terms"
+      summary="你在隐界发布和互动的内容，需要遵守当前世界实例的服务规则、法律要求与基础安全边界。"
+      sections={[
+        {
+          title: "你的使用责任",
+          paragraphs: [
+            "你需要对自己发送的消息、评论、动态、资料修改和举报内容负责，不得利用隐界发布违法、骚扰、仇恨、侵权或误导性内容。",
+            "如果你在世界里主动触发互动、加好友、创建群聊或调用 AI 能力，这些行为都会按产品能力进入对应的记录、通知和审计链路。",
+          ],
+        },
+        {
+          title: "平台可以做什么",
+          paragraphs: [
+            "对于违规内容或越界行为，平台与实例拥有者保留做降级、限制互动、封禁关系、保留审计记录和中止服务的权利。",
+            "当你删除账号、退出会话或清除关键配置后，当前登录与关联状态会按现有产品逻辑失效或被回收。",
+          ],
+        },
+      ]}
+    />
   );
 }
