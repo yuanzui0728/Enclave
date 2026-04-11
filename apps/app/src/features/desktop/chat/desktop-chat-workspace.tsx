@@ -163,6 +163,9 @@ export function DesktopChatWorkspace({
     useState(false);
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
+  const [detailsMemberSearchRequest, setDetailsMemberSearchRequest] = useState<
+    number | null
+  >(null);
   const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [conversationContextMenu, setConversationContextMenu] = useState<{
@@ -329,6 +332,7 @@ export function DesktopChatWorkspace({
       serviceConversationActive
     ) {
       setRightPanelMode(null);
+      setDetailsMemberSearchRequest(null);
     }
   }, [activeConversation, serviceConversationActive, subscriptionInboxActive]);
 
@@ -599,6 +603,12 @@ export function DesktopChatWorkspace({
     mode: Exclude<DesktopChatSidePanelMode, null>,
   ) {
     setRightPanelMode((current) => (current === mode ? null : mode));
+    setDetailsMemberSearchRequest(null);
+  }
+
+  function handleOpenGroupMemberSearch() {
+    setRightPanelMode("details");
+    setDetailsMemberSearchRequest(Date.now());
   }
 
   function openDesktopSearch(keyword = searchTerm) {
@@ -995,6 +1005,7 @@ export function DesktopChatWorkspace({
               desktopSidePanelMode={rightPanelMode}
               onToggleDesktopHistory={() => handleToggleSidePanel("history")}
               onToggleDesktopDetails={() => handleToggleSidePanel("details")}
+              onOpenDesktopMemberSearch={handleOpenGroupMemberSearch}
               onDesktopCallAction={handleDesktopCallAction}
               highlightedMessageId={
                 activeConversation.id === selectedConversationId
@@ -1046,14 +1057,21 @@ export function DesktopChatWorkspace({
           mode={rightPanelMode}
           title={rightPanelMode === "history" ? "聊天记录" : "聊天信息"}
           subtitle={activeConversation.title}
-          onClose={() => setRightPanelMode(null)}
+          onClose={() => {
+            setRightPanelMode(null);
+            setDetailsMemberSearchRequest(null);
+          }}
         >
           {rightPanelMode === "history" ? (
             <DesktopChatHistoryPanel conversation={activeConversation} />
           ) : (
             <DesktopChatDetailsPanel
               conversation={activeConversation}
-              onOpenHistory={() => setRightPanelMode("history")}
+              memberSearchRequest={detailsMemberSearchRequest}
+              onOpenHistory={() => {
+                setRightPanelMode("history");
+                setDetailsMemberSearchRequest(null);
+              }}
               onCreateGroup={(input) => {
                 setCreateGroupDialogState(input);
               }}

@@ -64,6 +64,7 @@ type GroupChatThreadPanelProps = {
   desktopSidePanelMode?: DesktopChatSidePanelMode;
   onToggleDesktopHistory?: () => void;
   onToggleDesktopDetails?: () => void;
+  onOpenDesktopMemberSearch?: () => void;
   onDesktopCallAction?: (kind: DesktopChatCallKind) => void;
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
@@ -78,6 +79,7 @@ export function GroupChatThreadPanel({
   desktopSidePanelMode = null,
   onToggleDesktopHistory,
   onToggleDesktopDetails,
+  onOpenDesktopMemberSearch,
   onDesktopCallAction,
   highlightedMessageId,
   routeContextNotice,
@@ -655,20 +657,30 @@ export function GroupChatThreadPanel({
     >
       {isDesktop ? (
         <header className="flex items-center gap-3 border-b border-black/5 bg-[#f3f3f3] px-6 py-3">
-          <button
-            type="button"
-            onClick={() => onToggleDesktopDetails?.()}
-            className="min-w-0 flex-1 rounded-[10px] px-1 py-1 text-left transition hover:bg-white/40"
-            aria-label="打开群聊信息"
-            title="打开群聊信息"
-          >
-            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-              {groupQuery.data?.name ?? "群聊"}
-            </div>
-            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-              {membersQuery.data?.length ?? 0} 人群聊
-            </div>
-          </button>
+          <div className="min-w-0 flex-1 px-1 py-1">
+            <button
+              type="button"
+              onClick={() => onToggleDesktopDetails?.()}
+              className="block w-full rounded-[10px] px-0 py-0 text-left transition hover:bg-white/40"
+              aria-label="打开群聊信息"
+              title="打开群聊信息"
+            >
+              <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+                {groupQuery.data?.name ?? "群聊"}
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onOpenDesktopMemberSearch?.() ?? onToggleDesktopDetails?.()
+              }
+              className="mt-1 rounded-[8px] px-0 py-0 text-[11px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+              aria-label="查看群成员"
+              title="查看群成员"
+            >
+              {(membersQuery.data?.length ?? 0).toString()} 人群聊
+            </button>
+          </div>
 
           <div className="hidden items-center xl:flex">
             <DesktopChatHeaderActions
