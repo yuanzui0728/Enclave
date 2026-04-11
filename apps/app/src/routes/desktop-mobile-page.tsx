@@ -674,7 +674,7 @@ export function DesktopMobilePage() {
             </section>
           </div>
 
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -691,7 +691,7 @@ export function DesktopMobilePage() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   to="/tabs/mini-programs"
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                 >
                   打开小程序面板
                 </Link>
@@ -707,7 +707,7 @@ export function DesktopMobilePage() {
                         : "小程序面板里还没有可同步到手机的最近使用。",
                     );
                   }}
-                  className="rounded-full"
+                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -716,7 +716,7 @@ export function DesktopMobilePage() {
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   当前小程序工作台
                 </div>
@@ -770,7 +770,7 @@ export function DesktopMobilePage() {
                 )}
               </div>
 
-              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近使用小程序
                 </div>
@@ -832,7 +832,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -848,14 +848,14 @@ export function DesktopMobilePage() {
               </div>
               <Link
                 to="/desktop/channels/live-companion"
-                className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
               >
                 打开直播伴侣
               </Link>
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   当前直播准备
                 </div>
@@ -883,7 +883,7 @@ export function DesktopMobilePage() {
                         setNotice,
                       })
                     }
-                    className="rounded-full"
+                    className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
                   >
                     <Copy size={14} />
                     发准备到手机
@@ -902,7 +902,7 @@ export function DesktopMobilePage() {
                           : "直播伴侣还没有可同步到手机的内容。",
                       );
                     }}
-                    className="rounded-full"
+                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                   >
                     <RefreshCw size={14} />
                     刷新直播状态
@@ -910,7 +910,7 @@ export function DesktopMobilePage() {
                 </div>
               </div>
 
-              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+              <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近直播状态
                 </div>
@@ -947,7 +947,7 @@ export function DesktopMobilePage() {
                         setNotice,
                       })
                     }
-                    className="rounded-full"
+                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                   >
                     <ArrowUpRight size={14} />
                     发直播状态到手机
@@ -957,7 +957,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -971,7 +971,7 @@ export function DesktopMobilePage() {
                   从群二维码页发到手机的邀请，会先集中展示在这里，方便继续发手机或回桌面群页。
                 </div>
               </div>
-              <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+              <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium text-[#1f8f4f]">
                 {recentGroupInviteHandoffs.length} 条最近邀请
               </div>
             </div>
@@ -979,10 +979,10 @@ export function DesktopMobilePage() {
             <div className="mt-4 space-y-3">
               {currentGroupInviteHandoff ? (
                 <>
-                  <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,rgba(255,247,236,0.98),rgba(255,255,255,0.92))] p-5">
+                  <div className="rounded-[14px] border border-black/6 bg-[#fafafa] p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium tracking-[0.18em] text-[color:var(--brand-primary)]">
+                        <div className="text-xs font-medium tracking-[0.14em] text-[#1f8f4f]">
                           当前群邀请
                         </div>
                         <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
@@ -999,7 +999,7 @@ export function DesktopMobilePage() {
                           <span>已纳入手机接力固定入口</span>
                         </div>
                       </div>
-                      <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                      <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium text-[#1f8f4f]">
                         群邀请入口
                       </div>
                     </div>
@@ -1016,21 +1016,21 @@ export function DesktopMobilePage() {
                             setNotice,
                           })
                         }
-                        className="rounded-full"
+                        className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
                       >
                         <Copy size={14} />
                         再发一次
                       </Button>
                       <Link
                         to={currentGroupInviteHandoff.path as never}
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                       >
                         桌面打开
                       </Link>
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
+                      <div className="rounded-[12px] border border-black/6 bg-white px-4 py-3">
                         {currentGroupInviteDelivery ? (
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="min-w-0 flex-1">
@@ -1048,7 +1048,7 @@ export function DesktopMobilePage() {
                               to={
                                 currentGroupInviteDelivery.conversationPath as never
                               }
-                              className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                              className="inline-flex h-8 items-center justify-center rounded-[8px] border border-black/8 bg-[#f7f7f7] px-3 text-[11px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                             >
                               回到会话
                             </Link>
@@ -1061,7 +1061,7 @@ export function DesktopMobilePage() {
                       </div>
 
                       {currentGroupInviteReopens.length ? (
-                        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white/84 px-4 py-3">
+                        <div className="rounded-[12px] border border-black/6 bg-white px-4 py-3">
                           <div className="text-xs font-medium text-[color:var(--text-primary)]">
                             最近从这些会话回到邀请页
                           </div>
@@ -1071,7 +1071,7 @@ export function DesktopMobilePage() {
                               .map((record) => (
                                 <div
                                   key={`${record.conversationPath}:${record.reopenedAt}`}
-                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.72)] px-3 py-2"
+                                  className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-black/6 bg-[#fafafa] px-3 py-2"
                                 >
                                   <div className="min-w-0 flex-1">
                                     <div className="truncate text-[11px] font-medium text-[color:var(--text-primary)]">
@@ -1086,7 +1086,7 @@ export function DesktopMobilePage() {
                                   </div>
                                   <Link
                                     to={record.conversationPath as never}
-                                    className="inline-flex h-7 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                                    className="inline-flex h-7 items-center justify-center rounded-[8px] border border-black/8 bg-white px-3 text-[10px] font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                                   >
                                     回到会话
                                   </Link>
@@ -1106,7 +1106,7 @@ export function DesktopMobilePage() {
                       {archivedGroupInviteHandoffs.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                          className="flex items-start justify-between gap-4 rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
                         >
                           <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1132,14 +1132,14 @@ export function DesktopMobilePage() {
                                   setNotice,
                                 })
                               }
-                              className="rounded-full"
+                              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                             >
                               <Copy size={14} />
                               再发一次
                             </Button>
                             <Link
                               to={item.path as never}
-                              className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                             >
                               桌面打开
                             </Link>
@@ -1158,7 +1158,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+          <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <CheckCircle2
                 size={16}
@@ -1183,7 +1183,7 @@ export function DesktopMobilePage() {
                           {group.description}
                         </div>
                       </div>
-                      <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                      <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-3 py-1 text-[11px] font-medium text-[#1f8f4f]">
                         {group.items.length} 条
                       </div>
                     </div>
@@ -1191,7 +1191,7 @@ export function DesktopMobilePage() {
                     {group.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-start justify-between gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                        className="flex items-start justify-between gap-4 rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1216,7 +1216,7 @@ export function DesktopMobilePage() {
                               setNotice,
                             })
                           }
-                          className="rounded-full"
+                          className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                         >
                           再发一次
                         </Button>
