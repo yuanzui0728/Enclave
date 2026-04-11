@@ -59,6 +59,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const [leavingScreen, setLeavingScreen] = useState(false);
   const [playbackSettling, setPlaybackSettling] = useState(false);
   const [videoCompletedTurnCount, setVideoCompletedTurnCount] = useState(0);
+  const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
   const waitingNoticeSentRef = useRef(false);
   const connectedNoticeSentRef = useRef(false);
   const endedNoticeSentRef = useRef(false);
@@ -186,6 +187,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           : "跟随主推理",
       ].join(" · ")
     : null;
+  const showSpeechWarning = Boolean(speechStatus && !speechStatus.speechReady);
+  const showDiagnosticsToggle =
+    !showSpeechWarning && Boolean(speechStatus || latencySummary);
   const showPermissionPrimer =
     !callTipsDismissed &&
     !isVideoMode &&
@@ -234,6 +238,23 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     setRecordButtonHolding(false);
   }, [speech.status]);
+
+  useEffect(() => {
+    if (
+      diagnosticsExpanded &&
+      (speech.status === "listening" ||
+        speech.status === "requesting-permission" ||
+        activeCall.turnMutation.isPending ||
+        activeCall.playbackState === "playing")
+    ) {
+      setDiagnosticsExpanded(false);
+    }
+  }, [
+    activeCall.playbackState,
+    activeCall.turnMutation.isPending,
+    diagnosticsExpanded,
+    speech.status,
+  ]);
 
   useEffect(() => {
     if (!isVideoMode) {
@@ -883,11 +904,35 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         )}
 
         <div className="mt-4 space-y-3">
-          {speechStatus ? (
-            <InlineNotice tone={speechStatus.speechReady ? "info" : "warning"}>
+          {showSpeechWarning && speechStatus ? (
+            <InlineNotice tone="warning">
               {speechStatus.speechMessage}
               {speechProviderSummary ? ` 当前链路：${speechProviderSummary}。` : ""}
             </InlineNotice>
+          ) : null}
+          {showDiagnosticsToggle ? (
+            <div className="flex justify-start">
+              <button
+                type="button"
+                onClick={() => setDiagnosticsExpanded((current) => !current)}
+                className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] tracking-[0.08em] text-white/56 transition hover:bg-white/10 hover:text-white/72"
+              >
+                {diagnosticsExpanded ? "收起链路状态" : "查看链路状态"}
+              </button>
+            </div>
+          ) : null}
+          {diagnosticsExpanded ? (
+            <div className="rounded-[20px] border border-white/10 bg-white/6 px-4 py-3 text-[12px] leading-6 text-white/68">
+              {speechStatus ? (
+                <div>
+                  当前语音链路：{speechStatus.speechMessage}
+                  {speechProviderSummary ? ` ${speechProviderSummary}。` : ""}
+                </div>
+              ) : null}
+              {latencySummary ? (
+                <div>{`最近一轮：${latencySummary}`}</div>
+              ) : null}
+            </div>
           ) : null}
           {showPermissionPrimer ? (
             <InlineNotice tone="info">
@@ -1033,11 +1078,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         </div>
 
         <div className="mt-4 grid gap-3">
-          {latencySummary ? (
-            <div className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-3 text-[12px] leading-6 text-white/72">
-              最近一轮：{latencySummary}
-            </div>
-          ) : null}
           <CallBubble
             label="我"
             text={
