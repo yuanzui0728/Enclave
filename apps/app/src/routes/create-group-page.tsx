@@ -196,20 +196,23 @@ export function CreateGroupPage() {
 
   if (isDesktopLayout) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#f5f5f5]">
-        <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-white px-6 py-4">
+      <div className="flex h-full min-h-0 flex-col bg-[#f3f3f3]">
+        <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div className="flex items-center gap-3">
             <Button
               type="button"
               onClick={handleBack}
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-full border border-black/6 bg-[#f7f7f7] text-[color:var(--text-primary)]"
+              className="h-10 w-10 rounded-[10px] border border-black/6 bg-white text-[color:var(--text-primary)]"
             >
               <ArrowLeft size={18} />
             </Button>
             <div>
-              <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                发起群聊
+              </div>
+              <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
                 发起群聊
               </div>
               <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -224,16 +227,16 @@ export function CreateGroupPage() {
             disabled={!selectedIds.length || createMutation.isPending}
             variant="primary"
             size="lg"
-            className="rounded-2xl px-6"
+            className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
           >
             {createMutation.isPending ? "正在创建..." : "创建群聊"}
           </Button>
         </header>
 
         <div className="min-h-0 flex-1 p-6">
-          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[28px] border border-black/6 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.10)]">
+          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[18px] border border-black/6 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
             <section className="flex w-[400px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-              <div className="border-b border-black/6 px-5 py-5">
+              <div className="border-b border-black/6 px-5 py-4">
                 <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
                   选择成员
                 </div>
@@ -251,7 +254,7 @@ export function CreateGroupPage() {
                     value={searchTerm}
                     onChange={(event) => setSearchTerm(event.target.value)}
                     placeholder="搜索联系人"
-                    className="h-11 w-full rounded-2xl border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+                    className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
                   />
                 </label>
 
@@ -293,7 +296,7 @@ export function CreateGroupPage() {
                   </div>
                 ) : null}
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {filteredFriends.map((item) => (
                     <FriendSelectionRow
                       key={item.character.id}
@@ -310,9 +313,9 @@ export function CreateGroupPage() {
               </div>
             </section>
 
-            <section className="flex min-w-0 flex-1 flex-col bg-[linear-gradient(180deg,#fcfcfc,#f6f6f6)]">
-              <div className="border-b border-black/6 px-6 py-5">
-                <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-dim)]">
+            <section className="flex min-w-0 flex-1 flex-col bg-[#fafafa]">
+              <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                   群资料
                 </div>
                 <div className="mt-4 max-w-[420px]">
@@ -323,7 +326,7 @@ export function CreateGroupPage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     placeholder={defaultGroupName}
-                    className="mt-3 rounded-2xl border-black/8 bg-white"
+                    className="mt-3 rounded-[10px] border-black/8 bg-white"
                   />
                   <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
                     不填写时会使用“{defaultGroupName}”。
@@ -341,7 +344,7 @@ export function CreateGroupPage() {
                       {selectedFriends.map((item) => (
                         <div
                           key={item.character.id}
-                          className="flex items-center gap-3 rounded-[22px] border border-black/6 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.05)]"
+                          className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-4"
                         >
                           <AvatarChip
                             name={getFriendDisplayName(item)}
@@ -358,7 +361,7 @@ export function CreateGroupPage() {
                           <button
                             type="button"
                             onClick={() => toggleSelection(item.character.id)}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
                             aria-label={`移除 ${getFriendDisplayName(item)}`}
                           >
                             <X size={14} />
@@ -381,7 +384,7 @@ export function CreateGroupPage() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-4 border-t border-black/6 px-6 py-4">
+              <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
                 <div className="text-[12px] text-[color:var(--text-muted)]">
                   已选择 {selectedIds.length} 位成员，创建后会直接进入新群聊。
                 </div>
@@ -390,7 +393,7 @@ export function CreateGroupPage() {
                     type="button"
                     variant="secondary"
                     onClick={handleBack}
-                    className="rounded-2xl"
+                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                   >
                     取消
                   </Button>
@@ -399,7 +402,7 @@ export function CreateGroupPage() {
                     onClick={() => createMutation.mutate()}
                     disabled={!selectedIds.length || createMutation.isPending}
                     variant="primary"
-                    className="rounded-2xl px-6"
+                    className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
                   >
                     {createMutation.isPending ? "正在创建群聊..." : "确认创建"}
                   </Button>
@@ -623,8 +626,8 @@ function FriendSelectionRow({
         "flex w-full items-center gap-3 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[18px] border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)] px-4 py-3 shadow-[0_8px_20px_rgba(7,193,96,0.08)]"
-            : "rounded-[18px] border border-transparent bg-transparent px-4 py-3 transition hover:bg-white"
+            ? "rounded-[10px] border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)] px-4 py-3"
+            : "rounded-[10px] border border-transparent bg-transparent px-4 py-3 transition hover:bg-white"
           : checked
             ? "bg-[#f3fff8] px-4 py-3"
             : "bg-white px-4 py-3",
@@ -647,7 +650,7 @@ function FriendSelectionRow({
           checked
             ? "border-[#07c160] bg-[#07c160] text-white"
             : isDesktop
-              ? "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-transparent"
+              ? "border-black/8 bg-[#f3f3f3] text-transparent"
               : "border-black/10 bg-[#f5f5f5] text-transparent",
         )}
       >
