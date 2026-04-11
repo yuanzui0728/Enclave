@@ -2470,10 +2470,9 @@ export function EvalsPage() {
                   <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提示词消息</div>
                   <div className="mt-2 space-y-2">
                     {traceDetailQuery.data.input.promptMessages.map((message, index) => (
-                      <div key={`${message.role}-${index}`} className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{formatPromptRole(message.role)}</div>
+                      <AdminMiniPanel key={`${message.role}-${index}`} title={formatPromptRole(message.role)}>
                         <div className="mt-2 whitespace-pre-wrap break-words leading-6 text-[color:var(--text-primary)]">{message.content}</div>
-                      </div>
+                      </AdminMiniPanel>
                     ))}
                   </div>
                 </div>
@@ -2507,8 +2506,7 @@ export function EvalsPage() {
                   <>
                     <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">评测汇总</div>
                     <div className="grid gap-3">
-                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">评分</div>
+                      <AdminMiniPanel title="评分">
                         <div className="mt-2 space-y-2">
                           {traceDetailQuery.data.evaluationSummary.scores.map((score) => (
                             <div key={score.key} className="flex items-center justify-between gap-3">
@@ -2517,9 +2515,8 @@ export function EvalsPage() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                      <div className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">失败标签</div>
+                      </AdminMiniPanel>
+                      <AdminMiniPanel title="失败标签">
                         <div className="mt-2 flex flex-wrap gap-2">
                           {traceDetailQuery.data.evaluationSummary.failureTags.length > 0 ? (
                             traceDetailQuery.data.evaluationSummary.failureTags.map((tag) => (
@@ -2532,7 +2529,7 @@ export function EvalsPage() {
                             <span className="text-[color:var(--text-secondary)]">无</span>
                           )}
                         </div>
-                      </div>
+                      </AdminMiniPanel>
                     </div>
                   </>
                 ) : null}
