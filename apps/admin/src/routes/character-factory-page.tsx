@@ -21,7 +21,9 @@ import {
   AdminActionFeedback,
   AdminCodeBlock as CodeBlock,
   AdminInfoRows,
+  AdminPanelEmpty,
   AdminPageHero,
+  AdminRecordCard,
   AdminSectionNav,
   AdminSelectField as SelectFieldBlock,
   AdminTextArea as TextAreaBlock,
@@ -974,11 +976,26 @@ export function CharacterFactoryPage() {
             ) : null}
             <div className="mt-4 space-y-4">
               {revisions.map((revision) => (
-                <RevisionCard
+                <AdminRecordCard
                   key={revision.id}
-                  revision={revision}
-                  restoring={restoreMutation.isPending && restoreMutation.variables === revision.id}
-                  onRestore={() => restoreMutation.mutate(revision.id)}
+                  title={revision.summary?.trim() || "无发布说明"}
+                  badges={
+                    <>
+                      <StatusPill tone="muted">v{revision.version}</StatusPill>
+                      <StatusPill tone="muted">{formatChangeSource(revision.changeSource)}</StatusPill>
+                    </>
+                  }
+                  meta={formatDateTime(revision.createdAt)}
+                  actions={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => restoreMutation.mutate(revision.id)}
+                      disabled={restoreMutation.isPending && restoreMutation.variables === revision.id}
+                    >
+                      {restoreMutation.isPending && restoreMutation.variables === revision.id ? "恢复中..." : "恢复到草稿"}
+                    </Button>
+                  }
                 />
               ))}
             </div>
@@ -994,7 +1011,28 @@ export function CharacterFactoryPage() {
           </InlineNotice>
           <div className="mt-4 space-y-3">
             {snapshot.fieldSources.map((item) => (
-              <FieldSourceCard key={`${item.targetField}-${item.recipeField}`} item={item} />
+              <AdminRecordCard
+                key={`${item.targetField}-${item.recipeField}`}
+                title={item.label}
+                badges={
+                  <StatusPill tone={item.status === "runtime_drift" ? "warning" : item.status === "draft_only" ? "muted" : "healthy"}>
+                    {formatFieldSourceStatus(item.status)}
+                  </StatusPill>
+                }
+                meta={
+                  <>
+                    {item.targetField} ← {item.recipeField}
+                  </>
+                }
+                description={item.note}
+                details={
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <ValueSnapshot label="运行时" value={item.runtimeValue} />
+                    <ValueSnapshot label="已发布" value={item.publishedValue} />
+                    <ValueSnapshot label="草稿" value={item.draftValue} />
+                  </div>
+                }
+              />
             ))}
           </div>
         </Card>
@@ -1008,12 +1046,25 @@ export function CharacterFactoryPage() {
           </InlineNotice>
           <div className="mt-4 space-y-3">
             {changedPublishItems.map((item) => (
-              <PublishDiffCard key={`${item.targetField}-${item.recipeField}`} item={item} />
+              <AdminRecordCard
+                key={`${item.targetField}-${item.recipeField}`}
+                title={item.label}
+                badges={<StatusPill tone="warning">发布后变更</StatusPill>}
+                meta={
+                  <>
+                    {item.targetField} ← {item.recipeField}
+                  </>
+                }
+                details={
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <ValueSnapshot label="当前运行时" value={item.currentValue} />
+                    <ValueSnapshot label="发布后" value={item.nextValue} />
+                  </div>
+                }
+              />
             ))}
             {changedPublishItems.length === 0 ? (
-              <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
-                当前没有需要覆盖的运行态字段。
-              </div>
+              <AdminPanelEmpty message="当前没有需要覆盖的运行态字段。" />
             ) : null}
             {snapshot.publishDiff.items.length > changedPublishItems.length ? (
               <div className="text-sm text-[color:var(--text-muted)]">
@@ -1023,84 +1074,6 @@ export function CharacterFactoryPage() {
           </div>
         </Card>
       </div>
-      </div>
-    </div>
-  );
-}
-
-function RevisionCard({
-  revision,
-  restoring,
-  onRestore,
-}: {
-  revision: CharacterBlueprintRevision;
-  restoring: boolean;
-  onRestore: () => void;
-}) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusPill tone="muted">v{revision.version}</StatusPill>
-        <StatusPill tone="muted">{formatChangeSource(revision.changeSource)}</StatusPill>
-      </div>
-      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
-        {revision.summary?.trim() || "无发布说明"}
-      </div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-        {formatDateTime(revision.createdAt)}
-      </div>
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button variant="secondary" size="sm" onClick={onRestore} disabled={restoring}>
-          {restoring ? "恢复中..." : "恢复到草稿"}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function FieldSourceCard({
-  item,
-}: {
-  item: CharacterFactorySnapshot["fieldSources"][number];
-}) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">{item.label}</div>
-        <StatusPill tone={item.status === "runtime_drift" ? "warning" : item.status === "draft_only" ? "muted" : "healthy"}>
-          {formatFieldSourceStatus(item.status)}
-        </StatusPill>
-      </div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-        {item.targetField} ← {item.recipeField}
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <ValueSnapshot label="运行时" value={item.runtimeValue} />
-        <ValueSnapshot label="已发布" value={item.publishedValue} />
-        <ValueSnapshot label="草稿" value={item.draftValue} />
-      </div>
-      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{item.note}</div>
-    </div>
-  );
-}
-
-function PublishDiffCard({
-  item,
-}: {
-  item: CharacterFactorySnapshot["publishDiff"]["items"][number];
-}) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">{item.label}</div>
-        <StatusPill tone="warning">发布后变更</StatusPill>
-      </div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-        {item.targetField} ← {item.recipeField}
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <ValueSnapshot label="当前运行时" value={item.currentValue} />
-        <ValueSnapshot label="发布后" value={item.nextValue} />
       </div>
     </div>
   );
