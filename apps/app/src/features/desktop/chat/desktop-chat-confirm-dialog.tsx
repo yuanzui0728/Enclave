@@ -60,8 +60,8 @@ export function DesktopChatConfirmDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+      <div className="relative w-full max-w-[520px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               {title}
@@ -74,20 +74,20 @@ export function DesktopChatConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-3 bg-[#f7f7f7] px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[10px] border-black/8 bg-white px-6 shadow-none hover:bg-[#efefef]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
           >
             取消
           </Button>
