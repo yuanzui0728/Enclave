@@ -215,8 +215,9 @@ export function ChannelsPage() {
     <AppPage className="space-y-0 px-0 pb-0 pt-0">
       <TabPageTopBar
         title="视频号"
-        subtitle="AI 视频与内容流"
+        subtitle="内容推荐与视频动态"
         titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={() =>
@@ -226,7 +227,7 @@ export function ChannelsPage() {
             }
             variant="ghost"
             size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
           >
             <ArrowLeft size={18} />
           </Button>
@@ -236,7 +237,7 @@ export function ChannelsPage() {
             onClick={() => generateMutation.mutate()}
             variant="ghost"
             size="sm"
-            className="border border-white/70 bg-white/82"
+            className="h-9 rounded-full border border-black/5 bg-white px-4 text-[13px] font-medium text-[#111827] hover:bg-[#f5f5f5]"
             disabled={generateMutation.isPending}
           >
             {generateMutation.isPending ? "生成中..." : "换一批"}
@@ -244,21 +245,21 @@ export function ChannelsPage() {
         }
       >
         <div className="mt-3 flex items-center gap-2">
-          <div className="rounded-full bg-[rgba(255,138,61,0.12)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+          <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1 text-[11px] font-medium text-[#07c160]">
             推荐
           </div>
-          <div className="rounded-full border border-white/80 bg-white/70 px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-black/5 bg-white px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
             朋友
           </div>
-          <div className="rounded-full border border-white/80 bg-white/70 px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-black/5 bg-white px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
             直播
           </div>
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-4 px-4 pb-5">
+      <div className="space-y-4 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         <InlineNotice tone="muted">
-          首轮只放 AI 生成内容和 AI 生成视频，交互节奏按微信视频号的推荐流来收口。
+          当前先聚焦推荐流体验，系统会持续补充 AI 生成的视频内容与互动演示。
         </InlineNotice>
         {successNotice ? (
           <InlineNotice tone="success">{successNotice}</InlineNotice>
@@ -271,7 +272,7 @@ export function ChannelsPage() {
         {!channelsQuery.isLoading && !visiblePosts.length ? (
           <EmptyState
             title="视频号还没有内容"
-            description="等系统注入第一批 AI 演示内容后，这里会出现沉浸式推荐流。"
+            description="再生成一批内容后，这里会逐步形成更连续的视频推荐流。"
           />
         ) : null}
         {!channelsQuery.isLoading && visiblePosts.length ? (
