@@ -29,20 +29,20 @@ export function MobileDetailsActionSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.22)] backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.18)] backdrop-blur-[1px]">
       <button
         type="button"
         className="absolute inset-0"
         aria-label="关闭操作菜单"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 rounded-t-[18px] bg-[#ededed] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-2 shadow-[0_-14px_32px_rgba(15,23,42,0.12)]">
+      <div className="absolute inset-x-0 bottom-0 rounded-t-[20px] bg-[#f2f2f7] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-2 shadow-[0_-10px_26px_rgba(15,23,42,0.1)]">
         <div className="mb-2 flex justify-center">
-          <div className="h-1 w-10 rounded-full bg-black/10" />
+          <div className="h-1 w-10 rounded-full bg-black/8" />
         </div>
 
-        <div className="overflow-hidden rounded-[14px] border border-black/6 bg-white">
-          <div className="border-b border-black/6 px-5 py-4 text-center">
+        <div className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
+          <div className="border-b border-black/5 px-5 py-4 text-center">
             <div className="text-[13px] font-medium text-[#111827]">{title}</div>
             {description ? (
               <div className="mt-1 text-[12px] leading-5 text-[#8c8c8c]">
@@ -57,8 +57,8 @@ export function MobileDetailsActionSheet({
               type="button"
               onClick={action.onClick}
               disabled={action.disabled}
-              className={`flex min-h-[56px] w-full flex-col items-center justify-center px-5 py-3 text-center transition active:bg-[#f7f7f7] ${
-                index > 0 ? "border-t border-black/6" : ""
+              className={`flex min-h-[56px] w-full flex-col items-center justify-center px-5 py-3 text-center transition active:bg-[#f5f5f5] ${
+                index > 0 ? "border-t border-black/5" : ""
               } ${action.danger ? "text-[#d74b45]" : "text-[#111827]"} ${
                 action.disabled ? "opacity-45" : ""
               }`}
@@ -80,7 +80,7 @@ export function MobileDetailsActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-[14px] border border-black/6 bg-white text-[17px] font-medium text-[#111827] transition active:bg-[#f7f7f7]"
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-[16px] border border-black/5 bg-white text-[17px] font-medium text-[#111827] transition active:bg-[#f5f5f5]"
         >
           {cancelLabel}
         </button>
