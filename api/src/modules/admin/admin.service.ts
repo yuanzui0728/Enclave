@@ -36,7 +36,7 @@ export class AdminService {
     return { ownerCount, characterCount, totalMessages, aiMessages };
   }
 
-  async getSystemInfo() {
+  getSystemInfo() {
     const dbPath = resolveDatabasePath(this.config.get<string>('DATABASE_PATH'));
     let dbSizeBytes = 0;
     try {

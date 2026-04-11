@@ -281,12 +281,13 @@ export class SocialService {
     return this.friendRequestRepo.save(req);
   }
 
-  async blockCharacter(characterId: string, _reason?: string): Promise<{
+  async blockCharacter(characterId: string, reason?: string): Promise<{
     id: string;
     characterId: string;
     reason?: string;
     createdAt: Date;
   }> {
+    void reason;
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const existing = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId });
 

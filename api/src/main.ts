@@ -40,4 +40,4 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
   console.log(`隐界 API running on port ${process.env.PORT ?? 3000}`);
 }
-bootstrap();
+void bootstrap();

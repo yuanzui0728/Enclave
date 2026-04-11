@@ -291,7 +291,7 @@ export class ReplyLogicAdminService {
     return {
       provider,
       worldContext,
-      conversation: await this.toGroupConversationItem(group, members, characters),
+      conversation: this.toGroupConversationItem(group, members, characters),
       visibleMessages: messages.map((message) =>
         this.toHistoryItemFromGroupMessage(
           message,
@@ -1046,11 +1046,11 @@ export class ReplyLogicAdminService {
     };
   }
 
-  private async toGroupConversationItem(
+  private toGroupConversationItem(
     group: GroupEntity,
     members: GroupMemberEntity[],
     characters: CharacterEntity[],
-  ): Promise<ReplyLogicOverviewConversationItem> {
+  ): ReplyLogicOverviewConversationItem {
     const characterMap = new Map(characters.map((character) => [character.id, character.name]));
 
     return {
