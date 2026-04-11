@@ -1,35 +1,27 @@
-import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import { AppPage, AppSection, Button } from "@yinjie/ui";
-import { navigateBackOrFallback } from "../lib/history-back";
+import { MobileDocumentShell } from "../components/mobile-document-shell";
 
 export function LegalPrivacyPage() {
-  const navigate = useNavigate();
-
   return (
-    <AppPage>
-      <Button
-        onClick={() =>
-          navigateBackOrFallback(() => {
-            void navigate({ to: "/profile/settings" });
-          })
-        }
-        variant="ghost"
-        size="icon"
-        className="text-[color:var(--text-secondary)]"
-      >
-        <ArrowLeft size={18} />
-      </Button>
-      <AppSection className="mt-4 space-y-4 p-6">
-        <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--text-muted)]">Privacy</div>
-        <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">隐私政策</h1>
-        <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-          隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、会话同步和安全审计。
-        </p>
-        <p className="text-sm leading-7 text-[color:var(--text-secondary)]">
-          远程模式下，数据会发送到 Core API 与推理网关；桌面自托管模式下，数据主要保存在本地运行目录。你可以在资料页退出会话、删除账号，并通过安全入口举报或屏蔽角色。
-        </p>
-      </AppSection>
-    </AppPage>
+    <MobileDocumentShell
+      title="隐私政策"
+      eyebrow="Privacy"
+      summary="隐界会在维持世界运行、会话同步和安全审计所需的范围内处理你的资料与互动数据。"
+      sections={[
+        {
+          title: "我们会保存什么",
+          paragraphs: [
+            "隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、消息同步和基础安全审计。",
+            "如果你在应用内配置了专属 API Key，服务端只会按现有能力做加密存储，不会在页面里直接展示完整明文。",
+          ],
+        },
+        {
+          title: "这些数据会去哪里",
+          paragraphs: [
+            "远程模式下，相关数据会发送到世界实例的 Core API 与推理网关；自托管或特定部署模式下，数据会保存在对应实例的运行目录与数据库里。",
+            "你可以通过资料设置、安全举报和屏蔽入口管理自己的使用范围；删除或退出后，系统会按当前产品规则回收会话与配置状态。",
+          ],
+        },
+      ]}
+    />
   );
 }
