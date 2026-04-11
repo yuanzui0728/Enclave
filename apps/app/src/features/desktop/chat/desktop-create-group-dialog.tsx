@@ -388,12 +388,17 @@ export function DesktopCreateGroupDialog({
         return;
       }
 
+      if (searchTerm.trim()) {
+        clearSearch();
+        return;
+      }
+
       onClose();
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [createMutation.isPending, onClose, open]);
+  }, [clearSearch, createMutation.isPending, onClose, open, searchTerm]);
 
   const toggleSelection = (characterId: string) => {
     setSelectedIds((current) =>
@@ -445,6 +450,14 @@ export function DesktopCreateGroupDialog({
     createMutation.mutate();
   };
 
+  const clearSearch = () => {
+    setSearchTerm("");
+    setFocusedFriendIndex(0);
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  };
+
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (
       shareHistory &&
@@ -494,6 +507,13 @@ export function DesktopCreateGroupDialog({
   const handleSearchKeyDown = (
     event: ReactKeyboardEvent<HTMLInputElement>,
   ) => {
+    if (event.key === "Escape" && searchTerm.trim()) {
+      event.preventDefault();
+      event.stopPropagation();
+      clearSearch();
+      return;
+    }
+
     if (event.key === "ArrowDown") {
       if (!orderedFilteredFriends.length) {
         return;
@@ -833,8 +853,18 @@ export function DesktopCreateGroupDialog({
               onChange={(event) => setSearchTerm(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="搜索联系人"
-              className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+              className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-10 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
             />
+            {searchTerm.trim() ? (
+              <button
+                type="button"
+                onClick={clearSearch}
+                aria-label="清空联系人搜索"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-[color:var(--text-dim)] transition hover:bg-[#f2f2f2] hover:text-[color:var(--text-primary)]"
+              >
+                <X size={14} />
+              </button>
+            ) : null}
           </label>
 
           <div className="mt-3 min-h-9 rounded-[10px] bg-[#fafafa] px-3 py-2.5">
@@ -1227,7 +1257,7 @@ export function DesktopCreateGroupDialog({
           <div className="rounded-[14px] border border-black/6 bg-[#fcfcfc] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
           <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] bg-white/80 px-3 py-2 text-[11px] text-[color:var(--text-dim)]">
             <span>{searchTerm.trim() ? `搜索：${searchTerm.trim()}` : "联系人目录"}</span>
-            <span>{searchTerm.trim() ? "按名称 / 备注 / 关系筛选" : "按首字母分组"}</span>
+            <span>{searchTerm.trim() ? "按名称 / 备注 / 关系筛选，Esc 清空" : "按首字母分组"}</span>
           </div>
           {friendsQuery.isLoading ? (
             <LoadingBlock className="px-3 py-4 text-left" label="正在读取联系人..." />
