@@ -43,6 +43,7 @@ import {
   AdminPageHero,
   AdminSelectField as SelectFieldBlock,
   AdminSectionNav,
+  AdminSubpanel,
   AdminTextArea as TextAreaBlock,
   AdminTextField as FieldBlock,
 } from "../components/admin-workbench";
@@ -1530,12 +1531,9 @@ function ReplyPreviewPanel({
       {preview ? (
         <div className="mt-6 space-y-6 border-t border-[color:var(--border-faint)] pt-6">
           <ActorSnapshotCard actor={preview.actor} title="候选消息预演快照" />
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              预演备注
-            </div>
-            <NoteList notes={preview.notes} className="mt-3" />
-          </Card>
+          <AdminSubpanel title="预演备注" contentClassName="mt-3">
+            <NoteList notes={preview.notes} />
+          </AdminSubpanel>
         </div>
       ) : null}
     </Card>
@@ -1640,42 +1638,27 @@ function ActorSnapshotCard({
             <MetricCard label="最近聊天时间" value={formatDateTime(actor.lastChatAt)} />
             <MetricCard label="世界上下文" value={actor.worldContextText || "暂无快照"} />
           </div>
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              角色备注
-            </div>
-            <NoteList notes={actor.notes} className="mt-3" />
-          </Card>
+          <AdminSubpanel title="角色备注" contentClassName="mt-3">
+            <NoteList notes={actor.notes} />
+          </AdminSubpanel>
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              提示词分段
-            </div>
-            <PromptSectionList className="mt-4" sections={actor.promptSections} />
-          </Card>
+          <AdminSubpanel title="提示词分段">
+            <PromptSectionList sections={actor.promptSections} />
+          </AdminSubpanel>
 
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              最终生效提示词
-            </div>
-            <AdminCodeBlock className="mt-4" value={actor.effectivePrompt} />
-          </Card>
+          <AdminSubpanel title="最终生效提示词">
+            <AdminCodeBlock value={actor.effectivePrompt} />
+          </AdminSubpanel>
 
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              上下文窗口
-            </div>
-            <HistoryList className="mt-4" items={actor.windowMessages} />
-          </Card>
+          <AdminSubpanel title="上下文窗口">
+            <HistoryList items={actor.windowMessages} />
+          </AdminSubpanel>
 
-          <Card className="bg-[color:var(--surface-card)]">
-            <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-              最终请求消息
-            </div>
-            <RequestMessageList className="mt-4" items={actor.requestMessages} />
-          </Card>
+          <AdminSubpanel title="最终请求消息">
+            <RequestMessageList items={actor.requestMessages} />
+          </AdminSubpanel>
         </div>
       </div>
     </Card>
@@ -1684,11 +1667,8 @@ function ActorSnapshotCard({
 
 function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
   return (
-    <Card className="bg-[color:var(--surface-card)]">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-          状态门
-        </div>
+    <AdminSubpanel title="状态门" contentClassName="mt-3">
+      <div className="flex justify-end">
         <StatusPill tone={toneForGate(gate.mode)}>{formatGateMode(gate.mode)}</StatusPill>
       </div>
       <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
@@ -1716,7 +1696,7 @@ function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
           ))}
         </ul>
       ) : null}
-    </Card>
+    </AdminSubpanel>
   );
 }
 

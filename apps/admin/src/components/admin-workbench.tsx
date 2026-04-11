@@ -194,6 +194,25 @@ export function AdminEmptyState({
   );
 }
 
+export function AdminSubpanel({
+  title,
+  children,
+  className,
+  contentClassName,
+}: {
+  title: ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+}) {
+  return (
+    <Card className={cn("bg-[color:var(--surface-card)]", className)}>
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{title}</div>
+      <div className={cn("mt-4", contentClassName)}>{children}</div>
+    </Card>
+  );
+}
+
 export function AdminActionGroup({
   title,
   description,
