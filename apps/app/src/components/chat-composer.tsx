@@ -3175,13 +3175,29 @@ function DesktopScreenshotEditor({
 
   const handleEditorShortcut = useEffectEvent(
     (event: globalThis.KeyboardEvent) => {
-      if (pending) {
+      if (pending || event.isComposing) {
         return;
       }
 
       const interactive = isInteractiveTarget(event.target);
       const key = event.key.toLowerCase();
       const commandKey = event.metaKey || event.ctrlKey;
+
+      if (key === "enter" && !event.altKey) {
+        event.preventDefault();
+        if (commandKey) {
+          onSendOriginal();
+          return;
+        }
+
+        if (crop) {
+          onSendCropped();
+          return;
+        }
+
+        onSendOriginal();
+        return;
+      }
 
       if (
         !interactive &&
@@ -3609,7 +3625,7 @@ function DesktopScreenshotEditor({
                   清空标注
                 </Button>
                 <span className="text-[11px] text-white/42">
-                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除，Esc 取消选中
+                  Enter 发送，Cmd/Ctrl + Enter 原图发送，Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除，Esc 取消选中
                 </span>
               </div>
             </div>
