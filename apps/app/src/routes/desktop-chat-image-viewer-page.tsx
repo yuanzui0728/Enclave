@@ -148,7 +148,7 @@ export function DesktopChatImageViewerPage() {
           <div className="mt-6 flex justify-center">
             <Button
               type="button"
-              onClick={() => window.location.assign("/tabs/chat")}
+              onClick={() => focusMainWindow("/tabs/chat")}
               className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
             >
               回到消息页
@@ -197,7 +197,7 @@ export function DesktopChatImageViewerPage() {
           {activeItem.returnTo ? (
             <StandaloneActionButton
               label="定位到聊天位置"
-              onClick={() => window.location.assign(activeItem.returnTo!)}
+              onClick={() => focusMainWindow(activeItem.returnTo!)}
             >
               <ArrowLeft size={16} />
             </StandaloneActionButton>
@@ -293,12 +293,42 @@ function closeStandaloneWindow(fallbackPath: string) {
     return;
   }
 
-  if (window.opener && !window.opener.closed) {
-    window.close();
+  closeCurrentWindow(() => {
+    focusMainWindow(fallbackPath);
+  });
+}
+
+function focusMainWindow(targetPath: string) {
+  if (typeof window === "undefined") {
     return;
   }
 
-  window.location.assign(fallbackPath);
+  try {
+    if (window.opener && !window.opener.closed) {
+      window.opener.location.assign(targetPath);
+      window.opener.focus?.();
+      closeCurrentWindow();
+      return;
+    }
+  } catch {
+    // Ignore opener access failures and fall back to local navigation.
+  }
+
+  window.location.assign(targetPath);
+}
+
+function closeCurrentWindow(onBlocked?: () => void) {
+  window.close();
+
+  if (!onBlocked) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!window.closed) {
+      onBlocked();
+    }
+  }, 120);
 }
 
 function saveUrlAsFile(url: string, fileName: string) {

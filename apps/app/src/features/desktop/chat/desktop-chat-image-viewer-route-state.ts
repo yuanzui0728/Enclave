@@ -113,8 +113,6 @@ export function openDesktopChatImageViewerWindow(
   const left = Math.max(24, Math.round((window.screen.availWidth - width) / 2));
   const top = Math.max(24, Math.round((window.screen.availHeight - height) / 2));
   const features = [
-    "noopener",
-    "noreferrer",
     "popup=yes",
     `width=${width}`,
     `height=${height}`,
