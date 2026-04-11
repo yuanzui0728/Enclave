@@ -43,6 +43,17 @@ export function DesktopSubscriptionWorkspace() {
     () => inboxQuery.data?.groups.flatMap((group) => group.deliveries) ?? [],
     [inboxQuery.data?.groups],
   );
+  const unreadCount = inboxQuery.data?.summary?.unreadCount ?? 0;
+  const groupCount = inboxQuery.data?.groups.length ?? 0;
+  const lastDeliveredLabel = inboxQuery.data?.summary?.lastDeliveredAt
+    ? new Date(inboxQuery.data.summary.lastDeliveredAt).toLocaleDateString(
+        "zh-CN",
+        {
+          month: "numeric",
+          day: "numeric",
+        },
+      )
+    : "暂无推送";
 
   useEffect(() => {
     if (!activeArticleId && deliveries[0]?.articleId) {
@@ -122,9 +133,9 @@ export function DesktopSubscriptionWorkspace() {
   }, [articleQuery.data?.id, markArticleReadMutation]);
 
   return (
-    <div className="flex h-full min-h-0 bg-[#efefef]">
-      <section className="flex w-[360px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-5">
+    <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
+      <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(242,246,245,0.78)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             聚合消息
           </div>
@@ -134,9 +145,15 @@ export function DesktopSubscriptionWorkspace() {
           <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
             已关注订阅号的最近推送会集中收口在这里，按微信式聚合流浏览。
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <SidebarMetricCard label="未读推送" value={`${unreadCount} 条`} />
+            <SidebarMetricCard label="账号分组" value={`${groupCount} 个`} />
+            <SidebarMetricCard label="最近更新" value={lastDeliveredLabel} />
+            <SidebarMetricCard label="文章总数" value={`${deliveries.length} 篇`} />
+          </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-3 py-3">
           {inboxQuery.isLoading ? <LoadingBlock label="正在读取订阅号消息..." /> : null}
           {inboxQuery.isError && inboxQuery.error instanceof Error ? (
             <ErrorBlock message={inboxQuery.error.message} />
@@ -148,7 +165,7 @@ export function DesktopSubscriptionWorkspace() {
           {inboxQuery.data?.groups.map((group) => (
             <section
               key={group.account.id}
-              className="border-b border-black/6 px-5 py-4"
+              className="mb-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] last:mb-0"
             >
               <button
                 type="button"
@@ -163,10 +180,15 @@ export function DesktopSubscriptionWorkspace() {
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {group.account.name}
                 </div>
-                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {group.unreadCount > 0
-                    ? `${group.unreadCount} 条未读推送`
-                    : "最近推送"}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[#15803d]">
+                    {group.unreadCount > 0
+                      ? `${group.unreadCount} 条未读推送`
+                      : "最近推送"}
+                  </span>
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[color:var(--text-muted)]">
+                    {group.deliveries.length} 篇
+                  </span>
                 </div>
               </button>
 
@@ -178,8 +200,8 @@ export function DesktopSubscriptionWorkspace() {
                     onClick={() => setActiveArticleId(delivery.articleId)}
                     className={`w-full rounded-[16px] border px-4 py-3 text-left transition ${
                       activeArticleId === delivery.articleId
-                        ? "border-[#cfe8d6] bg-[#f4faf6] shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
-                        : "border-black/6 bg-white hover:border-black/10 hover:bg-[#fbfbfb]"
+                        ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] shadow-[var(--shadow-section)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -191,11 +213,19 @@ export function DesktopSubscriptionWorkspace() {
                           {delivery.article.summary}
                         </div>
                       </div>
-                      {group.unreadCount > 0 ? (
-                        <div className="rounded-md bg-[#f3f3f3] px-2 py-1 text-[10px] text-[color:var(--text-muted)]">
-                          推送
+                      {group.unreadCount > 0 && !delivery.readAt ? (
+                        <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+                          未读
                         </div>
                       ) : null}
+                    </div>
+                    <div className="mt-2 text-[11px] text-[color:var(--text-dim)]">
+                      {new Date(delivery.deliveredAt).toLocaleDateString("zh-CN", {
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
                   </button>
                 ))}
@@ -204,7 +234,7 @@ export function DesktopSubscriptionWorkspace() {
           ))}
 
           {!inboxQuery.isLoading && !inboxQuery.data?.groups.length ? (
-            <div className="p-4">
+            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
               <EmptyState
                 title="还没有订阅号消息"
                 description="先关注一个订阅号，后续推送会汇总到这里。"
@@ -214,7 +244,7 @@ export function DesktopSubscriptionWorkspace() {
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto bg-[#f3f3f3] p-6">
+      <section className="min-w-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] p-6">
         {articleQuery.isLoading ? <LoadingBlock label="正在读取文章..." /> : null}
         {articleQuery.isError && articleQuery.error instanceof Error ? (
           <ErrorBlock message={articleQuery.error.message} />
@@ -244,6 +274,23 @@ export function DesktopSubscriptionWorkspace() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function SidebarMetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
+      <div className="text-[11px] text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
+        {value}
+      </div>
     </div>
   );
 }
