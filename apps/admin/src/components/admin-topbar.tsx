@@ -4,6 +4,7 @@ type AdminTopbarProps = {
   description: string;
   statusLabel: string;
   statusTone: "healthy" | "warning" | "muted";
+  statusDetailLabel?: string;
 };
 
 export function AdminTopbar({
@@ -12,6 +13,7 @@ export function AdminTopbar({
   description,
   statusLabel,
   statusTone,
+  statusDetailLabel,
 }: AdminTopbarProps) {
   return (
     <header className="rounded-[28px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-5 py-4 shadow-[var(--shadow-soft)] backdrop-blur">
@@ -34,7 +36,7 @@ export function AdminTopbar({
             {statusLabel}
           </div>
           <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-3 py-1.5 text-xs text-[color:var(--text-muted)]">
-            面向运营的实例工作台
+            {statusDetailLabel ?? "面向运营的实例工作台"}
           </div>
         </div>
       </div>

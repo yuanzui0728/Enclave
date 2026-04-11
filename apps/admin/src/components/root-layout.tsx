@@ -32,25 +32,49 @@ export function RootLayout() {
   );
   const shellStatus = useMemo(() => {
     if (statusQuery.isError) {
-      return { label: "实例状态待确认", tone: "warning" as const };
+      return {
+        label: "实例状态待确认",
+        tone: "warning" as const,
+        detailLabel: "数字人与运行状态尚未同步",
+      };
     }
-
-    const issueCount = [
-      !statusQuery.data?.coreApi.healthy,
-      !statusQuery.data?.inferenceGateway.activeProvider,
-      (statusQuery.data?.worldSurface.ownerCount ?? 0) !== 1,
-    ].filter(Boolean).length;
 
     if (!statusQuery.data) {
-      return { label: "正在读取实例状态", tone: "muted" as const };
+      return {
+        label: "正在读取实例状态",
+        tone: "muted" as const,
+        detailLabel: "正在同步数字人、推理和世界状态",
+      };
     }
+
+    const issues = [
+      !statusQuery.data.coreApi.healthy ? "核心接口待恢复" : null,
+      !statusQuery.data.inferenceGateway.activeProvider ? "推理服务待配置" : null,
+      (statusQuery.data.worldSurface.ownerCount ?? 0) !== 1
+        ? "世界主人数量异常"
+        : null,
+      !digitalHumanSummary.ready
+        ? `数字人${digitalHumanSummary.statusLabel}`
+        : null,
+    ].filter((item): item is string => Boolean(item));
+
+    const issueCount = issues.length;
 
     if (issueCount > 0) {
-      return { label: `${issueCount} 项待处理`, tone: "warning" as const };
+      return {
+        label: `${issueCount} 项待处理`,
+        tone: "warning" as const,
+        detailLabel:
+          issueCount === 1 ? issues[0] : `${issues[0]}，其中 ${issues[issues.length - 1]}`,
+      };
     }
 
-    return { label: "实例已就绪", tone: "healthy" as const };
-  }, [statusQuery.data, statusQuery.isError]);
+    return {
+      label: "实例已就绪",
+      tone: "healthy" as const,
+      detailLabel: `数字人${digitalHumanSummary.statusLabel}`,
+    };
+  }, [digitalHumanSummary.ready, digitalHumanSummary.statusLabel, statusQuery.data, statusQuery.isError]);
 
   function saveSecret() {
     setAdminSecret(draft);
@@ -87,6 +111,7 @@ export function RootLayout() {
             description={routeMeta.description}
             statusLabel={shellStatus.label}
             statusTone={shellStatus.tone}
+            statusDetailLabel={shellStatus.detailLabel}
           />
         }
       >
