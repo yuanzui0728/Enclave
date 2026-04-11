@@ -202,6 +202,21 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     !lastAssistantText &&
     !speech.error &&
     !activeCall.playerError;
+  const showVideoNextTurnPrimer =
+    isVideoMode &&
+    digitalHumanCall.sessionState === "ready" &&
+    digitalHumanCall.session?.renderStatus !== "rendering" &&
+    digitalHumanCall.session?.renderStatus !== "queued" &&
+    digitalHumanCall.session?.renderStatus !== "failed" &&
+    !digitalHumanCall.sessionError &&
+    !activeCall.turnMutation.isPending &&
+    !(activeCall.turnMutation.error instanceof Error) &&
+    activeCall.playbackState === "idle" &&
+    speech.status === "idle" &&
+    Boolean(lastAssistantText) &&
+    !speech.error &&
+    !activeCall.playerError &&
+    !leavingScreen;
 
   useEffect(() => {
     if (
@@ -260,16 +275,16 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       return "数字人画面失败";
     }
 
+    if (lastAssistantText) {
+      return isVideoMode ? "准备下一轮" : "继续说话";
+    }
+
     if (
       isVideoMode &&
       digitalHumanCall.session?.renderStatus === "ready" &&
       (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
     ) {
       return "数字人视频已接通";
-    }
-
-    if (lastAssistantText) {
-      return isVideoMode ? "继续通话" : "继续说话";
     }
 
     if (isVideoMode && digitalHumanGatewayCopy?.statusLabel) {
@@ -319,6 +334,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
       return "这一轮数字人画面没有成功生成，但语音回复仍可继续使用；可直接重试连接数字人。";
+    }
+
+    if (isVideoMode && lastAssistantText) {
+      return "这一轮已经结束。准备好后继续按住底部按钮说下一句，数字人会按同样节奏回复你。";
     }
 
     if (
@@ -800,6 +819,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {showVideoFirstTurnPrimer ? (
             <InlineNotice tone="info">
               数字人视频已经接通。先按住底部按钮说第一句，松开后本轮会自动开始转写、回复和播报。
+            </InlineNotice>
+          ) : null}
+          {showVideoNextTurnPrimer ? (
+            <InlineNotice tone="info">
+              这一轮已经结束。准备好后继续按住底部按钮说下一句，数字人会按同样节奏回复你。
             </InlineNotice>
           ) : null}
           {isVideoMode && !cameraEnabled ? (
