@@ -108,10 +108,10 @@ export function DesktopMiniProgramsWorkspace({
   const selectedTone = getMiniProgramToneStyle(selectedMiniProgram.tone);
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(248,252,249,0.98),rgba(255,247,239,0.96))]">
-      <aside className="flex w-[288px] shrink-0 flex-col border-r border-[rgba(15,23,42,0.06)] bg-[rgba(255,255,255,0.82)]">
-        <div className="border-b border-[rgba(15,23,42,0.06)] px-5 py-5">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--brand-secondary)]">
+    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
+      <aside className="flex w-[288px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
+        <div className="border-b border-black/6 px-5 py-5">
+          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
             Mini Programs
           </div>
           <div className="mt-2 text-[22px] font-semibold text-[color:var(--text-primary)]">
@@ -123,7 +123,7 @@ export function DesktopMiniProgramsWorkspace({
         </div>
 
         <div className="min-h-0 space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-4 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
             <label className="relative block">
               <input
                 type="search"
@@ -152,8 +152,8 @@ export function DesktopMiniProgramsWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
-                      ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] shadow-[var(--shadow-soft)]"
-                      : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] hover:bg-white",
+                      ? "border-[#b7e4c7] bg-[#edf8f0]"
+                      : "border-black/6 bg-[#f8f8f8] hover:bg-white",
                   )}
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -206,10 +206,10 @@ export function DesktopMiniProgramsWorkspace({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-[rgba(15,23,42,0.06)] px-6 py-5">
+        <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
+              <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                 微信式桌面工作区
               </div>
               <div className="mt-1 text-[20px] font-semibold text-[color:var(--text-primary)]">
@@ -235,7 +235,7 @@ export function DesktopMiniProgramsWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={onReturnToGroup}
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-xl"
                     >
                       返回群聊
                     </Button>
@@ -318,7 +318,7 @@ export function DesktopMiniProgramsWorkspace({
                 </div>
               </article>
 
-              <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -358,7 +358,7 @@ export function DesktopMiniProgramsWorkspace({
               {shelves.map((shelf) => (
                 <section
                   key={shelf.id}
-                  className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]"
+                  className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -410,7 +410,7 @@ export function DesktopMiniProgramsWorkspace({
               />
 
               {launchContext && panelMiniProgram.id === "group-relay" ? (
-                <section className="rounded-[30px] border border-[rgba(245,158,11,0.18)] bg-[linear-gradient(180deg,rgba(255,251,235,0.96),rgba(255,255,255,0.94))] p-5 shadow-[var(--shadow-soft)]">
+                <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -420,13 +420,13 @@ export function DesktopMiniProgramsWorkspace({
                         把当前接龙进度同步回“{launchContext.sourceGroupName}”，减少群成员反复追问。
                       </div>
                     </div>
-                    <div className="rounded-full bg-[rgba(245,158,11,0.12)] px-3 py-1 text-[11px] font-medium text-[#b45309]">
+                    <div className="rounded-md bg-[#eaf8ef] px-3 py-1 text-[11px] font-medium text-[#15803d]">
                       群接龙闭环
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-white/88 p-4">
-                    <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+                  <div className="mt-4 rounded-[18px] border border-black/6 bg-[#f7f7f7] p-4">
+                    <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                       发送预览
                     </div>
                     <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-7 text-[color:var(--text-secondary)]">
@@ -449,7 +449,7 @@ export function DesktopMiniProgramsWorkspace({
                 </section>
               ) : null}
 
-              <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   今日推荐
                 </div>
@@ -470,7 +470,7 @@ export function DesktopMiniProgramsWorkspace({
                           </div>
                           <div
                             className={cn(
-                              "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                              "rounded-md border px-2.5 py-1 text-[10px] font-medium",
                               tone.badgeClassName,
                             )}
                           >
@@ -489,7 +489,7 @@ export function DesktopMiniProgramsWorkspace({
                 </div>
               </section>
 
-              <section className="rounded-[30px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -549,7 +549,7 @@ function SidebarCard({
   const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
 
   return (
-    <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white/92 p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
@@ -557,7 +557,7 @@ function SidebarCard({
         {hasChildren ? (
           children
         ) : (
-          <div className="rounded-[18px] border border-dashed border-[rgba(15,23,42,0.08)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+          <div className="rounded-[16px] border border-dashed border-black/8 bg-[#f8f8f8] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
             {emptyText}
           </div>
         )}
@@ -584,8 +584,8 @@ function SidebarMiniProgramButton({
       className={cn(
         "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
         active
-          ? "border-[rgba(255,138,61,0.18)] bg-[rgba(255,247,238,0.92)]"
-          : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] hover:bg-white",
+          ? "border-[#b7e4c7] bg-[#edf8f0]"
+          : "border-black/6 bg-[#f8f8f8] hover:bg-white",
       )}
     >
       <MiniProgramGlyph miniProgram={miniProgram} size="sm" />
@@ -637,7 +637,7 @@ function MiniProgramGridCard({
         "rounded-[24px] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.9)] hover:bg-white",
+          : "border-black/6 bg-[#f8f8f8] hover:bg-white",
       )}
     >
       <div className="flex items-start gap-3">
@@ -649,7 +649,7 @@ function MiniProgramGridCard({
             </div>
             <div
               className={cn(
-                "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                 tone.badgeClassName,
               )}
             >
@@ -718,7 +718,7 @@ function MiniProgramListRow({
         "w-full rounded-[22px] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[rgba(15,23,42,0.06)] bg-[rgba(248,250,252,0.88)] hover:bg-white",
+          : "border-black/6 bg-[#f8f8f8] hover:bg-white",
       )}
     >
       <div className="flex items-start gap-3">
@@ -730,7 +730,7 @@ function MiniProgramListRow({
             </div>
             <div
               className={cn(
-                "rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                 tone.badgeClassName,
               )}
             >
