@@ -4289,12 +4289,7 @@ function DesktopScreenshotEditor({
                   : "拖拽框选文字区域，随后在工具栏输入内容。"}
           </div>
 
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-[12px] border px-2 py-1 transition",
-              getShortcutDemoClass("send"),
-            )}
-          >
+          <div className="flex items-center gap-2">
             {crop ? (
               <Button
                 type="button"
@@ -4326,6 +4321,12 @@ function DesktopScreenshotEditor({
                 复制裁剪图
               </Button>
             ) : null}
+            <div
+              className={cn(
+                "flex items-center gap-2 rounded-[12px] border px-2 py-1 transition",
+                getShortcutDemoClass("send"),
+              )}
+            >
             <Button
               type="button"
               variant="ghost"
@@ -4364,6 +4365,7 @@ function DesktopScreenshotEditor({
                 <span className="text-[10px] text-white/70">Enter</span>
               )}
             </Button>
+            </div>
           </div>
         </div>
       </div>
