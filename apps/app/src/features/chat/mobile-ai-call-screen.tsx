@@ -191,6 +191,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     !speech.error;
   const showPermissionRequestHint =
     speech.status === "requesting-permission" && !speech.error;
+  const showVideoFirstTurnPrimer =
+    isVideoMode &&
+    !callTipsDismissed &&
+    digitalHumanCall.sessionState === "ready" &&
+    !digitalHumanCall.sessionError &&
+    !activeCall.turnMutation.isPending &&
+    activeCall.playbackState !== "playing" &&
+    !lastUserTranscript &&
+    !lastAssistantText &&
+    !speech.error &&
+    !activeCall.playerError;
 
   useEffect(() => {
     if (
@@ -331,8 +342,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     return isVideoMode
       ? digitalSession?.presentationMode === "mock_stage"
-        ? "当前已接入数字人会话接口，远端先以内置数字人舞台承载，后续可替换真实 provider 流。"
-        : "远端是 AI 数字人舞台，本地摄像头仅用于预览，不影响 AI 回复链路。"
+        ? "先按住底部按钮说第一句，数字人会先听完，再用语音和画面回应你。当前远端先以内置数字人舞台承载。"
+        : "先按住底部按钮说第一句，数字人会先听完，再用语音和画面回应你。本地摄像头只影响你的预览。"
       : "每次说一段，AI 会回复一段语音。";
   }, [
     activeCall.playbackState,
@@ -784,6 +795,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {showPermissionRequestHint ? (
             <InlineNotice tone="info">
               正在请求麦克风权限，请在浏览器弹窗里点允许。
+            </InlineNotice>
+          ) : null}
+          {showVideoFirstTurnPrimer ? (
+            <InlineNotice tone="info">
+              数字人视频已经接通。先按住底部按钮说第一句，松开后本轮会自动开始转写、回复和播报。
             </InlineNotice>
           ) : null}
           {isVideoMode && !cameraEnabled ? (
