@@ -221,6 +221,21 @@ export function DesktopMobilePage() {
         .slice(0, 4),
     [officialAccountsQuery.data],
   );
+  const callHandoffConversationExists = useMemo(() => {
+    if (!callHandoffState) {
+      return false;
+    }
+
+    return (conversationsQuery.data ?? []).some((conversation) => {
+      if (conversation.id !== callHandoffState.conversationId) {
+        return false;
+      }
+
+      return callHandoffState.conversationType === "group"
+        ? isPersistedGroupConversation(conversation)
+        : !isPersistedGroupConversation(conversation);
+    });
+  }, [callHandoffState, conversationsQuery.data]);
   const callHandoffPath = callHandoffState
     ? callHandoffState.conversationType === "group"
       ? `/group/${callHandoffState.conversationId}`
@@ -291,6 +306,29 @@ export function DesktopMobilePage() {
   const currentGroupInviteId = currentGroupInviteHandoff
     ? resolveGroupIdFromHandoffPath(currentGroupInviteHandoff.path)
     : null;
+
+  useEffect(() => {
+    if (
+      !callHandoffState ||
+      conversationsQuery.isLoading ||
+      conversationsQuery.isError ||
+      callHandoffConversationExists
+    ) {
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/mobile",
+      hash: "",
+      replace: true,
+    });
+  }, [
+    callHandoffConversationExists,
+    callHandoffState,
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!notice) {
@@ -365,7 +403,7 @@ export function DesktopMobilePage() {
         <div className="space-y-5">
           {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
 
-          {callHandoffState && callHandoffPath ? (
+          {callHandoffState && callHandoffPath && callHandoffConversationExists ? (
             <section className="rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
