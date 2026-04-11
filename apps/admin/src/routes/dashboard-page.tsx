@@ -47,6 +47,7 @@ import {
   AdminJumpCard,
   AdminMetaText,
   AdminPanelEmpty,
+  AdminSectionHeader,
   AdminSoftBox,
   AdminStatusCard,
 } from "../components/admin-workbench";
@@ -867,7 +868,14 @@ export function DashboardPage() {
         </Card>
 
         <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>推理预览</SectionHeading>
+          <AdminSectionHeader
+            title="推理预览"
+            actions={
+              <StatusPill tone={previewMutation.data ? "healthy" : "muted"}>
+                {previewMutation.data ? "已生成预览" : "等待预览"}
+              </StatusPill>
+            }
+          />
           <form
             className="mt-4 space-y-4"
             onSubmit={previewForm.handleSubmit((values) => previewMutation.mutate(values))}

@@ -24,6 +24,7 @@ import {
   AdminPanelEmpty,
   AdminPageHero,
   AdminRecordCard,
+  AdminSectionHeader,
   AdminSectionNav,
   AdminSelectField as SelectFieldBlock,
   AdminTextArea as TextAreaBlock,
@@ -902,7 +903,14 @@ export function CharacterFactoryPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
-            <SectionHeading>发布操作</SectionHeading>
+            <AdminSectionHeader
+              title="发布操作"
+              actions={
+                <StatusPill tone={publishMutation.isPending ? "warning" : "muted"}>
+                  {publishMutation.isPending ? "发布中" : "等待发布"}
+                </StatusPill>
+              }
+            />
             <TextAreaBlock
               label="发布说明"
               value={publishSummary}
