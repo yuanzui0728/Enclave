@@ -684,7 +684,7 @@ export function ChatComposer({
   ]);
 
   useEffect(() => {
-    if (isDesktop) {
+    if (isDesktop || mobileSpeechMode) {
       return;
     }
 
@@ -695,7 +695,7 @@ export function ChatComposer({
 
     input.style.height = "0px";
     input.style.height = `${Math.min(Math.max(input.scrollHeight, 38), 108)}px`;
-  }, [isDesktop, value]);
+  }, [isDesktop, mobileSpeechMode, value]);
 
   useEffect(() => {
     if (!isDesktop || !stickerPanelOpen) {
