@@ -9,6 +9,7 @@ import {
   getCharacter,
   getConversations,
   getFriends,
+  getSystemStatus,
   hideConversation,
   sendFriendRequest,
   setConversationStrongReminder,
@@ -18,6 +19,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
+import { resolveDigitalHumanEntryGuardCopy } from "../features/chat/digital-human-entry-guard";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
   CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
@@ -44,11 +46,18 @@ export function ChatDetailsPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    tone: "success" | "info" | "warning";
+    message: string;
+  } | null>(null);
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  const [videoGuardMessage, setVideoGuardMessage] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     setNotice(null);
+    setVideoGuardMessage(null);
   }, [conversationId]);
 
   const conversationsQuery = useQuery({
@@ -82,6 +91,10 @@ export function ChatDetailsPage() {
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
   });
+  const systemStatusQuery = useQuery({
+    queryKey: ["system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
 
   const targetCharacter = characterQuery.data;
   const isPinned = conversation?.isPinned ?? false;
@@ -104,7 +117,10 @@ export function ChatDetailsPage() {
     mutationFn: (pinned: boolean) =>
       setConversationPinned(conversationId, { pinned }, baseUrl),
     onSuccess: async (_, pinned) => {
-      setNotice(pinned ? "聊天已置顶。" : "聊天已取消置顶。");
+      setNotice({
+        tone: "success",
+        message: pinned ? "聊天已置顶。" : "聊天已取消置顶。",
+      });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -137,13 +153,25 @@ export function ChatDetailsPage() {
     },
     onSuccess: async ({ enabled, permission }) => {
       if (!enabled) {
-        setNotice("已关闭强提醒。");
+        setNotice({
+          tone: "success",
+          message: "已关闭强提醒。",
+        });
       } else if (permission === "granted") {
-        setNotice("已开启 3 小时强提醒，系统通知已开启。");
+        setNotice({
+          tone: "success",
+          message: "已开启 3 小时强提醒，系统通知已开启。",
+        });
       } else if (permission === "denied") {
-        setNotice("已开启 3 小时强提醒，但系统通知未开启。");
+        setNotice({
+          tone: "success",
+          message: "已开启 3 小时强提醒，但系统通知未开启。",
+        });
       } else {
-        setNotice("已开启 3 小时强提醒。");
+        setNotice({
+          tone: "success",
+          message: "已开启 3 小时强提醒。",
+        });
       }
 
       await queryClient.invalidateQueries({
@@ -167,7 +195,10 @@ export function ChatDetailsPage() {
       );
     },
     onSuccess: async () => {
-      setNotice("已发起保存到通讯录请求。");
+      setNotice({
+        tone: "success",
+        message: "已发起保存到通讯录请求。",
+      });
       await queryClient.invalidateQueries({
         queryKey: ["app-friend-requests", baseUrl],
       });
@@ -177,7 +208,10 @@ export function ChatDetailsPage() {
   const clearMutation = useMutation({
     mutationFn: () => clearConversationHistory(conversationId, baseUrl),
     onSuccess: async () => {
-      setNotice("聊天记录已清空。");
+      setNotice({
+        tone: "success",
+        message: "聊天记录已清空。",
+      });
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-conversation-messages", baseUrl, conversationId],
@@ -191,7 +225,10 @@ export function ChatDetailsPage() {
   const hideMutation = useMutation({
     mutationFn: () => hideConversation(conversationId, baseUrl),
     onSuccess: async () => {
-      setNotice("聊天已隐藏。");
+      setNotice({
+        tone: "success",
+        message: "聊天已隐藏。",
+      });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -216,7 +253,10 @@ export function ChatDetailsPage() {
       );
     },
     onSuccess: () => {
-      setNotice("已提交投诉。");
+      setNotice({
+        tone: "success",
+        message: "已提交投诉。",
+      });
     },
   });
 
@@ -235,7 +275,10 @@ export function ChatDetailsPage() {
       );
     },
     onSuccess: async () => {
-      setNotice("已加入黑名单。");
+      setNotice({
+        tone: "success",
+        message: "已加入黑名单。",
+      });
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-chat-details-blocked", baseUrl],
@@ -345,7 +388,7 @@ export function ChatDetailsPage() {
       ) : null}
       {notice ? (
         <div className="px-3">
-          <InlineNotice tone="success">{notice}</InlineNotice>
+          <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
         </div>
       ) : null}
 
@@ -406,6 +449,22 @@ export function ChatDetailsPage() {
             videoValue="AI 数字人"
             onSelectKind={(kind) => {
               setNotice(null);
+              if (kind === "video") {
+                const guardCopy = resolveDigitalHumanEntryGuardCopy(
+                  systemStatusQuery.data?.digitalHumanGateway,
+                );
+
+                if (
+                  guardCopy &&
+                  videoGuardMessage !== guardCopy.message
+                ) {
+                  setVideoGuardMessage(guardCopy.message);
+                  setNotice(guardCopy);
+                  return;
+                }
+              }
+
+              setVideoGuardMessage(null);
               void navigate({
                 to:
                   kind === "voice"
