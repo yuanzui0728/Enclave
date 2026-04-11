@@ -735,6 +735,43 @@ export function AdminInlineSelectField({
   );
 }
 
+export function AdminPromptSectionList({
+  sections,
+  className,
+}: {
+  sections: Array<{
+    key: string;
+    label: ReactNode;
+    active: boolean;
+    content?: string | null;
+  }>;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="space-y-3">
+        {sections.map((section) => (
+          <div
+            key={section.key}
+            className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/90"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">{section.label}</div>
+              <StatusPill tone={section.active ? "healthy" : "muted"}>
+                {section.active ? "生效中" : "未生效"}
+              </StatusPill>
+            </div>
+            <AdminCodeBlock
+              className="rounded-none border-0 bg-transparent p-4"
+              value={section.content || "当前未注入该分段。"}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminTextField({
   label,
   value,

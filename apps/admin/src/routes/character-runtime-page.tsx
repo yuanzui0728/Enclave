@@ -22,6 +22,7 @@ import {
   AdminCodeBlock as CodeBlock,
   AdminInfoRows,
   AdminPageHero,
+  AdminPromptSectionList,
   AdminRecordCard,
   AdminSectionNav,
   AdminSelectField as SelectFieldBlock,
@@ -540,24 +541,15 @@ export function CharacterRuntimePage() {
 
           <Card id="character-runtime-prompt" className="bg-[color:var(--surface-console)]">
             <SectionHeading>提示词分段</SectionHeading>
-            <div className="mt-4 space-y-3">
-              {snapshot.actor.promptSections.map((section) => (
-                <div
-                  key={section.key}
-                  className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
-                >
-                  <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                      {section.label}
-                    </div>
-                    <StatusPill tone={section.active ? "healthy" : "muted"}>
-                      {section.active ? "生效中" : "未生效"}
-                    </StatusPill>
-                  </div>
-                  <CodeBlock className="rounded-none border-0 bg-transparent p-4" value={section.content || "当前未注入该分段。"} />
-                </div>
-              ))}
-            </div>
+            <AdminPromptSectionList
+              className="mt-4"
+              sections={snapshot.actor.promptSections.map((section) => ({
+                key: section.key,
+                label: section.label,
+                active: section.active,
+                content: section.content,
+              }))}
+            />
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
