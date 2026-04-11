@@ -91,6 +91,11 @@ import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
+import {
+  formatGroupCallRangeSummary,
+  resolveGroupCallCompletionBadge,
+  resolveGroupCallFooterCopy,
+} from "../features/chat/group-call-card";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import {
@@ -3912,34 +3917,7 @@ function GroupCallInviteMessage({
   }
 
   const canReopenCall = Boolean(onOpen);
-  const footerDescription =
-    invite.status === "ended"
-      ? canReopenCall
-        ? invite.kind === "video"
-          ? "点击可基于这张卡片重新发起当前群视频通话。"
-          : "点击可基于这张卡片重新发起当前群语音通话。"
-        : invite.kind === "video"
-          ? "这轮群视频通话已经结束，当前保留为状态记录卡片。"
-          : "这轮群语音通话已经结束，当前保留为状态记录卡片。"
-      : canReopenCall
-        ? invite.kind === "video"
-          ? "点击可回到当前群视频通话工作台。"
-          : "点击可回到当前群语音通话工作台。"
-        : invite.kind === "video"
-          ? "当前消息已转成群视频通话卡片，便于群成员识别画面状态。"
-          : "当前消息已转成群语音通话卡片，便于群成员识别状态。";
-  const footerActionLabel =
-    invite.status === "ended"
-      ? canReopenCall
-        ? "重新发起"
-        : "查看记录"
-      : canReopenCall
-        ? invite.kind === "voice"
-          ? "回到语音"
-          : "回到视频"
-        : invite.kind === "voice"
-          ? "语音中"
-          : "视频中";
+  const footerCopy = resolveGroupCallFooterCopy(invite, canReopenCall);
   const completionBadge = resolveGroupCallCompletionBadge(invite);
 
   const card = (
@@ -4041,10 +4019,17 @@ function GroupCallInviteMessage({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-          {footerDescription}
+          {footerCopy.description}
         </div>
-        <div className="text-[11px] font-medium text-[#2563eb]">
-          {footerActionLabel}
+        <div
+          className={cn(
+            "text-[11px] font-medium",
+            footerCopy.actionTone === "muted"
+              ? "text-[color:var(--text-muted)]"
+              : "text-[#2563eb]",
+          )}
+        >
+          {footerCopy.actionLabel}
         </div>
       </div>
     </div>
@@ -4059,11 +4044,7 @@ function GroupCallInviteMessage({
       type="button"
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={
-        invite.status === "ended"
-          ? `重新发起 ${invite.groupName} 的群通话`
-          : `回到 ${invite.groupName} 的群通话工作台`
-      }
+      aria-label={footerCopy.ariaLabel}
     >
       {card}
     </button>
@@ -4578,66 +4559,6 @@ function formatVoiceDurationLabel(durationMs?: number) {
   return minutes > 0
     ? `${minutes}:${String(seconds).padStart(2, "0")}`
     : `${seconds}"`;
-}
-
-function resolveGroupCallCompletionBadge(
-  invite: NonNullable<ReturnType<typeof parseGroupCallInviteMessage>>,
-) {
-  if (invite.status !== "ended" || !invite.activeCount) {
-    return null;
-  }
-
-  if (invite.activeCount.current <= 0) {
-    return {
-      label: "无人加入",
-      tone: "danger" as const,
-    };
-  }
-
-  if (invite.activeCount.current >= invite.activeCount.total) {
-    return {
-      label: "全员加入",
-      tone: "success" as const,
-    };
-  }
-
-  return {
-    label: "部分加入",
-    tone: "warning" as const,
-  };
-}
-
-function formatGroupCallRangeSummary(startedAt: string, endedAt: string) {
-  const startedAtTs = parseTimestamp(startedAt);
-  const endedAtTs = parseTimestamp(endedAt);
-  if (startedAtTs === null || endedAtTs === null) {
-    return `开始于 ${startedAt} · 结束于 ${endedAt}`;
-  }
-
-  const startedAtDate = new Date(startedAtTs);
-  const endedAtDate = new Date(endedAtTs);
-  const sameDay =
-    startedAtDate.getFullYear() === endedAtDate.getFullYear() &&
-    startedAtDate.getMonth() === endedAtDate.getMonth() &&
-    startedAtDate.getDate() === endedAtDate.getDate();
-
-  if (sameDay) {
-    return `${formatCallClockLabel(startedAtDate)} - ${formatCallClockLabel(endedAtDate)}`;
-  }
-
-  return `${formatCallDayClockLabel(startedAtDate)} - ${formatCallDayClockLabel(endedAtDate)}`;
-}
-
-function formatCallClockLabel(date: Date) {
-  return `${padCallTimeSegment(date.getHours())}:${padCallTimeSegment(date.getMinutes())}`;
-}
-
-function formatCallDayClockLabel(date: Date) {
-  return `${date.getMonth() + 1}/${date.getDate()} ${formatCallClockLabel(date)}`;
-}
-
-function padCallTimeSegment(value: number) {
-  return value.toString().padStart(2, "0");
 }
 
 function ViewerActionButton({
