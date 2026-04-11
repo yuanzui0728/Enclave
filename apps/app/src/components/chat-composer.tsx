@@ -2919,15 +2919,18 @@ function DesktopScreenshotToolButton({
   active,
   label,
   onClick,
+  shortcut,
 }: {
   active: boolean;
   label: string;
   onClick: () => void;
+  shortcut?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={shortcut ? `${label} (${shortcut})` : label}
       className={cn(
         "rounded-full px-3 py-1.5 text-[12px] transition",
         active
@@ -2935,7 +2938,17 @@ function DesktopScreenshotToolButton({
           : "bg-white/8 text-white/78 hover:bg-white/12 hover:text-white",
       )}
     >
-      {label}
+      <span>{label}</span>
+      {shortcut ? (
+        <span
+          className={cn(
+            "ml-1 rounded-full px-1.5 py-0.5 text-[10px]",
+            active ? "bg-[#e5e7eb] text-[#374151]" : "bg-white/10 text-white/46",
+          )}
+        >
+          {shortcut}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -3509,39 +3522,48 @@ function DesktopScreenshotEditor({
                 <DesktopScreenshotToolButton
                   label="裁剪"
                   active={tool === "crop"}
+                  shortcut="C"
                   onClick={() => onToolChange("crop")}
                 />
                 <DesktopScreenshotToolButton
                   label="矩形"
                   active={tool === "rect"}
+                  shortcut="R"
                   onClick={() => onToolChange("rect")}
                 />
                 <DesktopScreenshotToolButton
                   label="箭头"
                   active={tool === "arrow"}
+                  shortcut="A"
                   onClick={() => onToolChange("arrow")}
                 />
                 <DesktopScreenshotToolButton
                   label="文字"
                   active={tool === "text"}
+                  shortcut="T"
                   onClick={() => onToolChange("text")}
                 />
                 {tool !== "crop" ? (
                   <div className="ml-1 flex items-center gap-2 rounded-full bg-white/6 px-2 py-1">
-                    {SCREENSHOT_ANNOTATION_PALETTE.map((palette) => (
+                    {SCREENSHOT_ANNOTATION_PALETTE.map((palette, index) => (
                       <button
                         key={palette.id}
                         type="button"
                         onClick={() => onAnnotationColorChange(palette.id)}
+                        title={`切换为${palette.label}标注 (${index + 1})`}
                         className={cn(
-                          "h-5 w-5 rounded-full border transition",
+                          "relative h-5 w-5 rounded-full border transition",
                           palette.id === annotationColor
                             ? "scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
                             : "border-white/20 hover:border-white/60",
                         )}
                         style={{ backgroundColor: palette.stroke }}
                         aria-label={`切换为${palette.label}标注`}
-                      />
+                      >
+                        <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#111827] px-1 text-[9px] font-medium text-white/85 shadow-[0_4px_10px_rgba(0,0,0,0.28)]">
+                          {index + 1}
+                        </span>
+                      </button>
                     ))}
                   </div>
                 ) : null}
