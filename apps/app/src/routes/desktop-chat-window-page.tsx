@@ -49,9 +49,9 @@ export function DesktopChatWindowPage() {
 
   if (!routeState) {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center bg-[#f3f3f3] p-6">
-        <div className="w-full max-w-lg rounded-[16px] border border-black/6 bg-white p-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-          <div className="mb-5 inline-flex rounded-full bg-[rgba(15,23,42,0.05)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
+        <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] tracking-[0.12em] text-[#15803d]">
             独立聊天窗口
           </div>
           <EmptyState
@@ -80,9 +80,9 @@ export function DesktopChatWindowPage() {
     !activeConversation
   ) {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center bg-[#f3f3f3] p-6">
-        <div className="w-full max-w-lg rounded-[16px] border border-black/6 bg-white p-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-          <div className="mb-5 inline-flex rounded-full bg-[rgba(15,23,42,0.05)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
+        <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] tracking-[0.12em] text-[#15803d]">
             独立聊天窗口
           </div>
           <EmptyState
@@ -106,13 +106,13 @@ export function DesktopChatWindowPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f3f3f3]">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-black/6 bg-[rgba(247,247,247,0.96)] px-4 py-3 backdrop-blur">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-4 py-3 backdrop-blur-xl">
         <div className="min-w-0">
-          <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+          <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[#15803d]">
             {headerType === "group" ? "群聊独立窗口" : "聊天独立窗口"}
           </div>
-          <div className="mt-1 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+          <div className="mt-2 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
             {headerTitle}
           </div>
           <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -136,7 +136,7 @@ export function DesktopChatWindowPage() {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 bg-[#f5f5f5]">
+      <div className="min-h-0 flex-1 bg-[rgba(255,255,255,0.62)]">
         <DesktopChatWorkspace
           selectedConversationId={routeState.conversationId}
           standaloneWindow
@@ -161,7 +161,7 @@ function StandaloneActionButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/8 bg-white text-[color:var(--text-primary)] transition hover:bg-[#efefef]"
+      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
     >
       {children}
     </button>
