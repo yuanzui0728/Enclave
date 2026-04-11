@@ -3828,7 +3828,7 @@ function DesktopScreenshotEditor({
                             "flex items-start justify-between gap-2.5 rounded-[9px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
                               ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
-                              : "border-transparent bg-white/5 hover:border-white/10 hover:bg-white/8",
+                              : "border-transparent bg-white/[0.045] hover:border-white/8 hover:bg-white/[0.065]",
                           )}
                         >
                           <span className="min-w-[56px] pt-0.5 text-[10px] font-medium text-white/38">
