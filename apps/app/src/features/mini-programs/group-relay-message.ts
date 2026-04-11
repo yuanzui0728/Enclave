@@ -11,15 +11,17 @@ export function buildGroupRelaySummaryMessage(
   status: GroupRelaySummaryStatus = "pending",
   recordedAt = new Date().toISOString(),
   publishedAt?: string,
-  source: GroupRelaySummarySource = "desktop",
+  launchSource: GroupRelaySummarySource = "desktop",
+  publishedSource: GroupRelaySummarySource = launchSource,
 ) {
   return [
     `${GROUP_RELAY_MESSAGE_PREFIX} ${sourceGroupName}`,
     `状态 ${formatGroupRelayStatusLabel(status)}`,
     `时间 ${recordedAt}`,
     publishedAt ? `回填于 ${publishedAt}` : null,
-    `来源 ${formatGroupRelaySourceLabel(source)}`,
-    ...buildGroupRelaySummaryLines(status, source),
+    `发起来源 ${formatGroupRelaySourceLabel(launchSource)}`,
+    publishedAt ? `回填来源 ${formatGroupRelaySourceLabel(publishedSource)}` : null,
+    ...buildGroupRelaySummaryLines(status, launchSource),
   ]
     .filter(Boolean)
     .join("\n");
@@ -49,7 +51,7 @@ export function parseGroupRelaySummaryMessage(text: string) {
         Number(Boolean(timestampLabel))
     ],
   );
-  const sourceLabel = parseGroupRelaySourceLabel(
+  const launchSourceLabel = parseGroupRelayLaunchSourceLabel(
     lines[
       1 +
         Number(Boolean(statusLabel)) +
@@ -57,14 +59,25 @@ export function parseGroupRelaySummaryMessage(text: string) {
         Number(Boolean(publishedAtLabel))
     ],
   );
-  const source = parseGroupRelaySourceValue(sourceLabel);
+  const launchSource = parseGroupRelaySourceValue(launchSourceLabel);
+  const publishedSourceLabel = parseGroupRelayPublishedSourceLabel(
+    lines[
+      1 +
+        Number(Boolean(statusLabel)) +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(publishedAtLabel)) +
+        Number(Boolean(launchSourceLabel))
+    ],
+  );
+  const publishedSource = parseGroupRelaySourceValue(publishedSourceLabel);
   const summaryLines = lines
     .slice(
       1 +
         Number(Boolean(statusLabel)) +
         Number(Boolean(timestampLabel)) +
         Number(Boolean(publishedAtLabel)) +
-        Number(Boolean(sourceLabel)),
+        Number(Boolean(launchSourceLabel)) +
+        Number(Boolean(publishedSourceLabel)),
     )
     .map((line) => line.replace(/^\d+\.\s*/, "").trim())
     .filter(Boolean);
@@ -74,8 +87,10 @@ export function parseGroupRelaySummaryMessage(text: string) {
     statusLabel,
     timestampLabel,
     publishedAtLabel,
-    sourceLabel,
-    source,
+    launchSourceLabel,
+    launchSource,
+    publishedSourceLabel,
+    publishedSource,
     summaryLines,
   };
 }
@@ -104,12 +119,20 @@ function parseGroupRelayPublishedAtLabel(line: string | undefined) {
   return line.replace(/^回填于\s+/, "").trim() || null;
 }
 
-function parseGroupRelaySourceLabel(line: string | undefined) {
-  if (!line || !line.startsWith("来源 ")) {
+function parseGroupRelayLaunchSourceLabel(line: string | undefined) {
+  if (!line || !line.startsWith("发起来源 ")) {
     return null;
   }
 
-  return line.replace(/^来源\s+/, "").trim() || null;
+  return line.replace(/^发起来源\s+/, "").trim() || null;
+}
+
+function parseGroupRelayPublishedSourceLabel(line: string | undefined) {
+  if (!line || !line.startsWith("回填来源 ")) {
+    return null;
+  }
+
+  return line.replace(/^回填来源\s+/, "").trim() || null;
 }
 
 function parseGroupRelaySourceValue(

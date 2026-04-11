@@ -103,6 +103,7 @@ export function MiniProgramsPage() {
         relaySummaryPublishedAt,
         relaySummaryPublishedAt,
         isDesktopLayout ? "desktop" : "mobile",
+        isDesktopLayout ? "desktop" : "mobile",
       )
     : "";
 

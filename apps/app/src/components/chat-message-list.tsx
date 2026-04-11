@@ -3598,13 +3598,18 @@ function GroupRelaySummaryMessage({
           <div
             className={cn(
               "rounded-full px-2.5 py-1 text-[10px] font-medium",
-              summary.source === "mobile"
+              summary.publishedSource === "mobile"
                 ? "bg-[rgba(59,130,246,0.12)] text-[#2563eb]"
                 : "bg-[rgba(245,158,11,0.12)] text-[#b45309]",
             )}
           >
-            {summary.source === "mobile" ? "手机回填" : "桌面回填"}
+            {summary.publishedSource === "mobile" ? "手机回填" : "桌面回填"}
           </div>
+          {summary.launchSourceLabel ? (
+            <div className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-secondary)]">
+              {summary.launchSource === "mobile" ? "手机发起" : "桌面发起"}
+            </div>
+          ) : null}
           {summary.statusLabel ? (
             <div
               className={cn(
