@@ -42,6 +42,7 @@ import {
   AdminPageHero,
   AdminPillSelectField,
   AdminPillTextField,
+  AdminSelectableCard,
   AdminSectionNav,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -1125,34 +1126,32 @@ export function EvalsPage() {
             <SectionHeading>预设速览</SectionHeading>
             <div className="mt-4 space-y-3">
               {savedPresets.slice(0, 4).map((preset) => (
-                <button
+                <AdminSelectableCard
                   key={preset.name}
-                  type="button"
                   onClick={() => {
                     setPresetName(preset.name);
                     applyPreset(preset.name);
                   }}
-                  className={
-                    presetName === preset.name
-                      ? "block w-full rounded-[18px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3.5 text-left shadow-[var(--shadow-soft)] ring-1 ring-[color:var(--brand-primary)]/15"
-                      : "block w-full rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3.5 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+                  active={presetName === preset.name}
+                  title={preset.name}
+                  subtitle={preset.shareViewName || "未命名视图"}
+                  meta={
+                    <>
+                      <span>数据集 {preset.selectedDatasetId ?? "全部"}</span>
+                      <span className="mx-1">·</span>
+                      <span>对比 {formatCompareCaseFilter(preset.compareCaseFilter)}</span>
+                      <span className="mx-1">·</span>
+                      <span>链路 {formatTraceScope(preset.traceScopeFilter)}</span>
+                    </>
                   }
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="font-semibold text-[color:var(--text-primary)]">{preset.name}</div>
+                  badge={
                     <StatusPill tone={preset.compactView ? "healthy" : "muted"}>
                       {preset.compactView ? "紧凑" : "完整"}
                     </StatusPill>
-                  </div>
-                  <div className="mt-2 text-xs leading-5 text-[color:var(--text-muted)]">
-                    {preset.shareViewName || "未命名视图"}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-[color:var(--text-muted)]">
-                    <span>数据集 {preset.selectedDatasetId ?? "全部"}</span>
-                    <span>对比 {formatCompareCaseFilter(preset.compareCaseFilter)}</span>
-                    <span>链路 {formatTraceScope(preset.traceScopeFilter)}</span>
-                  </div>
-                </button>
+                  }
+                  activeLabel="当前预设"
+                  className="py-3.5"
+                />
               ))}
               {savedPresets.length === 0 ? (
                 <AdminEmptyState
