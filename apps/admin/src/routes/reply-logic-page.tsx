@@ -16,7 +16,6 @@ import {
   type ReplyLogicNarrativeArcSummary,
   type ReplyLogicOverview,
   type ReplyLogicPreviewResult,
-  type ReplyLogicPromptSection,
   type ReasoningConfig,
   type ReplyLogicStateGateSummary,
 } from "@yinjie/contracts";
@@ -42,6 +41,7 @@ import {
   AdminInfoRows,
   AdminNoteList,
   AdminPageHero,
+  AdminPromptSectionList,
   AdminRecordCard,
   AdminSelectField as SelectFieldBlock,
   AdminSectionNav,
@@ -1653,7 +1653,14 @@ function ActorSnapshotCard({
 
         <div className="space-y-4">
           <AdminSubpanel title="提示词分段">
-            <PromptSectionList sections={actor.promptSections} />
+            <AdminPromptSectionList
+              sections={actor.promptSections.map((section) => ({
+                key: section.key,
+                label: formatPromptSectionLabel(section),
+                active: section.active,
+                content: section.content,
+              }))}
+            />
           </AdminSubpanel>
 
           <AdminSubpanel title="最终生效提示词">
@@ -1700,40 +1707,6 @@ function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
         />
       ) : null}
     </AdminSubpanel>
-  );
-}
-
-function PromptSectionList({
-  sections,
-  className,
-}: {
-  sections: ReplyLogicPromptSection[];
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <div className="space-y-3">
-        {sections.map((section) => (
-          <div
-            key={section.key}
-            className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/90"
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                {formatPromptSectionLabel(section)}
-              </div>
-              <StatusPill tone={section.active ? "healthy" : "muted"}>
-                {section.active ? "生效中" : "未生效"}
-              </StatusPill>
-            </div>
-            <AdminCodeBlock
-              className="rounded-none border-0 bg-transparent p-4"
-              value={section.content || "当前未注入该分段。"}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -4086,7 +4059,7 @@ function formatAttachmentKind(kind: string) {
   return formatMessageType(kind);
 }
 
-function formatPromptSectionLabel(section: ReplyLogicPromptSection) {
+function formatPromptSectionLabel(section: ReplyLogicActorSnapshot["promptSections"][number]) {
   switch (section.key) {
     case "identity":
       return "身份设定";
