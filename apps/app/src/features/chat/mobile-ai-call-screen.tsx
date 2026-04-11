@@ -513,6 +513,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     recordButtonPointerIdRef.current = null;
     setLeavingScreen(true);
     setRecordButtonHolding(false);
+    if (isVideoMode) {
+      setCameraEnabled(false);
+    }
     activeCall.cancelRecordingTurn();
     activeCall.stopReplyPlayback();
     try {
@@ -549,6 +552,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     recordButtonPointerIdRef.current = null;
     setLeavingScreen(true);
     setRecordButtonHolding(false);
+    setCameraEnabled(false);
     activeCall.cancelRecordingTurn();
     activeCall.stopReplyPlayback();
     try {
