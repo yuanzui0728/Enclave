@@ -27,7 +27,7 @@ type DigitalHumanSessionRecord = {
   characterName: string;
   characterAvatar?: string;
   mode: DigitalHumanCallMode;
-  provider: 'mock_digital_human';
+  provider: 'mock_digital_human' | 'external_digital_human';
   presentationMode: 'mock_stage' | 'provider_stream';
   transport: 'audio_poster' | 'player_url';
   playerUrl?: string;
@@ -87,6 +87,9 @@ export class DigitalHumanCallsService {
     const sessionId = randomUUID();
     const providerSession = this.digitalHumanProvider.createSession({
       sessionId,
+      conversationId: conversation.id,
+      characterId,
+      characterName: character.name,
       posterUrl: character.avatar || undefined,
     });
     const session: DigitalHumanSessionRecord = {
@@ -144,6 +147,9 @@ export class DigitalHumanCallsService {
     });
     const providerTurn = this.digitalHumanProvider.prepareTurn({
       sessionId: session.id,
+      conversationId: session.conversationId,
+      characterId: session.characterId,
+      characterName: session.characterName,
       assistantAudioUrl: turn.assistantAudioUrl,
       assistantText: turn.assistantText,
       assistantMessageId: turn.assistantMessageId,

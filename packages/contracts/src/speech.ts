@@ -41,7 +41,9 @@ export interface VoiceCallTurnResult {
 
 export type DigitalHumanCallMode = "desktop_video_call" | "mobile_video_call";
 
-export type DigitalHumanProvider = "mock_digital_human";
+export type DigitalHumanProvider =
+  | "mock_digital_human"
+  | "external_digital_human";
 
 export type DigitalHumanPresentationMode = "mock_stage" | "provider_stream";
 
