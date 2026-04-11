@@ -426,6 +426,9 @@ export function ConversationThreadPanel({
             tone={entryNotice.tone}
             message={entryNotice.message}
             continueLabel={entryNotice.continueLabel}
+            onDismiss={() => {
+              resetEntryGuard();
+            }}
             voiceLabel={entryNotice.voiceLabel}
             onContinue={() => {
               resetEntryGuard();

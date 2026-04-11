@@ -4,15 +4,19 @@ export function DigitalHumanEntryNotice({
   tone,
   message,
   onContinue,
+  onDismiss,
   onSwitchToVoice,
   continueLabel = "继续视频通话",
+  dismissLabel = "先继续聊天",
   voiceLabel = "改用语音通话",
 }: {
   tone: "info" | "warning";
   message: string;
   onContinue: () => void;
+  onDismiss?: () => void;
   onSwitchToVoice: () => void;
   continueLabel?: string;
+  dismissLabel?: string;
   voiceLabel?: string;
 }) {
   return (
@@ -20,6 +24,16 @@ export function DigitalHumanEntryNotice({
       <div className="flex flex-col gap-3">
         <div className="text-sm leading-6">{message}</div>
         <div className="flex flex-wrap items-center gap-2">
+          {onDismiss ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDismiss}
+              className="rounded-full"
+            >
+              {dismissLabel}
+            </Button>
+          ) : null}
           <Button
             variant="secondary"
             size="sm"

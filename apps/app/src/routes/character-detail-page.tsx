@@ -376,6 +376,9 @@ export function CharacterDetailPage() {
             <DigitalHumanEntryNotice
               tone={entryNotice.tone}
               message={entryNotice.message}
+              onDismiss={() => {
+                resetEntryGuard();
+              }}
               onContinue={() => {
                 resetEntryGuard();
                 openCallMutation.mutate("video");
