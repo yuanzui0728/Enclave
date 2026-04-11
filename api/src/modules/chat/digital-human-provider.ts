@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { SystemConfigService } from '../config/config.service';
 import {
   buildMockDigitalHumanPlayerPage,
   type DigitalHumanPlayerPageSessionSnapshot,
@@ -48,8 +49,8 @@ type ProviderTurnPayload = {
 } & ProviderSessionPayload;
 
 export interface DigitalHumanProviderAdapter {
-  createSession(input: ProviderSessionInput): ProviderSessionPayload;
-  prepareTurn(input: ProviderTurnInput): ProviderTurnPayload;
+  createSession(input: ProviderSessionInput): Promise<ProviderSessionPayload>;
+  prepareTurn(input: ProviderTurnInput): Promise<ProviderTurnPayload>;
   renderPlayerPage(input: {
     sessionId: string;
     characterName: string;
@@ -61,10 +62,13 @@ export interface DigitalHumanProviderAdapter {
 export class MockDigitalHumanProviderAdapter
   implements DigitalHumanProviderAdapter
 {
-  private readonly mode: DigitalHumanProviderMode = this.resolveMode();
+  constructor(private readonly systemConfigService: SystemConfigService) {}
 
-  createSession(input: ProviderSessionInput): ProviderSessionPayload {
-    if (this.mode === 'mock_stage') {
+  async createSession(
+    input: ProviderSessionInput,
+  ): Promise<ProviderSessionPayload> {
+    const mode = await this.resolveMode();
+    if (mode === 'mock_stage') {
       return {
         provider: 'mock_digital_human',
         presentationMode: 'mock_stage',
@@ -81,12 +85,12 @@ export class MockDigitalHumanProviderAdapter
       };
     }
 
-    if (this.mode === 'external_iframe') {
+    if (mode === 'external_iframe') {
       return {
         provider: 'external_digital_human',
         presentationMode: 'provider_stream',
         transport: 'player_url',
-        playerUrl: this.buildExternalPlayerUrl(input),
+        playerUrl: await this.buildExternalPlayerUrl(input),
         streamUrl: undefined,
         posterUrl: input.posterUrl,
         renderStatus: 'queued',
@@ -114,15 +118,15 @@ export class MockDigitalHumanProviderAdapter
     };
   }
 
-  prepareTurn(input: ProviderTurnInput): ProviderTurnPayload {
+  async prepareTurn(input: ProviderTurnInput): Promise<ProviderTurnPayload> {
     return {
-      ...this.createSession({
+      ...(await this.createSession({
         sessionId: input.sessionId,
         conversationId: input.conversationId,
         characterId: input.characterId,
         characterName: input.characterName,
         posterUrl: input.posterUrl,
-      }),
+      })),
       renderStatus: 'ready',
     };
   }
@@ -142,36 +146,39 @@ export class MockDigitalHumanProviderAdapter
     return `${this.resolvePublicApiBaseUrl()}/api/chat/digital-human-calls/sessions/${sessionId}/player`;
   }
 
-  private buildExternalPlayerUrl(input: ProviderSessionInput) {
-    const template = process.env.DIGITAL_HUMAN_PLAYER_URL_TEMPLATE?.trim();
+  private async buildExternalPlayerUrl(input: ProviderSessionInput) {
+    const template = await this.resolvePlayerUrlTemplate();
     if (!template) {
       return this.buildPlayerUrl(input.sessionId);
     }
 
-    const callbackToken = this.resolveProviderCallbackToken();
-    return template
-      .replaceAll('{sessionId}', encodeURIComponent(input.sessionId))
-      .replaceAll(
-        '{conversationId}',
-        encodeURIComponent(input.conversationId ?? ''),
-      )
-      .replaceAll('{characterId}', encodeURIComponent(input.characterId ?? ''))
-      .replaceAll(
-        '{characterName}',
-        encodeURIComponent(input.characterName ?? ''),
-      )
-      .replaceAll(
-        '{callbackUrl}',
-        encodeURIComponent(this.buildProviderCallbackUrl(input.sessionId)),
-      )
-      .replaceAll(
-        '{callbackToken}',
-        encodeURIComponent(callbackToken ?? ''),
+    const callbackToken = await this.resolveProviderCallbackToken();
+    const replacements = {
+      sessionId: input.sessionId,
+      conversationId: input.conversationId ?? '',
+      characterId: input.characterId ?? '',
+      characterName: input.characterName ?? '',
+      callbackUrl: await this.buildProviderCallbackUrl(input.sessionId),
+      callbackToken: callbackToken ?? '',
+      ...(await this.resolveTemplateParams()),
+    } satisfies Record<string, string>;
+
+    let resolved = template;
+    for (const [key, value] of Object.entries(replacements)) {
+      resolved = resolved.replaceAll(
+        `{${key}}`,
+        encodeURIComponent(value ?? ''),
       );
+    }
+
+    return resolved;
   }
 
-  private resolveMode(): DigitalHumanProviderMode {
-    const mode = process.env.DIGITAL_HUMAN_PROVIDER_MODE?.trim();
+  private async resolveMode(): Promise<DigitalHumanProviderMode> {
+    const mode = (
+      (await this.systemConfigService.getConfig('digital_human_provider_mode')) ??
+      process.env.DIGITAL_HUMAN_PROVIDER_MODE
+    )?.trim();
     if (mode === 'mock_stage') {
       return 'mock_stage';
     }
@@ -183,6 +190,35 @@ export class MockDigitalHumanProviderAdapter
     return 'mock_iframe';
   }
 
+  private async resolvePlayerUrlTemplate() {
+    return (
+      (await this.systemConfigService.getConfig(
+        'digital_human_player_url_template',
+      )) ??
+      process.env.DIGITAL_HUMAN_PLAYER_URL_TEMPLATE
+    )?.trim();
+  }
+
+  private async resolveTemplateParams() {
+    const rawValue = await this.systemConfigService.getConfig(
+      'digital_human_provider_params',
+    );
+    if (!rawValue?.trim()) {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+      return Object.fromEntries(
+        Object.entries(parsed)
+          .filter(([key]) => key.trim().length > 0)
+          .map(([key, value]) => [key, value == null ? '' : String(value)]),
+      );
+    } catch {
+      return {};
+    }
+  }
+
   private resolvePublicApiBaseUrl() {
     return (
       process.env.PUBLIC_API_BASE_URL?.trim() ||
@@ -190,12 +226,12 @@ export class MockDigitalHumanProviderAdapter
     );
   }
 
-  private buildProviderCallbackUrl(sessionId: string) {
+  private async buildProviderCallbackUrl(sessionId: string) {
     const url = new URL(
       `/api/chat/digital-human-calls/sessions/${sessionId}/provider-state`,
       this.resolvePublicApiBaseUrl(),
     );
-    const callbackToken = this.resolveProviderCallbackToken();
+    const callbackToken = await this.resolveProviderCallbackToken();
     if (callbackToken) {
       url.searchParams.set('token', callbackToken);
     }
@@ -203,7 +239,12 @@ export class MockDigitalHumanProviderAdapter
     return url.toString();
   }
 
-  private resolveProviderCallbackToken() {
-    return process.env.DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN?.trim() || null;
+  private async resolveProviderCallbackToken() {
+    return (
+      (await this.systemConfigService.getConfig(
+        'digital_human_provider_callback_token',
+      )) ??
+      process.env.DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN
+    )?.trim() || null;
   }
 }

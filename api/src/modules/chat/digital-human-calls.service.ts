@@ -85,7 +85,7 @@ export class DigitalHumanCallsService {
 
     const now = new Date().toISOString();
     const sessionId = randomUUID();
-    const providerSession = this.digitalHumanProvider.createSession({
+    const providerSession = await this.digitalHumanProvider.createSession({
       sessionId,
       conversationId: conversation.id,
       characterId,
@@ -188,7 +188,7 @@ export class DigitalHumanCallsService {
       conversationId: session.conversationId,
       characterId: session.characterId,
     });
-    const providerTurn = this.digitalHumanProvider.prepareTurn({
+    const providerTurn = await this.digitalHumanProvider.prepareTurn({
       sessionId: session.id,
       conversationId: session.conversationId,
       characterId: session.characterId,
