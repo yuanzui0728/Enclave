@@ -114,10 +114,10 @@ export function DesktopSubscriptionWorkspace() {
   }, [articleQuery.data?.id, markArticleReadMutation]);
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,248,240,0.98))]">
-      <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(255,250,243,0.92)]">
-        <div className="border-b border-[color:var(--border-faint)] px-5 py-5">
-          <div className="text-xs uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
+    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
+      <section className="flex w-[360px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
+        <div className="border-b border-black/6 px-5 py-5">
+          <div className="text-xs font-medium text-[color:var(--text-muted)]">
             聚合消息
           </div>
           <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -140,7 +140,7 @@ export function DesktopSubscriptionWorkspace() {
           {inboxQuery.data?.groups.map((group) => (
             <section
               key={group.account.id}
-              className="border-b border-[color:var(--border-faint)] px-5 py-4"
+              className="border-b border-black/6 px-5 py-4"
             >
               <button
                 type="button"
@@ -168,10 +168,10 @@ export function DesktopSubscriptionWorkspace() {
                     key={delivery.id}
                     type="button"
                     onClick={() => setActiveArticleId(delivery.articleId)}
-                    className={`w-full rounded-[18px] border px-4 py-3 text-left transition ${
+                    className={`w-full rounded-[16px] border px-4 py-3 text-left transition ${
                       activeArticleId === delivery.articleId
-                        ? "border-[color:var(--border-brand)] bg-white shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
-                        : "border-[color:var(--border-faint)] bg-white/82 hover:bg-white"
+                        ? "border-[#b7e4c7] bg-[#edf8f0] shadow-[0_10px_24px_rgba(22,163,74,0.08)]"
+                        : "border-black/6 bg-white hover:bg-[#fbfbfb]"
                     }`}
                   >
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -197,7 +197,7 @@ export function DesktopSubscriptionWorkspace() {
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto p-6">
+      <section className="min-w-0 flex-1 overflow-auto bg-[#f3f3f3] p-6">
         {articleQuery.isLoading ? <LoadingBlock label="正在读取文章..." /> : null}
         {articleQuery.isError && articleQuery.error instanceof Error ? (
           <ErrorBlock message={articleQuery.error.message} />
