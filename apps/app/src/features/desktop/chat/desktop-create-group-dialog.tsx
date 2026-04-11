@@ -105,6 +105,11 @@ export function DesktopCreateGroupDialog({
         .filter((item): item is FriendDirectoryItem => Boolean(item)),
     [friendMap, selectedIds],
   );
+  const sourceFriend = useMemo(
+    () => seedMemberIds.map((id) => friendMap.get(id)).find(Boolean) ?? null,
+    [friendMap, seedMemberIds],
+  );
+  const sourceFriendName = sourceFriend ? getFriendDisplayName(sourceFriend) : null;
   const filteredFriends = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     return sortedFriendItems.filter((item) => {
@@ -681,7 +686,9 @@ export function DesktopCreateGroupDialog({
 
           {seedMemberIds.length ? (
             <div className="mb-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[#f3fff8] px-3 py-2.5 text-[12px] leading-5 text-[#2f7a4c]">
-              已按当前聊天默认勾选对方，你可以继续添加其他联系人。
+              已按当前聊天默认勾选
+              {sourceFriendName ? `“${sourceFriendName}”` : "对方"}
+              ，你可以继续添加其他联系人。
             </div>
           ) : null}
 
@@ -739,7 +746,9 @@ export function DesktopCreateGroupDialog({
                     聊天上下文
                   </div>
                   <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                    从当前单聊里带几条最近消息进群，减少重新说明成本。
+                    {sourceFriendName
+                      ? `从你和“${sourceFriendName}”的聊天里带几条最近消息进群，减少重新说明成本。`
+                      : "从当前单聊里带几条最近消息进群，减少重新说明成本。"}
                   </div>
                 </div>
                 <div className="shrink-0 rounded-full bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
@@ -748,119 +757,121 @@ export function DesktopCreateGroupDialog({
               </div>
 
               <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-3">
-              <label className="flex items-start gap-3 text-left">
-                <input
-                  type="checkbox"
-                  checked={shareHistory}
-                  onChange={(event) => {
-                    const nextChecked = event.target.checked;
-                    setShareHistory(nextChecked);
-                    setMessageSelectionNotice(null);
-                    if (!nextChecked) {
-                      setSelectedMessageIds([]);
-                    }
-                  }}
-                  className="mt-0.5 h-4 w-4 rounded border-black/20 text-[#07c160] focus:ring-[#07c160]"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium text-[color:var(--text-primary)]">
-                    分享聊天记录
+                <label className="flex items-start gap-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={shareHistory}
+                    onChange={(event) => {
+                      const nextChecked = event.target.checked;
+                      setShareHistory(nextChecked);
+                      setMessageSelectionNotice(null);
+                      if (!nextChecked) {
+                        setSelectedMessageIds([]);
+                      }
+                    }}
+                    className="mt-0.5 h-4 w-4 rounded border-black/20 text-[#07c160] focus:ring-[#07c160]"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] font-medium text-[color:var(--text-primary)]">
+                      {sourceFriendName
+                        ? `分享与“${sourceFriendName}”的聊天记录`
+                        : "分享聊天记录"}
+                    </span>
+                    <span className="mt-1 block text-[12px] leading-5 text-[color:var(--text-muted)]">
+                      从当前单聊里挑选几条最近消息，一并带进新群。
+                    </span>
                   </span>
-                  <span className="mt-1 block text-[12px] leading-5 text-[color:var(--text-muted)]">
-                    从当前单聊里挑选几条最近消息，一并带进新群。
-                  </span>
-                </span>
-              </label>
+                </label>
 
-              {shareHistory ? (
-                <div className="mt-3">
-                  {messageSelectionNotice ? (
-                    <InlineNotice className="mb-3 text-xs" tone="muted">
-                      {messageSelectionNotice}
-                    </InlineNotice>
-                  ) : null}
-                  {shareableMessagesQuery.isLoading ? (
-                    <LoadingBlock
-                      className="px-0 py-3 text-left"
-                      label="正在读取最近聊天记录..."
-                    />
-                  ) : null}
-                  {shareableMessagesQuery.isError &&
-                  shareableMessagesQuery.error instanceof Error ? (
-                    <ErrorBlock message={shareableMessagesQuery.error.message} />
-                  ) : null}
-                  {!shareableMessagesQuery.isLoading &&
-                  !shareableMessagesQuery.isError &&
-                  !shareableMessages.length ? (
-                    <div className="rounded-[10px] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
-                      当前单聊里还没有可分享的消息。
-                    </div>
-                  ) : null}
-                  {!shareableMessagesQuery.isLoading &&
-                  !shareableMessagesQuery.isError &&
-                  shareableMessages.length ? (
-                    <>
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <div className="text-[12px] text-[color:var(--text-muted)]">
-                          已选择 {selectedMessageIds.length} /{" "}
-                          {Math.min(
-                            MAX_SHARED_MESSAGE_COUNT,
-                            shareableMessages.length,
-                          )} 条
-                        </div>
-                        <div className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
-                          {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
+                {shareHistory ? (
+                  <div className="mt-3">
+                    {messageSelectionNotice ? (
+                      <InlineNotice className="mb-3 text-xs" tone="muted">
+                        {messageSelectionNotice}
+                      </InlineNotice>
+                    ) : null}
+                    {shareableMessagesQuery.isLoading ? (
+                      <LoadingBlock
+                        className="px-0 py-3 text-left"
+                        label="正在读取最近聊天记录..."
+                      />
+                    ) : null}
+                    {shareableMessagesQuery.isError &&
+                    shareableMessagesQuery.error instanceof Error ? (
+                      <ErrorBlock message={shareableMessagesQuery.error.message} />
+                    ) : null}
+                    {!shareableMessagesQuery.isLoading &&
+                    !shareableMessagesQuery.isError &&
+                    !shareableMessages.length ? (
+                      <div className="rounded-[10px] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
+                        当前单聊里还没有可分享的消息。
+                      </div>
+                    ) : null}
+                    {!shareableMessagesQuery.isLoading &&
+                    !shareableMessagesQuery.isError &&
+                    shareableMessages.length ? (
+                      <>
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <div className="text-[12px] text-[color:var(--text-muted)]">
+                            已选择 {selectedMessageIds.length} /{" "}
+                            {Math.min(
+                              MAX_SHARED_MESSAGE_COUNT,
+                              shareableMessages.length,
+                            )} 条
+                          </div>
+                          <div className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
+                            {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
+                              <button
+                                key={count}
+                                type="button"
+                                onClick={() => selectRecentMessages(count)}
+                                className={cn(
+                                  "rounded-[8px] border px-2.5 py-1 transition",
+                                  recentPresetSelectionState.get(count)
+                                    ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
+                                    : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                                )}
+                              >
+                                最近{count}条
+                              </button>
+                            ))}
                             <button
-                              key={count}
                               type="button"
-                              onClick={() => selectRecentMessages(count)}
+                              onClick={() =>
+                                applyMessageSelection(
+                                  shareableMessages.map((message) => message.id),
+                                )
+                              }
                               className={cn(
                                 "rounded-[8px] border px-2.5 py-1 transition",
-                                recentPresetSelectionState.get(count)
+                                allShareableMessagesSelected
                                   ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
                                   : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
                               )}
                             >
-                              最近{count}条
+                              全选
                             </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              applyMessageSelection(
-                                shareableMessages.map((message) => message.id),
-                              )
-                            }
-                            className={cn(
-                              "rounded-[8px] border px-2.5 py-1 transition",
-                              allShareableMessagesSelected
-                                ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
-                            )}
-                          >
-                            全选
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedMessageIds([])}
-                            className={cn(
-                              "rounded-[8px] border px-2.5 py-1 transition",
-                              selectedMessageIds.length === 0
-                                ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
-                            )}
-                          >
-                            清空
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMessageIds([])}
+                              className={cn(
+                                "rounded-[8px] border px-2.5 py-1 transition",
+                                selectedMessageIds.length === 0
+                                  ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
+                                  : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                              )}
+                            >
+                              清空
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <div
-                        tabIndex={0}
-                        onKeyDown={handleSharedMessagesKeyDown}
-                        className="max-h-56 overflow-auto rounded-[10px] border border-black/6 bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.18)]"
-                        aria-label="可分享聊天记录列表"
-                      >
-                        <div className="space-y-3">
+                        <div
+                          tabIndex={0}
+                          onKeyDown={handleSharedMessagesKeyDown}
+                          className="max-h-56 overflow-auto rounded-[10px] border border-black/6 bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.18)]"
+                          aria-label="可分享聊天记录列表"
+                        >
+                          <div className="space-y-3">
                           {shareableMessageSections.map((section) => (
                             <div key={section.key} className="rounded-[10px] bg-[#fcfcfc] px-2 py-2">
                               <div className="sticky top-0 z-10 -mx-1.5 mb-1 bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-dim)] backdrop-blur">
