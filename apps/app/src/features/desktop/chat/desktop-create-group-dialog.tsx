@@ -1124,6 +1124,11 @@ export function DesktopCreateGroupDialog({
                   <div className="space-y-1">
                     {section.items.map((item) => {
                       const displayName = getFriendDisplayName(item);
+                      const aliasName =
+                        item.friendship.remarkName?.trim() &&
+                        item.friendship.remarkName.trim() !== item.character.name
+                          ? item.character.name
+                          : null;
                       const checked = selectedIds.includes(item.character.id);
                       const focused =
                         friendPositionMap.get(item.character.id) ===
@@ -1138,11 +1143,13 @@ export function DesktopCreateGroupDialog({
                           disabled={createMutation.isPending}
                           onClick={() => toggleSelection(item.character.id)}
                           className={cn(
-                            "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
+                            "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
                             checked
-                              ? "bg-[rgba(7,193,96,0.08)]"
-                              : "hover:bg-[#f7f7f7]",
-                            focused ? "ring-1 ring-[rgba(7,193,96,0.24)]" : "",
+                              ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)]"
+                              : "hover:border-black/6 hover:bg-white",
+                            focused
+                              ? "ring-1 ring-[rgba(7,193,96,0.24)]"
+                              : "",
                           )}
                         >
                           <AvatarChip
@@ -1151,8 +1158,15 @@ export function DesktopCreateGroupDialog({
                             size="md"
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                              {displayName}
+                            <div className="flex items-center gap-2">
+                              <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+                                {displayName}
+                              </div>
+                              {aliasName ? (
+                                <span className="shrink-0 rounded-full bg-[#f3f4f6] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+                                  {aliasName}
+                                </span>
+                              ) : null}
                             </div>
                             <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
                               {item.character.relationship || "世界联系人"}
