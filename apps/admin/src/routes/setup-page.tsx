@@ -28,6 +28,10 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import {
+  buildDigitalHumanAdminSummary,
+  formatDigitalHumanAdminMode,
+} from "../lib/digital-human-admin-summary";
 
 function formatProviderMode(mode?: string | null) {
   if (mode === "cloud") {
@@ -116,11 +120,9 @@ export function SetupPage() {
   const digitalHumanTemplateWarnings = validateDigitalHumanTemplate(
     digitalHumanDraft,
   );
-  const digitalHumanProviderReady = Boolean(
-    digitalHumanDraft.mode === "external_iframe"
-      ? digitalHumanDraft.playerUrlTemplate.trim()
-      : digitalHumanDraft.mode,
-  ) && !digitalHumanParamsError;
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
   const digitalHumanPreview = buildDigitalHumanPreview(
     digitalHumanDraft,
     baseUrl,
@@ -147,10 +149,8 @@ export function SetupPage() {
     },
     {
       label: "数字人 Provider",
-      ok: digitalHumanProviderReady,
-      hint: digitalHumanProviderReady
-        ? `当前模式：${formatDigitalHumanMode(digitalHumanDraft.mode)}`
-        : "补齐数字人模式与模板参数，才能接真实视频流",
+      ok: digitalHumanSummary.ready,
+      hint: `${digitalHumanSummary.modeLabel} · ${digitalHumanSummary.statusLabel}`,
     },
     {
       label: "后台就绪",
@@ -202,11 +202,7 @@ export function SetupPage() {
     },
     {
       label: "数字人 Provider",
-      value: digitalHumanProviderReady
-        ? `${formatDigitalHumanMode(digitalHumanDraft.mode)} · ${
-            digitalHumanDraft.playerUrlTemplate.trim() ? "模板已配置" : "内置模式"
-          }`
-        : "待配置",
+      value: `${digitalHumanSummary.modeLabel} · ${digitalHumanSummary.statusLabel}`,
     },
     {
       label: "下一步",
@@ -293,9 +289,9 @@ export function SetupPage() {
               />
               <AdminStatusCard
                 title="补齐数字人 Provider 参数"
-                description="如果要接真实数字人视频流，这里需要保存模式、播放器模板和 provider 参数 JSON。"
-                tone={digitalHumanProviderReady ? "healthy" : "warning"}
-                statusLabel={digitalHumanProviderReady ? "完成" : "待处理"}
+                description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+                tone={digitalHumanSummary.ready ? "healthy" : "warning"}
+                statusLabel={digitalHumanSummary.statusLabel}
               />
             </div>
           </Card>
@@ -426,8 +422,8 @@ export function SetupPage() {
             <AdminSectionHeader
               title="数字人 Provider 配置"
               actions={
-                <StatusPill tone={digitalHumanProviderReady ? "healthy" : "warning"}>
-                  {digitalHumanProviderReady ? "已配置" : "待配置"}
+                <StatusPill tone={digitalHumanSummary.ready ? "healthy" : "warning"}>
+                  {digitalHumanSummary.statusLabel}
                 </StatusPill>
               }
             />
@@ -435,6 +431,12 @@ export function SetupPage() {
               这里保存 AI 数字人视频通话的 provider 模式、播放器模板和扩展参数。`external_iframe`
               模式下，模板可直接消费 `{`sessionId`}`、`{`conversationId`}`、`{`characterId`}`、`{`characterName`}`、`{`callbackUrl`}`、`{`callbackToken`}`，以及参数 JSON 里的同名键。
             </p>
+            <InlineNotice
+              className="mt-4"
+              tone={digitalHumanSummary.ready ? "success" : "warning"}
+            >
+              {digitalHumanSummary.description} {digitalHumanSummary.nextStep}
+            </InlineNotice>
 
             <div className="mt-5 grid gap-4">
               <div className="flex flex-wrap gap-3">
@@ -568,7 +570,7 @@ export function SetupPage() {
                 className="mt-4"
                 tone="success"
                 title="数字人配置已保存"
-                description={`当前模式：${formatDigitalHumanMode(
+                description={`当前模式：${formatDigitalHumanAdminMode(
                   digitalHumanDraft.mode,
                 )}`}
               />
@@ -587,19 +589,6 @@ export function SetupPage() {
       </div>
     </div>
   );
-}
-
-function formatDigitalHumanMode(mode: string) {
-  switch (mode) {
-    case "mock_stage":
-      return "内置舞台";
-    case "mock_iframe":
-      return "内置 iframe";
-    case "external_iframe":
-      return "外部 iframe";
-    default:
-      return mode || "未设置";
-  }
 }
 
 function createDigitalHumanConfigDraft(config?: Record<string, string>) {
