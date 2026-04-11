@@ -23,7 +23,7 @@ body {
   position: relative;
   background:
     var(--bg-accent),
-    linear-gradient(180deg, #fffdf7, #fff8ee 40%, #fefcf8);
+    linear-gradient(180deg, #f8fbf9, #f3f7f5 40%, #eef2f0);
   background-attachment: fixed;
 }
 
@@ -80,12 +80,101 @@ body.yj-mobile {
 
 html.yj-desktop-window,
 body.yj-desktop-window {
+  --bg-canvas: #eff3f4;
+  --bg-canvas-elevated: #ffffff;
+  --bg-accent:
+    radial-gradient(
+      ellipse at 16% 0%,
+      rgba(7, 193, 96, 0.12),
+      transparent 54%
+    ),
+    radial-gradient(
+      ellipse at 88% 16%,
+      rgba(56, 189, 248, 0.08),
+      transparent 46%
+    ),
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(148, 163, 184, 0.08),
+      transparent 52%
+    );
+  --bg-glow-top: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.74),
+    rgba(255, 255, 255, 0)
+  );
+  --bg-glow-bottom: linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.38),
+    rgba(255, 255, 255, 0)
+  );
+  --bg-grid:
+    linear-gradient(rgba(255, 255, 255, 0.56) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.56) 1px, transparent 1px);
+  --surface-primary: rgba(255, 255, 255, 0.94);
+  --surface-shell: rgba(250, 252, 252, 0.92);
+  --surface-section: #ffffff;
+  --surface-card: rgba(255, 255, 255, 0.98);
+  --surface-card-hover: #f3faf5;
+  --surface-soft: rgba(7, 193, 96, 0.08);
+  --surface-secondary: rgba(255, 255, 255, 0.82);
+  --surface-tertiary: rgba(7, 193, 96, 0.1);
+  --surface-overlay: rgba(255, 255, 255, 0.94);
+  --surface-console: #f9fbfb;
+  --surface-input: rgba(255, 255, 255, 0.98);
+  --border-faint: rgba(15, 23, 42, 0.08);
+  --border-subtle: rgba(15, 23, 42, 0.12);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --border-brand: rgba(7, 193, 96, 0.28);
+  --hairline-light: rgba(255, 255, 255, 0.36);
+  --text-primary: #111827;
+  --text-secondary: #475467;
+  --text-muted: #667085;
+  --text-dim: #98a2b3;
+  --text-on-brand: #ffffff;
+  --brand-primary: #07c160;
+  --brand-secondary: #1cd777;
+  --brand-accent: #38bdf8;
+  --brand-soft: rgba(7, 193, 96, 0.1);
+  --brand-gradient: linear-gradient(135deg, #07c160, #14d86f);
+  --state-success-bg: rgba(7, 193, 96, 0.1);
+  --state-success-text: #0b7a3b;
+  --state-warning-bg: rgba(245, 158, 11, 0.12);
+  --state-warning-text: #a16207;
+  --state-danger-bg: rgba(239, 68, 68, 0.1);
+  --state-danger-text: #b42318;
+  --state-info-bg: rgba(56, 189, 248, 0.12);
+  --state-info-text: #0c4a6e;
+  --shadow-shell: 0 18px 52px rgba(15, 23, 42, 0.14);
+  --shadow-section: 0 10px 28px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 8px 22px rgba(15, 23, 42, 0.09);
+  --shadow-soft: 0 3px 14px rgba(15, 23, 42, 0.06);
+  --shadow-lift: 0 14px 36px rgba(15, 23, 42, 0.1);
+  --shadow-overlay: 0 22px 44px rgba(15, 23, 42, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(7, 193, 96, 0.18);
   background: transparent;
   overflow: hidden;
 }
 
 body.yj-desktop-window #root {
   background: transparent;
+}
+
+body.yj-desktop-window::before {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(7, 193, 96, 0.08),
+      transparent 24%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0));
+}
+
+body.yj-desktop-window::after {
+  background: var(--bg-grid);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.12), transparent 72%);
+  opacity: 0.14;
 }
 
 a {
