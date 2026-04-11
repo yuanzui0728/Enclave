@@ -56,6 +56,8 @@ export type ChatRouteContextNotice = {
   actionLabel: string;
   description: string;
   onAction: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 };
 
 export function ConversationThreadPanel({
@@ -361,18 +363,31 @@ export function ConversationThreadPanel({
           }
         >
           <InlineNotice tone="info" className="border-black/6 bg-white">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs leading-6 text-[color:var(--text-secondary)]">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="min-w-0 flex-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                 {routeContextNotice.description}
               </span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={routeContextNotice.onAction}
-                className="shrink-0 rounded-full"
-              >
-                {routeContextNotice.actionLabel}
-              </Button>
+              <div className="flex items-center justify-end gap-1.5">
+                {routeContextNotice.secondaryActionLabel &&
+                routeContextNotice.onSecondaryAction ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={routeContextNotice.onSecondaryAction}
+                    className="shrink-0 rounded-full"
+                  >
+                    {routeContextNotice.secondaryActionLabel}
+                  </Button>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={routeContextNotice.onAction}
+                  className="shrink-0 rounded-full"
+                >
+                  {routeContextNotice.actionLabel}
+                </Button>
+              </div>
             </div>
           </InlineNotice>
         </div>

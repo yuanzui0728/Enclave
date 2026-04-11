@@ -93,7 +93,7 @@ export function ChatRoomPage() {
       ? null
       : {
           actionLabel: "发语音继续",
-          description: `本轮${routeCallReturnKind === "voice" ? "语音" : "视频"}通话已结束，可继续在聊天里发语音或文字。`,
+          description: `本轮${routeCallReturnKind === "voice" ? "语音" : "视频"}通话已结束。你可以直接继续输入，也可以切回语音发送。`,
           onAction: () => {
             setRouteCallReturnKind(null);
             void navigate({
@@ -105,6 +105,10 @@ export function ChatRoomPage() {
                 }) || undefined,
               hash,
             });
+          },
+          secondaryActionLabel: "继续打字",
+          onSecondaryAction: () => {
+            setRouteCallReturnKind(null);
           },
         };
 
