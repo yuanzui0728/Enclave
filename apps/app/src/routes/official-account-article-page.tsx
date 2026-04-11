@@ -8,6 +8,7 @@ import {
 } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
@@ -107,61 +108,70 @@ function MobileOfficialAccountArticlePage({
   }
 
   return (
-    <AppPage className="space-y-5">
-      <div className="flex items-center justify-between">
-        <Button
-          onClick={() => {
-            navigateBackOrFallback(() => {
-              if (article?.account.id) {
-                void navigate({
-                  to: "/official-accounts/$accountId",
-                  params: { accountId: article.account.id },
-                });
-                return;
-              }
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
+      <TabPageTopBar
+        title={article?.account.name ?? "公众号文章"}
+        titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        leftActions={
+          <Button
+            onClick={() => {
+              navigateBackOrFallback(() => {
+                if (article?.account.id) {
+                  void navigate({
+                    to: "/official-accounts/$accountId",
+                    params: { accountId: article.account.id },
+                  });
+                  return;
+                }
 
-              void navigate({ to: "/contacts/official-accounts" });
-            });
-          }}
-          variant="ghost"
-          size="icon"
-          className="text-[color:var(--text-secondary)]"
-        >
-          <ArrowLeft size={18} />
-        </Button>
+                void navigate({ to: "/contacts/official-accounts" });
+              });
+            }}
+            variant="ghost"
+            size="icon"
+            className="text-[color:var(--text-secondary)]"
+          >
+            <ArrowLeft size={18} />
+          </Button>
+        }
+      />
+
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        {articleQuery.isLoading ? (
+          <LoadingBlock label="正在读取文章..." />
+        ) : null}
+        {articleQuery.isError && articleQuery.error instanceof Error ? (
+          <ErrorBlock message={articleQuery.error.message} />
+        ) : null}
+        {markReadMutation.isError && markReadMutation.error instanceof Error ? (
+          <ErrorBlock message={markReadMutation.error.message} />
+        ) : null}
+
+        {article ? (
+          <OfficialArticleViewer
+            article={article}
+            favorite={
+              articleFavoriteSourceId
+                ? favoriteSourceIds.includes(articleFavoriteSourceId)
+                : false
+            }
+            onOpenAccount={(accountId) => {
+              void navigate({
+                to: "/official-accounts/$accountId",
+                params: { accountId },
+              });
+            }}
+            onOpenArticle={(nextArticleId) => {
+              void navigate({
+                to: "/official-accounts/articles/$articleId",
+                params: { articleId: nextArticleId },
+              });
+            }}
+            onToggleFavorite={toggleArticleFavorite}
+          />
+        ) : null}
       </div>
-
-      {articleQuery.isLoading ? <LoadingBlock label="正在读取文章..." /> : null}
-      {articleQuery.isError && articleQuery.error instanceof Error ? (
-        <ErrorBlock message={articleQuery.error.message} />
-      ) : null}
-      {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-        <ErrorBlock message={markReadMutation.error.message} />
-      ) : null}
-
-      {article ? (
-        <OfficialArticleViewer
-          article={article}
-          favorite={
-            articleFavoriteSourceId
-              ? favoriteSourceIds.includes(articleFavoriteSourceId)
-              : false
-          }
-          onOpenAccount={(accountId) => {
-            void navigate({
-              to: "/official-accounts/$accountId",
-              params: { accountId },
-            });
-          }}
-          onOpenArticle={(nextArticleId) => {
-            void navigate({
-              to: "/official-accounts/articles/$articleId",
-              params: { articleId: nextArticleId },
-            });
-          }}
-          onToggleFavorite={toggleArticleFavorite}
-        />
-      ) : null}
     </AppPage>
   );
 }

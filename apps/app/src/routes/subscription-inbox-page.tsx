@@ -7,7 +7,6 @@ import {
   markOfficialAccountSubscriptionInboxRead,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   AppPage,
   AppSection,
   Button,
@@ -15,6 +14,7 @@ import {
   LoadingBlock,
 } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { OfficialArticleCard } from "../components/official-article-card";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -75,12 +75,12 @@ function MobileSubscriptionInboxPage() {
   ]);
 
   return (
-    <AppPage>
-      <AppHeader
-        eyebrow="消息"
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
+      <TabPageTopBar
         title="订阅号消息"
-        description="已关注订阅号的最近推送会汇总在这里。"
-        actions={
+        titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        leftActions={
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
@@ -96,60 +96,67 @@ function MobileSubscriptionInboxPage() {
         }
       />
 
-      {inboxQuery.isLoading ? <LoadingBlock label="正在读取订阅号消息..." /> : null}
-      {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-        <ErrorBlock message={inboxQuery.error.message} />
-      ) : null}
-      {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-        <ErrorBlock message={markReadMutation.error.message} />
-      ) : null}
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        {inboxQuery.isLoading ? (
+          <LoadingBlock label="正在读取订阅号消息..." />
+        ) : null}
+        {inboxQuery.isError && inboxQuery.error instanceof Error ? (
+          <ErrorBlock message={inboxQuery.error.message} />
+        ) : null}
+        {markReadMutation.isError && markReadMutation.error instanceof Error ? (
+          <ErrorBlock message={markReadMutation.error.message} />
+        ) : null}
 
-      {inboxQuery.data?.groups.length ? (
-        inboxQuery.data.groups.map((group) => (
-          <AppSection key={group.account.id} className="space-y-4">
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigate({
-                    to: "/official-accounts/$accountId",
-                    params: { accountId: group.account.id },
-                  });
-                }}
-                className="text-left"
-              >
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {group.account.name}
-                </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                  {group.unreadCount > 0
-                    ? `${group.unreadCount} 条新推送`
-                    : "最近推送"}
-                </div>
-              </button>
-            </div>
+        {inboxQuery.data?.groups.length ? (
+          inboxQuery.data.groups.map((group) => (
+            <AppSection
+              key={group.account.id}
+              className="space-y-4 border-black/5 bg-white shadow-none"
+            >
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void navigate({
+                      to: "/official-accounts/$accountId",
+                      params: { accountId: group.account.id },
+                    });
+                  }}
+                  className="text-left"
+                >
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    {group.account.name}
+                  </div>
+                  <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                    {group.unreadCount > 0
+                      ? `${group.unreadCount} 条新推送`
+                      : "最近推送"}
+                  </div>
+                </button>
+              </div>
 
-            {group.deliveries.map((delivery) => (
-              <OfficialArticleCard
-                key={delivery.id}
-                article={delivery.article}
-                compact
-                onClick={() => {
-                  void navigate({
-                    to: "/official-accounts/articles/$articleId",
-                    params: { articleId: delivery.article.id },
-                  });
-                }}
-              />
-            ))}
-          </AppSection>
-        ))
-      ) : !inboxQuery.isLoading ? (
-        <EmptyState
-          title="还没有订阅号消息"
-          description="先关注一个订阅号，后续推送会汇总到这里。"
-        />
-      ) : null}
+              {group.deliveries.map((delivery) => (
+                <OfficialArticleCard
+                  key={delivery.id}
+                  article={delivery.article}
+                  compact
+                  onClick={() => {
+                    void navigate({
+                      to: "/official-accounts/articles/$articleId",
+                      params: { articleId: delivery.article.id },
+                    });
+                  }}
+                />
+              ))}
+            </AppSection>
+          ))
+        ) : !inboxQuery.isLoading ? (
+          <EmptyState
+            title="还没有订阅号消息"
+            description="先关注一个订阅号，后续推送会汇总到这里。"
+          />
+        ) : null}
+      </div>
     </AppPage>
   );
 }

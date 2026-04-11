@@ -8,7 +8,6 @@ import {
   unfollowOfficialAccount,
 } from "@yinjie/contracts";
 import {
-  AppHeader,
   AppPage,
   AppSection,
   Button,
@@ -17,6 +16,7 @@ import {
   LoadingBlock,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
+import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { OfficialArticleCard } from "../components/official-article-card";
 import { buildOfficialAccountFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
 import { buildOfficialArticleSummaryFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
@@ -119,14 +119,12 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   }
 
   return (
-    <AppPage>
-      <AppHeader
-        eyebrow="公众号"
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
+      <TabPageTopBar
         title={account?.name ?? "公众号主页"}
-        description={
-          account?.description ?? "查看账号资料、最近文章和历史推送。"
-        }
-        actions={
+        titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        leftActions={
           <Button
             onClick={() =>
               navigateBackOrFallback(() => {
@@ -142,16 +140,17 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         }
       />
 
-      {accountQuery.isLoading ? (
-        <LoadingBlock label="正在读取公众号..." />
-      ) : null}
-      {accountQuery.isError && accountQuery.error instanceof Error ? (
-        <ErrorBlock message={accountQuery.error.message} />
-      ) : null}
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        {accountQuery.isLoading ? (
+          <LoadingBlock label="正在读取公众号..." />
+        ) : null}
+        {accountQuery.isError && accountQuery.error instanceof Error ? (
+          <ErrorBlock message={accountQuery.error.message} />
+        ) : null}
 
-      {account ? (
-        <>
-          <AppSection className="space-y-5 p-6">
+        {account ? (
+          <>
+          <AppSection className="space-y-5 border-black/5 bg-white p-6 shadow-none">
             <div className="flex items-center gap-4">
               <AvatarChip name={account.name} src={account.avatar} size="lg" />
               <div className="min-w-0">
@@ -204,7 +203,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             ) : null}
           </AppSection>
 
-          <AppSection className="space-y-3">
+          <AppSection className="space-y-3 border-black/5 bg-white shadow-none">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               {account.accountType === "service" ? "服务消息" : "订阅号消息"}
             </div>
@@ -245,7 +244,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             ) : null}
           </AppSection>
 
-          <AppSection className="space-y-4">
+          <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
             <div>
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 最近文章
@@ -273,8 +272,9 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               />
             ))}
           </AppSection>
-        </>
-      ) : null}
+          </>
+        ) : null}
+      </div>
     </AppPage>
   );
 }
