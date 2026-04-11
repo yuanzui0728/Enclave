@@ -41,6 +41,7 @@ export function useDigitalHumanCallSession({
   const speechCancelRef = useRef<() => void>(() => {});
   const speechClearResultRef = useRef<() => void>(() => {});
   const sessionRef = useRef<DigitalHumanSession | null>(null);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
   const [session, setSession] = useState<DigitalHumanSession | null>(null);
   const [sessionState, setSessionState] =
     useState<DigitalHumanSessionState>("idle");
@@ -290,8 +291,19 @@ export function useDigitalHumanCallSession({
     conversationId,
     enabled,
     mode,
+    sessionAttempt,
     stopReplyPlayback,
   ]);
+
+  const retrySession = useCallback(() => {
+    autoSubmitRecordingRef.current = false;
+    stopReplyPlayback();
+    speechCancelRef.current();
+    setSession(null);
+    setSessionError(null);
+    setSessionState("connecting");
+    setSessionAttempt((current) => current + 1);
+  }, [stopReplyPlayback]);
 
   const startRecordingTurn = useCallback(async () => {
     if (!enabled || sessionState !== "ready" || !sessionRef.current) {
@@ -357,6 +369,7 @@ export function useDigitalHumanCallSession({
     playbackState,
     playerError,
     replayLastTurn,
+    retrySession,
     session,
     sessionError,
     sessionPhase:

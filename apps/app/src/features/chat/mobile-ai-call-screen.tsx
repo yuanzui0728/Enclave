@@ -250,7 +250,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     }
 
     if (isVideoMode && digitalHumanCall.sessionError) {
-      return "当前数字人会话没有建立成功，请返回聊天后重新发起。";
+      return "当前数字人会话没有建立成功，可以直接重试连接，或者先改用语音通话。";
     }
 
     if (activeCall.turnMutation.isPending) {
@@ -317,6 +317,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     void navigate({
       to: "/chat/$conversationId",
+      params: { conversationId: resolvedConversationId },
+    });
+  };
+
+  const handleSwitchToVoiceCall = async () => {
+    activeCall.stopReplyPlayback();
+    await digitalHumanCall.endSession();
+    void navigate({
+      to: "/chat/$conversationId/voice-call",
       params: { conversationId: resolvedConversationId },
     });
   };
@@ -541,6 +550,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {isVideoMode && digitalHumanCall.sessionError ? (
             <ErrorBlock message={digitalHumanCall.sessionError} />
           ) : null}
+          {isVideoMode && digitalHumanCall.sessionError ? (
+            <InlineNotice tone="info">
+              这类失败通常是会话网关瞬时不可用。你可以先点“重新连接数字人”，不行再切到语音通话继续聊。
+            </InlineNotice>
+          ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
@@ -585,6 +599,31 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
         <div className="mt-auto pt-6">
           <div className="flex flex-wrap items-center justify-center gap-3">
+            {isVideoMode && digitalHumanCall.sessionError ? (
+              <button
+                type="button"
+                onClick={() => {
+                  digitalHumanCall.retrySession();
+                }}
+                disabled={digitalHumanCall.sessionState === "connecting"}
+                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+              >
+                <RotateCcw size={16} />
+                重新连接数字人
+              </button>
+            ) : null}
+            {isVideoMode && digitalHumanCall.sessionError ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSwitchToVoiceCall();
+                }}
+                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition"
+              >
+                <PhoneOff size={16} />
+                改用语音通话
+              </button>
+            ) : null}
             {activeCall.playerError && lastAssistantText ? (
               <button
                 type="button"
