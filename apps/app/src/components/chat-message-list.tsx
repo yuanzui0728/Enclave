@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useMemo,
   useEffect,
   useRef,
@@ -400,10 +401,6 @@ export function ChatMessageList({
     queryFn: () => getFavorites(baseUrl),
   });
 
-  useEffect(() => {
-    syncFavoriteSourceIds(favoritesQuery.data ?? []);
-  }, [favoritesQuery.data]);
-
   const updateGroupMessageQueries = (
     groupId: string,
     updater: (
@@ -430,15 +427,20 @@ export function ChatMessageList({
     );
   };
 
-  const syncFavoriteSourceIds = (
-    remoteFavorites = favoritesQuery.data ?? [],
-  ) => {
-    setFavoriteSourceIds(
-      mergeDesktopFavoriteRecords(remoteFavorites, readDesktopFavorites()).map(
-        (item) => item.sourceId,
-      ),
-    );
-  };
+  const syncFavoriteSourceIds = useCallback(
+    (remoteFavorites: Awaited<ReturnType<typeof getFavorites>> = []) => {
+      setFavoriteSourceIds(
+        mergeDesktopFavoriteRecords(remoteFavorites, readDesktopFavorites()).map(
+          (item) => item.sourceId,
+        ),
+      );
+    },
+    [],
+  );
+
+  useEffect(() => {
+    syncFavoriteSourceIds(favoritesQuery.data ?? []);
+  }, [favoritesQuery.data, syncFavoriteSourceIds]);
 
   const forwardMutation = useMutation({
     mutationFn: async (input: {
