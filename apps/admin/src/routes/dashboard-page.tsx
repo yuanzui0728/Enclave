@@ -42,6 +42,7 @@ import {
   AdminActionFeedback,
   AdminActionGroup,
   AdminCallout,
+  AdminDetailPanel,
   AdminDangerZone,
   AdminJumpCard,
   AdminStatusCard,
@@ -748,9 +749,7 @@ export function DashboardPage() {
             )}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">最近调度记录</div>
-            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="最近调度记录" contentClassName="space-y-2">
               {schedulerQuery.data?.recentRuns.map((event) => (
                 <ListItemCard
                   key={event.id}
@@ -768,15 +767,14 @@ export function DashboardPage() {
               {schedulerQuery.data && schedulerQuery.data.recentRuns.length === 0 && (
                 <div>当前还没有调度任务执行记录。</div>
               )}
-            </div>
-          </div>
+          </AdminDetailPanel>
         </Card>
 
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>实时契约</SectionHeading>
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="命名空间">
             命名空间：{CHAT_NAMESPACE}
-          </div>
+          </AdminDetailPanel>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <MetricCard label="已连接客户端" value={realtimeQuery.data?.connectedClients ?? 0} />
             <MetricCard label="活跃房间" value={realtimeQuery.data?.activeRooms ?? 0} />
@@ -786,9 +784,9 @@ export function DashboardPage() {
               <ListItemCard key={eventName} className="py-3" title={eventName} />
             ))}
           </div>
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="Socket 路径">
             Socket 路径：{realtimeQuery.data?.socketPath ?? "/socket.io"}
-          </div>
+          </AdminDetailPanel>
           <div className="mt-4 grid gap-3">
             {realtimeQuery.data?.rooms.map((room) => (
               <ListItemCard
@@ -805,15 +803,12 @@ export function DashboardPage() {
               <ErrorBlock message={realtimeQuery.error.message} />
             )}
           </div>
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">最近实时事件</div>
-            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="最近实时事件" contentClassName="space-y-2">
               {realtimeQuery.data?.recentEvents.map((event) => (
                 <ListItemCard key={event} className="py-3" title={event} />
               ))}
               {realtimeQuery.data && realtimeQuery.data.recentEvents.length === 0 && <div>当前还没有实时事件。</div>}
-            </div>
-          </div>
+          </AdminDetailPanel>
         </Card>
       </div>
 
@@ -873,16 +868,13 @@ export function DashboardPage() {
           </form>
 
           <div className="mt-4 grid gap-3">
-            <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">结果</div>
-              <div className="mt-2 whitespace-pre-wrap text-[color:var(--text-primary)]">
+            <AdminDetailPanel title="结果" contentClassName="whitespace-pre-wrap text-[color:var(--text-primary)]">
                 {previewMutation.data
                   ? previewMutation.data.output ?? previewMutation.data.error ?? "预览未返回任何输出。"
                   : previewMutation.isError && previewMutation.error instanceof Error
                     ? previewMutation.error.message
                     : "用当前生效的推理服务配置运行一条预览提示词。"}
-              </div>
-            </div>
+            </AdminDetailPanel>
             <div className="grid gap-3 md:grid-cols-3">
               <MetricCard
                 label="模型"
@@ -948,9 +940,7 @@ export function DashboardPage() {
             ) : null}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">日志索引</div>
-            <div className="mt-3 space-y-2 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="日志索引" contentClassName="space-y-2">
               {logsQuery.data?.map((logPath) => (
                 <ListItemCard key={logPath} className="py-3" title={logPath} />
               ))}
@@ -959,8 +949,7 @@ export function DashboardPage() {
               {!logsQuery.isLoading && !logsQuery.data && !logsQuery.error ? (
                 <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="等待本地运行时日志..." />
               ) : null}
-            </div>
-          </div>
+          </AdminDetailPanel>
         </Card>
       </div>
       </div>

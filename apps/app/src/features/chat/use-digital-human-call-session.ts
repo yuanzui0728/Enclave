@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  LEGACY_API_PREFIX,
   closeDigitalHumanSession,
   createDigitalHumanSession,
   createDigitalHumanTurn,
@@ -9,6 +10,7 @@ import {
   type DigitalHumanSession,
   type DigitalHumanTurnResult,
   type VoiceCallTurnResult,
+  resolveCoreApiBaseUrl,
 } from "@yinjie/contracts";
 import { useSpeechInput } from "./use-speech-input";
 
@@ -297,42 +299,102 @@ export function useDigitalHumanCallSession({
   ]);
 
   useEffect(() => {
-    if (
-      !enabled ||
-      !session ||
-      session.status === "ended" ||
-      session.presentationMode !== "provider_stream" ||
-      (session.renderStatus !== "queued" && session.renderStatus !== "rendering")
-    ) {
+    if (!enabled || !session?.id || session.status === "ended") {
       return;
     }
 
     let disposed = false;
+    let eventSource: EventSource | null = null;
+    let intervalId: number | null = null;
+
+    const stopPolling = () => {
+      if (intervalId === null) {
+        return;
+      }
+
+      window.clearInterval(intervalId);
+      intervalId = null;
+    };
+
+    const stopEventStream = () => {
+      if (!eventSource) {
+        return;
+      }
+
+      eventSource.close();
+      eventSource = null;
+    };
 
     const syncSession = async () => {
+      const activeSession = sessionRef.current;
+      if (!activeSession || activeSession.status === "ended") {
+        stopPolling();
+        stopEventStream();
+        return;
+      }
+
       try {
-        const nextSession = await getDigitalHumanSession(session.id, baseUrl);
+        const nextSession = await getDigitalHumanSession(activeSession.id, baseUrl);
 
         if (disposed) {
           return;
         }
 
         setSession(nextSession);
+        if (nextSession.status === "ended") {
+          stopPolling();
+          stopEventStream();
+        }
       } catch {
         // Polling is best-effort. Keep the last snapshot and let manual retry recover.
       }
     };
 
-    void syncSession();
-    const intervalId = window.setInterval(() => {
+    const startPolling = () => {
+      if (intervalId !== null) {
+        return;
+      }
+
       void syncSession();
-    }, 3000);
+      intervalId = window.setInterval(() => {
+        void syncSession();
+      }, 3000);
+    };
+
+    if (typeof EventSource === "function") {
+      eventSource = new EventSource(
+        buildDigitalHumanSessionEventsUrl(session.id, baseUrl),
+      );
+      eventSource.onmessage = (event) => {
+        try {
+          const nextSession = JSON.parse(event.data) as DigitalHumanSession;
+          if (disposed) {
+            return;
+          }
+
+          setSession(nextSession);
+          stopPolling();
+          if (nextSession.status === "ended") {
+            stopEventStream();
+          }
+        } catch {
+          startPolling();
+        }
+      };
+      eventSource.onerror = () => {
+        stopEventStream();
+        startPolling();
+      };
+    } else {
+      startPolling();
+    }
 
     return () => {
       disposed = true;
-      window.clearInterval(intervalId);
+      stopEventStream();
+      stopPolling();
     };
-  }, [baseUrl, enabled, session]);
+  }, [baseUrl, enabled, session?.id, session?.status]);
 
   const retrySession = useCallback(() => {
     autoSubmitRecordingRef.current = false;
@@ -425,4 +487,8 @@ export function useDigitalHumanCallSession({
     stopReplyPlayback,
     turnMutation,
   };
+}
+
+function buildDigitalHumanSessionEventsUrl(sessionId: string, baseUrl?: string) {
+  return `${resolveCoreApiBaseUrl(baseUrl)}${LEGACY_API_PREFIX}/chat/digital-human-calls/sessions/${sessionId}/events`;
 }
