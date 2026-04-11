@@ -213,6 +213,33 @@ export function AdminSubpanel({
   );
 }
 
+export function AdminMiniPanel({
+  title,
+  children,
+  className,
+  contentClassName,
+  tone = "card",
+}: {
+  title: ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+  tone?: "card" | "soft";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-[color:var(--border-faint)] p-3",
+        tone === "soft" ? "bg-[color:var(--surface-soft)]" : "bg-[color:var(--surface-card)]",
+        className,
+      )}
+    >
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{title}</div>
+      <div className={cn("mt-2", contentClassName)}>{children}</div>
+    </div>
+  );
+}
+
 export function AdminActionGroup({
   title,
   description,

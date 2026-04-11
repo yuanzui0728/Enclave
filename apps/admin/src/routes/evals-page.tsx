@@ -37,6 +37,7 @@ import {
   AdminInlineSelectField,
   AdminInlineTextField,
   AdminInfoRows,
+  AdminMiniPanel,
   AdminPageHero,
   AdminPillSelectField,
   AdminPillTextField,
@@ -1791,21 +1792,16 @@ export function EvalsPage() {
                     <MetricCard label="持平" value={selectedReport.summary.ties} />
                   </div>
                   {selectedReport.notes.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">备注</div>
-                      <div className="mt-2 space-y-2">
+                    <AdminMiniPanel title="备注" tone="soft" className="mt-4" contentClassName="space-y-2">
                         {selectedReport.notes.map((note) => (
                           <div key={`${selectedReport.id}-${note}`} className="text-[color:var(--text-primary)]">
                             {note}
                           </div>
                         ))}
-                      </div>
-                    </div>
+                    </AdminMiniPanel>
                   ) : null}
                   {selectedReport.topCaseDeltas.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">重点用例差异</div>
-                      <div className="mt-2 space-y-2">
+                    <AdminMiniPanel title="重点用例差异" tone="soft" className="mt-4" contentClassName="space-y-2">
                         {selectedReport.topCaseDeltas.map((item) => (
                           <div key={`${selectedReport.id}-detail-${item.caseId}`} className="flex items-center justify-between gap-3">
                             <div className="text-[color:var(--text-primary)]">{item.caseId}</div>
@@ -1814,20 +1810,16 @@ export function EvalsPage() {
                             </div>
                           </div>
                         ))}
-                      </div>
-                    </div>
+                    </AdminMiniPanel>
                   ) : null}
                   {selectedReport.failureTagDeltas.length > 0 ? (
-                    <div className="mt-4 rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">失败标签差异</div>
-                      <div className="mt-2 flex flex-wrap gap-2">
+                    <AdminMiniPanel title="失败标签差异" tone="soft" className="mt-4" contentClassName="flex flex-wrap gap-2">
                         {selectedReport.failureTagDeltas.map((item) => (
                           <TagBadge key={`${selectedReport.id}-failure-${item.key}`} tone="warning">
                             {item.label} · {item.baselineCount}{"->"}{item.candidateCount} ({item.delta >= 0 ? "+" : ""}{item.delta})
                           </TagBadge>
                         ))}
-                      </div>
-                    </div>
+                    </AdminMiniPanel>
                   ) : null}
                 </div>
               ) : (
