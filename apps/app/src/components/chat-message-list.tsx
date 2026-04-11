@@ -92,6 +92,7 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { resolveChatCardBadgeClassName } from "../features/chat/chat-card-badge";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
+import { resolveResultCardFooterActionClassName } from "../features/chat/result-card-footer";
 import {
   resolveDirectCallFooterCopy,
   resolveDirectCallStatusLabel,
@@ -3754,7 +3755,7 @@ function GroupRelaySummaryMessage({
           <div
             className={cn(
               "text-[11px] font-medium",
-              ctaCopy.tone === "success" ? "text-[#15803d]" : "text-[#b45309]",
+              resolveResultCardFooterActionClassName(ctaCopy.tone),
             )}
           >
             {ctaCopy.actionLabel}
@@ -3773,7 +3774,7 @@ function GroupRelaySummaryMessage({
       type="button"
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={`${ctaCopy.actionLabel}${summary.sourceGroupName}的群接龙结果`}
+      aria-label={ctaCopy.ariaLabel}
     >
       {card}
     </button>
@@ -3996,15 +3997,13 @@ function GroupCallInviteMessage({
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {footerCopy.description}
         </div>
-        <div
-          className={cn(
-            "text-[11px] font-medium",
-            footerCopy.actionTone === "muted"
-              ? "text-[color:var(--text-muted)]"
-              : "text-[#2563eb]",
-          )}
-        >
-          {footerCopy.actionLabel}
+          <div
+            className={cn(
+              "text-[11px] font-medium",
+              resolveResultCardFooterActionClassName(footerCopy.tone),
+            )}
+          >
+            {footerCopy.actionLabel}
         </div>
       </div>
     </div>
@@ -4116,15 +4115,13 @@ function DirectCallInviteMessage({
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {footerCopy.description}
         </div>
-        <div
-          className={cn(
-            "text-[11px] font-medium",
-            footerCopy.actionTone === "muted"
-              ? "text-[color:var(--text-muted)]"
-              : "text-[#2563eb]",
-          )}
-        >
-          {footerCopy.actionLabel}
+          <div
+            className={cn(
+              "text-[11px] font-medium",
+              resolveResultCardFooterActionClassName(footerCopy.tone),
+            )}
+          >
+            {footerCopy.actionLabel}
         </div>
       </div>
     </div>

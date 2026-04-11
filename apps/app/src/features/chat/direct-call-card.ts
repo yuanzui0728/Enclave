@@ -1,4 +1,5 @@
 import { parseDirectCallInviteMessage } from "./group-call-message";
+import type { ResultCardFooterCopy } from "./result-card-footer";
 
 type DirectCallInvite = NonNullable<
   ReturnType<typeof parseDirectCallInviteMessage>
@@ -19,7 +20,7 @@ export function resolveDirectCallStatusLabel(invite: DirectCallInvite) {
 export function resolveDirectCallFooterCopy(
   invite: DirectCallInvite,
   canReopenCall: boolean,
-) {
+): ResultCardFooterCopy {
   if (invite.connectionStatus === "ended") {
     return canReopenCall
       ? {
@@ -28,7 +29,7 @@ export function resolveDirectCallFooterCopy(
               ? "点击可重新发起当前单聊视频通话。"
               : "点击可重新发起当前单聊语音通话。",
           actionLabel: "重新发起",
-          actionTone: "info" as const,
+          tone: "info" as const,
           ariaLabel: `重新发起 ${invite.title} 的单聊通话`,
         }
       : {
@@ -37,7 +38,7 @@ export function resolveDirectCallFooterCopy(
               ? "这轮单聊视频通话已经结束，当前保留为状态记录卡片。"
               : "这轮单聊语音通话已经结束，当前保留为状态记录卡片。",
           actionLabel: "查看记录",
-          actionTone: "muted" as const,
+          tone: "muted" as const,
           ariaLabel: `查看 ${invite.title} 的单聊通话记录`,
         };
   }
@@ -49,7 +50,7 @@ export function resolveDirectCallFooterCopy(
             ? "点击可回到当前单聊视频通话工作台。"
             : "点击可回到当前单聊语音通话工作台。",
         actionLabel: invite.kind === "voice" ? "回到语音" : "回到视频",
-        actionTone: "info" as const,
+        tone: "info" as const,
         ariaLabel: `回到 ${invite.title} 的单聊通话工作台`,
       }
     : {
@@ -58,7 +59,7 @@ export function resolveDirectCallFooterCopy(
             ? "当前消息已转成单聊视频通话卡片，方便快速识别状态。"
             : "当前消息已转成单聊语音通话卡片，方便快速识别状态。",
         actionLabel: invite.kind === "voice" ? "语音中" : "视频中",
-        actionTone: "info" as const,
+        tone: "info" as const,
         ariaLabel: `查看 ${invite.title} 的单聊通话状态`,
       };
 }

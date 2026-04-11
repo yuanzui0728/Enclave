@@ -1,5 +1,6 @@
 import { parseTimestamp } from "../../lib/format";
 import { parseGroupCallInviteMessage } from "./group-call-message";
+import type { ResultCardFooterCopy } from "./result-card-footer";
 
 type GroupCallInvite = NonNullable<
   ReturnType<typeof parseGroupCallInviteMessage>
@@ -33,7 +34,7 @@ export function resolveGroupCallCompletionBadge(invite: GroupCallInvite) {
 export function resolveGroupCallFooterCopy(
   invite: GroupCallInvite,
   canReopenCall: boolean,
-) {
+): ResultCardFooterCopy {
   if (invite.status === "ended") {
     return canReopenCall
       ? {
@@ -42,7 +43,7 @@ export function resolveGroupCallFooterCopy(
               ? "点击可基于这张卡片重新发起当前群视频通话。"
               : "点击可基于这张卡片重新发起当前群语音通话。",
           actionLabel: "重新发起",
-          actionTone: "info" as const,
+          tone: "info" as const,
           ariaLabel: `重新发起 ${invite.groupName} 的群通话`,
         }
       : {
@@ -51,7 +52,7 @@ export function resolveGroupCallFooterCopy(
               ? "这轮群视频通话已经结束，当前保留为状态记录卡片。"
               : "这轮群语音通话已经结束，当前保留为状态记录卡片。",
           actionLabel: "查看记录",
-          actionTone: "muted" as const,
+          tone: "muted" as const,
           ariaLabel: `查看 ${invite.groupName} 的群通话记录`,
         };
   }
@@ -63,7 +64,7 @@ export function resolveGroupCallFooterCopy(
             ? "点击可回到当前群视频通话工作台。"
             : "点击可回到当前群语音通话工作台。",
         actionLabel: invite.kind === "voice" ? "回到语音" : "回到视频",
-        actionTone: "info" as const,
+        tone: "info" as const,
         ariaLabel: `回到 ${invite.groupName} 的群通话工作台`,
       }
     : {
@@ -72,7 +73,7 @@ export function resolveGroupCallFooterCopy(
             ? "当前消息已转成群视频通话卡片，便于群成员识别画面状态。"
             : "当前消息已转成群语音通话卡片，便于群成员识别状态。",
         actionLabel: invite.kind === "voice" ? "语音中" : "视频中",
-        actionTone: "info" as const,
+        tone: "info" as const,
         ariaLabel: `查看 ${invite.groupName} 的群通话状态`,
       };
 }

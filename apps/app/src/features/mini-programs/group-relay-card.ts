@@ -2,6 +2,7 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../../lib/format";
+import type { ResultCardFooterCopy } from "../chat/result-card-footer";
 import { parseGroupRelaySummaryMessage } from "./group-relay-message";
 
 type GroupRelaySummary = NonNullable<
@@ -89,13 +90,16 @@ export function resolveGroupRelayCompletionBadge(summary: GroupRelaySummary) {
   };
 }
 
-export function resolveGroupRelayCtaCopy(summary: GroupRelaySummary) {
+export function resolveGroupRelayCtaCopy(
+  summary: GroupRelaySummary,
+): ResultCardFooterCopy {
   const pendingCount = parseGroupRelayCount(summary.pendingMemberCountLabel);
   if (pendingCount === 0) {
     return {
       description: "点击查看最终结果，必要时再覆盖新的完成状态",
       actionLabel: "查看结果",
       tone: "success" as const,
+      ariaLabel: `查看${summary.sourceGroupName}的群接龙结果`,
     };
   }
 
@@ -103,6 +107,7 @@ export function resolveGroupRelayCtaCopy(summary: GroupRelaySummary) {
     description: "点击继续查看和回填接龙",
     actionLabel: "继续接龙",
     tone: "warning" as const,
+    ariaLabel: `继续接龙${summary.sourceGroupName}的群接龙结果`,
   };
 }
 
