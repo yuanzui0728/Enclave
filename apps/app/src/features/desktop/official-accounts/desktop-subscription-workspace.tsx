@@ -114,10 +114,10 @@ export function DesktopSubscriptionWorkspace() {
   }, [articleQuery.data?.id, markArticleReadMutation]);
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <section className="flex w-[360px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-5 py-5">
-          <div className="text-xs font-medium text-[color:var(--text-muted)]">
+    <div className="flex h-full min-h-0 bg-[#efefef]">
+      <section className="flex w-[360px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
+        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-5">
+          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             聚合消息
           </div>
           <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -170,15 +170,24 @@ export function DesktopSubscriptionWorkspace() {
                     onClick={() => setActiveArticleId(delivery.articleId)}
                     className={`w-full rounded-[16px] border px-4 py-3 text-left transition ${
                       activeArticleId === delivery.articleId
-                        ? "border-[#b7e4c7] bg-[#edf8f0] shadow-[0_10px_24px_rgba(22,163,74,0.08)]"
-                        : "border-black/6 bg-white hover:bg-[#fbfbfb]"
+                        ? "border-[#cfe8d6] bg-[#f4faf6] shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
+                        : "border-black/6 bg-white hover:border-black/10 hover:bg-[#fbfbfb]"
                     }`}
                   >
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                      {delivery.article.title}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                      {delivery.article.summary}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                          {delivery.article.title}
+                        </div>
+                        <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                          {delivery.article.summary}
+                        </div>
+                      </div>
+                      {group.unreadCount > 0 ? (
+                        <div className="rounded-md bg-[#f3f3f3] px-2 py-1 text-[10px] text-[color:var(--text-muted)]">
+                          推送
+                        </div>
+                      ) : null}
                     </div>
                   </button>
                 ))}
@@ -219,10 +228,12 @@ export function DesktopSubscriptionWorkspace() {
             onOpenArticle={(articleId) => setActiveArticleId(articleId)}
           />
         ) : (
-          <EmptyState
-            title="选择一篇推送开始阅读"
-            description="左侧会按订阅号分组展示最近投递的文章。"
-          />
+          <div className="mx-auto max-w-[560px] py-10">
+            <EmptyState
+              title="选择一篇推送开始阅读"
+              description="左侧会按订阅号分组展示最近投递的文章。"
+            />
+          </div>
         )}
       </section>
     </div>
