@@ -1809,17 +1809,19 @@ function RequestMessageList({
     <div className={className}>
       <div className="space-y-3">
         {items.map((item, index) => (
-          <div
+          <AdminRecordCard
             key={`${item.role}-${index}`}
-            className="rounded-[20px] border border-[color:var(--border-faint)] bg-white/90 p-4"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusPill tone={item.role === "system" ? "warning" : item.role === "assistant" ? "healthy" : "muted"}>
+            title={formatRequestRole(item.role)}
+            badges={
+              <StatusPill
+                tone={item.role === "system" ? "warning" : item.role === "assistant" ? "healthy" : "muted"}
+              >
                 {formatRequestRole(item.role)}
               </StatusPill>
-            </div>
-            <AdminCodeBlock className="mt-3" value={item.content} />
-          </div>
+            }
+            details={<AdminCodeBlock value={item.content} />}
+            className="bg-white/90"
+          />
         ))}
       </div>
     </div>
