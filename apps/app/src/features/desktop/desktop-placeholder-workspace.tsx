@@ -30,8 +30,8 @@ export function DesktopPlaceholderWorkspace({
 
   if (!isDesktopLayout) {
     return (
-      <AppPage className="flex h-full items-center justify-center bg-[linear-gradient(180deg,#f8fcf8,#f2f8f5)]">
-        <div className="w-full max-w-md rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-8 shadow-[var(--shadow-section)]">
+      <AppPage className="flex h-full items-center justify-center bg-[#f3f3f3]">
+        <div className="w-full max-w-md rounded-[18px] border border-black/6 bg-white p-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">
             该入口当前仅提供桌面布局
           </div>
@@ -40,7 +40,7 @@ export function DesktopPlaceholderWorkspace({
           </div>
           <a
             href={mobileFallbackTo}
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-2xl bg-[var(--brand-gradient)] px-4 text-sm font-medium text-[color:var(--text-on-brand)]"
+            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-sm font-medium text-white hover:bg-[#06ad56]"
           >
             返回继续使用
           </a>
@@ -56,8 +56,8 @@ export function DesktopPlaceholderWorkspace({
       description={description}
       aside={
         <div className="relative space-y-4">
-          <div className="rounded-[26px] border border-white/70 bg-white/84 p-5 shadow-[var(--shadow-soft)]">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-dim)]">
+          <div className="rounded-[14px] border border-black/6 bg-white p-5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+            <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
               当前重点
             </div>
             <div className="mt-3 text-xl font-semibold text-[color:var(--text-primary)]">
@@ -71,15 +71,15 @@ export function DesktopPlaceholderWorkspace({
       }
     >
       <div className="space-y-5">
-        <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-6 shadow-[var(--shadow-soft)]">
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-secondary)]">
+        <div className="rounded-[18px] border border-black/6 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+          <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
             工作区规划
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {highlights.map((item) => (
               <div
                 key={item.label}
-                className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,248,239,0.7)] p-4"
+                className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
               >
                 <div className="text-xs text-[color:var(--text-muted)]">
                   {item.label}
@@ -95,7 +95,7 @@ export function DesktopPlaceholderWorkspace({
               variant="primary"
               size="lg"
               onClick={onCtaClick}
-              className="mt-5 rounded-2xl"
+              className="mt-5 rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
             >
               {ctaLabel}
             </Button>
