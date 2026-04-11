@@ -56,18 +56,21 @@ const quickScopeCards = [
     title: "聊天记录",
     description: "搜会话、群聊和历史消息",
     icon: Search,
+    iconClassName: "bg-[rgba(7,193,96,0.12)] text-[#07c160]",
   },
   {
     key: "contacts",
     title: "联系人",
     description: "搜好友、备注和世界角色",
     icon: UsersRound,
+    iconClassName: "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
   },
   {
     key: "feed",
     title: "内容流",
     description: "搜朋友圈、广场动态和公众号",
     icon: Newspaper,
+    iconClassName: "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]",
   },
 ];
 
@@ -103,13 +106,13 @@ export function MobileSearchWorkspace({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,239,0.98))]">
-      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,249,240,0.96))] px-4 pb-3 pt-4 backdrop-blur-xl">
+    <div className="flex h-full min-h-0 flex-col bg-[#f5f5f5]">
+      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-3 pt-4 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/80 text-[color:var(--text-primary)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent text-[color:var(--text-primary)]"
             aria-label="返回"
           >
             <ArrowLeft size={18} />
@@ -132,7 +135,7 @@ export function MobileSearchWorkspace({
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索聊天记录、联系人、公众号和内容"
-              className="h-11 w-full rounded-[14px] border border-transparent bg-white/88 pl-10 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white"
+              className="h-11 w-full rounded-[14px] border border-black/5 bg-white pl-10 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
             />
             {searchText ? (
               <button
@@ -156,7 +159,7 @@ export function MobileSearchWorkspace({
                 "shrink-0 rounded-full px-4 py-2 text-xs font-medium transition",
                 activeCategory === item.id
                   ? "bg-[color:var(--brand-primary)] text-white"
-                  : "bg-white/78 text-[color:var(--text-secondary)]",
+                  : "border border-black/5 bg-white text-[color:var(--text-secondary)]",
               )}
             >
               {item.label}
@@ -174,7 +177,7 @@ export function MobileSearchWorkspace({
 
         {!loading && !error && !hasKeyword ? (
           <div className="space-y-5">
-            <section className="rounded-[22px] bg-white/82 p-4 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[22px] border border-black/5 bg-white p-4 shadow-none">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近搜索
@@ -195,7 +198,7 @@ export function MobileSearchWorkspace({
                   {history.map((item) => (
                     <div
                       key={item.keyword}
-                      className="inline-flex items-center gap-2 rounded-full bg-[rgba(255,248,239,0.9)] px-3 py-2 text-xs text-[color:var(--text-secondary)]"
+                      className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-[#f5f5f5] px-3 py-2 text-xs text-[color:var(--text-secondary)]"
                     >
                       <button
                         type="button"
@@ -232,9 +235,14 @@ export function MobileSearchWorkspace({
                     onClick={() =>
                       setActiveCategory(item.key as SearchCategory)
                     }
-                    className="flex items-center gap-3 rounded-[22px] bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(255,245,232,0.92))] px-4 py-4 text-left shadow-[var(--shadow-soft)]"
+                    className="flex items-center gap-3 rounded-[22px] border border-black/5 bg-white px-4 py-4 text-left shadow-none"
                   >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-[rgba(255,138,61,0.12)] text-[color:var(--brand-primary)]">
+                    <div
+                      className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px]",
+                        item.iconClassName,
+                      )}
+                    >
                       <Icon size={18} />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -250,7 +258,7 @@ export function MobileSearchWorkspace({
               })}
             </section>
 
-            <section className="rounded-[22px] bg-white/82 p-4 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[22px] border border-black/5 bg-white p-4 shadow-none">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <Sparkles
                   size={16}
