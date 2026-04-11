@@ -3593,27 +3593,33 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={onUndoAnnotation}
                   disabled={pending || !annotations.length}
+                  title="撤销标注 (Cmd/Ctrl+Z)"
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   撤销标注
+                  <span className="text-[10px] text-white/50">⌘/Ctrl+Z</span>
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={onRedoAnnotation}
                   disabled={pending || !canRedoAnnotations}
+                  title="重做标注 (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)"
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   重做标注
+                  <span className="text-[10px] text-white/50">⌘/Ctrl+Shift+Z</span>
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={onDeleteSelectedAnnotation}
                   disabled={pending || !selectedAnnotationId}
+                  title="删除标注 (Delete / Backspace)"
                   className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
                 >
                   删除标注
+                  <span className="text-[10px] text-white/50">Del</span>
                 </Button>
                 <Button
                   type="button"
@@ -4127,28 +4133,38 @@ function DesktopScreenshotEditor({
               variant="ghost"
               onClick={onCancel}
               disabled={pending}
+              title="关闭截图预览 (Esc)"
               className="rounded-[9px] border-white/12 bg-white/6 text-white hover:bg-white/10"
             >
               取消
+              <span className="text-[10px] text-white/50">Esc</span>
             </Button>
             <Button
               type="button"
               variant="primary"
               onClick={onSendOriginal}
               disabled={pending}
+              title="按原图发送 (Cmd/Ctrl+Enter)"
               className="rounded-[9px] bg-[#2f855a] text-white hover:bg-[#276749]"
             >
               {pending ? "发送中..." : "按原图发送"}
+              {pending ? null : (
+                <span className="text-[10px] text-white/70">⌘/Ctrl+Enter</span>
+              )}
             </Button>
             <Button
               type="button"
               variant="primary"
               onClick={onSendCropped}
               disabled={pending || !crop}
+              title="裁剪后发送 (Enter)"
               className="rounded-[9px] bg-[#07c160] text-white hover:bg-[#06ad56]"
             >
               <Scissors size={14} />
               {pending ? "发送中..." : "裁剪后发送"}
+              {pending ? null : (
+                <span className="text-[10px] text-white/70">Enter</span>
+              )}
             </Button>
           </div>
         </div>
