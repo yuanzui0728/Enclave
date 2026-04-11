@@ -49,6 +49,7 @@ type SearchMessageRow = {
 export function useSearchIndex(
   searchText: string,
   activeCategory: SearchCategory,
+  isDesktopLayout: boolean,
 ) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -303,7 +304,8 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: "/discover/moments",
+        to: isDesktopLayout ? "/tabs/moments" : "/discover/moments",
+        hash: buildSearchMomentHash(moment.id),
         badge: "朋友圈",
         avatarName: moment.authorName,
         avatarSrc: moment.authorAvatar,
@@ -328,7 +330,8 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: "/discover/feed",
+        to: isDesktopLayout ? "/tabs/feed" : "/discover/feed",
+        hash: buildSearchFeedHash(post.id),
         badge: "广场动态",
         avatarName: post.authorName,
         avatarSrc: post.authorAvatar,
@@ -354,6 +357,7 @@ export function useSearchIndex(
     momentsQuery.data,
     normalizedSearchText,
     officialAccountsQuery.data,
+    isDesktopLayout,
   ]);
 
   const filteredResults = useMemo(
@@ -418,6 +422,18 @@ export function useSearchIndex(
       Boolean(normalizedSearchText) && messageSearchIndexQuery.isLoading,
     scopeCounts: loading ? emptySearchScopeCounts : scopeCounts,
   };
+}
+
+function buildSearchMomentHash(momentId: string) {
+  const params = new URLSearchParams();
+  params.set("moment", momentId);
+  return params.toString();
+}
+
+function buildSearchFeedHash(postId: string) {
+  const params = new URLSearchParams();
+  params.set("post", postId);
+  return params.toString();
 }
 
 function extractErrorMessage(error: unknown) {
