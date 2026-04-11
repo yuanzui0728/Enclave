@@ -97,7 +97,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                   className={cn(
                     "flex flex-col items-center gap-1 rounded-[12px] px-2 py-1.5 text-[11px] font-medium transition-[color,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     active
-                      ? "text-[color:var(--brand-primary)]"
+                      ? "text-[#07c160]"
                       : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
                   )}
                 >

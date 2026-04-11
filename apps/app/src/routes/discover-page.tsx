@@ -699,7 +699,7 @@ function DiscoverMobileEntryRow({
           <div className="truncate text-[16px] text-[color:var(--text-primary)]">
             {item.label}
           </div>
-          <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
+          <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
             {item.badge}
           </div>
         </div>

@@ -31,7 +31,7 @@ export function ProfilePage() {
               <div className="truncate text-[19px] font-medium text-[color:var(--text-primary)]">
                 {username ?? "世界主人"}
               </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
+              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
                 世界主人
               </div>
             </div>
@@ -52,7 +52,7 @@ export function ProfilePage() {
         <ProfileEntryGroup className="mt-2">
           <ProfileEntry
             icon={Settings}
-            iconClassName="bg-[rgba(7,193,96,0.10)] text-[color:var(--brand-primary)]"
+            iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
             label="设置"
             subtitle="个人资料、AI 设置和账号相关配置"
             to="/profile/settings"
