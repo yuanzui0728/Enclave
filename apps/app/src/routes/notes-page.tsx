@@ -11,8 +11,8 @@ export function NotesPage() {
 
   if (!isDesktopLayout) {
     return (
-      <AppPage className="flex h-full items-center justify-center bg-[#f5f5f5] px-5">
-        <div className="w-full max-w-md rounded-[22px] border border-black/6 bg-white p-8 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+      <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
+        <div className="w-full max-w-md rounded-[22px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">
             笔记当前仅提供桌面布局
           </div>
@@ -23,7 +23,7 @@ export function NotesPage() {
             variant="primary"
             size="lg"
             onClick={() => navigate({ to: "/tabs/chat" })}
-            className="mt-6 w-full rounded-xl"
+            className="mt-6 w-full rounded-xl bg-[#07c160] text-white hover:bg-[#06ad56]"
           >
             返回消息
           </Button>
