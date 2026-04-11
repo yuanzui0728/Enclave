@@ -13,7 +13,7 @@ export function OfficialServiceMessageBubble({
     <div className="flex justify-start">
       <div className="max-w-[min(100%,34rem)] space-y-2">
         {message.type === "text" && message.text ? (
-          <div className="rounded-[22px] rounded-bl-[10px] border border-[rgba(249,115,22,0.12)] bg-white px-4 py-3 text-sm leading-7 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]">
+          <div className="rounded-[22px] rounded-bl-[10px] border border-black/5 bg-white px-4 py-3 text-sm leading-7 text-[color:var(--text-primary)] shadow-none">
             {message.text}
           </div>
         ) : null}
@@ -22,10 +22,10 @@ export function OfficialServiceMessageBubble({
           <button
             type="button"
             onClick={() => onOpenArticle?.(message.attachment!.articleId)}
-            className="w-full rounded-[22px] border border-[rgba(249,115,22,0.12)] bg-[rgba(255,250,243,0.95)] p-4 text-left shadow-[var(--shadow-soft)] transition hover:bg-white"
+            className="w-full rounded-[22px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.98)] p-4 text-left shadow-none transition hover:bg-white"
           >
             <div className="flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
-              <FileText size={14} />
+              <FileText size={14} className="text-[#15803d]" />
               <span>文章卡片</span>
             </div>
             <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">

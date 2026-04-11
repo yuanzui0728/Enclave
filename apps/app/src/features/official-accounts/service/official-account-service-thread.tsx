@@ -65,16 +65,14 @@ export function OfficialAccountServiceThread({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop
-          ? "bg-[linear-gradient(180deg,rgba(255,252,246,0.98),rgba(255,247,238,0.98))]"
-          : "bg-[linear-gradient(180deg,#fffdf7,#fff8ef)]"
+        isDesktop ? "bg-white" : "bg-[#f5f5f5]"
       }`}
     >
       <header
         className={`border-b border-[color:var(--border-faint)] ${
           isDesktop
-            ? "bg-[linear-gradient(180deg,rgba(255,254,249,0.96),rgba(255,248,239,0.96))] px-5 py-4"
-            : "bg-white/88 px-4 py-3"
+            ? "bg-white/88 px-5 py-4 backdrop-blur-xl"
+            : "bg-[rgba(247,247,247,0.94)] px-4 py-3 backdrop-blur-xl"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -106,7 +104,7 @@ export function OfficialAccountServiceThread({
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto px-4 py-5">
+      <div className={`flex-1 overflow-auto ${isDesktop ? "px-5 py-5" : "px-4 py-5"}`}>
         {accountQuery.isLoading || messagesQuery.isLoading ? (
           <LoadingBlock label="正在读取服务号消息..." />
         ) : null}
