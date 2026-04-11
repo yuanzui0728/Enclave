@@ -3752,7 +3752,12 @@ function GroupRelaySummaryMessage({
           <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
             {ctaCopy.description}
           </div>
-          <div className="text-[11px] font-medium text-[#b45309]">
+          <div
+            className={cn(
+              "text-[11px] font-medium",
+              ctaCopy.tone === "success" ? "text-[#15803d]" : "text-[#b45309]",
+            )}
+          >
             {ctaCopy.actionLabel}
           </div>
         </div>
@@ -3873,12 +3878,14 @@ function resolveGroupRelayCtaCopy(
     return {
       description: "点击查看最终结果，必要时再覆盖新的完成状态",
       actionLabel: "查看结果",
+      tone: "success" as const,
     };
   }
 
   return {
     description: "点击继续查看和回填接龙",
     actionLabel: "继续接龙",
+    tone: "warning" as const,
   };
 }
 
