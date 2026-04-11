@@ -1156,6 +1156,17 @@ function GroupChatDetailsPanel({
               {(membersQuery.data ?? []).length} 人 · 群聊
             </div>
           </div>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setMemberBrowserAutoFocusSearch(true);
+              setMemberBrowserOpen(true);
+            }}
+            className="h-8 shrink-0 rounded-full border-black/8 bg-[#f5f5f5] px-3 text-[12px] shadow-none hover:bg-[#ededed]"
+          >
+            搜索群成员
+          </Button>
         </div>
       </DesktopPanelSection>
 
