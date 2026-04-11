@@ -158,6 +158,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       activeCount: number;
       totalCount: number;
       durationMs: number;
+      startedAt: string;
     }) =>
       sendGroupMessage(
         resolvedGroupId,
@@ -171,6 +172,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             effectiveSource,
             undefined,
             counts.durationMs,
+            counts.startedAt,
           ),
         },
         baseUrl,
@@ -266,6 +268,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       activeCount,
       totalCount,
       durationMs,
+      startedAt,
     });
     handleBack();
   };

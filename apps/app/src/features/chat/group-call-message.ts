@@ -70,6 +70,7 @@ export function buildGroupCallInviteMessage(
   source?: GroupCallInviteSource,
   snapshotRecordedAt = recordedAt,
   durationMs?: number,
+  startedAt?: string,
 ) {
   const normalizedTotalCount = Math.max(counts?.totalCount ?? 0, 0);
   const normalizedActiveCount = Math.min(
@@ -94,6 +95,7 @@ export function buildGroupCallInviteMessage(
     `状态 ${formatGroupCallStatusLabel(kind, status)}`,
     `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
     durationLabel ? `最近一轮 ${durationLabel}` : null,
+    status === "ended" && startedAt ? `开始于 ${startedAt}` : null,
     sourceLabel ? `发起设备 ${sourceLabel}` : null,
     `人数快照 ${snapshotRecordedAt}`,
     normalizedTotalCount
@@ -167,23 +169,38 @@ export function parseGroupCallInviteMessage(text: string) {
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
   const durationLabel = parseCallInviteDuration(lines[timestampLabel ? 4 : 3]);
-  const sourceLabel = parseCallInviteSource(
+  const startedAtLabel = parseCallInviteStartedAt(
     lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
   );
+  const sourceLabel = parseCallInviteSource(
+    lines[
+      3 +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(durationLabel)) +
+        Number(Boolean(startedAtLabel))
+    ],
+  );
   const source = parseCallInviteSourceValue(
-    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
+    lines[
+      3 +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(durationLabel)) +
+        Number(Boolean(startedAtLabel))
+    ],
   );
   const snapshotLabel = parseGroupCallSnapshotLabel(
     lines[
       3 +
         Number(Boolean(timestampLabel)) +
         Number(Boolean(durationLabel)) +
+        Number(Boolean(startedAtLabel)) +
         Number(Boolean(sourceLabel))
     ],
   );
   const metricOffset =
     Number(Boolean(timestampLabel)) +
     Number(Boolean(durationLabel)) +
+    Number(Boolean(startedAtLabel)) +
     Number(Boolean(sourceLabel)) +
     Number(Boolean(snapshotLabel));
 
@@ -194,6 +211,8 @@ export function parseGroupCallInviteMessage(text: string) {
     timestampLabel,
     recordedAt: parseCallInviteTimestampValue(lines[3]),
     durationLabel,
+    startedAtLabel,
+    startedAt: parseCallInviteStartedAtValue(startedAtLabel),
     source,
     sourceLabel,
     snapshotLabel,
@@ -211,6 +230,8 @@ export function parseGroupCallInviteMessage(text: string) {
     timestampLabel: string | null;
     recordedAt: string | null;
     durationLabel: string | null;
+    startedAtLabel: string | null;
+    startedAt: string | null;
     source: GroupCallInviteSource | null;
     sourceLabel: string | null;
     snapshotLabel: string | null;
@@ -298,6 +319,26 @@ function parseCallInviteTimestampValue(line: string | undefined) {
   }
 
   return timestampLabel.replace(/^(发起于|结束于)\s+/, "").trim() || null;
+}
+
+function parseCallInviteStartedAt(line: string | undefined) {
+  if (!line) {
+    return null;
+  }
+
+  if (line.startsWith("开始于 ")) {
+    return line;
+  }
+
+  return null;
+}
+
+function parseCallInviteStartedAtValue(line: string | null) {
+  if (!line) {
+    return null;
+  }
+
+  return line.replace(/^开始于\s+/, "").trim() || null;
 }
 
 function parseCallInviteDuration(line: string | undefined) {

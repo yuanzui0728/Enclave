@@ -41,6 +41,7 @@ type DesktopGroupCallPanelProps = {
     activeCount: number;
     totalCount: number;
     durationMs: number;
+    startedAt: string;
   }) => void;
 };
 
@@ -273,6 +274,7 @@ export function DesktopGroupCallPanel({
                   Date.now() - new Date(startedAt).getTime(),
                   0,
                 ),
+                startedAt,
               })
             }
             disabled={endNoticePending}

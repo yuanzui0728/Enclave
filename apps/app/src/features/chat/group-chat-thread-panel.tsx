@@ -284,6 +284,7 @@ export function GroupChatThreadPanel({
       totalCount: number;
       source: CallInviteSource;
       durationMs?: number;
+      startedAt?: string;
     }) =>
       sendGroupMessage(
         groupId,
@@ -300,6 +301,7 @@ export function GroupChatThreadPanel({
             input.source,
             undefined,
             input.durationMs,
+            input.startedAt,
           ),
         },
         baseUrl,
@@ -860,6 +862,7 @@ export function GroupChatThreadPanel({
                     totalCount: counts.totalCount,
                     source: desktopCallPanelState.source ?? "desktop",
                     durationMs: counts.durationMs,
+                    startedAt: counts.startedAt,
                   })
                   .then(() => {
                     setLastPublishedCallCounts(null);

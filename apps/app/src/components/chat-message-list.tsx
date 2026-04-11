@@ -3746,6 +3746,14 @@ function GroupCallInviteMessage({
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
         ) : null}
+        {invite.status === "ended" &&
+        invite.startedAt &&
+        invite.recordedAt ? (
+          <CallInviteMetric
+            label="起止时间"
+            value={formatGroupCallRangeSummary(invite.startedAt, invite.recordedAt)}
+          />
+        ) : null}
         {invite.durationLabel ? (
           <CallInviteMetric label="本轮时长" value={invite.durationLabel} />
         ) : null}
@@ -4320,6 +4328,39 @@ function formatVoiceDurationLabel(durationMs?: number) {
   return minutes > 0
     ? `${minutes}:${String(seconds).padStart(2, "0")}`
     : `${seconds}"`;
+}
+
+function formatGroupCallRangeSummary(startedAt: string, endedAt: string) {
+  const startedAtTs = parseTimestamp(startedAt);
+  const endedAtTs = parseTimestamp(endedAt);
+  if (startedAtTs === null || endedAtTs === null) {
+    return `开始于 ${startedAt} · 结束于 ${endedAt}`;
+  }
+
+  const startedAtDate = new Date(startedAtTs);
+  const endedAtDate = new Date(endedAtTs);
+  const sameDay =
+    startedAtDate.getFullYear() === endedAtDate.getFullYear() &&
+    startedAtDate.getMonth() === endedAtDate.getMonth() &&
+    startedAtDate.getDate() === endedAtDate.getDate();
+
+  if (sameDay) {
+    return `${formatCallClockLabel(startedAtDate)} - ${formatCallClockLabel(endedAtDate)}`;
+  }
+
+  return `${formatCallDayClockLabel(startedAtDate)} - ${formatCallDayClockLabel(endedAtDate)}`;
+}
+
+function formatCallClockLabel(date: Date) {
+  return `${padCallTimeSegment(date.getHours())}:${padCallTimeSegment(date.getMinutes())}`;
+}
+
+function formatCallDayClockLabel(date: Date) {
+  return `${date.getMonth() + 1}/${date.getDate()} ${formatCallClockLabel(date)}`;
+}
+
+function padCallTimeSegment(value: number) {
+  return value.toString().padStart(2, "0");
 }
 
 function ViewerActionButton({
