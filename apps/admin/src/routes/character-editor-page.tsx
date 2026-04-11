@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   createCharacter,
   getCharacter,
+  getSystemStatus,
   updateCharacter,
   type Character,
   type CharacterDraft,
@@ -19,6 +20,7 @@ import {
   StatusPill,
 } from "@yinjie/ui";
 import {
+  AdminCallout,
   AdminActionFeedback,
   AdminInfoRows,
   AdminPageHero,
@@ -29,6 +31,7 @@ import {
   AdminToggle as Toggle,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 const emptyCharacterDraft: CharacterDraft = {
   name: "",
@@ -114,6 +117,13 @@ export function CharacterEditorPage() {
     queryFn: () => getCharacter(characterId, baseUrl),
     enabled: !isNew,
   });
+  const systemStatusQuery = useQuery({
+    queryKey: ["admin-character-edit-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
 
   useEffect(() => {
     if (isNew) {
@@ -204,6 +214,16 @@ export function CharacterEditorPage() {
           </div>
         </Card>
       </div>
+
+      <AdminCallout
+        tone={digitalHumanSummary.ready ? "success" : "warning"}
+        title={
+          digitalHumanSummary.ready
+            ? "数字人链路已进入可联调状态"
+            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
+        }
+        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+      />
 
       {!isNew && characterQuery.isLoading ? <LoadingBlock label="正在加载角色草稿..." /> : null}
 
