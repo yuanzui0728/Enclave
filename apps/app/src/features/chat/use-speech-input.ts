@@ -427,7 +427,11 @@ export function useSpeechInput({
       return;
     }
 
-    if (status === "listening" || status === "processing") {
+    if (
+      status === "listening" ||
+      status === "processing" ||
+      status === "requesting-permission"
+    ) {
       return;
     }
 
@@ -446,6 +450,11 @@ export function useSpeechInput({
   };
 
   const stop = () => {
+    if (status === "requesting-permission") {
+      cancel();
+      return;
+    }
+
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       return;
