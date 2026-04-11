@@ -97,11 +97,6 @@ export function DashboardPage() {
     queryKey: ["admin-provider-config", baseUrl],
     queryFn: () => getProviderConfig(baseUrl),
   });
-  const digitalHumanConfigQuery = useQuery({
-    queryKey: ["admin-digital-human-config", baseUrl],
-    queryFn: () => adminApi.getConfig(),
-  });
-
   const availableModelsQuery = useQuery({
     queryKey: ["admin-available-models", baseUrl],
     queryFn: () => getAvailableModels(baseUrl),
@@ -217,7 +212,7 @@ export function DashboardPage() {
     exportDiagnosticsMutation.isPending || createBackupMutation.isPending || restoreBackupMutation.isPending;
   const providerConfigured = Boolean(providerConfigQuery.data?.model?.trim());
   const digitalHumanSummary = buildDigitalHumanDashboardSummary(
-    digitalHumanConfigQuery.data,
+    statusQuery.data?.digitalHumanGateway,
   );
   const desktopRuntimeReady = desktopAvailable
     ? Boolean(desktopStatusQuery.data?.reachable && runtimeContextQuery.data?.runtimeDataDir)
@@ -986,39 +981,47 @@ export function DashboardPage() {
   );
 }
 
-function buildDigitalHumanDashboardSummary(config?: Record<string, string>) {
-  const mode = config?.digital_human_provider_mode?.trim() || "mock_iframe";
-  const template = config?.digital_human_player_url_template?.trim() || "";
-  const callbackToken =
-    config?.digital_human_provider_callback_token?.trim() || "";
-  const rawParams = config?.digital_human_provider_params?.trim() || "";
-  const params = parseDigitalHumanDashboardParams(rawParams);
-  const templateReady = mode !== "external_iframe" || Boolean(template);
-  const paramsValid = rawParams ? params.valid : true;
-  const ready = Boolean(mode) && templateReady && paramsValid;
+function buildDigitalHumanDashboardSummary(
+  digitalHumanGateway?: {
+    mode: "mock_stage" | "mock_iframe" | "external_iframe";
+    ready: boolean;
+    playerTemplateConfigured: boolean;
+    callbackTokenConfigured: boolean;
+    paramsValid: boolean;
+    paramsCount: number;
+    paramsKeys: string[];
+    message: string;
+  },
+) {
+  const gateway = digitalHumanGateway ?? {
+    mode: "mock_iframe" as const,
+    ready: false,
+    playerTemplateConfigured: false,
+    callbackTokenConfigured: false,
+    paramsValid: true,
+    paramsCount: 0,
+    paramsKeys: [] as string[],
+    message: "等待系统状态返回数字人 provider 配置。",
+  };
 
   return {
-    ready,
-    modeLabel: formatDigitalHumanDashboardMode(mode),
-    description: !templateReady
-      ? "当前已切到外部 iframe 模式，但播放器模板还没配。"
-      : !paramsValid
-        ? "数字人扩展参数 JSON 不合法，当前配置不会被 provider 正常消费。"
-        : mode === "external_iframe"
-          ? `当前走外部 iframe 数字人，模板和回调参数已可用于联调。`
-          : `当前仍是 ${formatDigitalHumanDashboardMode(mode)}，还没有切到真实数字人 provider。`,
-    templateStatus: template ? "已配置" : "未配置",
-    templateDetail: template
-      ? truncateDigitalHumanTemplate(template)
+    ready: gateway.ready,
+    modeLabel: formatDigitalHumanDashboardMode(gateway.mode),
+    description: gateway.message,
+    templateStatus: gateway.playerTemplateConfigured ? "已配置" : "未配置",
+    templateDetail: gateway.playerTemplateConfigured
+      ? gateway.mode === "external_iframe"
+        ? "系统状态已检测到外部播放器模板。"
+        : "当前模式不依赖外部播放器模板。"
       : "进入设置页补齐播放器 URL 模板",
-    callbackTokenStatus: callbackToken ? "已设置" : "未设置",
-    callbackTokenDetail: callbackToken
-      ? `长度 ${callbackToken.length}，provider-state 回调可走鉴权。`
+    callbackTokenStatus: gateway.callbackTokenConfigured ? "已设置" : "未设置",
+    callbackTokenDetail: gateway.callbackTokenConfigured
+      ? "provider-state 回调可走鉴权。"
       : "未设置时，provider-state 回调不会附带保护 token。",
-    paramsStatus: params.valid ? String(params.count) : "无效",
-    paramsDetail: params.valid
-      ? params.count
-        ? `${params.keys.slice(0, 3).join(" / ")}${params.count > 3 ? " ..." : ""}`
+    paramsStatus: gateway.paramsValid ? String(gateway.paramsCount) : "无效",
+    paramsDetail: gateway.paramsValid
+      ? gateway.paramsCount
+        ? `${gateway.paramsKeys.slice(0, 3).join(" / ")}${gateway.paramsCount > 3 ? " ..." : ""}`
         : "当前没有扩展参数 JSON。"
       : "扩展参数 JSON 解析失败。",
   };
@@ -1035,28 +1038,6 @@ function formatDigitalHumanDashboardMode(mode: string) {
     default:
       return mode || "未设置";
   }
-}
-
-function parseDigitalHumanDashboardParams(rawValue: string) {
-  if (!rawValue) {
-    return { valid: true, count: 0, keys: [] as string[] };
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-      return { valid: false, count: 0, keys: [] as string[] };
-    }
-
-    const keys = Object.keys(parsed);
-    return { valid: true, count: keys.length, keys };
-  } catch {
-    return { valid: false, count: 0, keys: [] as string[] };
-  }
-}
-
-function truncateDigitalHumanTemplate(value: string) {
-  return value.length > 72 ? `${value.slice(0, 69)}...` : value;
 }
 
 function formatDesktopDiagnostics(values: {

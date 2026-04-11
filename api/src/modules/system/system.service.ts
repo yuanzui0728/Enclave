@@ -25,6 +25,11 @@ type ProviderPayload = {
   transcriptionApiKey?: string;
 };
 
+type DigitalHumanProviderMode =
+  | 'mock_stage'
+  | 'mock_iframe'
+  | 'external_iframe';
+
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
 
 function normalizeProviderEndpoint(value: string) {
@@ -53,6 +58,18 @@ function extractErrorMessage(error: unknown) {
 
 function resolveAppMode() {
   return process.env.NODE_ENV === 'production' ? 'production' : 'development';
+}
+
+function normalizeDigitalHumanMode(value?: string | null): DigitalHumanProviderMode {
+  if (value === 'mock_stage') {
+    return 'mock_stage';
+  }
+
+  if (value === 'external_iframe') {
+    return 'external_iframe';
+  }
+
+  return 'mock_iframe';
 }
 
 function createSpeechProbeAudioBuffer() {
@@ -157,6 +174,74 @@ export class SystemService {
     });
   }
 
+  private async resolveDigitalHumanConfig() {
+    const mode = normalizeDigitalHumanMode(
+      (await this.systemConfig.getConfig('digital_human_provider_mode')) ??
+        this.config.get<string>('DIGITAL_HUMAN_PROVIDER_MODE'),
+    );
+    const playerUrlTemplate =
+      (
+        await this.systemConfig.getConfig('digital_human_player_url_template')
+      )?.trim() ||
+      this.config.get<string>('DIGITAL_HUMAN_PLAYER_URL_TEMPLATE')?.trim() ||
+      '';
+    const callbackToken =
+      (
+        await this.systemConfig.getConfig(
+          'digital_human_provider_callback_token',
+        )
+      )?.trim() ||
+      this.config.get<string>('DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN')?.trim() ||
+      '';
+    const rawParams =
+      (await this.systemConfig.getConfig('digital_human_provider_params'))?.trim() ||
+      '';
+
+    let paramsValid = true;
+    let paramsKeys: string[] = [];
+    if (rawParams) {
+      try {
+        const parsed = JSON.parse(rawParams) as Record<string, unknown>;
+        if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+          paramsValid = false;
+        } else {
+          paramsKeys = Object.keys(parsed);
+        }
+      } catch {
+        paramsValid = false;
+      }
+    }
+
+    const playerTemplateConfigured = Boolean(playerUrlTemplate);
+    const ready =
+      mode === 'external_iframe'
+        ? playerTemplateConfigured && paramsValid
+        : true;
+
+    return {
+      mode,
+      provider:
+        mode === 'external_iframe'
+          ? ('external_digital_human' as const)
+          : ('mock_digital_human' as const),
+      ready,
+      playerTemplateConfigured,
+      callbackTokenConfigured: Boolean(callbackToken),
+      paramsValid,
+      paramsCount: paramsKeys.length,
+      paramsKeys,
+      message: !playerTemplateConfigured && mode === 'external_iframe'
+        ? '当前已切到外部 iframe 模式，但播放器模板还未配置。'
+        : !paramsValid
+          ? '数字人扩展参数 JSON 不合法。'
+          : mode === 'external_iframe'
+            ? '数字人 provider 已具备外部 iframe 联调条件。'
+            : mode === 'mock_stage'
+              ? '当前仍使用内置数字人舞台。'
+              : '当前使用内置数字人 iframe 播放页。',
+    };
+  }
+
   private async testChatProviderConnection(payload: ProviderPayload) {
     const client = this.createProviderClient(payload);
     await client.chat.completions.create({
@@ -188,13 +273,14 @@ export class SystemService {
   }
 
   async getStatus() {
-    const [ownerCount, charactersCount, narrativeArcsCount, behaviorLogsCount, providerConfig] =
+    const [ownerCount, charactersCount, narrativeArcsCount, behaviorLogsCount, providerConfig, digitalHumanConfig] =
       await Promise.all([
         this.userRepo.count(),
         this.characterRepo.count(),
         this.narrativeArcRepo.count(),
         this.behaviorLogRepo.count(),
         this.resolveProviderConfig(),
+        this.resolveDigitalHumanConfig(),
       ]);
 
     const databasePath = this.resolveDatabasePath();
@@ -251,6 +337,18 @@ export class SystemService {
         totalRequests: 0,
         successfulRequests: 0,
         failedRequests: 0,
+      },
+      digitalHumanGateway: {
+        healthy: digitalHumanConfig.ready,
+        mode: digitalHumanConfig.mode,
+        provider: digitalHumanConfig.provider,
+        ready: digitalHumanConfig.ready,
+        playerTemplateConfigured: digitalHumanConfig.playerTemplateConfigured,
+        callbackTokenConfigured: digitalHumanConfig.callbackTokenConfigured,
+        paramsValid: digitalHumanConfig.paramsValid,
+        paramsCount: digitalHumanConfig.paramsCount,
+        paramsKeys: digitalHumanConfig.paramsKeys,
+        message: digitalHumanConfig.message,
       },
       worldSurface: {
         apiPrefix: '/api',

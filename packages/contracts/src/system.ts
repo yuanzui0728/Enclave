@@ -28,6 +28,19 @@ export interface InferenceStatus {
   lastError?: string;
 }
 
+export interface DigitalHumanStatus {
+  healthy: boolean;
+  mode: "mock_stage" | "mock_iframe" | "external_iframe";
+  provider: "mock_digital_human" | "external_digital_human";
+  ready: boolean;
+  playerTemplateConfigured: boolean;
+  callbackTokenConfigured: boolean;
+  paramsValid: boolean;
+  paramsCount: number;
+  paramsKeys: string[];
+  message: string;
+}
+
 export interface WorldSurfaceStatus {
   apiPrefix: string;
   migratedModules: string[];
@@ -98,6 +111,7 @@ export interface SystemStatus {
   desktopShell: ServiceHealth;
   database: DatabaseStatus;
   inferenceGateway: InferenceStatus;
+  digitalHumanGateway: DigitalHumanStatus;
   worldSurface: WorldSurfaceStatus;
   scheduler: SchedulerStatus;
   appMode: "development" | "desktop" | "production";
