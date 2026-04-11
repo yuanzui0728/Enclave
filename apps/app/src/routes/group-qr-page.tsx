@@ -651,9 +651,9 @@ export function GroupQrPage() {
           </div>
 
           {currentReturnSourceConversation ? (
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.78)] px-4 py-4">
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-4">
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium tracking-[0.16em] text-[color:var(--brand-secondary)]">
+                <div className="text-xs font-medium tracking-[0.16em] text-[#15803d]">
                   当前回流来源
                 </div>
                 <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -758,7 +758,7 @@ export function GroupQrPage() {
           ) : null}
 
           {validDeliveryTargets.length ? (
-            <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,248,240,0.78)] px-4 py-4">
+            <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近已发邀请会话
@@ -776,7 +776,7 @@ export function GroupQrPage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                        <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
                           {index === 0 ? "最新发送批次" : `更早批次 ${index + 1}`}
                         </div>
                         <span
@@ -784,7 +784,7 @@ export function GroupQrPage() {
                             batch.status === "closed"
                               ? "bg-[rgba(34,197,94,0.12)] text-[#15803d]"
                               : batch.status === "reopened"
-                                ? "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]"
+                                ? "bg-[rgba(7,193,96,0.1)] text-[#15803d]"
                                 : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]"
                           }`}
                         >
@@ -835,7 +835,7 @@ export function GroupQrPage() {
           ) : null}
 
           {validReopenRecords.length ? (
-            <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.72)] px-4 py-4">
+            <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近从这些会话回到邀请页
@@ -875,7 +875,7 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
-          <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,249,238,0.62)] px-4 py-4">
+          <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
             <div>
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 发到最近会话
@@ -894,7 +894,7 @@ export function GroupQrPage() {
             ) : null}
             {pendingCurrentBatchConversations.length ? (
               <div className="space-y-2">
-                <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
                   本轮待回流会话
                 </div>
                 <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
@@ -941,7 +941,7 @@ export function GroupQrPage() {
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     {topPendingReturnConversation ? (
-                      <span className="rounded-full bg-[rgba(249,115,22,0.12)] px-2.5 py-1 font-medium text-[color:var(--brand-secondary)]">
+                      <span className="rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 font-medium text-[#15803d]">
                         1. 先补 {topPendingReturnConversation.conversation.title}
                       </span>
                     ) : null}
@@ -974,8 +974,8 @@ export function GroupQrPage() {
                       预计处理后
                     </div>
                     <div className="mt-2 grid gap-2 lg:grid-cols-2">
-                      <div className="rounded-[12px] border border-[rgba(249,115,22,0.16)] bg-[rgba(255,248,240,0.72)] px-3 py-3">
-                        <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-secondary)]">
+                      <div className="rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3">
+                        <div className="text-[11px] font-medium tracking-[0.12em] text-[#15803d]">
                           先处理主推荐
                         </div>
                         <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1053,10 +1053,10 @@ export function GroupQrPage() {
                   </div>
                 ) : null}
                 {topPendingReturnConversation ? (
-                  <div className="rounded-[18px] border border-[rgba(249,115,22,0.22)] bg-[linear-gradient(180deg,rgba(255,251,245,0.98),rgba(255,244,232,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                  <div className="rounded-[18px] border border-[rgba(7,193,96,0.18)] bg-[linear-gradient(180deg,rgba(247,251,248,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-none">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                        <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
                           当前最值得优先补发
                         </div>
                         <div className="mt-2 truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -1098,7 +1098,7 @@ export function GroupQrPage() {
                               topPendingReturnConversation.conversation,
                             );
                           }}
-                          className="rounded-full bg-[rgba(249,115,22,0.12)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-secondary)] transition hover:bg-[rgba(249,115,22,0.18)]"
+                          className="rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1.5 text-xs font-medium text-[#15803d] transition hover:bg-[rgba(7,193,96,0.18)]"
                         >
                           {isPendingReturnCoolingDown(
                             topPendingReturnConversation.target.deliveredAt,
@@ -1167,7 +1167,7 @@ export function GroupQrPage() {
                                 fallbackPendingReturnConversation.conversation,
                               );
                             }}
-                            className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(249,115,22,0.18)] hover:text-[color:var(--brand-secondary)]"
+                            className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.18)] hover:text-[#15803d]"
                           >
                             切到备选
                           </button>
@@ -1232,7 +1232,7 @@ export function GroupQrPage() {
                     onClick={() => {
                       void sendToConversation(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.18)] bg-[rgba(255,248,240,0.92)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
@@ -1286,7 +1286,7 @@ export function GroupQrPage() {
                         </div>
                       ) : null}
                     </div>
-                    <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                    <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
                       {resolvePendingReturnActionLabel(
                         conversation,
                         target.deliveredAt,
@@ -1307,10 +1307,10 @@ export function GroupQrPage() {
                 onClick={() => {
                   void sendToConversation(currentReturnSourceConversation);
                 }}
-                className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.18)] bg-[rgba(255,250,244,0.9)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.18)] hover:bg-white"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                  <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
                     优先回发给来源会话
                   </div>
                   <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -1356,7 +1356,7 @@ export function GroupQrPage() {
                     )}
                   </div>
                 </div>
-                <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
                   {resolveConversationActionLabel(
                     currentReturnSourceConversation,
                     deliveredTargetByPath[
@@ -1369,7 +1369,7 @@ export function GroupQrPage() {
             ) : null}
             {relatedReturnConversations.length ? (
               <div className="space-y-2">
-                <div className="text-xs font-medium tracking-[0.14em] text-[color:var(--brand-secondary)]">
+                <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
                   来源会话附近相关会话
                 </div>
                 {relatedReturnConversations.map((conversation) => (
@@ -1379,7 +1379,7 @@ export function GroupQrPage() {
                     onClick={() => {
                       void sendToConversation(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(249,115,22,0.14)] bg-[rgba(255,252,246,0.88)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
@@ -1419,7 +1419,7 @@ export function GroupQrPage() {
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                    <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
                       {resolveConversationActionLabel(
                         conversation,
                         deliveredTargetByPath[buildConversationPath(conversation)],
@@ -1439,7 +1439,7 @@ export function GroupQrPage() {
                     onClick={() => {
                       void sendToConversation(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
@@ -1479,7 +1479,7 @@ export function GroupQrPage() {
                         )}
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[rgba(249,115,22,0.1)] px-3 py-1 text-xs text-[color:var(--brand-secondary)]">
+                    <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
                       {resolveConversationActionLabel(
                         conversation,
                         deliveredTargetByPath[buildConversationPath(conversation)],
@@ -1575,9 +1575,9 @@ function ActionCard({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]"
+      className="rounded-[22px] border border-black/5 bg-white px-4 py-4 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
     >
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(249,115,22,0.1)] text-[color:var(--brand-secondary)]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(7,193,96,0.1)] text-[#15803d]">
         {icon}
       </div>
       <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1950,7 +1950,7 @@ function resolvePendingReturnActionStatus(
 
   return {
     label: "可以稍放",
-    tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
+    tone: "bg-[rgba(7,193,96,0.1)] text-[#15803d]",
   };
 }
 
@@ -1983,7 +1983,7 @@ function resolveConversationActionStatus(
   if (!deliveredTarget) {
     return {
       label: fallbackLabel,
-      tone: "bg-[rgba(249,115,22,0.12)] text-[color:var(--brand-secondary)]",
+      tone: "bg-[rgba(7,193,96,0.1)] text-[#15803d]",
     };
   }
 
