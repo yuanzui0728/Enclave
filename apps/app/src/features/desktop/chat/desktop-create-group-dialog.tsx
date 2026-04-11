@@ -291,10 +291,16 @@ export function DesktopCreateGroupDialog({
   }, [orderedFilteredFriends.length]);
 
   useEffect(() => {
+    const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
+    if (focusedFriend?.character.id === sourceFriendId) {
+      setActiveFriendIndexKey(null);
+      return;
+    }
+
     setActiveFriendIndexKey(
-      orderedFilteredFriends[focusedFriendIndex]?.indexLabel ?? null,
+      focusedFriend?.indexLabel ?? null,
     );
-  }, [orderedFilteredFriends, focusedFriendIndex]);
+  }, [focusedFriendIndex, orderedFilteredFriends, sourceFriendId]);
 
   useEffect(() => {
     if (!shareableMessages.length) {
@@ -602,6 +608,18 @@ export function DesktopCreateGroupDialog({
       return;
     }
 
+    if (pinnedSourceFriend) {
+      const pinnedNode = friendItemRefs.current[pinnedSourceFriend.character.id];
+      if (pinnedNode) {
+        const pinnedRect = pinnedNode.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        if (pinnedRect.bottom > containerRect.top + 24) {
+          setActiveFriendIndexKey(null);
+          return;
+        }
+      }
+    }
+
     const containerTop = scrollContainer.getBoundingClientRect().top;
     let nextSectionKey = friendSections[0]?.key ?? null;
 
@@ -625,8 +643,11 @@ export function DesktopCreateGroupDialog({
 
   useEffect(() => {
     if (searchTerm.trim()) {
+      const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
       setActiveFriendIndexKey(
-        orderedFilteredFriends[focusedFriendIndex]?.indexLabel ?? null,
+        focusedFriend?.character.id === sourceFriendId
+          ? null
+          : focusedFriend?.indexLabel ?? null,
       );
       return;
     }
@@ -636,7 +657,15 @@ export function DesktopCreateGroupDialog({
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [friendSections, focusedFriendIndex, orderedFilteredFriends, searchTerm, open]);
+  }, [
+    focusedFriendIndex,
+    friendSections,
+    open,
+    orderedFilteredFriends,
+    pinnedSourceFriend,
+    searchTerm,
+    sourceFriendId,
+  ]);
 
   const renderFriendRow = (item: FriendDirectoryItem) => {
     const displayName = getFriendDisplayName(item);
