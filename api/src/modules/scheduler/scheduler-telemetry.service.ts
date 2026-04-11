@@ -120,7 +120,9 @@ export class SchedulerTelemetryService {
     const summary =
       error instanceof Error
         ? error.message || 'Unknown scheduler error'
-        : String(error || 'Unknown scheduler error');
+        : typeof error === 'string' && error.trim()
+          ? error
+          : 'Unknown scheduler error';
     this.completeJob(handle, 'error', summary);
   }
 

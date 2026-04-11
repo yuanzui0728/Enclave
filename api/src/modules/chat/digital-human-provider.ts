@@ -212,7 +212,16 @@ export class MockDigitalHumanProviderAdapter
       return Object.fromEntries(
         Object.entries(parsed)
           .filter(([key]) => key.trim().length > 0)
-          .map(([key, value]) => [key, value == null ? '' : String(value)]),
+          .map(([key, value]) => [
+            key,
+            typeof value === 'string' ||
+            typeof value === 'number' ||
+            typeof value === 'boolean'
+              ? String(value)
+              : value == null
+                ? ''
+                : JSON.stringify(value),
+          ]),
       );
     } catch {
       return {};

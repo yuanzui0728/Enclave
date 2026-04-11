@@ -214,7 +214,7 @@ export class SchedulerService {
           this.handleTriggerMemoryProactiveMessages(),
         )).summary;
       default:
-        throw new Error(`Unknown scheduler job ${jobId}`);
+        throw new Error('Unknown scheduler job');
     }
   }
 
@@ -713,7 +713,7 @@ export class SchedulerService {
           },
         );
         const model = await this.ai['configService'].getAiModel();
-        const client = this.ai['client'] as import('openai').default;
+        const client = this.ai['client'];
         const resp = await client.chat.completions.create({
           model,
           messages: [{ role: 'user', content: checkPrompt }],

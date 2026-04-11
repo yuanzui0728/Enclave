@@ -66,7 +66,7 @@ export class MomentsService {
     });
     await this.postRepo.save(post);
     // Schedule AI reactions to user's moment
-    this.scheduleCharacterInteractions(post);
+    void this.scheduleCharacterInteractions(post);
     return this._enrichPost(post, visibleCharacterIds);
   }
 
@@ -116,7 +116,7 @@ export class MomentsService {
     await this.postRepo.increment({ id: postId }, 'commentCount', 1);
     // Schedule AI replies to user comment
     if (authorType === 'user') {
-      this.scheduleAiCommentReplies(postId, authorName, text);
+      void this.scheduleAiCommentReplies(postId, authorName, text);
     }
     return saved;
   }
@@ -158,7 +158,7 @@ export class MomentsService {
       await this.postRepo.save(post);
 
       // Schedule interactions from other characters (async, non-blocking)
-      this.scheduleCharacterInteractions(post);
+      void this.scheduleCharacterInteractions(post);
 
       return this._enrichPost(post, visibleCharacterIds);
     } catch (err) {
@@ -201,32 +201,34 @@ export class MomentsService {
 
       const delay = baseDelay + Math.random() * baseDelay + i * 3000;
 
-      setTimeout(async () => {
-        try {
-          if (!(await this.socialService.isFriendCharacter(char.id))) {
-            return;
-          }
-          if (post.authorType === 'character' && !(await this.socialService.isFriendCharacter(post.authorId))) {
-            return;
-          }
+      setTimeout(() => {
+        void (async () => {
+          try {
+            if (!(await this.socialService.isFriendCharacter(char.id))) {
+              return;
+            }
+            if (post.authorType === 'character' && !(await this.socialService.isFriendCharacter(post.authorId))) {
+              return;
+            }
 
-          const isComment = Math.random() < 0.4;
-          if (isComment) {
-            const profile = await this.characters.getProfile(char.id);
-            if (!profile) return;
-            const reply = await this.ai.generateReply({
-              profile,
-              conversationHistory: [],
-              userMessage: `你的朋友${post.authorName}发了一条朋友圈："${post.text}"，用一句话自然地评论一下，不超过20字。`,
-            });
-            await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
-            return;
-          }
+            const isComment = Math.random() < 0.4;
+            if (isComment) {
+              const profile = await this.characters.getProfile(char.id);
+              if (!profile) return;
+              const reply = await this.ai.generateReply({
+                profile,
+                conversationHistory: [],
+                userMessage: `你的朋友${post.authorName}发了一条朋友圈："${post.text}"，用一句话自然地评论一下，不超过20字。`,
+              });
+              await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
+              return;
+            }
 
-          await this.toggleLike(post.id, char.id, char.name, char.avatar, 'character');
-        } catch {
-          // ignore
-        }
+            await this.toggleLike(post.id, char.id, char.name, char.avatar, 'character');
+          } catch {
+            // ignore
+          }
+        })();
       }, delay);
     });
   }
@@ -240,24 +242,26 @@ export class MomentsService {
     if (!char) return;
 
     const delay = 30000 + Math.random() * 60000; // 30s - 90s
-    setTimeout(async () => {
-      try {
-        if (!(await this.socialService.isFriendCharacter(char.id))) {
-          return;
+    setTimeout(() => {
+      void (async () => {
+        try {
+          if (!(await this.socialService.isFriendCharacter(char.id))) {
+            return;
+          }
+
+          const profile = await this.characters.getProfile(char.id);
+          if (!profile) return;
+
+          const reply = await this.ai.generateReply({
+            profile,
+            conversationHistory: [],
+            userMessage: `${commenterName}在你的朋友圈评论了："${commentText}"，你的朋友圈内容是："${post.text}"，回复一下，不超过20字。`,
+          });
+          await this.addComment(postId, char.id, char.name, char.avatar, reply.text, 'character');
+        } catch {
+          // ignore
         }
-
-        const profile = await this.characters.getProfile(char.id);
-        if (!profile) return;
-
-        const reply = await this.ai.generateReply({
-          profile,
-          conversationHistory: [],
-          userMessage: `${commenterName}在你的朋友圈评论了："${commentText}"，你的朋友圈内容是："${post.text}"，回复一下，不超过20字。`,
-        });
-        await this.addComment(postId, char.id, char.name, char.avatar, reply.text, 'character');
-      } catch {
-        // ignore
-      }
+      })();
     }, delay);
   }
 
