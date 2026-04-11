@@ -96,6 +96,10 @@ export function DashboardPage() {
     queryKey: ["admin-provider-config", baseUrl],
     queryFn: () => getProviderConfig(baseUrl),
   });
+  const digitalHumanConfigQuery = useQuery({
+    queryKey: ["admin-digital-human-config", baseUrl],
+    queryFn: () => adminApi.getConfig(),
+  });
 
   const availableModelsQuery = useQuery({
     queryKey: ["admin-available-models", baseUrl],
@@ -211,6 +215,9 @@ export function DashboardPage() {
   const operationsBusy =
     exportDiagnosticsMutation.isPending || createBackupMutation.isPending || restoreBackupMutation.isPending;
   const providerConfigured = Boolean(providerConfigQuery.data?.model?.trim());
+  const digitalHumanSummary = buildDigitalHumanDashboardSummary(
+    digitalHumanConfigQuery.data,
+  );
   const desktopRuntimeReady = desktopAvailable
     ? Boolean(desktopStatusQuery.data?.reachable && runtimeContextQuery.data?.runtimeDataDir)
     : Boolean(statusQuery.data?.coreApi.healthy);
@@ -314,6 +321,12 @@ export function DashboardPage() {
               }
             />
             <AdminStatusCard
+              tone={digitalHumanSummary.ready ? "healthy" : "warning"}
+              title="数字人 Provider"
+              statusLabel={digitalHumanSummary.ready ? "正常" : "关注"}
+              description={digitalHumanSummary.description}
+            />
+            <AdminStatusCard
               tone={systemHealthy ? "healthy" : "warning"}
               title="实例健康"
               statusLabel={systemHealthy ? "正常" : "关注"}
@@ -331,6 +344,39 @@ export function DashboardPage() {
               <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="朋友圈" value={momentsQuery.data?.length ?? 0} detail="当前世界动态总数" />
               <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="广场动态" value={feedQuery.data?.total ?? 0} detail="公开内容总数" />
               <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="评测运行" value={evalOverviewQuery.data?.runCount ?? 0} detail={`Trace ${evalOverviewQuery.data?.traceCount ?? 0}`} />
+            </div>
+          </div>
+          <div className="mt-5 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+            <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">数字人 Provider 摘要</div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <MetricCard
+                className="border-0 bg-transparent p-0 shadow-none"
+                label="模式"
+                value={digitalHumanSummary.modeLabel}
+                meta={
+                  <StatusPill tone={digitalHumanSummary.ready ? "healthy" : "warning"}>
+                    {digitalHumanSummary.ready ? "可联调" : "待配置"}
+                  </StatusPill>
+                }
+              />
+              <MetricCard
+                className="border-0 bg-transparent p-0 shadow-none"
+                label="播放器模板"
+                value={digitalHumanSummary.templateStatus}
+                detail={digitalHumanSummary.templateDetail}
+              />
+              <MetricCard
+                className="border-0 bg-transparent p-0 shadow-none"
+                label="回调鉴权"
+                value={digitalHumanSummary.callbackTokenStatus}
+                detail={digitalHumanSummary.callbackTokenDetail}
+              />
+              <MetricCard
+                className="border-0 bg-transparent p-0 shadow-none"
+                label="扩展参数"
+                value={digitalHumanSummary.paramsStatus}
+                detail={digitalHumanSummary.paramsDetail}
+              />
             </div>
           </div>
         </Card>
@@ -937,6 +983,79 @@ export function DashboardPage() {
       </div>
     </div>
   );
+}
+
+function buildDigitalHumanDashboardSummary(config?: Record<string, string>) {
+  const mode = config?.digital_human_provider_mode?.trim() || "mock_iframe";
+  const template = config?.digital_human_player_url_template?.trim() || "";
+  const callbackToken =
+    config?.digital_human_provider_callback_token?.trim() || "";
+  const rawParams = config?.digital_human_provider_params?.trim() || "";
+  const params = parseDigitalHumanDashboardParams(rawParams);
+  const templateReady = mode !== "external_iframe" || Boolean(template);
+  const paramsValid = rawParams ? params.valid : true;
+  const ready = Boolean(mode) && templateReady && paramsValid;
+
+  return {
+    ready,
+    modeLabel: formatDigitalHumanDashboardMode(mode),
+    description: !templateReady
+      ? "当前已切到外部 iframe 模式，但播放器模板还没配。"
+      : !paramsValid
+        ? "数字人扩展参数 JSON 不合法，当前配置不会被 provider 正常消费。"
+        : mode === "external_iframe"
+          ? `当前走外部 iframe 数字人，模板和回调参数已可用于联调。`
+          : `当前仍是 ${formatDigitalHumanDashboardMode(mode)}，还没有切到真实数字人 provider。`,
+    templateStatus: template ? "已配置" : "未配置",
+    templateDetail: template
+      ? truncateDigitalHumanTemplate(template)
+      : "进入设置页补齐播放器 URL 模板",
+    callbackTokenStatus: callbackToken ? "已设置" : "未设置",
+    callbackTokenDetail: callbackToken
+      ? `长度 ${callbackToken.length}，provider-state 回调可走鉴权。`
+      : "未设置时，provider-state 回调不会附带保护 token。",
+    paramsStatus: params.valid ? String(params.count) : "无效",
+    paramsDetail: params.valid
+      ? params.count
+        ? `${params.keys.slice(0, 3).join(" / ")}${params.count > 3 ? " ..." : ""}`
+        : "当前没有扩展参数 JSON。"
+      : "扩展参数 JSON 解析失败。",
+  };
+}
+
+function formatDigitalHumanDashboardMode(mode: string) {
+  switch (mode) {
+    case "mock_stage":
+      return "内置舞台";
+    case "mock_iframe":
+      return "内置 iframe";
+    case "external_iframe":
+      return "外部 iframe";
+    default:
+      return mode || "未设置";
+  }
+}
+
+function parseDigitalHumanDashboardParams(rawValue: string) {
+  if (!rawValue) {
+    return { valid: true, count: 0, keys: [] as string[] };
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      return { valid: false, count: 0, keys: [] as string[] };
+    }
+
+    const keys = Object.keys(parsed);
+    return { valid: true, count: keys.length, keys };
+  } catch {
+    return { valid: false, count: 0, keys: [] as string[] };
+  }
+}
+
+function truncateDigitalHumanTemplate(value: string) {
+  return value.length > 72 ? `${value.slice(0, 69)}...` : value;
 }
 
 function formatDesktopDiagnostics(values: {
