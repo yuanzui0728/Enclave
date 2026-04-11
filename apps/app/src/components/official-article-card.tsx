@@ -21,11 +21,15 @@ export function OfficialArticleCard({
   return (
     <div
       className={cn(
-        "group w-full transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group w-full transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white/92 px-4 py-4 hover:bg-white"
-          : "border-b border-[color:var(--border-faint)] bg-white/80 px-5 py-4 hover:bg-white/95",
-        active ? "bg-[rgba(249,115,22,0.08)]" : undefined,
+          ? "rounded-[20px] border border-black/6 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)] hover:border-black/10 hover:bg-[#fcfcfc]"
+          : "border-b border-black/6 bg-white px-5 py-4 hover:bg-[#fbfbfb]",
+        active
+          ? compact
+            ? "border-[#cfe8d6] bg-[#f7fbf8]"
+            : "border-[#cfe8d6] bg-[#f4faf6]"
+          : undefined,
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -36,7 +40,7 @@ export function OfficialArticleCard({
         >
           <div className="flex items-center gap-2">
             {article.isPinned ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(249,115,22,0.12)] px-2 py-0.5 text-[11px] font-medium text-[#b45309]">
+              <span className="inline-flex items-center gap-1 rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-2 py-0.5 text-[11px] font-medium text-[#557d37]">
                 <Pin size={11} />
                 置顶
               </span>
@@ -58,10 +62,10 @@ export function OfficialArticleCard({
               type="button"
               onClick={onToggleFavorite}
               className={cn(
-                "inline-flex h-8 items-center gap-1 rounded-full border px-3 text-[11px] font-medium transition",
+                "inline-flex h-8 items-center gap-1 rounded-lg border px-3 text-[11px] font-medium transition",
                 favorite
-                  ? "border-[rgba(249,115,22,0.24)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                  : "border-[color:var(--border-faint)] bg-white/90 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                  ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
+                  : "border-black/6 bg-white text-[color:var(--text-secondary)] hover:bg-[#f6f6f6] hover:text-[color:var(--text-primary)]",
               )}
             >
               <Star size={12} className={favorite ? "fill-current" : ""} />
@@ -69,7 +73,7 @@ export function OfficialArticleCard({
             </button>
           ) : null}
           {!compact ? (
-            <div className="shrink-0 rounded-full bg-[rgba(47,122,63,0.10)] px-2.5 py-1 text-[11px] text-[#2f7a3f]">
+            <div className="shrink-0 rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-2.5 py-1 text-[11px] text-[#557d37]">
               {article.readCount} 阅读
             </div>
           ) : null}
