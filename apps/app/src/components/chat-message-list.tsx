@@ -3595,8 +3595,15 @@ function GroupRelaySummaryMessage({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          <div className="rounded-full bg-[rgba(245,158,11,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#b45309]">
-            结果回填
+          <div
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[10px] font-medium",
+              summary.source === "mobile"
+                ? "bg-[rgba(59,130,246,0.12)] text-[#2563eb]"
+                : "bg-[rgba(245,158,11,0.12)] text-[#b45309]",
+            )}
+          >
+            {summary.source === "mobile" ? "手机回填" : "桌面回填"}
           </div>
           {summary.statusLabel ? (
             <div

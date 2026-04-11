@@ -4,19 +4,22 @@ export type GroupRelaySummaryStatus =
   | "pending"
   | "completed"
   | "published";
+export type GroupRelaySummarySource = "desktop" | "mobile";
 
 export function buildGroupRelaySummaryMessage(
   sourceGroupName: string,
   status: GroupRelaySummaryStatus = "pending",
   recordedAt = new Date().toISOString(),
   publishedAt?: string,
+  source: GroupRelaySummarySource = "desktop",
 ) {
   return [
     `${GROUP_RELAY_MESSAGE_PREFIX} ${sourceGroupName}`,
     `状态 ${formatGroupRelayStatusLabel(status)}`,
     `时间 ${recordedAt}`,
     publishedAt ? `回填于 ${publishedAt}` : null,
-    ...buildGroupRelaySummaryLines(status),
+    `来源 ${formatGroupRelaySourceLabel(source)}`,
+    ...buildGroupRelaySummaryLines(status, source),
   ]
     .filter(Boolean)
     .join("\n");
@@ -46,12 +49,22 @@ export function parseGroupRelaySummaryMessage(text: string) {
         Number(Boolean(timestampLabel))
     ],
   );
+  const sourceLabel = parseGroupRelaySourceLabel(
+    lines[
+      1 +
+        Number(Boolean(statusLabel)) +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(publishedAtLabel))
+    ],
+  );
+  const source = parseGroupRelaySourceValue(sourceLabel);
   const summaryLines = lines
     .slice(
       1 +
         Number(Boolean(statusLabel)) +
         Number(Boolean(timestampLabel)) +
-        Number(Boolean(publishedAtLabel)),
+        Number(Boolean(publishedAtLabel)) +
+        Number(Boolean(sourceLabel)),
     )
     .map((line) => line.replace(/^\d+\.\s*/, "").trim())
     .filter(Boolean);
@@ -61,6 +74,8 @@ export function parseGroupRelaySummaryMessage(text: string) {
     statusLabel,
     timestampLabel,
     publishedAtLabel,
+    sourceLabel,
+    source,
     summaryLines,
   };
 }
@@ -89,6 +104,28 @@ function parseGroupRelayPublishedAtLabel(line: string | undefined) {
   return line.replace(/^回填于\s+/, "").trim() || null;
 }
 
+function parseGroupRelaySourceLabel(line: string | undefined) {
+  if (!line || !line.startsWith("来源 ")) {
+    return null;
+  }
+
+  return line.replace(/^来源\s+/, "").trim() || null;
+}
+
+function parseGroupRelaySourceValue(
+  sourceLabel: string | null,
+): GroupRelaySummarySource | null {
+  if (sourceLabel === "桌面端") {
+    return "desktop";
+  }
+
+  if (sourceLabel === "手机端") {
+    return "mobile";
+  }
+
+  return null;
+}
+
 function formatGroupRelayStatusLabel(status: GroupRelaySummaryStatus) {
   if (status === "published") {
     return "已回填";
@@ -101,10 +138,19 @@ function formatGroupRelayStatusLabel(status: GroupRelaySummaryStatus) {
   return "待继续";
 }
 
-function buildGroupRelaySummaryLines(status: GroupRelaySummaryStatus) {
+function formatGroupRelaySourceLabel(source: GroupRelaySummarySource) {
+  return source === "mobile" ? "手机端" : "桌面端";
+}
+
+function buildGroupRelaySummaryLines(
+  status: GroupRelaySummaryStatus,
+  source: GroupRelaySummarySource,
+) {
+  const sourceLabel = formatGroupRelaySourceLabel(source);
+
   if (status === "published") {
     return [
-      "1. 已从桌面端群聊打开群接龙工作台。",
+      `1. 已从${sourceLabel}群聊打开群接龙工作台。`,
       "2. 当前统计结果已经回填到原群聊，可继续在群里跟进补充名单。",
       "3. 如需继续调整，重新打开群接龙后再次回填即可覆盖最新结果。",
     ];
@@ -112,14 +158,14 @@ function buildGroupRelaySummaryLines(status: GroupRelaySummaryStatus) {
 
   if (status === "completed") {
     return [
-      "1. 已从桌面端群聊打开群接龙工作台。",
+      `1. 已从${sourceLabel}群聊打开群接龙工作台。`,
       "2. 当前名单和未确认成员已经整理完成，随时可以回填到原群聊。",
       "3. 请确认最终结果后再一键回填，避免群里出现过期统计。",
     ];
   }
 
   return [
-    "1. 已从桌面端群聊打开群接龙工作台。",
+    `1. 已从${sourceLabel}群聊打开群接龙工作台。`,
     "2. 当前正在整理接龙名单和未确认成员。",
     "3. 请按顺序继续接龙，或直接在群里补充结果。",
   ];
