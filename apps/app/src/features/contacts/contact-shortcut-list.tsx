@@ -27,7 +27,7 @@ export function ContactShortcutList({
     <section
       className={cn(
         "overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
-        compact ? "rounded-[24px]" : "rounded-none",
+        compact ? "rounded-[16px]" : "rounded-none",
         className,
       )}
     >
@@ -45,10 +45,10 @@ export function ContactShortcutList({
               compact
                 ? item.disabled
                   ? "cursor-not-allowed px-4 py-3.5"
-                  : "px-4 py-3.5 hover:bg-[rgba(249,115,22,0.05)]"
+                  : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]"
                 : item.disabled
                   ? "cursor-not-allowed px-4 py-3"
-                  : "px-4 py-3 hover:bg-[#f7f7f7]",
+                  : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
               item.disabled ? "opacity-60" : "",
               index > 0
                 ? "border-t border-[color:var(--border-faint)]"
@@ -57,7 +57,7 @@ export function ContactShortcutList({
           >
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-[11px] text-white shadow-[0_8px_18px_rgba(180,100,20,0.10)]",
+                "flex shrink-0 items-center justify-center rounded-[11px] text-white shadow-[var(--shadow-soft)]",
                 compact ? "h-10 w-10" : "h-9 w-9",
                 item.iconClassName,
               )}

@@ -453,7 +453,7 @@ function MobileChatListPage() {
 
       <TabPageTopBar
         title="消息"
-        className="z-40 space-y-3 overflow-visible border-b border-black/5 bg-[#ededed] px-3 pb-2.5 pt-2.5 text-[color:var(--text-primary)] shadow-none"
+        className="z-40 space-y-3 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-2.5 pt-2.5 text-[color:var(--text-primary)] shadow-none"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
@@ -463,7 +463,7 @@ function MobileChatListPage() {
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
-              className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/5"
+              className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
               aria-label="打开快捷菜单"
             >
               <Plus size={16} strokeWidth={2.4} />
@@ -546,7 +546,7 @@ function MobileChatListPage() {
             aria-hidden="true"
             className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
           />
-          <div className="h-9 w-full rounded-[10px] border border-black/6 bg-white pl-10 pr-4 text-sm leading-9 text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
+          <div className="h-9 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] pl-10 pr-4 text-sm leading-9 text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
             搜索
           </div>
         </button>
