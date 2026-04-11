@@ -3,8 +3,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { triggerSceneFriendRequest } from "@yinjie/contracts";
-import { AppPage, AppSection, Button, ErrorBlock, InlineNotice } from "@yinjie/ui";
+import {
+  AppPage,
+  AppSection,
+  Button,
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+} from "@yinjie/ui";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -16,6 +24,29 @@ const scenes = [
 ];
 
 export function DiscoverScenePage() {
+  const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/discover", replace: true });
+  }, [isDesktopLayout, navigate]);
+
+  if (isDesktopLayout) {
+    return (
+      <AppPage className="px-6 py-6">
+        <LoadingBlock label="正在切换到桌面发现页..." />
+      </AppPage>
+    );
+  }
+
+  return <MobileDiscoverScenePage />;
+}
+
+function MobileDiscoverScenePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
