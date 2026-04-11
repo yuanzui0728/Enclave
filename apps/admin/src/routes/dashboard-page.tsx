@@ -46,6 +46,7 @@ import {
   AdminDangerZone,
   AdminJumpCard,
   AdminMetaText,
+  AdminSoftBox,
   AdminStatusCard,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -696,19 +697,19 @@ export function DashboardPage() {
                 footer={
                   <>
                     <div className="grid gap-2 md:grid-cols-3">
-                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
+                      <AdminSoftBox>
                         运行次数：{job.runCount}
-                      </div>
-                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
+                      </AdminSoftBox>
+                      <AdminSoftBox>
                         耗时：{job.lastDurationMs ? `${job.lastDurationMs} ms` : "尚未执行"}
-                      </div>
-                      <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2">
+                      </AdminSoftBox>
+                      <AdminSoftBox>
                         最近执行：{job.lastRunAt ?? "尚未执行"}
-                      </div>
+                      </AdminSoftBox>
                     </div>
-                    <div className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]">
+                    <AdminSoftBox className="mt-3">
                       {job.lastResult ?? "暂时还没有执行结果记录。"}
-                    </div>
+                    </AdminSoftBox>
                   </>
                 }
               />

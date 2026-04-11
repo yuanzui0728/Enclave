@@ -278,6 +278,25 @@ export function AdminMetaText({
   );
 }
 
+export function AdminSoftBox({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2 text-sm text-[color:var(--text-secondary)]",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function AdminActionGroup({
   title,
   description,
