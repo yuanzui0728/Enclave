@@ -399,6 +399,55 @@ export function AdminToggle({
   );
 }
 
+export function AdminPillTextField({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+}) {
+  return (
+    <TextField
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className={cn(
+        "rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]",
+        className,
+      )}
+    />
+  );
+}
+
+export function AdminPillSelectField({
+  value,
+  onChange,
+  children,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <SelectField
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className={cn(
+        "rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]",
+        className,
+      )}
+    >
+      {children}
+    </SelectField>
+  );
+}
+
 export function AdminTextField({
   label,
   value,
