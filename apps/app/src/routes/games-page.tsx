@@ -480,12 +480,12 @@ export function GamesPage() {
   const selectedTone = getGameCenterToneStyle(selectedGame.tone);
 
   return (
-    <AppPage className="space-y-5">
+    <AppPage className="space-y-0 px-0 pb-0 pt-0">
       <TabPageTopBar
-        eyebrow="Discover"
         title="游戏"
-        subtitle="像微信一样从发现进入游戏中心"
+        subtitle="最近在玩与组局推荐"
         titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={() =>
@@ -495,16 +495,17 @@ export function GamesPage() {
             }
             variant="ghost"
             size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
 
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
       <section
         className={cn(
-          "relative overflow-hidden rounded-[32px] p-5 shadow-[var(--shadow-section)]",
+          "relative overflow-hidden rounded-[24px] p-5 shadow-[var(--shadow-soft)]",
           selectedTone.heroCardClassName,
         )}
       >
@@ -583,7 +584,7 @@ export function GamesPage() {
               "shrink-0 rounded-full border px-4 py-2 text-sm transition",
               activeCategory === tab.id
                 ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]"
-                : "border-white/80 bg-white/88 text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]",
+                : "border-black/5 bg-white text-[color:var(--text-secondary)] shadow-none",
             )}
           >
             {tab.label}
@@ -603,7 +604,7 @@ export function GamesPage() {
         onLaunch={handleLaunchGame}
       />
 
-      <AppSection className="space-y-4 bg-white/92">
+      <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
           <Clock3 size={16} className="text-[color:var(--brand-secondary)]" />
           最近玩过
@@ -638,7 +639,7 @@ export function GamesPage() {
         </div>
       </AppSection>
 
-      <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(255,250,245,0.98),rgba(255,255,255,0.95))]">
+      <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
           <UsersRound size={16} className="text-[color:var(--brand-secondary)]" />
           好友在玩
@@ -716,7 +717,7 @@ export function GamesPage() {
         />
       </div>
 
-      <AppSection className="space-y-4 bg-white/92">
+      <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
           <Play size={16} className="text-[color:var(--brand-secondary)]" />
           为你推荐
@@ -786,7 +787,7 @@ export function GamesPage() {
         </div>
       </AppSection>
 
-      <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
+      <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
           <Gift size={16} className="text-[color:var(--brand-primary)]" />
           福利活动
@@ -835,6 +836,7 @@ export function GamesPage() {
           })}
         </div>
       </AppSection>
+      </div>
     </AppPage>
   );
 }
@@ -862,7 +864,7 @@ function MobileRankingSection({
   onSelectGame: (gameId: string) => void;
 }) {
   return (
-    <AppSection className="space-y-4 bg-white/92">
+    <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
       <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
         {icon}
         {title}
