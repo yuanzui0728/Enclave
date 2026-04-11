@@ -45,6 +45,7 @@ import {
   AdminDetailPanel,
   AdminDangerZone,
   AdminJumpCard,
+  AdminMetaText,
   AdminStatusCard,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -573,11 +574,7 @@ export function DashboardPage() {
                   className="py-3"
                   title={character.name}
                   body={<div>{character.relationship}</div>}
-                  footer={
-                    <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                      {character.id}
-                    </div>
-                  }
+                  footer={<AdminMetaText>{character.id}</AdminMetaText>}
                 />
               ))
             ) : (
@@ -606,17 +603,9 @@ export function DashboardPage() {
                     key={moment.id}
                     className="py-3"
                     title={moment.authorName}
-                    actions={
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {moment.likeCount} 赞 / {moment.commentCount} 评论
-                      </div>
-                    }
+                    actions={<AdminMetaText>{moment.likeCount} 赞 / {moment.commentCount} 评论</AdminMetaText>}
                     body={<div className="line-clamp-3">{moment.text}</div>}
-                    footer={
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {moment.id}
-                      </div>
-                    }
+                    footer={<AdminMetaText>{moment.id}</AdminMetaText>}
                   />
                 ))
               ) : (
@@ -644,17 +633,9 @@ export function DashboardPage() {
                     key={post.id}
                     className="py-3"
                     title={post.authorName}
-                    actions={
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {post.likeCount} 赞 / {post.commentCount} 评论
-                      </div>
-                    }
+                    actions={<AdminMetaText>{post.likeCount} 赞 / {post.commentCount} 评论</AdminMetaText>}
                     body={<div className="line-clamp-3">{post.text}</div>}
-                    footer={
-                      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                        {post.id}
-                      </div>
-                    }
+                    footer={<AdminMetaText>{post.id}</AdminMetaText>}
                   />
                 ))
               ) : (
@@ -707,9 +688,9 @@ export function DashboardPage() {
                 body={
                   <>
                     <div>{job.description}</div>
-                    <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                    <AdminMetaText className="mt-2">
                       {job.cadence} / {job.nextRunHint}
-                    </div>
+                    </AdminMetaText>
                   </>
                 }
                 footer={

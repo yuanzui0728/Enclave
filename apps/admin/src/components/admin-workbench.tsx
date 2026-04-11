@@ -264,6 +264,20 @@ export function AdminDetailPanel({
   );
 }
 
+export function AdminMetaText({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]", className)}>
+      {children}
+    </div>
+  );
+}
+
 export function AdminActionGroup({
   title,
   description,
