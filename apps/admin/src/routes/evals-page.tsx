@@ -291,19 +291,22 @@ export function EvalsPage() {
   const traceDetailQuery = useQuery({
     queryKey: ["admin-eval-trace-detail", baseUrl, selectedTraceId],
     queryFn: () => getGenerationTrace(selectedTraceId ?? "", baseUrl),
-    enabled: Boolean(selectedTraceId),
+    enabled: Boolean(
+      selectedTraceId &&
+        (tracesQuery.data ?? EMPTY_LIST).some((trace) => trace.id === selectedTraceId),
+    ),
   });
 
   const runDetailQuery = useQuery({
     queryKey: ["admin-eval-run-detail", baseUrl, selectedRunId],
     queryFn: () => getEvalRun(selectedRunId ?? "", baseUrl),
-    enabled: Boolean(selectedRunId),
+    enabled: Boolean(selectedRunId && allRuns.some((run) => run.id === selectedRunId)),
   });
 
   const datasetDetailQuery = useQuery({
     queryKey: ["admin-eval-dataset-detail", baseUrl, selectedDatasetId],
     queryFn: () => getEvalDataset(selectedDatasetId ?? "", baseUrl),
-    enabled: Boolean(selectedDatasetId),
+    enabled: Boolean(selectedDatasetId && datasetList.some((dataset) => dataset.id === selectedDatasetId)),
   });
 
   const compareQuery = useQuery({
@@ -316,7 +319,13 @@ export function EvalsPage() {
         },
         baseUrl,
       ),
-    enabled: Boolean(baselineRunId && candidateRunId && baselineRunId !== candidateRunId),
+    enabled: Boolean(
+      baselineRunId &&
+        candidateRunId &&
+        baselineRunId !== candidateRunId &&
+        allRuns.some((run) => run.id === baselineRunId) &&
+        allRuns.some((run) => run.id === candidateRunId),
+    ),
   });
 
   const runDatasetMutation = useMutation({

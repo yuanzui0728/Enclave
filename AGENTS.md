@@ -260,6 +260,21 @@
 - `GET /api/admin/characters/:id/factory/revisions`
 - `POST /api/admin/characters/:id/factory/revisions/:revisionId/restore`
 
+## 系统评测路由
+
+- `GET /api/system/evals/overview`
+- `GET /api/system/evals/datasets`
+- `GET /api/system/evals/datasets/:id`
+- `GET /api/system/evals/strategies`
+- `GET /api/system/evals/prompt-variants`
+- `GET /api/system/evals/experiments`
+- `GET /api/system/evals/reports`
+- `GET /api/system/evals/runs`
+- `GET /api/system/evals/runs/:id`
+- `GET /api/system/evals/comparisons`
+- `GET /api/system/evals/traces`
+- `GET /api/system/evals/traces/:id`
+
 ## 环境变量（`api/.env`）
 
 `DEEPSEEK_API_KEY` · `OPENAI_BASE_URL` · `AI_MODEL` · `ADMIN_SECRET` · `DATABASE_PATH` · `PORT` · `CORS_ALLOWED_ORIGINS` · `PUBLIC_API_BASE_URL` · `USER_API_KEY_ENCRYPTION_SECRET` · `DIGITAL_HUMAN_PROVIDER_MODE` · `DIGITAL_HUMAN_PLAYER_URL_TEMPLATE` · `DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN`

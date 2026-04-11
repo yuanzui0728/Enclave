@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import OpenAI, { toFile } from 'openai';
@@ -31,6 +31,39 @@ type DigitalHumanProviderMode =
   | 'external_iframe';
 
 const DEFAULT_TRANSCRIPTION_MODEL = 'gpt-4o-mini-transcribe';
+const DEFAULT_EVAL_MEMORY_STRATEGIES = [
+  {
+    id: 'default',
+    label: 'default',
+    description: '保留当前默认记忆拼装策略。',
+    keepRecentTurns: 8,
+    truncateMemoryChars: 1200,
+    dropMemory: false,
+  },
+  {
+    id: 'recent-only',
+    label: 'recent-only',
+    description: '只保留最近轮次，不拼接长期记忆。',
+    keepRecentTurns: 6,
+    truncateMemoryChars: 0,
+    dropMemory: true,
+  },
+] as const;
+
+const DEFAULT_EVAL_PROMPT_VARIANTS = [
+  {
+    id: 'default',
+    label: 'default',
+    description: '保持当前实例默认提示词。',
+    instruction: '',
+  },
+  {
+    id: 'warmer',
+    label: 'warmer',
+    description: '语气更柔和，更偏陪伴式回复。',
+    instruction: '让回复保持更自然、更温和的陪伴语气。',
+  },
+] as const;
 
 function normalizeProviderEndpoint(value: string) {
   const normalized = value.trim().replace(/\/+$/, '');
@@ -556,6 +589,117 @@ export class SystemService {
       fallbackTraceCount: 0,
       failedRunCount: 0,
     };
+  }
+
+  listEvalDatasets() {
+    return [] as Array<{
+      id: string;
+      title: string;
+      scope: string;
+      targetType: 'turn' | 'session' | 'world_event_chain' | 'persona';
+      description: string;
+      caseIds: string[];
+      rubricIds: string[];
+      owner: string;
+      version: string;
+    }>;
+  }
+
+  listEvalMemoryStrategies() {
+    return DEFAULT_EVAL_MEMORY_STRATEGIES;
+  }
+
+  listEvalPromptVariants() {
+    return DEFAULT_EVAL_PROMPT_VARIANTS;
+  }
+
+  listEvalExperimentPresets() {
+    return [] as Array<{
+      id: string;
+      title: string;
+      description: string;
+      datasetId: string;
+      mode: 'single' | 'pairwise';
+      experimentLabel?: string | null;
+      baseline?: Record<string, unknown> | null;
+      candidate?: Record<string, unknown> | null;
+    }>;
+  }
+
+  listEvalExperimentReports() {
+    return [] as Array<{
+      id: string;
+      createdAt: string;
+      presetId: string;
+      presetTitle: string;
+      datasetId: string;
+      experimentLabel?: string | null;
+      mode: 'single' | 'pairwise';
+      singleRunId?: string | null;
+      baselineRunId?: string | null;
+      candidateRunId?: string | null;
+      comparisonId?: string | null;
+      summary: {
+        totalCases: number;
+        wins: number;
+        losses: number;
+        ties: number;
+      };
+      topCaseDeltas: Array<Record<string, unknown>>;
+      failureTagDeltas: Array<Record<string, unknown>>;
+      keep: string[];
+      regressions: string[];
+      rollback: string[];
+      recommendations: string[];
+      decisionStatus: 'keep-testing' | 'promote' | 'rollback' | 'archive';
+      appliedAction?: string | null;
+      decidedAt?: string | null;
+      decidedBy?: string | null;
+      notes: string[];
+    }>;
+  }
+
+  getEvalDataset(_id: string) {
+    throw new NotFoundException('Eval dataset not found.');
+  }
+
+  listEvalRuns(_query?: {
+    datasetId?: string;
+    experimentLabel?: string;
+    providerModel?: string;
+    judgeModel?: string;
+    promptVariant?: string;
+    memoryPolicyVariant?: string;
+  }) {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  getEvalRun(_id: string) {
+    throw new NotFoundException('Eval run not found.');
+  }
+
+  listEvalComparisons(_query?: {
+    datasetId?: string;
+    experimentLabel?: string;
+    providerModel?: string;
+    judgeModel?: string;
+    promptVariant?: string;
+    memoryPolicyVariant?: string;
+  }) {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  listGenerationTraces(_query?: {
+    source?: string;
+    status?: string;
+    characterId?: string;
+    limit?: number;
+  }) {
+    return [] as Array<Record<string, unknown>>;
+  }
+
+  getGenerationTrace(_id: string) {
+    throw new NotFoundException('Generation trace not found.');
   }
 
   async exportDiagnostics() {

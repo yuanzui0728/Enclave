@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { SystemService } from './system.service';
 
 @Controller('system')
@@ -79,6 +79,99 @@ export class SystemController {
   @Get('evals/overview')
   getEvalOverview() {
     return this.systemService.getEvalOverview();
+  }
+
+  @Get('evals/datasets')
+  listEvalDatasets() {
+    return this.systemService.listEvalDatasets();
+  }
+
+  @Get('evals/datasets/:id')
+  getEvalDataset(@Param('id') id: string) {
+    return this.systemService.getEvalDataset(id);
+  }
+
+  @Get('evals/strategies')
+  listEvalStrategies() {
+    return this.systemService.listEvalMemoryStrategies();
+  }
+
+  @Get('evals/prompt-variants')
+  listEvalPromptVariants() {
+    return this.systemService.listEvalPromptVariants();
+  }
+
+  @Get('evals/experiments')
+  listEvalExperimentPresets() {
+    return this.systemService.listEvalExperimentPresets();
+  }
+
+  @Get('evals/reports')
+  listEvalExperimentReports() {
+    return this.systemService.listEvalExperimentReports();
+  }
+
+  @Get('evals/runs')
+  listEvalRuns(
+    @Query('datasetId') datasetId?: string,
+    @Query('experimentLabel') experimentLabel?: string,
+    @Query('providerModel') providerModel?: string,
+    @Query('judgeModel') judgeModel?: string,
+    @Query('promptVariant') promptVariant?: string,
+    @Query('memoryPolicyVariant') memoryPolicyVariant?: string,
+  ) {
+    return this.systemService.listEvalRuns({
+      datasetId,
+      experimentLabel,
+      providerModel,
+      judgeModel,
+      promptVariant,
+      memoryPolicyVariant,
+    });
+  }
+
+  @Get('evals/runs/:id')
+  getEvalRun(@Param('id') id: string) {
+    return this.systemService.getEvalRun(id);
+  }
+
+  @Get('evals/comparisons')
+  listEvalComparisons(
+    @Query('datasetId') datasetId?: string,
+    @Query('experimentLabel') experimentLabel?: string,
+    @Query('providerModel') providerModel?: string,
+    @Query('judgeModel') judgeModel?: string,
+    @Query('promptVariant') promptVariant?: string,
+    @Query('memoryPolicyVariant') memoryPolicyVariant?: string,
+  ) {
+    return this.systemService.listEvalComparisons({
+      datasetId,
+      experimentLabel,
+      providerModel,
+      judgeModel,
+      promptVariant,
+      memoryPolicyVariant,
+    });
+  }
+
+  @Get('evals/traces')
+  listGenerationTraces(
+    @Query('source') source?: string,
+    @Query('status') status?: string,
+    @Query('characterId') characterId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.systemService.listGenerationTraces({
+      source,
+      status,
+      characterId,
+      limit: limit ? Number.parseInt(limit, 10) : undefined,
+    });
+  }
+
+  @Get('evals/traces/:id')
+  getGenerationTrace(@Param('id') id: string) {
+    return this.systemService.getGenerationTrace(id);
   }
 
   @Post('diag/export')
