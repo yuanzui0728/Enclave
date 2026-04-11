@@ -43,7 +43,7 @@ export function DesktopChatWindowPage() {
             <Button
               type="button"
               onClick={() => {
-                window.location.assign("/tabs/chat");
+                focusMainChatWindow("/tabs/chat");
               }}
               className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
             >
@@ -129,7 +129,7 @@ function focusMainChatWindow(targetPath: string) {
     if (window.opener && !window.opener.closed) {
       window.opener.location.assign(targetPath);
       window.opener.focus?.();
-      window.close();
+      closeCurrentWindow();
       return;
     }
   } catch {
@@ -144,10 +144,21 @@ function closeStandaloneWindow(fallbackPath: string) {
     return;
   }
 
-  if (window.opener && !window.opener.closed) {
-    window.close();
+  closeCurrentWindow(() => {
+    window.location.assign(fallbackPath);
+  });
+}
+
+function closeCurrentWindow(onBlocked?: () => void) {
+  window.close();
+
+  if (!onBlocked) {
     return;
   }
 
-  window.location.assign(fallbackPath);
+  window.setTimeout(() => {
+    if (!window.closed) {
+      onBlocked();
+    }
+  }, 120);
 }
