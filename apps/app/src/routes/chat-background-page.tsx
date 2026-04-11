@@ -85,6 +85,19 @@ export function ChatBackgroundPage() {
     setNotice(null);
   }, [conversationId]);
 
+  useEffect(() => {
+    if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [
+    conversation,
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    navigate,
+  ]);
+
   const uploadMutation = useMutation({
     mutationFn: async ({ file }: { file: File }) => {
       const compressed = await compressChatBackgroundImage(file);

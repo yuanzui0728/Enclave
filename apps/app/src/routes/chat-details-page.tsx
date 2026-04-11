@@ -92,6 +92,20 @@ export function ChatDetailsPage() {
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
   });
+
+  useEffect(() => {
+    if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [
+    conversation,
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    navigate,
+  ]);
+
   const targetCharacter = characterQuery.data;
   const isPinned = conversation?.isPinned ?? false;
   const strongReminderActive = isConversationStrongReminderActive(

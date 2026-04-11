@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getConversationMessages, getConversations } from "@yinjie/contracts";
@@ -22,9 +23,22 @@ export function ChatMessageSearchPage() {
     queryFn: () => getConversationMessages(conversationId, baseUrl),
   });
 
-  const conversationTitle =
-    conversationsQuery.data?.find((item) => item.id === conversationId)
-      ?.title ?? "聊天记录";
+  const conversation =
+    conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
+  const conversationTitle = conversation?.title ?? "聊天记录";
+
+  useEffect(() => {
+    if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [
+    conversation,
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    navigate,
+  ]);
 
   return (
     <ChatMessageSearchPanel
