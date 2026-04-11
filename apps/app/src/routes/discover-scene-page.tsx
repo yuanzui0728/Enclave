@@ -1,26 +1,51 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import {
+  BookOpen,
+  Coffee,
+  Dumbbell,
+  MapPin,
+  Trees,
+} from "lucide-react";
 import { triggerSceneFriendRequest } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
-  Button,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
+  cn,
 } from "@yinjie/ui";
-import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const scenes = [
-  { id: "coffee_shop", label: "咖啡馆" },
-  { id: "gym", label: "健身房" },
-  { id: "library", label: "图书馆" },
-  { id: "park", label: "公园" },
+  {
+    id: "coffee_shop",
+    label: "咖啡馆",
+    description: "适合轻松开场和日常寒暄。",
+    icon: Coffee,
+  },
+  {
+    id: "gym",
+    label: "健身房",
+    description: "更容易遇到直接一点的搭话。",
+    icon: Dumbbell,
+  },
+  {
+    id: "library",
+    label: "图书馆",
+    description: "偏安静，也更像慢热型相遇。",
+    icon: BookOpen,
+  },
+  {
+    id: "park",
+    label: "公园",
+    description: "随机性更强，气氛也更开放。",
+    icon: Trees,
+  },
 ];
 
 export function DiscoverScenePage() {
@@ -81,47 +106,58 @@ function MobileDiscoverScenePage() {
   }, [baseUrl]);
 
   return (
-    <AppPage>
-      <TabPageTopBar
-        title="场景相遇"
-        titleAlign="center"
-        leftActions={
-          <Button
-            onClick={() =>
-              navigateBackOrFallback(() => {
-                void navigate({ to: "/tabs/discover" });
-              })
-            }
-            variant="ghost"
-            size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-          >
-            <ArrowLeft size={18} />
-          </Button>
-        }
-      />
+    <MobileDiscoverToolShell
+      title="场景相遇"
+      subtitle="换一个地点，换一种相遇方式"
+      heroTitle="选择一个地点"
+      heroDescription="不同地点会触发不同角色的靠近方式，并把结果写进新的好友申请。"
+      heroVisual={<MapPin size={28} />}
+      notice={message ? <InlineNotice tone="info">{message}</InlineNotice> : null}
+      onBack={() =>
+        navigateBackOrFallback(() => {
+          void navigate({ to: "/tabs/discover" });
+        })
+      }
+    >
+      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
+        <div className="grid grid-cols-2 gap-0.5 bg-black/5 p-0.5">
+          {scenes.map((scene) => {
+            const Icon = scene.icon;
+            const busy =
+              sceneMutation.isPending && sceneMutation.variables === scene.id;
 
-      <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">选择一个地点</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">不同地点会触发不同角色的靠近方式，并写入新的好友申请。</div>
+            return (
+              <button
+                key={scene.id}
+                type="button"
+                onClick={() => sceneMutation.mutate(scene.id)}
+                disabled={sceneMutation.isPending}
+                className={cn(
+                  "bg-white px-4 py-4 text-left transition active:bg-[#f5f5f5]",
+                  sceneMutation.isPending && !busy && "opacity-60",
+                )}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.12)] text-[#07c160]">
+                  <Icon size={18} />
+                </div>
+                <div className="mt-3 text-[15px] font-medium text-[#111827]">
+                  {busy ? `正在前往${scene.label}...` : scene.label}
+                </div>
+                <div className="mt-1 text-[12px] leading-5 text-[#8c8c8c]">
+                  {scene.description}
+                </div>
+              </button>
+            );
+          })}
         </div>
-        <div className="flex flex-wrap gap-2">
-          {scenes.map((scene) => (
-            <Button
-              key={scene.id}
-              onClick={() => sceneMutation.mutate(scene.id)}
-              disabled={sceneMutation.isPending}
-              variant="secondary"
-              size="sm"
-            >
-              {sceneMutation.isPending && sceneMutation.variables === scene.id ? `正在前往${scene.label}...` : scene.label}
-            </Button>
-          ))}
+        <div className="border-t border-black/5 px-4 py-3 text-[13px] leading-6 text-[#6b7280]">
+          点一下就触发，不做多层确认，结果会直接回到好友申请里。
         </div>
-        {message ? <InlineNotice tone="info">{message}</InlineNotice> : null}
-        {sceneMutation.isError && sceneMutation.error instanceof Error ? <ErrorBlock message={sceneMutation.error.message} /> : null}
-      </AppSection>
-    </AppPage>
+      </section>
+
+      {sceneMutation.isError && sceneMutation.error instanceof Error ? (
+        <ErrorBlock message={sceneMutation.error.message} />
+      ) : null}
+    </MobileDiscoverToolShell>
   );
 }

@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { Compass, Sparkles } from "lucide-react";
 import { sendFriendRequest, shake } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
 } from "@yinjie/ui";
-import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -79,37 +78,59 @@ function MobileDiscoverEncounterPage() {
   }, [baseUrl]);
 
   return (
-    <AppPage>
-      <TabPageTopBar
-        title="摇一摇"
-        titleAlign="center"
-        leftActions={
-          <Button
-            onClick={() =>
-              navigateBackOrFallback(() => {
-                void navigate({ to: "/tabs/discover" });
-              })
-            }
-            variant="ghost"
-            size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
-          >
-            <ArrowLeft size={18} />
-          </Button>
-        }
-      />
-
-      <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">随机相遇</div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">每次摇一摇都会尝试为你安排一次随机相遇，并自动发出好友申请。</div>
-        </div>
-        <Button onClick={() => shakeMutation.mutate()} disabled={shakeMutation.isPending} variant="primary">
+    <MobileDiscoverToolShell
+      title="摇一摇"
+      subtitle="随机遇见新的世界居民"
+      heroTitle="随机相遇"
+      heroDescription="每次摇一摇都会尝试为你安排一次新的相遇，并自动写入一条好友申请。"
+      heroVisual={<Compass size={28} />}
+      heroAction={
+        <Button
+          onClick={() => shakeMutation.mutate()}
+          disabled={shakeMutation.isPending}
+          variant="primary"
+          className="h-12 w-full rounded-full bg-[#07c160] text-white hover:bg-[#06ad56]"
+        >
+          <Sparkles size={16} />
           {shakeMutation.isPending ? "正在寻找..." : "摇一摇"}
         </Button>
-        {message ? <InlineNotice tone={message.includes("好友申请") ? "success" : "info"}>{message}</InlineNotice> : null}
-        {shakeMutation.isError && shakeMutation.error instanceof Error ? <ErrorBlock message={shakeMutation.error.message} /> : null}
-      </AppSection>
-    </AppPage>
+      }
+      notice={
+        message ? (
+          <InlineNotice tone={message.includes("好友申请") ? "success" : "info"}>
+            {message}
+          </InlineNotice>
+        ) : null
+      }
+      onBack={() =>
+        navigateBackOrFallback(() => {
+          void navigate({ to: "/tabs/discover" });
+        })
+      }
+    >
+      <section className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
+        <div className="grid grid-cols-2 divide-x divide-black/5">
+          <div className="px-4 py-4">
+            <div className="text-[12px] text-[#8c8c8c]">匹配方式</div>
+            <div className="mt-1 text-[15px] font-medium text-[#111827]">
+              随机安排
+            </div>
+          </div>
+          <div className="px-4 py-4">
+            <div className="text-[12px] text-[#8c8c8c]">结果处理</div>
+            <div className="mt-1 text-[15px] font-medium text-[#111827]">
+              自动申请
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-black/5 px-4 py-3 text-[13px] leading-6 text-[#6b7280]">
+          更像微信里“摇一摇”的轻入口：点一下就出结果，不要求你先填资料或做多步确认。
+        </div>
+      </section>
+
+      {shakeMutation.isError && shakeMutation.error instanceof Error ? (
+        <ErrorBlock message={shakeMutation.error.message} />
+      ) : null}
+    </MobileDiscoverToolShell>
   );
 }
