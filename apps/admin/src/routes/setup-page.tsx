@@ -112,6 +112,9 @@ export function SetupPage() {
   const digitalHumanParamsError = validateDigitalHumanParams(
     digitalHumanDraft.providerParams,
   );
+  const digitalHumanTemplateWarnings = validateDigitalHumanTemplate(
+    digitalHumanDraft,
+  );
   const digitalHumanProviderReady = Boolean(
     digitalHumanDraft.mode === "external_iframe"
       ? digitalHumanDraft.playerUrlTemplate.trim()
@@ -433,6 +436,26 @@ export function SetupPage() {
             </div>
 
             <div className="mt-5 grid gap-4">
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => {
+                    setDigitalHumanDraft(createExternalIframeExampleDraft());
+                  }}
+                >
+                  套用外部 iframe 示例
+                </Button>
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={() => {
+                    setDigitalHumanDraft(createDigitalHumanConfigDraft());
+                  }}
+                >
+                  重置数字人配置
+                </Button>
+              </div>
               <AdminSelectField
                 label="Provider 模式"
                 value={digitalHumanDraft.mode}
@@ -524,6 +547,11 @@ export function SetupPage() {
             <InlineNotice className="mt-4" tone="info">
               建议把 provider 固定参数都放进扩展参数 JSON，再在播放器模板中直接使用对应占位符。
             </InlineNotice>
+            {digitalHumanTemplateWarnings.length ? (
+              <InlineNotice className="mt-4" tone="warning">
+                {digitalHumanTemplateWarnings.join(" ")}
+              </InlineNotice>
+            ) : null}
             {digitalHumanParamsError ? (
               <ErrorBlock className="mt-4" message={digitalHumanParamsError} />
             ) : null}
@@ -582,6 +610,24 @@ function createDigitalHumanConfigDraft(config?: Record<string, string>) {
   };
 }
 
+function createExternalIframeExampleDraft() {
+  return {
+    mode: "external_iframe",
+    playerUrlTemplate:
+      "https://provider.example.com/player?session={sessionId}&avatar={avatarId}&scene={sceneId}&callback={callbackUrl}",
+    callbackToken: "replace-with-provider-token",
+    providerParams: JSON.stringify(
+      {
+        appId: "demo-app",
+        avatarId: "host-001",
+        sceneId: "lobby",
+      },
+      null,
+      2,
+    ),
+  };
+}
+
 function validateDigitalHumanParams(value: string) {
   if (!value.trim()) {
     return null;
@@ -597,6 +643,35 @@ function validateDigitalHumanParams(value: string) {
   } catch {
     return "扩展参数 JSON 格式不合法，请修正后再保存。";
   }
+}
+
+function validateDigitalHumanTemplate(
+  draft: ReturnType<typeof createDigitalHumanConfigDraft>,
+) {
+  if (draft.mode !== "external_iframe") {
+    return [];
+  }
+
+  const warnings: string[] = [];
+  const template = draft.playerUrlTemplate.trim();
+  if (!template) {
+    warnings.push("当前是外部 iframe 模式，但播放器 URL 模板还未填写。");
+    return warnings;
+  }
+
+  if (!template.includes("{sessionId}")) {
+    warnings.push("建议模板包含 `{sessionId}`，便于区分每次数字人会话。");
+  }
+
+  if (!template.includes("{callbackUrl}")) {
+    warnings.push("建议模板包含 `{callbackUrl}`，这样 provider 可以直接回写渲染状态。");
+  }
+
+  if (draft.callbackToken.trim() && !template.includes("{callbackToken}")) {
+    warnings.push("当前已配置回调 Token；如果 provider 需要单独消费它，建议模板里带上 `{callbackToken}`。");
+  }
+
+  return warnings;
 }
 
 function buildDigitalHumanPreview(
