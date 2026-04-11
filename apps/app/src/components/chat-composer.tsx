@@ -3054,12 +3054,14 @@ function DesktopScreenshotEditor({
 }) {
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
+  const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
   const [previewViewportSize, setPreviewViewportSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewSpacePressed, setPreviewSpacePressed] = useState(false);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const [previewPanDrag, setPreviewPanDrag] = useState<{
     pointerId: number;
     startX: number;
@@ -3143,7 +3145,30 @@ function DesktopScreenshotEditor({
     setPreviewViewportSize(null);
     setPreviewSpacePressed(false);
     setPreviewPanDrag(null);
+    setShortcutHelpOpen(false);
   }, [draft.previewUrl]);
+
+  useEffect(() => {
+    if (!shortcutHelpOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        shortcutHelpRef.current &&
+        target instanceof Node &&
+        !shortcutHelpRef.current.contains(target)
+      ) {
+        setShortcutHelpOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [shortcutHelpOpen]);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -3652,9 +3677,57 @@ function DesktopScreenshotEditor({
                 >
                   清空标注
                 </Button>
-                <span className="text-[11px] text-white/42">
-                  Enter 发送，Cmd/Ctrl + Enter 原图发送，Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除，Esc 取消选中
-                </span>
+                <div ref={shortcutHelpRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShortcutHelpOpen((open) => !open)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition",
+                      shortcutHelpOpen
+                        ? "border-white/26 bg-white/12 text-white"
+                        : "border-white/10 bg-white/6 text-white/58 hover:border-white/18 hover:bg-white/10 hover:text-white/80",
+                    )}
+                    title="查看截图快捷键"
+                  >
+                    <Keyboard size={12} />
+                    <span>快捷键</span>
+                  </button>
+                  {shortcutHelpOpen ? (
+                    <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
+                      <div className="mb-2 text-[12px] font-medium text-white">
+                        截图快捷键
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>发送截图</span>
+                          <span className="text-white/92">Enter</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>按原图发送</span>
+                          <span className="text-white/92">⌘/Ctrl + Enter</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>缩放 / 视图</span>
+                          <span className="text-right text-white/92">
+                            ⌘/Ctrl + 滚轮 / 双击 / Space
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>切换工具</span>
+                          <span className="text-white/92">C / R / A / T</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>切换颜色</span>
+                          <span className="text-white/92">1 / 2 / 3 / 4</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2">
+                          <span>删除 / 取消选中</span>
+                          <span className="text-white/92">Delete / Esc</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
 
