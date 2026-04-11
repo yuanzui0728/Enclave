@@ -1241,12 +1241,14 @@ export function ReplyLogicPage() {
               </Card>
 
               <Card className="bg-[color:var(--surface-console)]">
-                <div className="flex items-center justify-between gap-3">
-                  <SectionHeading>回复运行配置</SectionHeading>
-                  <StatusPill tone={providerSetup.providerReady ? "healthy" : "warning"}>
-                    {providerSetup.providerReady ? "已配置" : "待配置"}
-                  </StatusPill>
-                </div>
+                <AdminSectionHeader
+                  title="回复运行配置"
+                  actions={
+                    <StatusPill tone={providerSetup.providerReady ? "healthy" : "warning"}>
+                      {providerSetup.providerReady ? "已配置" : "待配置"}
+                    </StatusPill>
+                  }
+                />
 
                 <div className="mt-4 space-y-4">
                   <FieldBlock
