@@ -9,7 +9,6 @@ import {
   getCharacter,
   getConversations,
   getFriends,
-  getSystemStatus,
   hideConversation,
   sendFriendRequest,
   setConversationStrongReminder,
@@ -19,7 +18,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
-import { resolveDigitalHumanEntryGuardCopy } from "../features/chat/digital-human-entry-guard";
+import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
   CONVERSATION_STRONG_REMINDER_DURATION_HOURS,
@@ -51,14 +50,14 @@ export function ChatDetailsPage() {
     message: string;
   } | null>(null);
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
-  const [videoGuardMessage, setVideoGuardMessage] = useState<string | null>(
-    null,
-  );
+  const { guardVideoEntry, resetEntryGuard } = useDigitalHumanEntryGuard({
+    baseUrl,
+  });
 
   useEffect(() => {
     setNotice(null);
-    setVideoGuardMessage(null);
-  }, [conversationId]);
+    resetEntryGuard();
+  }, [conversationId, resetEntryGuard]);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -91,11 +90,6 @@ export function ChatDetailsPage() {
     queryFn: () => getBlockedCharacters(baseUrl),
     enabled: Boolean(targetCharacterId),
   });
-  const systemStatusQuery = useQuery({
-    queryKey: ["system-status", baseUrl],
-    queryFn: () => getSystemStatus(baseUrl),
-  });
-
   const targetCharacter = characterQuery.data;
   const isPinned = conversation?.isPinned ?? false;
   const strongReminderActive = isConversationStrongReminderActive(
@@ -453,21 +447,10 @@ export function ChatDetailsPage() {
             onSelectKind={(kind) => {
               setNotice(null);
               if (kind === "video") {
-                const guardCopy = resolveDigitalHumanEntryGuardCopy(
-                  systemStatusQuery.data?.digitalHumanGateway,
-                );
-
-                if (
-                  guardCopy &&
-                  videoGuardMessage !== guardCopy.message
-                ) {
-                  setVideoGuardMessage(guardCopy.message);
-                  setNotice(guardCopy);
+                if (!guardVideoEntry()) {
                   return;
                 }
               }
-
-              setVideoGuardMessage(null);
               void navigate({
                 to:
                   kind === "voice"

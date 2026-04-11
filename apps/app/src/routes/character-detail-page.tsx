@@ -17,7 +17,6 @@ import {
   getFriendRequests,
   getFriends,
   getOrCreateConversation,
-  getSystemStatus,
   sendFriendRequest,
   setFriendStarred,
   unblockCharacter,
@@ -34,7 +33,7 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
-import { resolveDigitalHumanEntryGuardCopy } from "../features/chat/digital-human-entry-guard";
+import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -60,9 +59,9 @@ export function CharacterDetailPage() {
     message: string;
   } | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [videoGuardMessage, setVideoGuardMessage] = useState<string | null>(
-    null,
-  );
+  const { guardVideoEntry, resetEntryGuard } = useDigitalHumanEntryGuard({
+    baseUrl,
+  });
   const [profileForm, setProfileForm] = useState<FriendProfileFormState>({
     remarkName: "",
     region: "",
@@ -85,10 +84,6 @@ export function CharacterDetailPage() {
   const blockedQuery = useQuery({
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
-  });
-  const systemStatusQuery = useQuery({
-    queryKey: ["system-status", baseUrl],
-    queryFn: () => getSystemStatus(baseUrl),
   });
 
   const character = characterQuery.data;
@@ -128,7 +123,7 @@ export function CharacterDetailPage() {
   useEffect(() => {
     setNotice(null);
     setIsEditingProfile(false);
-    setVideoGuardMessage(null);
+    resetEntryGuard();
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
       region: friendship?.region ?? "",
@@ -141,6 +136,7 @@ export function CharacterDetailPage() {
     friendship?.region,
     friendship?.source,
     friendship?.tags,
+    resetEntryGuard,
   ]);
 
   const startChatMutation = useMutation({
@@ -307,23 +303,15 @@ export function CharacterDetailPage() {
 
   const handleVoiceCall = () => {
     setNotice(null);
-    setVideoGuardMessage(null);
+    resetEntryGuard();
     openCallMutation.mutate("voice");
   };
 
   const handleVideoCall = () => {
     setNotice(null);
-    const guardCopy = resolveDigitalHumanEntryGuardCopy(
-      systemStatusQuery.data?.digitalHumanGateway,
-    );
-
-    if (guardCopy && videoGuardMessage !== guardCopy.message) {
-      setVideoGuardMessage(guardCopy.message);
-      setNotice(guardCopy);
+    if (!guardVideoEntry()) {
       return;
     }
-
-    setVideoGuardMessage(null);
     openCallMutation.mutate("video");
   };
 
