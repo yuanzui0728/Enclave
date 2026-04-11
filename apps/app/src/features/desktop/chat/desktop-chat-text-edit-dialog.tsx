@@ -82,7 +82,7 @@ export function DesktopChatTextEditDialog({
       />
 
       <form
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
           if (confirmDisabled) {
@@ -92,7 +92,7 @@ export function DesktopChatTextEditDialog({
           onConfirm(normalizedDraft);
         }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
             <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
               {title}
@@ -107,14 +107,14 @@ export function DesktopChatTextEditDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="space-y-4 px-6 py-6">
+        <div className="space-y-4 bg-[rgba(255,255,255,0.62)] px-6 py-6">
           {multiline ? (
             <TextAreaField
               autoFocus
@@ -123,7 +123,7 @@ export function DesktopChatTextEditDialog({
               placeholder={placeholder}
               rows={6}
               disabled={pending}
-              className="min-h-[180px] resize-none rounded-[12px] border-black/8 bg-white shadow-none"
+              className="min-h-[180px] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none"
             />
           ) : (
             <TextField
@@ -132,7 +132,7 @@ export function DesktopChatTextEditDialog({
               onChange={(event) => setDraft(event.target.value)}
               placeholder={placeholder}
               disabled={pending}
-              className="rounded-[10px] border-black/8 bg-white shadow-none"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
             />
           )}
 
@@ -147,7 +147,7 @@ export function DesktopChatTextEditDialog({
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-[10px] border-black/8 bg-white px-6 shadow-none hover:bg-[#efefef]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
             >
               取消
             </Button>

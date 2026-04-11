@@ -91,7 +91,7 @@ export function DesktopConversationContextMenu({
 
       <div
         style={{ left, top }}
-        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-black/8 bg-white py-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
+        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {onOpenWindow ? (
@@ -187,7 +187,7 @@ function ContextMenuButton({
       className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition ${
         danger
           ? "text-[#dc2626] hover:bg-[rgba(220,38,38,0.06)]"
-          : "text-[color:var(--text-primary)] hover:bg-[#f5f5f5]"
+          : "text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
       } disabled:cursor-not-allowed disabled:opacity-50`}
     >
       <span
@@ -205,5 +205,5 @@ function ContextMenuButton({
 }
 
 function MenuDivider() {
-  return <div className="mx-3 my-1 border-t border-black/6" />;
+  return <div className="mx-3 my-1 border-t border-[color:var(--border-faint)]" />;
 }
