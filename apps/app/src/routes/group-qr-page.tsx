@@ -19,6 +19,7 @@ import {
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
   createGroupInviteDeliveryBatchId,
   readGroupInviteDeliveryRecord,
@@ -78,6 +79,14 @@ export function GroupQrPage() {
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
   });
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   const inviteLink = useMemo(() => {
     if (typeof window === "undefined") {
