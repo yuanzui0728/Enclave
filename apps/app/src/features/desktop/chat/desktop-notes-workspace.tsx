@@ -12,7 +12,7 @@ import {
 
 type DesktopNotesWorkspaceProps = {
   selectedNoteId?: string;
-  onSelectNote?: (noteId: string) => void;
+  onSelectNote?: (noteId?: string) => void;
 };
 
 type EditorAction = {
@@ -147,6 +147,7 @@ export function DesktopNotesWorkspace({
     if (!nextNotes.length) {
       setActiveNoteId(null);
       setEditorValue("");
+      onSelectNote?.();
       return;
     }
 

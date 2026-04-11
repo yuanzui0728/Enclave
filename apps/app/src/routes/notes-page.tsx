@@ -36,7 +36,11 @@ export function NotesPage() {
     <DesktopNotesWorkspace
       selectedNoteId={selectedNoteId}
       onSelectNote={(noteId) => {
-        void navigate({ to: "/notes", hash: noteId, replace: true });
+        void navigate({
+          to: "/notes",
+          hash: noteId || undefined,
+          replace: true,
+        });
       }}
     />
   );

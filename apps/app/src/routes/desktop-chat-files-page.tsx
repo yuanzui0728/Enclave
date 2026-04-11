@@ -102,7 +102,9 @@ export function DesktopChatFilesPage() {
 
   useEffect(() => {
     if (!conversations.length) {
-      setSelectedConversationId(null);
+      if (selectedConversationId !== null) {
+        setSelectedConversationId(null);
+      }
       return;
     }
 
@@ -121,6 +123,10 @@ export function DesktopChatFilesPage() {
       conversations.some((item) => item.id === selectedConversationId)
     ) {
       return;
+    }
+
+    if (selectedConversationId !== null) {
+      setSelectedConversationId(null);
     }
   }, [conversations, routeState.conversationId, selectedConversationId]);
 
