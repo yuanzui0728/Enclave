@@ -172,11 +172,43 @@ export function SetupPage() {
       providerSetup.providerSaveMutation.error.message) ||
     null;
 
-  const readinessSummary = coreApiReady && providerReady
-    ? "远程接口和推理服务均已就绪，当前实例已经可以进入角色、回复逻辑和评测工作区。"
-    : coreApiReady
+  const setupNextAction = !coreApiReady
+    ? "先恢复远程 API"
+    : !providerReady
+      ? "保存并测试推理服务"
+      : !speechReady
+        ? "补语音转写链路"
+        : !digitalHumanSummary.ready
+          ? `处理数字人${digitalHumanSummary.statusLabel}`
+          : "进入角色 / 回复逻辑 / 评测工作区";
+  const readinessSummary = !coreApiReady
+    ? "先恢复远程世界接口，再继续配置推理服务。"
+    : !providerReady
       ? "远程接口已连通，当前只差推理服务配置。"
-      : "先恢复远程世界接口，再继续配置推理服务。";
+      : !speechReady
+        ? "远程接口和推理服务已就绪，当前需要补齐语音转写链路。"
+        : !digitalHumanSummary.ready
+          ? `远程接口、推理服务和语音链路已就绪，当前阻塞在数字人配置：${digitalHumanSummary.statusLabel}。`
+          : "远程接口、推理服务、语音和数字人链路均已就绪，当前实例已经可以进入角色、回复逻辑和评测工作区。";
+  const setupBlockerTitle = !coreApiReady
+    ? "当前阻塞：远程 API"
+    : !providerReady
+      ? "当前阻塞：推理服务"
+      : !speechReady
+        ? "当前阻塞：语音转写"
+        : !digitalHumanSummary.ready
+          ? `当前阻塞：数字人${digitalHumanSummary.statusLabel}`
+          : "当前状态：可继续联调";
+  const setupBlockerDescription = !coreApiReady
+    ? "先检查世界实例地址、反向代理和服务进程，再继续后续配置。"
+    : !providerReady
+      ? "先补模型、接口地址和 API Key，并完成一次探测。"
+      : !speechReady
+        ? systemStatusQuery.data?.inferenceGateway.speechMessage ??
+          "语音通话依赖语音转写，建议先补齐 STT 网关后再继续数字人视频通话联调。"
+        : !digitalHumanSummary.ready
+          ? `${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`
+          : "当前可以直接进入角色、回复逻辑和评测工作区，或继续发起真实数字人视频通话联调。";
   const setupFocusRows = [
     {
       label: "远程 API",
@@ -206,11 +238,7 @@ export function SetupPage() {
     },
     {
       label: "下一步",
-      value: !coreApiReady
-        ? "先恢复远程 API"
-        : !providerReady
-          ? "保存并测试推理服务"
-          : "进入角色 / 回复逻辑 / 评测工作区",
+      value: setupNextAction,
     },
   ];
 
@@ -234,9 +262,15 @@ export function SetupPage() {
           metrics={[
             { label: "远程 API", value: coreApiReady ? "已连通" : "待恢复" },
             { label: "推理服务", value: providerReady ? "已配置" : "待配置" },
+            { label: "数字人", value: digitalHumanSummary.statusLabel },
             { label: "调度器", value: schedulerReady ? "健康" : "待关注" },
             { label: "世界主人", value: String(systemStatusQuery.data?.worldSurface.ownerCount ?? 0) },
           ]}
+        />
+        <AdminCallout
+          tone={coreApiReady && providerReady && speechReady && digitalHumanSummary.ready ? "success" : "warning"}
+          title={setupBlockerTitle}
+          description={setupBlockerDescription}
         />
 
         <AdminInfoRows title="当前聚焦" rows={setupFocusRows} />
