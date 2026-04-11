@@ -40,6 +40,7 @@ import {
   AdminEmptyState,
   AdminFormSection as ConfigSection,
   AdminInfoRows,
+  AdminNoteList,
   AdminPageHero,
   AdminRecordCard,
   AdminSelectField as SelectFieldBlock,
@@ -1449,7 +1450,10 @@ function CharacterInspectorPanel({
 
       <Card className="bg-[color:var(--surface-console)]">
         <SectionHeading>备注</SectionHeading>
-        <NoteList notes={query.data.notes} className="mt-4" />
+        <AdminNoteList
+          className="mt-4"
+          items={query.data.notes.map((note) => formatReplyLogicText(note))}
+        />
       </Card>
     </>
   );
@@ -1533,7 +1537,7 @@ function ReplyPreviewPanel({
         <div className="mt-6 space-y-6 border-t border-[color:var(--border-faint)] pt-6">
           <ActorSnapshotCard actor={preview.actor} title="候选消息预演快照" />
           <AdminSubpanel title="预演备注" contentClassName="mt-3">
-            <NoteList notes={preview.notes} />
+            <AdminNoteList items={preview.notes.map((note) => formatReplyLogicText(note))} />
           </AdminSubpanel>
         </div>
       ) : null}
@@ -1589,7 +1593,11 @@ function ConversationInspectorPanel({
         <AdminRecordCard
           className="mt-4"
           title={formatReplyLogicText(query.data.branchSummary.title)}
-          details={<NoteList notes={query.data.branchSummary.notes} />}
+          details={
+            <AdminNoteList
+              items={query.data.branchSummary.notes.map((note) => formatReplyLogicText(note))}
+            />
+          }
         />
       </Card>
 
@@ -1639,7 +1647,7 @@ function ActorSnapshotCard({
             <MetricCard label="世界上下文" value={actor.worldContextText || "暂无快照"} />
           </div>
           <AdminSubpanel title="角色备注" contentClassName="mt-3">
-            <NoteList notes={actor.notes} />
+            <AdminNoteList items={actor.notes.map((note) => formatReplyLogicText(note))} />
           </AdminSubpanel>
         </div>
 
@@ -1685,16 +1693,11 @@ function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
         </div>
       ) : null}
       {gate.hintMessages.length ? (
-        <ul className="mt-3 space-y-2 text-xs leading-6 text-[color:var(--text-muted)]">
-          {gate.hintMessages.map((message) => (
-            <li
-              key={message}
-              className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2"
-            >
-              {message}
-            </li>
-          ))}
-        </ul>
+        <AdminNoteList
+          className="mt-3"
+          itemClassName="text-xs leading-6 text-[color:var(--text-muted)]"
+          items={gate.hintMessages}
+        />
       ) : null}
     </AdminSubpanel>
   );
@@ -3389,31 +3392,6 @@ function RuntimeRulesEditorCard({
         </>
       )}
     </Card>
-  );
-}
-
-function NoteList({
-  notes,
-  className,
-}: {
-  notes: string[];
-  className?: string;
-}) {
-  if (!notes.length) {
-    return <div className={className} />;
-  }
-
-  return (
-    <ul className={className ? `${className} space-y-2` : "space-y-2"}>
-      {notes.map((note) => (
-        <li
-          key={note}
-          className="rounded-2xl border border-[color:var(--border-faint)] bg-white/80 px-3 py-2 text-sm leading-7 text-[color:var(--text-secondary)]"
-        >
-          {formatReplyLogicText(note)}
-        </li>
-      ))}
-    </ul>
   );
 }
 
