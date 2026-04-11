@@ -3835,7 +3835,7 @@ function DesktopScreenshotEditor({
                             {item.label}
                           </span>
                           <span className="text-right">
-                            <span className="block text-white/92">
+                            <span className="inline-flex rounded-[7px] border border-white/10 bg-white/8 px-2 py-1 text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                               {item.primary}
                             </span>
                             <span className="mt-0.5 block text-[10px] text-white/50">
