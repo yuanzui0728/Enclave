@@ -429,10 +429,37 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     speech.clearResult();
   };
 
+  const handleRetryDigitalHumanConnection = () => {
+    if (!isVideoMode || leavingScreen) {
+      return;
+    }
+
+    setRecordButtonHolding(false);
+    setCallTipsDismissed(true);
+    activeCall.cancelRecordingTurn();
+    activeCall.stopReplyPlayback();
+    activeCall.turnMutation.reset();
+    speech.clearResult();
+    digitalHumanCall.retrySession();
+  };
+
   const showTurnRecoveryActions =
     activeCall.turnMutation.error instanceof Error || Boolean(speech.error);
   const showPlaybackRecoveryAction =
-    Boolean(activeCall.playerError) && Boolean(lastAssistantText);
+    !isVideoMode && Boolean(activeCall.playerError) && Boolean(lastAssistantText);
+  const hasVideoSessionFailure =
+    isVideoMode && Boolean(digitalHumanCall.sessionError);
+  const hasVideoRenderFailure =
+    isVideoMode && digitalHumanCall.session?.renderStatus === "failed";
+  const hasVideoPlaybackFailure =
+    isVideoMode && Boolean(activeCall.playerError) && Boolean(lastAssistantText);
+  const videoRecoveryMessage = hasVideoSessionFailure
+    ? "当前数字人会话没有恢复成功。你可以重试连接数字人，或者先改用语音通话继续聊。"
+    : hasVideoRenderFailure
+      ? "这一轮数字人画面没有成功生成，当前已回到文字加语音链路。你可以重试连接数字人，或者先改用语音通话继续聊。"
+      : hasVideoPlaybackFailure
+        ? "数字人回复已经生成，但浏览器没有自动播报。你可以立即播放这一句，或继续下一轮对话。"
+        : null;
 
   useEffect(() => {
     if (
@@ -681,9 +708,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               }
               statusLabel={statusLabel}
               statusHint={statusHint}
-              onRetryRender={() => {
-                digitalHumanCall.retrySession();
-              }}
             />
 
             <div className="absolute right-4 top-4 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
@@ -783,11 +807,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {isVideoMode && digitalHumanCall.sessionError ? (
             <ErrorBlock message={digitalHumanCall.sessionError} />
           ) : null}
-          {isVideoMode && digitalHumanCall.sessionError ? (
-            <InlineNotice tone="info">
-              这类失败通常是会话网关瞬时不可用。你可以先点“重新连接数字人”，不行再切到语音通话继续聊。
-            </InlineNotice>
-          ) : null}
           {leavingScreen ? (
             <InlineNotice tone="info">
               正在结束当前通话并返回聊天，请稍候。
@@ -797,8 +816,65 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
           {speech.error ? <ErrorBlock message={speech.error} /> : null}
-          {activeCall.playerError ? (
+          {!isVideoMode && activeCall.playerError ? (
             <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
+          ) : null}
+          {videoRecoveryMessage ? (
+            <InlineNotice
+              tone={
+                hasVideoPlaybackFailure &&
+                !hasVideoSessionFailure &&
+                !hasVideoRenderFailure
+                  ? "info"
+                  : "warning"
+              }
+            >
+              {videoRecoveryMessage}
+            </InlineNotice>
+          ) : null}
+          {videoRecoveryMessage ? (
+            <div className="flex flex-wrap gap-2">
+              {(hasVideoSessionFailure || hasVideoRenderFailure) ? (
+                <button
+                  type="button"
+                  onClick={handleRetryDigitalHumanConnection}
+                  disabled={
+                    leavingScreen ||
+                    digitalHumanCall.sessionState === "connecting"
+                  }
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                >
+                  <RotateCcw size={16} />
+                  重试连接数字人
+                </button>
+              ) : null}
+              {(hasVideoSessionFailure || hasVideoRenderFailure) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleSwitchToVoiceCall();
+                  }}
+                  disabled={leavingScreen}
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                >
+                  <PhoneOff size={16} />
+                  改用语音通话
+                </button>
+              ) : null}
+              {hasVideoPlaybackFailure ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void activeCall.replayLastTurn();
+                  }}
+                  disabled={leavingScreen}
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                >
+                  <Volume2 size={16} />
+                  立即播放回复
+                </button>
+              ) : null}
+            </div>
           ) : null}
           {showTurnRecoveryActions || showPlaybackRecoveryAction ? (
             <div className="flex flex-wrap gap-2">
@@ -863,49 +939,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           />
         </div>
 
-        <div className="mt-auto pt-6">
+          <div className="mt-auto pt-6">
           <div className="flex flex-wrap items-center justify-center gap-3">
-            {isVideoMode && digitalHumanCall.sessionError ? (
-              <button
-                type="button"
-                onClick={() => {
-                  digitalHumanCall.retrySession();
-                }}
-                disabled={
-                  digitalHumanCall.sessionState === "connecting" || leavingScreen
-                }
-                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
-              >
-                <RotateCcw size={16} />
-                重新连接数字人
-              </button>
-            ) : null}
-            {isVideoMode && digitalHumanCall.sessionError ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleSwitchToVoiceCall();
-                }}
-                disabled={leavingScreen}
-                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
-              >
-                <PhoneOff size={16} />
-                改用语音通话
-              </button>
-            ) : null}
-            {activeCall.playerError && lastAssistantText ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void activeCall.replayLastTurn();
-                }}
-                disabled={leavingScreen}
-                className="flex h-12 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
-              >
-                <Volume2 size={16} />
-                点按播放回复
-              </button>
-            ) : null}
             {isVideoMode ? (
               <button
                 type="button"
