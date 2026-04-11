@@ -78,7 +78,10 @@ export function DesktopOfficialAccountsWorkspace({
   });
 
   const effectiveAccountId = useMemo(() => {
-    if (selectedAccountId) {
+    if (
+      selectedAccountId &&
+      (accountsQuery.data ?? []).some((account) => account.id === selectedAccountId)
+    ) {
       return selectedAccountId;
     }
 
@@ -100,8 +103,21 @@ export function DesktopOfficialAccountsWorkspace({
     enabled: Boolean(effectiveAccountId),
   });
 
-  const activeArticleId =
-    selectedArticleId ?? accountDetailQuery.data?.articles[0]?.id;
+  const activeArticleId = useMemo(() => {
+    if (
+      selectedArticleId &&
+      (pinnedArticleQuery.isLoading || pinnedArticleQuery.data?.id === selectedArticleId)
+    ) {
+      return selectedArticleId;
+    }
+
+    return accountDetailQuery.data?.articles[0]?.id;
+  }, [
+    accountDetailQuery.data?.articles,
+    pinnedArticleQuery.data?.id,
+    pinnedArticleQuery.isLoading,
+    selectedArticleId,
+  ]);
 
   const articleDetailQuery = useQuery({
     queryKey: ["app-official-account-reader", baseUrl, activeArticleId],
