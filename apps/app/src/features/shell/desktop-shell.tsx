@@ -104,6 +104,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const runtimeConfig = useAppRuntimeConfig();
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
+  const appTitle = runtimeConfig.publicAppName.trim() || "Yinjie";
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const [desktopWindow, setDesktopWindow] =
     useState<DesktopWindowHandle | null>(null);
@@ -261,7 +262,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   const shellInsetClass = nativeDesktopShell
     ? "rounded-none"
-    : "m-2 rounded-[30px]";
+    : "m-2 rounded-[20px]";
 
   const handleTitleBarMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.button !== 0 || !desktopWindow) {
@@ -346,19 +347,19 @@ export function DesktopShell({ children }: PropsWithChildren) {
       <div
         className={cn(
           nativeDesktopShell
-            ? "relative flex h-screen flex-col overflow-hidden bg-[linear-gradient(180deg,#fffdf7,#fff8ee)]"
-            : "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[rgba(249,115,22,0.12)] bg-[linear-gradient(180deg,#fffdf7,#fff8ee)] shadow-[var(--shadow-shell)]",
+            ? "relative flex h-screen flex-col overflow-hidden bg-[color:var(--bg-canvas)]"
+            : "relative flex h-[calc(100vh-16px)] flex-col overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] shadow-[var(--shadow-shell)]",
           shellInsetClass,
         )}
       >
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 top-0 h-64 w-64 rounded-full bg-[rgba(251,191,36,0.18)] blur-3xl" />
-          <div className="absolute right-0 top-20 h-52 w-52 rounded-full bg-[rgba(249,115,22,0.12)] blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 h-52 w-52 rounded-full bg-[rgba(16,185,129,0.09)] blur-3xl" />
+          <div className="absolute left-[-8%] top-0 h-56 w-56 rounded-full bg-[rgba(7,193,96,0.12)] blur-3xl" />
+          <div className="absolute right-[-4%] top-[10%] h-48 w-48 rounded-full bg-[rgba(56,189,248,0.08)] blur-3xl" />
+          <div className="absolute bottom-[-6%] left-1/3 h-44 w-44 rounded-full bg-[rgba(148,163,184,0.08)] blur-3xl" />
         </div>
 
         {nativeDesktopShell && !standaloneDesktopRoute ? (
-          <header className="relative z-10 flex h-16 shrink-0 items-center gap-3 border-b border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.86)] px-5 backdrop-blur-2xl">
+          <header className="relative z-10 flex h-14 shrink-0 items-center gap-3 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.74)] px-4 backdrop-blur-xl">
             <div
               className={cn(
                 "flex min-w-0 flex-1 select-none items-center gap-3",
@@ -374,16 +375,19 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 void desktopWindow.toggleMaximize();
               }}
             >
-              <div className="flex h-10 items-center gap-3 rounded-full border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-3 shadow-[var(--shadow-soft)]">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-gradient)] text-[11px] font-semibold text-[color:var(--text-on-brand)] shadow-[0_10px_24px_rgba(255,138,61,0.24)]">
-                  YJ
+              <div className="flex min-w-0 items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] px-3 py-1.5 shadow-[var(--shadow-soft)]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--brand-gradient)] text-[13px] font-semibold text-[color:var(--text-on-brand)]">
+                  隐
                 </div>
-                <div className="leading-none">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    Yinjie
+                <div className="min-w-0 leading-none">
+                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                    {appTitle}
                   </div>
-                  <div className="mt-1 text-[11px] tracking-[0.22em] text-[color:var(--text-dim)]">
-                    DESKTOP WORLD
+                  <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
+                    <span className="truncate">
+                      {ownerName?.trim() || "世界主人"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -431,13 +435,13 @@ export function DesktopShell({ children }: PropsWithChildren) {
           </header>
         ) : null}
 
-        <div
-          className={cn(
-            "relative z-10 flex min-h-0 flex-1",
-            standaloneDesktopRoute ? undefined : "gap-4 p-4",
-            nativeDesktopShell && !standaloneDesktopRoute ? "pt-3" : undefined,
-          )}
-        >
+          <div
+            className={cn(
+              "relative z-10 flex min-h-0 flex-1",
+              standaloneDesktopRoute ? undefined : "gap-3 p-3",
+              nativeDesktopShell && !standaloneDesktopRoute ? "pt-2" : undefined,
+            )}
+          >
           {isMoreMenuOpen && !standaloneDesktopRoute ? (
             <button
               type="button"
@@ -448,21 +452,21 @@ export function DesktopShell({ children }: PropsWithChildren) {
           ) : null}
 
           {standaloneDesktopRoute ? null : (
-            <aside className="hidden w-[104px] shrink-0 rounded-[30px] border border-[rgba(249,115,22,0.10)] bg-[linear-gradient(180deg,rgba(255,254,250,0.95),rgba(255,249,238,0.90))] p-3 shadow-[var(--shadow-section)] backdrop-blur-2xl lg:flex lg:flex-col">
+            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/6 bg-[linear-gradient(180deg,#2f393c,#252d30)] p-2.5 shadow-[0_18px_36px_rgba(15,23,42,0.20)] lg:flex lg:flex-col">
               <Link
                 to="/tabs/profile"
                 className={cn(
-                  "group mb-3 flex justify-center rounded-[22px] px-2 py-1.5",
-                  profileRouteActive ? "bg-white/92 shadow-[var(--shadow-card)]" : undefined,
+                  "group mb-3 flex justify-center rounded-[16px] px-2 py-1.5",
+                  profileRouteActive ? "bg-white/10 shadow-[0_8px_18px_rgba(15,23,42,0.18)]" : undefined,
                 )}
                 aria-label="打开我的资料"
               >
                 <div
                   className={cn(
-                    "rounded-[22px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    "rounded-[16px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     profileRouteActive
-                      ? "border-[color:var(--border-brand)] bg-[rgba(249,115,22,0.10)] shadow-[0_12px_28px_rgba(255,138,61,0.18)]"
-                      : "border-transparent group-hover:border-[color:var(--border-faint)] group-hover:bg-white/88 group-hover:shadow-[var(--shadow-card)]",
+                      ? "border-[rgba(7,193,96,0.42)] bg-[rgba(7,193,96,0.12)] shadow-[0_10px_24px_rgba(7,193,96,0.12)]"
+                      : "border-transparent bg-white/4 group-hover:border-white/12 group-hover:bg-white/8",
                   )}
                 >
                   <AvatarChip
@@ -485,7 +489,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
               </nav>
 
-              <div className="relative mt-3 border-t border-[rgba(249,115,22,0.10)] pt-3">
+              <div className="relative mt-3 border-t border-white/8 pt-3">
                 <div className="flex flex-col gap-2">
                   {desktopBottomNavItems.map((item) => (
                     <DesktopActionButton
@@ -510,9 +514,9 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
 
                 {isMoreMenuOpen ? (
-                  <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[248px] rounded-[26px] border border-[rgba(255,255,255,0.7)] bg-[rgba(255,252,246,0.98)] p-2 shadow-[0_24px_48px_rgba(135,78,24,0.18)] backdrop-blur-2xl">
-                    <div className="px-3 pb-2 pt-2 text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-dim)]">
-                      更多
+                  <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[232px] rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.97)] p-2 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
+                    <div className="px-3 pb-2 pt-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                      更多功能
                     </div>
                     <div className="space-y-1">
                       {desktopMoreMenuItems.map((item) => (
@@ -525,14 +529,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
                         />
                       ))}
                     </div>
-                    <div className="mt-2 rounded-[18px] bg-[rgba(255,248,240,0.88)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-dim)]">
-                      `Ctrl/⌘ + K` 搜一搜
+                    <div className="mt-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[11px] leading-6 text-[color:var(--text-dim)]">
+                      ⌘/Ctrl + K 搜索
                       <br />
-                      `Ctrl/⌘ + ,` 设置
+                      ⌘/Ctrl + , 设置
                       <br />
-                      `Ctrl/⌘ + Shift + F` 聊天文件
-                      <br />
-                      `Ctrl/⌘ + L` 锁定
+                      ⌘/Ctrl + Shift + F 聊天文件
                     </div>
                   </div>
                 ) : null}
@@ -545,7 +547,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               "min-w-0 flex-1 overflow-hidden",
               standaloneDesktopRoute
                 ? "bg-transparent"
-                : "rounded-[32px] border border-[rgba(249,115,22,0.10)] bg-[rgba(255,253,248,0.92)] shadow-[var(--shadow-section)] backdrop-blur-2xl",
+                : "rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.86)] shadow-[var(--shadow-section)] backdrop-blur-xl",
             )}
           >
             {children}
@@ -553,10 +555,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
         </div>
 
         {isLocked ? (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(22,18,14,0.48)] p-6 backdrop-blur-md">
-            <div className="w-full max-w-md rounded-[32px] border border-[rgba(255,255,255,0.28)] bg-[rgba(255,252,247,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(17,24,39,0.34)] p-6 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-[24px] border border-white/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(249,115,22,0.10)]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(7,193,96,0.10)]">
                   <AvatarChip
                     name={ownerName ?? "世界主人"}
                     src={ownerAvatar}
@@ -573,7 +575,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,249,242,0.88)] p-4">
+              <div className="mt-5 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   {lockMode === "setup" ? (
                     <ShieldCheck
@@ -608,12 +610,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
 
               {lockNotice ? (
-                <div className="mt-4 rounded-[18px] bg-[rgba(34,197,94,0.10)] px-4 py-3 text-sm text-[#15803d]">
+                <div className="mt-4 rounded-[14px] bg-[rgba(7,193,96,0.10)] px-4 py-3 text-sm text-[#0b7a3b]">
                   {lockNotice}
                 </div>
               ) : null}
               {lockError ? (
-                <div className="mt-4 rounded-[18px] bg-[rgba(239,68,68,0.10)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
+                <div className="mt-4 rounded-[14px] bg-[rgba(239,68,68,0.10)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
                   {lockError}
                 </div>
               ) : null}
@@ -637,7 +639,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder="设置 4 到 6 位数字口令"
-                    className="h-12 rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <TextField
                     value={setupPasscodeConfirm}
@@ -656,13 +658,13 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder="再次输入口令确认"
-                    className="h-12 rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
                     <Button
                       type="button"
                       onClick={submitSetupLock}
-                      className="rounded-2xl"
+                      className="rounded-[14px]"
                     >
                       设置口令并锁定
                     </Button>
@@ -670,7 +672,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       type="button"
                       variant="secondary"
                       onClick={closeDesktopLock}
-                      className="rounded-2xl"
+                      className="rounded-[14px]"
                     >
                       取消锁定
                     </Button>
@@ -695,13 +697,13 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder="输入桌面锁定口令"
-                    className="h-12 rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
                     <Button
                       type="button"
                       onClick={submitUnlock}
-                      className="rounded-2xl"
+                      className="rounded-[14px]"
                     >
                       解锁继续使用
                     </Button>
@@ -783,10 +785,10 @@ function DesktopWindowButton({
         onClick();
       }}
       className={cn(
-        "flex h-9 w-9 items-center justify-center rounded-full border text-[color:var(--text-muted)] transition-[background-color,color,border-color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5",
+        "flex h-8 w-8 items-center justify-center rounded-[10px] border text-[color:var(--text-muted)] transition-[background-color,color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         danger
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-danger)] hover:bg-[color:var(--state-danger-bg)] hover:text-[color:var(--state-danger-text)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-subtle)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}
@@ -808,18 +810,18 @@ function DesktopNavLink({
       key={item.to}
       to={item.to as never}
       className={cn(
-        "group flex flex-col items-center gap-2 rounded-[22px] px-3 py-3 text-[11px] transition-[background-color,color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "bg-white/92 text-[color:var(--brand-primary)] shadow-[var(--shadow-card)]"
-          : "text-[color:var(--text-secondary)] hover:bg-white/88 hover:text-[color:var(--text-primary)]",
+          ? "bg-white/10 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+          : "text-white/68 hover:bg-white/7 hover:text-white",
       )}
     >
       <div
         className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-[18px] border transition-[background-color,border-color,filter]",
+          "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
           active
-            ? "border-[color:var(--border-brand)] bg-[rgba(249,115,22,0.12)] [filter:drop-shadow(0_0_8px_rgba(249,115,22,0.35))]"
-            : "border-transparent bg-[rgba(255,255,255,0.82)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white",
+            ? "border-[rgba(7,193,96,0.32)] bg-[rgba(7,193,96,0.18)] text-[#b7ffd7]"
+            : "border-transparent bg-white/6 text-white/80 group-hover:border-white/10 group-hover:bg-white/10",
         )}
       >
         <Icon size={18} />
@@ -846,18 +848,18 @@ function DesktopActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full flex-col items-center gap-2 rounded-[22px] px-3 py-3 text-[11px] transition-[background-color,color,box-shadow,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex w-full flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "bg-white/92 text-[color:var(--brand-primary)] shadow-[var(--shadow-card)]"
-          : "text-[color:var(--text-secondary)] hover:bg-white/88 hover:text-[color:var(--text-primary)]",
+          ? "bg-white/10 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
+          : "text-white/68 hover:bg-white/7 hover:text-white",
       )}
     >
       <div
         className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-[18px] border transition-[background-color,border-color,filter]",
+          "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
           active
-            ? "border-[color:var(--border-brand)] bg-[rgba(249,115,22,0.12)] [filter:drop-shadow(0_0_8px_rgba(249,115,22,0.35))]"
-            : "border-transparent bg-[rgba(255,255,255,0.82)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white",
+            ? "border-[rgba(7,193,96,0.32)] bg-[rgba(7,193,96,0.18)] text-[#b7ffd7]"
+            : "border-transparent bg-white/6 text-white/80 group-hover:border-white/10 group-hover:bg-white/10",
         )}
       >
         <Icon size={18} />
@@ -881,9 +883,9 @@ function DesktopMoreMenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(255,138,61,0.08)]"
+      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.08)]"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(255,255,255,0.88)] text-[color:var(--brand-primary)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
