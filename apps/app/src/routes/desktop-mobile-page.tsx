@@ -331,14 +331,14 @@ export function DesktopMobilePage() {
   }
 
   return (
-    <div className="h-full overflow-auto px-6 py-6">
+    <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
       <DesktopEntryShell
         badge="Mobile"
         title="手机接力把桌面内容带到移动端"
         description="手机入口先收口真实的跨端继续能力：用当前远程世界的会话、公众号和系统状态做面板内容，再把目标链接复制给手机端继续查看。"
         aside={
           <div className="space-y-4">
-            <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/90 p-5 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center gap-4">
                 <AvatarChip
                   name={ownerName ?? "世界主人"}
@@ -366,13 +366,13 @@ export function DesktopMobilePage() {
           {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
 
           {callHandoffState && callHandoffPath ? (
-            <section className="rounded-[28px] border border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.96),rgba(255,255,255,0.98))] p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[18px] border border-[rgba(7,193,96,0.16)] bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                     <RadioTower
                       size={16}
-                      className="text-[#2563eb]"
+                      className="text-[#1f8f4f]"
                     />
                     <span>{callHandoffKindLabel}接力</span>
                   </div>
@@ -393,7 +393,7 @@ export function DesktopMobilePage() {
                       replace: true,
                     })
                   }
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-[rgba(37,99,235,0.18)] bg-white/80 px-4 text-xs font-medium text-[#2563eb] transition hover:bg-white"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-[#f7f7f7] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef]"
                 >
                   收起
                 </button>
@@ -411,14 +411,14 @@ export function DesktopMobilePage() {
                       setNotice,
                     })
                   }
-                  className="rounded-full"
+                  className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
                 >
                   <Copy size={14} />
                   复制到手机
                 </Button>
                 <Link
                   to={callHandoffPath as never}
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                 >
                   桌面打开聊天
                 </Link>
@@ -440,7 +440,7 @@ export function DesktopMobilePage() {
           ) : null}
 
           <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <Smartphone
                   size={16}
@@ -456,7 +456,7 @@ export function DesktopMobilePage() {
                 {quickEntries.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.84)] p-4"
+                    className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
                   >
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
                       {item.label}
@@ -476,14 +476,14 @@ export function DesktopMobilePage() {
                             setNotice,
                           })
                         }
-                        className="rounded-full"
+                        className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
                       >
                         <Copy size={14} />
                         复制到手机
                       </Button>
                       <Link
                         to={item.to as never}
-                        className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                        className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                       >
                         桌面打开
                       </Link>
@@ -493,7 +493,7 @@ export function DesktopMobilePage() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <Wifi size={16} className="text-[color:var(--brand-primary)]" />
                 <span>同步概览</span>
@@ -553,7 +553,7 @@ export function DesktopMobilePage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -567,7 +567,7 @@ export function DesktopMobilePage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => void conversationsQuery.refetch()}
-                  className="rounded-full"
+                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -613,7 +613,7 @@ export function DesktopMobilePage() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -627,7 +627,7 @@ export function DesktopMobilePage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => void officialAccountsQuery.refetch()}
-                  className="rounded-full"
+                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                 >
                   <RefreshCw size={14} />
                   刷新
@@ -1248,7 +1248,7 @@ function RecentConversationRow({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip name={item.title} size="wechat" />
         <div className="min-w-0 flex-1">
@@ -1263,7 +1263,11 @@ function RecentConversationRow({
             {description}
           </div>
           <div className="mt-3">
-            <Button size="sm" onClick={onCopy} className="rounded-full">
+            <Button
+              size="sm"
+              onClick={onCopy}
+              className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+            >
               <Copy size={14} />
               发到手机继续
             </Button>
@@ -1288,7 +1292,7 @@ function RecentArticleRow({
   }
 
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip name={account.name} src={account.avatar} size="wechat" />
         <div className="min-w-0 flex-1">
@@ -1303,7 +1307,11 @@ function RecentArticleRow({
             {account.recentArticle.summary}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" onClick={onCopyArticle} className="rounded-full">
+            <Button
+              size="sm"
+              onClick={onCopyArticle}
+              className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+            >
               <Copy size={14} />
               发文章到手机
             </Button>
@@ -1311,7 +1319,7 @@ function RecentArticleRow({
               variant="secondary"
               size="sm"
               onClick={onCopyAccount}
-              className="rounded-full"
+              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
             >
               <ArrowUpRight size={14} />
               发主页到手机
@@ -1343,7 +1351,7 @@ function MiniProgramHandoffCard({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/86 p-4">
+    <div className="rounded-[12px] border border-black/6 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1354,7 +1362,7 @@ function MiniProgramHandoffCard({
             {pinned ? " · 已加入我的小程序" : ""}
           </div>
         </div>
-        <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+        <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[#1f8f4f]">
           {launchCount} 次
         </div>
       </div>
@@ -1375,7 +1383,11 @@ function MiniProgramHandoffCard({
       </div>
 
       <div className="mt-4">
-        <Button size="sm" onClick={onCopy} className="rounded-full">
+        <Button
+          size="sm"
+          onClick={onCopy}
+          className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+        >
           <Copy size={14} />
           {buttonLabel}
         </Button>
@@ -1386,7 +1398,7 @@ function MiniProgramHandoffCard({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/88 p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -1397,7 +1409,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] px-4 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-3">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {value}
