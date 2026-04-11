@@ -296,6 +296,13 @@ export function DesktopChatWorkspace({
       );
     });
   }, [searchTerm, serviceConversations]);
+  const selectedConversationExists = useMemo(
+    () =>
+      selectedConversationId
+        ? conversations.some((conversation) => conversation.id === selectedConversationId)
+        : false,
+    [conversations, selectedConversationId],
+  );
 
   const activeConversation = useMemo(() => {
     if (subscriptionInboxActive || serviceConversationActive) {
@@ -310,7 +317,7 @@ export function DesktopChatWorkspace({
       return (
         conversations.find(
           (conversation) => conversation.id === selectedConversationId,
-        ) ?? (standaloneWindow ? null : filteredConversations[0])
+        ) ?? null
       );
     }
 
@@ -322,6 +329,34 @@ export function DesktopChatWorkspace({
   }, [
     conversations,
     filteredConversations,
+    selectedConversationId,
+    serviceConversationActive,
+    standaloneWindow,
+    subscriptionInboxActive,
+  ]);
+
+  useEffect(() => {
+    if (
+      standaloneWindow ||
+      !selectedConversationId ||
+      subscriptionInboxActive ||
+      serviceConversationActive ||
+      conversationsQuery.isLoading ||
+      conversationsQuery.isError ||
+      selectedConversationExists
+    ) {
+      return;
+    }
+
+    setRightPanelMode(null);
+    setDetailsAnnouncementRequest(null);
+    setDetailsMemberSearchRequest(null);
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    navigate,
+    selectedConversationExists,
     selectedConversationId,
     serviceConversationActive,
     standaloneWindow,

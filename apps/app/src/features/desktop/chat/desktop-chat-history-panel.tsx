@@ -103,8 +103,12 @@ export function DesktopChatHistoryPanel({
   const [historyLimit, setHistoryLimit] = useState(INITIAL_HISTORY_LIMIT);
 
   useEffect(() => {
+    setKeyword("");
+    setTypeFilter("all");
+    setDateFilter("all");
     setHistoryLimit(INITIAL_HISTORY_LIMIT);
     setSpecificDate("");
+    setSenderFilter("all");
   }, [conversation.id]);
 
   const messagesQuery = useQuery({
