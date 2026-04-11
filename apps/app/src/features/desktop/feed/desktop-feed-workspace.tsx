@@ -290,8 +290,8 @@ export function DesktopFeedWorkspace({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[#f5f5f5]">
-      <section className="min-w-0 flex-1 border-r border-black/6 bg-[#f3f3f3]">
+    <div className="relative flex h-full min-h-0 bg-[#efefef]">
+      <section className="min-w-0 flex-1 border-r border-black/6 bg-[#f6f6f6]">
         <div className="flex h-full min-h-0 flex-col">
           <DesktopFeedToolbar
             activeFilter={activeFilter}
@@ -319,9 +319,9 @@ export function DesktopFeedWorkspace({
 
           <div
             ref={scrollViewportRef}
-            className="min-h-0 flex-1 overflow-auto px-6 py-5"
+            className="min-h-0 flex-1 overflow-auto px-7 py-6"
           >
-            <div className="mx-auto w-full max-w-[720px]">
+            <div className="mx-auto w-full max-w-[760px]">
               <DesktopFeedList
                 commentDrafts={commentDrafts}
                 commentPendingPostId={commentPendingPostId}
