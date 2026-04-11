@@ -57,8 +57,8 @@ type MobileDiscoverEntry = {
     | "games"
     | "miniPrograms";
   label: string;
-  description: string;
-  detail: string;
+  badge: string;
+  summary: string;
   icon: typeof Users;
   iconClassName: string;
   to:
@@ -71,31 +71,31 @@ type MobileDiscoverEntry = {
     | "/discover/mini-programs";
 };
 
-const mobileDiscoverEntries: MobileDiscoverEntry[] = [
+const socialDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "moments",
     label: "朋友圈",
-    description: "仅好友可见",
-    detail: "记录只给好友看的生活片段，把更近的情绪留在熟人关系里。",
+    badge: "朋友",
+    summary: "只给朋友看的生活片段和熟人近况。",
     icon: Users,
-    iconClassName: "bg-[linear-gradient(135deg,#2f7a3f,#2a6c3a)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,#38b16d,#1f9d55)] text-white",
     to: "/discover/moments",
   },
   {
     key: "encounter",
     label: "摇一摇",
-    description: "随机相遇",
-    detail: "随手触发一场新相遇，让世界主动回应你。",
+    badge: "随机",
+    summary: "让世界主动给你一场新的相遇。",
     icon: Sparkles,
     iconClassName:
-      "bg-[var(--brand-gradient)] text-[color:var(--text-on-brand)]",
+      "bg-[linear-gradient(135deg,#22c55e,#07c160)] text-[color:var(--text-on-brand)]",
     to: "/discover/encounter",
   },
   {
     key: "scene",
     label: "场景相遇",
-    description: "按地点触发",
-    detail: "先选一个地点，再让世界按场景把新的靠近方式推到你面前。",
+    badge: "地点",
+    summary: "先选地点，再让角色按场景靠近你。",
     icon: Sparkles,
     iconClassName: "bg-[linear-gradient(135deg,#16a34a,#0f766e)] text-white",
     to: "/discover/scene",
@@ -103,17 +103,20 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "feed",
     label: "广场动态",
-    description: "居民公开可见",
-    detail: "看看世界里的居民正在说什么，也把自己的这一刻发到居民广场。",
+    badge: "公开",
+    summary: "看看居民们正在说什么，也发一条给世界看。",
     icon: Newspaper,
-    iconClassName: "bg-[linear-gradient(135deg,#5d67c9,#4951a3)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,#4f7cff,#2f5fe6)] text-white",
     to: "/discover/feed",
   },
+];
+
+const contentDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "channels",
     label: "视频号",
-    description: "AI 视频与内容流",
-    detail: "按微信视频号的浏览节奏收口 AI 生成短视频和内容卡片，移动端从这里进入沉浸式内容流。",
+    badge: "内容",
+    summary: "浏览 AI 生成短视频和持续更新的内容流。",
     icon: PlaySquare,
     iconClassName: "bg-[linear-gradient(135deg,#ff8a3d,#ff5f45)] text-white",
     to: "/discover/channels",
@@ -121,8 +124,8 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "games",
     label: "游戏",
-    description: "最近玩过与推荐",
-    detail: "按微信游戏中心的节奏承接最近玩过、好友热玩、推荐位和活动位，移动端从发现页进入。",
+    badge: "娱乐",
+    summary: "进入游戏中心，继续最近玩过和推荐内容。",
     icon: Gamepad2,
     iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
     to: "/discover/games",
@@ -130,9 +133,8 @@ const mobileDiscoverEntries: MobileDiscoverEntry[] = [
   {
     key: "miniPrograms",
     label: "小程序",
-    description: "最近使用与我的小程序",
-    detail:
-      "把最近使用、我的小程序、推荐位和分类浏览收在一起，移动端按微信一样从发现页进入。",
+    badge: "工具",
+    summary: "最近使用、我的小程序和推荐入口都在这里。",
     icon: Blocks,
     iconClassName:
       "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
@@ -623,49 +625,93 @@ export function DiscoverPage() {
   }
 
   return (
-    <AppPage className="space-y-5">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar title="发现" titleAlign="center" />
 
-      <div className="space-y-3">
-        {mobileDiscoverEntries.map((item) => {
-          const Icon = item.icon;
+      <div className="pb-8">
+        <div className="px-4 py-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+          从这里继续打开朋友动态、世界相遇和内容入口。
+        </div>
 
-          return (
-            <Link
-              key={item.key}
-              to={item.to}
-              className="flex items-center gap-4 rounded-[28px] border border-white/80 bg-white/88 px-4 py-4 shadow-[var(--shadow-section)] transition-[transform,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
-            >
-              <div
-                className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px]",
-                  item.iconClassName,
-                )}
-              >
-                <Icon size={20} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                    {item.label}
-                  </div>
-                  <div className="rounded-full bg-[rgba(255,138,61,0.08)] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-[color:var(--brand-primary)]">
-                    {item.description}
-                  </div>
-                </div>
-                <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-                  {item.detail}
-                </div>
-              </div>
-              <ChevronRight
-                size={16}
-                className="shrink-0 text-[color:var(--text-dim)]"
-              />
-            </Link>
-          );
-        })}
+        <DiscoverMobileSection
+          title="社交与动态"
+          items={socialDiscoverEntries}
+        />
+        <DiscoverMobileSection
+          title="内容与服务"
+          items={contentDiscoverEntries}
+        />
       </div>
     </AppPage>
+  );
+}
+
+function DiscoverMobileSection({
+  title,
+  items,
+}: {
+  title: string;
+  items: MobileDiscoverEntry[];
+}) {
+  return (
+    <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+      <div className="px-4 py-2 text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+        {title}
+      </div>
+      {items.map((item, index) => (
+        <DiscoverMobileEntryRow
+          key={item.key}
+          item={item}
+          index={index}
+        />
+      ))}
+    </section>
+  );
+}
+
+function DiscoverMobileEntryRow({
+  item,
+  index,
+}: {
+  item: MobileDiscoverEntry;
+  index: number;
+}) {
+  const Icon = item.icon;
+
+  return (
+    <Link
+      to={item.to}
+      className={cn(
+        "flex items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
+        index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px]",
+          item.iconClassName,
+        )}
+      >
+        <Icon size={19} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+            {item.label}
+          </div>
+          <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
+            {item.badge}
+          </div>
+        </div>
+        <div className="mt-1 truncate text-[13px] text-[color:var(--text-muted)]">
+          {item.summary}
+        </div>
+      </div>
+      <ChevronRight
+        size={16}
+        className="shrink-0 text-[color:var(--text-dim)]"
+      />
+    </Link>
   );
 }
 
