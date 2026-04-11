@@ -639,12 +639,13 @@ export function DesktopCreateGroupDialog({
         className="relative flex h-[min(720px,82vh)] w-full max-w-[640px] flex-col overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]"
         onKeyDown={handleDialogKeyDown}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
-          <div>
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+        <div className="flex items-center justify-between gap-4 border-b border-black/6 bg-[linear-gradient(180deg,#fbfbfb_0%,#f4f4f4_100%)] px-6 py-4">
+          <div className="min-w-0">
+            <div className="text-[18px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">
               发起群聊
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 flex items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#07c160]" />
               群名称会按成员自动生成，创建后可在聊天信息里修改。
             </div>
           </div>
@@ -657,7 +658,7 @@ export function DesktopCreateGroupDialog({
             }}
             disabled={createMutation.isPending}
             aria-label="关闭"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/6 bg-white/85 text-[color:var(--text-secondary)] transition hover:border-black/10 hover:bg-white hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X size={16} />
           </button>
@@ -1149,14 +1150,18 @@ export function DesktopCreateGroupDialog({
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
-          <div className="text-[12px] text-[color:var(--text-muted)]">
-            已选择 {selectedIds.length} 位成员
-            {selectedIds.length ? `，将创建“${defaultGroupName}”。` : "。"}
-            {shareHistory && selectedMessageIds.length
-              ? ` 会同步 ${selectedMessageIds.length} 条聊天记录。`
-              : ""}
-            {" "}快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Alt+数字` 选择最近 N 条聊天记录，`Ctrl/Cmd+Enter` 创建。
+        <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[linear-gradient(180deg,#fbfbfb_0%,#f4f4f4_100%)] px-6 py-4">
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              已选择 {selectedIds.length} 位成员
+              {selectedIds.length ? ` · ${defaultGroupName}` : ""}
+              {shareHistory && selectedMessageIds.length
+                ? ` · ${selectedMessageIds.length} 条聊天记录`
+                : ""}
+            </div>
+            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+              快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Alt+数字` 选择最近 N 条聊天记录，`Ctrl/Cmd+Enter` 创建。
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button
