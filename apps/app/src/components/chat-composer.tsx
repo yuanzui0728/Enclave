@@ -3807,21 +3807,21 @@ function DesktopScreenshotEditor({
                   <span>快捷键</span>
                 </button>
                 {shortcutHelpOpen ? (
-                  <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
-                    <div className="mb-2 flex items-center gap-2 text-[10px] text-white/44">
+                  <div className="absolute right-0 top-full z-30 mt-2 w-[288px] rounded-[14px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)]">
+                    <div className="mb-1.5 flex items-center gap-2 text-[10px] text-white/44">
                       <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 leading-none text-white/62">
                         ?
                       </span>
                       <span>按 ? 开关，点下面分组可高亮对应区域。</span>
                     </div>
-                    <div className="grid gap-2">
+                    <div className="grid gap-1.5">
                       {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
                         <button
                           key={item.label}
                           type="button"
                           onClick={() => triggerShortcutDemo(item.id)}
                           className={cn(
-                            "flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2 text-left transition",
+                            "flex items-center justify-between gap-2.5 rounded-[9px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
                               ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
                               : "border-transparent bg-white/5 hover:border-white/10 hover:bg-white/8",
