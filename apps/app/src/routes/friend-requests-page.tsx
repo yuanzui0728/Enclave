@@ -6,6 +6,7 @@ import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@y
 import { AppHeader, AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function FriendRequestsPage() {
@@ -62,7 +63,11 @@ export function FriendRequestsPage() {
         description="这个世界不会只等你去找人，它也会主动把相遇推到你面前。"
         actions={
           <Button
-            onClick={() => navigate({ to: "/tabs/chat" })}
+            onClick={() =>
+              navigateBackOrFallback(() => {
+                void navigate({ to: "/tabs/contacts" });
+              })
+            }
             variant="ghost"
             size="icon"
             className="text-[color:var(--text-secondary)]"
