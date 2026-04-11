@@ -468,28 +468,24 @@ export function CharacterRuntimePage() {
             <SectionHeading>Scheduler 最近执行结果</SectionHeading>
             <div className="mt-4 space-y-3">
               {snapshot.observability.relevantJobs.map((job) => (
-                <div
+                <AdminRecordCard
                   key={job.id}
-                  className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">{job.name}</div>
+                  title={job.name}
+                  badges={
                     <StatusPill tone={job.running ? "warning" : "healthy"}>
                       {job.running ? "运行中" : "空闲"}
                     </StatusPill>
-                  </div>
-                  <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-                    {job.cadence} / {job.nextRunHint}
-                  </div>
-                  <div className="mt-3 grid gap-3 md:grid-cols-3">
-                    <ValueCard label="运行次数" value={job.runCount} />
-                    <ValueCard label="最近执行" value={formatDateTime(job.lastRunAt)} />
-                    <ValueCard label="耗时" value={job.lastDurationMs ? `${job.lastDurationMs} ms` : "暂无"} />
-                  </div>
-                  <div className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                    {job.lastResult || "当前还没有执行结果。"}
-                  </div>
-                </div>
+                  }
+                  meta={`${job.cadence} / ${job.nextRunHint}`}
+                  description={job.lastResult || "当前还没有执行结果。"}
+                  details={
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <ValueCard label="运行次数" value={job.runCount} />
+                      <ValueCard label="最近执行" value={formatDateTime(job.lastRunAt)} />
+                      <ValueCard label="耗时" value={job.lastDurationMs ? `${job.lastDurationMs} ms` : "暂无"} />
+                    </div>
+                  }
+                />
               ))}
             </div>
             <div className="mt-4 space-y-3">
@@ -582,24 +578,27 @@ export function CharacterRuntimePage() {
           <Card id="character-runtime-arc" className="bg-[color:var(--surface-console)]">
             <SectionHeading>叙事弧线</SectionHeading>
             {snapshot.narrativeArc ? (
-              <div className="mt-4 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    {snapshot.narrativeArc.title}
-                  </div>
+              <AdminRecordCard
+                className="mt-4"
+                title={snapshot.narrativeArc.title}
+                badges={
+                  <>
                   <StatusPill tone={snapshot.narrativeArc.status === "completed" ? "healthy" : "warning"}>
                     {snapshot.narrativeArc.status}
                   </StatusPill>
                   <StatusPill tone="muted">{snapshot.narrativeArc.progress}%</StatusPill>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {snapshot.narrativeArc.milestones.map((item) => (
-                    <StatusPill key={`${snapshot.narrativeArc?.id}-${item.label}`} tone="healthy">
-                      {item.label}
-                    </StatusPill>
-                  ))}
-                </div>
-              </div>
+                  </>
+                }
+                details={
+                  <div className="flex flex-wrap gap-2">
+                    {snapshot.narrativeArc.milestones.map((item) => (
+                      <StatusPill key={`${snapshot.narrativeArc?.id}-${item.label}`} tone="healthy">
+                        {item.label}
+                      </StatusPill>
+                    ))}
+                  </div>
+                }
+              />
             ) : (
               <InlineNotice className="mt-4" tone="muted">当前还没有叙事弧线记录。</InlineNotice>
             )}
