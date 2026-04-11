@@ -10,10 +10,40 @@ function readKeyboardInset() {
   return inset > 0 ? Math.round(inset) : 0;
 }
 
+function hasFocusedEditableElement() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const activeElement = document.activeElement;
+  if (!(activeElement instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (activeElement.isContentEditable) {
+    return true;
+  }
+
+  if (activeElement instanceof HTMLTextAreaElement) {
+    return !activeElement.readOnly && !activeElement.disabled;
+  }
+
+  if (!(activeElement instanceof HTMLInputElement)) {
+    return false;
+  }
+
+  if (activeElement.readOnly || activeElement.disabled) {
+    return false;
+  }
+
+  const inputType = activeElement.type.toLowerCase();
+  return !NON_EDITABLE_INPUT_TYPES.has(inputType);
+}
+
 export function useKeyboardInset() {
   const [keyboardInset, setKeyboardInset] = useState(0);
   const updateInset = useEffectEvent(() => {
-    setKeyboardInset(readKeyboardInset());
+    setKeyboardInset(hasFocusedEditableElement() ? readKeyboardInset() : 0);
   });
 
   useEffect(() => {
@@ -43,3 +73,16 @@ export function useKeyboardInset() {
     nativePlatform: getNativeShellPlatform(),
   };
 }
+
+const NON_EDITABLE_INPUT_TYPES = new Set([
+  "button",
+  "checkbox",
+  "color",
+  "file",
+  "hidden",
+  "image",
+  "radio",
+  "range",
+  "reset",
+  "submit",
+]);
