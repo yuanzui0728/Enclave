@@ -15,6 +15,17 @@ export function SearchResultCard({
   layout,
   onOpen,
 }: SearchResultCardProps) {
+  const badgeClassName =
+    item.category === "messages"
+      ? "border-[#d7e5fb] bg-[#f3f7ff] text-[#315b9a]"
+      : item.category === "contacts"
+        ? "border-[#cfe8d6] bg-[#f2f8f3] text-[#1d6a37]"
+        : item.category === "officialAccounts"
+          ? "border-[#d8d8d8] bg-[#f5f5f5] text-[color:var(--text-secondary)]"
+          : item.category === "moments"
+            ? "border-[#d9e7d4] bg-[#f5faf3] text-[#557d37]"
+            : "border-[#d6e2db] bg-[#f2f7f4] text-[#3c6a53]";
+
   return (
     <button
       type="button"
@@ -22,7 +33,7 @@ export function SearchResultCard({
       className={
         layout === "mobile"
           ? "flex w-full items-start gap-3 rounded-[18px] bg-white/88 px-4 py-3 text-left transition hover:bg-white"
-          : "flex w-full items-start gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,252,247,0.84)] px-4 py-4 text-left transition hover:border-[rgba(60,60,60,0.10)] hover:bg-white"
+          : "flex w-full items-start gap-3 rounded-[20px] border border-black/6 bg-white px-4 py-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition hover:border-black/10 hover:bg-[#fcfcfc]"
       }
     >
       <AvatarChip
@@ -35,7 +46,9 @@ export function SearchResultCard({
           <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
             {renderHighlightedText(item.title, keyword)}
           </div>
-          <span className="rounded-full bg-[rgba(255,138,61,0.10)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+          <span
+            className={`rounded-md border px-2 py-0.5 text-[10px] font-medium ${badgeClassName}`}
+          >
             {item.badge}
           </span>
         </div>
