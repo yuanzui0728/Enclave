@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { getCharacter, getConversations } from "@yinjie/contracts";
+import {
+  getCharacter,
+  getConversations,
+  getSystemStatus,
+} from "@yinjie/contracts";
 import {
   AppPage,
   Button,
@@ -56,6 +60,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+  });
+  const systemStatusQuery = useQuery({
+    queryKey: ["app-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+    enabled: Boolean(baseUrl),
+    retry: false,
   });
   const conversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
@@ -151,6 +161,19 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const lastAssistantText = isVideoMode
     ? digitalHumanCall.lastTurn?.assistantText
     : voiceCall.lastTurn?.assistantText;
+  const speechStatus = systemStatusQuery.data?.inferenceGateway;
+  const latencySummary = activeCall.lastTurn
+    ? `转写 ${formatCallLatency(activeCall.lastTurn.transcriptionDurationMs)} · 播报 ${formatCallLatency(activeCall.lastTurn.synthesisDurationMs)} · 总耗时 ${formatCallLatency(activeCall.lastTurn.totalDurationMs)}`
+    : null;
+  const speechProviderSummary = speechStatus
+    ? [
+        `回复 ${speechStatus.activeProvider ?? "未配置"}`,
+        `转写 ${speechStatus.activeTranscriptionProvider ?? "未配置"}`,
+        speechStatus.transcriptionMode === "dedicated"
+          ? "独立网关"
+          : "跟随主推理",
+      ].join(" · ")
+    : null;
 
   const characterName =
     characterQuery.data?.name?.trim() ||
@@ -461,6 +484,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         )}
 
         <div className="mt-4 space-y-3">
+          {speechStatus ? (
+            <InlineNotice tone={speechStatus.speechReady ? "info" : "warning"}>
+              {speechStatus.speechMessage}
+              {speechProviderSummary ? ` 当前链路：${speechProviderSummary}。` : ""}
+            </InlineNotice>
+          ) : null}
           {isVideoMode && !cameraEnabled ? (
             <InlineNotice tone="info">
               你已关闭本地摄像头，仍可继续进行 AI 数字人视频通话。
@@ -493,6 +522,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         </div>
 
         <div className="mt-4 grid gap-3">
+          {latencySummary ? (
+            <div className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-3 text-[12px] leading-6 text-white/72">
+              最近一轮：{latencySummary}
+            </div>
+          ) : null}
           <CallBubble
             label="我"
             text={
@@ -621,6 +655,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       </div>
     </AppPage>
   );
+}
+
+function formatCallLatency(durationMs: number) {
+  if (durationMs < 1000) {
+    return `${durationMs}ms`;
+  }
+
+  return `${(durationMs / 1000).toFixed(1)}s`;
 }
 
 type CallBubbleProps = {
