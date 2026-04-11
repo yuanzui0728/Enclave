@@ -1993,7 +1993,7 @@ function DesktopGroupMemberBrowserDialog({
                     }}
                     disabled={pending || !canViewProfile}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-[12px] border px-4 py-3 text-left transition",
+                      "flex w-full items-center gap-3 rounded-[12px] border px-4 py-2.5 text-left transition",
                       canViewProfile && activeMemberId === member.id
                         ? "border-[#07c160]/30 bg-[rgba(7,193,96,0.08)] shadow-[0_0_0_1px_rgba(7,193,96,0.08)]"
                         : canViewProfile
@@ -2013,13 +2013,13 @@ function DesktopGroupMemberBrowserDialog({
                       size="wechat"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                           {member.memberName ?? member.memberId}
                         </div>
                         <span
                           className={cn(
-                            "shrink-0 rounded-[7px] px-2 py-0.5 text-[10px]",
+                            "shrink-0 rounded-full px-1.5 py-0.5 text-[10px]",
                             member.role === "owner"
                               ? "bg-[rgba(245,158,11,0.14)] text-[#b45309]"
                               : member.role === "admin"
@@ -2031,7 +2031,7 @@ function DesktopGroupMemberBrowserDialog({
                         </span>
                         <span
                           className={cn(
-                            "shrink-0 rounded-[7px] px-2 py-0.5 text-[10px]",
+                            "shrink-0 rounded-full px-1.5 py-0.5 text-[10px]",
                             member.memberType === "user"
                               ? "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]"
                               : "bg-[rgba(47,122,63,0.10)] text-[#2f7a3f]",
@@ -2040,14 +2040,15 @@ function DesktopGroupMemberBrowserDialog({
                           {member.memberType === "user" ? "世界主人" : "角色"}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {member.memberType === "user"
-                          ? "世界主人资料当前在本地维护"
-                          : "点击查看角色资料"}
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
-                        <span>ID: {member.memberId}</span>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
+                        <span>
+                          {member.memberType === "user"
+                            ? "本地维护资料"
+                            : "Enter 或点击查看资料"}
+                        </span>
+                        <span className="text-black/10">·</span>
                         <span>加入于 {formatTimestamp(member.joinedAt)}</span>
+                        <span className="truncate">ID {member.memberId}</span>
                       </div>
                     </div>
                     {canViewProfile ? (
