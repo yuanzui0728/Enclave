@@ -1018,7 +1018,7 @@ export function ContactsPage() {
         <TabPageTopBar
           title="通讯录"
           titleAlign="center"
-          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,248,239,0.94))] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         >
           <div className="pt-3">
             <button
@@ -1033,7 +1033,7 @@ export function ContactsPage() {
                   }),
                 });
               }}
-              className="flex w-full items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]"
+              className="flex w-full items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]"
               aria-label="打开搜一搜"
             >
               <Search size={15} className="shrink-0" />
