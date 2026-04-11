@@ -3852,7 +3852,7 @@ function DesktopScreenshotEditor({
                 {shortcutHelpVisible ? (
                   <div
                     className={cn(
-                      "absolute right-0 top-full z-30 mt-1.5 w-[288px] rounded-[14px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
+                      "absolute -right-1 top-full z-30 mt-1.5 w-[288px] origin-top-right rounded-[14px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
                       shortcutHelpEntered
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-0.5 opacity-0",
