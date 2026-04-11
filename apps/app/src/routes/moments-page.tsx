@@ -92,14 +92,20 @@ export function MomentsPage() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: (momentId: string) =>
-      addMomentComment(
+    mutationFn: (momentId: string) => {
+      const text = commentDrafts[momentId]?.trim();
+      if (!text) {
+        throw new Error("请先输入评论内容。");
+      }
+
+      return addMomentComment(
         momentId,
         {
-          text: commentDrafts[momentId].trim(),
+          text,
         },
         baseUrl,
-      ),
+      );
+    },
     onSuccess: async (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
       setSuccessNotice("朋友圈互动已更新。");
