@@ -456,7 +456,7 @@ export function WelcomePage() {
                 disabled={!phone.trim() || sendCodeMutation.isPending}
                 variant="secondary"
                 size="lg"
-                className="shrink-0 rounded-2xl px-5"
+                className="shrink-0 rounded-2xl border-black/5 bg-[#f5f5f5] px-5 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
                 {sendCodeMutation.isPending ? "发送中..." : "发送验证码"}
               </Button>
@@ -480,7 +480,7 @@ export function WelcomePage() {
           ) : null}
 
           {cloudCanRequestWorld ? (
-            <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/78 p-4">
+            <div className="rounded-[24px] border border-black/5 bg-white p-4 shadow-none">
               <TextField
                 value={worldName}
                 onChange={(event) => setWorldName(event.target.value)}
@@ -490,7 +490,7 @@ export function WelcomePage() {
                 onClick={() => createWorldRequestMutation.mutate()}
                 disabled={!worldName.trim() || createWorldRequestMutation.isPending}
                 variant="primary"
-                className="mt-4 rounded-2xl"
+                className="mt-4 rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
               >
                 {createWorldRequestMutation.isPending ? "提交中..." : "提交建世界申请"}
               </Button>
@@ -502,7 +502,7 @@ export function WelcomePage() {
             disabled={isContinuing}
             variant="primary"
             size="lg"
-            className="w-full rounded-2xl"
+            className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
           >
             {isContinuing ? "进入中..." : "进入我的世界"}
           </Button>
@@ -536,7 +536,7 @@ export function WelcomePage() {
           disabled={!normalizedLocalApiBaseUrl || isContinuing}
           variant="primary"
           size="lg"
-          className="w-full rounded-2xl"
+          className="w-full rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
         >
           {isContinuing ? "连接中..." : "进入我的世界"}
         </Button>
@@ -551,7 +551,7 @@ export function WelcomePage() {
           怎么称呼你？
         </h2>
 
-        <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/84 p-5 shadow-[var(--shadow-section)]">
+        <div className="rounded-[28px] border border-black/5 bg-white p-5 shadow-none">
           <TextField
             value={ownerName}
             onChange={(event) => {
@@ -585,7 +585,7 @@ export function WelcomePage() {
               disabled={isContinuing}
               variant="secondary"
               size="lg"
-              className="rounded-2xl"
+              className="rounded-2xl border-black/5 bg-[#f5f5f5] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
             >
               返回
             </Button>
@@ -594,7 +594,7 @@ export function WelcomePage() {
               disabled={isContinuing || !ownerName.trim()}
               variant="primary"
               size="lg"
-              className="rounded-2xl"
+              className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
             >
               {isContinuing ? "进入中..." : "进入我的世界"}
             </Button>
@@ -613,8 +613,8 @@ export function WelcomePage() {
             onClick={() => chooseMode("cloud")}
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "cloud"
-                ? "border-[rgba(249,115,22,0.50)] bg-[rgba(255,248,235,0.96)] shadow-[0_4px_16px_rgba(249,115,22,0.14)]"
-                : "border-[color:var(--border-faint)] bg-white/76 hover:bg-white"
+                ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">官方托管</div>
@@ -625,8 +625,8 @@ export function WelcomePage() {
             onClick={() => chooseMode("local")}
             className={`rounded-[24px] border p-4 text-left transition ${
               mode === "local"
-                ? "border-[rgba(16,185,129,0.40)] bg-[rgba(240,253,248,0.96)] shadow-[var(--shadow-soft)]"
-                : "border-[color:var(--border-faint)] bg-white/76 hover:bg-white"
+                ? "border-[rgba(7,193,96,0.24)] bg-[rgba(247,251,248,0.98)] shadow-none"
+                : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)]"
             }`}
           >
             <div className="text-sm font-medium text-[color:var(--text-primary)]">本地世界</div>
@@ -679,9 +679,9 @@ export function WelcomePage() {
   }
 
   return (
-    <AppPage className="py-8">
-      <AppSection className="mx-auto w-full max-w-xl bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,248,235,0.96))] px-6 py-8">
-        <div className="inline-flex rounded-full border border-[rgba(249,115,22,0.24)] bg-white/78 px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-primary)]">
+    <AppPage className="bg-[#f5f5f5] px-4 py-8">
+      <AppSection className="mx-auto w-full max-w-xl border-black/5 bg-white px-6 py-8 shadow-none">
+        <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.32em] text-[#15803d]">
           世界入口
         </div>
         <h1 className="mt-6 text-3xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
