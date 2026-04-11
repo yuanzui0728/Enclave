@@ -209,13 +209,16 @@ function DesktopGroupContactsPage() {
   }, [filteredGroups, selectedGroup]);
 
   return (
-    <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))] px-0 py-0">
+    <AppPage className="h-full min-h-0 space-y-0 bg-[#f3f3f3] px-0 py-0">
       <div className="flex h-full min-h-0">
-        <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+        <section className="flex w-[340px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
+          <div className="border-b border-black/6 px-4 py-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-base font-medium text-[color:var(--text-primary)]">
+                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                  群聊工作区
+                </div>
+                <div className="mt-1 text-base font-medium text-[color:var(--text-primary)]">
                   群聊
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
@@ -234,12 +237,13 @@ function DesktopGroupContactsPage() {
                     }),
                   });
                 }}
+                className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
               >
                 发起群聊
               </Button>
             </div>
 
-            <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+            <label className="mt-3 flex items-center gap-2 rounded-[10px] border border-black/8 bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
               <Search size={15} className="shrink-0" />
               <input
                 type="search"
@@ -251,7 +255,7 @@ function DesktopGroupContactsPage() {
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,249,238,0.72)] pb-4">
+          <div className="min-h-0 flex-1 overflow-auto bg-[#f5f5f5] pb-4">
             {groupsQuery.isLoading ? (
               <div className="px-3 pt-3">
                 <LoadingBlock label="正在读取群聊..." />
@@ -299,7 +303,7 @@ function DesktopGroupContactsPage() {
 
             {filteredGroups.length ? (
               <section className="px-3 py-3">
-                <div className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-[0_10px_32px_rgba(15,23,42,0.05)]">
+                <div className="overflow-hidden rounded-[16px] border border-black/6 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.04)]">
                   {filteredGroups.map((group, index) => {
                     const isSelected = group.id === selectedGroup?.id;
 
@@ -311,10 +315,10 @@ function DesktopGroupContactsPage() {
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "bg-[rgba(96,165,250,0.1)]"
-                            : "bg-[color:var(--bg-canvas-elevated)] hover:bg-[rgba(96,165,250,0.04)]",
+                            ? "bg-[rgba(15,23,42,0.06)]"
+                            : "bg-white hover:bg-[#f5f5f5]",
                           index > 0
-                            ? "border-t border-[color:var(--border-faint)]"
+                            ? "border-t border-black/6"
                             : undefined,
                         )}
                       >
@@ -343,10 +347,10 @@ function DesktopGroupContactsPage() {
           </div>
         </section>
 
-        <section className="min-w-0 flex-1 bg-[linear-gradient(180deg,rgba(255,251,246,0.88),rgba(255,247,236,0.94))]">
+        <section className="min-w-0 flex-1 bg-[#f3f3f3]">
           <div className="flex h-full min-h-0 items-center justify-center p-8">
             {selectedGroup ? (
-              <div className="w-full max-w-[520px] rounded-[32px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.86)] p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+              <div className="w-full max-w-[520px] rounded-[18px] border border-black/6 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
                 <div className="flex items-center gap-4">
                   <GroupAvatarChip name={selectedGroup.name} size="wechat" />
                   <div className="min-w-0">
@@ -363,14 +367,14 @@ function DesktopGroupContactsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-[24px] bg-[rgba(255,249,238,0.8)] px-5 py-4 text-sm leading-6 text-[color:var(--text-muted)]">
+                <div className="mt-6 rounded-[12px] border border-black/6 bg-[#fafafa] px-5 py-4 text-sm leading-6 text-[color:var(--text-muted)]">
                   {getGroupDescription(selectedGroup)}
                 </div>
 
                 <div className="mt-6 flex gap-3">
                   <Button
                     type="button"
-                    className="flex-1"
+                    className="flex-1 rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
                     onClick={() => {
                       void navigate({
                         to: "/group/$groupId",
@@ -383,7 +387,7 @@ function DesktopGroupContactsPage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="flex-1"
+                    className="flex-1 rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
                     onClick={() => {
                       void navigate({
                         to: "/group/$groupId/details",
