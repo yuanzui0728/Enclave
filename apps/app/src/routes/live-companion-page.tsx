@@ -117,7 +117,7 @@ export function LiveCompanionPage() {
     description: string;
     label: string;
   }) {
-    const path = "/tabs/channels";
+    const path = "/discover/channels";
     const link = resolveMobileHandoffLink(path);
 
     if (

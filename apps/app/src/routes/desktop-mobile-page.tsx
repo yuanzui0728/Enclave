@@ -916,7 +916,7 @@ export function DesktopMobilePage() {
                           ? `${liveDraft.title} · ${liveDraft.topic}`
                           : `${liveDraft.title}，在手机上继续直播准备与内容导流。`,
                         label: liveDraft.title.trim() || "直播准备",
-                        path: "/tabs/channels",
+                        path: "/discover/channels",
                         setHistory: setHandoffHistory,
                         setNotice,
                       })
@@ -980,7 +980,7 @@ export function DesktopMobilePage() {
                           activeLiveSession?.title ??
                           liveHistory[0]?.title ??
                           "最近直播",
-                        path: "/tabs/channels",
+                        path: "/discover/channels",
                         setHistory: setHandoffHistory,
                         setNotice,
                       })
@@ -1515,6 +1515,7 @@ function resolveMobileHandoffCategory(
 
   if (
     item.path === "/tabs/channels" ||
+    item.path.startsWith("/discover/channels") ||
     item.path.startsWith("/desktop/channels")
   ) {
     return "channel";
