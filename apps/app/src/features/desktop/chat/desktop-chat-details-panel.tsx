@@ -1753,6 +1753,17 @@ function DesktopGroupMemberBrowserDialog({
     });
   }, [activeFilter, members, searchTerm]);
 
+  const activeFilterLabel =
+    filterTabs.find((tab) => tab.id === activeFilter)?.label ?? "全部";
+  const emptyStateTitle = searchTerm.trim()
+    ? `没有找到“${searchTerm.trim()}”`
+    : "当前没有匹配成员";
+  const emptyStateDescription = searchTerm.trim()
+    ? `试试切换到其他筛选，或者搜索成员昵称、角色和 ID。当前范围：${activeFilterLabel}`
+    : activeFilter === "all"
+      ? "可以先添加成员，或者切换筛选查看特定角色。"
+      : `试试切换到其他筛选。当前范围：${activeFilterLabel}`;
+
   useEffect(() => {
     if (!open) {
       return;
@@ -2060,8 +2071,18 @@ function DesktopGroupMemberBrowserDialog({
               })}
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center px-6 text-center text-sm leading-6 text-[color:var(--text-muted)]">
-              没有找到匹配的群成员。
+            <div className="flex h-full items-center justify-center px-6">
+              <div className="flex max-w-[320px] flex-col items-center rounded-[16px] border border-dashed border-black/8 bg-[#fafafa] px-6 py-8 text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#f1f1f1] text-[color:var(--text-dim)]">
+                  <Search size={18} />
+                </div>
+                <div className="mt-4 text-sm font-medium text-[color:var(--text-primary)]">
+                  {emptyStateTitle}
+                </div>
+                <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
+                  {emptyStateDescription}
+                </div>
+              </div>
             </div>
           )}
         </div>
