@@ -52,8 +52,8 @@ export function DesktopMomentDetailPanel({
   }, [moment.id]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-start justify-between gap-3 border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+    <div className="flex h-full min-h-0 flex-col bg-[rgba(247,250,250,0.82)]">
+      <div className="flex items-start justify-between gap-3 border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
         <div className="min-w-0">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             动态详情
@@ -66,7 +66,7 @@ export function DesktopMomentDetailPanel({
           type="button"
           onClick={onClose}
           aria-label="关闭详情"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f8f8f8]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
         >
           <X size={16} />
         </button>
@@ -76,7 +76,7 @@ export function DesktopMomentDetailPanel({
         ref={scrollViewportRef}
         className="min-h-0 flex-1 overflow-auto px-5 py-5"
       >
-        <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-start gap-4">
             <button
               type="button"
@@ -103,8 +103,8 @@ export function DesktopMomentDetailPanel({
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                     moment.authorType === "character"
-                      ? "border-sky-100 bg-sky-50 text-sky-700"
-                      : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
+                      ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                   )}
                 >
                   {moment.authorType === "character" ? (
@@ -131,7 +131,7 @@ export function DesktopMomentDetailPanel({
             {moment.text}
           </div>
 
-          <div className="mt-4 rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
             <span>{moment.likeCount} 赞</span>
             <span className="mx-2 text-[color:var(--text-dim)]">/</span>
             <span>{moment.commentCount} 评论</span>
@@ -149,8 +149,8 @@ export function DesktopMomentDetailPanel({
               onClick={onLike}
               className={
                 likedByOwner
-                  ? "bg-[#eaf8ef] text-[#15803d] shadow-none"
-                  : undefined
+                  ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d] shadow-none"
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
               }
             >
               <Heart size={14} className={likedByOwner ? "fill-current" : ""} />
@@ -163,20 +163,25 @@ export function DesktopMomentDetailPanel({
               className={
                 favorite
                   ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11] shadow-none"
-                  : undefined
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[#d8d1a9] hover:bg-[#fffaf0]"
               }
             >
               <Star size={14} className={favorite ? "fill-current" : ""} />
               {favorite ? "已收藏" : "收藏"}
             </Button>
-            <Button variant="secondary" size="sm" onClick={onSelectAuthor}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onSelectAuthor}
+              className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+            >
               查看 TA 的动态
             </Button>
           </div>
         </div>
 
         {moment.likes.length > 0 ? (
-          <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
               点赞的人
             </div>
@@ -184,7 +189,7 @@ export function DesktopMomentDetailPanel({
               {moment.likes.map((like) => (
                 <span
                   key={like.id}
-                  className="rounded-md border border-black/6 bg-[#f8f8f8] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]"
                 >
                   {like.authorName}
                 </span>
@@ -193,7 +198,7 @@ export function DesktopMomentDetailPanel({
           </div>
         ) : null}
 
-        <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
           <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
             <MessageCircle size={14} />
             评论区
@@ -204,7 +209,7 @@ export function DesktopMomentDetailPanel({
               {moment.comments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-3"
+                  className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3"
                 >
                   <div className="flex items-center gap-2 text-[12px]">
                     <span className="font-medium text-[color:var(--text-primary)]">
@@ -221,7 +226,7 @@ export function DesktopMomentDetailPanel({
               ))}
             </div>
           ) : (
-            <div className="mt-4 rounded-[18px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+            <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
               还没有评论，你可以成为第一个回应的人。
             </div>
           )}
@@ -231,13 +236,14 @@ export function DesktopMomentDetailPanel({
               value={commentDraft}
               onChange={(event) => onCommentChange(event.target.value)}
               placeholder="在右栏继续写评论..."
-              className="min-w-0 flex-1 rounded-xl border-black/8 bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+              className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
             />
             <Button
-              variant="secondary"
+              variant="primary"
               size="sm"
               disabled={!commentDraft.trim() || commentLoading}
               onClick={onCommentSubmit}
+              className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
             >
               {commentLoading ? "发送中..." : "发送"}
             </Button>

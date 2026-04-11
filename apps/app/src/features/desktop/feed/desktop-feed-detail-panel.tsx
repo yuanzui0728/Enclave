@@ -53,8 +53,8 @@ export function DesktopFeedDetailPanel({
   }, [post]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-start justify-between gap-3 border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+    <div className="flex h-full min-h-0 flex-col bg-[rgba(247,250,250,0.82)]">
+      <div className="flex items-start justify-between gap-3 border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
         <div className="min-w-0">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             动态详情
@@ -67,7 +67,7 @@ export function DesktopFeedDetailPanel({
           type="button"
           onClick={onClose}
           aria-label="关闭详情"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-black/6 bg-white text-[color:var(--text-secondary)] transition hover:bg-[#f8f8f8]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
         >
           <X size={16} />
         </button>
@@ -86,14 +86,14 @@ export function DesktopFeedDetailPanel({
         ) : null}
 
         {!loading && !post ? (
-          <div className="rounded-[18px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
             当前动态不存在，或者已经被移除。
           </div>
         ) : null}
 
         {post ? (
           <>
-            <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-start gap-4">
                 <button
                   type="button"
@@ -120,8 +120,8 @@ export function DesktopFeedDetailPanel({
                       className={cn(
                         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                         post.authorType === "character"
-                          ? "border-sky-100 bg-sky-50 text-sky-700"
-                          : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
+                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {post.authorType === "character" ? (
@@ -157,7 +157,7 @@ export function DesktopFeedDetailPanel({
                   "mt-4 rounded-[16px] border px-4 py-3",
                   post.aiReacted
                     ? "border-[rgba(34,197,94,0.16)] bg-[rgba(236,253,245,0.92)]"
-                    : "border-black/6 bg-[#f8f8f8]",
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
                 )}
               >
                 <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
@@ -184,6 +184,7 @@ export function DesktopFeedDetailPanel({
                   size="sm"
                   disabled={likeLoading}
                   onClick={onLike}
+                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
                 >
                   <Heart size={14} />
                   {likeLoading ? "处理中..." : "点赞"}
@@ -195,19 +196,24 @@ export function DesktopFeedDetailPanel({
                   className={
                     favorite
                       ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11] shadow-none"
-                      : undefined
+                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[#d8d1a9] hover:bg-[#fffaf0]"
                   }
                 >
                   <Star size={14} className={favorite ? "fill-current" : ""} />
                   {favorite ? "已收藏" : "收藏"}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={onSelectAuthor}>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onSelectAuthor}
+                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                >
                   查看 TA 的公开动态
                 </Button>
               </div>
             </div>
 
-            <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
                 <MessageCircle size={14} />
                 评论区
@@ -222,7 +228,7 @@ export function DesktopFeedDetailPanel({
                   {post.comments.map((comment) => (
                     <div
                       key={comment.id}
-                      className="rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-3"
+                      className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3"
                     >
                       <div className="flex items-center gap-2 text-[12px]">
                         <span className="font-medium text-[color:var(--text-primary)]">
@@ -232,8 +238,8 @@ export function DesktopFeedDetailPanel({
                           className={cn(
                             "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                             comment.authorType === "character"
-                              ? "border-sky-100 bg-sky-50 text-sky-700"
-                              : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
+                              ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                              : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
                           )}
                         >
                           {comment.authorType === "character" ? "居民" : "世界主人"}
@@ -249,7 +255,7 @@ export function DesktopFeedDetailPanel({
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-[18px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+                <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
                   还没有评论，你可以成为第一个回应的人。
                 </div>
               )}
@@ -259,13 +265,14 @@ export function DesktopFeedDetailPanel({
                   value={commentDraft}
                   onChange={(event) => onCommentChange(event.target.value)}
                   placeholder="在右栏继续写评论..."
-                  className="min-w-0 flex-1 rounded-xl border-black/8 bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+                  className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
                 />
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   size="sm"
                   disabled={!commentDraft.trim() || commentLoading}
                   onClick={onCommentSubmit}
+                  className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
                 >
                   {commentLoading ? "发送中..." : "发送"}
                 </Button>
@@ -280,7 +287,7 @@ export function DesktopFeedDetailPanel({
 
 function DetailMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-4">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
       <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
         {label}
       </div>
