@@ -93,7 +93,7 @@ export function TabPageTopBar({
               : undefined
           }
         >
-          {eyebrow ? <div className="truncate text-[11px] uppercase tracking-[0.26em] text-[color:var(--brand-secondary)]">{eyebrow}</div> : null}
+          {eyebrow ? <div className="truncate text-[11px] uppercase tracking-[0.26em] text-[#15803d]">{eyebrow}</div> : null}
           <h1
             className={cn(
               "truncate tracking-[0.01em] text-current",

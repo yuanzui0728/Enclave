@@ -1304,7 +1304,7 @@ function SectionHeader({
         "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 bg-[rgba(244,248,246,0.96)] backdrop-blur"
-          : "sticky top-[88px] bg-[rgba(255,249,238,0.92)]",
+          : "sticky top-[88px] bg-[rgba(247,247,247,0.94)] backdrop-blur",
       )}
     >
       {title}

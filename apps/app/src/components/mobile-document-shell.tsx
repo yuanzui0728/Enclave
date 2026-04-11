@@ -23,7 +23,7 @@ export function MobileDocumentShell({
   const navigate = useNavigate();
 
   return (
-    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
       <TabPageTopBar
         title={title}
         titleAlign="center"
@@ -44,9 +44,9 @@ export function MobileDocumentShell({
         }
       />
 
-      <div className="space-y-2 pb-8">
-        <section className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
+      <div className="space-y-2 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        <section className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4">
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#15803d]">
             {eyebrow}
           </div>
           <div className="mt-2 text-[16px] font-medium text-[color:var(--text-primary)]">
@@ -60,7 +60,7 @@ export function MobileDocumentShell({
         {sections.map((section) => (
           <section
             key={section.title}
-            className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4"
+            className="border-y border-[color:var(--border-faint)] bg-white px-4 py-4"
           >
             <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
               {section.title}
