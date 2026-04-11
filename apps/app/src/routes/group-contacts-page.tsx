@@ -195,21 +195,21 @@ function DesktopGroupContactsPage() {
 
   const filteredGroups = useFilteredGroups(groupsQuery.data ?? [], searchText);
   const selectedGroup = useMemo(
-    () =>
-      filteredGroups.find((group) => group.id === selectedGroupId) ??
-      (groupsQuery.data ?? []).find((group) => group.id === selectedGroupId) ??
-      null,
-    [filteredGroups, groupsQuery.data, selectedGroupId],
+    () => filteredGroups.find((group) => group.id === selectedGroupId) ?? null,
+    [filteredGroups, selectedGroupId],
   );
   const hasSearchText = searchText.trim().length > 0;
 
   useEffect(() => {
-    if (selectedGroup) {
+    if (
+      selectedGroupId &&
+      filteredGroups.some((group) => group.id === selectedGroupId)
+    ) {
       return;
     }
 
     setSelectedGroupId(filteredGroups[0]?.id ?? null);
-  }, [filteredGroups, selectedGroup]);
+  }, [filteredGroups, selectedGroupId]);
 
   return (
     <AppPage className="h-full min-h-0 space-y-0 bg-[#f3f3f3] px-0 py-0">
