@@ -355,6 +355,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     setCallTipsDismissed(true);
     setRecordButtonHolding(true);
+    activeCall.turnMutation.reset();
+    if (speech.error || speech.recordedAudio || speech.status === "ready") {
+      speech.clearResult();
+    }
     await activeCall.startRecordingTurn();
   };
 
@@ -411,6 +415,24 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       });
     }
   };
+
+  const handleRetryCurrentTurn = () => {
+    if (leavingScreen) {
+      return;
+    }
+
+    setRecordButtonHolding(false);
+    setCallTipsDismissed(true);
+    activeCall.cancelRecordingTurn();
+    activeCall.stopReplyPlayback();
+    activeCall.turnMutation.reset();
+    speech.clearResult();
+  };
+
+  const showTurnRecoveryActions =
+    activeCall.turnMutation.error instanceof Error || Boolean(speech.error);
+  const showPlaybackRecoveryAction =
+    Boolean(activeCall.playerError) && Boolean(lastAssistantText);
 
   useEffect(() => {
     if (
@@ -777,6 +799,34 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {speech.error ? <ErrorBlock message={speech.error} /> : null}
           {activeCall.playerError ? (
             <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
+          ) : null}
+          {showTurnRecoveryActions || showPlaybackRecoveryAction ? (
+            <div className="flex flex-wrap gap-2">
+              {showTurnRecoveryActions ? (
+                <button
+                  type="button"
+                  onClick={handleRetryCurrentTurn}
+                  disabled={leavingScreen}
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                >
+                  <RotateCcw size={16} />
+                  重新录这一轮
+                </button>
+              ) : null}
+              {showPlaybackRecoveryAction ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void activeCall.replayLastTurn();
+                  }}
+                  disabled={leavingScreen}
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                >
+                  <Volume2 size={16} />
+                  立即播放回复
+                </button>
+              ) : null}
+            </div>
           ) : null}
           {characterQuery.isError && characterQuery.error instanceof Error ? (
             <ErrorBlock message={characterQuery.error.message} />

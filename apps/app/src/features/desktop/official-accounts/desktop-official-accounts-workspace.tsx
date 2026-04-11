@@ -231,9 +231,9 @@ export function DesktopOfficialAccountsWorkspace({
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-        <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
+        <div className="border-b border-black/6 px-4 py-4">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             公众号
           </div>
@@ -252,7 +252,7 @@ export function DesktopOfficialAccountsWorkspace({
               size="sm"
               variant={accountFilter === "all" ? "primary" : "secondary"}
               onClick={() => setAccountFilter("all")}
-              className="rounded-full"
+              className="rounded-xl"
             >
               全部
             </Button>
@@ -261,7 +261,7 @@ export function DesktopOfficialAccountsWorkspace({
               size="sm"
               variant={accountFilter === "following" ? "primary" : "secondary"}
               onClick={() => setAccountFilter("following")}
-              className="rounded-full"
+              className="rounded-xl"
             >
               已关注
             </Button>
@@ -305,9 +305,9 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
       </section>
 
-      <section className="flex w-[420px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(255,249,240,0.76)]">
-        <div className="border-b border-[color:var(--border-faint)] px-5 py-5">
-          <div className="text-xs uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
+      <section className="flex w-[420px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
+        <div className="border-b border-black/6 px-5 py-5">
+          <div className="text-xs font-medium text-[color:var(--text-muted)]">
             账号主页
           </div>
           <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -318,14 +318,14 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
           {account ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-[rgba(47,122,63,0.12)] px-3 py-1 text-[#2f7a3f]">
+              <span className="rounded-md bg-[#eaf8ef] px-3 py-1 text-[#15803d]">
                 {account.accountType === "service" ? "服务号" : "订阅号"}
               </span>
-              <span className="rounded-full bg-white px-3 py-1 text-[color:var(--text-muted)]">
+              <span className="rounded-md bg-white px-3 py-1 text-[color:var(--text-muted)]">
                 @{account.handle}
               </span>
               {account.isFollowing ? (
-                <span className="rounded-full bg-[rgba(93,103,201,0.12)] px-3 py-1 text-[#4951a3]">
+                <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-3 py-1 text-[color:var(--text-secondary)]">
                   已关注
                 </span>
               ) : null}
@@ -338,7 +338,7 @@ export function DesktopOfficialAccountsWorkspace({
                 variant={account.isFollowing ? "secondary" : "primary"}
                 onClick={() => followMutation.mutate()}
                 disabled={followMutation.isPending}
-                className="rounded-full"
+                className="rounded-xl"
               >
                 {followMutation.isPending
                   ? "处理中..."
@@ -350,7 +350,7 @@ export function DesktopOfficialAccountsWorkspace({
                 type="button"
                 variant="secondary"
                 onClick={toggleAccountFavorite}
-                className="rounded-full"
+                className="rounded-xl"
               >
                 {accountFavoriteSourceId &&
                 favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -393,7 +393,7 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto p-6">
+      <section className="min-w-0 flex-1 overflow-auto bg-[#f3f3f3] p-6">
         {articleDetailQuery.isLoading && !activeArticle ? (
           <LoadingBlock label="正在读取文章..." />
         ) : null}
