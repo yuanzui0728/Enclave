@@ -273,8 +273,10 @@ export class MockDigitalHumanProviderAdapter
       const subtitle = document.getElementById("subtitle");
       const stateLabel = document.getElementById("stateLabel");
       const sessionPath = window.location.pathname.replace(/\\/player$/, "");
+      const eventsPath = sessionPath + "/events";
       let lastMessageId = "";
       let pollTimer = null;
+      let eventSource = null;
 
       function setPlaying(playing) {
         document.body.dataset.playing = playing ? "true" : "false";
@@ -294,6 +296,35 @@ export class MockDigitalHumanProviderAdapter
         }
       }
 
+      function applySession(session) {
+        updatePoster(session.posterUrl);
+
+        if (session.lastTurn?.assistantText) {
+          caption.textContent = session.lastTurn.assistantText;
+          subtitle.textContent = "当前播放器协议已接通，数字人会在这里自动播报最新一轮回复。";
+        } else {
+          caption.textContent = "接通后，数字人的本轮回复会在这里同步显示。";
+          subtitle.textContent = "正在连接数字人播放器，等待本轮播报内容。";
+        }
+
+        if (session.status === "ended") {
+          stateLabel.textContent = "通话已结束";
+        } else if (session.renderStatus === "rendering" || session.renderStatus === "queued") {
+          stateLabel.textContent = "数字人准备中";
+        } else if (document.body.dataset.playing !== "true") {
+          stateLabel.textContent = "数字人待命中";
+        }
+
+        if (session.lastTurn?.assistantMessageId && session.lastTurn.assistantMessageId !== lastMessageId) {
+          lastMessageId = session.lastTurn.assistantMessageId;
+          if (session.lastTurn.assistantAudioUrl) {
+            audio.src = session.lastTurn.assistantAudioUrl;
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+          }
+        }
+      }
+
       async function refreshSession() {
         try {
           const response = await fetch(sessionPath, { cache: "no-store" });
@@ -301,34 +332,53 @@ export class MockDigitalHumanProviderAdapter
             throw new Error("load session failed");
           }
 
-          const session = await response.json();
-          updatePoster(session.posterUrl);
-
-          if (session.lastTurn?.assistantText) {
-            caption.textContent = session.lastTurn.assistantText;
-            subtitle.textContent = "当前播放器协议已接通，数字人会在这里自动播报最新一轮回复。";
-          } else {
-            caption.textContent = "接通后，数字人的本轮回复会在这里同步显示。";
-            subtitle.textContent = "正在连接数字人播放器，等待本轮播报内容。";
-          }
-
-          if (session.status === "ended") {
-            stateLabel.textContent = "通话已结束";
-          } else if (session.renderStatus === "rendering" || session.renderStatus === "queued") {
-            stateLabel.textContent = "数字人准备中";
-          }
-
-          if (session.lastTurn?.assistantMessageId && session.lastTurn.assistantMessageId !== lastMessageId) {
-            lastMessageId = session.lastTurn.assistantMessageId;
-            if (session.lastTurn.assistantAudioUrl) {
-              audio.src = session.lastTurn.assistantAudioUrl;
-              audio.currentTime = 0;
-              audio.play().catch(() => {});
-            }
-          }
+          applySession(await response.json());
         } catch {
           subtitle.textContent = "播放器暂时无法同步最新数字人状态。";
         }
+      }
+
+      function startPolling() {
+        if (pollTimer) {
+          return;
+        }
+
+        refreshSession();
+        pollTimer = window.setInterval(refreshSession, 1200);
+      }
+
+      function stopPolling() {
+        if (!pollTimer) {
+          return;
+        }
+
+        window.clearInterval(pollTimer);
+        pollTimer = null;
+      }
+
+      function startEventStream() {
+        if (typeof EventSource !== "function") {
+          startPolling();
+          return;
+        }
+
+        eventSource = new EventSource(eventsPath);
+        eventSource.onmessage = (event) => {
+          try {
+            applySession(JSON.parse(event.data));
+            stopPolling();
+          } catch {
+            subtitle.textContent = "播放器收到了一条无法解析的数字人状态。";
+          }
+        };
+        eventSource.onerror = () => {
+          subtitle.textContent = "播放器事件流暂时中断，已回退到轮询同步。";
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          startPolling();
+        };
       }
 
       audio.addEventListener("play", () => setPlaying(true));
@@ -336,11 +386,11 @@ export class MockDigitalHumanProviderAdapter
       audio.addEventListener("ended", () => setPlaying(false));
       audio.addEventListener("error", () => setPlaying(false));
 
-      refreshSession();
-      pollTimer = window.setInterval(refreshSession, 1200);
+      startEventStream();
       window.addEventListener("beforeunload", () => {
-        if (pollTimer) {
-          window.clearInterval(pollTimer);
+        stopPolling();
+        if (eventSource) {
+          eventSource.close();
         }
       });
     </script>

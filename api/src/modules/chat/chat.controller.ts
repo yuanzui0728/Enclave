@@ -250,6 +250,36 @@ export class DigitalHumanCallsController {
     return response.send(this.digitalHumanCallsService.renderPlayerPage(sessionId));
   }
 
+  @Get('sessions/:sessionId/events')
+  streamSessionEvents(
+    @Param('sessionId') sessionId: string,
+    @Res() response: Response,
+  ) {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache, no-transform');
+    response.setHeader('Connection', 'keep-alive');
+    response.flushHeaders?.();
+
+    const writeEvent = (payload: ReturnType<DigitalHumanCallsService['getSession']>) => {
+      response.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    writeEvent(this.digitalHumanCallsService.getSession(sessionId));
+    const unsubscribe = this.digitalHumanCallsService.subscribeSession(
+      sessionId,
+      writeEvent,
+    );
+    const heartbeat = setInterval(() => {
+      response.write(': keepalive\n\n');
+    }, 15000);
+
+    response.on('close', () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+      response.end();
+    });
+  }
+
   @Delete('sessions/:sessionId')
   closeSession(@Param('sessionId') sessionId: string) {
     return this.digitalHumanCallsService.closeSession(sessionId);
