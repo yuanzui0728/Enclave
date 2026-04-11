@@ -3636,7 +3636,7 @@ function GroupRelaySummaryMessage({
         {completionTimeLabel ? (
           <CallInviteMetric label="完成时间" value={completionTimeLabel} />
         ) : null}
-        {publishRangeLabel ? (
+        {typeof publishRangeLabel === "string" ? (
           <CallInviteMetric label="起止时间" value={publishRangeLabel} />
         ) : null}
         {summary.activeRelayCountLabel ? (
