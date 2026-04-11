@@ -11,7 +11,7 @@ export function useDigitalHumanEntryGuard({
   baseUrl,
   enabled = true,
 }: {
-  baseUrl: string;
+  baseUrl?: string;
   enabled?: boolean;
 }) {
   const [entryNotice, setEntryNotice] = useState<DigitalHumanEntryNotice>(null);
@@ -21,7 +21,7 @@ export function useDigitalHumanEntryGuard({
   const systemStatusQuery = useQuery({
     queryKey: ["system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
-    enabled,
+    enabled: enabled && Boolean(baseUrl),
   });
 
   const resetEntryGuard = useCallback(() => {
