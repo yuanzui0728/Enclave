@@ -73,14 +73,20 @@ export function ChannelsPage() {
   });
 
   const commentMutation = useMutation({
-    mutationFn: (postId: string) =>
-      addFeedComment(
+    mutationFn: (postId: string) => {
+      const text = commentDrafts[postId]?.trim();
+      if (!text) {
+        throw new Error("请先输入评论内容。");
+      }
+
+      return addFeedComment(
         postId,
         {
-          text: commentDrafts[postId].trim(),
+          text,
         },
         baseUrl,
-      ),
+      );
+    },
     onSuccess: async (_, postId) => {
       setCommentDrafts((current) => ({ ...current, [postId]: "" }));
       setSuccessNotice("视频号评论已发送。");
