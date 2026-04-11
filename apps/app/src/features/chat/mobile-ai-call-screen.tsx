@@ -187,7 +187,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     : null;
   const showSpeechWarning = Boolean(speechStatus && !speechStatus.speechReady);
   const showDiagnosticsToggle =
-    !showSpeechWarning && Boolean(speechStatus || latencySummary);
+    !showSpeechWarning && Boolean(latencySummary || diagnosticsExpanded);
   const showPermissionPrimer =
     !callTipsDismissed &&
     !isVideoMode &&
@@ -1072,7 +1072,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 onClick={() => setDiagnosticsExpanded((current) => !current)}
                 className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] tracking-[0.08em] text-white/56 transition hover:bg-white/10 hover:text-white/72"
               >
-                {diagnosticsExpanded ? "收起链路状态" : "查看链路状态"}
+                {diagnosticsExpanded ? "收起链路详情" : "链路详情"}
               </button>
             </div>
           ) : null}
