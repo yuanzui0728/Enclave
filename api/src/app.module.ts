@@ -10,6 +10,7 @@ import { MomentsModule } from './modules/moments/moments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SystemConfigModule } from './modules/config/config.module';
 import { SocialModule } from './modules/social/social.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
 import { FeedModule } from './modules/feed/feed.module';
 import { OfficialAccountsModule } from './modules/official-accounts/official-accounts.module';
 import { WorldModule } from './modules/world/world.module';
@@ -47,6 +48,7 @@ import { OfficialAccountArticleEntity } from './modules/official-accounts/offici
 import { OfficialAccountDeliveryEntity } from './modules/official-accounts/official-account-delivery.entity';
 import { OfficialAccountFollowEntity } from './modules/official-accounts/official-account-follow.entity';
 import { OfficialAccountServiceMessageEntity } from './modules/official-accounts/official-account-service-message.entity';
+import { ModerationReportEntity } from './modules/moderation/moderation-report.entity';
 import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database/database-path';
 
 @Module({
@@ -71,6 +73,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
           FeedPostEntity, FeedCommentEntity, WorldContextEntity,
           NarrativeArcEntity, AIBehaviorLogEntity, UserFeedInteractionEntity,
           OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity, OfficialAccountServiceMessageEntity,
+          ModerationReportEntity,
         ],
         synchronize: true,
       }),
@@ -82,6 +85,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
     MomentsModule,
     SystemConfigModule,
     SocialModule,
+    ModerationModule,
     FeedModule,
     OfficialAccountsModule,
     WorldModule,

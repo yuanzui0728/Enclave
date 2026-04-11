@@ -23,7 +23,7 @@
 
 ## 后端模块（`api/src/modules/`）
 
-`ai` · `admin` · `auth` · `characters` · `chat` · `config` · `import` · `moments` · `social` · `feed` · `official-accounts` · `world` · `scheduler` · `events` · `narrative` · `analytics`
+`ai` · `admin` · `auth` · `characters` · `chat` · `config` · `import` · `moments` · `social` · `moderation` · `feed` · `official-accounts` · `world` · `scheduler` · `events` · `narrative` · `analytics`
 
 ## 主 App 结构（`apps/app/src/`）
 
@@ -87,13 +87,15 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（26个，物理表保持兼容）
+## 数据库实体（27个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
 **朋友圈**：MomentPost · MomentComment · MomentLike · MomentEntity（legacy）
 
 **社交**：Friendship · FriendRequest · AIRelationship
+
+**安全**：ModerationReport
 
 **群聊**：Group · GroupMember · GroupMessage
 
@@ -193,6 +195,10 @@
   - `POST /api/reminders/messages`
   - `POST /api/reminders/messages/:sourceId/notified`
   - `DELETE /api/reminders/messages/:sourceId`
+- 安全举报路由：
+  - `GET /api/moderation/reports`
+  - `POST /api/moderation/reports`
+  - `PATCH /api/moderation/reports/:id/status`
 - 公众号消息路由：
   - `GET /api/official-accounts/message-entries`
   - `GET /api/official-accounts/subscription-inbox`
