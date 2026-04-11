@@ -23,12 +23,12 @@ export function OfficialArticleCard({
       className={cn(
         "group w-full transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[20px] border border-black/6 bg-white px-4 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)] hover:border-black/10 hover:bg-[#fcfcfc]"
-          : "border-b border-black/6 bg-white px-5 py-4 hover:bg-[#fbfbfb]",
+          ? "rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+          : "border-b border-[color:var(--border-faint)] bg-white px-5 py-4 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
-            ? "border-[#cfe8d6] bg-[#f7fbf8]"
-            : "border-[#cfe8d6] bg-[#f4faf6]"
+            ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
+            : "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)]"
           : undefined,
       )}
     >
@@ -40,7 +40,7 @@ export function OfficialArticleCard({
         >
           <div className="flex items-center gap-2">
             {article.isPinned ? (
-              <span className="inline-flex items-center gap-1 rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-2 py-0.5 text-[11px] font-medium text-[#557d37]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-0.5 text-[11px] font-medium text-[#15803d]">
                 <Pin size={11} />
                 置顶
               </span>
@@ -65,7 +65,7 @@ export function OfficialArticleCard({
                 "inline-flex h-8 items-center gap-1 rounded-lg border px-3 text-[11px] font-medium transition",
                 favorite
                   ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
-                  : "border-black/6 bg-white text-[color:var(--text-secondary)] hover:bg-[#f6f6f6] hover:text-[color:var(--text-primary)]",
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
               )}
             >
               <Star size={12} className={favorite ? "fill-current" : ""} />
@@ -73,7 +73,7 @@ export function OfficialArticleCard({
             </button>
           ) : null}
           {!compact ? (
-            <div className="shrink-0 rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-2.5 py-1 text-[11px] text-[#557d37]">
+            <div className="shrink-0 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] text-[#15803d]">
               {article.readCount} 阅读
             </div>
           ) : null}

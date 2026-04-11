@@ -46,7 +46,7 @@ export function OfficialArticleViewer({
   }
 
   return (
-    <article className="mx-auto w-full max-w-[760px] rounded-[28px] border border-black/6 bg-white px-5 py-6 shadow-[0_16px_40px_rgba(15,23,42,0.05)] sm:px-8">
+    <article className="mx-auto w-full max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <button
@@ -57,11 +57,11 @@ export function OfficialArticleViewer({
             {accountName ?? article.account.name}
           </button>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]">
-            <span className="rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-2.5 py-1 text-[#557d37]">
+            <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[#15803d]">
               {article.account.accountType === "service" ? "服务号" : "订阅号"}
             </span>
             {article.account.isVerified ? (
-              <span className="rounded-md border border-[#d7e5fb] bg-[#f3f7ff] px-2.5 py-1 text-[#315b9a]">
+              <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2.5 py-1 text-[#315b9a]">
                 已认证
               </span>
             ) : null}
@@ -103,14 +103,14 @@ export function OfficialArticleViewer({
       </div>
       {copyNotice ? (
         <InlineNotice
-          className="mt-4"
+          className="mt-4 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           tone={copyNotice.includes("已复制") ? "success" : "info"}
         >
           {copyNotice}
         </InlineNotice>
       ) : null}
       {article.coverImage ? (
-        <div className="mt-6 overflow-hidden rounded-[24px] border border-black/6 bg-[#f7f7f7]">
+        <div className="mt-6 overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]">
           <img
             src={article.coverImage}
             alt={article.title}
@@ -118,16 +118,16 @@ export function OfficialArticleViewer({
           />
         </div>
       ) : null}
-      <div className="mt-6 rounded-[22px] border border-black/6 bg-[#fafafa] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+      <div className="mt-6 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
         {article.summary}
       </div>
       <div
-        className="official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[#cfe8d6] [&_blockquote]:bg-[#f5faf6] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
+        className="official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.22)] [&_blockquote]:bg-[rgba(7,193,96,0.08)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
       />
 
       {article.relatedArticles.length ? (
-        <section className="mt-10 rounded-[24px] border border-black/6 bg-[#f8f8f8] p-5">
+        <section className="mt-10 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
           <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
             <Newspaper size={16} className="text-[#15803d]" />
             <span>该号更多内容</span>
@@ -139,7 +139,7 @@ export function OfficialArticleViewer({
                 key={relatedArticle.id}
                 type="button"
                 onClick={() => onOpenArticle?.(relatedArticle.id)}
-                className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-black/6 bg-white px-4 py-3 text-left transition hover:border-black/10 hover:bg-[#fcfcfc]"
+                className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium leading-6 text-[color:var(--text-primary)]">

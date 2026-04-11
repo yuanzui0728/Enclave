@@ -72,6 +72,24 @@ export function DesktopOfficialAccountsWorkspace({
   }, [accountFilter, accountsQuery.data, searchTerm]);
   const hasAccountFiltering =
     accountFilter !== "all" || searchTerm.trim().length > 0;
+  const followingCount = useMemo(
+    () => (accountsQuery.data ?? []).filter((account) => account.isFollowing).length,
+    [accountsQuery.data],
+  );
+  const subscriptionCount = useMemo(
+    () =>
+      (accountsQuery.data ?? []).filter(
+        (account) => account.accountType === "subscription",
+      ).length,
+    [accountsQuery.data],
+  );
+  const serviceCount = useMemo(
+    () =>
+      (accountsQuery.data ?? []).filter(
+        (account) => account.accountType === "service",
+      ).length,
+    [accountsQuery.data],
+  );
 
   const pinnedArticleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, selectedArticleId],
@@ -271,44 +289,59 @@ export function DesktopOfficialAccountsWorkspace({
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[#efefef]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-4 py-4">
-          <div className="text-base font-medium text-[color:var(--text-primary)]">
+    <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(242,246,245,0.78)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
+          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
             公众号
           </div>
           <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
             从通讯录进入，按微信式阅读路径浏览账号与文章。
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <WorkspaceStatCard label="已关注" value={`${followingCount} 个`} />
+            <WorkspaceStatCard
+              label="内容分布"
+              value={`${subscriptionCount} 订阅 / ${serviceCount} 服务`}
+            />
+          </div>
           <TextField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="搜索公众号"
-            className="mt-3 rounded-[18px] border-black/6 bg-white px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
+            className="mt-4 rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
           />
           <div className="mt-3 flex gap-2">
             <Button
               type="button"
               size="sm"
-              variant={accountFilter === "all" ? "primary" : "secondary"}
+              variant="secondary"
               onClick={() => setAccountFilter("all")}
-              className="rounded-xl"
+              className={
+                accountFilter === "all"
+                  ? "rounded-full border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d] shadow-none hover:bg-[rgba(7,193,96,0.12)]"
+                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+              }
             >
               全部
             </Button>
             <Button
               type="button"
               size="sm"
-              variant={accountFilter === "following" ? "primary" : "secondary"}
+              variant="secondary"
               onClick={() => setAccountFilter("following")}
-              className="rounded-xl"
+              className={
+                accountFilter === "following"
+                  ? "rounded-full border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d] shadow-none hover:bg-[rgba(7,193,96,0.12)]"
+                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+              }
             >
               已关注
             </Button>
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
           {accountsQuery.isLoading ? (
             <LoadingBlock label="正在读取公众号..." />
           ) : null}
@@ -316,22 +349,25 @@ export function DesktopOfficialAccountsWorkspace({
             <ErrorBlock message={accountsQuery.error.message} />
           ) : null}
 
-          {filteredAccounts.map((entry) => (
-            <OfficialAccountListItem
-              key={entry.id}
-              account={entry}
-              active={entry.id === effectiveAccountId}
-              onClick={() => {
-                void navigate({
-                  to: "/official-accounts/$accountId",
-                  params: { accountId: entry.id },
-                });
-              }}
-            />
-          ))}
+          <div className="space-y-2">
+            {filteredAccounts.map((entry) => (
+              <OfficialAccountListItem
+                key={entry.id}
+                account={entry}
+                active={entry.id === effectiveAccountId}
+                compact
+                onClick={() => {
+                  void navigate({
+                    to: "/official-accounts/$accountId",
+                    params: { accountId: entry.id },
+                  });
+                }}
+              />
+            ))}
+          </div>
 
           {!accountsQuery.isLoading && !filteredAccounts.length ? (
-            <div className="p-3">
+            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
               <EmptyState
                 title="没有匹配的公众号"
                 description={
@@ -345,8 +381,8 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
       </section>
 
-      <section className="flex w-[420px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-5">
+      <section className="flex w-[420px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white/88">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-5 py-5 backdrop-blur-xl">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             账号主页
           </div>
@@ -358,14 +394,14 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
           {account ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-3 py-1 text-[#557d37]">
+              <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[#15803d]">
                 {account.accountType === "service" ? "服务号" : "订阅号"}
               </span>
-              <span className="rounded-md border border-black/6 bg-white px-3 py-1 text-[color:var(--text-muted)]">
+              <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[color:var(--text-muted)]">
                 @{account.handle}
               </span>
               {account.isFollowing ? (
-                <span className="rounded-md border border-black/6 bg-[#f3f3f3] px-3 py-1 text-[color:var(--text-secondary)]">
+                <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
                   已关注
                 </span>
               ) : null}
@@ -378,7 +414,11 @@ export function DesktopOfficialAccountsWorkspace({
                 variant={account.isFollowing ? "secondary" : "primary"}
                 onClick={() => followMutation.mutate()}
                 disabled={followMutation.isPending}
-                className="rounded-xl"
+                className={
+                  account.isFollowing
+                    ? "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                    : "rounded-full bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                }
               >
                 {followMutation.isPending
                   ? "处理中..."
@@ -390,7 +430,7 @@ export function DesktopOfficialAccountsWorkspace({
                 type="button"
                 variant="secondary"
                 onClick={toggleAccountFavorite}
-                className="rounded-xl"
+                className="rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
                 {accountFavoriteSourceId &&
                 favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -401,7 +441,7 @@ export function DesktopOfficialAccountsWorkspace({
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.66)] px-4 py-4">
           {accountDetailQuery.isLoading ? (
             <LoadingBlock label="正在读取公众号主页..." />
           ) : null}
@@ -413,27 +453,61 @@ export function DesktopOfficialAccountsWorkspace({
             <ErrorBlock message={followMutation.error.message} />
           ) : null}
 
-          {account?.articles?.map((article) => (
-            <OfficialArticleCard
-              key={article.id}
-              article={article}
-              active={article.id === activeArticleId}
-              favorite={favoriteSourceIds.includes(
-                `official-article-${article.id}`,
-              )}
-              onClick={() => {
-                void navigate({
-                  to: "/official-accounts/articles/$articleId",
-                  params: { articleId: article.id },
-                });
-              }}
-              onToggleFavorite={() => toggleArticleSummaryFavorite(article.id)}
-            />
-          ))}
+          {account ? (
+            <div className="space-y-4">
+              <div className="grid gap-2 sm:grid-cols-3">
+                <WorkspaceStatCard
+                  label="最近文章"
+                  value={`${account.articles.length} 篇`}
+                />
+                <WorkspaceStatCard
+                  label="最新发布时间"
+                  value={
+                    account.articles[0]?.publishedAt
+                      ? new Date(account.articles[0].publishedAt).toLocaleDateString(
+                          "zh-CN",
+                          {
+                            month: "numeric",
+                            day: "numeric",
+                          },
+                        )
+                      : "暂无更新"
+                  }
+                />
+                <WorkspaceStatCard
+                  label="账号状态"
+                  value={account.isFollowing ? "已加入阅读列表" : "可关注"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                {account.articles.map((article) => (
+                  <OfficialArticleCard
+                    key={article.id}
+                    article={article}
+                    active={article.id === activeArticleId}
+                    compact
+                    favorite={favoriteSourceIds.includes(
+                      `official-article-${article.id}`,
+                    )}
+                    onClick={() => {
+                      void navigate({
+                        to: "/official-accounts/articles/$articleId",
+                        params: { articleId: article.id },
+                      });
+                    }}
+                    onToggleFavorite={() =>
+                      toggleArticleSummaryFavorite(article.id)
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section className="min-w-0 flex-1 overflow-auto bg-[#f3f3f3] p-6">
+      <section className="min-w-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] p-6">
         {articleDetailQuery.isLoading && !activeArticle ? (
           <LoadingBlock label="正在读取文章..." />
         ) : null}
@@ -476,6 +550,23 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function WorkspaceStatCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
+      <div className="text-[11px] text-[color:var(--text-muted)]">{label}</div>
+      <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
+        {value}
+      </div>
     </div>
   );
 }
