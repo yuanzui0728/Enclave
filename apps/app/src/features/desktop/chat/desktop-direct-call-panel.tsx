@@ -141,6 +141,26 @@ export function DesktopDirectCallPanel({
       return isVideoMode ? "正在听你说话" : "正在聆听";
     }
 
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
+      return "数字人渲染中";
+    }
+
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
+      return "数字人排队中";
+    }
+
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
+      return "数字人画面失败";
+    }
+
+    if (
+      isVideoMode &&
+      digitalHumanCall.session?.renderStatus === "ready" &&
+      (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
+    ) {
+      return "数字人视频已接通";
+    }
+
     if (latestTurn) {
       return isVideoMode ? "继续通话" : "继续说话";
     }
@@ -149,6 +169,9 @@ export function DesktopDirectCallPanel({
   }, [
     activeCall.playbackState,
     activeCall.turnMutation.isPending,
+    digitalHumanCall.session?.playerUrl,
+    digitalHumanCall.session?.renderStatus,
+    digitalHumanCall.session?.streamUrl,
     digitalHumanCall.sessionState,
     isVideoMode,
     latestTurn,
@@ -184,6 +207,26 @@ export function DesktopDirectCallPanel({
         : "当前为半双工模式，等 TA 说完后再开始下一轮。";
     }
 
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
+      return "语音回复已经生成，数字人视频画面正在渲染，完成后会自动切到 provider 画面。";
+    }
+
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
+      return "数字人视频流已进入上游队列，当前先保持会话连接和语音链路。";
+    }
+
+    if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
+      return "当前数字人画面渲染失败，但语音回复链路仍然可继续；可直接重试连接数字人。";
+    }
+
+    if (
+      isVideoMode &&
+      digitalHumanCall.session?.renderStatus === "ready" &&
+      (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
+    ) {
+      return "数字人视频流已经就绪，桌面端会优先展示 provider 侧画面。";
+    }
+
     if (
       speech.status === "requesting-permission" ||
       speech.status === "listening"
@@ -210,6 +253,9 @@ export function DesktopDirectCallPanel({
     activeCall.playbackState,
     activeCall.turnMutation.isPending,
     digitalHumanCall.sessionError,
+    digitalHumanCall.session?.playerUrl,
+    digitalHumanCall.session?.renderStatus,
+    digitalHumanCall.session?.streamUrl,
     digitalHumanCall.sessionState,
   ]);
   const callLabel = isVideoMode ? "AI 数字人视频通话" : "桌面 AI 语音通话";
