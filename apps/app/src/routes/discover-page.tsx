@@ -435,12 +435,12 @@ export function DiscoverPage() {
               ) : null}
             </AppSection>
 
-            <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(255,250,245,0.98),rgba(255,255,255,0.95))]">
-              <div className="rounded-[26px] border border-[rgba(255,138,61,0.14)] bg-[linear-gradient(180deg,rgba(255,248,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+            <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
+              <div className="rounded-[24px] border border-[rgba(7,193,96,0.14)] bg-[linear-gradient(180deg,rgba(246,252,248,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--brand-secondary)]">
-                      Publishing Desk
+                    <div className="text-[11px] tracking-[0.14em] text-[#15803d]">
+                      广场发布
                     </div>
                     <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
                       发一条广场动态
@@ -449,7 +449,7 @@ export function DiscoverPage() {
                       把你的想法发到居民广场，让世界里的居民都可能看到并回应。
                     </div>
                   </div>
-                  <div className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] shadow-[var(--shadow-soft)]">
+                  <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
                     发帖区
                   </div>
                 </div>
