@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  NotImplementedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import OpenAI, { toFile } from 'openai';
@@ -659,11 +663,12 @@ export class SystemService {
     }>;
   }
 
-  getEvalDataset(_id: string) {
+  getEvalDataset(id: string) {
+    void id;
     throw new NotFoundException('Eval dataset not found.');
   }
 
-  listEvalRuns(_query?: {
+  listEvalRuns(query?: {
     datasetId?: string;
     experimentLabel?: string;
     providerModel?: string;
@@ -671,14 +676,16 @@ export class SystemService {
     promptVariant?: string;
     memoryPolicyVariant?: string;
   }) {
+    void query;
     return [] as Array<Record<string, unknown>>;
   }
 
-  getEvalRun(_id: string) {
+  getEvalRun(id: string) {
+    void id;
     throw new NotFoundException('Eval run not found.');
   }
 
-  listEvalComparisons(_query?: {
+  listEvalComparisons(query?: {
     datasetId?: string;
     experimentLabel?: string;
     providerModel?: string;
@@ -686,31 +693,32 @@ export class SystemService {
     promptVariant?: string;
     memoryPolicyVariant?: string;
   }) {
+    void query;
     return [] as Array<Record<string, unknown>>;
   }
 
-  listGenerationTraces(_query?: {
+  listGenerationTraces(query?: {
     source?: string;
     status?: string;
     characterId?: string;
     limit?: number;
   }) {
+    void query;
     return [] as Array<Record<string, unknown>>;
   }
 
-  getGenerationTrace(_id: string) {
+  getGenerationTrace(id: string) {
+    void id;
     throw new NotFoundException('Generation trace not found.');
   }
 
-  async exportDiagnostics() {
-    const databasePath = this.resolveDatabasePath();
-    return {
-      success: true,
-      message: `Diagnostics export is scaffolded. Database path: ${databasePath}`,
-    };
+  exportDiagnostics() {
+    throw new NotImplementedException(
+      'Diagnostics export is not implemented in this remote-first build.',
+    );
   }
 
-  async createBackup() {
+  createBackup() {
     const sourcePath = this.resolveDatabasePath();
     const backupDir = resolveRepoPath('runtime-data', 'backups');
     fs.mkdirSync(backupDir, { recursive: true });
@@ -724,10 +732,9 @@ export class SystemService {
     return { success: true, message: 'Database file does not exist yet, so no backup was created.' };
   }
 
-  async restoreBackup() {
-    return {
-      success: true,
-      message: 'Backup restore is not implemented yet in this remote-first build.',
-    };
+  restoreBackup() {
+    throw new NotImplementedException(
+      'Backup restore is not implemented in this remote-first build.',
+    );
   }
 }
