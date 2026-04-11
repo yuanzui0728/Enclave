@@ -375,6 +375,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     digitalHumanGatewayCopy?.statusHint,
     digitalSession?.presentationMode,
     isVideoMode,
+    lastAssistantText,
     speech.status,
   ]);
 
