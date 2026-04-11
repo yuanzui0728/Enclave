@@ -116,9 +116,11 @@ export function ProfileSettingsPage() {
   const canSaveProfile = draftName.trim().length > 0;
   const aiSettingsBusy =
     saveApiKeyMutation.isPending || clearApiKeyMutation.isPending;
-  const desktopMode =
-    isDesktopLayout && pathname.startsWith("/desktop/settings");
+  const desktopSettingsRoute = pathname.startsWith("/desktop/settings");
+  const desktopMode = isDesktopLayout;
   const backTo = desktopMode ? "/tabs/chat" : "/tabs/profile";
+  const desktopBackTo = desktopSettingsRoute ? "/tabs/chat" : "/tabs/profile";
+  const desktopBackLabel = desktopSettingsRoute ? "返回消息" : "返回资料";
 
   const content = (
     <>
@@ -307,9 +309,13 @@ export function ProfileSettingsPage() {
     return (
       <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
         <DesktopEntryShell
-          badge="Settings"
-          title="桌面设置统一收口世界资料和 AI 配置"
-          description="更多菜单进入设置后，不再跳回手机式页面，而是在桌面工作区内完成资料编辑、专属 API Key 管理和协议查看。"
+          badge={desktopSettingsRoute ? "Settings" : "Profile"}
+          title="桌面模式下统一收口世界资料和 AI 配置"
+          description={
+            desktopSettingsRoute
+              ? "更多菜单进入设置后，不再跳回手机式页面，而是在桌面工作区内完成资料编辑、专属 API Key 管理和协议查看。"
+              : "从头像进入资料与设置时，也保持桌面工作区形态，避免切回手机式页面。"
+          }
           aside={
             <div className="space-y-3">
               <DesktopStatCard
@@ -330,11 +336,11 @@ export function ProfileSettingsPage() {
           <div className="space-y-4">
             <div className="flex justify-end">
               <Button
-                onClick={() => navigate({ to: backTo })}
+                onClick={() => navigate({ to: desktopBackTo })}
                 variant="ghost"
                 className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
               >
-                返回消息
+                {desktopBackLabel}
               </Button>
             </div>
             {content}
