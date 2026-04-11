@@ -1158,6 +1158,7 @@ export function DesktopCreateGroupDialog({
                         item.friendship.remarkName.trim() !== item.character.name
                           ? item.character.name
                           : null;
+                      const isSourceFriend = item.character.id === sourceFriendId;
                       const checked = selectedIds.includes(item.character.id);
                       const focused =
                         friendPositionMap.get(item.character.id) ===
@@ -1177,6 +1178,8 @@ export function DesktopCreateGroupDialog({
                             "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
                             checked
                               ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)]"
+                              : isSourceFriend
+                                ? "border-[rgba(7,193,96,0.10)] bg-[rgba(7,193,96,0.04)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
                               : "hover:border-black/6 hover:bg-white",
                             focused
                               ? "ring-1 ring-[rgba(7,193,96,0.24)]"
@@ -1193,6 +1196,11 @@ export function DesktopCreateGroupDialog({
                               <div className="truncate text-[14px] text-[color:var(--text-primary)]">
                                 {displayName}
                               </div>
+                              {isSourceFriend ? (
+                                <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                                  当前聊天
+                                </span>
+                              ) : null}
                               {aliasName ? (
                                 <span className="shrink-0 rounded-full bg-[#f3f4f6] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
                                   {aliasName}
