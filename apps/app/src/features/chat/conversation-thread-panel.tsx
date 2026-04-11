@@ -22,6 +22,7 @@ import {
 import { DesktopDirectCallPanel } from "../desktop/chat/desktop-direct-call-panel";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import { type ChatComposeShortcutAction } from "./chat-compose-shortcut-route";
+import { DigitalHumanEntryNotice } from "./digital-human-entry-notice";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
 import {
   buildDirectCallInviteMessage,
@@ -115,7 +116,7 @@ export function ConversationThreadPanel({
   const { entryNotice, clearEntryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
       baseUrl,
-    enabled: conversationType === "direct",
+      enabled: conversationType === "direct",
     });
   const unreadMarkerScrolledRef = useRef(false);
   const {
@@ -264,14 +265,7 @@ export function ConversationThreadPanel({
     setReplyDraft(null);
   };
 
-  const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
-    if (kind === "video") {
-      if (!guardVideoEntry()) {
-        return;
-      }
-    }
-    clearEntryNotice();
-
+  const startDirectCall = (kind: DesktopChatCallKind) => {
     if (isDesktop) {
       setDesktopCallPanelState({
         kind,
@@ -288,6 +282,15 @@ export function ConversationThreadPanel({
       params: { conversationId },
     });
     onDesktopCallAction?.(kind);
+  };
+
+  const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
+    if (kind === "video" && !guardVideoEntry()) {
+      return;
+    }
+
+    clearEntryNotice();
+    startDirectCall(kind);
   };
 
   const handleDismissRouteContextNotice = () => {
@@ -419,9 +422,18 @@ export function ConversationThreadPanel({
               : "border-b border-black/6 bg-white/82 px-3 py-2.5"
           }
         >
-          <InlineNotice tone={entryNotice.tone} className="border-black/6 bg-white">
-            {entryNotice.message}
-          </InlineNotice>
+          <DigitalHumanEntryNotice
+            tone={entryNotice.tone}
+            message={entryNotice.message}
+            onContinue={() => {
+              resetEntryGuard();
+              startDirectCall("video");
+            }}
+            onSwitchToVoice={() => {
+              resetEntryGuard();
+              startDirectCall("voice");
+            }}
+          />
         </div>
       ) : null}
 

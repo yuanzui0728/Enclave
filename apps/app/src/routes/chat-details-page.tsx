@@ -18,6 +18,7 @@ import {
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
+import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import {
@@ -50,9 +51,10 @@ export function ChatDetailsPage() {
     message: string;
   } | null>(null);
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
-  const { guardVideoEntry, resetEntryGuard } = useDigitalHumanEntryGuard({
-    baseUrl,
-  });
+  const { entryNotice, guardVideoEntry, resetEntryGuard } =
+    useDigitalHumanEntryGuard({
+      baseUrl,
+    });
 
   useEffect(() => {
     setNotice(null);
@@ -386,6 +388,28 @@ export function ChatDetailsPage() {
       {notice ? (
         <div className="px-3">
           <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+        </div>
+      ) : null}
+      {entryNotice ? (
+        <div className="px-3">
+          <DigitalHumanEntryNotice
+            tone={entryNotice.tone}
+            message={entryNotice.message}
+            onContinue={() => {
+              resetEntryGuard();
+              void navigate({
+                to: "/chat/$conversationId/video-call",
+                params: { conversationId },
+              });
+            }}
+            onSwitchToVoice={() => {
+              resetEntryGuard();
+              void navigate({
+                to: "/chat/$conversationId/voice-call",
+                params: { conversationId },
+              });
+            }}
+          />
         </div>
       ) : null}
 
