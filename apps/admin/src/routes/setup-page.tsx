@@ -108,11 +108,14 @@ export function SetupPage() {
   const coreApiReady = Boolean(systemStatusQuery.data?.coreApi.healthy);
   const providerReady = providerSetup.providerReady;
   const speechReady = Boolean(systemStatusQuery.data?.inferenceGateway.speechReady);
+  const digitalHumanParamsError = validateDigitalHumanParams(
+    digitalHumanDraft.providerParams,
+  );
   const digitalHumanProviderReady = Boolean(
     digitalHumanDraft.mode === "external_iframe"
       ? digitalHumanDraft.playerUrlTemplate.trim()
       : digitalHumanDraft.mode,
-  );
+  ) && !digitalHumanParamsError;
   const worldOwnerReady = (systemStatusQuery.data?.worldSurface.ownerCount ?? 0) === 1;
   const schedulerReady = Boolean(systemStatusQuery.data?.scheduler.healthy);
   const setupSteps = [
@@ -477,6 +480,9 @@ export function SetupPage() {
             <InlineNotice className="mt-4" tone="info">
               建议把 provider 固定参数都放进扩展参数 JSON，再在播放器模板中直接使用对应占位符。
             </InlineNotice>
+            {digitalHumanParamsError ? (
+              <ErrorBlock className="mt-4" message={digitalHumanParamsError} />
+            ) : null}
 
             {digitalHumanConfigQuery.error instanceof Error ? (
               <ErrorBlock className="mt-4" message={digitalHumanConfigQuery.error.message} />
@@ -498,7 +504,7 @@ export function SetupPage() {
             <div className="mt-4 flex justify-end">
               <Button
                 onClick={() => digitalHumanSaveMutation.mutate()}
-                disabled={digitalHumanSaveMutation.isPending}
+                disabled={digitalHumanSaveMutation.isPending || Boolean(digitalHumanParamsError)}
               >
                 {digitalHumanSaveMutation.isPending ? "保存中..." : "保存数字人配置"}
               </Button>
@@ -530,4 +536,21 @@ function createDigitalHumanConfigDraft(config?: Record<string, string>) {
     callbackToken: config?.digital_human_provider_callback_token ?? "",
     providerParams: config?.digital_human_provider_params ?? "",
   };
+}
+
+function validateDigitalHumanParams(value: string) {
+  if (!value.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      return "扩展参数 JSON 必须是对象，例如 {\"appId\":\"demo\"}。";
+    }
+
+    return null;
+  } catch {
+    return "扩展参数 JSON 格式不合法，请修正后再保存。";
+  }
 }
