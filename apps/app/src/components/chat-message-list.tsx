@@ -3635,6 +3635,9 @@ function GroupRelaySummaryMessage({
         {completionTimeLabel ? (
           <CallInviteMetric label="完成时间" value={completionTimeLabel} />
         ) : null}
+        {summary.resultSummaryLabel ? (
+          <CallInviteMetric label="结果摘要" value={summary.resultSummaryLabel} />
+        ) : null}
         {summary.summaryLines.map((line) => (
           <div
             key={line}

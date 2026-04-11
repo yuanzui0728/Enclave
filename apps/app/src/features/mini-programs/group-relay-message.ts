@@ -21,6 +21,7 @@ export function buildGroupRelaySummaryMessage(
     publishedAt ? `回填于 ${publishedAt}` : null,
     `发起来源 ${formatGroupRelaySourceLabel(launchSource)}`,
     publishedAt ? `回填来源 ${formatGroupRelaySourceLabel(publishedSource)}` : null,
+    `结果摘要 ${formatGroupRelayResultSummary(status)}`,
     ...buildGroupRelaySummaryLines(status, launchSource),
   ]
     .filter(Boolean)
@@ -70,6 +71,16 @@ export function parseGroupRelaySummaryMessage(text: string) {
     ],
   );
   const publishedSource = parseGroupRelaySourceValue(publishedSourceLabel);
+  const resultSummaryLabel = parseGroupRelayResultSummaryLabel(
+    lines[
+      1 +
+        Number(Boolean(statusLabel)) +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(publishedAtLabel)) +
+        Number(Boolean(launchSourceLabel)) +
+        Number(Boolean(publishedSourceLabel))
+    ],
+  );
   const summaryLines = lines
     .slice(
       1 +
@@ -77,7 +88,8 @@ export function parseGroupRelaySummaryMessage(text: string) {
         Number(Boolean(timestampLabel)) +
         Number(Boolean(publishedAtLabel)) +
         Number(Boolean(launchSourceLabel)) +
-        Number(Boolean(publishedSourceLabel)),
+        Number(Boolean(publishedSourceLabel)) +
+        Number(Boolean(resultSummaryLabel)),
     )
     .map((line) => line.replace(/^\d+\.\s*/, "").trim())
     .filter(Boolean);
@@ -91,6 +103,7 @@ export function parseGroupRelaySummaryMessage(text: string) {
     launchSource,
     publishedSourceLabel,
     publishedSource,
+    resultSummaryLabel,
     summaryLines,
   };
 }
@@ -135,6 +148,14 @@ function parseGroupRelayPublishedSourceLabel(line: string | undefined) {
   return line.replace(/^回填来源\s+/, "").trim() || null;
 }
 
+function parseGroupRelayResultSummaryLabel(line: string | undefined) {
+  if (!line || !line.startsWith("结果摘要 ")) {
+    return null;
+  }
+
+  return line.replace(/^结果摘要\s+/, "").trim() || null;
+}
+
 function parseGroupRelaySourceValue(
   sourceLabel: string | null,
 ): GroupRelaySummarySource | null {
@@ -163,6 +184,18 @@ function formatGroupRelayStatusLabel(status: GroupRelaySummaryStatus) {
 
 function formatGroupRelaySourceLabel(source: GroupRelaySummarySource) {
   return source === "mobile" ? "手机端" : "桌面端";
+}
+
+function formatGroupRelayResultSummary(status: GroupRelaySummaryStatus) {
+  if (status === "published") {
+    return "结果已回填，可继续覆盖";
+  }
+
+  if (status === "completed") {
+    return "名单已整理，待回填";
+  }
+
+  return "名单整理中，待继续";
 }
 
 function buildGroupRelaySummaryLines(
