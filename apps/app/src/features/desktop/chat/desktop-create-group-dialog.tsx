@@ -860,6 +860,7 @@ export function DesktopCreateGroupDialog({
                                   const focused =
                                     shareableMessagePositionMap.get(message.id) ===
                                     focusedMessageIndex;
+                                  const isGroupLead = !continuedFromPrevious;
                                   const timeLabel = formatShareableMessageTime(
                                     message.createdAt,
                                   );
@@ -916,9 +917,12 @@ export function DesktopCreateGroupDialog({
                                       </div>
                                       <div
                                         className={cn(
-                                          "relative min-w-0 flex-1 border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
+                                          "relative min-w-0 flex-1 border px-3 transition",
                                           continuedFromPrevious ? "py-2" : "py-2.5",
                                           continuedFromPrevious ? "pr-10" : "",
+                                          isGroupLead
+                                            ? "shadow-[0_1px_0_rgba(15,23,42,0.02)]"
+                                            : "shadow-none",
                                           messageGroupPosition === "single"
                                             ? "rounded-[10px]"
                                             : "",
@@ -933,7 +937,9 @@ export function DesktopCreateGroupDialog({
                                             : "",
                                           checked
                                             ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.10)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
-                                            : "border-black/6 bg-white group-hover:border-black/10 group-hover:bg-[#fcfcfc]",
+                                            : isGroupLead
+                                              ? "border-black/6 bg-white group-hover:border-black/10 group-hover:bg-[#fcfcfc]"
+                                              : "border-[rgba(15,23,42,0.05)] bg-[#fcfcfc] group-hover:border-[rgba(15,23,42,0.08)] group-hover:bg-[#fafafa]",
                                           focused && !checked
                                             ? "shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
                                             : "",
@@ -972,8 +978,11 @@ export function DesktopCreateGroupDialog({
                                         )}
                                         <div
                                           className={cn(
-                                            "line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]",
+                                            "line-clamp-2 text-[12px] leading-5",
                                             continuedFromPrevious ? "" : "mt-1",
+                                            isGroupLead
+                                              ? "text-[color:var(--text-primary)]"
+                                              : "text-[color:var(--text-secondary)]",
                                           )}
                                         >
                                           {getMessagePreviewText(message)}
