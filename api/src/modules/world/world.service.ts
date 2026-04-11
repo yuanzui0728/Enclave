@@ -6,6 +6,7 @@ import {
   DEFAULT_REPLY_LOGIC_RUNTIME_RULES,
   REPLY_LOGIC_RUNTIME_RULES_CONFIG_KEY,
   normalizeReplyLogicRuntimeRules,
+  type ReplyLogicRuntimeRules,
 } from '../ai/reply-logic.constants';
 import { WorldContextEntity } from './world-context.entity';
 
@@ -145,7 +146,8 @@ export class WorldService {
     }
 
     try {
-      return normalizeReplyLogicRuntimeRules(JSON.parse(raw));
+      const parsed = JSON.parse(raw) as Partial<ReplyLogicRuntimeRules>;
+      return normalizeReplyLogicRuntimeRules(parsed);
     } catch {
       this.logger.warn(
         `Failed to parse ${REPLY_LOGIC_RUNTIME_RULES_CONFIG_KEY}, using defaults.`,
