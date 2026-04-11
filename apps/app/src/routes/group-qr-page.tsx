@@ -118,6 +118,16 @@ export function GroupQrPage() {
         .slice(0, 5),
     [conversationsQuery.data, groupId],
   );
+  const conversationPathMap = useMemo(
+    () =>
+      new Map(
+        (conversationsQuery.data ?? []).map((conversation) => [
+          buildConversationPath(conversation),
+          conversation,
+        ]),
+      ),
+    [conversationsQuery.data],
+  );
   const inviteMessage = useMemo(
     () =>
       [
@@ -147,14 +157,8 @@ export function GroupQrPage() {
       return null;
     }
 
-    return (
-      (conversationsQuery.data ?? []).find(
-        (conversation) =>
-          buildConversationPath(conversation) ===
-          currentReturnSource.conversationPath,
-      ) ?? null
-    );
-  }, [conversationsQuery.data, currentReturnSource]);
+    return conversationPathMap.get(currentReturnSource.conversationPath) ?? null;
+  }, [conversationPathMap, currentReturnSource]);
   const prioritizedRecentConversations = useMemo(() => {
     if (!currentReturnSourceConversation) {
       return recentConversations;
@@ -164,9 +168,28 @@ export function GroupQrPage() {
       (conversation) => conversation.id !== currentReturnSourceConversation.id,
     );
   }, [currentReturnSourceConversation, recentConversations]);
+  const validDeliveryTargets = useMemo(
+    () =>
+      deliveryTargets.filter((record) =>
+        conversationPathMap.has(record.conversationPath),
+      ),
+    [conversationPathMap, deliveryTargets],
+  );
+  const validReopenRecords = useMemo(
+    () =>
+      reopenRecords.filter((record) =>
+        conversationPathMap.has(record.conversationPath),
+      ),
+    [conversationPathMap, reopenRecords],
+  );
+  const activeDeliveredConversation =
+    deliveredConversation &&
+    conversationPathMap.has(deliveredConversation.conversationPath)
+      ? deliveredConversation
+      : null;
   const reopenedPaths = useMemo(
-    () => new Set(reopenRecords.map((record) => record.conversationPath)),
-    [reopenRecords],
+    () => new Set(validReopenRecords.map((record) => record.conversationPath)),
+    [validReopenRecords],
   );
   const relatedReturnConversations = useMemo(() => {
     if (!currentReturnSourceConversation) {
@@ -213,18 +236,18 @@ export function GroupQrPage() {
   ]);
   const deliveredTargetByPath = useMemo(
     () =>
-      deliveryTargets.reduce<Record<string, GroupInviteDeliveryTarget>>(
+      validDeliveryTargets.reduce<Record<string, GroupInviteDeliveryTarget>>(
         (result, record) => {
           result[record.conversationPath] = record;
           return result;
         },
         {},
       ),
-    [deliveryTargets],
+    [validDeliveryTargets],
   );
   const deliveryTargetBatches = useMemo(
     () =>
-      deliveryTargets.reduce<
+      validDeliveryTargets.reduce<
         Array<{
           batchId: string;
           batchStartedAt: string;
@@ -234,7 +257,7 @@ export function GroupQrPage() {
         }>
       >((result, record) => {
         const targetBatch = result.find((item) => item.batchId === record.batchId);
-        const hasReopened = reopenRecords.some(
+        const hasReopened = validReopenRecords.some(
           (reopenRecord) => reopenRecord.conversationPath === record.conversationPath,
         );
         if (targetBatch) {
@@ -258,7 +281,7 @@ export function GroupQrPage() {
         });
         return result;
       }, []),
-    [deliveryTargets, reopenRecords],
+    [validDeliveryTargets, validReopenRecords],
   );
   const deliveryBatchRankById = useMemo(
     () =>
@@ -277,17 +300,10 @@ export function GroupQrPage() {
       }>;
     }
 
-    const conversationByPath = new Map(
-      (conversationsQuery.data ?? []).map((conversation) => [
-        buildConversationPath(conversation),
-        conversation,
-      ]),
-    );
-
     return currentBatch.items
       .filter((target) => !reopenedPaths.has(target.conversationPath))
       .map((target) => {
-        const conversation = conversationByPath.get(target.conversationPath);
+        const conversation = conversationPathMap.get(target.conversationPath);
         if (!conversation) {
           return null;
         }
@@ -337,7 +353,7 @@ export function GroupQrPage() {
 
         return left.conversation.title.localeCompare(right.conversation.title);
       });
-  }, [conversationsQuery.data, deliveryTargetBatches, reopenedPaths]);
+  }, [conversationPathMap, deliveryTargetBatches, reopenedPaths]);
   const topPendingReturnConversation =
     pendingCurrentBatchConversations[0] ?? null;
   const fallbackPendingReturnConversation =
@@ -444,6 +460,30 @@ export function GroupQrPage() {
       }),
     );
   }, [groupId, search]);
+
+  useEffect(() => {
+    if (
+      !currentReturnSource ||
+      conversationsQuery.isLoading ||
+      conversationsQuery.isError ||
+      currentReturnSourceConversation
+    ) {
+      return;
+    }
+
+    void navigate({
+      to: "/group/$groupId/qr",
+      params: { groupId },
+      replace: true,
+    });
+  }, [
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    currentReturnSource,
+    currentReturnSourceConversation,
+    groupId,
+    navigate,
+  ]);
 
   async function copyText(value: string, successMessage: string) {
     if (
@@ -601,14 +641,14 @@ export function GroupQrPage() {
             </div>
           </div>
 
-          {currentReturnSource ? (
+          {currentReturnSourceConversation ? (
             <section className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.78)] px-4 py-4">
               <div className="min-w-0 flex-1">
                 <div className="text-xs font-medium tracking-[0.16em] text-[color:var(--brand-secondary)]">
                   当前回流来源
                 </div>
                 <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-                  来自 {currentReturnSource.conversationTitle}
+                  来自 {currentReturnSourceConversation.title}
                 </div>
                 <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                   这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。
@@ -618,23 +658,23 @@ export function GroupQrPage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  void navigate({ to: currentReturnSource.conversationPath });
+                  void navigate({
+                    to: buildConversationPath(currentReturnSourceConversation),
+                  });
                 }}
                 className="shrink-0 rounded-full"
               >
                 回到会话
               </Button>
-              {currentReturnSourceConversation ? (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    void sendToConversation(currentReturnSourceConversation);
-                  }}
-                  className="shrink-0 rounded-full"
-                >
-                  再发回这个会话
-                </Button>
-              ) : null}
+              <Button
+                size="sm"
+                onClick={() => {
+                  void sendToConversation(currentReturnSourceConversation);
+                }}
+                className="shrink-0 rounded-full"
+              >
+                再发回这个会话
+              </Button>
             </section>
           ) : null}
 
@@ -683,21 +723,23 @@ export function GroupQrPage() {
             在同一世界实例内打开链接，可直接回到这个群聊。
           </div>
 
-          {deliveredConversation ? (
+          {activeDeliveredConversation ? (
             <section className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-4">
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  最近投递到 {deliveredConversation.conversationTitle}
+                  最近投递到 {activeDeliveredConversation.conversationTitle}
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {formatConversationTimestamp(deliveredConversation.deliveredAt)}
+                  {formatConversationTimestamp(activeDeliveredConversation.deliveredAt)}
                 </div>
               </div>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  void navigate({ to: deliveredConversation.conversationPath });
+                  void navigate({
+                    to: activeDeliveredConversation.conversationPath,
+                  });
                 }}
                 className="shrink-0 rounded-full"
               >
@@ -706,7 +748,7 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
-          {deliveryTargets.length ? (
+          {validDeliveryTargets.length ? (
             <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,248,240,0.78)] px-4 py-4">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -783,7 +825,7 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
-          {reopenRecords.length ? (
+          {validReopenRecords.length ? (
             <section className="space-y-3 rounded-[22px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,252,246,0.72)] px-4 py-4">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -795,7 +837,7 @@ export function GroupQrPage() {
               </div>
 
               <div className="space-y-2">
-                {reopenRecords.map((record) => (
+                {validReopenRecords.map((record) => (
                   <div
                     key={`${record.conversationPath}:${record.reopenedAt}`}
                     className="flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
@@ -1457,18 +1499,20 @@ export function GroupQrPage() {
                 <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
                   群二维码
                 </div>
-                {currentReturnSource ? (
+                {currentReturnSourceConversation ? (
                   <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
-                    当前来自 {currentReturnSource.conversationTitle}
+                    当前来自 {currentReturnSourceConversation.title}
                   </div>
                 ) : null}
               </div>
               <div className="flex items-center gap-2">
-                {currentReturnSource ? (
+                {currentReturnSourceConversation ? (
                   <Button
                     variant="ghost"
                     onClick={() => {
-                      void navigate({ to: currentReturnSource.conversationPath });
+                      void navigate({
+                        to: buildConversationPath(currentReturnSourceConversation),
+                      });
                     }}
                     className="rounded-full"
                   >
