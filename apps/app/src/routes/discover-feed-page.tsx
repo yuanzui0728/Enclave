@@ -11,15 +11,14 @@ import {
 } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
-  TextAreaField,
   TextField,
 } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import {
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -249,11 +248,12 @@ export function DiscoverFeedPage() {
   }
 
   return (
-    <AppPage>
+    <AppPage className="space-y-0 px-0 pb-0 pt-0">
       <TabPageTopBar
         title="广场动态"
         subtitle="世界居民公开可见"
         titleAlign="center"
+        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={() =>
@@ -263,180 +263,173 @@ export function DiscoverFeedPage() {
             }
             variant="ghost"
             size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
 
-      <AppSection className="space-y-4">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            发一条广场动态
-          </div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            发到广场，世界里的居民都可能看到并回应这条内容。
-          </div>
-        </div>
-        <TextAreaField
+      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+        <MobileSocialComposerCard
+          title="发一条广场动态"
+          description="发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。"
+          scopeLabel="公开可见"
+          scopeClassName="bg-[rgba(7,193,96,0.12)] text-[#07c160]"
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={setText}
           placeholder="写点想让世界居民都能看到的内容..."
-          className="min-h-28 resize-none"
-        />
-        <Button
+          helperText="这条内容会进入公开动态流，更适合发讨论、状态和世界广播。"
+          submitLabel="发布"
+          submittingLabel="正在发布..."
+          pending={createMutation.isPending}
           disabled={!text.trim() || createMutation.isPending}
-          onClick={() => createMutation.mutate()}
-          variant="primary"
-        >
-          {createMutation.isPending ? "正在发布..." : "发布"}
-        </Button>
-        {createMutation.isError && createMutation.error instanceof Error ? (
-          <ErrorBlock message={createMutation.error.message} />
-        ) : null}
-        <InlineNotice tone="muted">世界居民公开可见。</InlineNotice>
-      </AppSection>
+          errorMessage={
+            createMutation.isError && createMutation.error instanceof Error
+              ? createMutation.error.message
+              : null
+          }
+          onSubmit={() => createMutation.mutate()}
+        />
 
-      <AppSection className="space-y-4">
-        <div>
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            最近动态
+        <section className="space-y-3">
+          <div className="px-1">
+            <div className="text-[13px] text-[#8c8c8c]">最近动态</div>
+            <div className="mt-1 text-[12px] leading-5 text-[#8c8c8c]">
+              这里不只看朋友，也能看到世界里的居民正在说什么。
+            </div>
           </div>
-          <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-            这里不只看朋友，也能看到世界里的居民正在说什么。
-          </div>
-        </div>
-        {successNotice ? (
-          <InlineNotice tone="success">{successNotice}</InlineNotice>
-        ) : null}
-        {feedQuery.isLoading ? (
-          <LoadingBlock label="正在读取广场动态..." />
-        ) : null}
-        {feedQuery.isError && feedQuery.error instanceof Error ? (
-          <ErrorBlock message={feedQuery.error.message} />
-        ) : null}
+          {successNotice ? (
+            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          ) : null}
+          {feedQuery.isLoading ? (
+            <LoadingBlock label="正在读取广场动态..." />
+          ) : null}
+          {feedQuery.isError && feedQuery.error instanceof Error ? (
+            <ErrorBlock message={feedQuery.error.message} />
+          ) : null}
 
-        {visiblePosts.map((post) => {
-          const sourceId = `feed-${post.id}`;
-          const collected = favoriteSourceIds.includes(sourceId);
+          {visiblePosts.map((post) => {
+            const sourceId = `feed-${post.id}`;
+            const collected = favoriteSourceIds.includes(sourceId);
 
-          return (
-            <SocialPostCard
-              key={post.id}
-              authorName={post.authorName}
-              authorAvatar={post.authorAvatar}
-              meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
-              body={
-                <>
-                  {post.authorType === "user" ? (
-                    <div className="mb-3 inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
-                      居民公开可见
-                    </div>
-                  ) : null}
-                  <div>{post.text}</div>
-                </>
-              }
-              summary={`${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`}
-              actions={
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    disabled={likeMutation.isPending}
-                    onClick={() => likeMutation.mutate(post.id)}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    {pendingLikePostId === post.id ? "处理中..." : "点赞"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      const nextFavorites = collected
-                        ? removeDesktopFavorite(sourceId)
-                        : upsertDesktopFavorite({
-                            id: `favorite-${sourceId}`,
-                            sourceId,
-                            category: "feed",
-                            title: post.authorName,
-                            description: post.text,
-                            meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
-                            to: "/tabs/feed",
-                            badge: "广场动态",
-                            avatarName: post.authorName,
-                            avatarSrc: post.authorAvatar,
-                          });
-
-                      setFavoriteSourceIds(
-                        nextFavorites.map((favorite) => favorite.sourceId),
-                      );
-                    }}
-                  >
-                    {collected ? "取消收藏" : "收藏"}
-                  </Button>
-                </div>
-              }
-              secondary={
-                post.commentsPreview.length > 0 ? (
-                  <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
-                    {post.commentsPreview.map((comment) => (
-                      <div
-                        key={comment.id}
-                        className="text-xs leading-6 text-[color:var(--text-secondary)]"
-                      >
-                        <span className="text-[color:var(--text-primary)]">
-                          {comment.authorName}
-                        </span>
-                        {`：${comment.text}`}
+            return (
+              <SocialPostCard
+                key={post.id}
+                authorName={post.authorName}
+                authorAvatar={post.authorAvatar}
+                meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
+                body={
+                  <>
+                    {post.authorType === "user" ? (
+                      <div className="mb-3 inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#07c160]">
+                        居民公开可见
                       </div>
-                    ))}
+                    ) : null}
+                    <div>{post.text}</div>
+                  </>
+                }
+                summary={`${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`}
+                actions={
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      disabled={likeMutation.isPending}
+                      onClick={() => likeMutation.mutate(post.id)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {pendingLikePostId === post.id ? "处理中..." : "点赞"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        const nextFavorites = collected
+                          ? removeDesktopFavorite(sourceId)
+                          : upsertDesktopFavorite({
+                              id: `favorite-${sourceId}`,
+                              sourceId,
+                              category: "feed",
+                              title: post.authorName,
+                              description: post.text,
+                              meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
+                              to: "/tabs/feed",
+                              badge: "广场动态",
+                              avatarName: post.authorName,
+                              avatarSrc: post.authorAvatar,
+                            });
+
+                        setFavoriteSourceIds(
+                          nextFavorites.map((favorite) => favorite.sourceId),
+                        );
+                      }}
+                    >
+                      {collected ? "取消收藏" : "收藏"}
+                    </Button>
                   </div>
-                ) : null
-              }
-              composer={
-                <>
-                  <TextField
-                    value={commentDrafts[post.id] ?? ""}
-                    onChange={(event) =>
-                      setCommentDrafts((current) => ({
-                        ...current,
-                        [post.id]: event.target.value,
-                      }))
-                    }
-                    placeholder="写评论..."
-                    className="min-w-0 flex-1 rounded-full py-2 text-xs"
-                  />
-                  <Button
-                    disabled={
-                      !(commentDrafts[post.id] ?? "").trim() ||
-                      commentMutation.isPending
-                    }
-                    onClick={() => commentMutation.mutate(post.id)}
-                    variant="primary"
-                    size="sm"
-                  >
-                    {pendingCommentPostId === post.id ? "发送中..." : "发送"}
-                  </Button>
-                </>
-              }
+                }
+                secondary={
+                  post.commentsPreview.length > 0 ? (
+                    <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
+                      {post.commentsPreview.map((comment) => (
+                        <div
+                          key={comment.id}
+                          className="text-xs leading-6 text-[color:var(--text-secondary)]"
+                        >
+                          <span className="text-[color:var(--text-primary)]">
+                            {comment.authorName}
+                          </span>
+                          {`：${comment.text}`}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null
+                }
+                composer={
+                  <>
+                    <TextField
+                      value={commentDrafts[post.id] ?? ""}
+                      onChange={(event) =>
+                        setCommentDrafts((current) => ({
+                          ...current,
+                          [post.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="写评论..."
+                      className="min-w-0 flex-1 rounded-full py-2 text-xs"
+                    />
+                    <Button
+                      disabled={
+                        !(commentDrafts[post.id] ?? "").trim() ||
+                        commentMutation.isPending
+                      }
+                      onClick={() => commentMutation.mutate(post.id)}
+                      variant="primary"
+                      size="sm"
+                    >
+                      {pendingCommentPostId === post.id ? "发送中..." : "发送"}
+                    </Button>
+                  </>
+                }
+              />
+            );
+          })}
+
+          {likeMutation.isError && likeMutation.error instanceof Error ? (
+            <ErrorBlock message={likeMutation.error.message} />
+          ) : null}
+          {commentMutation.isError && commentMutation.error instanceof Error ? (
+            <ErrorBlock message={commentMutation.error.message} />
+          ) : null}
+
+          {!feedQuery.isLoading && !feedQuery.isError && !visiblePosts.length ? (
+            <EmptyState
+              title="广场还没有新动态"
+              description="你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
             />
-          );
-        })}
-
-        {likeMutation.isError && likeMutation.error instanceof Error ? (
-          <ErrorBlock message={likeMutation.error.message} />
-        ) : null}
-        {commentMutation.isError && commentMutation.error instanceof Error ? (
-          <ErrorBlock message={commentMutation.error.message} />
-        ) : null}
-
-        {!feedQuery.isLoading && !feedQuery.isError && !visiblePosts.length ? (
-          <EmptyState
-            title="广场还没有新动态"
-            description="你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
-          />
-        ) : null}
-      </AppSection>
+          ) : null}
+        </section>
+      </div>
     </AppPage>
   );
 }
