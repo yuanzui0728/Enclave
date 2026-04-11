@@ -38,6 +38,8 @@ import {
   AdminEmptyState,
   AdminInfoRows,
   AdminPageHero,
+  AdminPillSelectField,
+  AdminPillTextField,
   AdminSectionNav,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -1186,18 +1188,8 @@ export function EvalsPage() {
             : "当前是完整模式，适合完整浏览运行记录、对比结果、实验报告和生成链路。"}
         </InlineNotice>
         <div className="mt-4 flex flex-wrap gap-3">
-          <TextField
-            value={presetName}
-            onChange={(event) => setPresetName(event.target.value)}
-            placeholder="预设名称"
-            className="w-auto min-w-44 rounded-full py-2"
-          />
-          <TextField
-            value={shareViewName}
-            onChange={(event) => setShareViewName(event.target.value)}
-            placeholder="分享视图名称"
-            className="w-auto min-w-48 rounded-full py-2"
-          />
+          <AdminPillTextField value={presetName} onChange={setPresetName} placeholder="预设名称" className="w-auto min-w-44" />
+          <AdminPillTextField value={shareViewName} onChange={setShareViewName} placeholder="分享视图名称" className="w-auto min-w-48" />
           <Button variant="secondary" onClick={saveCurrentPreset}>
             保存预设
           </Button>
@@ -1214,13 +1206,12 @@ export function EvalsPage() {
           <Button variant="secondary" onClick={importPresets}>
             导入预设
           </Button>
-          <UiSelectField
+          <AdminPillSelectField
             value={presetName}
-            onChange={(event) => {
-              setPresetName(event.target.value);
-              applyPreset(event.target.value);
+            onChange={(value) => {
+              setPresetName(value);
+              applyPreset(value);
             }}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
           >
             <option value="">应用预设</option>
             {savedPresets.map((preset) => (
@@ -1228,7 +1219,7 @@ export function EvalsPage() {
                 {preset.name}
               </option>
             ))}
-          </UiSelectField>
+          </AdminPillSelectField>
           {presetName && savedPresets.some((preset) => preset.name === presetName) ? (
             <Button variant="danger" onClick={() => deletePreset(presetName)}>
               删除预设
@@ -1499,54 +1490,32 @@ export function EvalsPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>最近运行</SectionHeading>
           <div className="mt-4 flex flex-wrap gap-3">
-            <UiSelectField
-              value={selectedDatasetId ?? ""}
-              onChange={(event) => setSelectedDatasetId(event.target.value || null)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            <AdminPillSelectField value={selectedDatasetId ?? ""} onChange={(value) => setSelectedDatasetId(value || null)}>
               <option value="">全部数据集</option>
               {datasetList.map((dataset) => (
                 <option key={dataset.id} value={dataset.id}>
                   {dataset.title}
                 </option>
               ))}
-            </UiSelectField>
-            <TextField
-              value={historyProviderFilter}
-              onChange={(event) => setHistoryProviderFilter(event.target.value)}
-              placeholder="推理模型"
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
-            />
-            <TextField
-              value={historyJudgeFilter}
-              onChange={(event) => setHistoryJudgeFilter(event.target.value)}
-              placeholder="裁判模型"
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)]"
-            />
-            <UiSelectField
-              value={historyPromptVariantFilter}
-              onChange={(event) => setHistoryPromptVariantFilter(event.target.value)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillTextField value={historyProviderFilter} onChange={setHistoryProviderFilter} placeholder="推理模型" />
+            <AdminPillTextField value={historyJudgeFilter} onChange={setHistoryJudgeFilter} placeholder="裁判模型" />
+            <AdminPillSelectField value={historyPromptVariantFilter} onChange={setHistoryPromptVariantFilter}>
               <option value="">全部提示词变体</option>
               {promptVariants.map((variant) => (
                 <option key={`history-prompt-${variant.id}`} value={variant.id}>
                   {variant.label}
                 </option>
               ))}
-            </UiSelectField>
-            <UiSelectField
-              value={historyMemoryPolicyFilter}
-              onChange={(event) => setHistoryMemoryPolicyFilter(event.target.value)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillSelectField value={historyMemoryPolicyFilter} onChange={setHistoryMemoryPolicyFilter}>
               <option value="">全部记忆策略</option>
               {memoryStrategies.map((strategy) => (
                 <option key={`history-${strategy.id}`} value={strategy.id}>
                   {strategy.label}
                 </option>
               ))}
-            </UiSelectField>
+            </AdminPillSelectField>
           </div>
           <div className="mt-4 space-y-3">
             {recentRuns.length > 0 ? (
@@ -2142,67 +2111,42 @@ export function EvalsPage() {
           </InlineNotice>
           {compareFiltersExpanded ? (
           <div className="mb-4 flex flex-wrap gap-3">
-            <TextField
-              value={compareCaseSearch}
-              onChange={(event) => setCompareCaseSearch(event.target.value)}
-              placeholder="搜索用例编号"
-              className="w-auto min-w-44 rounded-full py-2"
-            />
-            <UiSelectField
-              value={baselineRunId}
-              onChange={(event) => setBaselineRunId(event.target.value)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            <AdminPillTextField value={compareCaseSearch} onChange={setCompareCaseSearch} placeholder="搜索用例编号" className="w-auto min-w-44" />
+            <AdminPillSelectField value={baselineRunId} onChange={setBaselineRunId}>
               <option value="">选择基线运行</option>
               {comparableRuns.map((run) => (
                 <option key={`baseline-${run.id}`} value={run.id}>
                   {run.datasetId} · {run.id}
                 </option>
               ))}
-            </UiSelectField>
-            <UiSelectField
-              value={candidateRunId}
-              onChange={(event) => setCandidateRunId(event.target.value)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillSelectField value={candidateRunId} onChange={setCandidateRunId}>
               <option value="">选择候选运行</option>
               {comparableRuns.map((run) => (
                 <option key={`candidate-${run.id}`} value={run.id}>
                   {run.datasetId} · {run.id}
                 </option>
               ))}
-            </UiSelectField>
-            <UiSelectField
-              value={compareCaseFilter}
-              onChange={(event) => setCompareCaseFilter(event.target.value as "all" | "different" | "failed")}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillSelectField value={compareCaseFilter} onChange={(value) => setCompareCaseFilter(value as "all" | "different" | "failed")}>
               <option value="all">全部用例</option>
               <option value="different">仅差异用例</option>
               <option value="failed">仅失败用例</option>
-            </UiSelectField>
-            <UiSelectField
-              value={compareOutcomeFilter}
-              onChange={(event) => setCompareOutcomeFilter(event.target.value as "all" | "win" | "lose" | "tie")}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillSelectField value={compareOutcomeFilter} onChange={(value) => setCompareOutcomeFilter(value as "all" | "win" | "lose" | "tie")}>
               <option value="all">全部结果</option>
               <option value="win">候选胜出</option>
               <option value="lose">候选落后</option>
               <option value="tie">持平</option>
-            </UiSelectField>
-            <UiSelectField
-              value={compareFailureTagFilter}
-              onChange={(event) => setCompareFailureTagFilter(event.target.value)}
-              className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-            >
+            </AdminPillSelectField>
+            <AdminPillSelectField value={compareFailureTagFilter} onChange={setCompareFailureTagFilter}>
               <option value="">全部失败标签</option>
               {availableCompareFailureTags.map((tagKey) => (
                 <option key={tagKey} value={tagKey}>
                   {tagKey}
                 </option>
               ))}
-            </UiSelectField>
+            </AdminPillSelectField>
           </div>
           ) : null}
           {compareQuery.data ? (
@@ -2374,73 +2318,49 @@ export function EvalsPage() {
         </InlineNotice>
         {traceFiltersExpanded ? (
         <div className="mt-4 flex flex-wrap gap-3">
-          <UiSelectField
-            value={traceScopeFilter}
-            onChange={(event) => setTraceScopeFilter(event.target.value as "all" | "run" | "compare")}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          <AdminPillSelectField value={traceScopeFilter} onChange={(value) => setTraceScopeFilter(value as "all" | "run" | "compare")}>
             <option value="all">全部链路</option>
             <option value="run">当前运行链路</option>
             <option value="compare">当前对比链路</option>
-          </UiSelectField>
-          <UiSelectField
-            value={traceCaseFilter}
-            onChange={(event) => setTraceCaseFilter(event.target.value)}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          </AdminPillSelectField>
+          <AdminPillSelectField value={traceCaseFilter} onChange={setTraceCaseFilter}>
             <option value="">全部用例</option>
             {availableTraceCaseIds.map((caseId) => (
               <option key={caseId} value={caseId}>
                 {caseId}
               </option>
             ))}
-          </UiSelectField>
-          <UiSelectField
-            value={traceFailureTagFilter}
-            onChange={(event) => setTraceFailureTagFilter(event.target.value)}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          </AdminPillSelectField>
+          <AdminPillSelectField value={traceFailureTagFilter} onChange={setTraceFailureTagFilter}>
             <option value="">全部失败标签</option>
             {availableTraceFailureTags.map((tagKey) => (
               <option key={tagKey} value={tagKey}>
                 {tagKey}
               </option>
             ))}
-          </UiSelectField>
-          <UiSelectField
-            value={traceSource}
-            onChange={(event) => setTraceSource(event.target.value)}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          </AdminPillSelectField>
+          <AdminPillSelectField value={traceSource} onChange={setTraceSource}>
             <option value="">全部来源</option>
             <option value="chat.reply">聊天直回</option>
             <option value="social.greeting">社交打招呼</option>
             <option value="group.intent">群聊意图判断</option>
             <option value="group.coordinator">群聊协调回复</option>
             <option value="memory.summary">记忆摘要</option>
-          </UiSelectField>
-          <UiSelectField
-            value={traceStatus}
-            onChange={(event) => setTraceStatus(event.target.value)}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          </AdminPillSelectField>
+          <AdminPillSelectField value={traceStatus} onChange={setTraceStatus}>
             <option value="">全部状态</option>
             <option value="success">成功</option>
             <option value="fallback">回退</option>
             <option value="error">错误</option>
-          </UiSelectField>
-          <UiSelectField
-            value={traceCharacterId}
-            onChange={(event) => setTraceCharacterId(event.target.value)}
-            className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-secondary)] hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
-          >
+          </AdminPillSelectField>
+          <AdminPillSelectField value={traceCharacterId} onChange={setTraceCharacterId}>
             <option value="">全部角色</option>
             {availableCharacterIds.map((characterId) => (
               <option key={characterId} value={characterId ?? ""}>
                 {characterId}
               </option>
             ))}
-          </UiSelectField>
+          </AdminPillSelectField>
           {focusedCaseId ? (
             <Button
               variant="secondary"
