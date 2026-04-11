@@ -240,6 +240,30 @@ export function AdminMiniPanel({
   );
 }
 
+export function AdminDetailPanel({
+  title,
+  children,
+  className,
+  contentClassName,
+}: {
+  title: ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]",
+        className,
+      )}
+    >
+      <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">{title}</div>
+      <div className={cn("mt-4", contentClassName)}>{children}</div>
+    </div>
+  );
+}
+
 export function AdminActionGroup({
   title,
   description,

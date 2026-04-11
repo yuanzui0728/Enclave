@@ -33,6 +33,7 @@ import {
 } from "@yinjie/ui";
 import {
   AdminActionFeedback,
+  AdminDetailPanel,
   AdminEmptyState,
   AdminInlineSelectField,
   AdminInlineTextField,
@@ -2415,7 +2416,7 @@ export function EvalsPage() {
           </div>
           <div>
             {traceDetailQuery.data ? (
-              <div className="space-y-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <AdminDetailPanel title="链路输出" contentClassName="space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-semibold text-[color:var(--text-primary)]">{formatTraceSource(traceDetailQuery.data.source)}</div>
                   <StatusPill tone={traceDetailQuery.data.status === "error" ? "warning" : traceDetailQuery.data.status === "fallback" ? "warning" : "healthy"}>
@@ -2496,7 +2497,7 @@ export function EvalsPage() {
                       "空"}
                   </div>
                 </div>
-              </div>
+              </AdminDetailPanel>
             ) : (
               <AdminEmptyState
                 title="先选择一条链路"
@@ -2506,8 +2507,7 @@ export function EvalsPage() {
           </div>
           <div>
             {traceDetailQuery.data ? (
-              <div className="space-y-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
-                <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">链路上下文</div>
+              <AdminDetailPanel title="链路上下文" contentClassName="space-y-4">
                 <div className="grid gap-3">
                   <SnapshotPanel title="请求配置" value={traceDetailQuery.data.input.requestConfig} />
                   <SnapshotPanel title="世界上下文快照" value={traceDetailQuery.data.input.worldContextSnapshot} />
@@ -2569,7 +2569,7 @@ export function EvalsPage() {
                     ) : null}
                   </div>
                 ) : null}
-              </div>
+              </AdminDetailPanel>
             ) : (
               <AdminEmptyState
                 title="先选择一条链路"
