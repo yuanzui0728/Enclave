@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { deleteCharacter, listCharacters, type Character } from "@yinjie/contracts";
+import { deleteCharacter, getSystemStatus, listCharacters, type Character } from "@yinjie/contracts";
 import {
   Button,
   Card,
@@ -22,6 +22,7 @@ import {
   AdminInfoRow,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 function relationshipTone(type: Character["relationshipType"]) {
   switch (type) {
@@ -47,6 +48,13 @@ export function CharactersPage() {
     queryKey: ["admin-characters-crud", baseUrl],
     queryFn: () => listCharacters(baseUrl),
   });
+  const systemStatusQuery = useQuery({
+    queryKey: ["admin-characters-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteCharacter(id, baseUrl),
@@ -110,6 +118,22 @@ export function CharactersPage() {
         title="角色运营路径"
         description="先筛角色，再在中间看摘要，右侧直接进入编辑、工厂和运行逻辑台。"
         tone="muted"
+      />
+      <AdminCallout
+        title={
+          digitalHumanSummary.ready
+            ? "数字人链路已进入可联调状态"
+            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
+        }
+        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+        tone={digitalHumanSummary.ready ? "success" : "warning"}
+        actions={
+          digitalHumanSummary.ready ? null : (
+            <Link to="/setup">
+              <Button variant="secondary">前往设置页补齐配置</Button>
+            </Link>
+          )
+        }
       />
 
       {charactersQuery.isLoading ? <LoadingBlock label="正在加载角色名册..." /> : null}
