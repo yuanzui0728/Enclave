@@ -42,6 +42,7 @@ import {
   AdminPageHero,
   AdminPillSelectField,
   AdminPillTextField,
+  AdminRecordCard,
   AdminSelectableCard,
   AdminSectionNav,
 } from "../components/admin-workbench";
@@ -1268,19 +1269,31 @@ export function EvalsPage() {
         <SectionHeading>已保存视图</SectionHeading>
         <div className="mt-4 grid gap-3 xl:grid-cols-3">
           {savedPresets.map((preset) => (
-            <div
+            <AdminRecordCard
               key={preset.name}
-              className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left text-sm text-[color:var(--text-secondary)]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="font-semibold text-[color:var(--text-primary)]">
+              title={
+                <>
                   {preset.name}
                   {preset.pinned ? " · 已置顶" : ""}
+                </>
+              }
+              badges={
+                <StatusPill tone={preset.compactView ? "healthy" : "muted"}>
+                  {preset.compactView ? "紧凑" : "完整"}
+                </StatusPill>
+              }
+              meta={preset.shareViewName || "未命名视图"}
+              details={
+                <div className="grid gap-2 text-xs">
+                  <div>数据集：{preset.selectedDatasetId ?? "全部"}</div>
+                  <div>对比：{formatCompareCaseFilter(preset.compareCaseFilter)} / {formatCompareOutcomeFilter(preset.compareOutcomeFilter)}</div>
+                  <div>
+                    链路：{formatTraceScope(preset.traceScopeFilter)} / {preset.traceSource ? formatTraceSource(preset.traceSource) : "全部来源"}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill tone={preset.compactView ? "healthy" : "muted"}>
-                    {preset.compactView ? "紧凑" : "完整"}
-                  </StatusPill>
+              }
+              actions={
+                <>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1302,30 +1315,19 @@ export function EvalsPage() {
                   >
                     下移
                   </Button>
-                </div>
-              </div>
-              <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-                {preset.shareViewName || "未命名视图"}
-              </div>
-              <div className="mt-3 grid gap-2 text-xs">
-                <div>数据集：{preset.selectedDatasetId ?? "全部"}</div>
-                <div>对比：{formatCompareCaseFilter(preset.compareCaseFilter)} / {formatCompareOutcomeFilter(preset.compareOutcomeFilter)}</div>
-                <div>
-                  链路：{formatTraceScope(preset.traceScopeFilter)} / {preset.traceSource ? formatTraceSource(preset.traceSource) : "全部来源"}
-                </div>
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-4"
-                onClick={() => {
-                  setPresetName(preset.name);
-                  applyPreset(preset.name);
-                }}
-              >
-                应用视图
-              </Button>
-            </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setPresetName(preset.name);
+                      applyPreset(preset.name);
+                    }}
+                  >
+                    应用视图
+                  </Button>
+                </>
+              }
+            />
           ))}
           {savedPresets.length === 0 ? (
             <AdminEmptyState
