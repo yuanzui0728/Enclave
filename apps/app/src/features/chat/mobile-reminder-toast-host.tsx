@@ -34,6 +34,11 @@ export function MobileReminderToastHost() {
   });
   const { reminders, clearReminder, notifyReminder } = useMessageReminders();
   const [dismissedMessageIds, setDismissedMessageIds] = useState<string[]>([]);
+  const [documentVisibility, setDocumentVisibility] = useState<
+    DocumentVisibilityState | null
+  >(() =>
+    typeof document === "undefined" ? null : document.visibilityState,
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -80,11 +85,26 @@ export function MobileReminderToastHost() {
   }, [dueReminders]);
 
   useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const syncVisibility = () => {
+      setDocumentVisibility(document.visibilityState);
+    };
+
+    syncVisibility();
+    document.addEventListener("visibilitychange", syncVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
     if (
       !activeReminder ||
       activeReminder.notifiedAt ||
-      typeof document === "undefined" ||
-      document.visibilityState === "visible"
+      documentVisibility !== "hidden"
     ) {
       return;
     }
@@ -110,7 +130,7 @@ export function MobileReminderToastHost() {
 
       void notifyReminder(activeReminder.messageId);
     });
-  }, [activeReminder]);
+  }, [activeReminder, documentVisibility, notifyReminder]);
 
   const shouldHideActiveReminder =
     !activeReminder ||

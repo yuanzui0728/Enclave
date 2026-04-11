@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { sendGroupMessage } from "@yinjie/contracts";
 import { DesktopMiniProgramsWorkspace } from "../features/desktop/mini-programs/desktop-mini-programs-workspace";
 import {
@@ -19,7 +19,6 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
   buildGroupRelaySummaryMessage,
-  type GroupRelaySummaryStatus,
 } from "../features/mini-programs/group-relay-message";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -27,26 +26,20 @@ function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
 }
 
-function resolveMiniProgramSelectionFromLocation() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const miniProgramId = new URLSearchParams(window.location.search).get(
-    "miniProgram",
-  );
+function resolveMiniProgramSelectionFromSearch(search: unknown) {
+  const miniProgramId = new URLSearchParams(
+    typeof search === "string" ? search : "",
+  ).get("miniProgram");
 
   return miniProgramId && getMiniProgramEntry(miniProgramId)
     ? miniProgramId
     : null;
 }
 
-function resolveMiniProgramLaunchContextFromLocation() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const searchParams = new URLSearchParams(window.location.search);
+function resolveMiniProgramLaunchContextFromSearch(search: unknown) {
+  const searchParams = new URLSearchParams(
+    typeof search === "string" ? search : "",
+  );
   const sourceGroupId = searchParams.get("sourceGroupId")?.trim() ?? "";
   const sourceGroupName = searchParams.get("sourceGroupName")?.trim() ?? "";
 
@@ -66,6 +59,9 @@ export function MiniProgramsPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const locationSearch = useRouterState({
+    select: (state) => state.location.search,
+  });
   const {
     activeMiniProgramId,
     completedTaskIdsByMiniProgramId,
@@ -83,21 +79,22 @@ export function MiniProgramsPage() {
   const [activeCategory, setActiveCategory] =
     useState<MiniProgramCategoryId>("all");
   const [searchText, setSearchText] = useState("");
+  const selectedMiniProgramFromSearch = useMemo(
+    () => resolveMiniProgramSelectionFromSearch(locationSearch),
+    [locationSearch],
+  );
   const [selectedMiniProgramId, setSelectedMiniProgramId] = useState(
-    resolveMiniProgramSelectionFromLocation() ?? resolveDefaultMiniProgramId(),
+    selectedMiniProgramFromSearch ?? resolveDefaultMiniProgramId(),
   );
   const launchContext = useMemo(
-    () => resolveMiniProgramLaunchContextFromLocation(),
-    [],
+    () => resolveMiniProgramLaunchContextFromSearch(locationSearch),
+    [locationSearch],
   );
-  const groupRelayCompletedTaskIds =
-    completedTaskIdsByMiniProgramId["group-relay"] ?? [];
   const groupRelayEntry = getMiniProgramEntry("group-relay");
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
-  const relaySummaryPublishedAt = useMemo(
-    () => new Date().toISOString(),
-    [launchContext?.sourceGroupId],
+  const [relaySummaryPublishedAt, setRelaySummaryPublishedAt] = useState(() =>
+    new Date().toISOString(),
   );
   const relaySummaryStartedAt =
     launchContext && lastOpenedAtById["group-relay"]
@@ -148,6 +145,22 @@ export function MiniProgramsPage() {
         .includes(keyword);
     });
   }, [activeCategory, searchText]);
+
+  useEffect(() => {
+    setRelaySummaryPublishedAt(new Date().toISOString());
+  }, [launchContext?.sourceGroupId]);
+
+  useEffect(() => {
+    if (!selectedMiniProgramFromSearch) {
+      return;
+    }
+
+    setSelectedMiniProgramId((current) =>
+      current === selectedMiniProgramFromSearch
+        ? current
+        : selectedMiniProgramFromSearch,
+    );
+  }, [selectedMiniProgramFromSearch]);
 
   useEffect(() => {
     if (!getMiniProgramEntry(selectedMiniProgramId)) {
@@ -367,20 +380,6 @@ export function MiniProgramsPage() {
       onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
     />
   );
-}
-
-function resolveGroupRelaySummaryStatus(
-  completedTaskIds: string[],
-): GroupRelaySummaryStatus {
-  if (completedTaskIds.includes("publish-result")) {
-    return "published";
-  }
-
-  if (completedTaskIds.includes("check-unconfirmed")) {
-    return "completed";
-  }
-
-  return "pending";
 }
 
 function resolveGroupRelayMetricValue(

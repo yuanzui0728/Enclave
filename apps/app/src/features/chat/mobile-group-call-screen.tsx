@@ -53,19 +53,21 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const routeState = useMemo(() => parseMobileGroupCallRouteHash(hash), [hash]);
   const effectiveSource = routeState?.source ?? "mobile";
   const sourceLabel = effectiveSource === "desktop" ? "桌面端" : "手机端";
-  const hasResumeCounts =
-    routeState !== null &&
-    routeState.activeCount !== null &&
-    routeState.totalCount !== null;
-  const resumeCounts =
-    routeState !== null &&
-    routeState.activeCount !== null &&
-    routeState.totalCount !== null
-    ? {
-        activeCount: routeState.activeCount,
-        totalCount: routeState.totalCount,
-      }
-    : null;
+  const resumeCounts = useMemo(() => {
+    if (
+      routeState === null ||
+      routeState.activeCount === null ||
+      routeState.totalCount === null
+    ) {
+      return null;
+    }
+
+    return {
+      activeCount: routeState.activeCount,
+      totalCount: routeState.totalCount,
+    };
+  }, [routeState]);
+  const hasResumeCounts = resumeCounts !== null;
   const [muted, setMuted] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
@@ -78,6 +80,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     totalCount: number;
   } | null>(null);
   const panelOpenedReportedRef = useRef(false);
+  const initializedSessionKeyRef = useRef<string | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, resolvedGroupId],
@@ -91,7 +94,28 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     enabled: Boolean(resolvedGroupId),
   });
 
-  const members = membersQuery.data ?? [];
+  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data]);
+  const callSessionKey = useMemo(
+    () =>
+      JSON.stringify({
+        activeCount: routeState?.activeCount ?? null,
+        groupId: resolvedGroupId,
+        mode,
+        recordedAt:
+          routeState?.recordedAt ?? routeState?.snapshotRecordedAt ?? null,
+        source: routeState?.source ?? "mobile",
+        totalCount: routeState?.totalCount ?? null,
+      }),
+    [
+      mode,
+      resolvedGroupId,
+      routeState?.activeCount,
+      routeState?.recordedAt,
+      routeState?.snapshotRecordedAt,
+      routeState?.source,
+      routeState?.totalCount,
+    ],
+  );
   const activeMembers = useMemo(
     () => members.filter((member) => joinedMemberIds.includes(member.memberId)),
     [joinedMemberIds, members],
@@ -122,6 +146,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   });
 
   useEffect(() => {
+    if (!resolvedGroupId || membersQuery.isLoading) {
+      return;
+    }
+
+    if (initializedSessionKeyRef.current === callSessionKey) {
+      return;
+    }
+
+    initializedSessionKeyRef.current = callSessionKey;
     setMuted(false);
     setSpeakerEnabled(true);
     setCameraEnabled(mode === "video");
@@ -137,7 +170,45 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     setJoinedMemberIds(
       buildInitialJoinedMemberIds(members, routeState?.activeCount ?? null),
     );
-  }, [groupId, hasResumeCounts, members, mode, resumeCounts, routeState]);
+  }, [
+    callSessionKey,
+    hasResumeCounts,
+    members,
+    membersQuery.isLoading,
+    mode,
+    resolvedGroupId,
+    resumeCounts,
+    routeState,
+  ]);
+
+  useEffect(() => {
+    if (!members.length) {
+      return;
+    }
+
+    const memberIds = new Set(members.map((member) => member.memberId));
+    const mandatoryJoinedIds = members
+      .filter(
+        (member) => member.memberType === "user" || member.role === "owner",
+      )
+      .map((member) => member.memberId);
+
+    setJoinedMemberIds((current) => {
+      const next = current.filter((memberId) => memberIds.has(memberId));
+      let changed = next.length !== current.length;
+
+      for (const memberId of mandatoryJoinedIds) {
+        if (next.includes(memberId)) {
+          continue;
+        }
+
+        next.push(memberId);
+        changed = true;
+      }
+
+      return changed ? next : current;
+    });
+  }, [members]);
 
   const invalidateCallQueries = useCallback(async () => {
     await Promise.all([
@@ -313,7 +384,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             kind: mode,
           }) || undefined,
       });
-    } catch (error) {
+    } catch {
       setLeavingScreen(false);
     }
   };
