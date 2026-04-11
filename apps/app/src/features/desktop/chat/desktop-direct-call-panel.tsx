@@ -456,6 +456,9 @@ export function DesktopDirectCallPanel({
               }
               statusLabel={statusLabel}
               statusHint={statusHint}
+              onRetryRender={() => {
+                digitalHumanCall.retrySession();
+              }}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">

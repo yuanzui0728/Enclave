@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { Video } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
@@ -10,6 +11,7 @@ type DigitalHumanStageProps = {
   statusLabel: string;
   statusHint: string;
   providerLabel?: string;
+  footerAction?: ReactNode;
 };
 
 export function DigitalHumanStage({
@@ -21,6 +23,7 @@ export function DigitalHumanStage({
   statusLabel,
   statusHint,
   providerLabel,
+  footerAction,
 }: DigitalHumanStageProps) {
   const initial = name.trim().slice(0, 1) || "AI";
   const mobile = variant === "mobile";
@@ -140,6 +143,7 @@ export function DigitalHumanStage({
           <div className="mt-1 text-[13px] leading-6 text-white/72">
             {statusHint}
           </div>
+          {footerAction ? <div className="mt-3">{footerAction}</div> : null}
         </div>
       </div>
     </section>
