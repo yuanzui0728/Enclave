@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Phone, Users, Video } from "lucide-react";
+import { getSystemStatus, type StickerAttachment } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
 import {
@@ -36,7 +38,7 @@ import {
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
-import { type StickerAttachment } from "@yinjie/contracts";
+import { resolveDigitalHumanEntryGuardCopy } from "./digital-human-entry-guard";
 
 type ConversationThreadPanelProps = {
   conversationId: string;
@@ -85,6 +87,13 @@ export function ConversationThreadPanel({
     nonce: number;
   } | null>(null);
   const [selectionModeActive, setSelectionModeActive] = useState(false);
+  const [entryNotice, setEntryNotice] = useState<{
+    tone: "info" | "warning";
+    message: string;
+  } | null>(null);
+  const [videoGuardMessage, setVideoGuardMessage] = useState<string | null>(
+    null,
+  );
   const {
     baseUrl,
     conversationTitle,
@@ -111,6 +120,11 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
+  const systemStatusQuery = useQuery({
+    queryKey: ["system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+    enabled: conversationType === "direct",
+  });
   const unreadMarkerScrolledRef = useRef(false);
   const {
     ref: scrollAnchorRef,
@@ -259,6 +273,24 @@ export function ConversationThreadPanel({
   };
 
   const handleDesktopCallAction = (kind: DesktopChatCallKind) => {
+    setEntryNotice(null);
+
+    if (kind === "video") {
+      const guardCopy = resolveDigitalHumanEntryGuardCopy(
+        systemStatusQuery.data?.digitalHumanGateway,
+      );
+
+      if (guardCopy && videoGuardMessage !== guardCopy.message) {
+        setVideoGuardMessage(guardCopy.message);
+        setEntryNotice(guardCopy);
+        return;
+      }
+    } else {
+      setVideoGuardMessage(null);
+    }
+
+    setVideoGuardMessage(null);
+
     if (isDesktop) {
       setDesktopCallPanelState({
         kind,
@@ -284,6 +316,8 @@ export function ConversationThreadPanel({
   useEffect(() => {
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
+    setEntryNotice(null);
+    setVideoGuardMessage(null);
   }, [conversationId]);
 
   useEffect(() => {
@@ -394,6 +428,19 @@ export function ConversationThreadPanel({
                 </Button>
               </div>
             </div>
+          </InlineNotice>
+        </div>
+      ) : null}
+      {entryNotice ? (
+        <div
+          className={
+            isDesktop
+              ? "border-b border-black/5 bg-[#f7f7f7] px-6 py-3"
+              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+          }
+        >
+          <InlineNotice tone={entryNotice.tone} className="border-black/6 bg-white">
+            {entryNotice.message}
           </InlineNotice>
         </div>
       ) : null}
