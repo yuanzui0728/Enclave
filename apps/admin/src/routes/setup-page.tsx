@@ -16,6 +16,7 @@ import { Link } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import {
   AdminCallout,
+  AdminCodeBlock,
   AdminInfoRows,
   AdminJumpCard,
   AdminPageHero,
@@ -116,6 +117,10 @@ export function SetupPage() {
       ? digitalHumanDraft.playerUrlTemplate.trim()
       : digitalHumanDraft.mode,
   ) && !digitalHumanParamsError;
+  const digitalHumanPreview = buildDigitalHumanPreview(
+    digitalHumanDraft,
+    baseUrl,
+  );
   const worldOwnerReady = (systemStatusQuery.data?.worldSurface.ownerCount ?? 0) === 1;
   const schedulerReady = Boolean(systemStatusQuery.data?.scheduler.healthy);
   const setupSteps = [
@@ -477,6 +482,45 @@ export function SetupPage() {
               />
             </div>
 
+            <div className="mt-5 rounded-[24px] border border-[color:var(--border-faint)] bg-white/70 p-4">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                模板预览
+              </div>
+              <div className="mt-3 grid gap-3">
+                <AdminInfoRows
+                  title="示例占位值"
+                  rows={[
+                    { label: "sessionId", value: digitalHumanPreview.replacements.sessionId },
+                    {
+                      label: "characterId",
+                      value: digitalHumanPreview.replacements.characterId,
+                    },
+                    {
+                      label: "characterName",
+                      value: digitalHumanPreview.replacements.characterName,
+                    },
+                    {
+                      label: "callbackToken",
+                      value:
+                        digitalHumanPreview.replacements.callbackToken || "未设置",
+                    },
+                  ]}
+                />
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                    示例播放器 URL
+                  </div>
+                  <AdminCodeBlock value={digitalHumanPreview.playerUrl} />
+                </div>
+                <div>
+                  <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                    示例回调 URL
+                  </div>
+                  <AdminCodeBlock value={digitalHumanPreview.callbackUrl} />
+                </div>
+              </div>
+            </div>
+
             <InlineNotice className="mt-4" tone="info">
               建议把 provider 固定参数都放进扩展参数 JSON，再在播放器模板中直接使用对应占位符。
             </InlineNotice>
@@ -552,5 +596,53 @@ function validateDigitalHumanParams(value: string) {
     return null;
   } catch {
     return "扩展参数 JSON 格式不合法，请修正后再保存。";
+  }
+}
+
+function buildDigitalHumanPreview(
+  draft: ReturnType<typeof createDigitalHumanConfigDraft>,
+  baseUrl: string,
+) {
+  const replacements = {
+    sessionId: "preview-session-001",
+    conversationId: "conversation-preview-001",
+    characterId: "character-preview-001",
+    characterName: "数字人小隐",
+    callbackUrl: `${baseUrl}/api/chat/digital-human-calls/sessions/preview-session-001/provider-state${
+      draft.callbackToken.trim()
+        ? `?token=${encodeURIComponent(draft.callbackToken.trim())}`
+        : ""
+    }`,
+    callbackToken: draft.callbackToken.trim(),
+    ...parseDigitalHumanParams(draft.providerParams),
+  };
+
+  let playerUrl = draft.playerUrlTemplate.trim();
+  for (const [key, value] of Object.entries(replacements)) {
+    playerUrl = playerUrl.replaceAll(
+      `{${key}}`,
+      encodeURIComponent(value ?? ""),
+    );
+  }
+
+  return {
+    callbackUrl: replacements.callbackUrl,
+    playerUrl: playerUrl || "当前未配置播放器模板",
+    replacements,
+  };
+}
+
+function parseDigitalHumanParams(value: string) {
+  if (!value.trim()) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed).map(([key, item]) => [key, item == null ? "" : String(item)]),
+    );
+  } catch {
+    return {};
   }
 }
