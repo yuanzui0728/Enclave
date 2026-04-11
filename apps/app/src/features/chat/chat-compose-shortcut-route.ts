@@ -1,7 +1,9 @@
 export type ChatComposeShortcutAction = "voice-message" | "camera" | "album";
 export type ChatCallFallbackKind = "voice" | "video";
+export type ChatCallReturnKind = "voice" | "video";
 
 const CHAT_COMPOSE_SHORTCUT_QUERY_KEY = "composeShortcut";
+const CHAT_CALL_RETURN_QUERY_KEY = "callReturn";
 
 type ChatComposeShortcutSearchInput =
   | string
@@ -31,6 +33,29 @@ export function buildChatComposeShortcutSearch(input?: {
     params.set(CHAT_COMPOSE_SHORTCUT_QUERY_KEY, input.action);
   } else {
     params.delete(CHAT_COMPOSE_SHORTCUT_QUERY_KEY);
+  }
+
+  const nextSearch = params.toString();
+  return nextSearch ? `?${nextSearch}` : "";
+}
+
+export function parseChatCallReturnKind(
+  search: ChatComposeShortcutSearchInput,
+): ChatCallReturnKind | null {
+  const kind = toSearchParams(search).get(CHAT_CALL_RETURN_QUERY_KEY)?.trim();
+  return kind === "voice" || kind === "video" ? kind : null;
+}
+
+export function buildChatCallReturnSearch(input?: {
+  search?: ChatComposeShortcutSearchInput;
+  kind?: ChatCallReturnKind | null;
+}) {
+  const params = toSearchParams(input?.search);
+
+  if (input?.kind) {
+    params.set(CHAT_CALL_RETURN_QUERY_KEY, input.kind);
+  } else {
+    params.delete(CHAT_CALL_RETURN_QUERY_KEY);
   }
 
   const nextSearch = params.toString();

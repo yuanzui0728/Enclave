@@ -2,8 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { AppPage } from "@yinjie/ui";
 import {
+  buildChatCallReturnSearch,
   buildChatComposeShortcutSearch,
+  parseChatCallReturnKind,
   parseChatComposeShortcutAction,
+  type ChatCallReturnKind,
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
@@ -22,6 +25,8 @@ export function ChatRoomPage() {
   const routeContext = resolveRouteContext(conversationId);
   const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
     useState<ChatComposeShortcutAction | null>(null);
+  const [routeCallReturnKind, setRouteCallReturnKind] =
+    useState<ChatCallReturnKind | null>(null);
 
   useEffect(() => {
     const nextAction = parseChatComposeShortcutAction(search);
@@ -44,9 +49,50 @@ export function ChatRoomPage() {
     });
   }, [conversationId, hash, navigate, search]);
 
+  useEffect(() => {
+    const nextKind = parseChatCallReturnKind(search);
+    if (!nextKind) {
+      return;
+    }
+
+    setRouteCallReturnKind(nextKind);
+
+    const nextSearch = buildChatCallReturnSearch({
+      search,
+      kind: null,
+    });
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId },
+      search: nextSearch || undefined,
+      hash,
+      replace: true,
+    });
+  }, [conversationId, hash, navigate, search]);
+
   const handleRouteMobileShortcutHandled = useCallback(() => {
     setRouteMobileShortcutAction(null);
   }, []);
+
+  const callReturnNotice =
+    routeCallReturnKind === null
+      ? null
+      : {
+          actionLabel: "发语音继续",
+          description: `本轮${routeCallReturnKind === "voice" ? "语音" : "视频"}通话已结束，可继续在聊天里发语音或文字。`,
+          onAction: () => {
+            setRouteCallReturnKind(null);
+            void navigate({
+              to: "/chat/$conversationId",
+              params: { conversationId },
+              search:
+                buildChatComposeShortcutSearch({
+                  action: "voice-message",
+                }) || undefined,
+              hash,
+            });
+          },
+        };
 
   if (isDesktopLayout) {
     return (
@@ -54,7 +100,8 @@ export function ChatRoomPage() {
         selectedConversationId={conversationId}
         highlightedMessageId={highlightedMessageId}
         routeContextNotice={
-          routeContext
+          callReturnNotice ??
+          (routeContext
             ? {
                 actionLabel: routeContext.actionLabel,
                 description: routeContext.description,
@@ -62,7 +109,7 @@ export function ChatRoomPage() {
                   void navigate({ to: routeContext.returnPath });
                 },
               }
-            : undefined
+            : undefined)
         }
       />
     );
@@ -77,7 +124,8 @@ export function ChatRoomPage() {
           routeMobileShortcutAction={routeMobileShortcutAction}
           onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
           routeContextNotice={
-            routeContext
+            callReturnNotice ??
+            (routeContext
               ? {
                   actionLabel: routeContext.actionLabel,
                   description: routeContext.description,
@@ -85,7 +133,7 @@ export function ChatRoomPage() {
                     void navigate({ to: routeContext.returnPath });
                   },
                 }
-              : undefined
+              : undefined)
           }
           onBack={() => {
             if (routeContext) {

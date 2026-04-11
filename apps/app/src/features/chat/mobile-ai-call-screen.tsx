@@ -35,6 +35,7 @@ import { useSelfCameraPreview } from "./use-self-camera-preview";
 import { DigitalHumanPlayer } from "./digital-human-player";
 import { useDigitalHumanCallSession } from "./use-digital-human-call-session";
 import { useVoiceCallSession } from "./use-voice-call-session";
+import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
 
 type MobileAiCallScreenProps = {
   mode: "voice" | "video";
@@ -364,6 +365,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     void navigate({
       to: "/chat/$conversationId",
       params: { conversationId: resolvedConversationId },
+      search:
+        buildChatCallReturnSearch({
+          kind: mode,
+        }) || undefined,
     });
   };
 

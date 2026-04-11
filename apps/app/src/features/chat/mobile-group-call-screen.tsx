@@ -31,6 +31,7 @@ import {
   formatGroupCallStatusLabel,
 } from "./group-call-message";
 import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
+import { buildChatCallReturnSearch } from "./chat-compose-shortcut-route";
 
 type MobileGroupCallScreenProps = {
   mode: "voice" | "video";
@@ -286,7 +287,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       durationMs,
       startedAt,
     });
-    handleBack();
+    void navigate({
+      to: "/group/$groupId",
+      params: { groupId: resolvedGroupId },
+      search:
+        buildChatCallReturnSearch({
+          kind: mode,
+        }) || undefined,
+    });
   };
 
   const toggleJoinedState = (memberId: string) => {
