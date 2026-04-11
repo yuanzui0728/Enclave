@@ -761,10 +761,24 @@ export function ChatMessageList({
     () => new Map(messageReminders.map((item) => [item.messageId, item])),
     [messageReminders],
   );
-  const visibleMessages = useMemo(
-    () => messages.filter((message) => !hiddenMessageIdSet.has(message.id)),
+  const visibleMessagesSnapshot = useMemo(
+    () =>
+      collapseOngoingGroupCallMessages(
+        messages.filter((message) => !hiddenMessageIdSet.has(message.id)),
+      ),
     [hiddenMessageIdSet, messages],
   );
+  const visibleMessages = visibleMessagesSnapshot.messages;
+  const collapsedMessageRedirects = visibleMessagesSnapshot.redirectedIds;
+  const resolvedUnreadMarkerMessageId =
+    unreadMarkerMessageId && collapsedMessageRedirects.has(unreadMarkerMessageId)
+      ? collapsedMessageRedirects.get(unreadMarkerMessageId) ?? null
+      : unreadMarkerMessageId;
+  const resolvedHighlightedMessageId =
+    activeHighlightedMessageId &&
+    collapsedMessageRedirects.has(activeHighlightedMessageId)
+      ? collapsedMessageRedirects.get(activeHighlightedMessageId)
+      : activeHighlightedMessageId;
   const importedSharedMessageIdSet = useMemo(() => {
     const nextIds = new Set<string>();
     let pendingImportCount = 0;
@@ -1645,7 +1659,7 @@ export function ChatMessageList({
           message.senderType === "user" && recalledMessageIdSet.has(message.id);
         const isSystem =
           message.type === "system" || message.senderType === "system";
-        const isHighlighted = message.id === activeHighlightedMessageId;
+        const isHighlighted = message.id === resolvedHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
         const isSharedHistoryMessage = importedSharedMessageIdSet.has(
           message.id,
@@ -1666,7 +1680,7 @@ export function ChatMessageList({
         if (isSystem || isRecalled) {
           return (
             <div key={message.id} className="space-y-2">
-              {unreadMarkerMessageId === message.id ? (
+              {resolvedUnreadMarkerMessageId === message.id ? (
                 <UnreadMarkerDivider
                   id={unreadMarkerDomId}
                   label={resolvedUnreadMarkerLabel}
@@ -1701,7 +1715,7 @@ export function ChatMessageList({
 
         return (
           <div key={message.id}>
-            {unreadMarkerMessageId === message.id ? (
+            {resolvedUnreadMarkerMessageId === message.id ? (
               <UnreadMarkerDivider
                 id={unreadMarkerDomId}
                 label={resolvedUnreadMarkerLabel}
@@ -3611,6 +3625,63 @@ function GroupRelaySummaryMessage({
       {card}
     </button>
   );
+}
+
+function collapseOngoingGroupCallMessages(messages: ChatRenderableMessage[]) {
+  const redirectedIds = new Map<string, string>();
+  const collapsedMessages: ChatRenderableMessage[] = [];
+
+  for (const message of messages) {
+    const previousMessage =
+      collapsedMessages.length > 0
+        ? collapsedMessages[collapsedMessages.length - 1]
+        : null;
+    const currentInvite = resolveOngoingGroupCallInvite(message);
+    const previousInvite = previousMessage
+      ? resolveOngoingGroupCallInvite(previousMessage)
+      : null;
+
+    if (
+      previousMessage &&
+      currentInvite &&
+      previousInvite &&
+      currentInvite.kind === previousInvite.kind &&
+      currentInvite.groupName === previousInvite.groupName
+    ) {
+      redirectedIds.set(previousMessage.id, message.id);
+      for (const [sourceId, targetId] of redirectedIds.entries()) {
+        if (targetId === previousMessage.id) {
+          redirectedIds.set(sourceId, message.id);
+        }
+      }
+      collapsedMessages[collapsedMessages.length - 1] = message;
+      continue;
+    }
+
+    collapsedMessages.push(message);
+  }
+
+  return {
+    messages: collapsedMessages,
+    redirectedIds,
+  };
+}
+
+function resolveOngoingGroupCallInvite(message: ChatRenderableMessage) {
+  const isSystem =
+    message.type === "system" || message.senderType === "system";
+  if (isSystem || message.senderType === "user") {
+    return null;
+  }
+
+  const invite = parseGroupCallInviteMessage(
+    sanitizeDisplayedChatText(message.text),
+  );
+  if (!invite || invite.status !== "ongoing") {
+    return null;
+  }
+
+  return invite;
 }
 
 function GroupCallInviteMessage({
