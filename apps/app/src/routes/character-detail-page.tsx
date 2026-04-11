@@ -88,6 +88,17 @@ export function CharacterDetailPage() {
     queryFn: () => getBlockedCharacters(baseUrl),
   });
 
+  useEffect(() => {
+    if (
+      characterQuery.isLoading ||
+      !isMissingCharacterError(characterQuery.error, characterId)
+    ) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/contacts", replace: true });
+  }, [characterId, characterQuery.error, characterQuery.isLoading, navigate]);
+
   const character = characterQuery.data;
   const friendship = useMemo(
     () =>
@@ -902,4 +913,11 @@ function buildRemarkSummary(
   ].filter(Boolean);
 
   return segments.length ? segments.join(" · ") : "未设置";
+}
+
+function isMissingCharacterError(error: unknown, characterId: string) {
+  return (
+    error instanceof Error &&
+    error.message.trim() === `Character ${characterId} not found`
+  );
 }
