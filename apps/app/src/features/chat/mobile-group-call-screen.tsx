@@ -615,7 +615,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   }
 
   return (
-    <AppPage className="min-h-full space-y-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_40%,#020617_100%)] px-0 py-0 text-white">
+    <AppPage className="flex min-h-[100dvh] flex-col space-y-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_40%,#020617_100%)] px-0 py-0 text-white">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.72)] px-3 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
@@ -639,7 +639,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       </div>
       </header>
 
-      <div className="flex min-h-[calc(100dvh-65px)] flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
         <section className="rounded-[28px] border border-white/10 bg-[rgba(15,23,42,0.76)] px-4 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center gap-4">
             <GroupAvatarChip
