@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getGroup, getGroupMessages } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupMessageSearchPage() {
@@ -19,6 +21,14 @@ export function GroupMessageSearchPage() {
     queryKey: ["app-group-messages", baseUrl, groupId],
     queryFn: () => getGroupMessages(groupId, baseUrl),
   });
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   return (
     <ChatMessageSearchPanel

@@ -11,6 +11,7 @@ import { Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupChatEditMode = "name" | "nickname";
@@ -65,6 +66,14 @@ function GroupChatEditPage({
   useEffect(() => {
     setDraft(initialValue);
   }, [initialValue]);
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   const saveGroupNameMutation = useMutation({
     mutationFn: (name: string) => updateGroup(groupId, { name }, baseUrl),

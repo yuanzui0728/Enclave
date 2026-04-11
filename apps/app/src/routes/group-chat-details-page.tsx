@@ -20,6 +20,7 @@ import { ChatDetailsSection } from "../features/chat-details/chat-details-sectio
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupChatDetailsPage() {
@@ -52,6 +53,14 @@ export function GroupChatDetailsPage() {
     setManagementSheetOpen(false);
     setDangerSheetAction(null);
   }, [groupId]);
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   const pinMutation = useMutation({
     mutationFn: (pinned: boolean) =>

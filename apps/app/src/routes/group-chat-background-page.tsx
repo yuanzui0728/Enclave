@@ -31,6 +31,7 @@ import { compressChatBackgroundImage } from "../features/chat/backgrounds/compre
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useGroupBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type UploadTarget = "default" | "group";
@@ -75,6 +76,14 @@ export function GroupChatBackgroundPage() {
   useEffect(() => {
     setNotice(null);
   }, [groupId]);
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   const uploadMutation = useMutation({
     mutationFn: async ({ file }: { file: File }) => {

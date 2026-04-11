@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -18,6 +18,7 @@ import {
   createFriendDirectoryItems,
 } from "../features/contacts/contact-utils";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type GroupMemberPickerMode = "add" | "remove";
@@ -68,6 +69,14 @@ function GroupMemberPickerPage({
     queryFn: () => getFriends(baseUrl),
     enabled: mode === "add",
   });
+
+  useEffect(() => {
+    if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
+      return;
+    }
+
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
 
   const memberIds = useMemo(
     () => new Set((membersQuery.data ?? []).map((item) => item.memberId)),
