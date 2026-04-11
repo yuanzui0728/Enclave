@@ -5,9 +5,9 @@ import { AvatarChip } from "../../components/avatar-chip";
 
 export function DesktopContactPaneEmptyState() {
   return (
-    <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
+    <div className="flex h-full items-center justify-center bg-[rgba(245,247,247,0.96)] px-10">
       <div className="flex max-w-sm flex-col items-center text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-[22px] border border-black/6 bg-white text-2xl text-[color:var(--text-dim)] shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+        <div className="flex h-20 w-20 items-center justify-center rounded-[22px] border border-[color:var(--border-faint)] bg-white text-2xl text-[color:var(--text-dim)] shadow-[var(--shadow-section)]">
           ···
         </div>
         <div className="mt-5 text-[16px] font-medium text-[color:var(--text-primary)]">
@@ -29,10 +29,10 @@ export function DesktopContactProfileShell({
   className?: string;
 }) {
   return (
-    <div className="flex h-full overflow-auto bg-[#f5f5f5]">
+    <div className="flex h-full overflow-auto bg-[rgba(245,247,247,0.96)]">
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[680px] flex-col bg-white",
+          "mx-auto my-5 flex w-full max-w-[720px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]",
           className,
         )}
       >
@@ -66,7 +66,7 @@ export function DesktopContactProfileHeader({
   return (
     <div
       className={cn(
-        "border-b border-black/6",
+        "border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(244,251,247,0.92),rgba(255,255,255,0.98))]",
         compact ? "px-4 py-4" : "px-8 py-7",
       )}
     >
@@ -93,7 +93,7 @@ export function DesktopContactProfileHeader({
                 {displayName}
               </h2>
               {badge ? (
-                <span className="rounded-full bg-[#f0f1f3] px-2.5 py-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                <span className="rounded-full border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-2.5 py-0.5 text-[11px] text-[color:var(--text-secondary)]">
                   {badge}
                 </span>
               ) : null}
@@ -136,9 +136,9 @@ export function DesktopContactProfileSection({
   action?: ReactNode;
 }) {
   return (
-    <section className="border-b border-black/6 last:border-b-0">
+    <section className="border-b border-[color:var(--border-faint)] last:border-b-0">
       <div className="flex items-center justify-between gap-3 px-8 pb-2 pt-5">
-        <div className="text-[12px] font-medium text-[color:var(--text-dim)]">
+        <div className="text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-dim)]">
           {title}
         </div>
         {action}
@@ -197,7 +197,7 @@ export function DesktopContactProfileEditableField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-w-0 flex-1 rounded-[12px] border border-black/8 bg-[#f7f7f7] px-3.5 py-2.5 text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[#07c160]"
+        className="min-w-0 flex-1 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-2.5 text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)] focus:bg-white"
       />
     </label>
   );
@@ -219,7 +219,7 @@ export function DesktopContactProfileToggleRow({
       type="button"
       onClick={onToggle}
       disabled={disabled || !onToggle}
-      className="flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors hover:bg-[#fafafa] disabled:opacity-60"
+      className="flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors hover:bg-[rgba(7,193,96,0.06)] disabled:opacity-60"
       role="switch"
       aria-checked={checked}
     >
@@ -265,7 +265,7 @@ export function DesktopContactProfileActionRow({
         "flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors",
         danger
           ? "hover:bg-[rgba(239,68,68,0.05)]"
-          : "hover:bg-[#fafafa]",
+          : "hover:bg-[rgba(7,193,96,0.06)]",
         disabled && "opacity-60",
       )}
     >

@@ -26,8 +26,8 @@ export function ContactShortcutList({
   return (
     <section
       className={cn(
-        "overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
-        compact ? "rounded-[16px]" : "rounded-none",
+        "overflow-hidden border border-[color:var(--border-faint)] bg-white",
+        compact ? "rounded-[18px]" : "rounded-none",
         className,
       )}
     >
@@ -41,11 +41,11 @@ export function ContactShortcutList({
             disabled={item.disabled}
             onClick={item.onClick}
             className={cn(
-              "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
+              "flex w-full items-center gap-3 bg-white text-left transition-[background-color,border-color]",
               compact
                 ? item.disabled
                   ? "cursor-not-allowed px-4 py-3.5"
-                  : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]"
+                  : "px-4 py-3.5 hover:bg-[rgba(7,193,96,0.06)]"
                 : item.disabled
                   ? "cursor-not-allowed px-4 py-3"
                   : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
@@ -57,7 +57,7 @@ export function ContactShortcutList({
           >
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-[11px] text-white shadow-[var(--shadow-soft)]",
+                "flex shrink-0 items-center justify-center rounded-[12px] text-white shadow-[0_10px_22px_rgba(15,23,42,0.10)]",
                 compact ? "h-10 w-10" : "h-9 w-9",
                 item.iconClassName,
               )}

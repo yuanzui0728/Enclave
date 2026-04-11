@@ -690,10 +690,10 @@ export function ContactsPage() {
   if (isDesktopLayout) {
     return (
       <div ref={pageRef} className="h-full min-h-0">
-        <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))] px-0 py-0">
+        <AppPage className="h-full min-h-0 space-y-0 bg-[rgba(244,247,246,0.98)] px-0 py-0">
           <div className="flex h-full min-h-0">
-            <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-              <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+            <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.9)]">
+              <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div className="text-base font-medium text-[color:var(--text-primary)]">
                     通讯录
@@ -706,7 +706,7 @@ export function ContactsPage() {
                   </div>
                 </div>
 
-                <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+                <label className="mt-3 flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
                   <Search size={15} className="shrink-0" />
                   <input
                     type="search"
@@ -722,14 +722,19 @@ export function ContactsPage() {
                 <ContactShortcutList
                   items={shortcutItems}
                   compact
-                  className="shadow-[0_10px_32px_rgba(15,23,42,0.05)]"
+                  className="shadow-[var(--shadow-section)]"
                 />
               </div>
 
-              <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,249,238,0.72)] pb-4">
+              <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
                 {notice ? (
                   <div className="px-3 pb-3">
-                    <InlineNotice tone="info">{notice}</InlineNotice>
+                    <InlineNotice
+                      tone="info"
+                      className="border-[color:var(--border-faint)] bg-white text-xs"
+                    >
+                      {notice}
+                    </InlineNotice>
                   </div>
                 ) : null}
                 {friendsQuery.isError && friendsQuery.error instanceof Error ? (
@@ -911,7 +916,7 @@ export function ContactsPage() {
               </div>
             </section>
 
-            <section className="min-w-0 flex-1">
+            <section className="min-w-0 flex-1 bg-[rgba(245,247,247,0.96)]">
               <ContactDetailPane
                 character={
                   selectedFriendItem?.character ??
@@ -1203,11 +1208,11 @@ function FriendListRow({
       className={cn(
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
-          ? "px-4 py-3.5 hover:bg-[rgba(249,115,22,0.06)]"
-          : "px-4 py-3 hover:bg-[rgba(249,115,22,0.05)]",
+          ? "px-4 py-3.5 hover:bg-white/86"
+          : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "bg-[rgba(22,163,74,0.10)] shadow-[inset_3px_0_0_0_#16a34a]"
+          ? "border border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
           : undefined,
       )}
     >
@@ -1231,7 +1236,7 @@ function FriendListRow({
       {desktop && item.friendship.isStarred ? (
         <Star
           size={15}
-          className="shrink-0 text-[#f59e0b]"
+          className="shrink-0 text-[#f3a311]"
           fill="currentColor"
         />
       ) : null}
@@ -1259,11 +1264,11 @@ function WorldCharacterRow({
       className={cn(
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
-          ? "px-4 py-3.5 hover:bg-[rgba(249,115,22,0.06)]"
-          : "px-4 py-3 hover:bg-[rgba(249,115,22,0.05)]",
+          ? "px-4 py-3.5 hover:bg-white/86"
+          : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "bg-[rgba(249,115,22,0.08)] shadow-[inset_3px_0_0_0_rgba(249,115,22,0.40)]"
+          ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(240,247,243,0.94)] shadow-[0_8px_22px_rgba(15,23,42,0.03)]"
           : undefined,
       )}
     >
@@ -1298,7 +1303,7 @@ function SectionHeader({
       className={cn(
         "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
-          ? "sticky top-0 bg-[rgba(255,250,240,0.96)] backdrop-blur"
+          ? "sticky top-0 bg-[rgba(244,248,246,0.96)] backdrop-blur"
           : "sticky top-[88px] bg-[rgba(255,249,238,0.92)]",
       )}
     >
