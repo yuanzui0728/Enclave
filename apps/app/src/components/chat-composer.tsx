@@ -130,7 +130,11 @@ type ScreenshotAnnotation = {
   text?: string;
 };
 
-type ScreenshotShortcutHelpGroupId = "send" | "view" | "edit";
+type ScreenshotShortcutHelpGroupId =
+  | "send"
+  | "view"
+  | "draw"
+  | "history";
 
 const SCREENSHOT_ANNOTATION_PALETTE = [
   {
@@ -176,9 +180,14 @@ const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
     value: "⌘/Ctrl + 滚轮 / 双击 / Space / ?",
   },
   {
-    id: "edit",
-    label: "编辑",
-    value: "C / R / A / T / 1-4 / Delete / Esc",
+    id: "draw",
+    label: "绘制",
+    value: "C / R / A / T / 1-4",
+  },
+  {
+    id: "history",
+    label: "历史",
+    value: "⌘/Ctrl + Z / Shift+Z / Y / Delete / Esc",
   },
 ] as const;
 
@@ -3631,7 +3640,7 @@ function DesktopScreenshotEditor({
               <div
                 className={cn(
                   "flex flex-wrap items-center gap-2 rounded-[12px] border px-2 py-1 transition",
-                  getShortcutDemoClass("edit"),
+                  getShortcutDemoClass("draw"),
                 )}
               >
                 <DesktopScreenshotToolButton
@@ -3734,7 +3743,7 @@ function DesktopScreenshotEditor({
               <div
                 className={cn(
                   "flex flex-wrap items-center gap-2 rounded-[12px] border px-2 py-1 transition",
-                  getShortcutDemoClass("edit"),
+                  getShortcutDemoClass("history"),
                 )}
               >
                 <Button
@@ -3779,60 +3788,60 @@ function DesktopScreenshotEditor({
                 >
                   清空标注
                 </Button>
-                <div ref={shortcutHelpRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => onShortcutHelpOpenChange(!shortcutHelpOpen)}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition",
-                      shortcutHelpOpen
-                        ? "border-white/26 bg-white/12 text-white"
-                        : "border-white/10 bg-white/6 text-white/58 hover:border-white/18 hover:bg-white/10 hover:text-white/80",
-                    )}
-                    title="查看截图快捷键 (?)"
-                  >
-                    <Keyboard size={12} />
-                    <span>快捷键</span>
-                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/58">
-                      ?
-                    </span>
-                  </button>
-                  {shortcutHelpOpen ? (
-                    <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
-                      <div className="mb-1 flex items-center justify-between gap-3">
-                        <div className="text-[12px] font-medium text-white">
-                          截图快捷键
-                        </div>
-                        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-white/52">
-                          按 ? 开关
-                        </span>
+              </div>
+              <div ref={shortcutHelpRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => onShortcutHelpOpenChange(!shortcutHelpOpen)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition",
+                    shortcutHelpOpen
+                      ? "border-white/26 bg-white/12 text-white"
+                      : "border-white/10 bg-white/6 text-white/58 hover:border-white/18 hover:bg-white/10 hover:text-white/80",
+                  )}
+                  title="查看截图快捷键 (?)"
+                >
+                  <Keyboard size={12} />
+                  <span>快捷键</span>
+                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/58">
+                    ?
+                  </span>
+                </button>
+                {shortcutHelpOpen ? (
+                  <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <div className="text-[12px] font-medium text-white">
+                        截图快捷键
                       </div>
-                      <div className="mb-2 text-[11px] text-white/46">
-                        点任一分组，会在界面里短暂高亮对应操作区域。
-                      </div>
-                      <div className="grid gap-2">
-                        {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
-                          <button
-                            key={item.label}
-                            type="button"
-                            onClick={() => triggerShortcutDemo(item.id)}
-                            className={cn(
-                              "flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2 text-left transition",
-                              shortcutDemoGroup === item.id
-                                ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
-                                : "border-transparent bg-white/5 hover:border-white/10 hover:bg-white/8",
-                            )}
-                          >
-                            <span>{item.label}</span>
-                            <span className="text-right text-white/92">
-                              {item.value}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                      <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-white/52">
+                        按 ? 开关
+                      </span>
                     </div>
-                  ) : null}
-                </div>
+                    <div className="mb-2 text-[11px] text-white/46">
+                      点任一分组，会在界面里短暂高亮对应操作区域。
+                    </div>
+                    <div className="grid gap-2">
+                      {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => triggerShortcutDemo(item.id)}
+                          className={cn(
+                            "flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2 text-left transition",
+                            shortcutDemoGroup === item.id
+                              ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
+                              : "border-transparent bg-white/5 hover:border-white/10 hover:bg-white/8",
+                          )}
+                        >
+                          <span>{item.label}</span>
+                          <span className="text-right text-white/92">
+                            {item.value}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
