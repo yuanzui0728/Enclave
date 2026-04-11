@@ -744,6 +744,15 @@ export function GroupChatThreadPanel({
               </div>
             </div>
           </button>
+          <button
+            type="button"
+            onClick={() => onToggleDesktopDetails?.()}
+            className="shrink-0 rounded-full border border-black/8 bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:border-black/10 hover:bg-[#f3f3f3] hover:text-[color:var(--text-primary)]"
+            aria-label="打开聊天信息"
+            title="打开聊天信息"
+          >
+            聊天信息
+          </button>
         </div>
       ) : null}
 
