@@ -405,7 +405,7 @@ export function GamesPage() {
 
   async function handleCopyGameToMobile(gameId: string) {
     const game = getGameCenterGame(gameId);
-    const path = "/games";
+    const path = buildGameInvitePath("/discover/games", { gameId });
     const link = resolveMobileHandoffLink(path);
 
     if (
