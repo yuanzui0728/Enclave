@@ -296,6 +296,15 @@ export function DesktopChatWorkspace({
       );
     });
   }, [searchTerm, serviceConversations]);
+  const selectedServiceConversationExists = useMemo(
+    () =>
+      selectedServiceAccountId
+        ? serviceConversations.some(
+            (conversation) => conversation.accountId === selectedServiceAccountId,
+          )
+        : false,
+    [selectedServiceAccountId, serviceConversations],
+  );
   const selectedConversationExists = useMemo(
     () =>
       selectedConversationId
@@ -332,6 +341,34 @@ export function DesktopChatWorkspace({
     selectedConversationId,
     serviceConversationActive,
     standaloneWindow,
+    subscriptionInboxActive,
+  ]);
+
+  useEffect(() => {
+    if (
+      !selectedServiceAccountId ||
+      subscriptionInboxActive ||
+      conversationsQuery.isLoading ||
+      conversationsQuery.isError ||
+      messageEntriesQuery.isLoading ||
+      messageEntriesQuery.isError ||
+      selectedServiceConversationExists
+    ) {
+      return;
+    }
+
+    setRightPanelMode(null);
+    setDetailsAnnouncementRequest(null);
+    setDetailsMemberSearchRequest(null);
+    void navigate({ to: "/tabs/chat", replace: true });
+  }, [
+    conversationsQuery.isError,
+    conversationsQuery.isLoading,
+    messageEntriesQuery.isError,
+    messageEntriesQuery.isLoading,
+    navigate,
+    selectedServiceAccountId,
+    selectedServiceConversationExists,
     subscriptionInboxActive,
   ]);
 
