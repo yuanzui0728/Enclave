@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { buildMockDigitalHumanPlayerPage } from './digital-human-player-page';
+import {
+  buildMockDigitalHumanPlayerPage,
+  type DigitalHumanPlayerPageSessionSnapshot,
+} from './digital-human-player-page';
 
 type MockDigitalHumanProviderMode = 'mock_stage' | 'mock_iframe';
 
@@ -41,6 +44,7 @@ export interface DigitalHumanProviderAdapter {
   renderPlayerPage(input: {
     sessionId: string;
     characterName: string;
+    initialSession?: DigitalHumanPlayerPageSessionSnapshot;
   }): string;
 }
 
@@ -97,9 +101,14 @@ export class MockDigitalHumanProviderAdapter
     };
   }
 
-  renderPlayerPage(input: { sessionId: string; characterName: string }) {
+  renderPlayerPage(input: {
+    sessionId: string;
+    characterName: string;
+    initialSession?: DigitalHumanPlayerPageSessionSnapshot;
+  }) {
     return buildMockDigitalHumanPlayerPage({
       characterName: input.characterName,
+      initialSession: input.initialSession,
     });
   }
 

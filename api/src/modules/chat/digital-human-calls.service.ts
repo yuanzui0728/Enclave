@@ -174,6 +174,7 @@ export class DigitalHumanCallsService {
     return this.digitalHumanProvider.renderPlayerPage({
       sessionId: session.id,
       characterName: session.characterName,
+      initialSession: this.serializeSession(session),
     });
   }
 

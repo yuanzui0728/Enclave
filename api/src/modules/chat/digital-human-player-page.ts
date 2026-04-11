@@ -1,7 +1,22 @@
+export type DigitalHumanPlayerPageSessionSnapshot = {
+  posterUrl?: string;
+  renderStatus: 'queued' | 'rendering' | 'ready' | 'failed';
+  status: 'ready' | 'playing' | 'ended';
+  lastTurn?: {
+    assistantText?: string;
+    assistantMessageId?: string;
+    assistantAudioUrl?: string;
+  };
+};
+
 export function buildMockDigitalHumanPlayerPage(input: {
   characterName: string;
+  initialSession?: DigitalHumanPlayerPageSessionSnapshot;
 }) {
   const escapedName = escapeHtml(input.characterName || 'AI 数字人');
+  const initialSessionPayload = escapeHtml(
+    JSON.stringify(input.initialSession ?? null),
+  );
 
   return `<!doctype html>
 <html lang="zh-CN">
@@ -169,6 +184,7 @@ export function buildMockDigitalHumanPlayerPage(input: {
       <div id="caption" class="caption">接通后，数字人的本轮回复会在这里同步显示。</div>
     </div>
     <audio id="audio" preload="auto"></audio>
+    <script id="initial-session" type="application/json">${initialSessionPayload}</script>
     <script>
       const audio = document.getElementById("audio");
       const poster = document.getElementById("poster");
@@ -176,6 +192,9 @@ export function buildMockDigitalHumanPlayerPage(input: {
       const caption = document.getElementById("caption");
       const subtitle = document.getElementById("subtitle");
       const stateLabel = document.getElementById("stateLabel");
+      const initialSession = JSON.parse(
+        document.getElementById("initial-session")?.textContent || "null"
+      );
       const sessionPath = window.location.pathname.replace(/\\/player$/, "");
       const eventsPath = sessionPath + "/events";
       let lastMessageId = "";
@@ -290,6 +309,9 @@ export function buildMockDigitalHumanPlayerPage(input: {
       audio.addEventListener("ended", () => setPlaying(false));
       audio.addEventListener("error", () => setPlaying(false));
 
+      if (initialSession) {
+        applySession(initialSession);
+      }
       startEventStream();
       window.addEventListener("beforeunload", () => {
         stopPolling();
