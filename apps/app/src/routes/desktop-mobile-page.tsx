@@ -290,27 +290,34 @@ export function DesktopMobilePage() {
     ? "已连接"
     : "待检查";
   const syncLabel = syncTimestamp ? formatTimestamp(syncTimestamp) : "暂无记录";
-  const handoffLabel = handoffHistory[0]
-    ? formatTimestamp(handoffHistory[0].sentAt)
+  const activeHandoffHistory = useMemo(
+    () =>
+      handoffHistory.filter((item) =>
+        isDesktopMobileHandoffPathActive(item.path, conversationPathSet),
+      ),
+    [conversationPathSet, handoffHistory],
+  );
+  const handoffLabel = activeHandoffHistory[0]
+    ? formatTimestamp(activeHandoffHistory[0].sentAt)
     : "还没有发送记录";
   const groupedHandoffHistory = useMemo(
     () =>
       mobileHandoffCategoryMeta
         .map((group) => ({
           ...group,
-          items: handoffHistory.filter(
+          items: activeHandoffHistory.filter(
             (item) => resolveMobileHandoffCategory(item) === group.id,
           ),
         }))
         .filter((group) => group.items.length),
-    [handoffHistory],
+    [activeHandoffHistory],
   );
   const recentGroupInviteHandoffs = useMemo(
     () =>
-      handoffHistory
+      activeHandoffHistory
         .filter((item) => resolveMobileHandoffCategory(item) === "group_invite")
         .slice(0, 3),
-    [handoffHistory],
+    [activeHandoffHistory],
   );
   const currentGroupInviteHandoff = recentGroupInviteHandoffs[0] ?? null;
   const archivedGroupInviteHandoffs = recentGroupInviteHandoffs.slice(1);
@@ -1553,9 +1560,30 @@ function resolveMobileHandoffCategory(
   return "other";
 }
 
+function isDesktopMobileHandoffPathActive(
+  path: string,
+  conversationPathSet: ReadonlySet<string>,
+) {
+  const conversationRoot = resolveConversationRootPath(path);
+  if (!conversationRoot) {
+    return true;
+  }
+
+  return conversationPathSet.has(conversationRoot);
+}
+
 function resolveGroupIdFromHandoffPath(path: string) {
   const match = path.match(/^\/group\/([^/?#]+)/);
   return match?.[1] ?? null;
+}
+
+function resolveConversationRootPath(path: string) {
+  const match = path.match(/^\/(chat|group)\/([^/?#]+)/);
+  if (!match) {
+    return null;
+  }
+
+  return `/${match[1]}/${match[2]}`;
 }
 
 async function handleCopyHandoff({
