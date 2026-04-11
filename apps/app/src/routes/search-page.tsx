@@ -38,7 +38,7 @@ export function SearchPage() {
     matchedCounts,
     scopeCounts,
     searchingMessages,
-  } = useSearchIndex(searchText, activeCategory);
+  } = useSearchIndex(searchText, activeCategory, isDesktopLayout);
 
   useEffect(() => {
     if (searchText !== routeState.keyword) {
