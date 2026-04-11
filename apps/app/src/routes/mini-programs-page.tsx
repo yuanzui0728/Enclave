@@ -17,7 +17,10 @@ import {
   resolveMobileHandoffLink,
 } from "../features/shell/mobile-handoff-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
-import { buildGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
+import {
+  buildGroupRelaySummaryMessage,
+  type GroupRelaySummaryStatus,
+} from "../features/mini-programs/group-relay-message";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 function resolveDefaultMiniProgramId() {
@@ -85,10 +88,15 @@ export function MiniProgramsPage() {
     () => resolveMiniProgramLaunchContextFromLocation(),
     [],
   );
+  const groupRelayCompletedTaskIds =
+    completedTaskIdsByMiniProgramId["group-relay"] ?? [];
   const [successNotice, setSuccessNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const relaySummaryMessage = launchContext
-    ? buildGroupRelaySummaryMessage(launchContext.sourceGroupName)
+    ? buildGroupRelaySummaryMessage(
+        launchContext.sourceGroupName,
+        resolveGroupRelaySummaryStatus(groupRelayCompletedTaskIds),
+      )
     : "";
 
   const visibleMiniPrograms = useMemo(() => {
@@ -335,4 +343,18 @@ export function MiniProgramsPage() {
       onTogglePinnedMiniProgram={handleTogglePinnedMiniProgram}
     />
   );
+}
+
+function resolveGroupRelaySummaryStatus(
+  completedTaskIds: string[],
+): GroupRelaySummaryStatus {
+  if (completedTaskIds.includes("publish-result")) {
+    return "published";
+  }
+
+  if (completedTaskIds.includes("check-unconfirmed")) {
+    return "completed";
+  }
+
+  return "pending";
 }

@@ -3599,7 +3599,16 @@ function GroupRelaySummaryMessage({
             结果回填
           </div>
           {summary.statusLabel ? (
-            <div className="rounded-full bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#2563eb]">
+            <div
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-medium",
+                summary.statusLabel === "已回填"
+                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
+                  : summary.statusLabel === "已完成"
+                    ? "bg-[rgba(59,130,246,0.12)] text-[#2563eb]"
+                    : "bg-[rgba(245,158,11,0.16)] text-[#b45309]",
+              )}
+            >
               {summary.statusLabel}
             </div>
           ) : null}
