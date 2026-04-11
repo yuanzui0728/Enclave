@@ -550,9 +550,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     ? "当前数字人会话没有恢复成功。你可以重试连接数字人，或者先改用语音通话继续聊。"
     : hasVideoRenderFailure
       ? "这一轮数字人画面没有成功生成，当前已回到文字加语音链路。你可以重试连接数字人，或者先改用语音通话继续聊。"
-      : hasVideoPlaybackFailure
-        ? "数字人回复已经生成，但浏览器没有自动播报。你可以立即播放这一句，或继续下一轮对话。"
-        : null;
+      : null;
+  const showPlaybackNudge = hasVideoPlaybackFailure || showPlaybackRecoveryAction;
+  const playbackNudgeMessage = isVideoMode
+    ? "浏览器没有自动播报这一句，点一下就能继续听当前回复。"
+    : "浏览器没有自动播报这一句，点一下就能补播当前回复。";
   const hasCallProgress =
     Boolean(lastUserTranscript) ||
     Boolean(lastAssistantText) ||
@@ -1127,9 +1129,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
           {speech.error ? <ErrorBlock message={speech.error} /> : null}
-          {!isVideoMode && activeCall.playerError ? (
-            <InlineNotice tone="info">{activeCall.playerError}</InlineNotice>
-          ) : null}
           {videoRecoveryMessage ? (
             <InlineNotice
               tone={
@@ -1142,6 +1141,22 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             >
               {videoRecoveryMessage}
             </InlineNotice>
+          ) : null}
+          {showPlaybackNudge ? (
+            <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/6 px-4 py-3 text-[13px] leading-6 text-white/72">
+              <div className="min-w-0 flex-1">{playbackNudgeMessage}</div>
+              <button
+                type="button"
+                onClick={() => {
+                  void activeCall.replayLastTurn();
+                }}
+                disabled={leavingScreen}
+                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-3.5 text-[13px] text-white transition disabled:opacity-45"
+              >
+                <Volume2 size={15} />
+                补播这一句
+              </button>
+            </div>
           ) : null}
           {videoRecoveryMessage ? (
             <div className="flex flex-wrap gap-2">
@@ -1172,22 +1187,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   改用语音通话
                 </button>
               ) : null}
-              {hasVideoPlaybackFailure ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void activeCall.replayLastTurn();
-                  }}
-                  disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
-                >
-                  <Volume2 size={16} />
-                  立即播放回复
-                </button>
-              ) : null}
             </div>
           ) : null}
-          {showTurnRecoveryActions || showPlaybackRecoveryAction ? (
+          {showTurnRecoveryActions ? (
             <div className="flex flex-wrap gap-2">
               {showTurnRecoveryActions ? (
                 <button
@@ -1198,19 +1200,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 >
                   <RotateCcw size={16} />
                   重新录这一轮
-                </button>
-              ) : null}
-              {showPlaybackRecoveryAction ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void activeCall.replayLastTurn();
-                  }}
-                  disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
-                >
-                  <Volume2 size={16} />
-                  立即播放回复
                 </button>
               ) : null}
             </div>
