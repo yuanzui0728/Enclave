@@ -78,7 +78,7 @@ export function DesktopMomentsSidebar({
 
   if (mode === "detail" && selectedMoment) {
     return (
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f7f7f7]">
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
         <DesktopMomentDetailPanel
           commentDraft={commentDrafts[selectedMoment.id] ?? ""}
           commentLoading={commentPendingMomentId === selectedMoment.id}
@@ -99,10 +99,10 @@ export function DesktopMomentsSidebar({
 
   if (mode === "author" && activeAuthorSummary) {
     return (
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f7f7f7]">
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-black/6 px-5 py-4">
-            <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+          <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+            <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
               作者时间线
             </div>
             <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
@@ -131,10 +131,10 @@ export function DesktopMomentsSidebar({
                     </div>
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium",
+                        "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                         activeAuthorSummary.authorType === "character"
-                          ? "bg-[rgba(56,189,248,0.12)] text-sky-700"
-                          : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+                          ? "border-sky-100 bg-sky-50 text-sky-700"
+                          : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {activeAuthorSummary.authorType === "character" ? (
@@ -219,10 +219,10 @@ export function DesktopMomentsSidebar({
   }
 
   return (
-    <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f7f7f7]">
+    <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
       <div className="flex h-full min-h-0 flex-col">
-        <div className="border-b border-black/6 px-5 py-4">
-          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             概览
           </div>
           <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
@@ -273,7 +273,7 @@ export function DesktopMomentsSidebar({
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-[border-color,background-color]",
                     activeAuthorId === author.authorId
-                      ? "border-[#b7e4c7] bg-[#edf8f0]"
+                      ? "border-[#cfe8d6] bg-[#f4faf6]"
                       : "border-black/6 bg-[#f8f8f8] hover:border-black/10 hover:bg-white",
                   )}
                 >

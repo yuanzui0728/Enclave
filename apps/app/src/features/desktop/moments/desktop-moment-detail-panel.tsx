@@ -53,9 +53,9 @@ export function DesktopMomentDetailPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-start justify-between gap-3 border-b border-black/6 px-5 py-4">
+      <div className="flex items-start justify-between gap-3 border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
         <div className="min-w-0">
-          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             动态详情
           </div>
           <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
@@ -101,10 +101,10 @@ export function DesktopMomentDetailPanel({
                 </button>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium",
+                    "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                     moment.authorType === "character"
-                      ? "bg-[rgba(56,189,248,0.12)] text-sky-700"
-                      : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
+                      ? "border-sky-100 bg-sky-50 text-sky-700"
+                      : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
                   )}
                 >
                   {moment.authorType === "character" ? (
@@ -162,7 +162,7 @@ export function DesktopMomentDetailPanel({
               onClick={onToggleFavorite}
               className={
                 favorite
-                  ? "bg-[rgba(250,204,21,0.16)] text-amber-700 shadow-none"
+                  ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11] shadow-none"
                   : undefined
               }
             >
@@ -231,7 +231,7 @@ export function DesktopMomentDetailPanel({
               value={commentDraft}
               onChange={(event) => onCommentChange(event.target.value)}
               placeholder="在右栏继续写评论..."
-              className="min-w-0 flex-1 rounded-xl border-[rgba(15,23,42,0.08)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+              className="min-w-0 flex-1 rounded-xl border-black/8 bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:shadow-none"
             />
             <Button
               variant="secondary"
