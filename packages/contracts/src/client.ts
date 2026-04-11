@@ -98,6 +98,7 @@ import type {
   SpeechSynthesisRequest,
   SpeechSynthesisResult,
   SpeechTranscriptionResult,
+  UpdateDigitalHumanProviderStateRequest,
   VoiceCallTurnResult,
 } from "./speech";
 import type {
@@ -326,6 +327,21 @@ export function createDigitalHumanTurn(
     {
       method: "POST",
       body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function updateDigitalHumanProviderState(
+  sessionId: string,
+  payload: UpdateDigitalHumanProviderStateRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<DigitalHumanSession>(
+    `/chat/digital-human-calls/sessions/${sessionId}/provider-state`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     },
     baseUrl,
   );
