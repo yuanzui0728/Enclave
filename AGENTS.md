@@ -180,6 +180,7 @@
   - `POST /api/chat/digital-human-calls/sessions`
   - `GET /api/chat/digital-human-calls/sessions/:sessionId`
   - `GET /api/chat/digital-human-calls/sessions/:sessionId/player`
+  - `GET /api/chat/digital-human-calls/sessions/:sessionId/events`
   - `DELETE /api/chat/digital-human-calls/sessions/:sessionId`
   - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
 - 收藏路由：
@@ -310,6 +311,7 @@
   - `POST /api/chat/digital-human-calls/sessions`
   - `GET /api/chat/digital-human-calls/sessions/:sessionId`
   - `GET /api/chat/digital-human-calls/sessions/:sessionId/player`
+  - `GET /api/chat/digital-human-calls/sessions/:sessionId/events`
   - `DELETE /api/chat/digital-human-calls/sessions/:sessionId`
   - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
 - AI 数字人视频通话路由已提供：

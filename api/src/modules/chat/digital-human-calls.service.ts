@@ -43,6 +43,10 @@ type DigitalHumanSessionRecord = {
 @Injectable()
 export class DigitalHumanCallsService {
   private readonly sessions = new Map<string, DigitalHumanSessionRecord>();
+  private readonly subscribers = new Map<
+    string,
+    Set<(payload: ReturnType<DigitalHumanCallsService['getSession']>) => void>
+  >();
 
   constructor(
     private readonly chatService: ChatService,
@@ -104,6 +108,7 @@ export class DigitalHumanCallsService {
       updatedAt: now,
     };
     this.sessions.set(session.id, session);
+    this.emitSessionUpdate(session.id);
 
     return this.serializeSession(session);
   }
@@ -117,6 +122,7 @@ export class DigitalHumanCallsService {
     session.status = 'ended';
     session.updatedAt = new Date().toISOString();
     this.sessions.set(session.id, session);
+    this.emitSessionUpdate(session.id);
     return this.serializeSession(session);
   }
 
@@ -125,6 +131,12 @@ export class DigitalHumanCallsService {
     if (session.status === 'ended') {
       throw new NotFoundException('当前数字人通话已结束，请重新发起。');
     }
+
+    session.status = 'playing';
+    session.renderStatus = 'rendering';
+    session.updatedAt = new Date().toISOString();
+    this.sessions.set(session.id, session);
+    this.emitSessionUpdate(session.id);
 
     const turn = await this.voiceCallsService.createTurn(file, {
       conversationId: session.conversationId,
@@ -148,6 +160,7 @@ export class DigitalHumanCallsService {
     session.renderStatus = providerTurn.renderStatus;
     session.updatedAt = new Date().toISOString();
     this.sessions.set(session.id, session);
+    this.emitSessionUpdate(session.id);
 
     return {
       session: this.serializeSession(session),
@@ -162,6 +175,28 @@ export class DigitalHumanCallsService {
       sessionId: session.id,
       characterName: session.characterName,
     });
+  }
+
+  subscribeSession(
+    sessionId: string,
+    listener: (payload: ReturnType<DigitalHumanCallsService['getSession']>) => void,
+  ) {
+    this.requireSession(sessionId);
+    const listeners = this.subscribers.get(sessionId) ?? new Set();
+    listeners.add(listener);
+    this.subscribers.set(sessionId, listeners);
+
+    return () => {
+      const current = this.subscribers.get(sessionId);
+      if (!current) {
+        return;
+      }
+
+      current.delete(listener);
+      if (!current.size) {
+        this.subscribers.delete(sessionId);
+      }
+    };
   }
 
   private requireSession(sessionId: string) {
@@ -198,5 +233,22 @@ export class DigitalHumanCallsService {
       updatedAt: session.updatedAt,
       lastTurn: session.lastTurn,
     };
+  }
+
+  private emitSessionUpdate(sessionId: string) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      return;
+    }
+
+    const listeners = this.subscribers.get(sessionId);
+    if (!listeners?.size) {
+      return;
+    }
+
+    const payload = this.serializeSession(session);
+    for (const listener of listeners) {
+      listener(payload);
+    }
   }
 }
