@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button, StatusPill } from "@yinjie/ui";
 import { AdminCompactStatusCard, AdminEyebrow } from "./admin-workbench";
+import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type SidebarLink = {
   label: string;
@@ -29,6 +30,7 @@ type AdminSidebarProps = {
   onEditSecret: () => void;
   coreApiHealthy: boolean;
   providerReady: boolean;
+  digitalHumanSummary: ReturnType<typeof buildDigitalHumanAdminSummary>;
   ownerCount: number | null;
   navLinks: readonly SidebarLink[];
   contextTitle?: string;
@@ -49,6 +51,7 @@ export function AdminSidebar({
   onEditSecret,
   coreApiHealthy,
   providerReady,
+  digitalHumanSummary,
   ownerCount,
   navLinks,
   contextTitle,
@@ -66,6 +69,13 @@ export function AdminSidebar({
     issues.push({
       label: "推理服务未配置",
       detail: "补齐模型、接口和 API Key，否则无法跑真实生成。",
+      to: "/setup",
+    });
+  }
+  if (!digitalHumanSummary.ready) {
+    issues.push({
+      label: `数字人 ${digitalHumanSummary.statusLabel}`,
+      detail: digitalHumanSummary.nextStep,
       to: "/setup",
     });
   }
@@ -88,7 +98,7 @@ export function AdminSidebar({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+      <div className="mt-4 grid gap-3 sm:grid-cols-4 lg:grid-cols-1">
         <AdminCompactStatusCard
           label="核心接口"
           value={coreApiHealthy ? "在线" : "待恢复"}
@@ -103,6 +113,11 @@ export function AdminSidebar({
           label="世界主人"
           value={ownerCount == null ? "加载中" : `${ownerCount} 个`}
           tone={ownerCount === 1 ? "healthy" : "warning"}
+        />
+        <AdminCompactStatusCard
+          label="数字人"
+          value={digitalHumanSummary.statusLabel}
+          tone={digitalHumanSummary.ready ? "healthy" : "warning"}
         />
       </div>
 

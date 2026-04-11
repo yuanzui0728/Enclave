@@ -8,6 +8,7 @@ import { AdminTopbar } from "./admin-topbar";
 import { DesktopRuntimeGuard } from "./desktop-runtime-guard";
 import { getAdminSecret, setAdminSecret } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 export function RootLayout() {
   const queryClient = useQueryClient();
@@ -25,6 +26,10 @@ export function RootLayout() {
 
   const routeMeta = useMemo(() => resolveRouteMeta(location.pathname), [location.pathname]);
   const characterContext = useMemo(() => resolveCharacterContext(location.pathname), [location.pathname]);
+  const digitalHumanSummary = useMemo(
+    () => buildDigitalHumanAdminSummary(statusQuery.data?.digitalHumanGateway),
+    [statusQuery.data?.digitalHumanGateway],
+  );
   const shellStatus = useMemo(() => {
     if (statusQuery.isError) {
       return { label: "实例状态待确认", tone: "warning" as const };
@@ -68,6 +73,7 @@ export function RootLayout() {
             onEditSecret={() => setEditingSecret(true)}
             coreApiHealthy={Boolean(statusQuery.data?.coreApi.healthy)}
             providerReady={Boolean(statusQuery.data?.inferenceGateway.activeProvider)}
+            digitalHumanSummary={digitalHumanSummary}
             ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
             navLinks={NAV_ITEMS}
             contextTitle={characterContext ? "角色工作区" : undefined}
