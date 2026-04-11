@@ -3639,6 +3639,7 @@ function GroupRelaySummaryMessage({
   const completionTimeLabel = resolveGroupRelayCompletionTime(summary);
   const publishRangeLabel = relayPublishRangeLabel(summary);
   const publishStageBadge = resolveGroupRelayPublishStageBadge(summary);
+  const completionBadge = resolveGroupRelayCompletionBadge(summary);
   const card = (
     <div
       className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
@@ -3696,6 +3697,18 @@ function GroupRelaySummaryMessage({
               )}
             >
               {publishStageBadge.label}
+            </div>
+          ) : null}
+          {completionBadge ? (
+            <div
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-medium",
+                completionBadge.tone === "success"
+                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
+                  : "bg-[rgba(245,158,11,0.16)] text-[#b45309]",
+              )}
+            >
+              {completionBadge.label}
             </div>
           ) : null}
         </div>
@@ -3828,7 +3841,32 @@ function resolveGroupRelayPublishStageBadge(
   };
 }
 
+function resolveGroupRelayCompletionBadge(
+  summary: NonNullable<ReturnType<typeof parseGroupRelaySummaryMessage>>,
+) {
+  const pendingCount = parseGroupRelayCount(summary.pendingMemberCountLabel);
+  if (pendingCount === null) {
+    return null;
+  }
+
+  if (pendingCount === 0) {
+    return {
+      label: "已全部确认",
+      tone: "success" as const,
+    };
+  }
+
+  return {
+    label: "仍有待确认",
+    tone: "warning" as const,
+  };
+}
+
 function parseGroupRelayPublishCount(label: string | null | undefined) {
+  return parseGroupRelayCount(label);
+}
+
+function parseGroupRelayCount(label: string | null | undefined) {
   if (!label) {
     return null;
   }
