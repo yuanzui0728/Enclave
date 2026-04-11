@@ -3640,6 +3640,7 @@ function GroupRelaySummaryMessage({
   const publishRangeLabel = relayPublishRangeLabel(summary);
   const publishStageBadge = resolveGroupRelayPublishStageBadge(summary);
   const completionBadge = resolveGroupRelayCompletionBadge(summary);
+  const ctaCopy = resolveGroupRelayCtaCopy(summary);
   const card = (
     <div
       className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
@@ -3749,9 +3750,11 @@ function GroupRelaySummaryMessage({
       {onOpen ? (
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
           <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-            点击继续查看和回填接龙
+            {ctaCopy.description}
           </div>
-          <div className="text-[11px] font-medium text-[#b45309]">继续接龙</div>
+          <div className="text-[11px] font-medium text-[#b45309]">
+            {ctaCopy.actionLabel}
+          </div>
         </div>
       ) : null}
     </div>
@@ -3859,6 +3862,23 @@ function resolveGroupRelayCompletionBadge(
   return {
     label: "仍有待确认",
     tone: "warning" as const,
+  };
+}
+
+function resolveGroupRelayCtaCopy(
+  summary: NonNullable<ReturnType<typeof parseGroupRelaySummaryMessage>>,
+) {
+  const pendingCount = parseGroupRelayCount(summary.pendingMemberCountLabel);
+  if (pendingCount === 0) {
+    return {
+      description: "点击查看最终结果，必要时再覆盖新的完成状态",
+      actionLabel: "查看结果",
+    };
+  }
+
+  return {
+    description: "点击继续查看和回填接龙",
+    actionLabel: "继续接龙",
   };
 }
 
