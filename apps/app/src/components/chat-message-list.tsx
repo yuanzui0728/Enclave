@@ -92,6 +92,7 @@ import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker"
 import { useMessageReminders } from "../features/chat/use-message-reminders";
 import {
   parseDirectCallInviteMessage,
+  formatGroupCallStatusLabel,
   parseGroupCallInviteMessage,
   type CallInviteSource,
 } from "../features/chat/group-call-message";
@@ -3732,17 +3733,11 @@ function GroupCallInviteMessage({
         </div>
       </div>
 
-      <div className="mt-3 space-y-2">
-        <CallInviteMetric
-          label="当前状态"
-          value={
-            invite.status === "ended"
-              ? "已结束"
-              : invite.kind === "video"
-                ? "画面进行中"
-                : "进行中"
-          }
-        />
+        <div className="mt-3 space-y-2">
+          <CallInviteMetric
+            label="当前状态"
+            value={formatGroupCallStatusLabel(invite.kind, invite.status)}
+          />
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
         ) : null}

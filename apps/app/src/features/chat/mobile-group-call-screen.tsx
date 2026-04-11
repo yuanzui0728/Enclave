@@ -25,7 +25,11 @@ import { GroupAvatarChip } from "../../components/group-avatar-chip";
 import { formatDetailedMessageTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
-import { buildGroupCallInviteMessage } from "./group-call-message";
+import {
+  buildGroupCallInviteMessage,
+  buildGroupCallSummaryLines,
+  formatGroupCallStatusLabel,
+} from "./group-call-message";
 import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 
 type MobileGroupCallScreenProps = {
@@ -96,12 +100,17 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const waitingCount = Math.max(totalCount - activeCount, 0);
   const groupName = groupQuery.data?.name ?? "群聊";
   const callTitle = mode === "voice" ? "群语音通话" : "群视频通话";
-  const statusTitle = mode === "voice" ? "语音进行中" : "画面进行中";
+  const statusTitle = formatGroupCallStatusLabel(mode, "ongoing");
   const hasSyncedStatus =
     lastPublishedCounts?.activeCount === activeCount &&
     lastPublishedCounts?.totalCount === totalCount;
   const showWorkspacePrimer = !callTipsDismissed && !hasResumeCounts;
   const showResumeHint = hasResumeCounts && !callTipsDismissed;
+  const workspaceSummaryLines = buildGroupCallSummaryLines({
+    kind: mode,
+    status: "ongoing",
+    sourceLabel,
+  });
 
   useEffect(() => {
     setMuted(false);
@@ -569,10 +578,11 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               当前沿用了上一端的群通话快照，可继续调整在线成员后再同步到群聊。
             </InlineNotice>
           ) : null}
-          <InlineNotice tone="info">
-            当前会沿用 {sourceLabel}
-            的群通话来源语义，并把在线人数快照继续同步回群聊消息卡片。
-          </InlineNotice>
+          {workspaceSummaryLines.map((line) => (
+            <InlineNotice key={line} tone="info">
+              {line}
+            </InlineNotice>
+          ))}
           {mode === "video" ? (
             <InlineNotice tone="info">
               当前群视频页先承载移动工作台状态，本地摄像头开关只影响当前页面提示，不会上传真实画面。

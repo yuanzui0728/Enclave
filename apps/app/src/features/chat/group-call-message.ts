@@ -423,31 +423,29 @@ function formatCallInviteSource(source: DirectCallInviteSource | undefined) {
   return null;
 }
 
-function buildGroupCallSummaryLines(input: {
+export function buildGroupCallSummaryLines(input: {
   kind: DesktopChatCallKind;
   status: GroupCallInviteStatus;
   sourceLabel: string | null;
 }) {
   const callLabel = input.kind === "video" ? "群视频通话" : "群语音通话";
   const panelLabel = input.kind === "video" ? "群视频通话面板" : "群语音通话面板";
-  const stateLabel =
-    input.kind === "video" ? "群成员画面与加入状态" : "群成员加入状态";
   const sourceLabel = input.sourceLabel ?? "当前设备";
 
   if (input.status === "ended") {
     return [
-      `本轮${callLabel}已结束，可继续在群里跟进结果。`,
+      `本轮${callLabel}已结束，当前卡片会保留这轮状态记录。`,
       `如需再次发起，请重新打开当前群聊顶部的${panelLabel}。`,
     ];
   }
 
   return [
-    `已从${sourceLabel}打开${callLabel}工作台，可直接在聊天页继续查看${stateLabel}。`,
-    `如需继续加入或切回聊天，请在当前群聊顶部的${panelLabel}里操作。`,
+    `已从${sourceLabel}发起${callLabel}，当前工作台会继续同步在线人数和加入状态。`,
+    `如需继续邀请成员、切回聊天或转到其他设备，请回到当前群聊顶部的${panelLabel}。`,
   ];
 }
 
-function formatGroupCallStatusLabel(
+export function formatGroupCallStatusLabel(
   kind: DesktopChatCallKind,
   status: GroupCallInviteStatus,
 ) {

@@ -15,6 +15,7 @@ import { AvatarChip } from "../../../components/avatar-chip";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import type { DesktopChatCallKind } from "./desktop-chat-header-actions";
 import { formatDetailedMessageTimestamp } from "../../../lib/format";
+import { buildGroupCallSummaryLines } from "../../chat/group-call-message";
 
 type DesktopGroupCallPanelProps = {
   kind: DesktopChatCallKind;
@@ -88,6 +89,11 @@ export function DesktopGroupCallPanel({
   const hasSyncedStatus =
     lastSyncedCounts?.activeCount === activeCount &&
     lastSyncedCounts?.totalCount === members.length;
+  const workspaceSummaryLines = buildGroupCallSummaryLines({
+    kind,
+    status: "ongoing",
+    sourceLabel: "桌面端",
+  });
 
   useEffect(() => {
     if (panelOpenedReported) {
@@ -219,9 +225,13 @@ export function DesktopGroupCallPanel({
           </div>
 
           <div className="mt-4">
-            <InlineNotice tone="info">
-              桌面端先承接群通话工作台和成员调度，必要时仍可一键接力到手机继续。
-            </InlineNotice>
+            <div className="space-y-3">
+              {workspaceSummaryLines.map((line) => (
+                <InlineNotice key={line} tone="info">
+                  {line}
+                </InlineNotice>
+              ))}
+            </div>
           </div>
           {!hasSyncedStatus ? (
             <div className="mt-3">
