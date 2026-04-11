@@ -104,6 +104,7 @@ export function useSpeechInput({
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaStartRequestIdRef = useRef(0);
   const recordedChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
   const shouldUploadRecordingRef = useRef(true);
@@ -145,6 +146,7 @@ export function useSpeechInput({
   };
 
   const cancel = useEffectEvent(() => {
+    mediaStartRequestIdRef.current += 1;
     shouldUploadRecordingRef.current = false;
 
     if (recognitionRef.current) {
@@ -283,9 +285,20 @@ export function useSpeechInput({
     setRecordingElapsedMs(0);
     setError(null);
     shouldUploadRecordingRef.current = true;
+    const requestId = mediaStartRequestIdRef.current + 1;
+    mediaStartRequestIdRef.current = requestId;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      if (
+        mediaStartRequestIdRef.current !== requestId ||
+        !shouldUploadRecordingRef.current
+      ) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       mediaStreamRef.current = stream;
       recordedChunksRef.current = [];
       const mimeType = getSupportedRecordingMimeType();
@@ -389,6 +402,14 @@ export function useSpeechInput({
     } catch (startError) {
       stopMediaTracks();
       mediaRecorderRef.current = null;
+
+      if (
+        mediaStartRequestIdRef.current !== requestId ||
+        !shouldUploadRecordingRef.current
+      ) {
+        return;
+      }
+
       setStatus("error");
       setError(
         startError instanceof Error &&

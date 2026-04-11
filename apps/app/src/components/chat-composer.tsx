@@ -1328,6 +1328,33 @@ export function ChatComposer({
   const handleCancelAttachmentDraft = () => {
     releaseAttachmentDraft(attachmentDraft);
     setAttachmentDraft(null);
+    setAttachmentError(null);
+    setMobilePlusNotice(null);
+  };
+
+  const trimSentImageDraftItems = (count: number) => {
+    if (count <= 0) {
+      return;
+    }
+
+    setAttachmentDraft((currentDraft) => {
+      if (!currentDraft || currentDraft.kind !== "images") {
+        return currentDraft;
+      }
+
+      const sentItems = currentDraft.items.slice(0, count);
+      sentItems.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      const remainingItems = currentDraft.items.slice(count);
+
+      if (!remainingItems.length) {
+        return null;
+      }
+
+      return {
+        kind: "images",
+        items: remainingItems,
+      };
+    });
   };
 
   const closeDesktopScreenshotEditor = useCallback(() => {
@@ -2088,7 +2115,7 @@ export function ChatComposer({
   };
 
   const handleSendDraftAttachment = async () => {
-    if (!attachmentDraft) {
+    if (!attachmentDraft || !onSendAttachment) {
       return;
     }
 
@@ -2096,21 +2123,24 @@ export function ChatComposer({
     if (currentDraft.kind === "images") {
       setAttachmentBusy(true);
       setAttachmentError(null);
+      let sentCount = 0;
 
       try {
         for (const item of currentDraft.items) {
-          await onSendAttachment?.({
+          await onSendAttachment({
             type: "image",
             file: item.file,
             fileName: item.fileName,
             width: item.width,
             height: item.height,
           });
+          sentCount += 1;
         }
 
         setPlusPanelOpen(false);
         handleCancelAttachmentDraft();
       } catch (attachmentActionError) {
+        trimSentImageDraftItems(sentCount);
         setAttachmentError(
           attachmentActionError instanceof Error
             ? attachmentActionError.message
