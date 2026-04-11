@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getConversations,
   sendGroupMessage,
@@ -67,15 +67,27 @@ function resolveGames(ids: string[]) {
     .filter((game): game is GameCenterGame => Boolean(game));
 }
 
-function resolveInitialGameSelection() {
-  if (typeof window === "undefined") {
-    return gameCenterFeaturedGameIds[0] ?? "signal-squad";
+function resolveDefaultGameSelection() {
+  return gameCenterFeaturedGameIds[0] ?? "signal-squad";
+}
+
+function resolveGameInviteActivityFromSearch(search: unknown) {
+  const params = new URLSearchParams(typeof search === "string" ? search : "");
+  const inviteId = params.get("invite")?.trim();
+
+  if (!inviteId) {
+    return null;
   }
 
-  const gameId = new URLSearchParams(window.location.search).get("game");
-  return getGameCenterGame(gameId ?? "")
-    ? gameId!
-    : (gameCenterFeaturedGameIds[0] ?? "signal-squad");
+  return gameCenterFriendActivities.find((item) => item.id === inviteId) ?? null;
+}
+
+function resolveGameSelectionFromSearch(search: unknown) {
+  const params = new URLSearchParams(typeof search === "string" ? search : "");
+  const inviteActivity = resolveGameInviteActivityFromSearch(search);
+  const gameId = inviteActivity?.gameId ?? params.get("game")?.trim() ?? "";
+
+  return getGameCenterGame(gameId) ? gameId : null;
 }
 
 export function GamesPage() {
@@ -85,6 +97,9 @@ export function GamesPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerId = useWorldOwnerStore((state) => state.id);
+  const locationSearch = useRouterState({
+    select: (state) => state.location.search,
+  });
   const {
     activeGameId,
     eventActionStatusById,
@@ -105,8 +120,16 @@ export function GamesPage() {
   } = useGameCenterState();
   const [activeCategory, setActiveCategory] =
     useState<GameCenterCategoryId>("featured");
+  const selectedGameFromSearch = useMemo(
+    () => resolveGameSelectionFromSearch(locationSearch),
+    [locationSearch],
+  );
+  const inviteActivityFromSearch = useMemo(
+    () => resolveGameInviteActivityFromSearch(locationSearch),
+    [locationSearch],
+  );
   const [selectedGameId, setSelectedGameId] = useState(
-    resolveInitialGameSelection(),
+    selectedGameFromSearch ?? resolveDefaultGameSelection(),
   );
   const [activeInviteActivityId, setActiveInviteActivityId] = useState<string | null>(
     null,
@@ -136,28 +159,22 @@ export function GamesPage() {
   }, [successNotice]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    const nextSelectedGameId =
+      selectedGameFromSearch ?? resolveDefaultGameSelection();
 
-    const params = new URLSearchParams(window.location.search);
-    const gameId = params.get("game");
-    const inviteId = params.get("invite");
-    const activity = inviteId
-      ? gameCenterFriendActivities.find((item) => item.id === inviteId)
-      : null;
+    setSelectedGameId((current) =>
+      current === nextSelectedGameId ? current : nextSelectedGameId,
+    );
+  }, [selectedGameFromSearch]);
 
-    if (gameId && getGameCenterGame(gameId)) {
-      setSelectedGameId(gameId);
-    }
-
-    if (activity) {
+  useEffect(() => {
+    if (inviteActivityFromSearch) {
       setNoticeTone("info");
       setSuccessNotice(
-        `已带上 ${activity.friendName} 的组局邀约，可在手机继续查看 ${getGameCenterGame(activity.gameId)?.name ?? "当前游戏"}。`,
+        `已带上 ${inviteActivityFromSearch.friendName} 的组局邀约，可在手机继续查看 ${getGameCenterGame(inviteActivityFromSearch.gameId)?.name ?? "当前游戏"}。`,
       );
     }
-  }, []);
+  }, [inviteActivityFromSearch]);
 
   const featuredGames = resolveGames(gameCenterFeaturedGameIds);
   const selectedGame =
