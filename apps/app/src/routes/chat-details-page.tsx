@@ -130,7 +130,10 @@ export function ChatDetailsPage() {
     mutationFn: (muted: boolean) =>
       setConversationMuted(conversationId, { muted }, baseUrl),
     onSuccess: async (_, muted) => {
-      setNotice(muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
+      setNotice({
+        tone: "success",
+        message: muted ? "已开启消息免打扰。" : "已关闭消息免打扰。",
+      });
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
