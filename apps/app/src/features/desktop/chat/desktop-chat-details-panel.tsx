@@ -1877,59 +1877,59 @@ function DesktopGroupMemberBrowserDialog({
         </div>
 
         <div className="border-b border-black/6 px-6 py-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <MemberBrowserStatCard
-              label="全部成员"
-              value={`${members.length} 人`}
-              detail="桌面端完整成员列表"
-            />
-            <MemberBrowserStatCard
-              label="角色成员"
-              value={`${characterCount} 人`}
-              detail="可直接跳转角色资料"
-            />
-            <MemberBrowserStatCard
-              label="管理角色"
-              value={`${ownerCount + adminCount} 人`}
-              detail="群主与管理员"
-            />
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+            <span className="rounded-full border border-black/8 bg-[#f5f5f5] px-3 py-1">
+              全部 {members.length} 人
+            </span>
+            <span className="rounded-full border border-black/8 bg-[#f5f5f5] px-3 py-1">
+              角色成员 {characterCount} 人
+            </span>
+            <span className="rounded-full border border-black/8 bg-[#f5f5f5] px-3 py-1">
+              群主与管理员 {ownerCount + adminCount} 人
+            </span>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveFilter(tab.id)}
-                className={cn(
-                  "rounded-[8px] border px-3 py-1.5 text-xs transition",
-                  activeFilter === tab.id
-                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                    : "border-transparent bg-[#ececec] text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#e6e6e6]",
-                )}
-              >
-                {tab.label} {tab.count}
-              </button>
-            ))}
-          </div>
+          <div className="mt-4 rounded-[14px] border border-black/8 bg-[#f7f7f7] px-4 py-4">
+            <div className="flex flex-col gap-3">
+              <label className="relative block">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
+                />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="搜索昵称、角色或成员 ID"
+                  className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+                />
+              </label>
 
-          <label className="relative mt-4 block">
-            <Search
-              size={16}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
-            />
-            <input
-              ref={searchInputRef}
-              type="search"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder="搜索昵称、角色或成员 ID"
-              className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
-            />
-          </label>
-          <div className="mt-2 text-[11px] text-[color:var(--text-dim)]">
-            ↑ ↓ 选择成员，Enter 打开角色资料
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-2">
+                  {filterTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveFilter(tab.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-xs transition",
+                        activeFilter === tab.id
+                          ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
+                          : "border-transparent bg-[#ececec] text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#e6e6e6]",
+                      )}
+                    >
+                      {tab.label} {tab.count}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[11px] text-[color:var(--text-dim)]">
+                  ↑ ↓ 选择，Enter 打开
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -2066,30 +2066,6 @@ function DesktopGroupMemberBrowserDialog({
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function MemberBrowserStatCard({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-[12px] border border-black/6 bg-[#f5f5f5] px-4 py-3">
-      <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-        {label}
-      </div>
-      <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">
-        {value}
-      </div>
-      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-        {detail}
       </div>
     </div>
   );
