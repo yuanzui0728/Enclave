@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   dismissActiveMiniProgram,
   markMiniProgramOpened,
+  recordGroupRelayPublish,
   readMiniProgramsState,
   toggleMiniProgramTaskCompletion,
   togglePinnedMiniProgram,
@@ -36,6 +37,9 @@ export function useMiniProgramsState() {
     },
     dismissActiveMiniProgram() {
       setState((current) => dismissActiveMiniProgram(current));
+    },
+    recordGroupRelayPublish(sourceGroupId: string) {
+      setState((current) => recordGroupRelayPublish(current, sourceGroupId));
     },
   };
 }

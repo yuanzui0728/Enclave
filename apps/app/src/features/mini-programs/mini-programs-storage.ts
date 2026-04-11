@@ -5,6 +5,7 @@ export type MiniProgramsStoredState = {
   launchCountById: Record<string, number>;
   lastOpenedAtById: Record<string, string>;
   completedTaskIdsByMiniProgramId: Record<string, string[]>;
+  groupRelayPublishCountBySourceGroupId: Record<string, number>;
 };
 
 const MINI_PROGRAMS_STORAGE_KEY = "yinjie-mini-programs-state";
@@ -60,6 +61,19 @@ function sanitizeStringArrayRecord(value: unknown) {
   );
 }
 
+function sanitizeNumberRecord(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return {} as Record<string, number>;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, number] =>
+        typeof entry[0] === "string" && typeof entry[1] === "number",
+    ),
+  );
+}
+
 export function getDefaultMiniProgramsState(): MiniProgramsStoredState {
   return {
     activeMiniProgramId: "schedule-assistant",
@@ -96,6 +110,7 @@ export function getDefaultMiniProgramsState(): MiniProgramsStoredState {
       "file-drop": ["sort-temp-files"],
       "read-later": ["sort-by-source"],
     },
+    groupRelayPublishCountBySourceGroupId: {},
   };
 }
 
@@ -131,6 +146,9 @@ export function readMiniProgramsState() {
       lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
       completedTaskIdsByMiniProgramId: sanitizeStringArrayRecord(
         parsed.completedTaskIdsByMiniProgramId,
+      ),
+      groupRelayPublishCountBySourceGroupId: sanitizeNumberRecord(
+        parsed.groupRelayPublishCountBySourceGroupId,
       ),
     };
   } catch {
@@ -169,6 +187,8 @@ export function markMiniProgramOpened(
       [miniProgramId]: openedAt,
     },
     completedTaskIdsByMiniProgramId: state.completedTaskIdsByMiniProgramId,
+    groupRelayPublishCountBySourceGroupId:
+      state.groupRelayPublishCountBySourceGroupId,
   };
 }
 
@@ -213,6 +233,24 @@ export function toggleMiniProgramTaskCompletion(
       [input.miniProgramId]: completed
         ? currentTaskIds.filter((taskId) => taskId !== input.taskId)
         : [...currentTaskIds, input.taskId],
+    },
+  };
+}
+
+export function recordGroupRelayPublish(
+  state: MiniProgramsStoredState,
+  sourceGroupId: string,
+): MiniProgramsStoredState {
+  if (!sourceGroupId.trim()) {
+    return state;
+  }
+
+  return {
+    ...state,
+    groupRelayPublishCountBySourceGroupId: {
+      ...state.groupRelayPublishCountBySourceGroupId,
+      [sourceGroupId]:
+        (state.groupRelayPublishCountBySourceGroupId[sourceGroupId] ?? 0) + 1,
     },
   };
 }

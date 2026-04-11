@@ -3578,6 +3578,7 @@ function GroupRelaySummaryMessage({
   }
 
   const completionTimeLabel = resolveGroupRelayCompletionTime(summary);
+  const publishRangeLabel = relayPublishRangeLabel(summary);
   const card = (
     <div
       className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
@@ -3635,11 +3636,17 @@ function GroupRelaySummaryMessage({
         {completionTimeLabel ? (
           <CallInviteMetric label="完成时间" value={completionTimeLabel} />
         ) : null}
+        {publishRangeLabel ? (
+          <CallInviteMetric label="起止时间" value={publishRangeLabel} />
+        ) : null}
         {summary.activeRelayCountLabel ? (
           <CallInviteMetric label="进行中" value={summary.activeRelayCountLabel} />
         ) : null}
         {summary.pendingMemberCountLabel ? (
           <CallInviteMetric label="待确认" value={summary.pendingMemberCountLabel} />
+        ) : null}
+        {summary.publishCountLabel ? (
+          <CallInviteMetric label="回填次数" value={summary.publishCountLabel} />
         ) : null}
         {summary.resultSummaryLabel ? (
           <CallInviteMetric label="结果摘要" value={summary.resultSummaryLabel} />
@@ -3693,6 +3700,39 @@ function resolveGroupRelayCompletionTime(
   }
 
   return null;
+}
+
+function relayPublishRangeLabel(
+  summary: NonNullable<ReturnType<typeof parseGroupRelaySummaryMessage>>,
+) {
+  if (!summary.publishedAtLabel || !summary.timestampLabel) {
+    return null;
+  }
+
+  const startedAtTs = parseTimestamp(summary.timestampLabel);
+  const endedAtTs = parseTimestamp(summary.publishedAtLabel);
+  if (startedAtTs === null || endedAtTs === null) {
+    return `${summary.timestampLabel} - ${summary.publishedAtLabel}`;
+  }
+
+  const startedAt = new Date(startedAtTs);
+  const endedAt = new Date(endedAtTs);
+  const sameDay =
+    startedAt.getFullYear() === endedAt.getFullYear() &&
+    startedAt.getMonth() === endedAt.getMonth() &&
+    startedAt.getDate() === endedAt.getDate();
+
+  if (sameDay) {
+    return `${formatMessageTimestamp(summary.timestampLabel)} - ${new Intl.DateTimeFormat(
+      "zh-CN",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    ).format(endedAt)}`;
+  }
+
+  return `${formatMessageTimestamp(summary.timestampLabel)} - ${formatMessageTimestamp(summary.publishedAtLabel)}`;
 }
 
 function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {

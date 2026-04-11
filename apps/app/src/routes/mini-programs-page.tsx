@@ -69,12 +69,14 @@ export function MiniProgramsPage() {
   const {
     activeMiniProgramId,
     completedTaskIdsByMiniProgramId,
+    groupRelayPublishCountBySourceGroupId,
     launchCountById,
     lastOpenedAtById,
     pinnedMiniProgramIds,
     recentMiniProgramIds,
     dismissActiveMiniProgram,
     openMiniProgram,
+    recordGroupRelayPublish,
     toggleTaskCompletion,
     togglePinned,
   } = useMiniProgramsState();
@@ -97,16 +99,26 @@ export function MiniProgramsPage() {
     () => new Date().toISOString(),
     [launchContext?.sourceGroupId],
   );
+  const relaySummaryStartedAt =
+    launchContext && lastOpenedAtById["group-relay"]
+      ? lastOpenedAtById["group-relay"]
+      : relaySummaryPublishedAt;
+  const relayPublishCount =
+    launchContext?.sourceGroupId
+      ? (groupRelayPublishCountBySourceGroupId[launchContext.sourceGroupId] ??
+          0) + 1
+      : 1;
   const relaySummaryMessage = launchContext
     ? buildGroupRelaySummaryMessage(
         launchContext.sourceGroupName,
         "published",
-        relaySummaryPublishedAt,
+        relaySummaryStartedAt,
         relaySummaryPublishedAt,
         isDesktopLayout ? "desktop" : "mobile",
         isDesktopLayout ? "desktop" : "mobile",
         resolveGroupRelayMetricValue(groupRelayEntry?.usersLabel, "接龙进行中"),
         resolveGroupRelayMetricValue(groupRelayEntry?.serviceLabel, "待确认"),
+        `第 ${relayPublishCount} 次`,
       )
     : "";
 
@@ -265,6 +277,7 @@ export function MiniProgramsPage() {
       ) {
         toggleTaskCompletion("group-relay", "publish-result");
       }
+      recordGroupRelayPublish(launchContext.sourceGroupId);
 
       setNoticeTone("success");
       setSuccessNotice(`群接龙结果已回填到“${launchContext.sourceGroupName}”。`);

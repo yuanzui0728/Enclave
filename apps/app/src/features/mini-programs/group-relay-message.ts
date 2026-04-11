@@ -15,6 +15,7 @@ export function buildGroupRelaySummaryMessage(
   publishedSource: GroupRelaySummarySource = launchSource,
   activeRelayCountLabel?: string | null,
   pendingMemberCountLabel?: string | null,
+  publishCountLabel?: string | null,
 ) {
   return [
     `${GROUP_RELAY_MESSAGE_PREFIX} ${sourceGroupName}`,
@@ -25,6 +26,7 @@ export function buildGroupRelaySummaryMessage(
     publishedAt ? `回填来源 ${formatGroupRelaySourceLabel(publishedSource)}` : null,
     activeRelayCountLabel ? `进行中 ${activeRelayCountLabel}` : null,
     pendingMemberCountLabel ? `待确认 ${pendingMemberCountLabel}` : null,
+    publishCountLabel ? `回填次数 ${publishCountLabel}` : null,
     `结果摘要 ${formatGroupRelayResultSummary(status)}`,
     ...buildGroupRelaySummaryLines(status, launchSource),
   ]
@@ -90,6 +92,11 @@ export function parseGroupRelaySummaryMessage(text: string) {
     cursor += 1;
   }
 
+  const publishCountLabel = parseGroupRelayPublishCountLabel(lines[cursor]);
+  if (publishCountLabel) {
+    cursor += 1;
+  }
+
   const resultSummaryLabel = parseGroupRelayResultSummaryLabel(lines[cursor]);
   if (resultSummaryLabel) {
     cursor += 1;
@@ -111,6 +118,7 @@ export function parseGroupRelaySummaryMessage(text: string) {
     publishedSource,
     activeRelayCountLabel,
     pendingMemberCountLabel,
+    publishCountLabel,
     resultSummaryLabel,
     summaryLines,
   };
@@ -170,6 +178,14 @@ function parseGroupRelayPendingMemberCountLabel(line: string | undefined) {
   }
 
   return line.replace(/^待确认\s+/, "").trim() || null;
+}
+
+function parseGroupRelayPublishCountLabel(line: string | undefined) {
+  if (!line || !line.startsWith("回填次数 ")) {
+    return null;
+  }
+
+  return line.replace(/^回填次数\s+/, "").trim() || null;
 }
 
 function parseGroupRelayResultSummaryLabel(line: string | undefined) {
