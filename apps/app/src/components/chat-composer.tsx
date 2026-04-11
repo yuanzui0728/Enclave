@@ -3794,18 +3794,17 @@ function DesktopScreenshotEditor({
                   type="button"
                   onClick={() => onShortcutHelpOpenChange(!shortcutHelpOpen)}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition",
+                    "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] transition",
                     shortcutHelpOpen
-                      ? "border-white/26 bg-white/12 text-white"
-                      : "border-white/10 bg-white/6 text-white/58 hover:border-white/18 hover:bg-white/10 hover:text-white/80",
+                      ? "border-white/18 bg-white/8 text-white/88"
+                      : "border-white/8 bg-transparent text-white/46 hover:border-white/14 hover:bg-white/6 hover:text-white/72",
                   )}
                   title="查看截图快捷键 (?)"
                 >
-                  <Keyboard size={12} />
-                  <span>快捷键</span>
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/58">
+                  <span className="rounded-full border border-white/12 bg-white/6 px-1.5 py-0.5 text-[10px] leading-none text-white/72">
                     ?
                   </span>
+                  <span>快捷键</span>
                 </button>
                 {shortcutHelpOpen ? (
                   <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
