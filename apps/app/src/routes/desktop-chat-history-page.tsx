@@ -18,7 +18,7 @@ import {
   useLocalChatMessageActionState,
 } from "../features/chat/local-chat-message-actions";
 import { useMessageReminders } from "../features/chat/use-message-reminders";
-import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { sanitizeDisplayedChatText } from "../lib/chat-text";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -163,62 +163,121 @@ export function DesktopChatHistoryPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <section className="flex w-[300px] shrink-0 flex-col border-r border-black/6 bg-[#ededed]">
-        <div className="border-b border-black/6 px-4 py-4">
-          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-            聊天记录管理
-          </div>
-          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            先按会话查看、展开和清理最近聊天记录。
-          </div>
-        </div>
+    <DesktopUtilityShell
+      title="聊天记录"
+      subtitle={
+        selectedConversation
+          ? `${selectedConversation.title} · 已加载 ${historyRows.length} 条`
+          : "按会话查看、展开和清理最近聊天记录"
+      }
+      toolbar={
+        selectedConversation ? (
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void messagesQuery.refetch();
+                setNotice(`已刷新当前会话最近 ${historyRows.length} 条记录。`);
+              }}
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+            >
+              刷新记录
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (!mayHaveEarlierMessages) {
+                  setNotice("当前会话的聊天记录已经全部加载。");
+                  return;
+                }
 
-        <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
-          {conversationsQuery.isLoading ? (
-            <LoadingBlock label="正在读取会话..." />
-          ) : null}
-          {conversationsQuery.isError &&
-          conversationsQuery.error instanceof Error ? (
-            <ErrorBlock message={conversationsQuery.error.message} />
-          ) : null}
+                setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
+              }}
+              disabled={!historyRows.length || messagesQuery.isFetching}
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+            >
+              {messagesQuery.isFetching
+                ? "正在加载..."
+                : mayHaveEarlierMessages
+                  ? "加载更早消息"
+                  : "历史已全部加载"}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => clearMutation.mutate(selectedConversation)}
+              disabled={clearMutation.isPending}
+              className="h-8 rounded-[10px] border-[rgba(239,68,68,0.18)] bg-[rgba(254,242,242,0.92)] px-3 text-[12px] text-[color:var(--state-danger-text)] shadow-none hover:bg-[rgba(254,226,226,0.95)]"
+            >
+              {clearMutation.isPending ? "清空中..." : "清空记录"}
+            </Button>
+          </>
+        ) : null
+      }
+      sidebar={
+        <>
+          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              会话列表
+            </div>
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              选择一个会话后再查看历史消息。
+            </div>
+          </div>
 
-          <div className="space-y-1">
-            {conversations.map((conversation) => (
-              <button
-                key={conversation.id}
-                type="button"
-                onClick={() => setSelectedConversationId(conversation.id)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-[10px] border px-3 py-2.5 text-left transition",
-                  conversation.id === selectedConversationId
-                    ? "border-black/8 bg-white"
-                    : "border-transparent bg-transparent hover:border-black/6 hover:bg-white/72",
-                )}
-              >
-                <AvatarChip name={conversation.title} size="wechat" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                    {conversation.title}
+          <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
+            {conversationsQuery.isLoading ? (
+              <LoadingBlock label="正在读取会话..." />
+            ) : null}
+            {conversationsQuery.isError &&
+            conversationsQuery.error instanceof Error ? (
+              <ErrorBlock message={conversationsQuery.error.message} />
+            ) : null}
+
+            <div className="space-y-1">
+              {conversations.map((conversation) => (
+                <button
+                  key={conversation.id}
+                  type="button"
+                  onClick={() => setSelectedConversationId(conversation.id)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-[12px] border px-3 py-2.5 text-left transition",
+                    conversation.id === selectedConversationId
+                      ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.08)]"
+                      : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/80",
+                  )}
+                >
+                  <AvatarChip name={conversation.title} size="wechat" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                      {conversation.title}
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {conversation.type === "group" ? "群聊" : "单聊"} ·{" "}
+                      {formatConversationTimestamp(conversation.lastActivityAt)}
+                    </div>
                   </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {conversation.type === "group" ? "群聊" : "单聊"} ·{" "}
-                    {formatConversationTimestamp(conversation.lastActivityAt)}
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </>
+      }
+      aside={
+        selectedConversation ? (
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                当前会话
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                辅助查看当前加载窗口与提醒数量。
+              </div>
+            </div>
 
-      <section className="min-w-0 flex-1 overflow-auto p-4">
-        {selectedConversation ? (
-          <DesktopEntryShell
-            badge="聊天记录"
-            title={selectedConversation.title}
-            description="这里集中查看当前会话的最近聊天记录，也能继续展开更早消息。"
-            aside={
+            <div className="min-h-0 flex-1 overflow-auto p-5">
               <div className="space-y-3">
                 <InfoCard
                   label="会话类型"
@@ -240,75 +299,49 @@ export function DesktopChatHistoryPage() {
                 <InfoCard label="加载窗口" value={`最近 ${historyLimit} 条`} />
                 <InfoCard
                   label="更早消息"
-                  value={mayHaveEarlierMessages ? "继续展开" : "已全部加载"}
+                  value={mayHaveEarlierMessages ? "还可继续展开" : "已全部加载"}
                 />
               </div>
-            }
-          >
-            {notice ? (
-              <InlineNotice tone="success">{notice}</InlineNotice>
-            ) : null}
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void messagesQuery.refetch();
-                  setNotice(
-                    `已刷新当前会话最近 ${historyRows.length} 条记录。`,
-                  );
-                }}
-                className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
-              >
-                刷新记录
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  if (!mayHaveEarlierMessages) {
-                    setNotice("当前会话的聊天记录已经全部加载。");
-                    return;
-                  }
-
-                  setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
-                }}
-                disabled={!historyRows.length || messagesQuery.isFetching}
-                className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-3 text-[12px] shadow-none hover:bg-[#efefef]"
-              >
-                {messagesQuery.isFetching
-                  ? "正在加载更早消息..."
-                  : mayHaveEarlierMessages
-                    ? `加载更早消息（当前 ${historyRows.length} 条）`
-                    : "历史已全部加载"}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => clearMutation.mutate(selectedConversation)}
-                disabled={clearMutation.isPending}
-                className="h-8 rounded-[8px] border-[rgba(239,68,68,0.18)] bg-[rgba(254,242,242,0.9)] px-3 text-[12px] text-[color:var(--state-danger-text)] shadow-none hover:bg-[rgba(254,226,226,0.95)]"
-              >
-                {clearMutation.isPending ? "清空中..." : "清空当前会话记录"}
-              </Button>
             </div>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center px-6">
+            <EmptyState
+              title="先选会话"
+              description="右侧会显示当前会话的加载与提醒摘要。"
+            />
+          </div>
+        )
+      }
+    >
+      <div className="p-5">
+        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
 
-            <div className="mt-5 space-y-2.5">
-              {messagesQuery.isLoading ? (
-                <LoadingBlock label="正在读取聊天记录..." />
-              ) : null}
-              {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-                <ErrorBlock message={messagesQuery.error.message} />
-              ) : null}
-              {clearMutation.isError && clearMutation.error instanceof Error ? (
-                <ErrorBlock message={clearMutation.error.message} />
-              ) : null}
+        <div className="mt-4 space-y-2.5">
+          {messagesQuery.isLoading ? (
+            <LoadingBlock label="正在读取聊天记录..." />
+          ) : null}
+          {messagesQuery.isError && messagesQuery.error instanceof Error ? (
+            <ErrorBlock message={messagesQuery.error.message} />
+          ) : null}
+          {clearMutation.isError && clearMutation.error instanceof Error ? (
+            <ErrorBlock message={clearMutation.error.message} />
+          ) : null}
 
-              {historyRows.map((item) => (
+          {!selectedConversation ? (
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+              <EmptyState
+                title="先从左侧选择一个会话"
+                description="聊天记录管理会优先按会话承接查看和清理操作。"
+              />
+            </div>
+          ) : null}
+
+          {selectedConversation
+            ? historyRows.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-[14px] border border-black/6 bg-white p-4"
+                  className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -319,59 +352,58 @@ export function DesktopChatHistoryPage() {
                         {formatMessageTimestamp(item.createdAt)}
                       </div>
                     </div>
-                    <span className="rounded-[8px] bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                      {item.typeLabel}
-                    </span>
-                    {item.reminderAt ? (
-                      <span className="rounded-[8px] bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
-                        提醒 · {formatMessageTimestamp(item.reminderAt)}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <span className="rounded-[8px] bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                        {item.typeLabel}
                       </span>
-                    ) : null}
+                      {item.reminderAt ? (
+                        <span className="rounded-[8px] bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
+                          提醒 · {formatMessageTimestamp(item.reminderAt)}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
                     {item.preview}
                   </div>
                 </div>
-              ))}
+              ))
+            : null}
 
-              {!messagesQuery.isLoading && !historyRows.length ? (
-                <EmptyState
-                  title="当前会话还没有可管理的记录"
-                  description="可能刚刚清空过，或者这个会话目前还没有任何消息。"
-                />
-              ) : null}
-
-              {!messagesQuery.isLoading &&
-              historyRows.length > 0 &&
-              mayHaveEarlierMessages ? (
-                <div className="flex justify-center pt-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                      setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
-                    }
-                    disabled={messagesQuery.isFetching}
-                    className="h-8 rounded-[8px] border-black/8 bg-[#f7f7f7] px-4 text-[12px] shadow-none hover:bg-[#efefef]"
-                  >
-                    {messagesQuery.isFetching
-                      ? "正在加载更早消息..."
-                      : "继续加载更早消息"}
-                  </Button>
-                </div>
-              ) : null}
+          {selectedConversation &&
+          !messagesQuery.isLoading &&
+          !historyRows.length ? (
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+              <EmptyState
+                title="当前会话还没有可管理的记录"
+                description="可能刚刚清空过，或者这个会话目前还没有任何消息。"
+              />
             </div>
-          </DesktopEntryShell>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <EmptyState
-              title="先从左侧选择一个会话"
-              description="聊天记录管理会优先按会话承接查看和清理操作。"
-            />
-          </div>
-        )}
-      </section>
-    </div>
+          ) : null}
+
+          {selectedConversation &&
+          !messagesQuery.isLoading &&
+          historyRows.length > 0 &&
+          mayHaveEarlierMessages ? (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
+                }
+                disabled={messagesQuery.isFetching}
+                className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-4 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+              >
+                {messagesQuery.isFetching
+                  ? "正在加载更早消息..."
+                  : "继续加载更早消息"}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </DesktopUtilityShell>
   );
 }
 
@@ -460,7 +492,7 @@ function resolveMessageTypeLabel(type: Message["type"] | GroupMessage["type"]) {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-[#f7f7f7] p-4">
+    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}

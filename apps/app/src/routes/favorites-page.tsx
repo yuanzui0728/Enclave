@@ -2,10 +2,16 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { getFavorites, removeFavorite } from "@yinjie/contracts";
-import { TextField, cn } from "@yinjie/ui";
+import {
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+  TextField,
+  cn,
+} from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
-import { DesktopEntryShell } from "../features/desktop/desktop-entry-shell";
+import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
@@ -14,13 +20,14 @@ import {
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const categoryLabels: Array<{
   id: "all" | DesktopFavoriteCategory;
   label: string;
 }> = [
-  { id: "all", label: "全部" },
+  { id: "all", label: "全部收藏" },
   { id: "messages", label: "消息" },
   { id: "contacts", label: "联系人" },
   { id: "officialAccounts", label: "公众号" },
@@ -41,6 +48,10 @@ export function FavoritesPage() {
   const [activeCategory, setActiveCategory] = useState<
     "all" | DesktopFavoriteCategory
   >("all");
+  const [selectedFavoriteSourceId, setSelectedFavoriteSourceId] = useState<
+    string | null
+  >(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const deferredSearchText = useDeferredValue(searchText);
   const favoritesQuery = useQuery({
     queryKey: ["app-favorites", baseUrl],
@@ -57,6 +68,15 @@ export function FavoritesPage() {
       ),
     );
   }, [favoritesQuery.data]);
+
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setNotice(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   const removeMutation = useMutation({
     mutationFn: async (item: DesktopFavoriteRecord) => {
@@ -79,6 +99,7 @@ export function FavoritesPage() {
       setFavorites(
         mergeDesktopFavoriteRecords(nextRemoteFavorites, nextLocalFavorites),
       );
+      setNotice(`${item.title} 已从收藏中移除。`);
     },
   });
 
@@ -100,8 +121,24 @@ export function FavoritesPage() {
     });
   }, [activeCategory, favorites, normalizedSearchText]);
 
+  useEffect(() => {
+    if (
+      selectedFavoriteSourceId &&
+      filteredFavorites.some((item) => item.sourceId === selectedFavoriteSourceId)
+    ) {
+      return;
+    }
+
+    setSelectedFavoriteSourceId(filteredFavorites[0]?.sourceId ?? null);
+  }, [filteredFavorites, selectedFavoriteSourceId]);
+
+  const selectedFavorite =
+    filteredFavorites.find((item) => item.sourceId === selectedFavoriteSourceId) ??
+    null;
+
   const counts = useMemo(
     () => ({
+      all: favorites.length,
       messages: favorites.filter((item) => item.category === "messages").length,
       contacts: favorites.filter((item) => item.category === "contacts").length,
       officialAccounts: favorites.filter(
@@ -119,145 +156,256 @@ export function FavoritesPage() {
   }
 
   return (
-    <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
-      <DesktopEntryShell
-        badge="Favorites"
-        title="收藏把跨频道的重要内容统一收住"
-        description="桌面收藏已经接通搜索、聊天文件、朋友圈、广场动态、视频号和公众号阅读链路，把跨频道的重要内容统一收住。"
-        aside={
-          <div className="space-y-3">
-            <StatCard label="当前收藏" value={`${favorites.length} 项`} />
-            <StatCard
-              label="内容流"
-              value={`${counts.moments + counts.feed + counts.channels} 项`}
-            />
-            <StatCard
-              label="消息与联系人"
-              value={`${counts.messages + counts.contacts} 项`}
-            />
-          </div>
-        }
-      >
-        <div className="space-y-5">
-          <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+    <DesktopUtilityShell
+      title="收藏"
+      subtitle={
+        normalizedSearchText
+          ? `搜索“${searchText.trim()}”命中 ${filteredFavorites.length} 项`
+          : `${counts.all} 项内容已收进桌面收藏`
+      }
+      sidebar={
+        <>
+          <div className="border-b border-[color:var(--border-faint)] p-4">
             <TextField
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索已收藏的消息、联系人、公众号或内容"
-              className="rounded-[10px] border-black/8 bg-white px-4 py-3 shadow-none"
+              placeholder="搜索已收藏内容"
+              className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 shadow-none"
             />
-            <div className="mt-4 flex flex-wrap gap-2">
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-auto p-3">
+            <div className="space-y-1">
               {categoryLabels.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setActiveCategory(item.id)}
                   className={cn(
-                    "rounded-[10px] border px-4 py-2 text-xs font-medium transition",
+                    "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
                     activeCategory === item.id
-                      ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
-                      : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:bg-[#efefef] hover:text-[color:var(--text-primary)]",
+                      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
+                      : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
                   )}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  <span className="rounded-full bg-white/88 px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]">
+                    {counts[item.id]}
+                  </span>
                 </button>
               ))}
             </div>
+
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
+              <div className="text-xs text-[color:var(--text-muted)]">
+                收藏概览
+              </div>
+              <div className="mt-3 space-y-3">
+                <FavoriteMetric
+                  label="内容流"
+                  value={`${counts.moments + counts.feed + counts.channels} 项`}
+                />
+                <FavoriteMetric
+                  label="消息与联系人"
+                  value={`${counts.messages + counts.contacts} 项`}
+                />
+                <FavoriteMetric
+                  label="公众号"
+                  value={`${counts.officialAccounts} 项`}
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      }
+      aside={
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              收藏详情
+            </div>
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              右侧预览当前选中的收藏条目。
+            </div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[240px_1fr]">
-            <section className="space-y-3 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-              <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
-                分类概览
-              </div>
-              <SummaryCard label="消息" count={counts.messages} />
-              <SummaryCard label="联系人" count={counts.contacts} />
-              <SummaryCard label="公众号" count={counts.officialAccounts} />
-              <SummaryCard label="朋友圈" count={counts.moments} />
-              <SummaryCard label="广场动态" count={counts.feed} />
-              <SummaryCard label="视频号" count={counts.channels} />
-            </section>
-
-            <section className="space-y-3 rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
-              {filteredFavorites.length ? (
-                filteredFavorites.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
-                  >
-                    <div className="flex items-start gap-4">
-                      <AvatarChip
-                        name={item.avatarName ?? item.title}
-                        src={item.avatarSrc}
-                        size="wechat"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                            {item.title}
-                          </div>
-                          <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#1f8f4f]">
-                            {item.badge}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {item.meta}
-                        </div>
-                        <div className="mt-3 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                          {item.description}
-                        </div>
-                        <div className="mt-4 flex items-center gap-3">
-                          <Link
-                            to={item.to as never}
-                            className="inline-flex h-9 items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-xs font-medium text-white hover:bg-[#06ad56]"
-                          >
-                            打开
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => removeMutation.mutate(item)}
-                            disabled={removeMutation.isPending}
-                            className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
-                          >
-                            取消收藏
-                          </button>
-                        </div>
+          <div className="min-h-0 flex-1 overflow-auto p-5">
+            {selectedFavorite ? (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <AvatarChip
+                    name={selectedFavorite.avatarName ?? selectedFavorite.title}
+                    src={selectedFavorite.avatarSrc}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                        {selectedFavorite.title}
                       </div>
+                      <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
+                        {selectedFavorite.badge}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {selectedFavorite.meta}
                     </div>
                   </div>
-                ))
-              ) : (
+                </div>
+
+                <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    内容摘要
+                  </div>
+                  <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    {selectedFavorite.description}
+                  </div>
+                </div>
+
+                <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    收藏信息
+                  </div>
+                  <div className="mt-3 space-y-3">
+                    <FavoriteMetric
+                      label="分类"
+                      value={resolveFavoriteCategoryLabel(
+                        selectedFavorite.category,
+                      )}
+                    />
+                    <FavoriteMetric
+                      label="收藏时间"
+                      value={formatTimestamp(selectedFavorite.collectedAt)}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    to={selectedFavorite.to as never}
+                    className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-sm font-medium text-white transition hover:bg-[#06ad56]"
+                  >
+                    打开内容
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => removeMutation.mutate(selectedFavorite)}
+                    disabled={
+                      removeMutation.isPending &&
+                      removeMutation.variables?.sourceId ===
+                        selectedFavorite.sourceId
+                    }
+                    className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {removeMutation.isPending &&
+                    removeMutation.variables?.sourceId ===
+                      selectedFavorite.sourceId
+                      ? "移除中..."
+                      : "取消收藏"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center">
                 <EmptyState
-                  title="还没有收藏内容"
-                  description="先到搜一搜里把消息、联系人、公众号或内容流条目加入收藏。"
+                  title="先从中间选择一条收藏"
+                  description="这里会显示摘要、来源和操作入口。"
                 />
-              )}
-            </section>
+              </div>
+            )}
           </div>
         </div>
-      </DesktopEntryShell>
-    </div>
-  );
-}
+      }
+    >
+      <div className="p-4">
+        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        {favoritesQuery.isError && favoritesQuery.error instanceof Error ? (
+          <div className="mb-4">
+            <ErrorBlock message={favoritesQuery.error.message} />
+          </div>
+        ) : null}
+        {removeMutation.isError && removeMutation.error instanceof Error ? (
+          <div className="mb-4">
+            <ErrorBlock message={removeMutation.error.message} />
+          </div>
+        ) : null}
 
-function SummaryCard({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
-      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
-        {count}
+        {favoritesQuery.isLoading && !favorites.length ? (
+          <LoadingBlock label="正在读取收藏..." />
+        ) : null}
+
+        {!favoritesQuery.isLoading && !filteredFavorites.length ? (
+          <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+            <EmptyState
+              title={
+                normalizedSearchText ? "没有匹配的收藏" : "还没有收藏内容"
+              }
+              description={
+                normalizedSearchText
+                  ? "换个关键词，或者切回其他分类继续查看。"
+                  : "先到聊天、内容流或公众号里把重要内容加入收藏。"
+              }
+            />
+          </div>
+        ) : null}
+
+        {filteredFavorites.length ? (
+          <div className="space-y-2">
+            {filteredFavorites.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedFavoriteSourceId(item.sourceId)}
+                className={cn(
+                  "flex w-full items-start gap-4 rounded-[14px] border px-4 py-4 text-left transition",
+                  item.sourceId === selectedFavoriteSourceId
+                    ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.06)] shadow-[var(--shadow-soft)]"
+                    : "border-[color:var(--border-faint)] bg-white hover:bg-[rgba(255,255,255,0.92)]",
+                )}
+              >
+                <AvatarChip
+                  name={item.avatarName ?? item.title}
+                  src={item.avatarSrc}
+                  size="wechat"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                      {item.title}
+                    </div>
+                    <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
+                      {item.badge}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                    {item.meta}
+                  </div>
+                  <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                    {item.description}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
-    </div>
+    </DesktopUtilityShell>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function FavoriteMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+    <div className="flex items-start justify-between gap-3 text-sm">
+      <span className="text-[color:var(--text-muted)]">{label}</span>
+      <span className="text-right text-[color:var(--text-primary)]">
         {value}
-      </div>
+      </span>
     </div>
+  );
+}
+
+function resolveFavoriteCategoryLabel(category: DesktopFavoriteCategory) {
+  return (
+    categoryLabels.find((item) => item.id === category)?.label ?? "未分类"
   );
 }
