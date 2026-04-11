@@ -38,6 +38,7 @@ import {
   type CallInviteSource,
   type GroupCallInviteStatus,
 } from "./group-call-message";
+import { buildMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import {
   buildChatUnreadMarkerDomId,
@@ -921,6 +922,13 @@ export function GroupChatThreadPanel({
                       ? "/group/$groupId/voice-call"
                       : "/group/$groupId/video-call",
                   params: { groupId },
+                  hash: buildMobileGroupCallRouteHash({
+                    source: input.source,
+                    activeCount: input.activeCount,
+                    totalCount: input.totalCount,
+                    recordedAt: input.recordedAt ?? undefined,
+                    snapshotRecordedAt: input.snapshotRecordedAt ?? undefined,
+                  }),
                 });
               }}
               onSelectionModeChange={setSelectionModeActive}

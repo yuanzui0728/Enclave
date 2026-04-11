@@ -148,6 +148,10 @@ type ChatMessageListProps = {
   onOpenGroupCallInvite?: (input: {
     kind: "voice" | "video";
     source: CallInviteSource | null;
+    activeCount: number | null;
+    totalCount: number | null;
+    recordedAt?: string | null;
+    snapshotRecordedAt?: string | null;
   }) => void;
   onSelectionModeChange?: (active: boolean) => void;
 };
@@ -1893,6 +1897,13 @@ export function ChatMessageList({
                               onOpenGroupCallInvite({
                                 kind: groupCallInvite.kind,
                                 source: groupCallInvite.source,
+                                activeCount:
+                                  groupCallInvite.activeCount?.current ?? null,
+                                totalCount:
+                                  groupCallInvite.activeCount?.total ?? null,
+                                recordedAt: groupCallInvite.recordedAt,
+                                snapshotRecordedAt:
+                                  groupCallInvite.snapshotRecordedAt,
                               })
                       }
                     />

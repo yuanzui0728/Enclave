@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { getGroup, getGroupMembers, sendGroupMessage } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import {
@@ -26,6 +26,7 @@ import { formatDetailedMessageTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { buildGroupCallInviteMessage } from "./group-call-message";
+import { parseMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 
 type MobileGroupCallScreenProps = {
   mode: "voice" | "video";
@@ -41,8 +42,25 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const baseUrl = runtimeConfig.apiBaseUrl;
   const resolvedGroupId = groupId ?? "";
+  const routeState = useMemo(() => parseMobileGroupCallRouteHash(hash), [hash]);
+  const effectiveSource = routeState?.source ?? "mobile";
+  const sourceLabel = effectiveSource === "desktop" ? "桌面端" : "手机端";
+  const hasResumeCounts =
+    routeState !== null &&
+    routeState.activeCount !== null &&
+    routeState.totalCount !== null;
+  const resumeCounts =
+    routeState !== null &&
+    routeState.activeCount !== null &&
+    routeState.totalCount !== null
+    ? {
+        activeCount: routeState.activeCount,
+        totalCount: routeState.totalCount,
+      }
+    : null;
   const [muted, setMuted] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
@@ -86,11 +104,17 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     setMuted(false);
     setSpeakerEnabled(true);
     setCameraEnabled(mode === "video");
-    setStartedAt(new Date().toISOString());
-    setLastPublishedCounts(null);
-    panelOpenedReportedRef.current = false;
-    setJoinedMemberIds(buildInitialJoinedMemberIds(members));
-  }, [groupId, members, mode]);
+    setStartedAt(
+      routeState?.recordedAt ??
+        routeState?.snapshotRecordedAt ??
+        new Date().toISOString(),
+    );
+    setLastPublishedCounts(resumeCounts);
+    panelOpenedReportedRef.current = hasResumeCounts;
+    setJoinedMemberIds(
+      buildInitialJoinedMemberIds(members, routeState?.activeCount ?? null),
+    );
+  }, [groupId, hasResumeCounts, members, mode, resumeCounts, routeState]);
 
   const invalidateCallQueries = useCallback(async () => {
     await Promise.all([
@@ -114,7 +138,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             counts,
             "ongoing",
             undefined,
-            "mobile",
+            effectiveSource,
           ),
         },
         baseUrl,
@@ -136,7 +160,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             counts,
             "ended",
             undefined,
-            "mobile",
+            effectiveSource,
           ),
         },
         baseUrl,
@@ -309,9 +333,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           </div>
           <div className="rounded-full border border-[#34d399]/22 bg-[#34d399]/10 px-3 py-1 text-[11px] text-[#bbf7d0]">
-            手机端发起
-          </div>
+            {effectiveSource === "desktop" ? "沿用桌面来源" : "手机端发起"}
         </div>
+      </div>
       </header>
 
       <div className="flex min-h-[calc(100dvh-65px)] flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
@@ -376,7 +400,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
         <div className="mt-4 space-y-3">
           <InlineNotice tone="info">
-            移动端群通话先收口为状态工作台，进入页面会把当前在线人数同步回群聊消息卡片。
+            当前会沿用 {sourceLabel}
+            的群通话来源语义，并把在线人数快照继续同步回群聊消息卡片。
           </InlineNotice>
           {!hasSyncedStatus ? (
             <InlineNotice tone="warning">
@@ -519,13 +544,29 @@ function buildInitialJoinedMemberIds(
     memberType: string;
     role: string;
   }>,
+  activeCount?: number | null,
 ) {
   const joinedMembers = members
     .filter(
-      (member, index) =>
-        member.memberType === "user" || member.role === "owner" || index < 3,
+      (member) => member.memberType === "user" || member.role === "owner",
     )
     .map((member) => member.memberId);
+  const normalizedTargetCount =
+    activeCount === null || activeCount === undefined
+      ? Math.max(joinedMembers.length, Math.min(members.length, 3))
+      : Math.max(joinedMembers.length, Math.min(activeCount, members.length));
+
+  for (const member of members) {
+    if (joinedMembers.includes(member.memberId)) {
+      continue;
+    }
+
+    if (joinedMembers.length >= normalizedTargetCount) {
+      break;
+    }
+
+    joinedMembers.push(member.memberId);
+  }
 
   return Array.from(new Set(joinedMembers));
 }

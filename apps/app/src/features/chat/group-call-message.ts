@@ -178,9 +178,11 @@ export function parseGroupCallInviteMessage(text: string) {
     groupName: lines[1] || "当前群聊",
     status: parseGroupCallStatus(lines[2]),
     timestampLabel,
+    recordedAt: parseCallInviteTimestampValue(lines[3]),
     source,
     sourceLabel,
     snapshotLabel,
+    snapshotRecordedAt: snapshotLabel,
     activeCount: parseGroupCallMetric(
       lines[3 + metricOffset],
       /当前在线\s+(\d+)\/(\d+)\s+人/,
@@ -192,9 +194,11 @@ export function parseGroupCallInviteMessage(text: string) {
     groupName: string;
     status: GroupCallInviteStatus;
     timestampLabel: string | null;
+    recordedAt: string | null;
     source: GroupCallInviteSource | null;
     sourceLabel: string | null;
     snapshotLabel: string | null;
+    snapshotRecordedAt: string | null;
     activeCount: { current: number; total: number } | null;
     waitingCount: number | null;
     summaryLines: string[];
@@ -269,6 +273,15 @@ function parseCallInviteTimestamp(line: string | undefined) {
   }
 
   return null;
+}
+
+function parseCallInviteTimestampValue(line: string | undefined) {
+  const timestampLabel = parseCallInviteTimestamp(line);
+  if (!timestampLabel) {
+    return null;
+  }
+
+  return timestampLabel.replace(/^(发起于|结束于)\s+/, "").trim() || null;
 }
 
 function parseCallInviteDuration(line: string | undefined) {
