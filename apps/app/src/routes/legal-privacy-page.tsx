@@ -1,13 +1,23 @@
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { AppPage, AppSection, Button } from "@yinjie/ui";
+import { navigateBackOrFallback } from "../lib/history-back";
 
 export function LegalPrivacyPage() {
   const navigate = useNavigate();
 
   return (
     <AppPage>
-      <Button onClick={() => navigate({ to: "/tabs/profile" })} variant="ghost" size="icon" className="text-[color:var(--text-secondary)]">
+      <Button
+        onClick={() =>
+          navigateBackOrFallback(() => {
+            void navigate({ to: "/profile/settings" });
+          })
+        }
+        variant="ghost"
+        size="icon"
+        className="text-[color:var(--text-secondary)]"
+      >
         <ArrowLeft size={18} />
       </Button>
       <AppSection className="mt-4 space-y-4 p-6">
