@@ -630,7 +630,7 @@ export function GroupQrPage() {
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
 
       {groupQuery.data ? (
-        <section className="space-y-5 rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.88)] p-5 shadow-[var(--shadow-section)] backdrop-blur">
+        <section className="space-y-5 rounded-[28px] border border-black/5 bg-white p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-start gap-4">
             <GroupAvatarChip
               name={groupQuery.data.name}
@@ -687,7 +687,7 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
-          <div className="overflow-hidden rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-[linear-gradient(180deg,#fffdf8,#f8efe1)] p-5 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
+          <div className="overflow-hidden rounded-[24px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(247,251,248,0.98),rgba(255,255,255,0.98))] p-5 shadow-none">
             <div
               className="mx-auto w-full max-w-[420px]"
               dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
@@ -1498,11 +1498,11 @@ export function GroupQrPage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="min-h-full bg-[linear-gradient(180deg,#f8f1e6,#f4f7ef)] px-5 py-5">
+      <AppPage className="min-h-full bg-[linear-gradient(180deg,#f6f8f7,#eef6f1)] px-5 py-5">
           <div className="mx-auto flex max-w-5xl flex-col gap-5">
-            <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-[rgba(255,255,255,0.84)] px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
+            <div className="flex items-center justify-between rounded-[28px] border border-black/5 bg-white/88 px-5 py-4 shadow-[var(--shadow-section)] backdrop-blur">
               <div className="min-w-0">
-                <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--brand-secondary)]">
+                <div className="text-xs uppercase tracking-[0.2em] text-[#15803d]">
                   Group Invite
                 </div>
                 <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
