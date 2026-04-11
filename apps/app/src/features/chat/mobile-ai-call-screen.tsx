@@ -364,41 +364,41 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   ]);
   const statusHint = useMemo(() => {
     if (isVideoMode && digitalHumanCall.sessionState === "connecting") {
-      return "正在建立 AI 数字人视频通话，会话就绪后即可开始第一轮。";
+      return "正在接通数字人，接通后就能开始第一轮。";
     }
 
     if (isVideoMode && digitalHumanCall.sessionError) {
-      return "当前数字人会话没有建立成功，可以直接重试连接，或者先改用语音通话。";
+      return "数字人暂时没接通，可以重试，或先切到语音。";
     }
 
     if (activeCall.turnMutation.isPending) {
-      return "本轮语音已收到，正在转写并组织回复。";
+      return "这一句已收到，正在整理回复。";
     }
 
     if (activeCall.playbackState === "playing") {
       return isVideoMode
-        ? "当前是半双工数字人通话，等 TA 说完后再开始下一轮。"
-        : "当前是半双工模式，等 TA 说完后再开始下一轮。";
+        ? "等 TA 说完，再开始下一句。"
+        : "等 TA 说完，再开始下一句。";
     }
 
     if (isVideoMode && playbackSettling) {
-      return "这一轮刚结束，等播报收尾后就可以继续按住底部按钮说下一句。";
+      return "这一轮刚结束，等播报收尾后再继续。";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "rendering") {
-      return "语音回复已经生成，数字人画面正在渲染中，完成后会自动切到视频流。";
+      return "回复已生成，画面还在准备中。";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "queued") {
-      return "数字人画面已经进入上游队列，当前先保持会话连接和语音链路。";
+      return "画面正在排队，语音会先继续。";
     }
 
     if (isVideoMode && digitalHumanCall.session?.renderStatus === "failed") {
-      return "这一轮数字人画面没有成功生成，但语音回复仍可继续使用；可直接重试连接数字人。";
+      return "这一轮画面没出来，但语音还能继续。";
     }
 
     if (isVideoMode && lastAssistantText) {
-      return "这一轮已经结束。准备好后继续按住底部按钮说下一句，数字人会按同样节奏回复你。";
+      return "这一轮已经结束，准备好后继续说下一句。";
     }
 
     if (
@@ -406,14 +406,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       digitalHumanCall.session?.renderStatus === "ready" &&
       (digitalHumanCall.session?.playerUrl || digitalHumanCall.session?.streamUrl)
     ) {
-      return "数字人视频流已经就绪，当前会优先展示 provider 侧画面。";
+      return "视频已经就绪，会优先展示远端画面。";
     }
 
     if (
       speech.status === "requesting-permission" ||
       speech.status === "listening"
     ) {
-      return "松开按钮后会自动发起这一轮通话。";
+      return "松开后会立刻发出这一句。";
     }
 
     if (isVideoMode && digitalHumanGatewayCopy?.statusHint) {
@@ -422,9 +422,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     return isVideoMode
       ? digitalSession?.presentationMode === "mock_stage"
-        ? "先按住底部按钮说第一句，数字人会先听完，再用语音和画面回应你。当前远端先以内置数字人舞台承载。"
-        : "先按住底部按钮说第一句，数字人会先听完，再用语音和画面回应你。本地摄像头只影响你的预览。"
-      : "每次说一段，AI 会回复一段语音。";
+        ? "先按住底部按钮说第一句，数字人会听完再用语音和画面回应。"
+        : "先按住底部按钮说第一句，数字人会听完再回应。"
+      : "每次说一段，AI 会回一段语音。";
   }, [
     activeCall.playbackState,
     activeCall.turnMutation.isPending,
@@ -547,14 +547,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const hasVideoPlaybackFailure =
     isVideoMode && Boolean(activeCall.playerError) && Boolean(lastAssistantText);
   const videoRecoveryMessage = hasVideoSessionFailure
-    ? "当前数字人会话没有恢复成功。你可以重试连接数字人，或者先改用语音通话继续聊。"
+    ? "数字人还没恢复，先重试或改用语音继续。"
     : hasVideoRenderFailure
-      ? "这一轮数字人画面没有成功生成，当前已回到文字加语音链路。你可以重试连接数字人，或者先改用语音通话继续聊。"
+      ? "这一轮画面没出来，当前已回到语音链路。"
       : null;
   const showPlaybackNudge = hasVideoPlaybackFailure || showPlaybackRecoveryAction;
   const playbackNudgeMessage = isVideoMode
-    ? "浏览器没有自动播报这一句，点一下就能继续听当前回复。"
-    : "浏览器没有自动播报这一句，点一下就能补播当前回复。";
+    ? "这一句没有自动播报，点一下继续听。"
+    : "这一句没有自动播报，点一下补播。";
   const hasCallProgress =
     Boolean(lastUserTranscript) ||
     Boolean(lastAssistantText) ||
@@ -1091,17 +1091,17 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
           {showPermissionPrimer ? (
             <InlineNotice tone="info">
-              首次使用请先允许浏览器访问麦克风。若系统拦截自动播报，下面可以直接点“点按播放回复”。
+              首次使用请先允许麦克风权限。若自动播报被拦截，可直接补播这一句。
             </InlineNotice>
           ) : null}
           {showPermissionRequestHint ? (
             <InlineNotice tone="info">
-              正在请求麦克风权限，请在浏览器弹窗里点允许。
+              正在请求麦克风权限，请在弹窗里点允许。
             </InlineNotice>
           ) : null}
           {showVideoFirstTurnPrimer ? (
             <InlineNotice tone="info">
-              数字人视频已经接通。先按住底部按钮说第一句，松开后本轮会自动开始转写、回复和播报。
+              数字人已接通。先按住底部按钮说第一句，松开后会自动回复。
             </InlineNotice>
           ) : null}
           {isVideoMode &&
@@ -1122,7 +1122,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
           {leavingScreen ? (
             <InlineNotice tone="info">
-              正在结束当前通话并返回聊天，请稍候。
+              正在结束通话并返回聊天。
             </InlineNotice>
           ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
