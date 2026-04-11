@@ -70,6 +70,20 @@ export function ChatRoomPage() {
     });
   }, [conversationId, hash, navigate, search]);
 
+  useEffect(() => {
+    if (routeCallReturnKind === null) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRouteCallReturnKind(null);
+    }, 6000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [routeCallReturnKind]);
+
   const handleRouteMobileShortcutHandled = useCallback(() => {
     setRouteMobileShortcutAction(null);
   }, []);
