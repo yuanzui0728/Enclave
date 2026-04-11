@@ -604,6 +604,27 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const showBackShortcut = hasCallProgress || leavingScreen;
   const showBottomShortcutRow =
     (isVideoMode || showReplayShortcut || showBackShortcut) && !leavingScreen;
+  const showHeaderStatusRow =
+    isVideoMode ||
+    Boolean(lastAssistantText) ||
+    speech.status === "listening" ||
+    speech.status === "requesting-permission" ||
+    activeCall.turnMutation.isPending ||
+    activeCall.playbackState === "playing" ||
+    leavingScreen;
+  const headerMetaLabel = isVideoMode ? "视频通话" : "语音通话";
+  const headerStatusClass = cn(
+    "inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-medium tracking-[0.08em]",
+    activeCall.playbackState === "playing"
+      ? "border-[#34d399]/28 bg-[#34d399]/16 text-[#bbf7d0]"
+      : speech.status === "listening" ||
+          speech.status === "requesting-permission" ||
+          activeCall.turnMutation.isPending
+        ? "border-[#60a5fa]/28 bg-[#60a5fa]/14 text-[#dbeafe]"
+        : leavingScreen
+          ? "border-white/12 bg-white/10 text-white/68"
+          : "border-white/10 bg-white/8 text-white/72",
+  );
 
   useEffect(() => {
     if (
@@ -803,29 +824,48 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     <AppPage className="min-h-full space-y-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.22),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_42%,#020617_100%)] px-0 py-0 text-white">
       <audio ref={activeCall.audioRef} preload="auto" />
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.68)] px-3 py-3 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <button
             type="button"
             onClick={handleBack}
             disabled={leavingScreen}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16"
+            className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16"
             aria-label="返回聊天"
           >
             <ArrowLeft size={18} />
           </button>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[17px] font-medium">
-              {isVideoMode ? "视频通话" : "语音通话"}
+              {characterName}
             </div>
-            <div className="mt-0.5 truncate text-[12px] text-white/60">
-              {conversation.title}
+            <div className="mt-0.5 flex items-center gap-2 text-[12px] text-white/58">
+              <span className="shrink-0">{headerMetaLabel}</span>
+              <span className="text-white/24">/</span>
+              <span className="truncate">{conversation.title}</span>
             </div>
+            {showHeaderStatusRow ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className={headerStatusClass}>{statusLabel}</span>
+                {activeCall.audioMuted ? (
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] text-white/58">
+                    已静音播放
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={() => activeCall.setAudioMuted((current) => !current)}
             disabled={leavingScreen}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16 disabled:opacity-55"
+            className={cn(
+              "mt-0.5 flex h-10 w-10 items-center justify-center rounded-full transition active:bg-white/16 disabled:opacity-55",
+              activeCall.audioMuted
+                ? "bg-white text-[#020617]"
+                : showHeaderStatusRow
+                  ? "bg-white/14 text-white"
+                  : "bg-white/10 text-white/82",
+            )}
             aria-label={activeCall.audioMuted ? "取消静音播放" : "静音播放"}
           >
             {activeCall.audioMuted ? (
