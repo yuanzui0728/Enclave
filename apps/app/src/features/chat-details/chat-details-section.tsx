@@ -12,7 +12,7 @@ export function ChatDetailsSection({
   title,
   children,
   className,
-  variant = "default",
+  variant = "wechat",
 }: ChatDetailsSectionProps) {
   const isWechat = variant === "wechat";
 
@@ -31,7 +31,7 @@ export function ChatDetailsSection({
       <div
         className={cn(
           "overflow-hidden rounded-[12px] border border-black/6 bg-white",
-          isWechat && "rounded-[12px] border-black/6 shadow-none",
+          isWechat && "rounded-[12px] border-black/5 shadow-none",
         )}
       >
         {children}
