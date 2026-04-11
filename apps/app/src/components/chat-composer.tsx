@@ -173,25 +173,25 @@ const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
     id: "draw",
     label: "绘制",
     primary: "C / R / A / T",
-    secondary: "1-4 切颜色",
+    secondary: "颜色 1-4",
   },
   {
     id: "history",
     label: "撤销与删除",
     primary: "⌘/Ctrl + Z / Shift+Z / Y",
-    secondary: "Delete 删除 / Esc 取消选中",
+    secondary: "Delete / Esc",
   },
   {
     id: "view",
     label: "视图",
     primary: "⌘/Ctrl + 滚轮 / 双击",
-    secondary: "Space 拖动画布 / ? 开关帮助",
+    secondary: "Space / ?",
   },
   {
     id: "send",
     label: "发送",
     primary: "Enter 发送",
-    secondary: "⌘/Ctrl + Enter 原图发送",
+    secondary: "原图 ⌘/Ctrl + Enter",
   },
 ] as const;
 
