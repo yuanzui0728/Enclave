@@ -28,7 +28,12 @@ export function buildGroupRelaySummaryMessage(
     pendingMemberCountLabel ? `待确认 ${pendingMemberCountLabel}` : null,
     publishCountLabel ? `回填次数 ${publishCountLabel}` : null,
     `结果摘要 ${formatGroupRelayResultSummary(status, pendingMemberCountLabel)}`,
-    ...buildGroupRelaySummaryLines(status, launchSource, publishCountLabel),
+    ...buildGroupRelaySummaryLines(
+      status,
+      launchSource,
+      publishCountLabel,
+      pendingMemberCountLabel,
+    ),
   ]
     .filter(Boolean)
     .join("\n");
@@ -263,11 +268,21 @@ function buildGroupRelaySummaryLines(
   status: GroupRelaySummaryStatus,
   source: GroupRelaySummarySource,
   publishCountLabel?: string | null,
+  pendingMemberCountLabel?: string | null,
 ) {
   const sourceLabel = formatGroupRelaySourceLabel(source);
   const publishCount = parseGroupRelayPublishCount(publishCountLabel);
+  const pendingCount = parseGroupRelayPublishCount(pendingMemberCountLabel);
 
   if (status === "published") {
+    if (pendingCount === 0) {
+      return [
+        `1. 已从${sourceLabel}群聊完成本轮群接龙结果回填。`,
+        "2. 当前名单已经全部确认，群里看到的是这一轮的最终完成结果。",
+        "3. 如后续有人补报或变更，再次打开群接龙并回填即可覆盖新的最终状态。",
+      ];
+    }
+
     if (publishCount !== null && publishCount > 1) {
       return [
         `1. 已从${sourceLabel}群聊再次打开群接龙工作台。`,
