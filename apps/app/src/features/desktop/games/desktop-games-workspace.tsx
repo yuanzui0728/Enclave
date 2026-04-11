@@ -134,9 +134,9 @@ export function DesktopGamesWorkspace({
   const selectedPinned = pinnedGameIds.includes(selectedGame.id);
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <aside className="flex w-[284px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-5 py-5">
+    <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
+      <aside className="flex w-[284px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
           <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
             Game Center
           </div>
@@ -148,8 +148,8 @@ export function DesktopGamesWorkspace({
           </div>
         </div>
 
-        <div className="min-h-0 space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+        <div className="min-h-0 space-y-4 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-xs text-[color:var(--text-muted)]">
               浏览频道
             </div>
@@ -162,8 +162,8 @@ export function DesktopGamesWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
-                      ? "border-[#b7e4c7] bg-[#edf8f0]"
-                      : "border-black/6 bg-[#f8f8f8] hover:bg-white",
+                      ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
                   )}
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -177,7 +177,7 @@ export function DesktopGamesWorkspace({
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <Pin size={15} className="text-[#16a34a]" />
               固定常玩
@@ -195,7 +195,7 @@ export function DesktopGamesWorkspace({
                         "w-full rounded-[18px] border px-3 py-3 text-left transition",
                         selectedGame.id === game.id
                           ? tone.mutedPanelClassName
-                          : "border-black/6 bg-[#f8f8f8] hover:bg-white",
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
                       )}
                     >
                       <div className="flex items-center justify-between gap-3">
@@ -220,14 +220,14 @@ export function DesktopGamesWorkspace({
                   );
                 })
               ) : (
-                <div className="rounded-[16px] border border-dashed border-black/8 bg-[#f8f8f8] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+                <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
                   从推荐区把常玩的游戏固定到这里，桌面工作区就能更像微信的常驻入口。
                 </div>
               )}
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <Clock3
                 size={15}
@@ -244,8 +244,8 @@ export function DesktopGamesWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border border-[rgba(15,23,42,0.06)] px-3 py-3 text-left transition hover:bg-white",
                     selectedGame.id === game.id
-                      ? "border-[#b7e4c7] bg-[#edf8f0]"
-                      : "bg-[#f8f8f8]",
+                      ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)]",
                   )}
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -264,7 +264,7 @@ export function DesktopGamesWorkspace({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-5">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
@@ -283,7 +283,7 @@ export function DesktopGamesWorkspace({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] px-6 py-6">
           <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
             <div className="space-y-6">
               <article
@@ -376,7 +376,7 @@ export function DesktopGamesWorkspace({
                 </div>
               </article>
 
-              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -388,7 +388,7 @@ export function DesktopGamesWorkspace({
                         : "按当前频道继续筛选，让桌面端浏览更接近微信的游戏中心。"}
                     </div>
                   </div>
-                  <div className="rounded-md bg-[#eaf8ef] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+                  <div className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
                     {browseGames.length} 个入口
                   </div>
                 </div>
@@ -503,7 +503,7 @@ export function DesktopGamesWorkspace({
                 onLaunch={onLaunchGame}
               />
 
-              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <UsersRound
                     size={16}
@@ -521,7 +521,7 @@ export function DesktopGamesWorkspace({
                     return (
                       <div
                         key={activity.id}
-                        className="flex w-full items-start gap-3 rounded-[18px] border border-black/6 bg-[#f8f8f8] px-3 py-3 text-left transition hover:bg-white"
+                        className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
                       >
                         <button
                           type="button"
@@ -541,7 +541,7 @@ export function DesktopGamesWorkspace({
                                 正在玩 {game.name}
                               </span>
                               {friendInviteStatusByActivityId[activity.id] ? (
-                                <span className="rounded-md bg-[#eaf8ef] px-2 py-1 text-[10px] text-[#15803d]">
+                                <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2 py-1 text-[10px] text-[#15803d]">
                                   已邀约
                                 </span>
                               ) : null}
@@ -612,7 +612,7 @@ export function DesktopGamesWorkspace({
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gamepad2
                     size={16}
@@ -639,7 +639,7 @@ export function DesktopGamesWorkspace({
                   </div>
                 ) : inviteConversationCandidates.length ? (
                   <div className="mt-4 space-y-3">
-                    <div className="rounded-[18px] border border-black/6 bg-[#f6f6f6] px-4 py-4">
+                    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
                         当前邀约
                       </div>
@@ -669,7 +669,7 @@ export function DesktopGamesWorkspace({
                 )}
               </section>
 
-              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gift
                     size={16}
@@ -727,7 +727,7 @@ export function DesktopGamesWorkspace({
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gamepad2
                     size={16}
@@ -772,7 +772,7 @@ function InviteConversationRow({
   );
 
   return (
-    <div className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-left transition hover:bg-white">
+    <div className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white">
       <button
         type="button"
         onClick={() =>
@@ -833,7 +833,7 @@ function DesktopRankingPanel({
   onSelectGame: (gameId: string) => void;
 }) {
   return (
-    <section className="rounded-[22px] border border-black/6 bg-white p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+    <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
         {icon}
         {title}
@@ -852,7 +852,7 @@ function DesktopRankingPanel({
               key={`${title}-${entry.gameId}`}
               type="button"
               onClick={() => onSelectGame(entry.gameId)}
-            className="flex w-full items-start gap-3 rounded-[18px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-left transition hover:bg-white"
+              className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
             >
               <div
                 className={cn(
