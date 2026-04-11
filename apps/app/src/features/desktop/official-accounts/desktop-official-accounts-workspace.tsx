@@ -231,9 +231,9 @@ export function DesktopOfficialAccountsWorkspace({
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-4 py-4">
+    <div className="flex h-full min-h-0 bg-[#efefef]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
+        <div className="border-b border-black/6 bg-[#fbfbfb] px-4 py-4">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             公众号
           </div>
@@ -244,7 +244,7 @@ export function DesktopOfficialAccountsWorkspace({
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="搜索公众号"
-            className="mt-3 rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
+            className="mt-3 rounded-[18px] border-black/6 bg-white px-4 py-2.5 shadow-none hover:bg-white focus:shadow-none"
           />
           <div className="mt-3 flex gap-2">
             <Button
@@ -305,9 +305,9 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
       </section>
 
-      <section className="flex w-[420px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-5 py-5">
-          <div className="text-xs font-medium text-[color:var(--text-muted)]">
+      <section className="flex w-[420px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6]">
+        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-5">
+          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             账号主页
           </div>
           <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -318,14 +318,14 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
           {account ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-md bg-[#eaf8ef] px-3 py-1 text-[#15803d]">
+              <span className="rounded-md border border-[#d8e6d3] bg-[#f5faf3] px-3 py-1 text-[#557d37]">
                 {account.accountType === "service" ? "服务号" : "订阅号"}
               </span>
-              <span className="rounded-md bg-white px-3 py-1 text-[color:var(--text-muted)]">
+              <span className="rounded-md border border-black/6 bg-white px-3 py-1 text-[color:var(--text-muted)]">
                 @{account.handle}
               </span>
               {account.isFollowing ? (
-                <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-3 py-1 text-[color:var(--text-secondary)]">
+                <span className="rounded-md border border-black/6 bg-[#f3f3f3] px-3 py-1 text-[color:var(--text-secondary)]">
                   已关注
                 </span>
               ) : null}
@@ -428,10 +428,12 @@ export function DesktopOfficialAccountsWorkspace({
             onToggleFavorite={toggleArticleFavorite}
           />
         ) : (
-          <EmptyState
-            title="还没有可读内容"
-            description="先从左侧选择一个公众号，或等待该账号发布第一篇文章。"
-          />
+          <div className="mx-auto max-w-[560px] py-10">
+            <EmptyState
+              title="还没有可读内容"
+              description="先从左侧选择一个公众号，或等待该账号发布第一篇文章。"
+            />
+          </div>
         )}
       </section>
     </div>
