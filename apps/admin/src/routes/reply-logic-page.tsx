@@ -38,6 +38,7 @@ import {
   AdminCodeBlock,
   AdminEmptyState,
   AdminFormSection as ConfigSection,
+  AdminInfoRow,
   AdminInfoRows,
   AdminNoteList,
   AdminPageHero,
@@ -1689,14 +1690,22 @@ function StateGateCard({ gate }: { gate: ReplyLogicStateGateSummary }) {
       <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
         {formatStateGateReason(gate)}
       </div>
-      {gate.activity ? (
-        <div className="mt-3 text-xs text-[color:var(--text-muted)]">
-          活动：{formatActivity(gate.activity)}
-        </div>
-      ) : null}
-      {gate.delayMs ? (
-        <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-          延迟：{gate.delayMs.min}ms - {gate.delayMs.max}ms
+      {gate.activity || gate.delayMs ? (
+        <div className="mt-3 space-y-2">
+          {gate.activity ? (
+            <AdminInfoRow
+              label="活动"
+              value={formatActivity(gate.activity)}
+              className="bg-white/80 px-3 py-2.5"
+            />
+          ) : null}
+          {gate.delayMs ? (
+            <AdminInfoRow
+              label="延迟"
+              value={`${gate.delayMs.min}ms - ${gate.delayMs.max}ms`}
+              className="bg-white/80 px-3 py-2.5"
+            />
+          ) : null}
         </div>
       ) : null}
       {gate.hintMessages.length ? (
