@@ -70,6 +70,8 @@ export function DesktopOfficialAccountsWorkspace({
       );
     });
   }, [accountFilter, accountsQuery.data, searchTerm]);
+  const hasAccountFiltering =
+    accountFilter !== "all" || searchTerm.trim().length > 0;
 
   const pinnedArticleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, selectedArticleId],
@@ -80,19 +82,32 @@ export function DesktopOfficialAccountsWorkspace({
   const effectiveAccountId = useMemo(() => {
     if (
       selectedAccountId &&
+      filteredAccounts.some((account) => account.id === selectedAccountId)
+    ) {
+      return selectedAccountId;
+    }
+
+    if (
+      !hasAccountFiltering &&
+      selectedAccountId &&
       (accountsQuery.data ?? []).some((account) => account.id === selectedAccountId)
     ) {
       return selectedAccountId;
     }
 
-    if (pinnedArticleQuery.data?.account.id) {
+    if (!hasAccountFiltering && pinnedArticleQuery.data?.account.id) {
       return pinnedArticleQuery.data.account.id;
     }
 
-    return filteredAccounts[0]?.id ?? accountsQuery.data?.[0]?.id;
+    if (hasAccountFiltering) {
+      return filteredAccounts[0]?.id;
+    }
+
+    return accountsQuery.data?.[0]?.id;
   }, [
     accountsQuery.data,
     filteredAccounts,
+    hasAccountFiltering,
     pinnedArticleQuery.data?.account.id,
     selectedAccountId,
   ]);
@@ -104,8 +119,13 @@ export function DesktopOfficialAccountsWorkspace({
   });
 
   const activeArticleId = useMemo(() => {
+    if (!effectiveAccountId) {
+      return null;
+    }
+
     if (
       selectedArticleId &&
+      pinnedArticleQuery.data?.account.id === effectiveAccountId &&
       (pinnedArticleQuery.isLoading || pinnedArticleQuery.data?.id === selectedArticleId)
     ) {
       return selectedArticleId;
@@ -114,6 +134,8 @@ export function DesktopOfficialAccountsWorkspace({
     return accountDetailQuery.data?.articles[0]?.id;
   }, [
     accountDetailQuery.data?.articles,
+    effectiveAccountId,
+    pinnedArticleQuery.data?.account.id,
     pinnedArticleQuery.data?.id,
     pinnedArticleQuery.isLoading,
     selectedArticleId,
@@ -125,9 +147,11 @@ export function DesktopOfficialAccountsWorkspace({
     enabled: Boolean(activeArticleId),
   });
 
-  const activeArticle = selectedArticleId
-    ? (pinnedArticleQuery.data ?? articleDetailQuery.data)
-    : articleDetailQuery.data;
+  const activeArticle =
+    selectedArticleId &&
+    pinnedArticleQuery.data?.account.id === effectiveAccountId
+      ? (pinnedArticleQuery.data ?? articleDetailQuery.data)
+      : articleDetailQuery.data;
   const account = accountDetailQuery.data;
   const accountFavoriteSourceId = account ? `official-${account.id}` : null;
   const articleFavoriteSourceId = activeArticle
