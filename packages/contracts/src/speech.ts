@@ -49,6 +49,12 @@ export type DigitalHumanTransport = "audio_poster" | "player_url" | "stream_url"
 
 export type DigitalHumanSessionStatus = "ready" | "playing" | "ended";
 
+export type DigitalHumanRenderStatus =
+  | "queued"
+  | "rendering"
+  | "ready"
+  | "failed";
+
 export interface CreateDigitalHumanSessionRequest {
   conversationId: string;
   characterId?: string;
@@ -68,6 +74,7 @@ export interface DigitalHumanSession {
   playerUrl?: string;
   streamUrl?: string;
   posterUrl?: string;
+  renderStatus?: DigitalHumanRenderStatus;
   capabilities?: {
     supportsRealtimeStream: boolean;
     supportsInterrupt: boolean;
@@ -82,5 +89,5 @@ export interface DigitalHumanSession {
 export interface DigitalHumanTurnResult {
   session: DigitalHumanSession;
   turn: VoiceCallTurnResult;
-  renderStatus?: "queued" | "rendering" | "ready" | "failed";
+  renderStatus?: DigitalHumanRenderStatus;
 }

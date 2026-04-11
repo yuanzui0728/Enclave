@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+type MockDigitalHumanProviderMode = 'mock_stage' | 'mock_iframe';
+
 type ProviderSessionInput = {
   sessionId: string;
   posterUrl?: string;
@@ -15,11 +17,12 @@ type ProviderTurnInput = {
 
 type ProviderSessionPayload = {
   provider: 'mock_digital_human';
-  presentationMode: 'provider_stream';
-  transport: 'player_url';
-  playerUrl: string;
+  presentationMode: 'mock_stage' | 'provider_stream';
+  transport: 'audio_poster' | 'player_url';
+  playerUrl?: string;
   streamUrl?: string;
   posterUrl?: string;
+  renderStatus: 'queued' | 'ready';
   capabilities: {
     supportsRealtimeStream: false;
     supportsInterrupt: false;
@@ -44,7 +47,29 @@ export interface DigitalHumanProviderAdapter {
 export class MockDigitalHumanProviderAdapter
   implements DigitalHumanProviderAdapter
 {
+  private readonly mode: MockDigitalHumanProviderMode =
+    process.env.DIGITAL_HUMAN_PROVIDER_MODE?.trim() === 'mock_stage'
+      ? 'mock_stage'
+      : 'mock_iframe';
+
   createSession(input: ProviderSessionInput): ProviderSessionPayload {
+    if (this.mode === 'mock_stage') {
+      return {
+        provider: 'mock_digital_human',
+        presentationMode: 'mock_stage',
+        transport: 'audio_poster',
+        playerUrl: undefined,
+        streamUrl: undefined,
+        posterUrl: input.posterUrl,
+        renderStatus: 'queued',
+        capabilities: {
+          supportsRealtimeStream: false,
+          supportsInterrupt: false,
+          supportsSubtitle: true,
+        },
+      };
+    }
+
     return {
       provider: 'mock_digital_human',
       presentationMode: 'provider_stream',
@@ -52,6 +77,7 @@ export class MockDigitalHumanProviderAdapter
       playerUrl: this.buildPlayerUrl(input.sessionId),
       streamUrl: undefined,
       posterUrl: input.posterUrl,
+      renderStatus: 'queued',
       capabilities: {
         supportsRealtimeStream: false,
         supportsInterrupt: false,
@@ -284,6 +310,12 @@ export class MockDigitalHumanProviderAdapter
           } else {
             caption.textContent = "接通后，数字人的本轮回复会在这里同步显示。";
             subtitle.textContent = "正在连接数字人播放器，等待本轮播报内容。";
+          }
+
+          if (session.status === "ended") {
+            stateLabel.textContent = "通话已结束";
+          } else if (session.renderStatus === "rendering" || session.renderStatus === "queued") {
+            stateLabel.textContent = "数字人准备中";
           }
 
           if (session.lastTurn?.assistantMessageId && session.lastTurn.assistantMessageId !== lastMessageId) {
