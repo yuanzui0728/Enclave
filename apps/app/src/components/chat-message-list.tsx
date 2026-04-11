@@ -3737,6 +3737,7 @@ function GroupCallInviteMessage({
         : invite.kind === "voice"
           ? "语音中"
           : "视频中";
+  const completionBadge = resolveGroupCallCompletionBadge(invite);
 
   const card = (
     <div
@@ -3756,19 +3757,35 @@ function GroupCallInviteMessage({
             {invite.groupName}
           </div>
         </div>
-        <div
-          className={cn(
-            "rounded-full px-2.5 py-1 text-[10px] font-medium",
-            invite.status === "ended"
-              ? "bg-[rgba(239,68,68,0.10)] text-[#d74b45]"
-              : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
-          )}
-        >
-          {invite.status === "ended"
-            ? "已结束"
-            : invite.sourceLabel
-              ? `${invite.sourceLabel}发起`
-              : "桌面发起"}
+        <div className="flex flex-col items-end gap-1.5">
+          <div
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[10px] font-medium",
+              invite.status === "ended"
+                ? "bg-[rgba(239,68,68,0.10)] text-[#d74b45]"
+                : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+            )}
+          >
+            {invite.status === "ended"
+              ? "已结束"
+              : invite.sourceLabel
+                ? `${invite.sourceLabel}发起`
+                : "桌面发起"}
+          </div>
+          {completionBadge ? (
+            <div
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-medium",
+                completionBadge.tone === "success"
+                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
+                  : completionBadge.tone === "warning"
+                    ? "bg-[rgba(245,158,11,0.16)] text-[#b45309]"
+                    : "bg-[rgba(239,68,68,0.12)] text-[#d74b45]",
+              )}
+            >
+              {completionBadge.label}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -4348,6 +4365,33 @@ function formatVoiceDurationLabel(durationMs?: number) {
   return minutes > 0
     ? `${minutes}:${String(seconds).padStart(2, "0")}`
     : `${seconds}"`;
+}
+
+function resolveGroupCallCompletionBadge(
+  invite: NonNullable<ReturnType<typeof parseGroupCallInviteMessage>>,
+) {
+  if (invite.status !== "ended" || !invite.activeCount) {
+    return null;
+  }
+
+  if (invite.activeCount.current <= 0) {
+    return {
+      label: "无人加入",
+      tone: "danger" as const,
+    };
+  }
+
+  if (invite.activeCount.current >= invite.activeCount.total) {
+    return {
+      label: "全员加入",
+      tone: "success" as const,
+    };
+  }
+
+  return {
+    label: "部分加入",
+    tone: "warning" as const,
+  };
 }
 
 function formatGroupCallRangeSummary(startedAt: string, endedAt: string) {
