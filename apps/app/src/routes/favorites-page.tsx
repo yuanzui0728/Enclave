@@ -119,7 +119,7 @@ export function FavoritesPage() {
   }
 
   return (
-    <div className="h-full overflow-auto px-6 py-6">
+    <div className="h-full overflow-auto bg-[#f3f3f3] px-6 py-6">
       <DesktopEntryShell
         badge="Favorites"
         title="收藏把跨频道的重要内容统一收住"
@@ -139,12 +139,12 @@ export function FavoritesPage() {
         }
       >
         <div className="space-y-5">
-          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+          <div className="rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
             <TextField
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索已收藏的消息、联系人、公众号或内容"
-              className="rounded-[18px] border-[color:var(--border-faint)] bg-[rgba(255,249,241,0.88)] px-4 py-3 shadow-none"
+              className="rounded-[10px] border-black/8 bg-white px-4 py-3 shadow-none"
             />
             <div className="mt-4 flex flex-wrap gap-2">
               {categoryLabels.map((item) => (
@@ -153,10 +153,10 @@ export function FavoritesPage() {
                   type="button"
                   onClick={() => setActiveCategory(item.id)}
                   className={cn(
-                    "rounded-full border px-4 py-2 text-xs font-medium transition",
+                    "rounded-[10px] border px-4 py-2 text-xs font-medium transition",
                     activeCategory === item.id
-                      ? "border-[rgba(249,115,22,0.20)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                      : "border-[color:var(--border-faint)] bg-white/88 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
+                      ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
+                      : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:bg-[#efefef] hover:text-[color:var(--text-primary)]",
                   )}
                 >
                   {item.label}
@@ -166,8 +166,8 @@ export function FavoritesPage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[240px_1fr]">
-            <section className="space-y-3 rounded-[28px] border border-[color:var(--border-faint)] bg-white/90 p-4 shadow-[var(--shadow-soft)]">
-              <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-dim)]">
+            <section className="space-y-3 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+              <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
                 分类概览
               </div>
               <SummaryCard label="消息" count={counts.messages} />
@@ -178,12 +178,12 @@ export function FavoritesPage() {
               <SummaryCard label="视频号" count={counts.channels} />
             </section>
 
-            <section className="space-y-3 rounded-[28px] border border-[color:var(--border-faint)] bg-white/90 p-5 shadow-[var(--shadow-soft)]">
+            <section className="space-y-3 rounded-[18px] border border-black/6 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
               {filteredFavorites.length ? (
                 filteredFavorites.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[24px] border border-[color:var(--border-faint)] bg-[rgba(255,252,247,0.82)] p-4"
+                    className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4"
                   >
                     <div className="flex items-start gap-4">
                       <AvatarChip
@@ -196,7 +196,7 @@ export function FavoritesPage() {
                           <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                             {item.title}
                           </div>
-                          <span className="rounded-full bg-[rgba(255,138,61,0.10)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                          <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#1f8f4f]">
                             {item.badge}
                           </span>
                         </div>
@@ -209,7 +209,7 @@ export function FavoritesPage() {
                         <div className="mt-4 flex items-center gap-3">
                           <Link
                             to={item.to as never}
-                            className="inline-flex h-9 items-center justify-center rounded-full bg-[var(--brand-gradient)] px-4 text-xs font-medium text-white"
+                            className="inline-flex h-9 items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-xs font-medium text-white hover:bg-[#06ad56]"
                           >
                             打开
                           </Link>
@@ -217,7 +217,7 @@ export function FavoritesPage() {
                             type="button"
                             onClick={() => removeMutation.mutate(item)}
                             disabled={removeMutation.isPending}
-                            className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                            className="inline-flex h-9 items-center justify-center rounded-[10px] border border-black/8 bg-white px-4 text-xs text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
                           >
                             取消收藏
                           </button>
@@ -242,7 +242,7 @@ export function FavoritesPage() {
 
 function SummaryCard({ label, count }: { label: string; count: number }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,248,239,0.72)] p-4">
+    <div className="rounded-[12px] border border-black/6 bg-[#fafafa] p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
         {count}
@@ -253,7 +253,7 @@ function SummaryCard({ label, count }: { label: string; count: number }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4">
+    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
