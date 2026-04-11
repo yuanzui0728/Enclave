@@ -44,6 +44,7 @@ import {
   AdminPageHero,
   AdminPromptSectionList,
   AdminRecordCard,
+  AdminSelectableCard,
   AdminSelectField as SelectFieldBlock,
   AdminSectionNav,
   AdminSubpanel,
@@ -1366,29 +1367,14 @@ function TargetListCard({
       <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">{title}</div>
       <div className="mt-3 space-y-2">
         {items.map((item) => (
-          <button
+          <AdminSelectableCard
             key={item.id}
-            type="button"
             onClick={item.onSelect}
-            className={
-              item.active
-                ? "block w-full rounded-[18px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-left shadow-[var(--shadow-soft)] ring-1 ring-[color:var(--brand-primary)]/15"
-                : "block w-full rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
-            }
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="truncate font-semibold text-[color:var(--text-primary)]">{item.title}</div>
-                <div className="mt-1 truncate text-sm text-[color:var(--text-secondary)]">{item.subtitle}</div>
-                {item.active ? (
-                  <div className="mt-2 text-xs uppercase tracking-[0.16em] text-[color:var(--brand-primary)]">
-                    当前查看
-                  </div>
-                ) : null}
-              </div>
-              <StatusPill tone={item.tone}>{item.status}</StatusPill>
-            </div>
-          </button>
+            active={item.active}
+            title={item.title}
+            subtitle={item.subtitle}
+            badge={<StatusPill tone={item.tone}>{item.status}</StatusPill>}
+          />
         ))}
       </div>
     </div>
