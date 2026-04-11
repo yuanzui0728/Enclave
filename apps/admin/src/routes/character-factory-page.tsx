@@ -6,6 +6,7 @@ import type {
   CharacterBlueprintRevision,
   CharacterFactorySnapshot,
 } from "@yinjie/contracts";
+import { getSystemStatus } from "@yinjie/contracts";
 import {
   Button,
   Card,
@@ -18,6 +19,7 @@ import {
   ToggleChip,
 } from "@yinjie/ui";
 import {
+  AdminCallout,
   AdminActionFeedback,
   AdminCodeBlock as CodeBlock,
   AdminInfoRows,
@@ -32,6 +34,8 @@ import {
   AdminValueCard as ValueSnapshot,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
+import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 const ACTIVITY_OPTIONS = [
   { value: "", label: "未设置" },
@@ -46,6 +50,7 @@ const ACTIVITY_OPTIONS = [
 export function CharacterFactoryPage() {
   const { characterId } = useParams({ from: "/characters/$characterId/factory" });
   const queryClient = useQueryClient();
+  const baseUrl = resolveAdminCoreApiBaseUrl();
   const [draft, setDraft] = useState<CharacterBlueprintRecipe | null>(null);
   const [publishSummary, setPublishSummary] = useState("");
   const [generationPersonName, setGenerationPersonName] = useState("");
@@ -59,26 +64,27 @@ export function CharacterFactoryPage() {
     queryKey: ["admin-character-factory-revisions", characterId],
     queryFn: () => adminApi.listCharacterFactoryRevisions(characterId),
   });
+  const systemStatusQuery = useQuery({
+    queryKey: ["admin-character-factory-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
+  const draftRecipe = factoryQuery.data?.blueprint.draftRecipe ?? null;
+  const lastGeneratedPersonName = factoryQuery.data?.blueprint.lastAiGeneration?.personName ?? "";
 
   const seedSignature = useMemo(
-    () => (factoryQuery.data?.blueprint.draftRecipe ? JSON.stringify(factoryQuery.data.blueprint.draftRecipe) : ""),
-    [factoryQuery.data?.blueprint.draftRecipe],
+    () => (draftRecipe ? JSON.stringify(draftRecipe) : ""),
+    [draftRecipe],
   );
 
   useEffect(() => {
-    setDraft(factoryQuery.data?.blueprint.draftRecipe ?? null);
-  }, [seedSignature]);
+    setDraft(draftRecipe);
+  }, [draftRecipe]);
 
   useEffect(() => {
     setGenerationPersonName(
-      factoryQuery.data?.blueprint.lastAiGeneration?.personName ??
-        factoryQuery.data?.blueprint.draftRecipe.identity.name ??
-        "",
+      lastGeneratedPersonName || draftRecipe?.identity.name || "",
     );
-  }, [
-    factoryQuery.data?.blueprint.draftRecipe.identity.name,
-    factoryQuery.data?.blueprint.lastAiGeneration?.personName,
-  ]);
+  }, [draftRecipe?.identity.name, lastGeneratedPersonName]);
 
   const isDirty = useMemo(() => {
     if (!draft || !seedSignature) {
@@ -156,6 +162,9 @@ export function CharacterFactoryPage() {
   const revisions = revisionsQuery.data ?? [];
   const driftFieldCount = snapshot.fieldSources.filter((item) => item.status === "runtime_drift").length;
   const changedPublishItems = snapshot.publishDiff.items.filter((item) => item.changed);
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
 
   function jumpToSection(sectionId: string) {
     if (typeof document === "undefined") {
@@ -215,6 +224,16 @@ export function CharacterFactoryPage() {
           </div>
         </Card>
       </div>
+
+      <AdminCallout
+        tone={digitalHumanSummary.ready ? "success" : "warning"}
+        title={
+          digitalHumanSummary.ready
+            ? "数字人链路已进入可联调状态"
+            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
+        }
+        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+      />
 
       {saveMutation.isError && saveMutation.error instanceof Error ? (
         <ErrorBlock message={saveMutation.error.message} />
