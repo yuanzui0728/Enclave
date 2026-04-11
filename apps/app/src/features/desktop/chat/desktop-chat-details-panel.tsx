@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -704,6 +704,8 @@ function GroupChatDetailsPanel({
     "add",
   );
   const [memberBrowserOpen, setMemberBrowserOpen] = useState(false);
+  const [memberBrowserAutoFocusSearch, setMemberBrowserAutoFocusSearch] =
+    useState(false);
   const [editorMode, setEditorMode] = useState<GroupDetailsEditorMode | null>(
     null,
   );
@@ -714,6 +716,7 @@ function GroupChatDetailsPanel({
     setMemberPickerOpen(false);
     setMemberPickerMode("add");
     setMemberBrowserOpen(false);
+    setMemberBrowserAutoFocusSearch(false);
     setEditorMode(null);
   }, [conversation.id]);
 
@@ -1157,11 +1160,23 @@ function GroupChatDetailsPanel({
         ) : (
           <>
             <DesktopMemberGrid items={memberItems} />
+            <DesktopPanelRow
+              label="搜索群成员"
+              value="按昵称或角色查找"
+              icon={<Search size={15} />}
+              onClick={() => {
+                setMemberBrowserAutoFocusSearch(true);
+                setMemberBrowserOpen(true);
+              }}
+            />
             {groupMembers.length > 8 ? (
               <DesktopPanelRow
                 label="更多群成员"
                 value={`${groupMembers.length} 人`}
-                onClick={() => setMemberBrowserOpen(true)}
+                onClick={() => {
+                  setMemberBrowserAutoFocusSearch(false);
+                  setMemberBrowserOpen(true);
+                }}
               />
             ) : null}
           </>
@@ -1198,7 +1213,10 @@ function GroupChatDetailsPanel({
         <DesktopPanelRow
           label="全部成员"
           value={`${groupMembers.length} 人`}
-          onClick={() => setMemberBrowserOpen(true)}
+          onClick={() => {
+            setMemberBrowserAutoFocusSearch(false);
+            setMemberBrowserOpen(true);
+          }}
         />
         <DesktopPanelInfoRow
           label="最近活跃"
@@ -1404,17 +1422,23 @@ function GroupChatDetailsPanel({
       />
       <DesktopGroupMemberBrowserDialog
         open={memberBrowserOpen}
+        autoFocusSearch={memberBrowserAutoFocusSearch}
         groupName={groupQuery.data?.name ?? conversation.title}
         members={groupMembers}
         pending={busy}
-        onClose={() => setMemberBrowserOpen(false)}
+        onClose={() => {
+          setMemberBrowserOpen(false);
+          setMemberBrowserAutoFocusSearch(false);
+        }}
         onAddMembers={() => {
           setMemberBrowserOpen(false);
+          setMemberBrowserAutoFocusSearch(false);
           setMemberPickerMode("add");
           setMemberPickerOpen(true);
         }}
         onRemoveMembers={() => {
           setMemberBrowserOpen(false);
+          setMemberBrowserAutoFocusSearch(false);
           setMemberPickerMode("remove");
           setMemberPickerOpen(true);
         }}
@@ -1425,6 +1449,7 @@ function GroupChatDetailsPanel({
           }
 
           setMemberBrowserOpen(false);
+          setMemberBrowserAutoFocusSearch(false);
           void navigate({
             to: "/character/$characterId",
             params: { characterId: member.memberId },
@@ -1613,6 +1638,7 @@ function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
 
 function DesktopGroupMemberBrowserDialog({
   open,
+  autoFocusSearch = false,
   groupName,
   members,
   pending = false,
@@ -1623,6 +1649,7 @@ function DesktopGroupMemberBrowserDialog({
   onViewMember,
 }: {
   open: boolean;
+  autoFocusSearch?: boolean;
   groupName: string;
   members: GroupMember[];
   pending?: boolean;
@@ -1632,6 +1659,7 @@ function DesktopGroupMemberBrowserDialog({
   canRemoveMembers?: boolean;
   onViewMember: (member: GroupMember) => void;
 }) {
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] =
     useState<DesktopGroupMemberBrowserFilter>("all");
@@ -1644,6 +1672,18 @@ function DesktopGroupMemberBrowserDialog({
     setSearchTerm("");
     setActiveFilter("all");
   }, [groupName, open]);
+
+  useEffect(() => {
+    if (!open || !autoFocusSearch) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [autoFocusSearch, open]);
 
   const ownerCount = useMemo(
     () => members.filter((member) => member.role === "owner").length,
@@ -1788,6 +1828,7 @@ function DesktopGroupMemberBrowserDialog({
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
             />
             <input
+              ref={searchInputRef}
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
