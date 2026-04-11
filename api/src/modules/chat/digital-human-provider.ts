@@ -148,6 +148,7 @@ export class MockDigitalHumanProviderAdapter
       return this.buildPlayerUrl(input.sessionId);
     }
 
+    const callbackToken = this.resolveProviderCallbackToken();
     return template
       .replaceAll('{sessionId}', encodeURIComponent(input.sessionId))
       .replaceAll(
@@ -158,6 +159,14 @@ export class MockDigitalHumanProviderAdapter
       .replaceAll(
         '{characterName}',
         encodeURIComponent(input.characterName ?? ''),
+      )
+      .replaceAll(
+        '{callbackUrl}',
+        encodeURIComponent(this.buildProviderCallbackUrl(input.sessionId)),
+      )
+      .replaceAll(
+        '{callbackToken}',
+        encodeURIComponent(callbackToken ?? ''),
       );
   }
 
@@ -179,5 +188,22 @@ export class MockDigitalHumanProviderAdapter
       process.env.PUBLIC_API_BASE_URL?.trim() ||
       `http://localhost:${process.env.PORT ?? '3000'}`
     );
+  }
+
+  private buildProviderCallbackUrl(sessionId: string) {
+    const url = new URL(
+      `/api/chat/digital-human-calls/sessions/${sessionId}/provider-state`,
+      this.resolvePublicApiBaseUrl(),
+    );
+    const callbackToken = this.resolveProviderCallbackToken();
+    if (callbackToken) {
+      url.searchParams.set('token', callbackToken);
+    }
+
+    return url.toString();
+  }
+
+  private resolveProviderCallbackToken() {
+    return process.env.DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN?.trim() || null;
   }
 }

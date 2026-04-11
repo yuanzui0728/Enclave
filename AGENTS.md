@@ -310,7 +310,7 @@
   - `POST /api/chat/voice-calls/turns`
 - AI 数字人 provider 现已支持：
   - `DIGITAL_HUMAN_PROVIDER_MODE=mock_stage|mock_iframe|external_iframe`
-  - `DIGITAL_HUMAN_PLAYER_URL_TEMPLATE`，可通过 `{sessionId}` / `{conversationId}` / `{characterId}` / `{characterName}` 注入外部播放器地址
+  - `DIGITAL_HUMAN_PLAYER_URL_TEMPLATE`，可通过 `{sessionId}` / `{conversationId}` / `{characterId}` / `{characterName}` / `{callbackUrl}` / `{callbackToken}` 注入外部播放器地址
   - `DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN`，用于保护 `PATCH /api/chat/digital-human-calls/sessions/:sessionId/provider-state` 回调鉴权
 - AI 数字人视频通话会话路由已提供：
   - `POST /api/chat/digital-human-calls/sessions`
