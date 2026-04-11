@@ -3577,6 +3577,7 @@ function GroupRelaySummaryMessage({
     return null;
   }
 
+  const completionTimeLabel = resolveGroupRelayCompletionTime(summary);
   const card = (
     <div
       className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
@@ -3631,8 +3632,8 @@ function GroupRelaySummaryMessage({
         {summary.timestampLabel ? (
           <CallInviteMetric label="时间" value={summary.timestampLabel} />
         ) : null}
-        {summary.publishedAtLabel ? (
-          <CallInviteMetric label="回填时间" value={summary.publishedAtLabel} />
+        {completionTimeLabel ? (
+          <CallInviteMetric label="完成时间" value={completionTimeLabel} />
         ) : null}
         {summary.summaryLines.map((line) => (
           <div
@@ -3669,6 +3670,20 @@ function GroupRelaySummaryMessage({
       {card}
     </button>
   );
+}
+
+function resolveGroupRelayCompletionTime(
+  summary: NonNullable<ReturnType<typeof parseGroupRelaySummaryMessage>>,
+) {
+  if (summary.statusLabel === "已回填") {
+    return summary.publishedAtLabel ?? summary.timestampLabel ?? null;
+  }
+
+  if (summary.statusLabel === "已完成") {
+    return summary.timestampLabel ?? null;
+  }
+
+  return null;
 }
 
 function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {
