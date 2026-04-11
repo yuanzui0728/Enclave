@@ -3241,6 +3241,30 @@ function DesktopScreenshotEditor({
       if (key === "t") {
         event.preventDefault();
         onToolChange("text");
+        return;
+      }
+
+      if (key === "1") {
+        event.preventDefault();
+        onAnnotationColorChange("amber");
+        return;
+      }
+
+      if (key === "2") {
+        event.preventDefault();
+        onAnnotationColorChange("cyan");
+        return;
+      }
+
+      if (key === "3") {
+        event.preventDefault();
+        onAnnotationColorChange("rose");
+        return;
+      }
+
+      if (key === "4") {
+        event.preventDefault();
+        onAnnotationColorChange("lime");
       }
     },
   );
@@ -3575,7 +3599,7 @@ function DesktopScreenshotEditor({
                   清空标注
                 </Button>
                 <span className="text-[11px] text-white/42">
-                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，Delete 删除
+                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，1-4 切颜色，Delete 删除
                 </span>
               </div>
             </div>
