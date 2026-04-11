@@ -20,6 +20,7 @@ import {
   AdminInfoRows,
   AdminJumpCard,
   AdminPageHero,
+  AdminSectionHeader,
   AdminSelectField,
   AdminStatusCard,
   AdminTextArea,
@@ -422,18 +423,18 @@ export function SetupPage() {
           />
 
           <Card className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <SectionHeading>数字人 Provider 配置</SectionHeading>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-                  这里保存 AI 数字人视频通话的 provider 模式、播放器模板和扩展参数。`external_iframe`
-                  模式下，模板可直接消费 `{`sessionId`}`、`{`conversationId`}`、`{`characterId`}`、`{`characterName`}`、`{`callbackUrl`}`、`{`callbackToken`}`，以及参数 JSON 里的同名键。
-                </p>
-              </div>
-              <StatusPill tone={digitalHumanProviderReady ? "healthy" : "warning"}>
-                {digitalHumanProviderReady ? "已配置" : "待配置"}
-              </StatusPill>
-            </div>
+            <AdminSectionHeader
+              title="数字人 Provider 配置"
+              actions={
+                <StatusPill tone={digitalHumanProviderReady ? "healthy" : "warning"}>
+                  {digitalHumanProviderReady ? "已配置" : "待配置"}
+                </StatusPill>
+              }
+            />
+            <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+              这里保存 AI 数字人视频通话的 provider 模式、播放器模板和扩展参数。`external_iframe`
+              模式下，模板可直接消费 `{`sessionId`}`、`{`conversationId`}`、`{`characterId`}`、`{`characterName`}`、`{`callbackUrl`}`、`{`callbackToken`}`，以及参数 JSON 里的同名键。
+            </p>
 
             <div className="mt-5 grid gap-4">
               <div className="flex flex-wrap gap-3">
