@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -8,6 +9,7 @@ import {
   Printer,
   X,
 } from "lucide-react";
+import { getConversations } from "@yinjie/contracts";
 import { Button } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import {
@@ -16,13 +18,35 @@ import {
   readDesktopChatImageViewerSession,
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function DesktopChatImageViewerPage() {
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(
     () => parseDesktopChatImageViewerRouteHash(hash),
     [hash],
+  );
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: Boolean(routeState),
+  });
+  const shouldValidateReturnPaths =
+    !conversationsQuery.isLoading && !conversationsQuery.isError;
+  const conversationPathSet = useMemo(
+    () =>
+      new Set(
+        (conversationsQuery.data ?? []).map((conversation) =>
+          isPersistedGroupConversation(conversation)
+            ? `/group/${conversation.id}`
+            : `/chat/${conversation.id}`,
+        ),
+      ),
+    [conversationsQuery.data],
   );
   const sessionItems = useMemo(
     () =>
@@ -31,25 +55,46 @@ export function DesktopChatImageViewerPage() {
         : [],
     [routeState?.sessionId],
   );
+  const routeReturnTo = useMemo(
+    () =>
+      resolveConversationReturnPath(
+        routeState?.returnTo,
+        conversationPathSet,
+        shouldValidateReturnPaths,
+      ),
+    [conversationPathSet, routeState?.returnTo, shouldValidateReturnPaths],
+  );
   const viewerItems = useMemo(() => {
     if (!routeState) {
       return [] as DesktopChatImageViewerSessionItem[];
     }
 
-    if (sessionItems.length) {
-      return sessionItems;
-    }
+    const rawItems = sessionItems.length
+      ? sessionItems
+      : [
+          {
+            id: routeState.activeId || "current-image",
+            imageUrl: routeState.imageUrl,
+            title: routeState.title,
+            meta: routeState.meta,
+            returnTo: routeState.returnTo,
+          },
+        ];
 
-    return [
-      {
-        id: routeState.activeId || "current-image",
-        imageUrl: routeState.imageUrl,
-        title: routeState.title,
-        meta: routeState.meta,
-        returnTo: routeState.returnTo,
-      },
-    ];
-  }, [routeState, sessionItems]);
+    return rawItems.map((item) => ({
+      ...item,
+      returnTo: resolveConversationReturnPath(
+        item.returnTo,
+        conversationPathSet,
+        shouldValidateReturnPaths,
+      ),
+    }));
+  }, [
+    conversationPathSet,
+    routeState,
+    sessionItems,
+    shouldValidateReturnPaths,
+  ]);
   const activeItemIndex = useMemo(() => {
     if (!viewerItems.length) {
       return -1;
@@ -66,7 +111,8 @@ export function DesktopChatImageViewerPage() {
   }, [routeState?.activeId, viewerItems]);
   const activeItem =
     activeItemIndex >= 0 ? viewerItems[activeItemIndex] : undefined;
-  const fallbackPath = activeItem?.returnTo ?? routeState?.returnTo ?? "/tabs/chat";
+  const activeItemReturnTo = activeItem?.returnTo;
+  const fallbackPath = activeItem?.returnTo ?? routeReturnTo ?? "/tabs/chat";
 
   const navigateToItem = useCallback(
     (item: DesktopChatImageViewerSessionItem) => {
@@ -121,7 +167,10 @@ export function DesktopChatImageViewerPage() {
         return;
       }
 
-      if (event.key === "ArrowRight" && activeItemIndex < viewerItems.length - 1) {
+      if (
+        event.key === "ArrowRight" &&
+        activeItemIndex < viewerItems.length - 1
+      ) {
         event.preventDefault();
         navigateToItem(viewerItems[activeItemIndex + 1]!);
         return;
@@ -148,7 +197,7 @@ export function DesktopChatImageViewerPage() {
           <div className="mt-6 flex justify-center">
             <Button
               type="button"
-              onClick={() => focusMainWindow("/tabs/chat")}
+              onClick={() => focusMainWindow(fallbackPath)}
               className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
             >
               回到消息页
@@ -194,10 +243,10 @@ export function DesktopChatImageViewerPage() {
           >
             <Printer size={16} />
           </StandaloneActionButton>
-          {activeItem.returnTo ? (
+          {activeItemReturnTo ? (
             <StandaloneActionButton
               label="定位到聊天位置"
-              onClick={() => focusMainWindow(activeItem.returnTo!)}
+              onClick={() => focusMainWindow(activeItemReturnTo)}
             >
               <ArrowLeft size={16} />
             </StandaloneActionButton>
@@ -286,6 +335,34 @@ function StandaloneActionButton({
       {children}
     </button>
   );
+}
+
+function resolveConversationReturnPath(
+  path: string | undefined,
+  conversationPathSet: ReadonlySet<string>,
+  shouldValidate: boolean,
+) {
+  const normalizedPath = path?.trim();
+  if (!normalizedPath) {
+    return undefined;
+  }
+
+  if (!shouldValidate) {
+    return normalizedPath;
+  }
+
+  const hashIndex = normalizedPath.indexOf("#");
+  const queryIndex = normalizedPath.indexOf("?");
+  const cutIndex =
+    hashIndex === -1
+      ? queryIndex
+      : queryIndex === -1
+        ? hashIndex
+        : Math.min(hashIndex, queryIndex);
+  const basePath =
+    cutIndex === -1 ? normalizedPath : normalizedPath.slice(0, cutIndex);
+
+  return conversationPathSet.has(basePath) ? normalizedPath : undefined;
 }
 
 function closeStandaloneWindow(fallbackPath: string) {
