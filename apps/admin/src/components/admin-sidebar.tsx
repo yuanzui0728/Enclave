@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Button, StatusPill } from "@yinjie/ui";
+import { AdminCompactStatusCard } from "./admin-workbench";
 
 type SidebarLink = {
   label: string;
@@ -88,17 +89,17 @@ export function AdminSidebar({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-        <StatusBlock
+        <AdminCompactStatusCard
           label="核心接口"
           value={coreApiHealthy ? "在线" : "待恢复"}
           tone={coreApiHealthy ? "healthy" : "warning"}
         />
-        <StatusBlock
+        <AdminCompactStatusCard
           label="推理服务"
           value={providerReady ? "已配置" : "待配置"}
           tone={providerReady ? "healthy" : "warning"}
         />
-        <StatusBlock
+        <AdminCompactStatusCard
           label="世界主人"
           value={ownerCount == null ? "加载中" : `${ownerCount} 个`}
           tone={ownerCount === 1 ? "healthy" : "warning"}
@@ -215,30 +216,5 @@ export function AdminSidebar({
         )}
       </section>
     </aside>
-  );
-}
-
-function StatusBlock({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: "healthy" | "warning";
-}) {
-  return (
-    <div
-      className={
-        tone === "healthy"
-          ? "rounded-[22px] border border-emerald-200/70 bg-emerald-50/80 px-4 py-3 shadow-[var(--shadow-soft)]"
-          : "rounded-[22px] border border-amber-200/70 bg-amber-50/80 px-4 py-3 shadow-[var(--shadow-soft)]"
-      }
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{label}</div>
-        <StatusPill tone={tone}>{value}</StatusPill>
-      </div>
-    </div>
   );
 }

@@ -416,6 +416,34 @@ export function AdminStatusCard({
   );
 }
 
+export function AdminCompactStatusCard({
+  label,
+  value,
+  tone,
+  className,
+}: {
+  label: string;
+  value: string;
+  tone: "healthy" | "warning";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        tone === "healthy"
+          ? "rounded-[22px] border border-emerald-200/70 bg-emerald-50/80 px-4 py-3 shadow-[var(--shadow-soft)]"
+          : "rounded-[22px] border border-amber-200/70 bg-amber-50/80 px-4 py-3 shadow-[var(--shadow-soft)]",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--text-muted)]">{label}</div>
+        <StatusPill tone={tone}>{value}</StatusPill>
+      </div>
+    </div>
+  );
+}
+
 export function AdminJumpCard({
   to,
   title,
