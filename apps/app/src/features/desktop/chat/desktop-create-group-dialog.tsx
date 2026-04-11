@@ -129,9 +129,28 @@ export function DesktopCreateGroupDialog({
       ].some((value) => value.toLowerCase().includes(keyword));
     });
   }, [searchTerm, sortedFriendItems]);
+  const pinnedSourceFriend = useMemo(
+    () =>
+      sourceFriendId
+        ? filteredFriends.find((item) => item.character.id === sourceFriendId) ?? null
+        : null,
+    [filteredFriends, sourceFriendId],
+  );
+  const directoryFriends = useMemo(
+    () =>
+      sourceFriendId
+        ? filteredFriends.filter((item) => item.character.id !== sourceFriendId)
+        : filteredFriends,
+    [filteredFriends, sourceFriendId],
+  );
+  const orderedFilteredFriends = useMemo(
+    () =>
+      pinnedSourceFriend ? [pinnedSourceFriend, ...directoryFriends] : directoryFriends,
+    [directoryFriends, pinnedSourceFriend],
+  );
   const friendSections = useMemo(
-    () => buildContactSections(filteredFriends),
-    [filteredFriends],
+    () => buildContactSections(directoryFriends),
+    [directoryFriends],
   );
   const friendIndexItems = useMemo(
     () =>
@@ -144,12 +163,12 @@ export function DesktopCreateGroupDialog({
   const friendPositionMap = useMemo(
     () =>
       new Map(
-        filteredFriends.map(
+        orderedFilteredFriends.map(
           (item, index) =>
             [item.character.id, index] satisfies [string, number],
         ),
       ),
-    [filteredFriends],
+    [orderedFilteredFriends],
   );
   const defaultGroupName = useMemo(
     () => buildDefaultGroupName(selectedFriends),
@@ -261,19 +280,21 @@ export function DesktopCreateGroupDialog({
   }, [open, selectedMessageIds.length, shareHistory, shareableMessages]);
 
   useEffect(() => {
-    if (!filteredFriends.length) {
+    if (!orderedFilteredFriends.length) {
       setFocusedFriendIndex(0);
       return;
     }
 
     setFocusedFriendIndex((current) =>
-      Math.min(Math.max(current, 0), filteredFriends.length - 1),
+      Math.min(Math.max(current, 0), orderedFilteredFriends.length - 1),
     );
-  }, [filteredFriends.length]);
+  }, [orderedFilteredFriends.length]);
 
   useEffect(() => {
-    setActiveFriendIndexKey(filteredFriends[focusedFriendIndex]?.indexLabel ?? null);
-  }, [filteredFriends, focusedFriendIndex]);
+    setActiveFriendIndexKey(
+      orderedFilteredFriends[focusedFriendIndex]?.indexLabel ?? null,
+    );
+  }, [orderedFilteredFriends, focusedFriendIndex]);
 
   useEffect(() => {
     if (!shareableMessages.length) {
@@ -288,14 +309,16 @@ export function DesktopCreateGroupDialog({
 
   useEffect(() => {
     const focusedFriend = filteredFriends[focusedFriendIndex];
-    if (!focusedFriend) {
+    const resolvedFocusedFriend =
+      orderedFilteredFriends[focusedFriendIndex] ?? focusedFriend;
+    if (!resolvedFocusedFriend) {
       return;
     }
 
-    friendItemRefs.current[focusedFriend.character.id]?.scrollIntoView({
+    friendItemRefs.current[resolvedFocusedFriend.character.id]?.scrollIntoView({
       block: "nearest",
     });
-  }, [filteredFriends, focusedFriendIndex]);
+  }, [filteredFriends, focusedFriendIndex, orderedFilteredFriends]);
 
   useEffect(() => {
     const focusedMessage = shareableMessages[focusedMessageIndex];
@@ -437,13 +460,15 @@ export function DesktopCreateGroupDialog({
       /^[a-z]$/i.test(event.key)
     ) {
       const nextIndex = findFriendIndexByJumpKey(
-        filteredFriends,
+        orderedFilteredFriends,
         event.key.toUpperCase(),
       );
       if (nextIndex !== -1) {
         event.preventDefault();
         setFocusedFriendIndex(nextIndex);
-        setFriendIndexIndicatorLabel(filteredFriends[nextIndex]?.indexLabel ?? null);
+        setFriendIndexIndicatorLabel(
+          orderedFilteredFriends[nextIndex]?.indexLabel ?? null,
+        );
         searchInputRef.current?.focus();
       }
       return;
@@ -464,25 +489,25 @@ export function DesktopCreateGroupDialog({
     event: ReactKeyboardEvent<HTMLInputElement>,
   ) => {
     if (event.key === "ArrowDown") {
-      if (!filteredFriends.length) {
+      if (!orderedFilteredFriends.length) {
         return;
       }
 
       event.preventDefault();
       setFocusedFriendIndex((current) =>
-        current >= filteredFriends.length - 1 ? 0 : current + 1,
+        current >= orderedFilteredFriends.length - 1 ? 0 : current + 1,
       );
       return;
     }
 
     if (event.key === "ArrowUp") {
-      if (!filteredFriends.length) {
+      if (!orderedFilteredFriends.length) {
         return;
       }
 
       event.preventDefault();
       setFocusedFriendIndex((current) =>
-        current <= 0 ? filteredFriends.length - 1 : current - 1,
+        current <= 0 ? orderedFilteredFriends.length - 1 : current - 1,
       );
       return;
     }
@@ -499,7 +524,7 @@ export function DesktopCreateGroupDialog({
     }
 
     if (event.key === "Enter") {
-      const focusedFriend = filteredFriends[focusedFriendIndex];
+      const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
       if (!focusedFriend || createMutation.isPending) {
         return;
       }
@@ -600,7 +625,9 @@ export function DesktopCreateGroupDialog({
 
   useEffect(() => {
     if (searchTerm.trim()) {
-      setActiveFriendIndexKey(filteredFriends[focusedFriendIndex]?.indexLabel ?? null);
+      setActiveFriendIndexKey(
+        orderedFilteredFriends[focusedFriendIndex]?.indexLabel ?? null,
+      );
       return;
     }
 
@@ -609,7 +636,79 @@ export function DesktopCreateGroupDialog({
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [friendSections, focusedFriendIndex, searchTerm, open]);
+  }, [friendSections, focusedFriendIndex, orderedFilteredFriends, searchTerm, open]);
+
+  const renderFriendRow = (item: FriendDirectoryItem) => {
+    const displayName = getFriendDisplayName(item);
+    const aliasName =
+      item.friendship.remarkName?.trim() &&
+      item.friendship.remarkName.trim() !== item.character.name
+        ? item.character.name
+        : null;
+    const isSourceFriend = item.character.id === sourceFriendId;
+    const checked = selectedIds.includes(item.character.id);
+    const focused =
+      friendPositionMap.get(item.character.id) === focusedFriendIndex;
+
+    return (
+      <button
+        key={item.character.id}
+        type="button"
+        ref={(node) => {
+          friendItemRefs.current[item.character.id] = node;
+        }}
+        disabled={createMutation.isPending}
+        onClick={() => toggleSelection(item.character.id)}
+        aria-pressed={checked}
+        aria-current={focused ? "true" : undefined}
+        className={cn(
+          "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
+          checked
+            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)]"
+            : isSourceFriend
+              ? "border-[rgba(7,193,96,0.10)] bg-[rgba(7,193,96,0.04)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
+              : "hover:border-black/6 hover:bg-white",
+          focused ? "ring-1 ring-[rgba(7,193,96,0.24)]" : "",
+        )}
+      >
+        <AvatarChip
+          name={displayName}
+          src={item.character.avatar}
+          size="md"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+              {displayName}
+            </div>
+            {isSourceFriend ? (
+              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                当前聊天
+              </span>
+            ) : null}
+            {aliasName ? (
+              <span className="shrink-0 rounded-full bg-[#f3f4f6] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+                {aliasName}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+            {item.character.relationship || "世界联系人"}
+          </div>
+        </div>
+        <div
+          className={cn(
+            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+            checked
+              ? "border-[#07c160] bg-[#07c160] text-white"
+              : "border-black/10 bg-[#f5f5f5] text-transparent",
+          )}
+        >
+          <Check size={12} strokeWidth={2.8} />
+        </div>
+      </button>
+    );
+  };
 
   if (!open) {
     return null;
@@ -1140,6 +1239,15 @@ export function DesktopCreateGroupDialog({
 
           <div className="relative pr-8">
             <div className="space-y-3">
+              {pinnedSourceFriend ? (
+                <div className="mb-3">
+                  <div className="mb-1 rounded-[8px] bg-[rgba(7,193,96,0.08)] px-2 py-1 text-[11px] font-medium tracking-[0.12em] text-[#17803d]">
+                    当前聊天
+                  </div>
+                  {renderFriendRow(pinnedSourceFriend)}
+                </div>
+              ) : null}
+
               {friendSections.map((section) => (
                 <div
                   key={section.key}
@@ -1151,79 +1259,7 @@ export function DesktopCreateGroupDialog({
                     {section.title}
                   </div>
                   <div className="space-y-1">
-                    {section.items.map((item) => {
-                      const displayName = getFriendDisplayName(item);
-                      const aliasName =
-                        item.friendship.remarkName?.trim() &&
-                        item.friendship.remarkName.trim() !== item.character.name
-                          ? item.character.name
-                          : null;
-                      const isSourceFriend = item.character.id === sourceFriendId;
-                      const checked = selectedIds.includes(item.character.id);
-                      const focused =
-                        friendPositionMap.get(item.character.id) ===
-                        focusedFriendIndex;
-                      return (
-                        <button
-                          key={item.character.id}
-                          type="button"
-                          ref={(node) => {
-                            friendItemRefs.current[item.character.id] = node;
-                          }}
-                          disabled={createMutation.isPending}
-                          onClick={() => toggleSelection(item.character.id)}
-                          aria-pressed={checked}
-                          aria-current={focused ? "true" : undefined}
-                          className={cn(
-                            "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
-                            checked
-                              ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)]"
-                              : isSourceFriend
-                                ? "border-[rgba(7,193,96,0.10)] bg-[rgba(7,193,96,0.04)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
-                              : "hover:border-black/6 hover:bg-white",
-                            focused
-                              ? "ring-1 ring-[rgba(7,193,96,0.24)]"
-                              : "",
-                          )}
-                        >
-                          <AvatarChip
-                            name={displayName}
-                            src={item.character.avatar}
-                            size="md"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <div className="truncate text-[14px] text-[color:var(--text-primary)]">
-                                {displayName}
-                              </div>
-                              {isSourceFriend ? (
-                                <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
-                                  当前聊天
-                                </span>
-                              ) : null}
-                              {aliasName ? (
-                                <span className="shrink-0 rounded-full bg-[#f3f4f6] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
-                                  {aliasName}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-                              {item.character.relationship || "世界联系人"}
-                            </div>
-                          </div>
-                          <div
-                            className={cn(
-                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                              checked
-                                ? "border-[#07c160] bg-[#07c160] text-white"
-                                : "border-black/10 bg-[#f5f5f5] text-transparent",
-                            )}
-                          >
-                            <Check size={12} strokeWidth={2.8} />
-                          </div>
-                        </button>
-                      );
-                    })}
+                    {section.items.map((item) => renderFriendRow(item))}
                   </div>
                 </div>
               ))}
