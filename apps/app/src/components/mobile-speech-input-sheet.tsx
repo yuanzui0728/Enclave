@@ -129,9 +129,10 @@ export function MobileSpeechInputSheet({
               type="button"
               className={cn(
                 "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/8 text-white/72 transition",
-                holding ? "opacity-0" : "opacity-100",
+                holding ? "pointer-events-none opacity-0" : "opacity-100",
               )}
               onClick={onClose}
+              disabled={holding}
               aria-label="关闭"
             >
               <X size={16} />
