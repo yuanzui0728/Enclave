@@ -255,7 +255,7 @@
 
 ## 环境变量（`api/.env`）
 
-`DEEPSEEK_API_KEY` · `OPENAI_BASE_URL` · `AI_MODEL` · `ADMIN_SECRET` · `DATABASE_PATH` · `PORT` · `CORS_ALLOWED_ORIGINS` · `PUBLIC_API_BASE_URL` · `USER_API_KEY_ENCRYPTION_SECRET` · `DIGITAL_HUMAN_PROVIDER_MODE`
+`DEEPSEEK_API_KEY` · `OPENAI_BASE_URL` · `AI_MODEL` · `ADMIN_SECRET` · `DATABASE_PATH` · `PORT` · `CORS_ALLOWED_ORIGINS` · `PUBLIC_API_BASE_URL` · `USER_API_KEY_ENCRYPTION_SECRET` · `DIGITAL_HUMAN_PROVIDER_MODE` · `DIGITAL_HUMAN_PLAYER_URL_TEMPLATE`
 
 ## 环境变量（`apps/cloud-api/.env`）
 
@@ -307,6 +307,9 @@
   - `GET /api/ai/speech/:fileName`
 - AI 语言通话路由已提供：
   - `POST /api/chat/voice-calls/turns`
+- AI 数字人 provider 现已支持：
+  - `DIGITAL_HUMAN_PROVIDER_MODE=mock_stage|mock_iframe|external_iframe`
+  - `DIGITAL_HUMAN_PLAYER_URL_TEMPLATE`，可通过 `{sessionId}` / `{conversationId}` / `{characterId}` / `{characterName}` 注入外部播放器地址
 - AI 数字人视频通话会话路由已提供：
   - `POST /api/chat/digital-human-calls/sessions`
   - `GET /api/chat/digital-human-calls/sessions/:sessionId`
