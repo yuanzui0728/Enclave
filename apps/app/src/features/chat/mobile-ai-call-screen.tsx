@@ -928,7 +928,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   }
 
   return (
-    <AppPage className="min-h-full space-y-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.22),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_42%,#020617_100%)] px-0 py-0 text-white">
+    <AppPage className="flex min-h-[100dvh] flex-col space-y-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.22),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_42%,#020617_100%)] px-0 py-0 text-white">
       <audio ref={activeCall.audioRef} preload="auto" />
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.68)] px-3 py-3 backdrop-blur-xl">
         <div className="flex items-start gap-3">
@@ -984,7 +984,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         </div>
       </header>
 
-      <div className="flex min-h-[calc(100dvh-65px)] flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
         {isVideoMode ? (
           <section className="relative">
             <DigitalHumanPlayer
@@ -1228,7 +1228,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           />
         </div>
 
-          <div className="mt-auto pt-6">
+        <div className="mt-auto pt-6">
           {showBottomShortcutRow ? (
             <div className="flex flex-wrap items-center justify-center gap-3">
               {isVideoMode ? (
