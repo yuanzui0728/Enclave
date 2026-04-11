@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getSystemStatus,
   updateCharacter,
   type BehavioralPatterns,
   type Character,
@@ -55,6 +56,7 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type InspectorScope = "character" | "conversation";
 
@@ -105,6 +107,10 @@ export function ReplyLogicPage() {
     queryKey: ["admin-reply-logic-overview", baseUrl],
     queryFn: () => adminApi.getReplyLogicOverview(),
   });
+  const systemStatusQuery = useQuery({
+    queryKey: ["admin-reply-logic-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
 
   useEffect(() => {
     if (!overviewQuery.data) {
@@ -151,6 +157,9 @@ export function ReplyLogicPage() {
   });
 
   const overview = overviewQuery.data;
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
   const selectedCharacter = useMemo(
     () => overview?.characters.find((item) => item.id === activeCharacterId) ?? null,
     [activeCharacterId, overview?.characters],
@@ -382,6 +391,7 @@ export function ReplyLogicPage() {
     },
     { label: "角色草稿", value: isCharacterDraftDirty ? "未保存" : "已同步" },
     { label: "运行规则", value: isRuntimeRulesDraftDirty ? "未保存" : "已同步" },
+    { label: "数字人状态", value: digitalHumanSummary.statusLabel },
   ];
   const targetSummaryRows =
     scope === "character" && selectedCharacter
@@ -464,12 +474,22 @@ export function ReplyLogicPage() {
                 { label: "角色数", value: overview.characters.length },
                 { label: "会话数", value: overview.conversations.length },
                 { label: "当前模型", value: overview.provider.model },
+                { label: "数字人", value: digitalHumanSummary.statusLabel },
                 { label: "世界上下文", value: overview.worldContext?.text || "暂无快照" },
               ]}
             />
 
             <AdminInfoRows title="当前状态" rows={currentStatusRows} />
           </div>
+          <AdminCallout
+            tone={digitalHumanSummary.ready ? "success" : "warning"}
+            title={
+              digitalHumanSummary.ready
+                ? "数字人链路已进入可联调状态"
+                : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
+            }
+            description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+          />
 
           <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_440px]">
             <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
@@ -3865,7 +3885,7 @@ function schedulerTextTemplatesSummary(
 function schedulerTextTemplatesToLines(
   value: ReplyLogicConstantSummary["schedulerTextTemplates"],
 ) {
-  const { proactiveReminderCheckPrompt, ...rest } = value;
+  const { ...rest } = value;
   return recordToLines(rest);
 }
 
