@@ -33,6 +33,7 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
@@ -59,9 +60,10 @@ export function CharacterDetailPage() {
     message: string;
   } | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const { guardVideoEntry, resetEntryGuard } = useDigitalHumanEntryGuard({
-    baseUrl,
-  });
+  const { entryNotice, guardVideoEntry, resetEntryGuard } =
+    useDigitalHumanEntryGuard({
+      baseUrl,
+    });
   const [profileForm, setProfileForm] = useState<FriendProfileFormState>({
     remarkName: "",
     region: "",
@@ -369,6 +371,26 @@ export function CharacterDetailPage() {
         >
           {notice ? (
             <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+          ) : null}
+          {entryNotice ? (
+            <DigitalHumanEntryNotice
+              tone={entryNotice.tone}
+              message={entryNotice.message}
+              onContinue={() => {
+                resetEntryGuard();
+                openCallMutation.mutate("video");
+              }}
+              onSwitchToVoice={() => {
+                resetEntryGuard();
+                openCallMutation.mutate("voice");
+              }}
+              continueLabel={
+                openCallMutation.isPending ? "正在接通视频..." : "继续视频通话"
+              }
+              voiceLabel={
+                openCallMutation.isPending ? "正在接通语音..." : "改用语音通话"
+              }
+            />
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
             <ErrorBlock message={friendsQuery.error.message} />
