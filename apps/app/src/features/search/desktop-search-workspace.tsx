@@ -77,10 +77,10 @@ export function DesktopSearchWorkspace({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,247,235,0.98))]">
-      <aside className="flex w-[260px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))] p-4">
+    <div className="flex h-full min-h-0 bg-[#efefef]">
+      <aside className="flex w-[260px] shrink-0 flex-col border-r border-black/6 bg-[#f6f6f6] p-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--brand-secondary)]">
+          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             Search
           </div>
           <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -98,10 +98,10 @@ export function DesktopSearchWorkspace({
               type="button"
               onClick={() => setActiveCategory(item.id)}
               className={cn(
-                "flex w-full items-center justify-between rounded-[16px] px-3 py-3 text-left text-sm transition",
+                "flex w-full items-center justify-between rounded-[16px] border px-3 py-3 text-left text-sm transition",
                 activeCategory === item.id
-                  ? "bg-[rgba(255,138,61,0.14)] text-[color:var(--text-primary)]"
-                  : "bg-white/72 text-[color:var(--text-secondary)] hover:bg-white",
+                  ? "border-[#cfe8d6] bg-[#f7fbf8] text-[color:var(--text-primary)] shadow-[0_8px_20px_rgba(15,23,42,0.04)]"
+                  : "border-transparent bg-white text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#fcfcfc]",
               )}
             >
               <span>{item.label}</span>
@@ -135,7 +135,7 @@ export function DesktopSearchWorkspace({
               {history.map((item) => (
                 <div
                   key={item.keyword}
-                  className="flex items-center gap-2 rounded-[14px] bg-white/76 px-3 py-2.5"
+                  className="flex items-center gap-2 rounded-[14px] border border-black/6 bg-white px-3 py-2.5"
                 >
                   <button
                     type="button"
@@ -159,15 +159,15 @@ export function DesktopSearchWorkspace({
               ))}
             </div>
           ) : (
-            <div className="mt-3 rounded-[16px] bg-white/74 px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+            <div className="mt-3 rounded-[16px] border border-black/6 bg-white px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
               还没有最近搜索，桌面端会把你真正使用过的关键词放在这里。
             </div>
           )}
         </div>
       </aside>
 
-      <section className="flex min-w-0 flex-1 flex-col border-r border-[color:var(--border-faint)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] px-5 py-4">
+      <section className="flex min-w-0 flex-1 flex-col border-r border-black/6 bg-[#f6f6f6]">
+        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
           <form
             className="relative"
             onSubmit={(event) => {
@@ -185,7 +185,7 @@ export function DesktopSearchWorkspace({
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索聊天记录、联系人、公众号、朋友圈和广场动态"
-              className="h-12 w-full rounded-[18px] border border-transparent bg-white pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)]"
+              className="h-12 w-full rounded-[18px] border border-black/6 bg-white pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-black/10"
             />
             {searchText ? (
               <button
@@ -295,9 +295,9 @@ export function DesktopSearchWorkspace({
         </div>
       </section>
 
-      <aside className="flex w-[300px] shrink-0 flex-col bg-[linear-gradient(180deg,rgba(255,253,248,0.92),rgba(248,252,249,0.96))] p-5">
+      <aside className="flex w-[300px] shrink-0 flex-col bg-[#f3f3f3] p-5">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Sparkles size={16} className="text-[color:var(--brand-primary)]" />
+          <Sparkles size={16} className="text-[#15803d]" />
           <span>搜索概览</span>
         </div>
 
@@ -316,7 +316,7 @@ export function DesktopSearchWorkspace({
           {searchTips.map((item) => (
             <div
               key={item}
-              className="rounded-[18px] bg-white/80 px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
+              className="rounded-[18px] border border-black/6 bg-white px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
             >
               {item}
             </div>
@@ -329,7 +329,7 @@ export function DesktopSearchWorkspace({
 
 function ScopeCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] bg-white/82 px-4 py-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[20px] border border-black/6 bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
         {value}
@@ -348,8 +348,8 @@ function QuickPanel({
   title: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white/86 px-4 py-5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[rgba(255,138,61,0.12)] text-[color:var(--brand-primary)]">
+    <div className="rounded-[24px] border border-black/6 bg-white px-4 py-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[#eef7f0] text-[#15803d]">
         <Icon size={18} />
       </div>
       <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
