@@ -230,6 +230,26 @@ export function MobileChatPlusPanel({
   }, [open]);
 
   useEffect(() => {
+    if (!open || activeView !== "root") {
+      return;
+    }
+
+    const pager = rootPagerRef.current;
+    if (!pager) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      pager.scrollTo({
+        left: pager.clientWidth * activeRootPage,
+        behavior: "auto",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeRootPage, activeView, open]);
+
+  useEffect(() => {
     if (!open || activeView !== "favorites") {
       return;
     }
@@ -332,6 +352,12 @@ export function MobileChatPlusPanel({
                           : item.key === "favorite"
                             ? () => {
                                 setUnavailableAction(null);
+                                setFavoriteRecords(
+                                  mergeDesktopFavoriteRecords(
+                                    favoritesQuery.data ?? [],
+                                    readDesktopFavorites(),
+                                  ),
+                                );
                                 setActiveView("favorites");
                               }
                             : item.key === "contact"
@@ -534,6 +560,12 @@ export function MobileChatPlusPanel({
       {activeView === "favorites" ? (
         <div className="pb-4">
           <PanelHeader title="发送收藏" onBack={() => setActiveView("root")} />
+          {favoritesQuery.isLoading && !favoriteRecords.length ? (
+            <LoadingBlock
+              className="px-4 py-6 text-left"
+              label="正在读取收藏..."
+            />
+          ) : null}
           {favoriteRecords.length ? (
             <div className="mx-3 max-h-72 overflow-auto rounded-[10px] bg-white">
               {favoriteRecords.map((item, index) => (
@@ -573,11 +605,11 @@ export function MobileChatPlusPanel({
                 </button>
               ))}
             </div>
-          ) : (
+          ) : !favoritesQuery.isLoading ? (
             <div className="px-4 py-8 text-center text-sm text-[color:var(--text-muted)]">
               还没有可发送的收藏内容，先在聊天或内容页里把消息加入收藏。
             </div>
-          )}
+          ) : null}
         </div>
       ) : null}
 
