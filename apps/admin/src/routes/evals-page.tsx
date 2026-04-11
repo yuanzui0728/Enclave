@@ -1667,7 +1667,7 @@ export function EvalsPage() {
             </div>
             <div>
               {selectedReport ? (
-                <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+                <AdminDetailPanel title="实验报告详情">
                   <div className="flex items-center justify-between gap-3">
                     <div className="font-semibold text-[color:var(--text-primary)]">{selectedReport.presetTitle}</div>
                     <StatusPill tone={selectedReport.summary.wins > selectedReport.summary.losses ? "healthy" : "muted"}>
@@ -1819,7 +1819,7 @@ export function EvalsPage() {
                         ))}
                     </AdminMiniPanel>
                   ) : null}
-                </div>
+                </AdminDetailPanel>
               ) : (
                 <AdminEmptyState
                   title="先选择一份实验报告"
@@ -2348,7 +2348,7 @@ export function EvalsPage() {
           ) : null}
         </div>
         {traceDetailQuery.data ? (
-          <div className="mt-4 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+          <AdminDetailPanel className="mt-4" title="当前链路聚焦">
             <div className="flex flex-wrap items-center gap-3">
               <StatusPill
                 tone={
@@ -2368,7 +2368,7 @@ export function EvalsPage() {
                 <StatusPill tone="warning">失败标签：{selectedTraceFailureTags.length}</StatusPill>
               ) : null}
             </div>
-          </div>
+          </AdminDetailPanel>
         ) : null}
         <div className="mt-4 grid gap-6 xl:grid-cols-[0.8fr_1.05fr_0.95fr]">
           <div className="space-y-3">
