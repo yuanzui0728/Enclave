@@ -58,10 +58,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const [callTipsDismissed, setCallTipsDismissed] = useState(false);
   const [leavingScreen, setLeavingScreen] = useState(false);
   const [playbackSettling, setPlaybackSettling] = useState(false);
+  const [videoCompletedTurnCount, setVideoCompletedTurnCount] = useState(0);
   const waitingNoticeSentRef = useRef(false);
   const connectedNoticeSentRef = useRef(false);
   const endedNoticeSentRef = useRef(false);
   const previousPlaybackStateRef = useRef<"idle" | "playing">("idle");
+  const previousVideoTurnRef = useRef<unknown>(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -206,6 +208,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     !activeCall.playerError;
   const showVideoNextTurnPrimer =
     isVideoMode &&
+    videoCompletedTurnCount === 1 &&
     digitalHumanCall.sessionState === "ready" &&
     digitalHumanCall.session?.renderStatus !== "rendering" &&
     digitalHumanCall.session?.renderStatus !== "queued" &&
@@ -231,6 +234,27 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
     setRecordButtonHolding(false);
   }, [speech.status]);
+
+  useEffect(() => {
+    if (!isVideoMode) {
+      if (videoCompletedTurnCount !== 0) {
+        setVideoCompletedTurnCount(0);
+      }
+      previousVideoTurnRef.current = digitalHumanCall.lastTurn;
+      return;
+    }
+
+    if (
+      digitalHumanCall.lastTurn &&
+      digitalHumanCall.lastTurn !== previousVideoTurnRef.current
+    ) {
+      previousVideoTurnRef.current = digitalHumanCall.lastTurn;
+      setVideoCompletedTurnCount((current) => current + 1);
+      return;
+    }
+
+    previousVideoTurnRef.current = digitalHumanCall.lastTurn;
+  }, [digitalHumanCall.lastTurn, isVideoMode, videoCompletedTurnCount]);
 
   useEffect(() => {
     const previousPlaybackState = previousPlaybackStateRef.current;
