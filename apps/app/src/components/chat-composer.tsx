@@ -3808,16 +3808,11 @@ function DesktopScreenshotEditor({
                 </button>
                 {shortcutHelpOpen ? (
                   <div className="absolute right-0 top-full z-30 mt-2 w-[320px] rounded-[16px] border border-white/12 bg-[#181818] p-3 text-[11px] text-white/72 shadow-[0_20px_48px_rgba(0,0,0,0.32)]">
-                    <div className="mb-1 flex items-center justify-between gap-3">
-                      <div className="text-[12px] font-medium text-white">
-                        截图快捷键
-                      </div>
-                      <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-white/52">
-                        按 ? 开关
+                    <div className="mb-2 flex items-center gap-2 text-[10px] text-white/44">
+                      <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 leading-none text-white/62">
+                        ?
                       </span>
-                    </div>
-                    <div className="mb-2 text-[11px] text-white/46">
-                      点任一分组，会在界面里短暂高亮对应操作区域。
+                      <span>按 ? 开关，点下面分组可高亮对应区域。</span>
                     </div>
                     <div className="grid gap-2">
                       {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
