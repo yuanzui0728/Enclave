@@ -1905,20 +1905,29 @@ export function ChatMessageList({
                       onOpen={
                         selectionMode ||
                         threadContext?.type !== "group" ||
-                          groupCallInvite.status !== "ongoing" ||
-                          !onOpenGroupCallInvite
+                        !onOpenGroupCallInvite
                           ? undefined
                           : () =>
                               onOpenGroupCallInvite({
                                 kind: groupCallInvite.kind,
                                 source: groupCallInvite.source,
                                 activeCount:
-                                  groupCallInvite.activeCount?.current ?? null,
+                                  groupCallInvite.status === "ended"
+                                    ? null
+                                    : groupCallInvite.activeCount?.current ??
+                                      null,
                                 totalCount:
-                                  groupCallInvite.activeCount?.total ?? null,
-                                recordedAt: groupCallInvite.recordedAt,
+                                  groupCallInvite.status === "ended"
+                                    ? null
+                                    : groupCallInvite.activeCount?.total ?? null,
+                                recordedAt:
+                                  groupCallInvite.status === "ended"
+                                    ? null
+                                    : groupCallInvite.recordedAt,
                                 snapshotRecordedAt:
-                                  groupCallInvite.snapshotRecordedAt,
+                                  groupCallInvite.status === "ended"
+                                    ? null
+                                    : groupCallInvite.snapshotRecordedAt,
                               })
                       }
                     />
