@@ -294,6 +294,42 @@ export function AdminDetailPanel({
   );
 }
 
+export function AdminRecordCard({
+  title,
+  badges,
+  meta,
+  description,
+  details,
+  actions,
+  className,
+}: {
+  title: ReactNode;
+  badges?: ReactNode;
+  meta?: ReactNode;
+  description?: ReactNode;
+  details?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4",
+        className,
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">{title}</div>
+        {badges}
+      </div>
+      {meta ? <div className="mt-2 text-xs text-[color:var(--text-muted)]">{meta}</div> : null}
+      {description ? <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{description}</div> : null}
+      {details ? <div className="mt-3">{details}</div> : null}
+      {actions ? <div className="mt-4 flex flex-wrap gap-3">{actions}</div> : null}
+    </div>
+  );
+}
+
 export function AdminMetaText({
   children,
   className,

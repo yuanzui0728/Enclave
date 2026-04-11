@@ -5,7 +5,6 @@ import {
   updateCharacter,
   type Character,
   type ReplyLogicCharacterSnapshot,
-  type ReplyLogicHistoryItem,
 } from "@yinjie/contracts";
 import {
   Button,
@@ -23,6 +22,7 @@ import {
   AdminCodeBlock as CodeBlock,
   AdminInfoRows,
   AdminPageHero,
+  AdminRecordCard,
   AdminSectionNav,
   AdminSelectField as SelectFieldBlock,
   AdminTextArea as TextAreaBlock,
@@ -493,7 +493,22 @@ export function CharacterRuntimePage() {
             </div>
             <div className="mt-4 space-y-3">
               {snapshot.observability.recentRuns.map((run) => (
-                <SchedulerRunCard key={run.id} run={run} />
+                <AdminRecordCard
+                  key={run.id}
+                  title={run.jobName}
+                  badges={
+                    <StatusPill tone={run.status === "error" ? "warning" : "healthy"}>
+                      {formatSchedulerRunStatus(run.status)}
+                    </StatusPill>
+                  }
+                  meta={
+                    <>
+                      {formatDateTime(run.startedAt)}
+                      {run.durationMs ? ` · ${run.durationMs} ms` : ""}
+                    </>
+                  }
+                  description={run.summary}
+                />
               ))}
               {snapshot.observability.recentRuns.length === 0 ? (
                 <InlineNotice tone="muted">当前还没有可展示的调度执行记录。</InlineNotice>
@@ -505,7 +520,17 @@ export function CharacterRuntimePage() {
             <SectionHeading>最近生活事件</SectionHeading>
             <div className="mt-4 space-y-3">
               {snapshot.observability.lifeEvents.map((event) => (
-                <LifeEventCard key={event.id} event={event} />
+                <AdminRecordCard
+                  key={event.id}
+                  title={event.title}
+                  badges={<StatusPill tone="muted">{formatLifeEventKind(event.kind)}</StatusPill>}
+                  meta={
+                    <>
+                      {event.jobName} / {formatDateTime(event.createdAt)}
+                    </>
+                  }
+                  description={event.summary}
+                />
               ))}
               {snapshot.observability.lifeEvents.length === 0 ? (
                 <InlineNotice tone="muted">当前还没有记录到该角色的生活事件。</InlineNotice>
@@ -544,7 +569,20 @@ export function CharacterRuntimePage() {
             <SectionHeading>上下文窗口</SectionHeading>
             <div className="mt-4 space-y-3">
               {snapshot.actor.windowMessages.map((item) => (
-                <HistoryItemCard key={item.id} item={item} />
+                <AdminRecordCard
+                  key={item.id}
+                  title={item.senderName}
+                  badges={
+                    <>
+                      <StatusPill tone={item.includedInWindow ? "healthy" : "muted"}>
+                        {item.includedInWindow ? "进入窗口" : "仅可见"}
+                      </StatusPill>
+                      <StatusPill tone="muted">{item.type}</StatusPill>
+                    </>
+                  }
+                  meta={formatDateTime(item.createdAt)}
+                  description={item.text}
+                />
               ))}
             </div>
           </Card>
@@ -577,62 +615,6 @@ export function CharacterRuntimePage() {
         </div>
       </div>
       </div>
-    </div>
-  );
-}
-
-function SchedulerRunCard({
-  run,
-}: {
-  run: ReplyLogicCharacterSnapshot["observability"]["recentRuns"][number];
-}) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">{run.jobName}</div>
-        <StatusPill tone={run.status === "error" ? "warning" : "healthy"}>
-          {formatSchedulerRunStatus(run.status)}
-        </StatusPill>
-      </div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-        {formatDateTime(run.startedAt)}{run.durationMs ? ` · ${run.durationMs} ms` : ""}
-      </div>
-      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{run.summary}</div>
-    </div>
-  );
-}
-
-function LifeEventCard({
-  event,
-}: {
-  event: ReplyLogicCharacterSnapshot["observability"]["lifeEvents"][number];
-}) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">{event.title}</div>
-        <StatusPill tone="muted">{formatLifeEventKind(event.kind)}</StatusPill>
-      </div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-        {event.jobName} / {formatDateTime(event.createdAt)}
-      </div>
-      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{event.summary}</div>
-    </div>
-  );
-}
-
-function HistoryItemCard({ item }: { item: ReplyLogicHistoryItem }) {
-  return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusPill tone={item.includedInWindow ? "healthy" : "muted"}>
-          {item.includedInWindow ? "进入窗口" : "仅可见"}
-        </StatusPill>
-        <StatusPill tone="muted">{item.senderName}</StatusPill>
-        <StatusPill tone="muted">{item.type}</StatusPill>
-      </div>
-      <div className="mt-3 text-sm text-[color:var(--text-secondary)]">{item.text}</div>
-      <div className="mt-2 text-xs text-[color:var(--text-muted)]">{formatDateTime(item.createdAt)}</div>
     </div>
   );
 }
