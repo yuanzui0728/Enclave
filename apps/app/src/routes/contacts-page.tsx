@@ -605,10 +605,6 @@ export function ContactsPage() {
     });
   }
 
-  function handleIndexJump(anchorId: string) {
-    handleIndexJumpWithBehavior(anchorId, "smooth");
-  }
-
   function handleIndexJumpWithBehavior(
     anchorId: string,
     behavior: ScrollBehavior = "smooth",

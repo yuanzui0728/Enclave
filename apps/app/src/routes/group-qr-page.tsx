@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
-import { Copy, Download, Link2, QrCode, Share2 } from "lucide-react";
+import { Copy, Download, Link2, Share2 } from "lucide-react";
 import {
   getConversations,
   getGroup,
@@ -211,10 +211,6 @@ export function GroupQrPage() {
     groupId,
     reopenedPaths,
   ]);
-  const deliveredPaths = useMemo(
-    () => new Set(deliveryTargets.map((record) => record.conversationPath)),
-    [deliveryTargets],
-  );
   const deliveredTargetByPath = useMemo(
     () =>
       deliveryTargets.reduce<Record<string, GroupInviteDeliveryTarget>>(

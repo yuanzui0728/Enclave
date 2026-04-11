@@ -304,13 +304,13 @@ export function ChatComposer({
   ] = useState<ScreenshotAnnotation[][]>([]);
   const [desktopScreenshotSelection, setDesktopScreenshotSelection] =
     useState<ScreenshotSelectionDraft | null>(null);
-  const [desktopScreenshotCropResize, setDesktopScreenshotCropResize] =
+  const [, setDesktopScreenshotCropResize] =
     useState<ScreenshotCropResizeDraft | null>(null);
-  const [desktopScreenshotCropMove, setDesktopScreenshotCropMove] =
+  const [, setDesktopScreenshotCropMove] =
     useState<ScreenshotCropMoveDraft | null>(null);
-  const [desktopScreenshotAnnotationResize, setDesktopScreenshotAnnotationResize] =
+  const [, setDesktopScreenshotAnnotationResize] =
     useState<ScreenshotAnnotationResizeDraft | null>(null);
-  const [desktopScreenshotAnnotationMove, setDesktopScreenshotAnnotationMove] =
+  const [, setDesktopScreenshotAnnotationMove] =
     useState<ScreenshotAnnotationMoveDraft | null>(null);
   const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
     string | null
