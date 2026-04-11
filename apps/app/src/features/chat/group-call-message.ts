@@ -69,6 +69,7 @@ export function buildGroupCallInviteMessage(
   recordedAt = new Date().toISOString(),
   source?: GroupCallInviteSource,
   snapshotRecordedAt = recordedAt,
+  durationMs?: number,
 ) {
   const normalizedTotalCount = Math.max(counts?.totalCount ?? 0, 0);
   const normalizedActiveCount = Math.min(
@@ -80,6 +81,7 @@ export function buildGroupCallInviteMessage(
     0,
   );
   const sourceLabel = formatCallInviteSource(source);
+  const durationLabel = formatCallInviteDuration(durationMs ?? null);
   const summaryLines = buildGroupCallSummaryLines({
     kind,
     status,
@@ -91,6 +93,7 @@ export function buildGroupCallInviteMessage(
     groupName.trim() || "当前群聊",
     `状态 ${formatGroupCallStatusLabel(kind, status)}`,
     `${status === "ended" ? "结束于" : "发起于"} ${recordedAt}`,
+    durationLabel ? `最近一轮 ${durationLabel}` : null,
     sourceLabel ? `发起设备 ${sourceLabel}` : null,
     `人数快照 ${snapshotRecordedAt}`,
     normalizedTotalCount
@@ -163,13 +166,24 @@ export function parseGroupCallInviteMessage(text: string) {
   }
 
   const timestampLabel = parseCallInviteTimestamp(lines[3]);
-  const sourceLabel = parseCallInviteSource(lines[timestampLabel ? 4 : 3]);
-  const source = parseCallInviteSourceValue(lines[timestampLabel ? 4 : 3]);
+  const durationLabel = parseCallInviteDuration(lines[timestampLabel ? 4 : 3]);
+  const sourceLabel = parseCallInviteSource(
+    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
+  );
+  const source = parseCallInviteSourceValue(
+    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(durationLabel))],
+  );
   const snapshotLabel = parseGroupCallSnapshotLabel(
-    lines[3 + Number(Boolean(timestampLabel)) + Number(Boolean(sourceLabel))],
+    lines[
+      3 +
+        Number(Boolean(timestampLabel)) +
+        Number(Boolean(durationLabel)) +
+        Number(Boolean(sourceLabel))
+    ],
   );
   const metricOffset =
     Number(Boolean(timestampLabel)) +
+    Number(Boolean(durationLabel)) +
     Number(Boolean(sourceLabel)) +
     Number(Boolean(snapshotLabel));
 
@@ -179,6 +193,7 @@ export function parseGroupCallInviteMessage(text: string) {
     status: parseGroupCallStatus(lines[2]),
     timestampLabel,
     recordedAt: parseCallInviteTimestampValue(lines[3]),
+    durationLabel,
     source,
     sourceLabel,
     snapshotLabel,
@@ -195,6 +210,7 @@ export function parseGroupCallInviteMessage(text: string) {
     status: GroupCallInviteStatus;
     timestampLabel: string | null;
     recordedAt: string | null;
+    durationLabel: string | null;
     source: GroupCallInviteSource | null;
     sourceLabel: string | null;
     snapshotLabel: string | null;

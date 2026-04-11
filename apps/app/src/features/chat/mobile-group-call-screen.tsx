@@ -154,7 +154,11 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
   });
 
   const endStatusMutation = useMutation({
-    mutationFn: (counts: { activeCount: number; totalCount: number }) =>
+    mutationFn: (counts: {
+      activeCount: number;
+      totalCount: number;
+      durationMs: number;
+    }) =>
       sendGroupMessage(
         resolvedGroupId,
         {
@@ -165,6 +169,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             "ended",
             undefined,
             effectiveSource,
+            undefined,
+            counts.durationMs,
           ),
         },
         baseUrl,
@@ -255,9 +261,11 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       return;
     }
 
+    const durationMs = Math.max(Date.now() - new Date(startedAt).getTime(), 0);
     await endStatusMutation.mutateAsync({
       activeCount,
       totalCount,
+      durationMs,
     });
     handleBack();
   };

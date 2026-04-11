@@ -3746,6 +3746,9 @@ function GroupCallInviteMessage({
         {invite.timestampLabel ? (
           <CallInviteMetric label="时间" value={invite.timestampLabel} />
         ) : null}
+        {invite.durationLabel ? (
+          <CallInviteMetric label="本轮时长" value={invite.durationLabel} />
+        ) : null}
         {invite.sourceLabel ? (
           <CallInviteMetric label="发起端" value={invite.sourceLabel} />
         ) : null}

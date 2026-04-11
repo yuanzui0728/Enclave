@@ -37,7 +37,11 @@ type DesktopGroupCallPanelProps = {
     activeCount: number;
     totalCount: number;
   }) => void;
-  onEndCall: (counts: { activeCount: number; totalCount: number }) => void;
+  onEndCall: (counts: {
+    activeCount: number;
+    totalCount: number;
+    durationMs: number;
+  }) => void;
 };
 
 export function DesktopGroupCallPanel({
@@ -265,6 +269,10 @@ export function DesktopGroupCallPanel({
               onEndCall({
                 activeCount,
                 totalCount: members.length,
+                durationMs: Math.max(
+                  Date.now() - new Date(startedAt).getTime(),
+                  0,
+                ),
               })
             }
             disabled={endNoticePending}
