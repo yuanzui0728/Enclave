@@ -92,6 +92,10 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import {
+  resolveDirectCallFooterCopy,
+  resolveDirectCallStatusLabel,
+} from "../features/chat/direct-call-card";
+import {
   formatGroupCallRangeSummary,
   resolveGroupCallCompletionBadge,
   resolveGroupCallFooterCopy,
@@ -4078,34 +4082,7 @@ function DirectCallInviteMessage({
   }
 
   const canReopenCall = Boolean(onOpen);
-  const footerDescription =
-    invite.connectionStatus === "ended"
-      ? canReopenCall
-        ? invite.kind === "video"
-          ? "点击可基于这张卡片重新发起当前单聊视频通话。"
-          : "点击可基于这张卡片重新发起当前单聊语音通话。"
-        : invite.kind === "video"
-          ? "这轮单聊视频通话已经结束，当前保留为状态记录卡片。"
-          : "这轮单聊语音通话已经结束，当前保留为状态记录卡片。"
-      : canReopenCall
-        ? invite.kind === "video"
-          ? "点击可回到当前单聊视频通话工作台。"
-          : "点击可回到当前单聊语音通话工作台。"
-        : invite.kind === "video"
-          ? "当前消息已转成单聊视频通话卡片，方便快速识别状态。"
-          : "当前消息已转成单聊语音通话卡片，方便快速识别状态。";
-  const footerActionLabel =
-    invite.connectionStatus === "ended"
-      ? canReopenCall
-        ? "重新发起"
-        : "查看记录"
-      : canReopenCall
-        ? invite.kind === "voice"
-          ? "回到语音"
-          : "回到视频"
-        : invite.kind === "voice"
-          ? "语音中"
-          : "视频中";
+  const footerCopy = resolveDirectCallFooterCopy(invite, canReopenCall);
 
   const card = (
     <div
@@ -4145,17 +4122,7 @@ function DirectCallInviteMessage({
         {invite.connectionStatus ? (
           <CallInviteMetric
             label="当前状态"
-            value={
-              invite.connectionStatus === "ended"
-                ? "已结束"
-                : invite.connectionStatus === "connected"
-                  ? invite.kind === "video"
-                    ? "画面已接通"
-                    : "已接通"
-                  : invite.kind === "video"
-                    ? "等待接入画面"
-                    : "等待接听"
-            }
+            value={resolveDirectCallStatusLabel(invite)}
           />
         ) : null}
         {invite.timestampLabel ? (
@@ -4179,10 +4146,17 @@ function DirectCallInviteMessage({
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
-          {footerDescription}
+          {footerCopy.description}
         </div>
-        <div className="text-[11px] font-medium text-[#2563eb]">
-          {footerActionLabel}
+        <div
+          className={cn(
+            "text-[11px] font-medium",
+            footerCopy.actionTone === "muted"
+              ? "text-[color:var(--text-muted)]"
+              : "text-[#2563eb]",
+          )}
+        >
+          {footerCopy.actionLabel}
         </div>
       </div>
     </div>
@@ -4197,11 +4171,7 @@ function DirectCallInviteMessage({
       type="button"
       onClick={onOpen}
       className="text-left transition hover:opacity-95"
-      aria-label={
-        invite.connectionStatus === "ended"
-          ? `重新发起 ${invite.title} 的单聊通话`
-          : `回到 ${invite.title} 的单聊通话工作台`
-      }
+      aria-label={footerCopy.ariaLabel}
     >
       {card}
     </button>
