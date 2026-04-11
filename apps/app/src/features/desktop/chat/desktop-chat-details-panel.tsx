@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -1660,9 +1667,11 @@ function DesktopGroupMemberBrowserDialog({
   onViewMember: (member: GroupMember) => void;
 }) {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilter, setActiveFilter] =
     useState<DesktopGroupMemberBrowserFilter>("all");
+  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -1671,6 +1680,7 @@ function DesktopGroupMemberBrowserDialog({
 
     setSearchTerm("");
     setActiveFilter("all");
+    setActiveMemberId(null);
   }, [groupName, open]);
 
   useEffect(() => {
@@ -1742,6 +1752,87 @@ function DesktopGroupMemberBrowserDialog({
       );
     });
   }, [activeFilter, members, searchTerm]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const firstNavigableMember =
+      filteredMembers.find((member) => member.memberType === "character") ??
+      null;
+
+    setActiveMemberId((current) => {
+      if (
+        current &&
+        filteredMembers.some(
+          (member) =>
+            member.id === current && member.memberType === "character",
+        )
+      ) {
+        return current;
+      }
+
+      return firstNavigableMember?.id ?? null;
+    });
+  }, [filteredMembers, open]);
+
+  useEffect(() => {
+    if (!activeMemberId) {
+      return;
+    }
+
+    const target = memberItemRefs.current[activeMemberId];
+    target?.scrollIntoView({ block: "nearest" });
+  }, [activeMemberId]);
+
+  const getNextNavigableMember = (direction: 1 | -1) => {
+    const navigableMembers = filteredMembers.filter(
+      (member) => member.memberType === "character",
+    );
+    if (!navigableMembers.length) {
+      return null;
+    }
+
+    const currentIndex = activeMemberId
+      ? navigableMembers.findIndex((member) => member.id === activeMemberId)
+      : -1;
+
+    if (currentIndex < 0) {
+      return direction > 0
+        ? navigableMembers[0]
+        : navigableMembers[navigableMembers.length - 1];
+    }
+
+    const nextIndex =
+      (currentIndex + direction + navigableMembers.length) %
+      navigableMembers.length;
+    return navigableMembers[nextIndex] ?? null;
+  };
+
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const nextMember = getNextNavigableMember(
+        event.key === "ArrowDown" ? 1 : -1,
+      );
+      if (nextMember) {
+        setActiveMemberId(nextMember.id);
+      }
+      return;
+    }
+
+    if (event.key === "Enter" && activeMemberId) {
+      const activeMember = filteredMembers.find(
+        (member) =>
+          member.id === activeMemberId && member.memberType === "character",
+      );
+      if (activeMember) {
+        event.preventDefault();
+        onViewMember(activeMember);
+      }
+    }
+  };
 
   if (!open) {
     return null;
@@ -1832,10 +1923,14 @@ function DesktopGroupMemberBrowserDialog({
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
               placeholder="搜索昵称、角色或成员 ID"
               className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
             />
           </label>
+          <div className="mt-2 text-[11px] text-[color:var(--text-dim)]">
+            ↑ ↓ 选择成员，Enter 打开角色资料
+          </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button
@@ -1877,17 +1972,35 @@ function DesktopGroupMemberBrowserDialog({
                 return (
                   <button
                     key={member.id}
+                    ref={(node) => {
+                      memberItemRefs.current[member.id] = node;
+                    }}
                     type="button"
                     onClick={() => {
                       if (canViewProfile) {
                         onViewMember(member);
                       }
                     }}
+                    onMouseEnter={() => {
+                      if (canViewProfile) {
+                        setActiveMemberId(member.id);
+                      }
+                    }}
+                    onFocus={() => {
+                      if (canViewProfile) {
+                        setActiveMemberId(member.id);
+                      }
+                    }}
                     disabled={pending || !canViewProfile}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[12px] border px-4 py-3 text-left transition",
+                      canViewProfile && activeMemberId === member.id
+                        ? "border-[#07c160]/30 bg-[rgba(7,193,96,0.08)] shadow-[0_0_0_1px_rgba(7,193,96,0.08)]"
+                        : canViewProfile
+                          ? "border-black/6 bg-[#fafafa] hover:bg-white"
+                          : "border-black/[0.05] bg-[#f4f4f4]",
                       canViewProfile
-                        ? "border-black/6 bg-[#fafafa] hover:bg-white"
+                        ? "focus-visible:border-[#07c160]/30 focus-visible:bg-[rgba(7,193,96,0.08)] focus-visible:outline-none"
                         : "border-black/[0.05] bg-[#f4f4f4]",
                       pending || !canViewProfile
                         ? "cursor-default"
