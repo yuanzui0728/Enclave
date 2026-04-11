@@ -27,6 +27,7 @@ export function DigitalHumanPlayer({
     session?.presentationMode === "provider_stream"
       ? "数字人视频流"
       : "内置数字人舞台";
+  const renderStatus = session?.renderStatus;
   const playerUrl =
     session?.presentationMode === "provider_stream"
       ? session.playerUrl?.trim() || undefined
@@ -62,8 +63,9 @@ export function DigitalHumanPlayer({
               <div className="mt-1 text-[13px] leading-6 text-white/78">
                 {statusHint}
               </div>
-              <div className="mt-2 text-[11px] text-white/52">
-                {providerLabel}
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
+                <span>{providerLabel}</span>
+                {renderStatus ? <span>渲染状态: {renderStatus}</span> : null}
               </div>
             </div>
           </div>
@@ -80,7 +82,9 @@ export function DigitalHumanPlayer({
         thinking={thinking}
         statusLabel={statusLabel}
         statusHint={statusHint}
-        providerLabel={providerLabel}
+        providerLabel={
+          renderStatus ? `${providerLabel} · ${renderStatus}` : providerLabel
+        }
       />
     );
   }
@@ -122,8 +126,9 @@ export function DigitalHumanPlayer({
             <div className="mt-1 text-[13px] leading-6 text-white/78">
               {statusHint}
             </div>
-            <div className="mt-2 text-[11px] text-white/52">
-              {providerLabel}
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
+              <span>{providerLabel}</span>
+              {renderStatus ? <span>渲染状态: {renderStatus}</span> : null}
             </div>
           </div>
         </div>

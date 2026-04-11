@@ -14,7 +14,7 @@ type UploadedAudioFile = {
 
 type DigitalHumanCallMode = 'desktop_video_call' | 'mobile_video_call';
 type DigitalHumanSessionStatus = 'ready' | 'playing' | 'ended';
-type DigitalHumanRenderStatus = 'ready';
+type DigitalHumanRenderStatus = 'queued' | 'rendering' | 'ready' | 'failed';
 
 type DigitalHumanTurnResult = Awaited<
   ReturnType<VoiceCallsService['createTurn']>
@@ -28,11 +28,12 @@ type DigitalHumanSessionRecord = {
   characterAvatar?: string;
   mode: DigitalHumanCallMode;
   provider: 'mock_digital_human';
-  presentationMode: 'provider_stream';
-  transport: 'player_url';
-  playerUrl: string;
+  presentationMode: 'mock_stage' | 'provider_stream';
+  transport: 'audio_poster' | 'player_url';
+  playerUrl?: string;
   streamUrl?: string;
   posterUrl?: string;
+  renderStatus: DigitalHumanRenderStatus;
   status: DigitalHumanSessionStatus;
   createdAt: string;
   updatedAt: string;
@@ -97,6 +98,7 @@ export class DigitalHumanCallsService {
       playerUrl: providerSession.playerUrl,
       streamUrl: providerSession.streamUrl,
       posterUrl: providerSession.posterUrl,
+      renderStatus: providerSession.renderStatus,
       status: 'ready',
       createdAt: now,
       updatedAt: now,
@@ -143,6 +145,7 @@ export class DigitalHumanCallsService {
     session.playerUrl = providerTurn.playerUrl;
     session.streamUrl = providerTurn.streamUrl;
     session.posterUrl = providerTurn.posterUrl;
+    session.renderStatus = providerTurn.renderStatus;
     session.updatedAt = new Date().toISOString();
     this.sessions.set(session.id, session);
 
@@ -184,6 +187,7 @@ export class DigitalHumanCallsService {
       playerUrl: session.playerUrl,
       streamUrl: session.streamUrl,
       posterUrl: session.posterUrl,
+      renderStatus: session.renderStatus,
       status: session.status,
       capabilities: {
         supportsRealtimeStream: false,

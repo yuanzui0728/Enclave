@@ -65,6 +65,8 @@
 - `chat-background-page.tsx`：聊天背景设置页，承载默认背景图与好友专属背景图配置
 - `chat-voice-call-page.tsx`：Web 手机版 AI 语言通话页，承载单聊语音回合制对话、AI 语音播报与挂断回跳
 - `chat-video-call-page.tsx`：Web 手机版 AI 数字人视频通话页，承载单聊数字人会话、本地摄像头预览、舞台播放与挂断回跳
+- `group-voice-call-page.tsx`：Web 手机版群语音通话页，承载移动端群通话工作台、成员在线状态同步与结束回跳
+- `group-video-call-page.tsx`：Web 手机版群视频通话页，承载移动端群视频工作台、成员画面状态同步与结束回跳
 - `chat/$conversationId/background`：单聊聊天背景设置路由，对齐微信式“聊天信息 -> 聊天背景”
 - `chat/$conversationId/voice-call`：单聊 AI 语言通话路由，承载“录音 -> 转写 -> AI 回复 -> TTS 播放”的半双工通话体验
 - `chat/$conversationId/video-call`：单聊 AI 数字人视频通话路由，承载“本地摄像头预览 + 数字人舞台 + 录音 -> 转写 -> AI 回复 -> TTS 播放”的半双工视频通话体验
@@ -74,6 +76,8 @@
 - `group/$groupId/edit/name`：群聊名称编辑页，承载微信式二级表单编辑而非浏览器原生 prompt
 - `group/$groupId/edit/nickname`：我在本群的昵称编辑页，承载微信式群内昵称二级编辑
 - `group/$groupId/background`：群聊聊天背景设置路由，对齐微信式“群聊信息 -> 聊天背景”
+- `group/$groupId/voice-call`：群语音通话路由，承载移动端群通话工作台、成员在线状态同步与回到群聊
+- `group/$groupId/video-call`：群视频通话路由，承载移动端群视频工作台、成员状态同步与回到群聊
 - `group/$groupId/announcement`：群公告独立页，承载群公告阅读与编辑
 - `group/$groupId/qr`：群二维码页，承载群邀请卡、群链接与邀请码分享
 - `group/$groupId/search`：群聊聊天记录检索页，由群聊信息页进入
@@ -250,7 +254,7 @@
 
 ## 环境变量（`api/.env`）
 
-`DEEPSEEK_API_KEY` · `OPENAI_BASE_URL` · `AI_MODEL` · `ADMIN_SECRET` · `DATABASE_PATH` · `PORT` · `CORS_ALLOWED_ORIGINS` · `PUBLIC_API_BASE_URL` · `USER_API_KEY_ENCRYPTION_SECRET`
+`DEEPSEEK_API_KEY` · `OPENAI_BASE_URL` · `AI_MODEL` · `ADMIN_SECRET` · `DATABASE_PATH` · `PORT` · `CORS_ALLOWED_ORIGINS` · `PUBLIC_API_BASE_URL` · `USER_API_KEY_ENCRYPTION_SECRET` · `DIGITAL_HUMAN_PROVIDER_MODE`
 
 ## 环境变量（`apps/cloud-api/.env`）
 
