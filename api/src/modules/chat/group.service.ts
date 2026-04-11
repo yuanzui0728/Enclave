@@ -606,31 +606,33 @@ export class GroupService {
         Math.random() *
           (runtimeRules.groupReplyDelayMs.max -
             runtimeRules.groupReplyDelayMs.min);
-      setTimeout(async () => {
-        try {
-          const reply = await this.ai.generateReply({
-            profile,
-            conversationHistory: history,
-            userMessage: currentUserMessage.content,
-            userMessageParts: currentUserMessage.parts,
-            isGroupChat: true,
-          });
-          await this.sendMessage(
-            groupId,
-            char.id,
-            'character',
-            char.name,
-            {
-              text: reply.text,
-            },
-            char.avatar,
-          );
-        } catch (err) {
-          this.logger.error(
-            `AI reply failed for ${char.name} in group ${groupId}`,
-            err,
-          );
-        }
+      setTimeout(() => {
+        void (async () => {
+          try {
+            const reply = await this.ai.generateReply({
+              profile,
+              conversationHistory: history,
+              userMessage: currentUserMessage.content,
+              userMessageParts: currentUserMessage.parts,
+              isGroupChat: true,
+            });
+            await this.sendMessage(
+              groupId,
+              char.id,
+              'character',
+              char.name,
+              {
+                text: reply.text,
+              },
+              char.avatar,
+            );
+          } catch (err) {
+            this.logger.error(
+              `AI reply failed for ${char.name} in group ${groupId}`,
+              err,
+            );
+          }
+        })();
       }, delay);
     }
   }

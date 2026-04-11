@@ -29,7 +29,6 @@ import {
   LocationCardAttachment,
   Message,
   MessageAttachment,
-  StickerAttachment,
   VoiceAttachment,
 } from './chat.types';
 import { findStickerAttachment } from './sticker-catalog';
