@@ -3104,12 +3104,14 @@ function DesktopScreenshotEditor({
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
   const shortcutDemoTimeoutRef = useRef<number | null>(null);
+  const shortcutHelpTimeoutRef = useRef<number | null>(null);
   const [previewViewportSize, setPreviewViewportSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewSpacePressed, setPreviewSpacePressed] = useState(false);
+  const [shortcutHelpVisible, setShortcutHelpVisible] = useState(false);
   const [shortcutHelpEntered, setShortcutHelpEntered] = useState(false);
   const [shortcutDemoGroup, setShortcutDemoGroup] =
     useState<ScreenshotShortcutHelpGroupId | null>(null);
@@ -3196,6 +3198,9 @@ function DesktopScreenshotEditor({
       if (shortcutDemoTimeoutRef.current) {
         window.clearTimeout(shortcutDemoTimeoutRef.current);
       }
+      if (shortcutHelpTimeoutRef.current) {
+        window.clearTimeout(shortcutHelpTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -3204,21 +3209,44 @@ function DesktopScreenshotEditor({
     setPreviewViewportSize(null);
     setPreviewSpacePressed(false);
     setPreviewPanDrag(null);
+    setShortcutHelpVisible(false);
+    setShortcutHelpEntered(false);
     setShortcutDemoGroup(null);
     if (shortcutDemoTimeoutRef.current) {
       window.clearTimeout(shortcutDemoTimeoutRef.current);
       shortcutDemoTimeoutRef.current = null;
     }
+    if (shortcutHelpTimeoutRef.current) {
+      window.clearTimeout(shortcutHelpTimeoutRef.current);
+      shortcutHelpTimeoutRef.current = null;
+    }
     onShortcutHelpOpenChange(false);
   }, [draft.previewUrl, onShortcutHelpOpenChange]);
 
   useEffect(() => {
-    if (!shortcutHelpOpen) {
+    if (!shortcutHelpOpen && !shortcutHelpVisible) {
       setShortcutHelpEntered(false);
       return;
     }
 
+    if (!shortcutHelpOpen) {
+      setShortcutHelpEntered(false);
+      if (shortcutHelpTimeoutRef.current) {
+        window.clearTimeout(shortcutHelpTimeoutRef.current);
+      }
+      shortcutHelpTimeoutRef.current = window.setTimeout(() => {
+        setShortcutHelpVisible(false);
+        shortcutHelpTimeoutRef.current = null;
+      }, 150);
+      return;
+    }
+
     let animationFrameId = 0;
+    if (shortcutHelpTimeoutRef.current) {
+      window.clearTimeout(shortcutHelpTimeoutRef.current);
+      shortcutHelpTimeoutRef.current = null;
+    }
+    setShortcutHelpVisible(true);
     setShortcutHelpEntered(false);
     animationFrameId = window.requestAnimationFrame(() => {
       setShortcutHelpEntered(true);
@@ -3242,7 +3270,7 @@ function DesktopScreenshotEditor({
       }
       window.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [onShortcutHelpOpenChange, shortcutHelpOpen]);
+  }, [onShortcutHelpOpenChange, shortcutHelpOpen, shortcutHelpVisible]);
 
   useEffect(() => {
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -3821,7 +3849,7 @@ function DesktopScreenshotEditor({
                   </span>
                   <span>快捷键</span>
                 </button>
-                {shortcutHelpOpen ? (
+                {shortcutHelpVisible ? (
                   <div
                     className={cn(
                       "absolute right-0 top-full z-30 mt-2 w-[288px] rounded-[14px] border border-white/12 bg-[#181818] p-2.5 text-[11px] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
