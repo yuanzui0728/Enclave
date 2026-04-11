@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -378,6 +379,14 @@ export function DesktopCreateGroupDialog({
     sortedFriendItems.length,
   ]);
 
+  const clearSearch = useCallback(() => {
+    setSearchTerm("");
+    setFocusedFriendIndex(0);
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  }, []);
+
   useEffect(() => {
     if (!open) {
       return;
@@ -449,14 +458,6 @@ export function DesktopCreateGroupDialog({
 
     createMutation.mutate();
   };
-
-  function clearSearch() {
-    setSearchTerm("");
-    setFocusedFriendIndex(0);
-    window.requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-  }
 
   const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (
@@ -622,7 +623,7 @@ export function DesktopCreateGroupDialog({
     searchInputRef.current?.focus();
   };
 
-  const syncActiveFriendSectionFromScroll = () => {
+  const syncActiveFriendSectionFromScroll = useCallback(() => {
     const scrollContainer = friendListScrollRef.current;
     if (!scrollContainer || !friendSections.length) {
       return;
@@ -659,7 +660,7 @@ export function DesktopCreateGroupDialog({
     }
 
     setActiveFriendIndexKey(nextSectionKey);
-  };
+  }, [friendSections, pinnedSourceFriend]);
 
   useEffect(() => {
     if (searchTerm.trim()) {
@@ -684,6 +685,7 @@ export function DesktopCreateGroupDialog({
     orderedFilteredFriends,
     pinnedSourceFriend,
     searchTerm,
+    syncActiveFriendSectionFromScroll,
     sourceFriendId,
   ]);
 

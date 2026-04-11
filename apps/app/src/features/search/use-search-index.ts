@@ -81,7 +81,10 @@ export function useSearchIndex(
     queryFn: () => getFeed(1, 20, baseUrl),
   });
 
-  const conversations = conversationsQuery.data ?? [];
+  const conversations = useMemo(
+    () => conversationsQuery.data ?? [],
+    [conversationsQuery.data],
+  );
   const conversationsSearchKey = useMemo(
     () =>
       conversations

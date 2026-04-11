@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
@@ -71,9 +71,13 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
     },
   });
 
-  useEffect(() => {
+  const resetFollowMutation = useEffectEvent(() => {
     followMutation.reset();
-  }, [accountId, baseUrl]);
+  });
+
+  useEffect(() => {
+    resetFollowMutation();
+  }, [accountId, baseUrl, resetFollowMutation]);
 
   const account = accountQuery.data;
   const accountFavoriteSourceId = account ? `official-${account.id}` : null;

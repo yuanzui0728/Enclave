@@ -20,6 +20,7 @@ import { getFavorites, type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
   useMemo,
@@ -424,12 +425,15 @@ export function ChatComposer({
       isDesktop && desktopPlusMenuOpen && desktopPlusMenuView === "favorites",
   });
 
-  const getActiveInput = () =>
-    (isDesktop ? desktopInputRef.current : mobileTextareaRef.current) ??
-    desktopInputRef.current ??
-    mobileTextareaRef.current;
+  const getActiveInput = useCallback(
+    () =>
+      (isDesktop ? desktopInputRef.current : mobileTextareaRef.current) ??
+      desktopInputRef.current ??
+      mobileTextareaRef.current,
+    [isDesktop],
+  );
 
-  const focusInput = () => {
+  const focusInput = useCallback(() => {
     if (typeof window === "undefined") {
       return;
     }
@@ -444,7 +448,7 @@ export function ChatComposer({
       const selection = input.value.length;
       input.setSelectionRange(selection, selection);
     });
-  };
+  }, [getActiveInput]);
 
   const syncInputCursor = () => {
     const input = getActiveInput();
@@ -461,38 +465,38 @@ export function ChatComposer({
     setMobilePlusNotice(null);
   };
 
-  const setMobileSpeechCancelState = (nextValue: boolean) => {
+  const setMobileSpeechCancelState = useCallback((nextValue: boolean) => {
     mobileSpeechCancelIntentRef.current = nextValue;
     setMobileSpeechCancelIntent(nextValue);
-  };
+  }, []);
 
-  const resetMobileSpeechGesture = () => {
+  const resetMobileSpeechGesture = useCallback(() => {
     mobileSpeechPointerIdRef.current = null;
     mobileSpeechStartYRef.current = null;
     setMobileSpeechPressing(false);
     setMobileSpeechCancelState(false);
-  };
+  }, [setMobileSpeechCancelState]);
 
-  const closeMobileSpeechSheet = () => {
+  const closeMobileSpeechSheet = useCallback(() => {
     mobileSpeechAutoCommitRef.current = false;
     resetMobileSpeechGesture();
     setMobileSpeechSheetOpen(false);
-  };
+  }, [resetMobileSpeechGesture]);
 
   const cancelMobileSpeech = () => {
     speech.cancel();
     closeMobileSpeechSheet();
   };
 
-  const commitSpeechInput = () => {
+  const commitSpeechInput = useEffectEvent(() => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
     setMobileInputMode("text");
     closeMobileSpeechSheet();
     focusInput();
-  };
+  });
 
-  const sendRecordedVoice = async () => {
+  const sendRecordedVoice = useEffectEvent(async () => {
     if (!onSendAttachment || !speech.recordedAudio || attachmentBusy) {
       return false;
     }
@@ -513,7 +517,7 @@ export function ChatComposer({
     speech.clearResult();
     closeMobileSpeechSheet();
     return true;
-  };
+  });
 
   const handleMobileSpeechPressStart = async (
     event: ReactPointerEvent<HTMLButtonElement>,
@@ -641,7 +645,7 @@ export function ChatComposer({
 
     setMobileInputMode("text");
     closeMobileSpeechSheet();
-  }, [showSpeechEntry]);
+  }, [closeMobileSpeechSheet, showSpeechEntry]);
 
   useEffect(() => {
     if (
@@ -669,6 +673,7 @@ export function ChatComposer({
     }
   }, [
     commitSpeechInput,
+    closeMobileSpeechSheet,
     isDesktop,
     mobileSpeechPressing,
     mobileSpeechSheetOpen,
@@ -752,6 +757,14 @@ export function ChatComposer({
     };
   }, [desktopScreenshotDraft]);
 
+  const handleCloseDesktopScreenshotEditor = useEffectEvent(() => {
+    closeDesktopScreenshotEditor();
+  });
+
+  const handleCaptureDesktopScreenshot = useEffectEvent(() => {
+    void captureDesktopScreenshot();
+  });
+
   useEffect(() => {
     if (!isDesktop || !desktopScreenshotDraft) {
       return;
@@ -773,7 +786,7 @@ export function ChatComposer({
         return;
       }
 
-      closeDesktopScreenshotEditor();
+      handleCloseDesktopScreenshotEditor();
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -783,6 +796,7 @@ export function ChatComposer({
     desktopScreenshotDraft,
     desktopScreenshotShortcutHelpOpen,
     desktopScreenshotSelectedAnnotationId,
+    handleCloseDesktopScreenshotEditor,
     isDesktop,
   ]);
 
@@ -810,12 +824,18 @@ export function ChatComposer({
       }
 
       event.preventDefault();
-      void captureDesktopScreenshot();
+      handleCaptureDesktopScreenshot();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [attachmentBusy, desktopScreenshotDraft, isDesktop, onSendAttachment]);
+  }, [
+    attachmentBusy,
+    desktopScreenshotDraft,
+    handleCaptureDesktopScreenshot,
+    isDesktop,
+    onSendAttachment,
+  ]);
 
   useEffect(() => {
     if (isDesktop && onSendAttachment && !attachmentBusy) {
@@ -844,7 +864,7 @@ export function ChatComposer({
     }
 
     setMobileMentionDismissed(false);
-  }, [activeMention?.query, activeMention?.start]);
+  }, [activeMention]);
 
   useEffect(() => {
     if (pendingSelection === null) {
@@ -865,7 +885,7 @@ export function ChatComposer({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [isDesktop, pendingSelection, value]);
+  }, [getActiveInput, isDesktop, pendingSelection, value]);
 
   const toggleStickerPanel = () => {
     if (!onSendSticker) {
@@ -920,10 +940,10 @@ export function ChatComposer({
     setPlusPanelOpen((current) => !current);
   };
 
-  const closeDesktopPlusMenu = () => {
+  const closeDesktopPlusMenu = useCallback(() => {
     setDesktopPlusMenuOpen(false);
     setDesktopPlusMenuView("root");
-  };
+  }, []);
 
   const toggleDesktopFavoritePicker = () => {
     if (desktopPlusMenuOpen && desktopPlusMenuView === "favorites") {
@@ -982,7 +1002,7 @@ export function ChatComposer({
     fileInputRef.current?.click();
   };
 
-  const captureDesktopScreenshot = async () => {
+  const captureDesktopScreenshot = useCallback(async () => {
     if (!isDesktop || !onSendAttachment || attachmentBusy) {
       return;
     }
@@ -1075,7 +1095,14 @@ export function ChatComposer({
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
     }
-  };
+  }, [
+    attachmentBusy,
+    attachmentDraft,
+    closeDesktopPlusMenu,
+    desktopScreenshotDraft,
+    isDesktop,
+    onSendAttachment,
+  ]);
 
   const activateMobileSpeechFallback = () => {
     if (isDesktop || !showSpeechEntry) {
@@ -1303,7 +1330,7 @@ export function ChatComposer({
     setAttachmentDraft(null);
   };
 
-  const closeDesktopScreenshotEditor = () => {
+  const closeDesktopScreenshotEditor = useCallback(() => {
     releaseImageDraft(desktopScreenshotDraft);
     setDesktopScreenshotDraft(null);
     setDesktopScreenshotCrop(null);
@@ -1320,7 +1347,7 @@ export function ChatComposer({
     setDesktopScreenshotAnnotationMove(null);
     setDesktopScreenshotNotice(null);
     setDesktopScreenshotShortcutHelpOpen(false);
-  };
+  }, [desktopScreenshotDraft]);
 
   const handleDesktopScreenshotPointerDown = (
     event: ReactPointerEvent<HTMLDivElement>,
