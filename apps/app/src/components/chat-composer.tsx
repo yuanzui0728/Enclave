@@ -130,6 +130,8 @@ type ScreenshotAnnotation = {
   text?: string;
 };
 
+type ScreenshotShortcutHelpGroupId = "send" | "view" | "edit";
+
 const SCREENSHOT_ANNOTATION_PALETTE = [
   {
     id: "amber",
@@ -164,14 +166,17 @@ const SCREENSHOT_ANNOTATION_PALETTE = [
 
 const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
   {
+    id: "send",
     label: "发送",
     value: "Enter / ⌘/Ctrl + Enter",
   },
   {
+    id: "view",
     label: "视图",
     value: "⌘/Ctrl + 滚轮 / 双击 / Space / ?",
   },
   {
+    id: "edit",
     label: "编辑",
     value: "C / R / A / T / 1-4 / Delete / Esc",
   },
@@ -3085,12 +3090,15 @@ function DesktopScreenshotEditor({
   const previewViewportRef = useRef<HTMLDivElement | null>(null);
   const selectedTextInputRef = useRef<HTMLInputElement | null>(null);
   const shortcutHelpRef = useRef<HTMLDivElement | null>(null);
+  const shortcutDemoTimeoutRef = useRef<number | null>(null);
   const [previewViewportSize, setPreviewViewportSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewSpacePressed, setPreviewSpacePressed] = useState(false);
+  const [shortcutDemoGroup, setShortcutDemoGroup] =
+    useState<ScreenshotShortcutHelpGroupId | null>(null);
   const [previewPanDrag, setPreviewPanDrag] = useState<{
     pointerId: number;
     startX: number;
@@ -3170,10 +3178,23 @@ function DesktopScreenshotEditor({
   }, [selectedAnnotationId, selectedTextAnnotationActive]);
 
   useEffect(() => {
+    return () => {
+      if (shortcutDemoTimeoutRef.current) {
+        window.clearTimeout(shortcutDemoTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     setPreviewZoom(1);
     setPreviewViewportSize(null);
     setPreviewSpacePressed(false);
     setPreviewPanDrag(null);
+    setShortcutDemoGroup(null);
+    if (shortcutDemoTimeoutRef.current) {
+      window.clearTimeout(shortcutDemoTimeoutRef.current);
+      shortcutDemoTimeoutRef.current = null;
+    }
     onShortcutHelpOpenChange(false);
   }, [draft.previewUrl, onShortcutHelpOpenChange]);
 
@@ -3487,6 +3508,18 @@ function DesktopScreenshotEditor({
     });
   };
 
+  const triggerShortcutDemo = (groupId: ScreenshotShortcutHelpGroupId) => {
+    setShortcutDemoGroup(groupId);
+    if (shortcutDemoTimeoutRef.current) {
+      window.clearTimeout(shortcutDemoTimeoutRef.current);
+    }
+
+    shortcutDemoTimeoutRef.current = window.setTimeout(() => {
+      setShortcutDemoGroup((current) => (current === groupId ? null : current));
+      shortcutDemoTimeoutRef.current = null;
+    }, 1800);
+  };
+
   const handlePreviewPanStart = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (!previewPanEnabled) {
       return;
@@ -3533,6 +3566,11 @@ function DesktopScreenshotEditor({
       return current;
     });
   };
+
+  const getShortcutDemoClass = (groupId: ScreenshotShortcutHelpGroupId) =>
+    shortcutDemoGroup === groupId
+      ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.12)] shadow-[0_0_0_1px_rgba(152,245,186,0.2),0_12px_28px_rgba(7,193,96,0.14)]"
+      : "border-transparent";
 
   const finishPreviewPan = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.stopPropagation();
@@ -3590,7 +3628,12 @@ function DesktopScreenshotEditor({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-white/8 bg-white/6 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2">
+              <div
+                className={cn(
+                  "flex flex-wrap items-center gap-2 rounded-[12px] border px-2 py-1 transition",
+                  getShortcutDemoClass("edit"),
+                )}
+              >
                 <DesktopScreenshotToolButton
                   label="裁剪"
                   active={tool === "crop"}
@@ -3651,7 +3694,12 @@ function DesktopScreenshotEditor({
                 ) : null}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div
+                className={cn(
+                  "flex flex-wrap items-center gap-2 rounded-[12px] border px-2 py-1 transition",
+                  getShortcutDemoClass("view"),
+                )}
+              >
                 <Button
                   type="button"
                   variant="ghost"
@@ -3753,19 +3801,26 @@ function DesktopScreenshotEditor({
                         </span>
                       </div>
                       <div className="mb-2 text-[11px] text-white/46">
-                        视图和编辑操作都在这里，不再常驻挤占工具条。
+                        点任一分组，会在界面里短暂高亮对应操作区域。
                       </div>
                       <div className="grid gap-2">
                         {SCREENSHOT_SHORTCUT_HELP_GROUPS.map((item) => (
-                          <div
+                          <button
                             key={item.label}
-                            className="flex items-center justify-between gap-3 rounded-[10px] bg-white/5 px-3 py-2"
+                            type="button"
+                            onClick={() => triggerShortcutDemo(item.id)}
+                            className={cn(
+                              "flex items-center justify-between gap-3 rounded-[10px] border px-3 py-2 text-left transition",
+                              shortcutDemoGroup === item.id
+                                ? "border-[#2d8f5b] bg-[rgba(7,193,96,0.14)] text-white"
+                                : "border-transparent bg-white/5 hover:border-white/10 hover:bg-white/8",
+                            )}
                           >
                             <span>{item.label}</span>
                             <span className="text-right text-white/92">
                               {item.value}
                             </span>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -4234,7 +4289,12 @@ function DesktopScreenshotEditor({
                   : "拖拽框选文字区域，随后在工具栏输入内容。"}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-[12px] border px-2 py-1 transition",
+              getShortcutDemoClass("send"),
+            )}
+          >
             {crop ? (
               <Button
                 type="button"
