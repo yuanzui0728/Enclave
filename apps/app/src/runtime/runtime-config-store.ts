@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import { readNativeRuntimeConfig } from "./native-runtime";
 import { detectAppPlatform } from "./platform";
 import { normalizeAppRuntimeConfig, readInjectedRuntimeConfig, RUNTIME_CONFIG_STORAGE_KEY, type AppRuntimeConfig } from "./runtime-config";
+import { APP_RUNTIME_SOCKET_CONFIG_CHANGE_EVENT } from "./runtime-config-events";
 
 const listeners = new Set<() => void>();
 let nativeRuntimeHydrated = false;
@@ -86,9 +87,9 @@ export function setAppRuntimeConfig(nextConfig: Partial<AppRuntimeConfig>) {
 
   getStorage()?.setItem(RUNTIME_CONFIG_STORAGE_KEY, JSON.stringify(runtimeConfig));
   if (previousApiBaseUrl !== runtimeConfig.apiBaseUrl || previousSocketBaseUrl !== runtimeConfig.socketBaseUrl) {
-    void import("../lib/socket").then(({ disconnectChatSocket }) => {
-      disconnectChatSocket();
-    });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event(APP_RUNTIME_SOCKET_CONFIG_CHANGE_EVENT));
+    }
   }
   emitRuntimeConfigChange();
   return runtimeConfig;

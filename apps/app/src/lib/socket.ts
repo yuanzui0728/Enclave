@@ -10,19 +10,39 @@ import {
   type TypingPayload,
 } from "@yinjie/contracts";
 import { resolveAppSocketBaseUrl } from "./runtime-config";
+import { APP_RUNTIME_SOCKET_CONFIG_CHANGE_EVENT } from "../runtime/runtime-config-events";
 
 let socket: Socket | null = null;
+let activeSocketBaseUrl: string | null = null;
+let runtimeConfigListenerAttached = false;
 
 function socketBaseUrl() {
   return resolveAppSocketBaseUrl();
 }
 
+function ensureRuntimeConfigListener() {
+  if (runtimeConfigListenerAttached || typeof window === "undefined") {
+    return;
+  }
+
+  window.addEventListener(
+    APP_RUNTIME_SOCKET_CONFIG_CHANGE_EVENT,
+    disconnectChatSocket,
+  );
+  runtimeConfigListenerAttached = true;
+}
+
 export function getChatSocket() {
-  if (socket) {
+  const nextSocketBaseUrl = socketBaseUrl();
+  ensureRuntimeConfigListener();
+
+  if (socket && activeSocketBaseUrl === nextSocketBaseUrl) {
     return socket;
   }
 
-  socket = io(`${socketBaseUrl()}${CHAT_NAMESPACE}`, {
+  disconnectChatSocket();
+  activeSocketBaseUrl = nextSocketBaseUrl;
+  socket = io(`${nextSocketBaseUrl}${CHAT_NAMESPACE}`, {
     path: "/socket.io",
     transports: ["websocket", "polling"],
   });
@@ -32,12 +52,14 @@ export function getChatSocket() {
 
 export function disconnectChatSocket() {
   if (!socket) {
+    activeSocketBaseUrl = null;
     return;
   }
 
   socket.removeAllListeners();
   socket.disconnect();
   socket = null;
+  activeSocketBaseUrl = null;
 }
 
 export function joinConversationRoom(payload: JoinConversationPayload) {
