@@ -346,7 +346,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   if (conversationsQuery.isLoading) {
     return (
-      <AppPage className="min-h-full bg-[#111827] px-4 py-6 text-white">
+      <AppPage
+        className={cn(
+          "min-h-full px-4 py-6",
+          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+        )}
+      >
         <LoadingBlock
           label={
             isVideoMode ? "正在连接数字人视频通话..." : "正在连接语音通话..."
@@ -358,7 +363,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   if (conversationsQuery.isError && conversationsQuery.error instanceof Error) {
     return (
-      <AppPage className="min-h-full bg-[#111827] px-4 py-6 text-white">
+      <AppPage
+        className={cn(
+          "min-h-full px-4 py-6",
+          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+        )}
+      >
         <ErrorBlock message={conversationsQuery.error.message} />
       </AppPage>
     );
@@ -366,7 +376,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   if (!conversation || conversation.type !== "direct") {
     return (
-      <AppPage className="min-h-full space-y-4 bg-[#111827] px-4 py-6 text-white">
+      <AppPage
+        className={cn(
+          "min-h-full space-y-4 px-4 py-6",
+          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+        )}
+      >
         <ErrorBlock
           message={
             isVideoMode
@@ -377,7 +392,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         <Button
           variant="secondary"
           onClick={handleBack}
-          className="rounded-full"
+          className={cn(
+            isDesktopLayout
+              ? "rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+              : "rounded-full",
+          )}
         >
           返回聊天
         </Button>
@@ -387,17 +406,120 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="min-h-full space-y-4 bg-[#111827] px-4 py-6 text-white">
-        <InlineNotice tone="info">
-          当前页面只面向 Web 手机版，桌面端请回到聊天页顶部发起对应通话。
-        </InlineNotice>
-        <Button
-          variant="secondary"
-          onClick={handleBack}
-          className="rounded-full"
-        >
-          返回聊天
-        </Button>
+      <AppPage className="min-h-full bg-[#f3f3f3] px-0 py-0">
+        <div className="flex min-h-full flex-col">
+          <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-black/6 bg-white text-[color:var(--text-primary)] transition hover:bg-[#efefef]"
+                aria-label="返回聊天"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <div>
+                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                  {isVideoMode ? "视频通话" : "语音通话"}
+                </div>
+                <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
+                  {conversation.title}
+                </div>
+                <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                  桌面端通话入口已收口到聊天工作区顶部工具栏。
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleBack}
+              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+            >
+              返回聊天
+            </Button>
+          </header>
+
+          <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+            <div className="w-full max-w-[760px] rounded-[18px] border border-black/6 bg-white p-8 shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+              <div className="inline-flex rounded-full bg-[rgba(15,23,42,0.05)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                桌面通话工作区
+              </div>
+              <div className="mt-5 flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.10)] text-[#1f8f4f]">
+                  {isVideoMode ? <Camera size={24} /> : <Mic size={24} />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[20px] font-medium text-[color:var(--text-primary)]">
+                    桌面端请从聊天页继续发起{isVideoMode ? "视频通话" : "语音通话"}
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
+                    当前独立路由主要保留给手机端通话流程。桌面端已经改为在聊天消息页内打开通话工作台，这样消息、侧栏信息和通话控制会保持在同一窗口里。
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                    当前会话
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+                    {conversation.title}
+                  </div>
+                </div>
+                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                    通话类型
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+                    {isVideoMode ? "AI 数字人视频通话" : "AI 语音通话"}
+                  </div>
+                </div>
+                <div className="rounded-[12px] border border-black/6 bg-[#fafafa] px-4 py-4">
+                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                    对话对象
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+                    {characterName}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <InlineNotice tone="info">
+                  回到聊天页后，继续使用顶部通话按钮即可进入桌面通话工作台。
+                </InlineNotice>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={handleBack}
+                  className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+                >
+                  <MessageCircleMore size={16} />
+                  返回聊天继续
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void navigate({
+                      to: "/chat/$conversationId/details",
+                      params: { conversationId: resolvedConversationId },
+                    });
+                  }}
+                  className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                >
+                  查看聊天信息
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </AppPage>
     );
   }
