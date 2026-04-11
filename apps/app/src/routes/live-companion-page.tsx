@@ -8,7 +8,6 @@ import {
   type FeedPostListItem,
 } from "@yinjie/contracts";
 import {
-  AlertCircle,
   BadgeCheck,
   Clapperboard,
   Copy,
@@ -149,7 +148,7 @@ export function LiveCompanionPage() {
   }
 
   return (
-    <div className="h-full overflow-auto px-6 py-6">
+    <div className="h-full overflow-auto bg-[#f5f5f5] px-6 py-6">
       <DesktopEntryShell
         badge="Live Companion"
         title="直播伴侣把开播前准备和桌面控台收在一起"
@@ -187,11 +186,11 @@ export function LiveCompanionPage() {
           ) : null}
 
           <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[20px] border border-black/6 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <RadioTower
                   size={16}
-                  className="text-[color:var(--brand-primary)]"
+                  className="text-[#16a34a]"
                 />
                 <span>开播准备</span>
               </div>
@@ -202,7 +201,7 @@ export function LiveCompanionPage() {
               <div className="mt-4 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
                       直播标题
                     </div>
                     <TextField
@@ -217,7 +216,7 @@ export function LiveCompanionPage() {
                     />
                   </div>
                   <div>
-                    <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
                       直播主题
                     </div>
                     <TextField
@@ -234,7 +233,7 @@ export function LiveCompanionPage() {
                 </div>
 
                 <div>
-                  <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                  <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
                     封面钩子
                   </div>
                   <TextField
@@ -325,7 +324,7 @@ export function LiveCompanionPage() {
                       setNotice("直播伴侣已切到直播中状态。");
                     }}
                     disabled={Boolean(activeSession)}
-                    className="rounded-2xl"
+                    className="rounded-xl"
                   >
                     <MonitorUp size={15} />
                     {activeSession ? "直播进行中" : "开始本场直播"}
@@ -344,7 +343,7 @@ export function LiveCompanionPage() {
                       setError(null);
                       setNotice("直播已结束，并记录到本地历史。");
                     }}
-                    className="rounded-2xl"
+                    className="rounded-xl"
                   >
                     <Clapperboard size={15} />
                     结束直播
@@ -358,7 +357,7 @@ export function LiveCompanionPage() {
                       setNotice("直播准备草稿已清空。");
                       setError(null);
                     }}
-                    className="rounded-2xl"
+                    className="rounded-xl"
                   >
                     <RefreshCcw size={15} />
                     清空准备
@@ -375,7 +374,7 @@ export function LiveCompanionPage() {
                         label: draft.title.trim() || "直播准备",
                       })
                     }
-                    className="rounded-2xl"
+                    className="rounded-xl"
                   >
                     <Copy size={15} />
                     发准备到手机
@@ -385,11 +384,11 @@ export function LiveCompanionPage() {
             </section>
 
             <section className="space-y-5">
-              <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[20px] border border-black/6 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <BadgeCheck
                     size={16}
-                    className="text-[color:var(--brand-primary)]"
+                    className="text-[#16a34a]"
                   />
                   <span>开播检查</span>
                 </div>
@@ -397,14 +396,14 @@ export function LiveCompanionPage() {
                   {preflightChecks.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-center justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] px-4 py-3"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-black/6 bg-[#f6f6f6] px-4 py-3"
                     >
                       <div className="text-sm text-[color:var(--text-primary)]">
                         {item.label}
                       </div>
                       <div
                         className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                          "rounded-md px-2.5 py-1 text-[11px] font-medium",
                           item.passed
                             ? "bg-[rgba(34,197,94,0.10)] text-[#15803d]"
                             : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
@@ -417,7 +416,7 @@ export function LiveCompanionPage() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[20px] border border-black/6 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   当前实例状态
                 </div>
@@ -462,7 +461,7 @@ export function LiveCompanionPage() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[20px] border border-black/6 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -474,7 +473,7 @@ export function LiveCompanionPage() {
                 </div>
                 <Link
                   to="/tabs/channels"
-                  className="inline-flex h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-black/6 bg-[#f8f8f8] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
                 >
                   打开视频号
                 </Link>
@@ -516,7 +515,7 @@ export function LiveCompanionPage() {
               </div>
             </section>
 
-            <section className="rounded-[28px] border border-[color:var(--border-faint)] bg-white/92 p-5 shadow-[var(--shadow-soft)]">
+            <section className="rounded-[20px] border border-black/6 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -546,7 +545,7 @@ export function LiveCompanionPage() {
                       );
                     }
                   }}
-                  className="rounded-full"
+                  className="rounded-xl"
                 >
                   <Wand2 size={14} />
                   生成预热内容
@@ -558,7 +557,7 @@ export function LiveCompanionPage() {
                   liveHistory.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4"
+                      className="rounded-[18px] border border-black/6 bg-[#f6f6f6] p-4"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -566,7 +565,7 @@ export function LiveCompanionPage() {
                         </div>
                         <span
                           className={cn(
-                            "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                            "rounded-md px-2.5 py-1 text-[11px] font-medium",
                             item.status === "live"
                               ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
                               : "bg-[rgba(34,197,94,0.10)] text-[#15803d]",
@@ -600,7 +599,7 @@ export function LiveCompanionPage() {
                               label: item.title,
                             })
                           }
-                          className="rounded-full"
+                          className="rounded-xl"
                         >
                           <Copy size={14} />
                           发到手机继续
@@ -609,7 +608,7 @@ export function LiveCompanionPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-[22px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.58)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+                  <div className="rounded-[18px] border border-dashed border-black/8 bg-[#f8f8f8] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
                     还没有直播记录。先准备一场直播并切到“直播中”，这里就会开始积累桌面伴侣历史。
                   </div>
                 )}
@@ -635,7 +634,7 @@ function SelectorCard({
 }) {
   return (
     <div>
-      <div className="mb-2 text-xs uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+      <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">
         {label}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -645,10 +644,10 @@ function SelectorCard({
             type="button"
             onClick={() => onChange(item.id)}
             className={cn(
-              "rounded-full border px-3 py-2 text-xs font-medium transition",
+              "rounded-xl border px-3 py-2 text-xs font-medium transition",
               value === item.id
-                ? "border-[rgba(249,115,22,0.24)] bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                : "border-[color:var(--border-faint)] bg-white/90 text-[color:var(--text-secondary)]",
+                ? "border-[#b7e4c7] bg-[#eaf8ef] text-[#15803d]"
+                : "border-black/8 bg-[#f8f8f8] text-[color:var(--text-secondary)] hover:bg-white",
             )}
           >
             {item.label}
@@ -675,10 +674,10 @@ function ToggleCard({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        "rounded-[22px] border px-4 py-4 text-left transition",
+        "rounded-[18px] border px-4 py-4 text-left transition",
         checked
-          ? "border-[rgba(249,115,22,0.24)] bg-[rgba(249,115,22,0.10)]"
-          : "border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)]",
+          ? "border-[#b7e4c7] bg-[#eef8f1]"
+          : "border-black/6 bg-[#f7f7f7]",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -687,9 +686,9 @@ function ToggleCard({
         </div>
         <span
           className={cn(
-            "rounded-full px-2.5 py-1 text-[11px] font-medium",
+            "rounded-md px-2.5 py-1 text-[11px] font-medium",
             checked
-              ? "bg-white text-[color:var(--brand-primary)]"
+              ? "bg-white text-[#15803d]"
               : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
           )}
         >
@@ -711,7 +710,7 @@ function PostReferenceCard({
   post: FeedPostListItem;
 }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] p-4">
+    <div className="rounded-[18px] border border-black/6 bg-[#f6f6f6] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip
           name={post.authorName}
@@ -730,11 +729,11 @@ function PostReferenceCard({
             {post.text}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button size="sm" onClick={onUse} className="rounded-full">
+            <Button size="sm" onClick={onUse} className="rounded-xl">
               <Sparkles size={14} />
               带入直播准备
             </Button>
-            <span className="inline-flex items-center rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
+            <span className="inline-flex items-center rounded-md bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
               {post.commentCount} 评论 · {post.likeCount} 赞
             </span>
           </div>
@@ -746,7 +745,7 @@ function PostReferenceCard({
 
 function StatusRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,250,244,0.82)] px-4 py-3">
+    <div className="rounded-2xl border border-black/6 bg-[#f6f6f6] px-4 py-3">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -757,7 +756,7 @@ function StatusRow({ label, value }: { label: string; value: string }) {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white/88 p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
         {value}
