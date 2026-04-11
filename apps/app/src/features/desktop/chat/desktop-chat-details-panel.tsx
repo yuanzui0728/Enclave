@@ -1854,11 +1854,11 @@ function DesktopGroupMemberBrowserDialog({
       <div className="relative flex h-[min(760px,78vh)] w-full max-w-[760px] flex-col overflow-hidden rounded-[18px] border border-black/8 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.18)]">
         <div className="flex items-start justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
           <div>
-            <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
-              更多群成员
+            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+              群成员
             </div>
             <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-              {groupName} · 共 {members.length} 人
+              {groupName} · {members.length} 人
             </div>
           </div>
           <button
