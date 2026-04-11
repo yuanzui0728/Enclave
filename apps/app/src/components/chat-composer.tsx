@@ -192,6 +192,16 @@ type ScreenshotAnnotationResizeDraft = {
   annotations: ScreenshotAnnotation[];
 };
 
+type ScreenshotAnnotationMoveDraft = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  boundsWidth: number;
+  boundsHeight: number;
+  annotationId: string;
+  annotations: ScreenshotAnnotation[];
+};
+
 type AttachmentDraft =
   | {
       kind: "images";
@@ -265,6 +275,8 @@ export function ChatComposer({
     useState<ScreenshotCropMoveDraft | null>(null);
   const [desktopScreenshotAnnotationResize, setDesktopScreenshotAnnotationResize] =
     useState<ScreenshotAnnotationResizeDraft | null>(null);
+  const [desktopScreenshotAnnotationMove, setDesktopScreenshotAnnotationMove] =
+    useState<ScreenshotAnnotationMoveDraft | null>(null);
   const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
     string | null
   >(null);
@@ -992,6 +1004,7 @@ export function ChatComposer({
       setDesktopScreenshotCropResize(null);
       setDesktopScreenshotCropMove(null);
       setDesktopScreenshotAnnotationResize(null);
+      setDesktopScreenshotAnnotationMove(null);
       setDesktopScreenshotNotice(null);
     } catch (captureError) {
       const name =
@@ -1251,6 +1264,7 @@ export function ChatComposer({
     setDesktopScreenshotCropResize(null);
     setDesktopScreenshotCropMove(null);
     setDesktopScreenshotAnnotationResize(null);
+    setDesktopScreenshotAnnotationMove(null);
     setDesktopScreenshotNotice(null);
   };
 
@@ -1490,6 +1504,95 @@ export function ChatComposer({
     }
 
     setDesktopScreenshotAnnotationResize((current) => {
+      if (!current || current.pointerId !== event.pointerId) {
+        return current;
+      }
+
+      if (
+        !areScreenshotAnnotationsEqual(
+          current.annotations,
+          desktopScreenshotAnnotations,
+        )
+      ) {
+        setDesktopScreenshotAnnotationHistory((history) => [
+          ...history,
+          current.annotations,
+        ]);
+        setDesktopScreenshotAnnotationFuture([]);
+      }
+
+      return null;
+    });
+  };
+
+  const handleDesktopScreenshotAnnotationMoveStart = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (
+      attachmentBusy ||
+      !desktopScreenshotSelectedAnnotationId ||
+      !desktopScreenshotAnnotations.some(
+        (annotation) =>
+          annotation.id === desktopScreenshotSelectedAnnotationId &&
+          annotation.kind === "text",
+      )
+    ) {
+      return;
+    }
+
+    const bounds = desktopScreenshotImageRef.current?.getBoundingClientRect();
+    if (!bounds || !bounds.width || !bounds.height) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setDesktopScreenshotAnnotationMove({
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      boundsWidth: bounds.width,
+      boundsHeight: bounds.height,
+      annotationId: desktopScreenshotSelectedAnnotationId,
+      annotations: desktopScreenshotAnnotations,
+    });
+  };
+
+  const handleDesktopScreenshotAnnotationMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    setDesktopScreenshotAnnotationMove((current) => {
+      if (!current || current.pointerId !== event.pointerId) {
+        return current;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      const deltaX =
+        (event.clientX - current.startX) / Math.max(1, current.boundsWidth);
+      const deltaY =
+        (event.clientY - current.startY) / Math.max(1, current.boundsHeight);
+
+      setDesktopScreenshotAnnotations(
+        current.annotations.map((annotation) =>
+          annotation.id === current.annotationId && annotation.kind === "text"
+            ? moveScreenshotTextAnnotation(annotation, deltaX, deltaY)
+            : annotation,
+        ),
+      );
+      return current;
+    });
+  };
+
+  const finishDesktopScreenshotAnnotationMove = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    setDesktopScreenshotAnnotationMove((current) => {
       if (!current || current.pointerId !== event.pointerId) {
         return current;
       }
@@ -2083,6 +2186,9 @@ export function ChatComposer({
             onRedoAnnotation={handleRedoScreenshotAnnotation}
             onSelectAnnotation={handleSelectScreenshotAnnotation}
             onSelectedTextChange={handleUpdateSelectedScreenshotText}
+            onSelectedTextMove={handleDesktopScreenshotAnnotationMove}
+            onSelectedTextMoveEnd={finishDesktopScreenshotAnnotationMove}
+            onSelectedTextMoveStart={handleDesktopScreenshotAnnotationMoveStart}
             onSelectedTextResizeEnd={finishDesktopScreenshotAnnotationResize}
             onSelectedTextResizeMove={handleDesktopScreenshotAnnotationResizeMove}
             onSelectedTextResizeStart={
@@ -2859,6 +2965,9 @@ function DesktopScreenshotEditor({
   onRedoAnnotation,
   onSelectAnnotation,
   onSelectedTextChange,
+  onSelectedTextMove,
+  onSelectedTextMoveEnd,
+  onSelectedTextMoveStart,
   onSelectedTextResizeEnd,
   onSelectedTextResizeMove,
   onSelectedTextResizeStart,
@@ -2903,6 +3012,11 @@ function DesktopScreenshotEditor({
   onRedoAnnotation: () => void;
   onSelectAnnotation: (annotationId: string) => void;
   onSelectedTextChange: (text: string) => void;
+  onSelectedTextMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onSelectedTextMoveEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onSelectedTextMoveStart: (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => void;
   onSelectedTextResizeEnd: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   onSelectedTextResizeMove: (
     event: ReactPointerEvent<HTMLButtonElement>,
@@ -3520,6 +3634,15 @@ function DesktopScreenshotEditor({
                           boxShadow: "0 0 0 1px rgba(0,0,0,0.2)",
                         }}
                       >
+                        <button
+                          type="button"
+                          onPointerDown={onSelectedTextMoveStart}
+                          onPointerMove={onSelectedTextMove}
+                          onPointerUp={onSelectedTextMoveEnd}
+                          onPointerCancel={onSelectedTextMoveEnd}
+                          className="absolute inset-2 cursor-move rounded-[8px] border border-white/14 bg-white/0 text-transparent"
+                          aria-label="移动文字标注"
+                        />
                         {(["nw", "ne", "sw", "se"] as const).map((handle) => (
                           <button
                             key={`text-resize-${handle}`}
@@ -4171,6 +4294,26 @@ function resizeScreenshotTextAnnotation(
     y1: nextRect.y,
     x2: nextRect.x + nextRect.width,
     y2: nextRect.y + nextRect.height,
+  };
+}
+
+function moveScreenshotTextAnnotation(
+  annotation: ScreenshotAnnotation,
+  deltaX: number,
+  deltaY: number,
+) {
+  const rect = getScreenshotAnnotationRect(annotation);
+  const maxX = Math.max(0, 1 - rect.width);
+  const maxY = Math.max(0, 1 - rect.height);
+  const nextX = clamp(rect.x + deltaX, 0, maxX);
+  const nextY = clamp(rect.y + deltaY, 0, maxY);
+
+  return {
+    ...annotation,
+    x1: nextX,
+    y1: nextY,
+    x2: nextX + rect.width,
+    y2: nextY + rect.height,
   };
 }
 
