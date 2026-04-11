@@ -3579,6 +3579,7 @@ function GroupRelaySummaryMessage({
 
   const completionTimeLabel = resolveGroupRelayCompletionTime(summary);
   const publishRangeLabel = relayPublishRangeLabel(summary);
+  const publishStageBadge = resolveGroupRelayPublishStageBadge(summary);
   const card = (
     <div
       className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
@@ -3624,6 +3625,18 @@ function GroupRelaySummaryMessage({
               )}
             >
               {summary.statusLabel}
+            </div>
+          ) : null}
+          {publishStageBadge ? (
+            <div
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-medium",
+                publishStageBadge.tone === "success"
+                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
+                  : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+              )}
+            >
+              {publishStageBadge.label}
             </div>
           ) : null}
         </div>
@@ -3733,6 +3746,41 @@ function relayPublishRangeLabel(
   }
 
   return `${formatMessageTimestamp(summary.timestampLabel)} - ${formatMessageTimestamp(summary.publishedAtLabel)}`;
+}
+
+function resolveGroupRelayPublishStageBadge(
+  summary: NonNullable<ReturnType<typeof parseGroupRelaySummaryMessage>>,
+) {
+  const publishCount = parseGroupRelayPublishCount(summary.publishCountLabel);
+  if (publishCount === null) {
+    return null;
+  }
+
+  if (publishCount <= 1) {
+    return {
+      label: "首次回填",
+      tone: "info" as const,
+    };
+  }
+
+  return {
+    label: "多次回填",
+    tone: "success" as const,
+  };
+}
+
+function parseGroupRelayPublishCount(label: string | null | undefined) {
+  if (!label) {
+    return null;
+  }
+
+  const matched = label.match(/\d+/);
+  if (!matched) {
+    return null;
+  }
+
+  const count = Number(matched[0]);
+  return Number.isFinite(count) ? count : null;
 }
 
 function collapseGroupCallMessages(messages: ChatRenderableMessage[]) {
