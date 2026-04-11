@@ -247,6 +247,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       !groupQuery.data ||
       !totalCount ||
       syncStatusMutation.isPending ||
+      syncStatusMutation.isError ||
       hasSyncedStatus
     ) {
       return;
@@ -265,6 +266,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     hasSyncedStatus,
     resolvedGroupId,
     syncCurrentStatus,
+    syncStatusMutation.isError,
     syncStatusMutation.isPending,
     totalCount,
   ]);
@@ -318,11 +320,41 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
   const toggleJoinedState = (memberId: string) => {
     setCallTipsDismissed(true);
+    if (syncStatusMutation.isError) {
+      syncStatusMutation.reset();
+    }
     setJoinedMemberIds((current) =>
       current.includes(memberId)
         ? current.filter((item) => item !== memberId)
         : [...current, memberId],
     );
+  };
+
+  const handleRetrySyncStatus = () => {
+    if (leavingScreen) {
+      return;
+    }
+
+    setCallTipsDismissed(true);
+    syncStatusMutation.reset();
+    void syncCurrentStatus();
+  };
+
+  const handleContinueAfterSyncError = () => {
+    syncStatusMutation.reset();
+  };
+
+  const handleRetryEndCall = () => {
+    if (leavingScreen) {
+      return;
+    }
+
+    endStatusMutation.reset();
+    void handleEndCall();
+  };
+
+  const handleContinueAfterEndError = () => {
+    endStatusMutation.reset();
   };
 
   if (groupQuery.isLoading || membersQuery.isLoading) {
@@ -626,7 +658,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               当前群视频页先承载移动工作台状态，本地摄像头开关只影响当前页面提示，不会上传真实画面。
             </InlineNotice>
           ) : null}
-          {!hasSyncedStatus ? (
+          {!hasSyncedStatus && !syncStatusMutation.isError ? (
             <InlineNotice tone="warning">
               {syncStatusMutation.isPending
                 ? "正在把最新在线人数同步到群聊。"
@@ -636,8 +668,62 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           {syncStatusMutation.error instanceof Error ? (
             <ErrorBlock message={syncStatusMutation.error.message} />
           ) : null}
+          {syncStatusMutation.error instanceof Error ? (
+            <InlineNotice tone="info">
+              这次群状态没有回写成功。你可以继续调整成员席位，确认后再手动重试同步。
+            </InlineNotice>
+          ) : null}
+          {syncStatusMutation.error instanceof Error ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleRetrySyncStatus}
+                disabled={leavingScreen}
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+              >
+                <Users size={16} />
+                重试同步状态
+              </button>
+              <button
+                type="button"
+                onClick={handleContinueAfterSyncError}
+                disabled={leavingScreen}
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+              >
+                <Mic size={16} />
+                继续调整成员
+              </button>
+            </div>
+          ) : null}
           {endStatusMutation.error instanceof Error ? (
             <ErrorBlock message={endStatusMutation.error.message} />
+          ) : null}
+          {endStatusMutation.error instanceof Error ? (
+            <InlineNotice tone="info">
+              结束群通话失败了，但当前工作台还在。你可以重试结束，或者先继续保留这一轮状态。
+            </InlineNotice>
+          ) : null}
+          {endStatusMutation.error instanceof Error ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleRetryEndCall}
+                disabled={leavingScreen}
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+              >
+                <PhoneOff size={16} />
+                重试结束通话
+              </button>
+              <button
+                type="button"
+                onClick={handleContinueAfterEndError}
+                disabled={leavingScreen}
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+              >
+                <Users size={16} />
+                继续保留当前状态
+              </button>
+            </div>
           ) : null}
           {leavingScreen ? (
             <InlineNotice tone="info">
@@ -738,6 +824,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             variant="secondary"
             onClick={() => {
               setCallTipsDismissed(true);
+              syncStatusMutation.reset();
               void syncCurrentStatus();
             }}
             disabled={syncStatusMutation.isPending || !totalCount || leavingScreen}
