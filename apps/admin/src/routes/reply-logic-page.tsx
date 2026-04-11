@@ -36,6 +36,7 @@ import {
   AdminActionFeedback,
   AdminCallout,
   AdminCodeBlock,
+  AdminDraftStatusPill,
   AdminEmptyState,
   AdminFormSection as ConfigSection,
   AdminInfoRow,
@@ -45,6 +46,7 @@ import {
   AdminPromptSectionList,
   AdminRecordCard,
   AdminSelectableCard,
+  AdminSectionHeader,
   AdminSelectField as SelectFieldBlock,
   AdminSectionNav,
   AdminSubpanel,
@@ -600,12 +602,16 @@ export function ReplyLogicPage() {
 
               <div id="reply-logic-config">
                 <Card className="bg-[color:var(--surface-console)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <SectionHeading>配置抽屉</SectionHeading>
-                    <StatusPill tone={isCharacterDraftDirty ? "warning" : "healthy"}>
-                      {characterDraft ? (isCharacterDraftDirty ? "草稿未保存" : "已同步") : "等待目标"}
-                    </StatusPill>
-                  </div>
+                  <AdminSectionHeader
+                    title="配置抽屉"
+                    actions={
+                      <AdminDraftStatusPill
+                        ready={Boolean(characterDraft)}
+                        dirty={isCharacterDraftDirty}
+                        loadingLabel="等待目标"
+                      />
+                    }
+                  />
                   <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                     <MetricCard label="当前范围" value={scope === "character" ? "角色" : "会话"} />
                     <MetricCard
@@ -634,14 +640,16 @@ export function ReplyLogicPage() {
               </div>
 
               <Card className="bg-[color:var(--surface-console)]">
-                <div className="flex items-center justify-between gap-3">
-                  <SectionHeading>角色配置</SectionHeading>
-                  {editableCharacterSource ? (
-                    <StatusPill tone={editableCharacterSource.isOnline ? "healthy" : "muted"}>
-                      {editableCharacterSource.isOnline ? "在线" : "离线"}
-                    </StatusPill>
-                  ) : null}
-                </div>
+                <AdminSectionHeader
+                  title="角色配置"
+                  actions={
+                    editableCharacterSource ? (
+                      <StatusPill tone={editableCharacterSource.isOnline ? "healthy" : "muted"}>
+                        {editableCharacterSource.isOnline ? "在线" : "离线"}
+                      </StatusPill>
+                    ) : null
+                  }
+                />
 
                 {!characterDraft ? (
                   scope === "character" && characterSnapshotQuery.isLoading ? (
@@ -1471,12 +1479,14 @@ function ReplyPreviewPanel({
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
-      <div className="flex items-center justify-between gap-3">
-        <SectionHeading>候选消息预演</SectionHeading>
-        <StatusPill tone={preview ? "healthy" : "muted"}>
-          {preview ? "已生成预演" : "等待预演"}
-        </StatusPill>
-      </div>
+      <AdminSectionHeader
+        title="候选消息预演"
+        actions={
+          <StatusPill tone={preview ? "healthy" : "muted"}>
+            {preview ? "已生成预演" : "等待预演"}
+          </StatusPill>
+        }
+      />
 
       <AdminCallout
         className="mt-4"
@@ -1865,12 +1875,10 @@ function RuntimeRulesEditorCard({
 }) {
   return (
     <Card className="bg-[color:var(--surface-console)]">
-      <div className="flex items-center justify-between gap-3">
-        <SectionHeading>运行规则配置</SectionHeading>
-        <StatusPill tone={isDirty ? "warning" : "healthy"}>
-          {draft ? (isDirty ? "草稿未保存" : "已同步") : "等待加载"}
-        </StatusPill>
-      </div>
+      <AdminSectionHeader
+        title="运行规则配置"
+        actions={<AdminDraftStatusPill ready={Boolean(draft)} dirty={isDirty} />}
+      />
 
       {!draft ? (
         <LoadingBlock className="mt-4" label="正在加载运行规则..." />

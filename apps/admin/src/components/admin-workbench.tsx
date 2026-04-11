@@ -107,6 +107,23 @@ export function AdminSectionNav({
   );
 }
 
+export function AdminSectionHeader({
+  title,
+  actions,
+  className,
+}: {
+  title: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-center justify-between gap-3", className)}>
+      <SectionHeading>{title}</SectionHeading>
+      {actions}
+    </div>
+  );
+}
+
 export function AdminInfoRows({
   title,
   rows,
@@ -487,6 +504,26 @@ export function AdminActionFeedback({
       <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
       <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
     </div>
+  );
+}
+
+export function AdminDraftStatusPill({
+  ready,
+  dirty,
+  loadingLabel = "等待加载",
+  dirtyLabel = "草稿未保存",
+  syncedLabel = "已同步",
+}: {
+  ready: boolean;
+  dirty: boolean;
+  loadingLabel?: string;
+  dirtyLabel?: string;
+  syncedLabel?: string;
+}) {
+  return (
+    <StatusPill tone={!ready ? "muted" : dirty ? "warning" : "healthy"}>
+      {!ready ? loadingLabel : dirty ? dirtyLabel : syncedLabel}
+    </StatusPill>
   );
 }
 
