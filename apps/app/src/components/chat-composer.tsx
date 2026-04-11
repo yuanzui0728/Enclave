@@ -3094,6 +3094,17 @@ function DesktopScreenshotEditor({
             annotation.kind === "text",
         ) ?? null
       : null;
+  const isInteractiveTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+
+    return Boolean(
+      target.closest(
+        'input, textarea, select, button, a, [contenteditable="true"], [role="button"]',
+      ),
+    );
+  };
 
   useEffect(() => {
     if (!selectedTextAnnotationActive) {
@@ -3112,18 +3123,6 @@ function DesktopScreenshotEditor({
   }, [draft.previewUrl]);
 
   useEffect(() => {
-    const isInteractiveTarget = (target: EventTarget | null) => {
-      if (!(target instanceof HTMLElement)) {
-        return false;
-      }
-
-      return Boolean(
-        target.closest(
-          'input, textarea, select, button, a, [contenteditable="true"], [role="button"]',
-        ),
-      );
-    };
-
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (
         event.code !== "Space" ||
@@ -3163,6 +3162,99 @@ function DesktopScreenshotEditor({
       window.removeEventListener("blur", handleWindowBlur);
     };
   }, []);
+
+  const handleEditorShortcut = useEffectEvent(
+    (event: globalThis.KeyboardEvent) => {
+      if (pending) {
+        return;
+      }
+
+      const interactive = isInteractiveTarget(event.target);
+      const key = event.key.toLowerCase();
+      const commandKey = event.metaKey || event.ctrlKey;
+
+      if (
+        !interactive &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        (event.key === "Delete" || event.key === "Backspace") &&
+        selectedAnnotationId
+      ) {
+        event.preventDefault();
+        onDeleteSelectedAnnotation();
+        return;
+      }
+
+      if (
+        !interactive &&
+        commandKey &&
+        !event.altKey &&
+        key === "z" &&
+        event.shiftKey
+      ) {
+        event.preventDefault();
+        onRedoAnnotation();
+        return;
+      }
+
+      if (!interactive && commandKey && !event.altKey && key === "y") {
+        event.preventDefault();
+        onRedoAnnotation();
+        return;
+      }
+
+      if (
+        !interactive &&
+        commandKey &&
+        !event.altKey &&
+        key === "z" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+        onUndoAnnotation();
+        return;
+      }
+
+      if (interactive || event.altKey || event.metaKey || event.ctrlKey) {
+        return;
+      }
+
+      if (key === "c") {
+        event.preventDefault();
+        onToolChange("crop");
+        return;
+      }
+
+      if (key === "r") {
+        event.preventDefault();
+        onToolChange("rect");
+        return;
+      }
+
+      if (key === "a") {
+        event.preventDefault();
+        onToolChange("arrow");
+        return;
+      }
+
+      if (key === "t") {
+        event.preventDefault();
+        onToolChange("text");
+      }
+    },
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      handleEditorShortcut(event);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleEditorShortcut]);
 
   useEffect(() => {
     const image = imageRef.current;
@@ -3483,7 +3575,7 @@ function DesktopScreenshotEditor({
                   清空标注
                 </Button>
                 <span className="text-[11px] text-white/42">
-                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布
+                  Ctrl/Cmd + 滚轮缩放，双击切换，空格拖动画布，C/R/A/T 切工具，Delete 删除
                 </span>
               </div>
             </div>
