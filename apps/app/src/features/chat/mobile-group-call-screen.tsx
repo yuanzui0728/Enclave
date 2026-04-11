@@ -351,6 +351,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
     void navigate({
       to: "/group/$groupId",
       params: { groupId: resolvedGroupId },
+      replace: true,
     });
   };
 
@@ -364,6 +365,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       void navigate({
         to: "/group/$groupId",
         params: { groupId: resolvedGroupId },
+        replace: true,
       });
       return;
     }
@@ -383,6 +385,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           buildChatCallReturnSearch({
             kind: mode,
           }) || undefined,
+        replace: true,
       });
     } catch {
       setLeavingScreen(false);

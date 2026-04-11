@@ -488,6 +488,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           buildChatCallReturnSearch({
             kind: mode,
           }) || undefined,
+        replace: true,
       });
     }
   };
@@ -505,6 +506,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       void navigate({
         to: "/chat/$conversationId/voice-call",
         params: { conversationId: resolvedConversationId },
+        replace: true,
       });
     }
   };

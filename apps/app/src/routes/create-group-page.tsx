@@ -85,7 +85,11 @@ export function CreateGroupPage() {
         baseUrl,
       ),
     onSuccess: (group) => {
-      void navigate({ to: "/group/$groupId", params: { groupId: group.id } });
+      void navigate({
+        to: "/group/$groupId",
+        params: { groupId: group.id },
+        replace: true,
+      });
     },
   });
 

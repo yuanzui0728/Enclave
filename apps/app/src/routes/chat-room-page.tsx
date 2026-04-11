@@ -158,13 +158,10 @@ export function ChatRoomPage() {
               : undefined)
           }
           onBack={() => {
-            if (routeContext) {
-              void navigate({ to: routeContext.returnPath });
-              return;
-            }
-
             navigateBackOrFallback(() => {
-              void navigate({ to: "/tabs/chat" });
+              void navigate({
+                to: routeContext?.returnPath ?? "/tabs/chat",
+              });
             });
           }}
         />
