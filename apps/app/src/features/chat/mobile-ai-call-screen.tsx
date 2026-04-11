@@ -575,6 +575,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               }
               statusLabel={statusLabel}
               statusHint={statusHint}
+              onRetryRender={() => {
+                digitalHumanCall.retrySession();
+              }}
             />
 
             <div className="absolute right-4 top-4 w-[124px] overflow-hidden rounded-[24px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">

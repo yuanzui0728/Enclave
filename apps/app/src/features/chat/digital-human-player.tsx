@@ -11,6 +11,7 @@ type DigitalHumanPlayerProps = {
   thinking: boolean;
   statusLabel: string;
   statusHint: string;
+  onRetryRender?: () => void;
 };
 
 export function DigitalHumanPlayer({
@@ -22,6 +23,7 @@ export function DigitalHumanPlayer({
   thinking,
   statusLabel,
   statusHint,
+  onRetryRender,
 }: DigitalHumanPlayerProps) {
   const providerLabel =
     session?.presentationMode === "provider_stream"
@@ -45,6 +47,16 @@ export function DigitalHumanPlayer({
         : "info";
   const renderStatusLabel = resolveRenderStatusLabel(renderStatus);
   const renderStatusHint = resolveRenderStatusHint(renderStatus);
+  const showRetryRenderAction = renderStatus === "failed" && onRetryRender;
+  const retryRenderAction = showRetryRenderAction ? (
+    <button
+      type="button"
+      onClick={onRetryRender}
+      className="inline-flex h-10 items-center justify-center rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition hover:bg-white/12"
+    >
+      重试连接数字人
+    </button>
+  ) : null;
 
   if (!streamUrl) {
     if (playerUrl) {
@@ -82,6 +94,9 @@ export function DigitalHumanPlayer({
                   <span>渲染状态: {renderStatusLabel}</span>
                 ) : null}
               </div>
+              {retryRenderAction ? (
+                <div className="pointer-events-auto mt-3">{retryRenderAction}</div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -102,6 +117,7 @@ export function DigitalHumanPlayer({
             ? `${providerLabel} · ${renderStatusLabel}`
             : providerLabel
         }
+        footerAction={retryRenderAction}
       />
     );
   }
@@ -160,6 +176,9 @@ export function DigitalHumanPlayer({
                 <span>渲染状态: {renderStatusLabel}</span>
               ) : null}
             </div>
+            {retryRenderAction ? (
+              <div className="mt-3">{retryRenderAction}</div>
+            ) : null}
           </div>
         </div>
       </div>
