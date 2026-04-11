@@ -6,6 +6,7 @@ import {
   getEvalDataset,
   getEvalOverview,
   getEvalRun,
+  getSystemStatus,
   listEvalComparisonsWithQuery,
   listEvalDatasets,
   listEvalExperimentPresets,
@@ -32,6 +33,7 @@ import {
   TagBadge,
 } from "@yinjie/ui";
 import {
+  AdminCallout,
   AdminActionFeedback,
   AdminDetailPanel,
   AdminEmptyState,
@@ -47,6 +49,7 @@ import {
   AdminSectionNav,
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
+import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 const EVALS_STATE_KEY = "yinjie-admin-evals-state";
 const EVALS_PRESETS_KEY = "yinjie-admin-evals-presets";
@@ -105,6 +108,10 @@ type EvalsPreset = {
 export function EvalsPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
+  const systemStatusQuery = useQuery({
+    queryKey: ["admin-evals-system-status", baseUrl],
+    queryFn: () => getSystemStatus(baseUrl),
+  });
   const persistedState = readInitialEvalsState(baseUrl);
   const [compactView, setCompactView] = useState(persistedState.compactView);
   const [shareViewName, setShareViewName] = useState(persistedState.shareViewName);
@@ -144,6 +151,9 @@ export function EvalsPage() {
   const [presetName, setPresetName] = useState("");
   const [savedPresets, setSavedPresets] = useState<EvalsPreset[]>([]);
   const [successNotice, setSuccessNotice] = useState("");
+  const digitalHumanSummary = buildDigitalHumanAdminSummary(
+    systemStatusQuery.data?.digitalHumanGateway,
+  );
 
   function persistSavedPresets(nextPresets: EvalsPreset[]) {
     setSavedPresets(nextPresets);
@@ -177,7 +187,10 @@ export function EvalsPage() {
     queryKey: ["admin-eval-strategies", baseUrl],
     queryFn: () => listEvalMemoryStrategies(baseUrl),
   });
-  const memoryStrategies = strategiesQuery.data ?? [];
+  const memoryStrategies = useMemo(
+    () => strategiesQuery.data ?? EMPTY_LIST,
+    [strategiesQuery.data],
+  );
   const memoryStrategyLabelMap = useMemo(
     () => new Map(memoryStrategies.map((strategy) => [strategy.id, strategy.label])),
     [memoryStrategies],
@@ -186,7 +199,10 @@ export function EvalsPage() {
     queryKey: ["admin-eval-prompt-variants", baseUrl],
     queryFn: () => listEvalPromptVariants(baseUrl),
   });
-  const promptVariants = promptVariantsQuery.data ?? [];
+  const promptVariants = useMemo(
+    () => promptVariantsQuery.data ?? EMPTY_LIST,
+    [promptVariantsQuery.data],
+  );
   const promptVariantLabelMap = useMemo(
     () => new Map(promptVariants.map((variant) => [variant.id, variant.label])),
     [promptVariants],
@@ -1063,6 +1079,7 @@ export function EvalsPage() {
     { label: "当前链路", value: selectedTraceId ?? "未选择" },
     { label: "实验报告", value: selectedReport?.presetTitle ?? "未选择" },
     { label: "用例聚焦", value: focusedCaseId ?? "未聚焦" },
+    { label: "数字人状态", value: digitalHumanSummary.statusLabel },
   ];
   const quickStatusRows = [
     { label: "最近运行", value: overviewQuery.data?.latestRunAt ?? "暂无" },
@@ -1095,6 +1112,7 @@ export function EvalsPage() {
             { label: "数据集", value: overviewQuery.data?.datasetCount ?? 0 },
             { label: "运行次数", value: overviewQuery.data?.runCount ?? 0 },
             { label: "链路数", value: overviewQuery.data?.traceCount ?? 0 },
+            { label: "数字人", value: digitalHumanSummary.statusLabel },
             { label: "失败运行", value: overviewQuery.data?.failedRunCount ?? 0 },
           ]}
         />
@@ -1106,6 +1124,15 @@ export function EvalsPage() {
           ) : null}
         </div>
       </div>
+      <AdminCallout
+        tone={digitalHumanSummary.ready ? "success" : "warning"}
+        title={
+          digitalHumanSummary.ready
+            ? "数字人链路已进入可联调状态"
+            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
+        }
+        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
