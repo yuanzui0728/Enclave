@@ -67,8 +67,8 @@ export function DesktopMomentRow({
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[rgba(249,115,22,0.18)] bg-[rgba(255,251,245,0.98)] shadow-[0_12px_28px_rgba(255,138,61,0.08)]"
-          : "border-[rgba(15,23,42,0.06)] bg-[rgba(255,255,255,0.96)] hover:border-[rgba(249,115,22,0.12)] hover:bg-white hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+          ? "border-[#cfe8d6] bg-[#f7fbf8] shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
+          : "border-black/6 bg-white hover:border-black/10 hover:bg-[#fcfcfc] hover:shadow-[0_10px_24px_rgba(15,23,42,0.05)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -103,10 +103,10 @@ export function DesktopMomentRow({
               </button>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium tracking-[0.14em]",
+                  "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium tracking-[0.12em]",
                   moment.authorType === "character"
-                    ? "bg-[rgba(56,189,248,0.12)] text-sky-700"
-                    : "bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]",
+                    ? "border-sky-100 bg-sky-50 text-sky-700"
+                    : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
                 )}
               >
                 {moment.authorType === "character" ? (
@@ -147,10 +147,10 @@ export function DesktopMomentRow({
                   onLike();
                 }}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] transition-[background-color,color] disabled:opacity-55",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-[background-color,border-color,color] disabled:opacity-55",
                   likedByOwner
-                    ? "bg-[rgba(249,115,22,0.10)] text-[color:var(--brand-primary)]"
-                    : "text-[color:var(--text-secondary)] hover:bg-[rgba(248,250,252,0.98)] hover:text-[color:var(--text-primary)]",
+                    ? "border-[#b7dfc0] bg-[#eaf8ef] text-[#15803d]"
+                    : "border-transparent text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f6f6f6] hover:text-[color:var(--text-primary)]",
                 )}
               >
                 <Heart
@@ -165,7 +165,7 @@ export function DesktopMomentRow({
                   event.stopPropagation();
                   setShowComposer((current) => !current);
                 }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color] hover:bg-[rgba(248,250,252,0.98)] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-transparent px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,border-color,color] hover:border-black/6 hover:bg-[#f6f6f6] hover:text-[color:var(--text-primary)]"
               >
                 <MessageCircle size={14} />
                 评论
@@ -177,10 +177,10 @@ export function DesktopMomentRow({
                   onToggleFavorite();
                 }}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] transition-[background-color,color]",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-[background-color,border-color,color]",
                   favorite
-                    ? "bg-[rgba(250,204,21,0.16)] text-amber-700"
-                    : "text-[color:var(--text-secondary)] hover:bg-[rgba(248,250,252,0.98)] hover:text-[color:var(--text-primary)]",
+                    ? "border-[#ead9a6] bg-[#fbf7e8] text-[#8a6b11]"
+                    : "border-transparent text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f6f6f6] hover:text-[color:var(--text-primary)]",
                 )}
               >
                 <Star size={14} className={favorite ? "fill-current" : ""} />
@@ -191,7 +191,7 @@ export function DesktopMomentRow({
 
           {moment.likes.length > 0 || commentsPreview.length > 0 ? (
             <div
-              className="mt-3 rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-3"
+              className="mt-3 rounded-[14px] border border-black/6 bg-[#fafafa] px-4 py-3"
               onClick={(event) => {
                 event.stopPropagation();
                 onOpenDetail();
@@ -213,7 +213,7 @@ export function DesktopMomentRow({
                   className={cn(
                     "space-y-2 text-[13px] leading-6 text-[color:var(--text-secondary)]",
                     moment.likes.length > 0
-                      ? "mt-3 border-t border-[rgba(15,23,42,0.06)] pt-3"
+                      ? "mt-3 border-t border-black/6 pt-3"
                       : "",
                   )}
                 >
@@ -235,7 +235,7 @@ export function DesktopMomentRow({
                     event.stopPropagation();
                     onOpenDetail();
                   }}
-                  className="mt-3 text-[12px] font-medium text-[color:var(--brand-primary)]"
+                  className="mt-3 text-[12px] font-medium text-[#15803d]"
                 >
                   查看全部 {moment.commentCount} 条评论
                 </button>
@@ -252,7 +252,7 @@ export function DesktopMomentRow({
                 value={commentDraft}
                 onChange={(event) => onCommentChange(event.target.value)}
                 placeholder="写评论..."
-                className="min-w-0 flex-1 rounded-full border-[rgba(15,23,42,0.08)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+                className="min-w-0 flex-1 rounded-xl border-black/8 bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:shadow-none"
               />
               <Button
                 variant="secondary"
