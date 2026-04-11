@@ -916,8 +916,9 @@ export function DesktopCreateGroupDialog({
                                       </div>
                                       <div
                                         className={cn(
-                                          "min-w-0 flex-1 border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
+                                          "relative min-w-0 flex-1 border px-3 shadow-[0_1px_0_rgba(15,23,42,0.02)] transition",
                                           continuedFromPrevious ? "py-2" : "py-2.5",
+                                          continuedFromPrevious ? "pr-10" : "",
                                           messageGroupPosition === "single"
                                             ? "rounded-[10px]"
                                             : "",
@@ -931,8 +932,11 @@ export function DesktopCreateGroupDialog({
                                             ? "rounded-[10px] rounded-tl-[6px]"
                                             : "",
                                           checked
-                                            ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
-                                            : "border-black/6 bg-white group-hover:border-black/10",
+                                            ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.10)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
+                                            : "border-black/6 bg-white group-hover:border-black/10 group-hover:bg-[#fcfcfc]",
+                                          focused && !checked
+                                            ? "shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
+                                            : "",
                                         )}
                                       >
                                         {!continuedFromPrevious ? (
@@ -957,7 +961,7 @@ export function DesktopCreateGroupDialog({
                                         ) : (
                                           <div
                                             className={cn(
-                                              "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                                              "absolute right-3 top-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                                               checked
                                                 ? "border-[#07c160] bg-[#07c160] text-white"
                                                 : "border-black/10 bg-[#f5f5f5] text-transparent",
