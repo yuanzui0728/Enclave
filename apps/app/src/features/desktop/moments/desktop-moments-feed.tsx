@@ -45,7 +45,7 @@ export function DesktopMomentsFeed({
       {isLoading ? (
         <LoadingBlock
           label="正在读取朋友圈..."
-          className="rounded-[20px] border-black/6 bg-white py-10 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
+          className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       ) : null}
 

@@ -157,9 +157,9 @@ export function DesktopChannelsWorkspace({
   }, [posts]);
 
   return (
-    <div className="flex h-full min-h-0 bg-[#f5f5f5]">
-      <aside className="flex w-[292px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-5 py-5">
+    <div className="flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
+      <aside className="flex w-[292px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-5 py-5 backdrop-blur-xl">
           <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
             Channels
           </div>
@@ -173,7 +173,7 @@ export function DesktopChannelsWorkspace({
         </div>
 
         <div className="space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-xs text-[color:var(--text-muted)]">
               当前节奏
             </div>
@@ -204,7 +204,7 @@ export function DesktopChannelsWorkspace({
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 直播伴侣状态
@@ -227,7 +227,7 @@ export function DesktopChannelsWorkspace({
                   : "从直播伴侣挑一条内容后，这里会回带当前准备状态。"}
             </div>
             {liveCompanionReferencePost ? (
-              <div className="mt-3 rounded-[16px] border border-black/6 bg-[#f6f6f6] px-3 py-3">
+              <div className="mt-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
                 <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                   当前参考内容
                 </div>
@@ -266,7 +266,7 @@ export function DesktopChannelsWorkspace({
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               推荐作者
             </div>
@@ -286,8 +286,8 @@ export function DesktopChannelsWorkspace({
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
                     selectedPost?.authorId === author.authorId
-                      ? "border-[#b7e4c7] bg-[#edf8f0]"
-                      : "border-black/6 bg-[#f8f8f8] hover:bg-white",
+                      ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
                   <AvatarChip name={author.name} src={author.avatar} />
@@ -305,7 +305,7 @@ export function DesktopChannelsWorkspace({
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 内容队列
@@ -323,8 +323,8 @@ export function DesktopChannelsWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     selectedPost?.id === post.id
-                      ? "border-[#b7e4c7] bg-[#edf8f0]"
-                      : "border-black/6 bg-[#f8f8f8] hover:bg-white",
+                      ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
                   <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
@@ -351,7 +351,7 @@ export function DesktopChannelsWorkspace({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-5">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-5 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
@@ -365,7 +365,12 @@ export function DesktopChannelsWorkspace({
               </div>
             </div>
             {successNotice ? (
-              <InlineNotice tone="success">{successNotice}</InlineNotice>
+              <InlineNotice
+                tone="success"
+                className="border-[color:var(--border-faint)] bg-white"
+              >
+                {successNotice}
+              </InlineNotice>
             ) : null}
           </div>
           {errorMessage ? (
@@ -387,7 +392,7 @@ export function DesktopChannelsWorkspace({
 
           {!isLoading && selectedPost ? (
             <div className="mx-auto max-w-[860px] space-y-5">
-              <article className="overflow-hidden rounded-[22px] border border-black/6 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+              <article className="overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
                 <div className="relative bg-[#0f1115]">
                   <video
                     key={selectedPost.id}
@@ -457,7 +462,7 @@ export function DesktopChannelsWorkspace({
                     </div>
                   </div>
 
-                  <div className="rounded-[18px] border border-black/6 bg-[#f6f6f6] p-3">
+                  <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
                     <div className="flex items-center gap-2">
                       <TextField
                         value={commentDrafts[selectedPost.id] ?? ""}
@@ -489,8 +494,8 @@ export function DesktopChannelsWorkspace({
         </div>
       </section>
 
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f7f7f7]">
-        <div className="border-b border-black/6 px-5 py-4">
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
           <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
             互动侧栏
           </div>
@@ -500,7 +505,7 @@ export function DesktopChannelsWorkspace({
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 当前内容
@@ -522,7 +527,7 @@ export function DesktopChannelsWorkspace({
             ) : null}
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               最近评论
             </div>
@@ -531,7 +536,7 @@ export function DesktopChannelsWorkspace({
                 selectedPost.commentsPreview.map((comment) => (
                   <div
                     key={comment.id}
-                    className="rounded-[14px] border border-black/6 bg-[#f7f7f7] px-3 py-3"
+                    className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
                   >
                     <div className="text-xs font-medium text-[color:var(--text-primary)]">
                       {comment.authorName}
@@ -549,7 +554,7 @@ export function DesktopChannelsWorkspace({
             </div>
           </div>
 
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
               下一条推荐
             </div>
@@ -559,7 +564,7 @@ export function DesktopChannelsWorkspace({
                   key={post.id}
                   type="button"
                   onClick={() => setSelectedPostId(post.id)}
-                  className="w-full rounded-[16px] border border-black/6 bg-[#f7f7f7] px-3 py-3 text-left transition hover:bg-white"
+                  className="w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
                 >
                   <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
                     {post.text}

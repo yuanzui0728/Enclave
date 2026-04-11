@@ -54,7 +54,7 @@ export function DesktopFeedToolbar({
   onSortChange,
 }: DesktopFeedToolbarProps) {
   return (
-    <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+    <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-4 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
@@ -94,8 +94,8 @@ export function DesktopFeedToolbar({
               className={cn(
                 "rounded-xl border px-4 py-2 text-[12px] font-medium transition-[border-color,background-color,color]",
                 activeFilter === option.key
-                  ? "border-[rgba(93,103,201,0.18)] bg-[rgba(93,103,201,0.10)] text-[#4951a3]"
-                  : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:border-black/12 hover:text-[color:var(--text-primary)]",
+                  ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:text-[color:var(--text-primary)]",
               )}
             >
               {option.label}
@@ -106,7 +106,7 @@ export function DesktopFeedToolbar({
             <button
               type="button"
               onClick={onClearAuthor}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#b7e4c7] bg-[#edf8f0] px-4 py-2 text-[12px] font-medium text-[#15803d]"
+              className="inline-flex items-center gap-2 rounded-xl border border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] px-4 py-2 text-[12px] font-medium text-[#15803d]"
             >
               只看 {selectedAuthorName} 的公开动态
               <X size={13} />
@@ -126,8 +126,8 @@ export function DesktopFeedToolbar({
               className={cn(
                 "rounded-xl border px-3.5 py-1.5 text-[12px] font-medium transition-[border-color,background-color,color]",
                 activeSort === option.key
-                  ? "border-[rgba(16,185,129,0.18)] bg-[rgba(16,185,129,0.10)] text-emerald-700"
-                  : "border-black/8 bg-white text-[color:var(--text-secondary)] hover:border-black/12 hover:text-[color:var(--text-primary)]",
+                  ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:text-[color:var(--text-primary)]",
               )}
             >
               {option.label}
@@ -145,7 +145,7 @@ export function DesktopFeedToolbar({
               value={searchText}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="搜索作者、正文或评论"
-              className="rounded-xl border-[rgba(15,23,42,0.08)] bg-white py-2.5 pl-11 text-[13px] shadow-none hover:bg-white focus:shadow-none"
+              className="rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2.5 pl-11 text-[13px] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
             />
           </label>
           <div className="text-[12px] text-[color:var(--text-muted)]">
@@ -155,7 +155,12 @@ export function DesktopFeedToolbar({
 
         {successNotice ? (
           <div className="mt-4">
-            <InlineNotice tone="success">{successNotice}</InlineNotice>
+            <InlineNotice
+              tone="success"
+              className="border-[color:var(--border-faint)] bg-white"
+            >
+              {successNotice}
+            </InlineNotice>
           </div>
         ) : null}
 

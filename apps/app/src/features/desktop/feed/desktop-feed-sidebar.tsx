@@ -103,7 +103,7 @@ export function DesktopFeedSidebar({
 
   if (mode === "detail" && selectedPostId) {
     return (
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
         <DesktopFeedDetailPanel
           commentDraft={commentDrafts[selectedPostId] ?? ""}
           commentLoading={commentPendingPostId === selectedPostId}
@@ -132,9 +132,9 @@ export function DesktopFeedSidebar({
 
   if (mode === "author" && activeAuthorSummary) {
     return (
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+          <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
             <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
               作者公开流
             </div>
@@ -150,7 +150,7 @@ export function DesktopFeedSidebar({
             ref={authorScrollViewportRef}
             className="min-h-0 flex-1 overflow-auto px-5 py-5"
           >
-            <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
               <div className="flex items-center gap-4">
                 <AvatarChip
                   name={activeAuthorSummary.authorName}
@@ -166,8 +166,8 @@ export function DesktopFeedSidebar({
                       className={cn(
                         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                         activeAuthorSummary.authorType === "character"
-                          ? "border-sky-100 bg-sky-50 text-sky-700"
-                          : "border-black/6 bg-[#f6f6f6] text-[color:var(--text-secondary)]",
+                          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[#15803d]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {activeAuthorSummary.authorType === "character" ? (
@@ -201,7 +201,7 @@ export function DesktopFeedSidebar({
               </div>
             </div>
 
-            <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+            <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
               <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                 最近公开动态
               </div>
@@ -211,7 +211,7 @@ export function DesktopFeedSidebar({
                     key={post.id}
                     type="button"
                     onClick={() => onSelectPost(post.id)}
-                    className="w-full rounded-[14px] border border-black/6 bg-[#f8f8f8] px-3.5 py-3 text-left transition-[border-color,background-color] hover:border-black/10 hover:bg-white"
+                    className="w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
                   >
                     <div className="line-clamp-2 text-[13px] leading-6 text-[color:var(--text-primary)]">
                       {post.text}
@@ -230,9 +230,9 @@ export function DesktopFeedSidebar({
   }
 
   return (
-    <aside className="flex w-[320px] shrink-0 flex-col border-l border-black/6 bg-[#f6f6f6]">
+    <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
       <div className="flex h-full min-h-0 flex-col">
-        <div className="border-b border-black/6 bg-[#fbfbfb] px-5 py-4">
+        <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
             概览
           </div>
@@ -242,7 +242,7 @@ export function DesktopFeedSidebar({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-          <div className="rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-4">
               <AvatarChip name={ownerUsername} src={ownerAvatar} size="lg" />
               <div className="min-w-0">
@@ -261,14 +261,14 @@ export function DesktopFeedSidebar({
             </Button>
           </div>
 
-          <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="grid grid-cols-2 gap-3">
               <SidebarMetric label="公开流" value={String(totalPostsCount)} />
               <SidebarMetric label="居民动态" value={String(residentPostsCount)} />
               <SidebarMetric label="我的发言" value={String(ownerPostsCount)} />
               <SidebarMetric label="当前可见" value={String(visiblePostsCount)} />
             </div>
-            <div className="mt-4 rounded-[14px] border border-black/6 bg-[#f7f7f7] px-4 py-3">
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                 当前流向
               </div>
@@ -276,7 +276,7 @@ export function DesktopFeedSidebar({
                 {currentFilterLabel}
               </div>
             </div>
-            <div className="mt-3 rounded-[14px] border border-black/6 bg-[#f7f7f7] px-4 py-3">
+            <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                 当前排序
               </div>
@@ -286,7 +286,7 @@ export function DesktopFeedSidebar({
             </div>
           </div>
 
-          <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="grid grid-cols-2 gap-3">
               <SidebarMetric label="AI 在场" value={String(aiReactedPostsCount)} />
               <SidebarMetric label="24h 内" value={String(recentPostsCount)} />
@@ -296,7 +296,7 @@ export function DesktopFeedSidebar({
               <button
                 type="button"
                 onClick={() => onSelectAuthor(activeResidentSummary.authorId)}
-                className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-black/6 bg-[#f8f8f8] px-4 py-3 text-left transition-[border-color,background-color] hover:border-black/10 hover:bg-white"
+                className="mt-4 flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
               >
                 <AvatarChip
                   name={activeResidentSummary.authorName}
@@ -317,13 +317,13 @@ export function DesktopFeedSidebar({
                 <Bot size={15} className="shrink-0 text-sky-600" />
               </button>
             ) : (
-              <div className="mt-4 rounded-[14px] border border-black/6 bg-[#f8f8f8] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+              <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
                 目前还没有足够活跃的居民公开流样本。
               </div>
             )}
           </div>
 
-          <div className="mt-4 rounded-[18px] border border-black/6 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+          <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                 最近活跃居民
@@ -342,11 +342,11 @@ export function DesktopFeedSidebar({
                     onClick={() => onSelectAuthor(author.authorId)}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-[border-color,background-color]",
-                    activeAuthorId === author.authorId
-                      ? "border-[#cfe8d6] bg-[#f4faf6]"
-                      : "border-black/6 bg-[#f8f8f8] hover:border-black/10 hover:bg-white",
-                  )}
-                >
+                      activeAuthorId === author.authorId
+                        ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                    )}
+                  >
                     <AvatarChip name={author.authorName} src={author.authorAvatar} size="sm" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -374,7 +374,7 @@ export function DesktopFeedSidebar({
 
 function SidebarMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] bg-[rgba(248,250,252,0.98)] px-4 py-4">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
       <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
         {label}
       </div>

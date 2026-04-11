@@ -210,8 +210,8 @@ export function DesktopMomentsWorkspace({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[#efefef]">
-      <section className="min-w-0 flex-1 border-r border-black/6 bg-[#f6f6f6]">
+    <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
+      <section className="min-w-0 flex-1 border-r border-[color:var(--border-faint)] bg-[rgba(245,248,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
           <DesktopMomentsToolbar
             activeFilter={activeFilter}
