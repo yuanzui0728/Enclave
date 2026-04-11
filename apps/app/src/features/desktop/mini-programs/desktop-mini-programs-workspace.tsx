@@ -113,6 +113,7 @@ export function DesktopMiniProgramsWorkspace({
   }
 
   const selectedTone = getMiniProgramToneStyle(selectedMiniProgram.tone);
+  const showEmptyResults = hasFiltering && !visibleMiniPrograms.length;
 
   return (
     <div className="flex h-full min-h-0 bg-[#f5f5f5]">
@@ -254,7 +255,19 @@ export function DesktopMiniProgramsWorkspace({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
-          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.92fr]">
+          {showEmptyResults ? (
+            <div className="rounded-[22px] border border-black/6 bg-white p-8 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+              <EmptyState
+                title="没有匹配的小程序"
+                description={
+                  searchText.trim()
+                    ? `当前搜索“${searchText.trim()}”没有命中结果，试试换个关键词或切回全部分类。`
+                    : "当前分类下还没有可展示的小程序，切换到其他分类看看。"
+                }
+              />
+            </div>
+          ) : (
+            <div className="grid gap-6 xl:grid-cols-[1.2fr_0.92fr]">
             <div className="space-y-6">
               <article
                 className={cn(
@@ -535,9 +548,10 @@ export function DesktopMiniProgramsWorkspace({
                     description="换个关键词，或者切回全部分类继续浏览。"
                   />
                 )}
-              </section>
+                </section>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
     </div>
