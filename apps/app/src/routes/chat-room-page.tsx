@@ -12,6 +12,7 @@ import {
 import { ConversationThreadPanel } from "../features/chat/conversation-thread-panel";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
@@ -162,7 +163,9 @@ export function ChatRoomPage() {
               return;
             }
 
-            void navigate({ to: "/tabs/chat" });
+            navigateBackOrFallback(() => {
+              void navigate({ to: "/tabs/chat" });
+            });
           }}
         />
       </div>

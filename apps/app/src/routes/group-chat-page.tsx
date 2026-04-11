@@ -11,6 +11,7 @@ import {
 } from "../features/chat/chat-compose-shortcut-route";
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
@@ -161,7 +162,9 @@ export function GroupChatPage() {
               return;
             }
 
-            void navigate({ to: "/tabs/chat" });
+            navigateBackOrFallback(() => {
+              void navigate({ to: "/tabs/chat" });
+            });
           }}
         />
       </div>
