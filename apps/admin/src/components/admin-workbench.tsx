@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import {
   Card,
   MetricCard,
+  PanelEmpty,
   SectionHeading,
   SelectField,
   StatusPill,
@@ -205,6 +206,21 @@ export function AdminEmptyState({
       <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
       {actions ? <div className="mt-4 flex flex-wrap justify-center gap-3">{actions}</div> : null}
     </div>
+  );
+}
+
+export function AdminPanelEmpty({
+  message,
+  className,
+}: {
+  message: string;
+  className?: string;
+}) {
+  return (
+    <PanelEmpty
+      className={cn("border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]", className)}
+      message={message}
+    />
   );
 }
 

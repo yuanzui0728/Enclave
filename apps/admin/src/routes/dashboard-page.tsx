@@ -32,7 +32,6 @@ import {
   ListItemCard,
   LoadingBlock,
   MetricCard,
-  PanelEmpty,
   SectionHeading,
   StatusPill,
   TextAreaField,
@@ -47,6 +46,7 @@ import {
   AdminEyebrow,
   AdminJumpCard,
   AdminMetaText,
+  AdminPanelEmpty,
   AdminSoftBox,
   AdminStatusCard,
 } from "../components/admin-workbench";
@@ -621,8 +621,7 @@ export function DashboardPage() {
                 />
               ))
             ) : (
-              <PanelEmpty
-                className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
+              <AdminPanelEmpty
                 message={
                   charactersQuery.error instanceof Error
                     ? charactersQuery.error.message
@@ -652,8 +651,7 @@ export function DashboardPage() {
                   />
                 ))
               ) : (
-                <PanelEmpty
-                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
+                <AdminPanelEmpty
                   message={
                     momentsQuery.error instanceof Error
                       ? momentsQuery.error.message
@@ -682,8 +680,7 @@ export function DashboardPage() {
                   />
                 ))
               ) : (
-                <PanelEmpty
-                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]"
+                <AdminPanelEmpty
                   message={
                     feedQuery.error instanceof Error
                       ? feedQuery.error.message
@@ -769,7 +766,7 @@ export function DashboardPage() {
               <ErrorBlock message={schedulerQuery.error.message} />
             )}
             {!schedulerQuery.data && !schedulerQuery.error && (
-              <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="等待调度器对齐数据..." />
+              <AdminPanelEmpty message="等待调度器对齐数据..." />
             )}
           </div>
 
@@ -821,7 +818,7 @@ export function DashboardPage() {
               />
             ))}
             {realtimeQuery.data && realtimeQuery.data.rooms.length === 0 && (
-              <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="当前还没有活跃的实时房间。" />
+              <AdminPanelEmpty message="当前还没有活跃的实时房间。" />
             )}
             {!realtimeQuery.data && realtimeQuery.error instanceof Error && (
               <ErrorBlock message={realtimeQuery.error.message} />
@@ -971,7 +968,7 @@ export function DashboardPage() {
               {logsQuery.isLoading ? <LoadingBlock className="px-0 py-0 text-left text-sm bg-transparent border-0 shadow-none" label="正在加载本地运行时日志..." /> : null}
               {!logsQuery.data && logsQuery.error instanceof Error ? <ErrorBlock message={logsQuery.error.message} /> : null}
               {!logsQuery.isLoading && !logsQuery.data && !logsQuery.error ? (
-                <PanelEmpty className="border-[color:var(--border-faint)] bg-[color:var(--surface-soft)]" message="等待本地运行时日志..." />
+                <AdminPanelEmpty message="等待本地运行时日志..." />
               ) : null}
           </AdminDetailPanel>
         </Card>
