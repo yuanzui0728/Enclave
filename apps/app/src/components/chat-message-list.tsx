@@ -90,6 +90,7 @@ import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
+import { resolveChatCardBadgeClassName } from "../features/chat/chat-card-badge";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import {
   resolveDirectCallFooterCopy,
@@ -3676,55 +3677,37 @@ function GroupRelaySummaryMessage({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <div
-            className={cn(
-              "rounded-full px-2.5 py-1 text-[10px] font-medium",
-              summary.publishedSource === "mobile"
-                ? "bg-[rgba(59,130,246,0.12)] text-[#2563eb]"
-                : "bg-[rgba(245,158,11,0.12)] text-[#b45309]",
+            className={resolveChatCardBadgeClassName(
+              summary.publishedSource === "mobile" ? "info" : "warning",
             )}
           >
             {summary.publishedSource === "mobile" ? "手机回填" : "桌面回填"}
           </div>
           {summary.launchSourceLabel ? (
-            <div className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-secondary)]">
+            <div className={resolveChatCardBadgeClassName("neutral")}>
               {summary.launchSource === "mobile" ? "手机发起" : "桌面发起"}
             </div>
           ) : null}
           {summary.statusLabel ? (
             <div
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[10px] font-medium",
+              className={resolveChatCardBadgeClassName(
                 summary.statusLabel === "已回填"
-                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
+                  ? "success"
                   : summary.statusLabel === "已完成"
-                    ? "bg-[rgba(59,130,246,0.12)] text-[#2563eb]"
-                    : "bg-[rgba(245,158,11,0.16)] text-[#b45309]",
+                    ? "info"
+                    : "warning",
               )}
             >
               {summary.statusLabel}
             </div>
           ) : null}
           {publishStageBadge ? (
-            <div
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[10px] font-medium",
-                publishStageBadge.tone === "success"
-                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
-                  : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
-              )}
-            >
+            <div className={resolveChatCardBadgeClassName(publishStageBadge.tone)}>
               {publishStageBadge.label}
             </div>
           ) : null}
           {completionBadge ? (
-            <div
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[10px] font-medium",
-                completionBadge.tone === "success"
-                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
-                  : "bg-[rgba(245,158,11,0.16)] text-[#b45309]",
-              )}
-            >
+            <div className={resolveChatCardBadgeClassName(completionBadge.tone)}>
               {completionBadge.label}
             </div>
           ) : null}
@@ -3944,11 +3927,8 @@ function GroupCallInviteMessage({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <div
-            className={cn(
-              "rounded-full px-2.5 py-1 text-[10px] font-medium",
-              invite.status === "ended"
-                ? "bg-[rgba(239,68,68,0.10)] text-[#d74b45]"
-                : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+            className={resolveChatCardBadgeClassName(
+              invite.status === "ended" ? "danger" : "info",
             )}
           >
             {invite.status === "ended"
@@ -3958,16 +3938,7 @@ function GroupCallInviteMessage({
                 : "桌面发起"}
           </div>
           {completionBadge ? (
-            <div
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[10px] font-medium",
-                completionBadge.tone === "success"
-                  ? "bg-[rgba(34,197,94,0.14)] text-[#15803d]"
-                  : completionBadge.tone === "warning"
-                    ? "bg-[rgba(245,158,11,0.16)] text-[#b45309]"
-                    : "bg-[rgba(239,68,68,0.12)] text-[#d74b45]",
-              )}
-            >
+            <div className={resolveChatCardBadgeClassName(completionBadge.tone)}>
               {completionBadge.label}
             </div>
           ) : null}
@@ -4103,11 +4074,8 @@ function DirectCallInviteMessage({
           </div>
         </div>
         <div
-          className={cn(
-            "rounded-full px-2.5 py-1 text-[10px] font-medium",
-            invite.connectionStatus === "ended"
-              ? "bg-[rgba(239,68,68,0.10)] text-[#d74b45]"
-              : "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+          className={resolveChatCardBadgeClassName(
+            invite.connectionStatus === "ended" ? "danger" : "info",
           )}
         >
           {invite.connectionStatus === "ended"
