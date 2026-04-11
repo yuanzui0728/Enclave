@@ -58,13 +58,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const [callTipsDismissed, setCallTipsDismissed] = useState(false);
   const [leavingScreen, setLeavingScreen] = useState(false);
   const [playbackSettling, setPlaybackSettling] = useState(false);
-  const [videoCompletedTurnCount, setVideoCompletedTurnCount] = useState(0);
   const [diagnosticsExpanded, setDiagnosticsExpanded] = useState(false);
   const waitingNoticeSentRef = useRef(false);
   const connectedNoticeSentRef = useRef(false);
   const endedNoticeSentRef = useRef(false);
   const previousPlaybackStateRef = useRef<"idle" | "playing">("idle");
-  const previousVideoTurnRef = useRef<unknown>(null);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -210,24 +208,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     !lastAssistantText &&
     !speech.error &&
     !activeCall.playerError;
-  const showVideoNextTurnPrimer =
-    isVideoMode &&
-    videoCompletedTurnCount === 1 &&
-    digitalHumanCall.sessionState === "ready" &&
-    digitalHumanCall.session?.renderStatus !== "rendering" &&
-    digitalHumanCall.session?.renderStatus !== "queued" &&
-    digitalHumanCall.session?.renderStatus !== "failed" &&
-    !digitalHumanCall.sessionError &&
-    !activeCall.turnMutation.isPending &&
-    !(activeCall.turnMutation.error instanceof Error) &&
-    activeCall.playbackState === "idle" &&
-    speech.status === "idle" &&
-    !playbackSettling &&
-    Boolean(lastAssistantText) &&
-    !speech.error &&
-    !activeCall.playerError &&
-    !leavingScreen;
-
   useEffect(() => {
     if (
       speech.status === "listening" ||
@@ -255,27 +235,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
     diagnosticsExpanded,
     speech.status,
   ]);
-
-  useEffect(() => {
-    if (!isVideoMode) {
-      if (videoCompletedTurnCount !== 0) {
-        setVideoCompletedTurnCount(0);
-      }
-      previousVideoTurnRef.current = digitalHumanCall.lastTurn;
-      return;
-    }
-
-    if (
-      digitalHumanCall.lastTurn &&
-      digitalHumanCall.lastTurn !== previousVideoTurnRef.current
-    ) {
-      previousVideoTurnRef.current = digitalHumanCall.lastTurn;
-      setVideoCompletedTurnCount((current) => current + 1);
-      return;
-    }
-
-    previousVideoTurnRef.current = digitalHumanCall.lastTurn;
-  }, [digitalHumanCall.lastTurn, isVideoMode, videoCompletedTurnCount]);
 
   useEffect(() => {
     const previousPlaybackState = previousPlaybackStateRef.current;
@@ -1141,16 +1100,6 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {showVideoFirstTurnPrimer ? (
             <InlineNotice tone="info">
               数字人视频已经接通。先按住底部按钮说第一句，松开后本轮会自动开始转写、回复和播报。
-            </InlineNotice>
-          ) : null}
-          {showVideoNextTurnPrimer ? (
-            <InlineNotice tone="info">
-              这一轮已经结束。准备好后继续按住底部按钮说下一句，数字人会按同样节奏回复你。
-            </InlineNotice>
-          ) : null}
-          {isVideoMode && !cameraEnabled ? (
-            <InlineNotice tone="info">
-              你已关闭本地摄像头，仍可继续进行 AI 数字人视频通话。
             </InlineNotice>
           ) : null}
           {isVideoMode &&
