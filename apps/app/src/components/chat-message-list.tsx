@@ -2026,7 +2026,9 @@ export function ChatMessageList({
                                   groupRelaySummary.sourceGroupName,
                               });
                               void navigate({
-                                to: "/tabs/mini-programs",
+                                to: isDesktop
+                                  ? "/tabs/mini-programs"
+                                  : "/discover/mini-programs",
                                 search: `?${query.toString()}`,
                               });
                             }

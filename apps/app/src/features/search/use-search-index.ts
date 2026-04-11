@@ -303,7 +303,7 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: "/tabs/moments",
+        to: "/discover/moments",
         badge: "朋友圈",
         avatarName: moment.authorName,
         avatarSrc: moment.authorAvatar,
@@ -328,7 +328,7 @@ export function useSearchIndex(
           .filter(Boolean)
           .join(" ")
           .toLowerCase(),
-        to: "/tabs/feed",
+        to: "/discover/feed",
         badge: "广场动态",
         avatarName: post.authorName,
         avatarSrc: post.authorAvatar,
