@@ -162,6 +162,7 @@ export function ProfileSettingsPage() {
 
       {activeTab === "profile" ? (
         <MobileSettingsSection
+          desktop={desktopMode}
           title="个人资料"
           description="这里的名称和签名会用于移动端资料页和世界主人展示。"
         >
@@ -206,6 +207,7 @@ export function ProfileSettingsPage() {
 
       {activeTab === "ai" ? (
         <MobileSettingsSection
+          desktop={desktopMode}
           title="AI 设置"
           description="你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。"
         >
@@ -329,10 +331,11 @@ export function ProfileSettingsPage() {
 
           {desktopMode ? (
             <MobileSettingsSection
+              desktop
               title="协议与规范"
               description="桌面端保留当前文档切换和独立打开入口。"
             >
-              <div className="flex gap-1 rounded-[12px] border border-black/6 bg-[#f7f7f7] p-1">
+              <div className="flex gap-1 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-1">
                 {legalTabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -510,7 +513,7 @@ export function ProfileSettingsPage() {
 
 function DesktopStatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-black/6 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -520,16 +523,25 @@ function DesktopStatCard({ label, value }: { label: string; value: string }) {
 }
 
 function MobileSettingsSection({
+  desktop = false,
   title,
   description,
   children,
 }: {
+  desktop?: boolean;
   title: string;
   description?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-2 space-y-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4">
+    <section
+      className={cn(
+        "space-y-4",
+        desktop
+          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]"
+          : "mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4",
+      )}
+    >
       <div>
         <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
           {title}
