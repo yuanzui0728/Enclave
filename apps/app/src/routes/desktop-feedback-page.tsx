@@ -89,6 +89,20 @@ const priorityOptions: Array<{
   { id: "high", label: "高" },
 ];
 
+function areDesktopFeedbackDraftsEqual(
+  left: DesktopFeedbackDraft,
+  right: DesktopFeedbackDraft,
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function areDesktopFeedbackHistoriesEqual(
+  left: DesktopFeedbackRecord[],
+  right: DesktopFeedbackRecord[],
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function DesktopFeedbackPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
@@ -142,6 +156,52 @@ export function DesktopFeedbackPage() {
 
     return () => {
       cancelled = true;
+    };
+  }, [nativeDesktopFeedback]);
+
+  useEffect(() => {
+    if (!nativeDesktopFeedback) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFeedbackStore() {
+      const store = await hydrateDesktopFeedbackFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setDraft((current) =>
+        areDesktopFeedbackDraftsEqual(current, store.draft)
+          ? current
+          : store.draft,
+      );
+      setHistory((current) =>
+        areDesktopFeedbackHistoriesEqual(current, store.history)
+          ? current
+          : store.history,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFeedbackStore();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFeedbackStore();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [nativeDesktopFeedback]);
 
