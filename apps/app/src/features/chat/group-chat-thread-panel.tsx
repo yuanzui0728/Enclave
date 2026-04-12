@@ -756,7 +756,7 @@ export function GroupChatThreadPanel({
       ) : null}
 
       {!isDesktop && announcement ? (
-        <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-2">
+        <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1.5">
           <button
             type="button"
             onClick={() => {
@@ -765,16 +765,16 @@ export function GroupChatThreadPanel({
                 params: { groupId },
               });
             }}
-            className="flex w-full items-center gap-2.5 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.96)] px-3 py-2.5 text-left active:bg-white"
+            className="flex w-full items-center gap-2 rounded-[13px] border border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.96)] px-3 py-2 text-left active:bg-white"
           >
             <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[10px] font-medium text-[#15803d]">
               群公告
             </span>
-            <span className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-primary)]">
+            <span className="min-w-0 flex-1 truncate text-[12px] text-[color:var(--text-primary)]">
               {announcement}
             </span>
-            <span className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
-              详情
+            <span className="shrink-0 text-[10px] text-[color:var(--text-muted)]">
+              查看
             </span>
           </button>
         </div>
@@ -816,9 +816,9 @@ export function GroupChatThreadPanel({
             </InlineNotice>
           </div>
         ) : (
-          <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-2">
-            <div className="rounded-[14px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-3 py-2.5 shadow-none">
-              <div className="text-[11px] leading-[18px] text-[#166534]">
+          <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1.5">
+            <div className="rounded-[13px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-3 py-2 shadow-none">
+              <div className="text-[11px] leading-[17px] text-[#166534]">
                 {routeContextNotice.description}
               </div>
               <div className="mt-2 flex items-center justify-end gap-1.5">
@@ -828,7 +828,7 @@ export function GroupChatThreadPanel({
                     variant="ghost"
                     size="sm"
                     onClick={routeContextNotice.onSecondaryAction}
-                    className="h-8 shrink-0 rounded-full px-3 text-[11px]"
+                    className="h-8 shrink-0 rounded-full px-2.5 text-[10px]"
                   >
                     {routeContextNotice.secondaryActionLabel}
                   </Button>
@@ -837,7 +837,7 @@ export function GroupChatThreadPanel({
                   variant="secondary"
                   size="sm"
                   onClick={routeContextNotice.onAction}
-                  className="h-8 shrink-0 rounded-full px-3 text-[11px]"
+                  className="h-8 shrink-0 rounded-full px-2.5 text-[10px]"
                 >
                   {routeContextNotice.actionLabel}
                 </Button>
