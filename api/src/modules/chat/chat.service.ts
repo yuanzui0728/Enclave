@@ -859,6 +859,7 @@ export class ChatService {
     return {
       id: entity.id,
       type: 'direct',
+      source: 'conversation',
       title: entity.title,
       participants: entity.participants,
       messages: [],
@@ -950,6 +951,7 @@ export class ChatService {
     return {
       id: group.id,
       type: 'group',
+      source: 'group',
       title: group.name,
       participants: members.map((member) => member.memberId),
       messages: [],

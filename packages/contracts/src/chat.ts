@@ -38,6 +38,7 @@ export interface Message {
 export interface Conversation {
   id: string;
   type: ConversationType;
+  source?: "conversation" | "group";
   title: string;
   participants: string[];
   messages: Message[];

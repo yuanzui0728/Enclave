@@ -130,6 +130,7 @@ export interface Group {
 export interface Conversation {
   id: string;
   type: 'direct' | 'group';
+  source?: 'conversation' | 'group';
   title: string;
   participants: string[]; // character ids
   messages: Message[];
