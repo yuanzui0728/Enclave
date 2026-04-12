@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import {
   clearWorldOwnerApiKey,
   getWorldOwner,
@@ -22,13 +22,19 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import {
+  formatChatSendShortcutLabel,
+  type ChatSendShortcut,
+  useChatPreferencesStore,
+} from "../store/chat-preferences-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
-type SettingsTab = "profile" | "ai" | "legal";
+type SettingsTab = "profile" | "chat" | "ai" | "legal";
 type LegalTab = "privacy" | "terms" | "community";
 
 const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
   { id: "profile", label: "个人资料" },
+  { id: "chat", label: "聊天" },
   { id: "ai", label: "AI 设置" },
   { id: "legal", label: "协议与规范" },
 ];
@@ -37,6 +43,23 @@ const legalTabs: Array<{ id: LegalTab; label: string }> = [
   { id: "privacy", label: "隐私政策" },
   { id: "terms", label: "用户协议" },
   { id: "community", label: "社区规范" },
+];
+
+const chatSendShortcutOptions: Array<{
+  id: ChatSendShortcut;
+  label: string;
+  description: string;
+}> = [
+  {
+    id: "enter",
+    label: "Enter 发送消息",
+    description: "按回车直接发送，保持当前更顺手的输入节奏。",
+  },
+  {
+    id: "mod_enter",
+    label: "Ctrl/Cmd + Enter 发送消息",
+    description: "发送前多一道组合键确认，更接近微信桌面版可切换方式。",
+  },
 ];
 
 export function ProfileSettingsPage() {
@@ -51,6 +74,12 @@ export function ProfileSettingsPage() {
   const signature = useWorldOwnerStore((state) => state.signature);
   const updateOwnerStore = useWorldOwnerStore((state) => state.updateOwner);
   const hydrateOwner = useWorldOwnerStore((state) => state.hydrateOwner);
+  const sendMessageShortcut = useChatPreferencesStore(
+    (state) => state.sendMessageShortcut,
+  );
+  const setSendMessageShortcut = useChatPreferencesStore(
+    (state) => state.setSendMessageShortcut,
+  );
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [activeLegalTab, setActiveLegalTab] = useState<LegalTab>("privacy");
@@ -199,6 +228,70 @@ export function ProfileSettingsPage() {
           {saveProfileMutation.isSuccess ? (
             <InlineNotice tone="success">资料已更新。</InlineNotice>
           ) : null}
+        </MobileSettingsSection>
+      ) : null}
+
+      {activeTab === "chat" ? (
+        <MobileSettingsSection
+          desktop={desktopMode}
+          title={desktopMode ? "聊天设置" : undefined}
+          description={
+            desktopMode
+              ? "调整桌面和 Web 键盘聊天输入时的发送快捷键。"
+              : "设置键盘聊天输入时的发送快捷键"
+          }
+        >
+          <div
+            className={cn(
+              "overflow-hidden rounded-[16px] border",
+              desktopMode
+                ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+                : "border-[color:var(--border-faint)] bg-white",
+            )}
+          >
+            {chatSendShortcutOptions.map((option, index) => {
+              const selected = sendMessageShortcut === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setSendMessageShortcut(option.id)}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-3 text-left transition",
+                    index > 0 && "border-t border-[color:var(--border-faint)]",
+                    selected
+                      ? "bg-[rgba(7,193,96,0.08)]"
+                      : "hover:bg-[color:var(--surface-card-hover)]",
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                      {option.label}
+                    </div>
+                    <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
+                      {option.description}
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition",
+                      selected
+                        ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
+                        : "border-[color:var(--border-faint)] bg-white text-transparent",
+                    )}
+                    aria-hidden="true"
+                  >
+                    <Check size={14} strokeWidth={2.5} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <InlineNotice tone="muted">
+            当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+          </InlineNotice>
         </MobileSettingsSection>
       ) : null}
 
@@ -381,6 +474,8 @@ export function ProfileSettingsPage() {
         subtitle={
           activeTab === "profile"
             ? "在桌面工作区里管理世界主人的资料与签名。"
+            : activeTab === "chat"
+              ? "调整桌面和 Web 键盘聊天输入的发送快捷键。"
             : activeTab === "ai"
               ? "管理专属 API Key 和兼容 Base URL。"
               : "查看当前世界相关的协议和社区规范。"
@@ -457,6 +552,10 @@ export function ProfileSettingsPage() {
                       ? "已配置专属 API Key"
                       : "使用实例级 Provider"
                   }
+                />
+                <DesktopStatCard
+                  label="发送快捷键"
+                  value={formatChatSendShortcutLabel(sendMessageShortcut)}
                 />
                 {activeTab === "legal" ? (
                   <DesktopStatCard
