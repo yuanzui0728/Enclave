@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   getConversations,
   getOfficialAccountMessageEntries,
@@ -141,6 +141,9 @@ export function ChatListPage() {
 function MobileChatListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const localMessageActionState = useLocalChatMessageActionState();
@@ -156,16 +159,17 @@ function MobileChatListPage() {
     useState<PendingHideConversation | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
   const pendingHideRef = useRef<PendingHideConversation | null>(null);
+  const isActiveTab = pathname === "/tabs/chat";
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
-    refetchInterval: 3_000,
+    refetchInterval: isActiveTab ? 3_000 : false,
   });
   const messageEntriesQuery = useQuery({
     queryKey: ["app-official-message-entries", baseUrl],
     queryFn: () => getOfficialAccountMessageEntries(baseUrl),
-    refetchInterval: 3_000,
+    refetchInterval: isActiveTab ? 3_000 : false,
   });
 
   const conversations = useMemo(

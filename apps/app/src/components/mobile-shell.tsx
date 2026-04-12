@@ -1,4 +1,10 @@
-import { useEffect, useMemo, type PropsWithChildren } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { getConversations } from "@yinjie/contracts";
@@ -22,14 +28,21 @@ const tabs = [
   { to: "/tabs/discover", label: "发现", icon: Compass },
   { to: "/tabs/profile", label: "我", icon: UserRound },
 ];
+const KEEP_ALIVE_TAB_PATHS = new Set(tabs.map((tab) => tab.to));
 
 export function MobileShell({ children }: PropsWithChildren) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
   const showTabs = pathname.startsWith("/tabs/") && pathname !== "/tabs/search";
+  const activeKeepAlivePath = KEEP_ALIVE_TAB_PATHS.has(pathname)
+    ? pathname
+    : null;
   const runtimeConfig = useAppRuntimeConfig();
   const { reminders } = useMessageReminders();
+  const [cachedTabPages, setCachedTabPages] = useState<
+    Partial<Record<(typeof tabs)[number]["to"], ReactNode>>
+  >({});
 
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
@@ -63,19 +76,47 @@ export function MobileShell({ children }: PropsWithChildren) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!activeKeepAlivePath) {
+      return;
+    }
+
+    setCachedTabPages((current) => {
+      if (current[activeKeepAlivePath]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [activeKeepAlivePath]: children,
+      };
+    });
+  }, [activeKeepAlivePath, children]);
+
   return (
     <div className="yj-mobile-shell relative h-dvh min-h-dvh overflow-hidden bg-[color:var(--bg-canvas)] text-[color:var(--text-primary)]">
       <MobileReminderToastHost />
       <div className="flex h-full min-h-0 flex-col">
-        <div
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
-          style={{
-            paddingTop: "var(--safe-area-inset-top)",
-            paddingRight: "var(--safe-area-inset-right)",
-            paddingLeft: "var(--safe-area-inset-left)",
-          }}
-        >
-          {children}
+        <div className="relative min-h-0 flex-1">
+          {tabs.map(({ to }) => {
+            const page = activeKeepAlivePath === to
+              ? cachedTabPages[to] ?? children
+              : cachedTabPages[to];
+            if (!page) {
+              return null;
+            }
+
+            const active = activeKeepAlivePath === to;
+
+            return (
+              <MobileViewportPane key={to} active={active}>
+                {page}
+              </MobileViewportPane>
+            );
+          })}
+          {activeKeepAlivePath ? null : (
+            <MobileViewportPane active>{children}</MobileViewportPane>
+          )}
         </div>
         {showTabs ? (
           <nav
@@ -132,6 +173,28 @@ export function MobileShell({ children }: PropsWithChildren) {
           </nav>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function MobileViewportPane({
+  active,
+  children,
+}: PropsWithChildren<{ active: boolean }>) {
+  return (
+    <div
+      aria-hidden={!active}
+      className={cn(
+        "absolute inset-0 min-h-0 overflow-y-auto overscroll-contain",
+        active ? "pointer-events-auto" : "pointer-events-none hidden",
+      )}
+      style={{
+        paddingTop: "var(--safe-area-inset-top)",
+        paddingRight: "var(--safe-area-inset-right)",
+        paddingLeft: "var(--safe-area-inset-left)",
+      }}
+    >
+      {children}
     </div>
   );
 }
