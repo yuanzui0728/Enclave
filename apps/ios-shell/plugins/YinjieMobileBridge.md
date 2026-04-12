@@ -12,15 +12,16 @@
 
 1. `openExternalUrl({ url })`
 2. `share({ title?, text?, url? })`
-3. `pickImages({ multiple? })`
-4. `pickFile()`
-5. `captureImage()`
-6. `getPushToken()`
-7. `getNotificationPermissionState()`
-8. `requestNotificationPermission()`
-9. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
-10. `getPendingLaunchTarget()`
-11. `clearPendingLaunchTarget()`
+3. `shareFile({ base64Data, fileName, mimeType?, title? })`
+4. `pickImages({ multiple? })`
+5. `pickFile()`
+6. `captureImage()`
+7. `getPushToken()`
+8. `getNotificationPermissionState()`
+9. `requestNotificationPermission()`
+10. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
+11. `getPendingLaunchTarget()`
+12. `clearPendingLaunchTarget()`
 
 ## 返回结构
 
@@ -49,6 +50,17 @@
     "mimeType": "image/jpeg",
     "fileName": "captured.jpg"
   }
+}
+```
+
+### shareFile
+
+```json
+{
+  "base64Data": "<base64>",
+  "fileName": "需求文档.pdf",
+  "mimeType": "application/pdf",
+  "title": "保存文件"
 }
 ```
 
@@ -112,6 +124,7 @@
 - `@objc(YinjieMobileBridgePlugin)`
 - `openExternalUrl(_ call: CAPPluginCall)`
 - `share(_ call: CAPPluginCall)`
+- `shareFile(_ call: CAPPluginCall)`
 - `pickImages(_ call: CAPPluginCall)`
 - `pickFile(_ call: CAPPluginCall)`
 - `captureImage(_ call: CAPPluginCall)`
@@ -126,17 +139,19 @@
 
 1. 打开外链：`UIApplication.shared.open`
 2. 分享：`UIActivityViewController`
-3. 图片选择：`PHPickerViewController`
-4. 文件选择：`UIDocumentPickerViewController`
-5. 拍照：`UIImagePickerController(sourceType: .camera)`
-6. Push token：已注册到 APNs 后缓存于原生层
-7. 通知权限：`UNUserNotificationCenter`
-8. 本地提醒通知：`UNUserNotificationCenter` 本地通知
-9. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
+3. 文件分享：把 base64 文件落到临时目录，再通过 `UIActivityViewController` 交给系统“存储到文件/转发”
+4. 图片选择：`PHPickerViewController`
+5. 文件选择：`UIDocumentPickerViewController`
+6. 拍照：`UIImagePickerController(sourceType: .camera)`
+7. Push token：已注册到 APNs 后缓存于原生层
+8. 通知权限：`UNUserNotificationCenter`
+9. 本地提醒通知：`UNUserNotificationCenter` 本地通知
+10. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 当前 stub 行为：
 
 - `pickImages` 会通过 `PHPickerViewController` 选择图片
+- `shareFile` 会把 Web 层传入的二进制文件写到临时目录，再打开系统分享面板
 - `pickFile` 会通过 `UIDocumentPickerViewController` 选择文件，并把结果复制到临时目录再返回给 Web 层
 - `captureImage` 会通过系统相机拍照，并把结果写到临时目录再返回给 Web 层
 - 选中的资源会复制到临时目录，再以 `path / webPath / fileName / mimeType` 返回给 Web 层
