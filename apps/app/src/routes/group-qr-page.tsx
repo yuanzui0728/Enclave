@@ -27,6 +27,7 @@ import {
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
   createGroupInviteDeliveryBatchId,
+  hydrateGroupInviteDeliveryFromNative,
   readGroupInviteDeliveryRecord,
   readGroupInviteDeliveryTargets,
   readGroupInviteReopenRecords,
@@ -59,6 +60,7 @@ export function GroupQrPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopGroupInvite = runtimeConfig.appPlatform === "desktop";
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
   const nativeMobileShareSupported =
@@ -83,6 +85,9 @@ export function GroupQrPage() {
   }));
   const [reopenRecords, setReopenRecords] = useState<GroupInviteReopenRecord[]>(
     () => readGroupInviteReopenRecords(groupId),
+  );
+  const [groupInviteStoreReady, setGroupInviteStoreReady] = useState(
+    !nativeDesktopGroupInvite,
   );
 
   const groupQuery = useQuery({
@@ -459,16 +464,51 @@ export function GroupQrPage() {
   }, [fallbackPendingReturnConversation, pendingReturnOverview]);
 
   useEffect(() => {
-    setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
-    setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
-  }, [groupId]);
+    if (nativeDesktopGroupInvite) {
+      setGroupInviteStoreReady(false);
+    }
 
-  useEffect(() => {
-    setReopenRecords(readGroupInviteReopenRecords(groupId));
-  }, [groupId]);
+    let cancelled = false;
+
+    const syncGroupInviteState = async () => {
+      await hydrateGroupInviteDeliveryFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setDeliveredConversation(readGroupInviteDeliveryRecord(groupId));
+      setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
+      setReopenRecords(readGroupInviteReopenRecords(groupId));
+      setGroupInviteStoreReady(true);
+    };
+
+    void syncGroupInviteState();
+
+    if (typeof window === "undefined") {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const handleFocus = () => {
+      void syncGroupInviteState();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+    };
+  }, [groupId, nativeDesktopGroupInvite]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!groupInviteStoreReady) {
       return;
     }
 
@@ -486,7 +526,7 @@ export function GroupQrPage() {
         conversationTitle: fromTitle,
       }),
     );
-  }, [groupId, search]);
+  }, [groupId, groupInviteStoreReady, search]);
 
   useEffect(() => {
     if (

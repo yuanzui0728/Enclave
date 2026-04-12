@@ -15,7 +15,10 @@ import { ConversationThreadPanel } from "../features/chat/conversation-thread-pa
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { navigateBackOrFallback } from "../lib/history-back";
-import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
+import {
+  hydrateGroupInviteDeliveryFromNative,
+  resolveGroupInviteRouteContext,
+} from "../lib/group-invite-delivery";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -29,7 +32,9 @@ export function ChatRoomPage() {
   const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
-  const routeContext = resolveRouteContext(conversationId);
+  const [routeContext, setRouteContext] = useState(() =>
+    resolveRouteContext(conversationId),
+  );
   const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
@@ -40,6 +45,10 @@ export function ChatRoomPage() {
   });
   const activeConversation =
     conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
+
+  useEffect(() => {
+    setRouteContext(resolveRouteContext(conversationId));
+  }, [conversationId, search]);
 
   useEffect(() => {
     if (!activeConversation || !isPersistedGroupConversation(activeConversation)) {
@@ -114,6 +123,37 @@ export function ChatRoomPage() {
   const handleRouteMobileShortcutHandled = useCallback(() => {
     setRouteMobileShortcutAction(null);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncRouteContext = async () => {
+      await hydrateGroupInviteDeliveryFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setRouteContext(resolveRouteContext(conversationId));
+    };
+
+    void syncRouteContext();
+
+    const handleFocus = () => {
+      void syncRouteContext();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+    };
+  }, [conversationId, search]);
 
   const callReturnNotice =
     routeCallReturnKind === null

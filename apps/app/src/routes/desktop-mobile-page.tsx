@@ -57,6 +57,7 @@ import {
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
 import {
+  hydrateGroupInviteDeliveryFromNative,
   readGroupInviteDeliveryRecord,
   readGroupInviteReopenRecords,
   type GroupInviteDeliveryRecord,
@@ -446,7 +447,14 @@ export function DesktopMobilePage() {
       return;
     }
 
-    const syncDelivery = () => {
+    let cancelled = false;
+
+    const syncDelivery = async () => {
+      await hydrateGroupInviteDeliveryFromNative();
+      if (cancelled) {
+        return;
+      }
+
       setCurrentGroupInviteDelivery(
         readGroupInviteDeliveryRecord(currentGroupInviteId),
       );
@@ -455,12 +463,18 @@ export function DesktopMobilePage() {
       );
     };
 
-    syncDelivery();
-    window.addEventListener("focus", syncDelivery);
-    window.addEventListener("storage", syncDelivery);
+    void syncDelivery();
+
+    const handleFocus = () => {
+      void syncDelivery();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
     return () => {
-      window.removeEventListener("focus", syncDelivery);
-      window.removeEventListener("storage", syncDelivery);
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
     };
   }, [currentGroupInviteId]);
 
