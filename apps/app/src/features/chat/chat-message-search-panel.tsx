@@ -302,7 +302,7 @@ export function ChatMessageSearchPanel({
     <ChatDetailsShell title="查找聊天记录" subtitle={subtitle} onBack={onBack}>
       <ChatDetailsSection title="搜索">
         <div className="px-3 py-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-black/8 bg-white px-3 py-2.5">
+          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5">
             <Search
               size={16}
               className="shrink-0 text-[color:var(--text-dim)]"
@@ -363,8 +363,8 @@ export function ChatMessageSearchPanel({
                 className={cn(
                   "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                   dateFilter === item.id && !specificDate
-                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                    : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
+                    ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
+                    : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
                 )}
               >
                 {item.label}
@@ -380,8 +380,8 @@ export function ChatMessageSearchPanel({
                 className={cn(
                   "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                   messageTypeFilter === item.id
-                    ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                    : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
+                    ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
+                    : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
                 )}
               >
                 {item.label}
@@ -398,13 +398,13 @@ export function ChatMessageSearchPanel({
                   setDateFilter("all");
                 }
               }}
-              className="min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
+              className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)]"
             />
             {enableSenderFilter ? (
               <select
                 value={senderFilter}
                 onChange={(event) => setSenderFilter(event.target.value)}
-                className="min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
+                className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)]"
               >
                 <option value="all">全部成员</option>
                 {senderOptions.map((senderName) => (
@@ -428,7 +428,7 @@ export function ChatMessageSearchPanel({
                   setDateFilter("all");
                   setSpecificDate("");
                 }}
-                className="h-8 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                className="h-8 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 清空筛选
               </Button>
@@ -468,8 +468,8 @@ export function ChatMessageSearchPanel({
                     className={cn(
                       "rounded-[12px] border px-3 py-3 text-left transition-colors",
                       active
-                        ? "border-black/8 bg-white"
-                        : "border-black/6 bg-[#f6f6f6] hover:bg-[#efefef]",
+                        ? "border-[rgba(7,193,96,0.18)] bg-white shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -478,7 +478,7 @@ export function ChatMessageSearchPanel({
                           className={cn(
                             "flex h-9 w-9 items-center justify-center rounded-[10px]",
                             active
-                              ? "bg-[#07c160] text-white"
+                              ? "bg-[color:var(--brand-primary)] text-white"
                               : "bg-white text-[color:var(--text-secondary)]",
                           )}
                         >
@@ -584,16 +584,16 @@ export function ChatMessageSearchPanel({
               <div>
                 {resultSections.map((section) => (
                   <section key={section.key}>
-                    <div className="sticky top-0 z-[1] border-y border-black/5 bg-[#f6f6f6] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                    <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                       {section.label}
                     </div>
-                    <div className="divide-y divide-black/5">
+                    <div className="divide-y divide-[color:var(--border-faint)]">
                       {section.items.map((item) => (
                         <button
                           key={item.message.id}
                           type="button"
                           onClick={() => onOpenMessage(item.message.id)}
-                          className="block w-full px-4 py-3 text-left transition hover:bg-[#f8f8f8]"
+                          className="block w-full px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
@@ -649,7 +649,7 @@ export function ChatMessageSearchPanel({
                   </section>
                 ))}
                 {isPartialResult ? (
-                  <div className="border-t border-black/5 bg-[#f6f6f6] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
                     当前仅展示前 {MAX_VISIBLE_RESULTS}{" "}
                     条结果，请继续缩小范围查找。
                   </div>
