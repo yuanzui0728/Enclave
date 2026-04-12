@@ -20,6 +20,7 @@ import {
   Gift,
   Pin,
   Play,
+  Share2,
   Sparkles,
   Trophy,
   UsersRound,
@@ -58,6 +59,10 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -94,6 +99,8 @@ export function GamesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerId = useWorldOwnerStore((state) => state.id);
@@ -376,6 +383,19 @@ export function GamesPage() {
     const path = `/discover/games?game=${activity.gameId}&invite=${activity.id}`;
     const link = resolveMobileHandoffLink(path);
 
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${activity.friendName} 的组局邀约`,
+        text: `${activity.friendName} 正在玩 ${game?.name ?? "当前游戏"}，邀请你一起玩。\n${link}`,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setSuccessNotice("已打开系统分享面板。");
+        return;
+      }
+    }
+
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
@@ -407,6 +427,19 @@ export function GamesPage() {
     const game = getGameCenterGame(gameId);
     const path = buildGameInvitePath("/discover/games", { gameId });
     const link = resolveMobileHandoffLink(path);
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${game?.name ?? "游戏中心"} 入口`,
+        text: `${game?.name ?? "游戏中心"}\n${link}`,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setSuccessNotice("已打开系统分享面板。");
+        return;
+      }
+    }
 
     if (
       typeof navigator === "undefined" ||
@@ -601,6 +634,11 @@ export function GamesPage() {
         lastOpenedAt={lastOpenedAtById[selectedGame.id]}
         compact
         onDismiss={activeGameId === selectedGame.id ? dismissActiveGame : undefined}
+        onCopyToMobile={
+          nativeMobileShareSupported ? handleCopyGameToMobile : undefined
+        }
+        copyActionIcon={<Share2 size={16} />}
+        copyActionLabel="系统分享"
         onLaunch={handleLaunchGame}
       />
 

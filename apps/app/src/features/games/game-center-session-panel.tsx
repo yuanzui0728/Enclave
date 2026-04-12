@@ -15,6 +15,8 @@ type GameCenterSessionPanelProps = {
   compact?: boolean;
   onDismiss?: () => void;
   onCopyToMobile?: (gameId: string) => void;
+  copyActionIcon?: ReactNode;
+  copyActionLabel?: string;
   onLaunch: (gameId: string) => void;
 };
 
@@ -26,6 +28,8 @@ export function GameCenterSessionPanel({
   compact = false,
   onDismiss,
   onCopyToMobile,
+  copyActionIcon,
+  copyActionLabel,
   onLaunch,
 }: GameCenterSessionPanelProps) {
   const tone = getGameCenterToneStyle(game.tone);
@@ -35,6 +39,8 @@ export function GameCenterSessionPanel({
   const rewardAccentClass = compact
     ? "text-[#15803d]"
     : "text-[color:var(--brand-primary)]";
+  const resolvedCopyActionIcon = copyActionIcon ?? <Smartphone size={16} />;
+  const resolvedCopyActionLabel = copyActionLabel ?? "发到手机";
 
   return (
     <section
@@ -152,8 +158,8 @@ export function GameCenterSessionPanel({
                 : undefined
             }
           >
-            <Smartphone size={16} />
-            发到手机
+            {resolvedCopyActionIcon}
+            {resolvedCopyActionLabel}
           </Button>
         ) : null}
         <div
