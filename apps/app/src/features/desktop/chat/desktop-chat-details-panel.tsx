@@ -439,7 +439,7 @@ function DirectChatDetailsPanel({
                     params: { characterId: targetCharacterId },
                   });
                 }}
-                className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-xs text-[color:var(--text-secondary)] transition-colors hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-xs text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--surface-console)]"
               >
                 联系人资料
               </button>
@@ -1188,7 +1188,7 @@ function GroupChatDetailsPanel({
               setMemberBrowserAutoFocusSearch(true);
               setMemberBrowserOpen(true);
             }}
-            className="h-8 shrink-0 rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+            className="h-8 shrink-0 rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
           >
             搜索群成员
           </Button>
@@ -1608,7 +1608,7 @@ function DesktopPanelRow({
           <span
             className={cn(
               "relative h-6 w-10 rounded-full transition-colors",
-              checked ? "bg-[#07c160]" : "bg-[#d8d8d8]",
+              checked ? "bg-[color:var(--brand-primary)]" : "bg-[#d8d8d8]",
             )}
           >
             <span
@@ -1918,7 +1918,7 @@ function DesktopGroupMemberBrowserDialog({
               }
             }}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
@@ -1962,7 +1962,7 @@ function DesktopGroupMemberBrowserDialog({
                       className={cn(
                         "rounded-full border px-3 py-1.5 text-xs transition",
                         activeFilter === tab.id
-                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
                           : "border-transparent bg-white text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-white",
                       )}
                     >
@@ -1987,7 +1987,7 @@ function DesktopGroupMemberBrowserDialog({
                 variant="secondary"
                 onClick={onRemoveMembers}
                 disabled={pending || !canRemoveMembers}
-                className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 移除成员
               </Button>
@@ -1996,7 +1996,7 @@ function DesktopGroupMemberBrowserDialog({
                 variant="primary"
                 onClick={onAddMembers}
                 disabled={pending}
-                className="h-8 rounded-full bg-[#07c160] px-3 text-[12px] text-white hover:bg-[#06ad56]"
+                className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-white hover:opacity-95"
               >
                 添加成员
               </Button>
@@ -2042,12 +2042,12 @@ function DesktopGroupMemberBrowserDialog({
                     className={cn(
                       "flex w-full items-center gap-3 rounded-[12px] border px-4 py-2.5 text-left transition",
                       canViewProfile && activeMemberId === member.id
-                        ? "border-[#07c160]/30 bg-[rgba(7,193,96,0.08)] shadow-[0_0_0_1px_rgba(7,193,96,0.08)]"
+                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_0_0_1px_rgba(7,193,96,0.06)]"
                         : canViewProfile
-                          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white"
                           : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
                       canViewProfile
-                        ? "focus-visible:border-[#07c160]/30 focus-visible:bg-[rgba(7,193,96,0.08)] focus-visible:outline-none"
+                        ? "focus-visible:border-[rgba(7,193,96,0.14)] focus-visible:bg-[rgba(7,193,96,0.07)] focus-visible:outline-none"
                         : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
                       pending || !canViewProfile
                         ? "cursor-default"
