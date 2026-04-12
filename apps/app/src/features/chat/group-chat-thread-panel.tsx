@@ -1072,6 +1072,18 @@ export function GroupChatThreadPanel({
           }}
           replyPreview={replyPreview}
           onCancelReply={() => setReplyDraft(null)}
+          onStartVoiceCall={() => {
+            void navigate({
+              to: "/group/$groupId/voice-call",
+              params: { groupId },
+            });
+          }}
+          onStartVideoCall={() => {
+            void navigate({
+              to: "/group/$groupId/video-call",
+              params: { groupId },
+            });
+          }}
           onSubmit={() => void handleSubmit()}
         />
       ) : null}
