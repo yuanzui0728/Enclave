@@ -349,7 +349,7 @@ export function ConversationThreadPanel({
           <button
             type="button"
             onClick={() => onToggleDesktopDetails?.()}
-            className="min-w-0 flex-1 rounded-[10px] px-1 py-1 text-left transition hover:bg-[rgba(7,193,96,0.06)]"
+            className="min-w-0 flex-1 rounded-[10px] px-1 py-1 text-left transition hover:bg-[color:var(--surface-console)]"
             aria-label="打开聊天信息"
             title="打开聊天信息"
           >
@@ -410,10 +410,13 @@ export function ConversationThreadPanel({
           className={
             isDesktop
               ? "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3"
-              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+              : "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-3 py-2.5"
           }
         >
-          <InlineNotice tone="info" className="border-black/6 bg-white">
+          <InlineNotice
+            tone="info"
+            className="border-[color:var(--border-faint)] bg-white"
+          >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="min-w-0 flex-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                 {routeContextNotice.description}
@@ -448,7 +451,7 @@ export function ConversationThreadPanel({
           className={
             isDesktop
               ? "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3"
-              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+              : "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-3 py-2.5"
           }
         >
           <DigitalHumanEntryNotice

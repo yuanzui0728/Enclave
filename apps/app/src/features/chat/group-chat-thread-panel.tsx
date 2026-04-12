@@ -690,7 +690,7 @@ export function GroupChatThreadPanel({
             <button
               type="button"
               onClick={() => onToggleDesktopDetails?.()}
-              className="block w-full rounded-[10px] px-0 py-0 text-left transition hover:bg-[rgba(7,193,96,0.06)]"
+              className="block w-full rounded-[10px] px-0 py-0 text-left transition hover:bg-[color:var(--surface-console)]"
               aria-label="打开群聊信息"
               title="打开群聊信息"
             >
@@ -756,7 +756,7 @@ export function GroupChatThreadPanel({
             }}
             className="flex min-w-0 flex-1 items-start gap-3 text-left transition hover:opacity-90"
           >
-            <span className="mt-0.5 shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] font-medium tracking-[0.08em] text-[#07a35a]">
+            <span className="mt-0.5 shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
               群公告
             </span>
             <div className="min-w-0 flex-1">
@@ -778,7 +778,7 @@ export function GroupChatThreadPanel({
                 params: { groupId },
               });
             }}
-            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
             aria-label="打开群公告页"
             title="打开群公告页"
           >
@@ -796,12 +796,12 @@ export function GroupChatThreadPanel({
               params: { groupId },
             });
           }}
-          className="flex items-center gap-2.5 border-b border-black/5 bg-[#f7f7f7] px-4 py-2.5 text-left"
+          className="flex items-center gap-2.5 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-2.5 text-left"
         >
-          <span className="shrink-0 rounded-[8px] bg-white px-2 py-0.5 text-[10px] font-medium text-[#8c8c8c]">
+          <span className="shrink-0 rounded-[8px] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]">
             群公告
           </span>
-          <span className="min-w-0 flex-1 truncate text-[13px] text-[#5f5f5f]">
+          <span className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-secondary)]">
             {announcement}
           </span>
         </button>
@@ -812,10 +812,13 @@ export function GroupChatThreadPanel({
           className={
             isDesktop
               ? "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-6 py-3"
-              : "border-b border-black/6 bg-white/82 px-3 py-2.5"
+              : "border-b border-[color:var(--border-faint)] bg-[rgba(249,251,250,0.92)] px-3 py-2.5"
           }
         >
-          <InlineNotice tone="info" className="border-black/6 bg-white">
+          <InlineNotice
+            tone="info"
+            className="border-[color:var(--border-faint)] bg-white"
+          >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="min-w-0 flex-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                 {routeContextNotice.description}
