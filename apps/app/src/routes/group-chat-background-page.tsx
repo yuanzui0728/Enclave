@@ -272,19 +272,24 @@ export function GroupChatBackgroundPage() {
           ) : null}
 
           <SectionCard
+            compact={!isDesktopLayout}
             title="默认背景图"
             description="应用到所有未单独设置专属背景的聊天。"
             status={getChatBackgroundLabel(defaultDraft)}
           >
             <PresetGrid
+              compact={!isDesktopLayout}
               selectedAssetId={defaultDraft?.assetId}
               onSelect={(preset) => handlePresetSelect("default", preset)}
             />
-            <div className="flex flex-wrap gap-3">
+            <div
+              className={`flex flex-wrap gap-3 ${isDesktopLayout ? "" : "gap-2"}`}
+            >
               <Button
                 variant="secondary"
                 disabled={busy}
                 onClick={() => openPicker("default")}
+                className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 上传图片
               </Button>
@@ -292,6 +297,7 @@ export function GroupChatBackgroundPage() {
                 variant="primary"
                 disabled={busy || !defaultDraft}
                 onClick={() => saveDefaultMutation.mutate()}
+                className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 保存默认背景
               </Button>
@@ -299,6 +305,7 @@ export function GroupChatBackgroundPage() {
                 variant="ghost"
                 disabled={busy}
                 onClick={() => clearDefaultMutation.mutate()}
+                className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
                 恢复系统背景
               </Button>
@@ -306,6 +313,7 @@ export function GroupChatBackgroundPage() {
           </SectionCard>
 
           <SectionCard
+            compact={!isDesktopLayout}
             title="当前群聊背景"
             description="群聊可设置专属背景，优先级高于默认背景图。"
             status={
@@ -317,12 +325,14 @@ export function GroupChatBackgroundPage() {
             <div className="flex flex-wrap gap-2">
               <ModeChip
                 active={groupMode === "inherit"}
+                compact={!isDesktopLayout}
                 disabled={busy}
                 label="跟随默认"
                 onClick={() => setGroupMode("inherit")}
               />
               <ModeChip
                 active={groupMode === "custom"}
+                compact={!isDesktopLayout}
                 disabled={busy}
                 label="单独设置"
                 onClick={() => setGroupMode("custom")}
@@ -332,35 +342,39 @@ export function GroupChatBackgroundPage() {
             {groupMode === "custom" ? (
               <>
                 <PresetGrid
+                  compact={!isDesktopLayout}
                   selectedAssetId={groupDraft?.assetId}
                   onSelect={(preset) => handlePresetSelect("group", preset)}
                 />
-                <div className="flex flex-wrap gap-3">
+                <div
+                  className={`flex flex-wrap gap-3 ${isDesktopLayout ? "" : "gap-2"}`}
+                >
                   <Button
                     variant="secondary"
                     disabled={busy}
                     onClick={() => openPicker("group")}
+                    className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
                   >
                     上传图片
-                  </Button>
-                  <Button
-                    variant="primary"
-                    disabled={busy || !groupDraft}
-                    onClick={() => saveGroupMutation.mutate()}
-                  >
-                    保存当前群聊背景
                   </Button>
                   <Button
                     variant="ghost"
                     disabled={busy}
                     onClick={() => clearGroupMutation.mutate()}
+                    className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
                   >
                     跟随默认背景
                   </Button>
                 </div>
               </>
             ) : (
-              <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.62)] px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <div
+                className={
+                  isDesktopLayout
+                    ? "rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.62)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
+                    : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
+                }
+              >
                 当前群聊会直接沿用默认背景图。切换到“单独设置”后，可以挑选群聊专属背景。
               </div>
             )}
@@ -368,10 +382,11 @@ export function GroupChatBackgroundPage() {
             <div className="flex flex-wrap gap-3">
               <Button
                 variant="primary"
-                disabled={busy}
+                disabled={busy || (groupMode === "custom" && !groupDraft)}
                 onClick={() => saveGroupMutation.mutate()}
+                className={!isDesktopLayout ? "min-h-11 rounded-full px-4" : undefined}
               >
-                保存当前群聊设置
+                {groupMode === "custom" ? "保存群聊背景" : "保存当前群聊设置"}
               </Button>
             </div>
           </SectionCard>
@@ -448,26 +463,52 @@ export function GroupChatBackgroundPage() {
 }
 
 function SectionCard({
+  compact = false,
   title,
   description,
   status,
   children,
 }: {
+  compact?: boolean;
   title: string;
   description: string;
   status: string;
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+    <section
+      className={
+        compact
+          ? "space-y-4 overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4 shadow-none"
+          : "space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]"
+      }
+    >
       <div>
-        <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+        <div
+          className={
+            compact
+              ? "text-[17px] font-medium text-[color:var(--text-primary)]"
+              : "text-lg font-semibold text-[color:var(--text-primary)]"
+          }
+        >
           {title}
         </div>
-        <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
+        <div
+          className={
+            compact
+              ? "mt-1 text-xs leading-6 text-[color:var(--text-secondary)]"
+              : "mt-1 text-sm leading-6 text-[color:var(--text-secondary)]"
+          }
+        >
           {description}
         </div>
-        <div className="mt-3 inline-flex rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-xs text-[color:var(--text-muted)]">
+        <div
+          className={
+            compact
+              ? "mt-3 inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-3 py-1 text-[11px] text-[color:var(--text-muted)]"
+              : "mt-3 inline-flex rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-xs text-[color:var(--text-muted)]"
+          }
+        >
           当前：{status}
         </div>
       </div>
@@ -477,14 +518,18 @@ function SectionCard({
 }
 
 function PresetGrid({
+  compact = false,
   selectedAssetId,
   onSelect,
 }: {
+  compact?: boolean;
   selectedAssetId?: string;
   onSelect: (background: ChatBackgroundAsset) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div
+      className={`grid grid-cols-2 ${compact ? "gap-2" : "gap-3"} sm:grid-cols-3`}
+    >
       {CHAT_BACKGROUND_PRESETS.map((preset) => (
         <button
           key={preset.assetId}
@@ -493,7 +538,9 @@ function PresetGrid({
           className={`overflow-hidden rounded-[12px] border text-left transition ${
             preset.assetId === selectedAssetId
               ? "border-[rgba(7,193,96,0.22)] bg-white shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
-              : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]"
+              : compact
+                ? "border-[color:var(--border-subtle)] bg-white active:bg-[color:var(--surface-card-hover)]"
+                : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]"
           }`}
         >
           <div
@@ -515,11 +562,13 @@ function PresetGrid({
 
 function ModeChip({
   active,
+  compact = false,
   disabled,
   label,
   onClick,
 }: {
   active: boolean;
+  compact?: boolean;
   disabled: boolean;
   label: string;
   onClick: () => void;
@@ -529,10 +578,18 @@ function ModeChip({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-[8px] border px-4 py-2 text-sm transition ${
+      className={`border transition ${
+        compact
+          ? "rounded-full px-4 py-2 text-[13px]"
+          : "rounded-[8px] px-4 py-2 text-sm"
+      } ${
         active
-          ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white"
+          ? compact
+            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(247,251,248,0.96)] text-[#15803d]"
+            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
+          : compact
+            ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)] active:bg-white"
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white"
       } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {label}
