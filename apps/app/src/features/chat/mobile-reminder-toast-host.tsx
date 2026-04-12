@@ -186,7 +186,14 @@ export function MobileReminderToastHost() {
   };
 
   return (
-    <div className="pointer-events-none absolute inset-x-3 top-3 z-30 space-y-2">
+    <div
+      className="pointer-events-none absolute z-30 space-y-2"
+      style={{
+        top: "calc(var(--safe-area-inset-top) + 0.75rem)",
+        right: "calc(var(--safe-area-inset-right) + 0.75rem)",
+        left: "calc(var(--safe-area-inset-left) + 0.75rem)",
+      }}
+    >
       {actionNotice ? (
         <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[rgba(249,255,251,0.97)] shadow-[0_12px_28px_rgba(15,23,42,0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3">
