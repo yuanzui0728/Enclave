@@ -669,7 +669,7 @@ export function ContactsPage() {
       label: "公众号",
       subtitle: "查看已上线的内容账号",
       icon: BookText,
-      iconClassName: "bg-[linear-gradient(135deg,#5d67c9,#4951a3)]",
+      iconClassName: "bg-[linear-gradient(135deg,#10b981,#0f766e)]",
       onClick: () => handleShortcutNavigate("/contacts/official-accounts"),
     },
     {
@@ -690,9 +690,9 @@ export function ContactsPage() {
   if (isDesktopLayout) {
     return (
       <div ref={pageRef} className="h-full min-h-0">
-        <AppPage className="h-full min-h-0 space-y-0 bg-[rgba(244,247,246,0.98)] px-0 py-0">
+        <AppPage className="h-full min-h-0 space-y-0 bg-[color:var(--bg-app)] px-0 py-0">
           <div className="flex h-full min-h-0">
-            <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.9)]">
+            <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
               <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div className="text-base font-medium text-[color:var(--text-primary)]">
@@ -706,7 +706,7 @@ export function ContactsPage() {
                   </div>
                 </div>
 
-                <label className="mt-3 flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+                <label className="mt-3 flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
                   <Search size={15} className="shrink-0" />
                   <input
                     type="search"
@@ -722,7 +722,7 @@ export function ContactsPage() {
                 <ContactShortcutList
                   items={shortcutItems}
                   compact
-                  className="shadow-[var(--shadow-section)]"
+                  className="bg-white shadow-[var(--shadow-section)]"
                 />
               </div>
 
@@ -817,9 +817,17 @@ export function ContactsPage() {
                 ) : null}
 
                 {!friendsQuery.isLoading && friendSections.length ? (
-                  <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-                    {friendSections.map((section) => (
-                      <div key={section.key} id={section.anchorId}>
+                  <div className="mx-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+                    {friendSections.map((section, sectionIndex) => (
+                      <div
+                        key={section.key}
+                        id={section.anchorId}
+                        className={cn(
+                          sectionIndex > 0
+                            ? "border-t border-[color:var(--border-faint)]"
+                            : undefined,
+                        )}
+                      >
                         <SectionHeader title={section.title} desktop />
                         {section.items.map((item, index) => (
                           <FriendListRow
@@ -887,7 +895,7 @@ export function ContactsPage() {
                 {filteredWorldCharacterItems.length ? (
                   <div
                     id="world-character-directory"
-                    className="mt-3 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+                    className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]"
                   >
                     <SectionHeader
                       title={normalizedSearchText ? "世界角色结果" : "世界角色"}
@@ -1208,11 +1216,11 @@ function FriendListRow({
       className={cn(
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
-          ? "px-4 py-3.5 hover:bg-white/86"
+          ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
           : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
-          ? "border border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+          ? "border border-[rgba(7,193,96,0.16)] bg-[rgba(240,247,243,0.94)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
           : undefined,
       )}
     >
@@ -1264,7 +1272,7 @@ function WorldCharacterRow({
       className={cn(
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
-          ? "px-4 py-3.5 hover:bg-white/86"
+          ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
           : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
@@ -1303,7 +1311,7 @@ function SectionHeader({
       className={cn(
         "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
-          ? "sticky top-0 bg-[rgba(244,248,246,0.96)] backdrop-blur"
+          ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
           : "sticky top-[88px] bg-[rgba(247,247,247,0.94)] backdrop-blur",
       )}
     >
