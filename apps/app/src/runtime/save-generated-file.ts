@@ -1,4 +1,8 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+import {
+  isNativeMobileBridgeAvailable,
+  shareFileWithNativeShell,
+} from "./mobile-bridge";
 
 export type SaveGeneratedFileInput = {
   contents: string;
@@ -59,10 +63,44 @@ function saveGeneratedFileWithBrowser(
   };
 }
 
+async function saveGeneratedFileWithNativeShell(
+  input: SaveGeneratedFileInput,
+): Promise<SaveGeneratedFileResult> {
+  const kindLabel = resolveKindLabel(input.kindLabel);
+  const mimeType = input.mimeType?.trim() || "application/octet-stream";
+  const result = await shareFileWithNativeShell({
+    blob: new Blob([input.contents], {
+      type: mimeType,
+    }),
+    fileName: normalizeGeneratedFileName(input.fileName),
+    mimeType,
+    title: input.dialogTitle,
+  });
+
+  if (!result.shared) {
+    return {
+      status: "failed",
+      message: `${kindLabel}保存失败，请稍后再试。`,
+    };
+  }
+
+  return {
+    status: "started",
+    message: `${kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。`,
+  };
+}
+
 export async function saveGeneratedFile(
   input: SaveGeneratedFileInput,
 ): Promise<SaveGeneratedFileResult> {
   const fileName = normalizeGeneratedFileName(input.fileName);
+  if (isNativeMobileBridgeAvailable()) {
+    return saveGeneratedFileWithNativeShell({
+      ...input,
+      fileName,
+    });
+  }
+
   if (!isDesktopRuntimeAvailable()) {
     return saveGeneratedFileWithBrowser({
       ...input,
