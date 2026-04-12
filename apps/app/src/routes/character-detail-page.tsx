@@ -329,7 +329,12 @@ export function CharacterDetailPage() {
   };
 
   return (
-    <AppPage className="min-h-full space-y-0 bg-[#ededed] px-0 py-0 text-[#111827]">
+    <AppPage
+      className={cn(
+        "min-h-full space-y-0 px-0 py-0 text-[#111827]",
+        isDesktopLayout ? "bg-[#ededed]" : "bg-[#f5f5f5]",
+      )}
+    >
       <header className="sticky top-0 z-20 border-b border-black/5 bg-[rgba(247,247,247,0.95)] px-2 py-2.5 backdrop-blur-xl">
         <div className="relative flex min-h-11 items-center gap-1.5">
           <button
@@ -448,7 +453,14 @@ export function CharacterDetailPage() {
             <ErrorBlock message={deleteFriendMutation.error.message} />
           ) : null}
 
-          <section className="overflow-hidden rounded-[18px] border border-black/5 bg-white">
+          <section
+            className={cn(
+              "overflow-hidden border bg-white",
+              isDesktopLayout
+                ? "rounded-[18px] border-black/5"
+                : "mt-2 -mx-3 rounded-none border-x-0 border-[color:var(--border-faint)]",
+            )}
+          >
             <div className="flex items-start gap-4 px-4 py-4">
               <AvatarChip
                 name={character.name}
@@ -483,7 +495,14 @@ export function CharacterDetailPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-[18px] border border-black/5 bg-black/5">
+          <section
+            className={cn(
+              "overflow-hidden border",
+              isDesktopLayout
+                ? "rounded-[18px] border-black/5 bg-black/5"
+                : "-mx-3 rounded-none border-x-0 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+            )}
+          >
             <div
               className={cn(
                 "grid gap-px",
