@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   dismissActiveGame,
+  hydrateGameCenterStateFromNative,
   markGameCenterEventAction,
   markGameCenterInviteDelivered,
   markGameCenterFriendInvite,
@@ -15,10 +17,38 @@ export function useGameCenterState() {
   const [state, setState] = useState<GameCenterStoredState>(() =>
     readGameCenterState(),
   );
+  const [stateReady, setStateReady] = useState(!isDesktopRuntimeAvailable());
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateState() {
+      const hydratedState = await hydrateGameCenterStateFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setState(hydratedState);
+      setStateReady(true);
+    }
+
+    void hydrateState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!stateReady && isDesktopRuntimeAvailable()) {
+      writeGameCenterState(state, {
+        syncNative: false,
+      });
+      return;
+    }
+
     writeGameCenterState(state);
-  }, [state]);
+  }, [state, stateReady]);
 
   return {
     ...state,
