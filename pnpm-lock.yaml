@@ -105,6 +105,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.1.1
         version: 7.6.1
+      '@capacitor/keyboard':
+        specifier: ^7.0.6
+        version: 7.0.6(@capacitor/core@7.6.1)
     devDependencies:
       '@capacitor/cli':
         specifier: ^7.1.1
@@ -115,6 +118,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.1.1
         version: 7.6.1
+      '@capacitor/keyboard':
+        specifier: ^7.0.6
+        version: 7.0.6(@capacitor/core@7.6.1)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.72.0)

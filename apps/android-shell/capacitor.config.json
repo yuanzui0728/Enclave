@@ -5,6 +5,11 @@
   "server": {
     "androidScheme": "http"
   },
+  "plugins": {
+    "Keyboard": {
+      "resizeOnFullScreen": true
+    }
+  },
   "android": {
     "path": "android"
   }

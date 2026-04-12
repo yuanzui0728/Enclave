@@ -1,4 +1,6 @@
-import { useEffect, useEffectEvent, useState } from "react";
+import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
+import { Keyboard } from "@capacitor/keyboard";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { getNativeShellPlatform } from "../lib/native-shell";
 
 function readKeyboardInset() {
@@ -6,8 +8,41 @@ function readKeyboardInset() {
     return 0;
   }
 
-  const inset = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+  const inset =
+    window.innerHeight -
+    window.visualViewport.height -
+    window.visualViewport.offsetTop;
   return inset > 0 ? Math.round(inset) : 0;
+}
+
+function readWindowHeight() {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  return Math.round(window.innerHeight);
+}
+
+function resolveKeyboardInset(input: {
+  layoutHeight: number;
+  nativeKeyboardHeight: number;
+  platform: string | null;
+}) {
+  const viewportInset = readKeyboardInset();
+  if (input.platform !== "android" || input.nativeKeyboardHeight <= 0) {
+    return viewportInset;
+  }
+
+  // Android WebView may overlay the IME without resizing the page.
+  const currentWindowHeight = readWindowHeight();
+  const windowShrinkInset = Math.max(
+    input.layoutHeight - currentWindowHeight,
+    0,
+  );
+  return Math.max(
+    viewportInset,
+    input.nativeKeyboardHeight - windowShrinkInset,
+  );
 }
 
 function hasFocusedEditableElement() {
@@ -41,36 +76,120 @@ function hasFocusedEditableElement() {
 }
 
 export function useKeyboardInset() {
+  const nativePlatform = getNativeShellPlatform();
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const layoutHeightRef = useRef(readWindowHeight());
+  const nativeKeyboardHeightRef = useRef(0);
   const updateInset = useEffectEvent(() => {
-    setKeyboardInset(hasFocusedEditableElement() ? readKeyboardInset() : 0);
-  });
-
-  useEffect(() => {
-    updateInset();
-
-    const viewport = window.visualViewport;
-    if (!viewport) {
+    if (typeof window === "undefined") {
       return;
     }
 
-    viewport.addEventListener("resize", updateInset);
-    viewport.addEventListener("scroll", updateInset);
-    window.addEventListener("focusin", updateInset);
-    window.addEventListener("focusout", updateInset);
+    if (!hasFocusedEditableElement()) {
+      if (nativeKeyboardHeightRef.current <= 0) {
+        layoutHeightRef.current = readWindowHeight();
+      }
+      setKeyboardInset(0);
+      return;
+    }
+
+    setKeyboardInset(
+      resolveKeyboardInset({
+        layoutHeight: layoutHeightRef.current,
+        nativeKeyboardHeight: nativeKeyboardHeightRef.current,
+        platform: nativePlatform,
+      }),
+    );
+  });
+
+  useEffect(() => {
+    layoutHeightRef.current = readWindowHeight();
+    updateInset();
+
+    const viewport = window.visualViewport;
+    const syncLayoutHeight = () => {
+      if (
+        nativeKeyboardHeightRef.current <= 0 &&
+        !hasFocusedEditableElement()
+      ) {
+        layoutHeightRef.current = readWindowHeight();
+      }
+    };
+    const handleViewportChange = () => {
+      syncLayoutHeight();
+      updateInset();
+    };
+    const handleFocusChange = () => {
+      syncLayoutHeight();
+      updateInset();
+    };
+
+    viewport?.addEventListener("resize", handleViewportChange);
+    viewport?.addEventListener("scroll", handleViewportChange);
+    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("focusin", handleFocusChange);
+    window.addEventListener("focusout", handleFocusChange);
 
     return () => {
-      viewport.removeEventListener("resize", updateInset);
-      viewport.removeEventListener("scroll", updateInset);
-      window.removeEventListener("focusin", updateInset);
-      window.removeEventListener("focusout", updateInset);
+      viewport?.removeEventListener("resize", handleViewportChange);
+      viewport?.removeEventListener("scroll", handleViewportChange);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("focusin", handleFocusChange);
+      window.removeEventListener("focusout", handleFocusChange);
     };
   }, [updateInset]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || nativePlatform !== "android") {
+      return;
+    }
+
+    let listenerHandles: PluginListenerHandle[] = [];
+    let disposed = false;
+    const syncNativeKeyboardHeight = (keyboardHeight: number) => {
+      nativeKeyboardHeightRef.current = Math.max(Math.round(keyboardHeight), 0);
+      updateInset();
+    };
+
+    void Promise.all([
+      Keyboard.addListener("keyboardWillShow", (info) => {
+        syncNativeKeyboardHeight(info.keyboardHeight);
+      }),
+      Keyboard.addListener("keyboardDidShow", (info) => {
+        syncNativeKeyboardHeight(info.keyboardHeight);
+      }),
+      Keyboard.addListener("keyboardWillHide", () => {
+        syncNativeKeyboardHeight(0);
+      }),
+      Keyboard.addListener("keyboardDidHide", () => {
+        syncNativeKeyboardHeight(0);
+      }),
+    ])
+      .then((handles) => {
+        if (disposed) {
+          handles.forEach((handle) => {
+            void handle.remove();
+          });
+          return;
+        }
+
+        listenerHandles = handles;
+      })
+      .catch(() => {});
+
+    return () => {
+      disposed = true;
+      nativeKeyboardHeightRef.current = 0;
+      listenerHandles.forEach((handle) => {
+        void handle.remove();
+      });
+    };
+  }, [nativePlatform, updateInset]);
 
   return {
     keyboardInset,
     keyboardOpen: keyboardInset > 0,
-    nativePlatform: getNativeShellPlatform(),
+    nativePlatform,
   };
 }
 
