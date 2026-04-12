@@ -1739,12 +1739,26 @@ export function ChatMessageList({
           previousMessage?.createdAt,
         );
         const isUser = message.senderType === "user";
+        const previousIsSystemLike =
+          previousMessage?.type === "system" ||
+          previousMessage?.senderType === "system" ||
+          (previousMessage?.senderType === "user" &&
+            recalledMessageIdSet.has(previousMessage.id));
         const isRecalled =
           message.senderType === "user" && recalledMessageIdSet.has(message.id);
         const isSystem =
           message.type === "system" || message.senderType === "system";
         const isHighlighted = message.id === resolvedHighlightedMessageId;
         const isSelected = selectedMessageIdSet.has(message.id);
+        const continuesMessageRun =
+          !isDesktop &&
+          !showTimestamp &&
+          !previousIsSystemLike &&
+          !!previousMessage &&
+          previousMessage.senderType === message.senderType &&
+          (previousMessage.senderType === "user" ||
+            (previousMessage.senderName ?? "") ===
+              (message.senderName ?? ""));
         const showSenderName =
           !isUser &&
           groupMode &&
@@ -1863,7 +1877,11 @@ export function ChatMessageList({
               onPointerCancel={clearLongPressTimer}
               onPointerMove={handleMobileMessagePointerMove}
               className={`rounded-[16px] transition-[background-color,box-shadow] duration-300 ${
-                isDesktop ? "space-y-1.5 px-2 py-1.5" : "space-y-1 px-1.5 py-1"
+                isDesktop
+                  ? "space-y-1.5 px-2 py-1.5"
+                  : continuesMessageRun
+                    ? "space-y-0.5 px-1.5 py-0.5"
+                    : "space-y-1 px-1.5 py-1"
               } ${
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
@@ -1873,7 +1891,9 @@ export function ChatMessageList({
               }`}
             >
               <div
-                className={`flex items-start ${isDesktop ? "gap-2.5" : "gap-2"} ${isUser ? "justify-end" : "justify-start"}`}
+                className={`flex items-start ${
+                  isDesktop ? "gap-2.5" : continuesMessageRun ? "gap-1.5" : "gap-2"
+                } ${isUser ? "justify-end" : "justify-start"}`}
               >
                 {!isUser && selectionMode ? (
                   <SelectionToggle
@@ -1893,7 +1913,9 @@ export function ChatMessageList({
                   {isSharedHistoryMessage ? (
                     <div
                       className={cn(
-                        "mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium",
+                        isDesktop
+                          ? "mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium"
+                          : "mb-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium",
                         isUser
                           ? "bg-[rgba(148,163,184,0.18)] text-[color:var(--text-secondary)]"
                           : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
@@ -1905,7 +1927,9 @@ export function ChatMessageList({
                   {showSenderName ? (
                     <div
                       className={`px-1 text-[color:var(--text-muted)] ${
-                        isDesktop ? "mb-1 text-[10px]" : "mb-0.5 text-[11px]"
+                        isDesktop
+                          ? "mb-1 text-[10px]"
+                          : "mb-px px-0.5 text-[10px] leading-4"
                       }`}
                     >
                       {message.senderName}
@@ -2084,7 +2108,9 @@ export function ChatMessageList({
                   {reminderRecord ? (
                     <div
                       className={`px-1 text-[#8c8c8c] ${
-                        isDesktop ? "mt-1 text-[11px]" : "mt-0.5 text-[10px]"
+                        isDesktop
+                          ? "mt-1 text-[11px]"
+                          : "mt-px px-0.5 text-[10px]"
                       }`}
                     >
                       已设提醒 ·{" "}
