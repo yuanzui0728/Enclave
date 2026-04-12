@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { transcribeSpeechInput } from "./api/transcriptions";
 import type {
   BrowserSpeechRecognition,
@@ -61,13 +62,15 @@ function mapRecognitionError(error: string) {
   switch (error) {
     case "not-allowed":
     case "service-not-allowed":
-      return "麦克风权限被拒绝，请先允许浏览器访问麦克风。";
+      return resolveMicrophonePermissionDeniedCopy();
     case "no-speech":
       return "没有听到有效语音，请再说一遍。";
     case "audio-capture":
       return "当前设备无法采集麦克风音频。";
     case "network":
-      return "浏览器语音识别网络异常，已可改用录音转写。";
+      return isNativeMobileRuntime()
+        ? "语音识别网络异常，已可改用录音转写。"
+        : "浏览器语音识别网络异常，已可改用录音转写。";
     default:
       return "语音识别中断了，请重试。";
   }
@@ -269,11 +272,7 @@ export function useSpeechInput({
   const startMediaRecorder = async () => {
     if (!canUseMediaRecorder) {
       setStatus("error");
-      setError(
-        mode === "voice"
-          ? "当前浏览器不支持语音发送。"
-          : "当前浏览器不支持录音转写。",
-      );
+      setError(resolveSpeechInputUnsupportedCopy(mode));
       return;
     }
 
@@ -414,8 +413,8 @@ export function useSpeechInput({
       setError(
         startError instanceof Error &&
           /permission|denied|allowed/i.test(startError.message)
-          ? "麦克风权限被拒绝，请先允许浏览器访问麦克风。"
-          : "无法启动录音，请检查浏览器麦克风权限。",
+          ? resolveMicrophonePermissionDeniedCopy()
+          : resolveMicrophonePermissionCheckCopy(),
       );
     }
   };
@@ -559,4 +558,21 @@ function formatDurationLabel(durationMs: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function resolveSpeechInputUnsupportedCopy(mode: "dictation" | "voice") {
+  const surfaceLabel = isNativeMobileRuntime() ? "当前设备" : "当前浏览器";
+  return mode === "voice"
+    ? `${surfaceLabel}不支持语音发送。`
+    : `${surfaceLabel}不支持录音转写。`;
+}
+
+function resolveMicrophonePermissionDeniedCopy() {
+  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
+  return `麦克风权限被拒绝，请先允许${surfaceLabel}访问麦克风。`;
+}
+
+function resolveMicrophonePermissionCheckCopy() {
+  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
+  return `无法启动录音，请检查${surfaceLabel}麦克风权限。`;
 }

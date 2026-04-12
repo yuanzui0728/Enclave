@@ -62,7 +62,7 @@ function resolveStatusHint(
 
   switch (status) {
     case "requesting-permission":
-      return "第一次使用时，浏览器可能会弹出麦克风授权。";
+      return "第一次使用时，系统可能会弹出麦克风授权。";
     case "listening":
       return "继续按住说话，松开后结束本次输入。";
     case "processing":

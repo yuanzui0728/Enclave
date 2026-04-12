@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 
 type CameraPreviewStatus =
   | "idle"
@@ -35,7 +36,7 @@ export function useSelfCameraPreview({
     if (!supported) {
       stopCurrentStream();
       setStatus("unsupported");
-      setError("当前浏览器不支持摄像头预览。");
+      setError(resolveCameraPreviewUnsupportedCopy());
       return;
     }
 
@@ -116,7 +117,7 @@ function mapCameraPreviewError(error: unknown) {
         return "摄像头启动被中断了，请再试一次。";
       case "NotAllowedError":
       case "SecurityError":
-        return "摄像头权限被拒绝，请先允许浏览器访问摄像头。";
+        return resolveCameraPermissionDeniedCopy();
       case "NotFoundError":
         return "当前设备没有可用的摄像头。";
       case "NotReadableError":
@@ -130,8 +131,24 @@ function mapCameraPreviewError(error: unknown) {
   }
 
   if (error instanceof Error) {
-    return error.message || "无法打开摄像头，请检查浏览器权限。";
+    return error.message || resolveCameraPermissionCheckCopy();
   }
 
-  return "无法打开摄像头，请检查浏览器权限。";
+  return resolveCameraPermissionCheckCopy();
+}
+
+function resolveCameraPreviewUnsupportedCopy() {
+  return isNativeMobileRuntime()
+    ? "当前设备不支持摄像头预览。"
+    : "当前浏览器不支持摄像头预览。";
+}
+
+function resolveCameraPermissionDeniedCopy() {
+  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
+  return `摄像头权限被拒绝，请先允许${surfaceLabel}访问摄像头。`;
+}
+
+function resolveCameraPermissionCheckCopy() {
+  const surfaceLabel = isNativeMobileRuntime() ? "应用" : "浏览器";
+  return `无法打开摄像头，请检查${surfaceLabel}权限。`;
 }

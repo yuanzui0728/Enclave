@@ -4,6 +4,7 @@ import {
   createVoiceCallTurn,
   type VoiceCallTurnResult,
 } from "@yinjie/contracts";
+import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { useSpeechInput } from "./use-speech-input";
 
 type UseVoiceCallSessionOptions = {
@@ -68,7 +69,7 @@ export function useVoiceCallSession({
       await audio.play();
     } catch {
       setPlaybackState("idle");
-      setPlayerError("浏览器拦截了自动播报，点“重播上一句”即可播放。");
+      setPlayerError(resolveAutoplayBlockedCopy());
     }
   }, []);
 
@@ -125,9 +126,7 @@ export function useVoiceCallSession({
     };
     const handleError = () => {
       setPlaybackState("idle");
-      setPlayerError(
-        "语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。",
-      );
+      setPlayerError(resolveVoicePlaybackFailedCopy());
     };
 
     audio.addEventListener("play", handlePlay);
@@ -254,4 +253,16 @@ export function useVoiceCallSession({
     stopReplyPlayback,
     turnMutation,
   };
+}
+
+function resolveAutoplayBlockedCopy() {
+  return isNativeMobileRuntime()
+    ? "系统拦截了自动播报，点“重播上一句”即可播放。"
+    : "浏览器拦截了自动播报，点“重播上一句”即可播放。";
+}
+
+function resolveVoicePlaybackFailedCopy() {
+  return isNativeMobileRuntime()
+    ? "语音已生成，但当前设备没有成功播放。可以点“重播上一句”再试。"
+    : "语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。";
 }

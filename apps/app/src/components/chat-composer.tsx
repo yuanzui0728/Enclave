@@ -380,7 +380,10 @@ export function ChatComposer({
     showSpeechEntry && !speechSupported
       ? isDesktop
         ? "当前浏览器不支持语音输入，请改用键盘输入。"
-        : "当前浏览器不支持语音发送，请改用键盘输入。"
+        : runtimeConfig.appPlatform === "android" ||
+            runtimeConfig.appPlatform === "ios"
+          ? "当前设备不支持语音发送，请改用键盘输入。"
+          : "当前浏览器不支持语音发送，请改用键盘输入。"
       : null;
   const speechButtonDisabled =
     !speechSupported ||

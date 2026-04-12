@@ -12,6 +12,7 @@ import {
   type VoiceCallTurnResult,
   resolveCoreApiBaseUrl,
 } from "@yinjie/contracts";
+import { isNativeMobileRuntime } from "../../runtime/native-runtime";
 import { useSpeechInput } from "./use-speech-input";
 
 type UseDigitalHumanCallSessionOptions = {
@@ -95,7 +96,7 @@ export function useDigitalHumanCallSession({
       await audio.play();
     } catch {
       setPlaybackState("idle");
-      setPlayerError("浏览器拦截了自动播报，点“重播上一句”即可播放。");
+      setPlayerError(resolveAutoplayBlockedCopy());
     }
   }, []);
 
@@ -161,9 +162,7 @@ export function useDigitalHumanCallSession({
     };
     const handleError = () => {
       setPlaybackState("idle");
-      setPlayerError(
-        "数字人语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。",
-      );
+      setPlayerError(resolveDigitalHumanPlaybackFailedCopy());
     };
 
     audio.addEventListener("play", handlePlay);
@@ -491,4 +490,16 @@ export function useDigitalHumanCallSession({
 
 function buildDigitalHumanSessionEventsUrl(sessionId: string, baseUrl?: string) {
   return `${resolveCoreApiBaseUrl(baseUrl)}${LEGACY_API_PREFIX}/chat/digital-human-calls/sessions/${sessionId}/events`;
+}
+
+function resolveAutoplayBlockedCopy() {
+  return isNativeMobileRuntime()
+    ? "系统拦截了自动播报，点“重播上一句”即可播放。"
+    : "浏览器拦截了自动播报，点“重播上一句”即可播放。";
+}
+
+function resolveDigitalHumanPlaybackFailedCopy() {
+  return isNativeMobileRuntime()
+    ? "数字人语音已生成，但当前设备没有成功播放。可以点“重播上一句”再试。"
+    : "数字人语音已生成，但浏览器没有成功播放。可以点“重播上一句”再试。";
 }
