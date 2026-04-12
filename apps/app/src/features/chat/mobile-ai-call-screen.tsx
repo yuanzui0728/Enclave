@@ -1166,24 +1166,28 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <button
                 type="button"
                 onClick={() => setDiagnosticsExpanded((current) => !current)}
-                className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.06em] text-white/60 transition active:bg-white/12 active:text-white/76"
+                className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.04em] text-white/62 transition active:bg-white/12 active:text-white/78"
               >
                 {diagnosticsExpanded ? "收起链路详情" : "链路详情"}
               </button>
             </div>
           ) : null}
           {diagnosticsExpanded ? (
-            <div className="rounded-[18px] border border-white/12 bg-white/8 px-4 py-3 text-[12px] leading-6 text-white/70">
+            <MobileCallNotice tone="info" className="space-y-1.5">
               {speechStatus ? (
                 <div>
-                  当前语音链路：{speechStatus.speechMessage}
+                  <span className="text-white/48">当前语音链路：</span>
+                  {speechStatus.speechMessage}
                   {speechProviderSummary ? ` ${speechProviderSummary}。` : ""}
                 </div>
               ) : null}
               {latencySummary ? (
-                <div>{`最近一轮：${latencySummary}`}</div>
+                <div>
+                  <span className="text-white/48">最近一轮：</span>
+                  {latencySummary}
+                </div>
               ) : null}
-            </div>
+            </MobileCallNotice>
           ) : null}
           {showPermissionPrimer ? (
             <MobileCallNotice tone="info">
@@ -1270,7 +1274,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {showPlaybackNudge ? (
-            <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/12 bg-white/8 px-4 py-3 text-[12px] leading-6 text-white/74">
+            <MobileCallNotice
+              tone="info"
+              className="flex items-center justify-between gap-3"
+            >
               <div className="min-w-0 flex-1">{playbackNudgeMessage}</div>
               <button
                 type="button"
@@ -1278,12 +1285,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   void activeCall.replayLastTurn();
                 }}
                 disabled={leavingScreen}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-3.5 text-[13px] text-white transition active:bg-white/14 disabled:opacity-45"
+                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-3.5 text-[12px] text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Volume2 size={15} />
                 补播这一句
               </button>
-            </div>
+            </MobileCallNotice>
           ) : null}
           {videoRecoveryMessage ? (
             <div className="flex flex-wrap gap-2">
