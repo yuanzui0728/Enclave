@@ -218,9 +218,14 @@ export function DesktopFeedDetailPanel({
             </div>
 
             <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-              <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
-                <MessageCircle size={14} />
-                评论区
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-primary)]">
+                  <MessageCircle size={14} />
+                  评论区
+                </div>
+                <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  {post.commentCount} 条
+                </span>
               </div>
               <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-muted)]">
                 共 {post.commentCount} 条评论，其中 {residentCommentCount} 条来自居民，
@@ -264,22 +269,30 @@ export function DesktopFeedDetailPanel({
                 </div>
               )}
 
-              <div className="mt-4 flex items-center gap-2">
-                <TextField
-                  value={commentDraft}
-                  onChange={(event) => onCommentChange(event.target.value)}
-                  placeholder="在右栏继续写评论..."
-                  className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
-                />
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!commentDraft.trim() || commentLoading}
-                  onClick={onCommentSubmit}
-                  className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                >
-                  {commentLoading ? "发送中..." : "发送"}
-                </Button>
+              <div className="mt-4 border-t border-[color:var(--border-faint)] pt-4">
+                <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+                  <span>直接在右栏继续回应当前公开动态。</span>
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
+                    评论输入
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
+                  <TextField
+                    value={commentDraft}
+                    onChange={(event) => onCommentChange(event.target.value)}
+                    placeholder="在右栏继续写评论..."
+                    className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={!commentDraft.trim() || commentLoading}
+                    onClick={onCommentSubmit}
+                    className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                  >
+                    {commentLoading ? "发送中..." : "发送"}
+                  </Button>
+                </div>
               </div>
             </div>
           </>
