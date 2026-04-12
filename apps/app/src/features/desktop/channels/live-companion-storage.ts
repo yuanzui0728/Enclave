@@ -1,3 +1,5 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+
 export type LiveDraft = {
   title: string;
   topic: string;
@@ -22,9 +24,15 @@ export type LiveSessionRecord = {
   channelPostId?: string;
 };
 
+type LiveCompanionStore = {
+  draft: LiveDraft;
+  history: LiveSessionRecord[];
+};
+
 const LIVE_DRAFT_STORAGE_KEY = "yinjie-desktop-live-companion-draft";
 const LIVE_HISTORY_STORAGE_KEY = "yinjie-desktop-live-companion-history";
 const MAX_LIVE_HISTORY = 12;
+let liveCompanionNativeWriteQueue: Promise<void> = Promise.resolve();
 
 export const defaultLiveDraft: LiveDraft = {
   title: "",
@@ -38,95 +46,284 @@ export const defaultLiveDraft: LiveDraft = {
   autoClip: true,
 };
 
-export function readLiveDraft() {
+function getStorage() {
   if (typeof window === "undefined") {
-    return { ...defaultLiveDraft };
+    return null;
   }
 
-  const raw = window.localStorage.getItem(LIVE_DRAFT_STORAGE_KEY);
+  return window.localStorage;
+}
+
+function normalizeLiveDraft(
+  draft: Partial<LiveDraft> | null | undefined,
+): LiveDraft {
+  return {
+    title: typeof draft?.title === "string" ? draft.title : "",
+    topic: typeof draft?.topic === "string" ? draft.topic : "",
+    coverHook: typeof draft?.coverHook === "string" ? draft.coverHook : "",
+    referencePostAuthorName:
+      typeof draft?.referencePostAuthorName === "string"
+        ? draft.referencePostAuthorName
+        : null,
+    referencePostId:
+      typeof draft?.referencePostId === "string" ? draft.referencePostId : null,
+    quality: isLiveQuality(draft?.quality) ? draft.quality : "hd",
+    mode: isLiveMode(draft?.mode) ? draft.mode : "solo",
+    syncComments:
+      typeof draft?.syncComments === "boolean"
+        ? draft.syncComments
+        : defaultLiveDraft.syncComments,
+    autoClip:
+      typeof draft?.autoClip === "boolean"
+        ? draft.autoClip
+        : defaultLiveDraft.autoClip,
+  };
+}
+
+function normalizeLiveHistory(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as LiveSessionRecord[];
+  }
+
+  return value.filter(
+    (item): item is LiveSessionRecord =>
+      typeof item?.id === "string" &&
+      typeof item.title === "string" &&
+      typeof item.topic === "string" &&
+      isLiveQuality(item.quality) &&
+      isLiveMode(item.mode) &&
+      typeof item.startedAt === "string" &&
+      (item.endedAt === undefined || typeof item.endedAt === "string") &&
+      (item.channelPostId === undefined || typeof item.channelPostId === "string") &&
+      (item.status === "live" || item.status === "ended"),
+  );
+}
+
+function normalizeLiveCompanionStore(value: unknown): LiveCompanionStore {
+  if (!value || typeof value !== "object") {
+    return {
+      draft: { ...defaultLiveDraft },
+      history: [] as LiveSessionRecord[],
+    };
+  }
+
+  const parsed = value as {
+    draft?: Partial<LiveDraft>;
+    history?: unknown;
+  };
+
+  return {
+    draft: normalizeLiveDraft(parsed.draft),
+    history: normalizeLiveHistory(parsed.history),
+  };
+}
+
+function parseLiveCompanionStore(raw: string | null | undefined) {
+  if (!raw) {
+    return {
+      draft: { ...defaultLiveDraft },
+      history: [] as LiveSessionRecord[],
+    } satisfies LiveCompanionStore;
+  }
+
+  try {
+    return normalizeLiveCompanionStore(JSON.parse(raw));
+  } catch {
+    return {
+      draft: { ...defaultLiveDraft },
+      history: [] as LiveSessionRecord[],
+    } satisfies LiveCompanionStore;
+  }
+}
+
+function parseLiveDraftRaw(raw: string | null) {
   if (!raw) {
     return { ...defaultLiveDraft };
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<LiveDraft>;
-    return {
-      title: typeof parsed.title === "string" ? parsed.title : "",
-      topic: typeof parsed.topic === "string" ? parsed.topic : "",
-      coverHook: typeof parsed.coverHook === "string" ? parsed.coverHook : "",
-      referencePostAuthorName:
-        typeof parsed.referencePostAuthorName === "string"
-          ? parsed.referencePostAuthorName
-          : null,
-      referencePostId:
-        typeof parsed.referencePostId === "string"
-          ? parsed.referencePostId
-          : null,
-      quality: isLiveQuality(parsed.quality) ? parsed.quality : "hd",
-      mode: isLiveMode(parsed.mode) ? parsed.mode : "solo",
-      syncComments:
-        typeof parsed.syncComments === "boolean"
-          ? parsed.syncComments
-          : defaultLiveDraft.syncComments,
-      autoClip:
-        typeof parsed.autoClip === "boolean"
-          ? parsed.autoClip
-          : defaultLiveDraft.autoClip,
-    };
+    return normalizeLiveDraft(JSON.parse(raw) as Partial<LiveDraft>);
   } catch {
     return { ...defaultLiveDraft };
   }
+}
+
+function parseLiveHistoryRaw(raw: string | null) {
+  if (!raw) {
+    return [] as LiveSessionRecord[];
+  }
+
+  try {
+    return normalizeLiveHistory(JSON.parse(raw) as LiveSessionRecord[]);
+  } catch {
+    return [] as LiveSessionRecord[];
+  }
+}
+
+function hasLiveDraftChanges(draft: LiveDraft) {
+  return (
+    draft.title.trim().length > 0 ||
+    draft.topic.trim().length > 0 ||
+    draft.coverHook.trim().length > 0 ||
+    draft.referencePostAuthorName !== defaultLiveDraft.referencePostAuthorName ||
+    draft.referencePostId !== defaultLiveDraft.referencePostId ||
+    draft.quality !== defaultLiveDraft.quality ||
+    draft.mode !== defaultLiveDraft.mode ||
+    draft.syncComments !== defaultLiveDraft.syncComments ||
+    draft.autoClip !== defaultLiveDraft.autoClip
+  );
+}
+
+function hasLiveCompanionStoreData(store: LiveCompanionStore) {
+  return hasLiveDraftChanges(store.draft) || store.history.length > 0;
+}
+
+function getLatestLiveHistoryTimestamp(history: LiveSessionRecord[]) {
+  return history.reduce((latest, item) => {
+    const startedAt = Date.parse(item.startedAt);
+    const endedAt = item.endedAt ? Date.parse(item.endedAt) : Number.NaN;
+    return Math.max(
+      latest,
+      Number.isFinite(startedAt) ? startedAt : 0,
+      Number.isFinite(endedAt) ? endedAt : 0,
+    );
+  }, 0);
+}
+
+function readLocalLiveCompanionStore(): LiveCompanionStore {
+  const storage = getStorage();
+  if (!storage) {
+    return {
+      draft: { ...defaultLiveDraft },
+      history: [] as LiveSessionRecord[],
+    };
+  }
+
+  const draftRaw = storage.getItem(LIVE_DRAFT_STORAGE_KEY);
+  const historyRaw = storage.getItem(LIVE_HISTORY_STORAGE_KEY);
+
+  return {
+    draft: parseLiveDraftRaw(draftRaw),
+    history: parseLiveHistoryRaw(historyRaw),
+  };
+}
+
+function queueNativeLiveCompanionStoreWrite(store: LiveCompanionStore) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(store);
+  liveCompanionNativeWriteQueue = liveCompanionNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_live_companion_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
+function writeLiveCompanionStoreToLocal(
+  store: LiveCompanionStore,
+  options?: {
+    syncNative?: boolean;
+  },
+) {
+  const storage = getStorage();
+  if (!storage) {
+    return store;
+  }
+
+  if (hasLiveDraftChanges(store.draft)) {
+    storage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(store.draft));
+  } else {
+    storage.removeItem(LIVE_DRAFT_STORAGE_KEY);
+  }
+
+  if (store.history.length) {
+    storage.setItem(LIVE_HISTORY_STORAGE_KEY, JSON.stringify(store.history));
+  } else {
+    storage.removeItem(LIVE_HISTORY_STORAGE_KEY);
+  }
+
+  if (options?.syncNative !== false) {
+    queueNativeLiveCompanionStoreWrite(store);
+  }
+
+  return store;
+}
+
+export function readLiveDraft() {
+  return readLocalLiveCompanionStore().draft;
 }
 
 export function writeLiveDraft(draft: LiveDraft) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(LIVE_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  const nextStore = {
+    ...readLocalLiveCompanionStore(),
+    draft: normalizeLiveDraft(draft),
+  } satisfies LiveCompanionStore;
+  writeLiveCompanionStoreToLocal(nextStore);
+  return nextStore.draft;
 }
 
 export function readLiveHistory() {
-  if (typeof window === "undefined") {
-    return [] as LiveSessionRecord[];
-  }
-
-  const raw = window.localStorage.getItem(LIVE_HISTORY_STORAGE_KEY);
-  if (!raw) {
-    return [] as LiveSessionRecord[];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as LiveSessionRecord[];
-    if (!Array.isArray(parsed)) {
-      return [] as LiveSessionRecord[];
-    }
-
-    return parsed.filter(
-      (item) =>
-        typeof item?.id === "string" &&
-        typeof item.title === "string" &&
-        typeof item.topic === "string" &&
-        isLiveQuality(item.quality) &&
-        isLiveMode(item.mode) &&
-        typeof item.startedAt === "string" &&
-        (item.endedAt === undefined || typeof item.endedAt === "string") &&
-        (item.status === "live" || item.status === "ended"),
-    );
-  } catch {
-    return [] as LiveSessionRecord[];
-  }
+  return readLocalLiveCompanionStore().history;
 }
 
 export function writeLiveHistory(history: LiveSessionRecord[]) {
-  if (typeof window === "undefined") {
-    return;
+  const nextStore = {
+    ...readLocalLiveCompanionStore(),
+    history: normalizeLiveHistory(history),
+  } satisfies LiveCompanionStore;
+  writeLiveCompanionStoreToLocal(nextStore);
+  return nextStore.history;
+}
+
+export async function hydrateLiveCompanionFromNative() {
+  const localStore = readLocalLiveCompanionStore();
+  if (!isDesktopRuntimeAvailable()) {
+    return localStore;
   }
 
-  window.localStorage.setItem(
-    LIVE_HISTORY_STORAGE_KEY,
-    JSON.stringify(history),
-  );
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_live_companion_store");
+
+    if (!result.exists) {
+      if (hasLiveCompanionStoreData(localStore)) {
+        queueNativeLiveCompanionStoreWrite(localStore);
+      }
+      return localStore;
+    }
+
+    const nativeStore = parseLiveCompanionStore(result.contents ?? null);
+    const shouldPreferLocal =
+      (!hasLiveCompanionStoreData(nativeStore) &&
+        hasLiveCompanionStoreData(localStore)) ||
+      (hasLiveDraftChanges(localStore.draft) &&
+        !hasLiveDraftChanges(nativeStore.draft)) ||
+      getLatestLiveHistoryTimestamp(localStore.history) >
+        getLatestLiveHistoryTimestamp(nativeStore.history);
+
+    if (shouldPreferLocal) {
+      if (hasLiveCompanionStoreData(localStore)) {
+        queueNativeLiveCompanionStoreWrite(localStore);
+      }
+      return localStore;
+    }
+
+    writeLiveCompanionStoreToLocal(nativeStore, {
+      syncNative: false,
+    });
+    return nativeStore;
+  } catch {
+    return localStore;
+  }
 }
 
 export function startLocalLiveSession(input: {
