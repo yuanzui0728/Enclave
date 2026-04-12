@@ -216,8 +216,8 @@ function GroupMemberPickerPage({
 
   if (isDesktopLayout) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#f3f3f3]">
-        <header className="flex items-center justify-between gap-4 border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+      <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+        <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <Button
               type="button"
@@ -229,7 +229,7 @@ function GroupMemberPickerPage({
               }}
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-[10px] border border-black/6 bg-white text-[color:var(--text-primary)]"
+              className="h-10 w-10 rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <ArrowLeft size={18} />
             </Button>
@@ -270,9 +270,9 @@ function GroupMemberPickerPage({
         </header>
 
         <div className="min-h-0 flex-1 p-6">
-          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[18px] border border-black/6 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-            <section className="flex w-[400px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-              <div className="border-b border-black/6 px-5 py-4">
+          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+            <section className="flex w-[400px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
                 <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
                   {mode === "add" ? "选择联系人" : "选择成员"}
                 </div>
@@ -292,7 +292,7 @@ function GroupMemberPickerPage({
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
                     placeholder={mode === "add" ? "搜索联系人" : "搜索群成员"}
-                    className="h-10 w-full rounded-[10px] border border-black/8 bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+                    className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)]"
                   />
                 </label>
 
@@ -356,8 +356,8 @@ function GroupMemberPickerPage({
               </div>
             </section>
 
-            <section className="flex min-w-0 flex-1 flex-col bg-[#fafafa]">
-              <div className="border-b border-black/6 bg-[#f7f7f7] px-6 py-4">
+            <section className="flex min-w-0 flex-1 flex-col bg-[rgba(245,248,247,0.92)]">
+              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
                 <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
                   {mode === "add" ? "待添加成员" : "待移除成员"}
                 </div>
@@ -372,7 +372,7 @@ function GroupMemberPickerPage({
                     {selectedItems.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-4 py-4"
+                        className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]"
                       >
                         <AvatarChip name={item.name} src={item.avatar} />
                         <div className="min-w-0 flex-1">
@@ -386,7 +386,7 @@ function GroupMemberPickerPage({
                         <button
                           type="button"
                           onClick={() => toggleSelection(item.id)}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-black/6 text-[color:var(--text-secondary)] transition hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                           aria-label={`移除 ${item.name}`}
                         >
                           <X size={14} />
@@ -412,7 +412,7 @@ function GroupMemberPickerPage({
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-4 border-t border-black/6 bg-[#f7f7f7] px-6 py-4">
+              <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
                 <div className="text-[12px] text-[color:var(--text-muted)]">
                   {mode === "add"
                     ? `已选择 ${selectedIds.length} 位联系人，确认后会直接加入当前群聊。`
@@ -428,7 +428,7 @@ function GroupMemberPickerPage({
                         params: { groupId },
                       });
                     }}
-                    className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                   >
                     取消
                   </Button>
@@ -668,8 +668,8 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[10px] border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)]"
-            : "rounded-[10px] border border-transparent bg-transparent transition hover:bg-white"
+            ? "rounded-[12px] border border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+            : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
             ? "bg-[#f3fff8]"
             : "bg-white",
@@ -692,7 +692,7 @@ function CandidateRow({
           checked
             ? "border-[#07c160] bg-[#07c160] text-white"
             : isDesktop
-              ? "border-black/8 bg-[#f3f3f3] text-transparent"
+              ? "border-[color:var(--border-faint)] bg-white text-transparent"
               : "border-black/10 bg-[#f5f5f5] text-transparent",
         )}
       >
