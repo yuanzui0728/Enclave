@@ -911,6 +911,9 @@ function ConversationListItemLink({
     conversation.unreadCount > 0 || canConversationBeMarkedUnread(conversation);
   const swipeActionWidth = (showReadAction ? 4 : 3) * SWIPE_ACTION_BUTTON_WIDTH;
   const readActionLabel = conversation.unreadCount > 0 ? "标已读" : "标未读";
+  const muteActionClassName = conversation.isMuted
+    ? "bg-[#07c160]"
+    : "bg-[#8e8e93]";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
   const hasUnreadMessages = conversation.unreadCount > 0;
   const isPinned = conversation.isPinned;
@@ -1126,7 +1129,10 @@ function ConversationListItemLink({
         <button
           type="button"
           onClick={onToggleMuted}
-          className="flex w-[72px] items-center justify-center bg-[#f59e0b] text-white"
+          className={cn(
+            "flex w-[72px] items-center justify-center text-white",
+            muteActionClassName,
+          )}
         >
           <div className="flex flex-col items-center gap-1 text-[11px]">
             <BellOff size={15} />
