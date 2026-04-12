@@ -33,9 +33,11 @@ AI_MODEL=deepseek-chat
 ADMIN_SECRET=replace-with-a-long-random-secret
 DATABASE_PATH=/app/data/database.sqlite
 CORS_ALLOWED_ORIGINS=https://app.your-domain.com,https://admin.your-domain.com
-PUBLIC_API_BASE_URL=https://api.your-domain.com
+PUBLIC_API_BASE_URL=https://app.your-domain.com
 USER_API_KEY_ENCRYPTION_SECRET=replace-with-a-second-long-random-secret
 ```
+
+如果你打算把 Web 客户端和 Core API 放在同一个公开域名下，`PUBLIC_API_BASE_URL` 应填写这个公开站点根地址，不要带 `/api`。
 
 ### 3. 启动世界实例
 
@@ -43,10 +45,21 @@ USER_API_KEY_ENCRYPTION_SECRET=replace-with-a-second-long-random-secret
 docker compose up -d
 ```
 
+默认会一起启动：
+- `web`：生产静态前端，默认暴露 `${APP_PORT:-80}`
+- `api`：Core API，默认暴露 `${PORT:-3000}`
+
+如果你只想单独启动后端：
+
+```bash
+docker compose up -d api
+```
+
 ### 4. 验证服务
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost/healthz
+curl http://localhost/health
 ```
 
 ## 单用户世界迁移
@@ -59,18 +72,18 @@ curl http://localhost:3000/health
 
 ## 反向代理
 
-推荐为世界实例单独配置 HTTPS 域名，例如 `https://api.your-domain.com`。
+推荐把公开域名直接反向代理到根 compose 的 `web` 服务，例如 `https://app.your-domain.com`。`web` 容器已经会把 `/api`、`/health`、`/socket.io` 转发给内部 `api:3000`，宿主机代理不需要再单独拆 API 路由。
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name api.your-domain.com;
+    server_name app.your-domain.com;
 
     ssl_certificate /path/to/fullchain.pem;
     ssl_certificate_key /path/to/privkey.pem;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:80;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_http_version 1.1;
@@ -118,7 +131,7 @@ DELETE /api/world/owner/api-key
 
 ## 云平台部署说明
 
-当前根目录 `docker-compose.yml` 只包含世界实例 `api/`。
+当前根目录 `docker-compose.yml` 默认交付世界实例 `web + api`。
 
 如果要部署官方云平台，还需要额外部署：
 - `apps/cloud-api/`
@@ -140,8 +153,14 @@ DELETE /api/world/owner/api-key
 | `PORT` | 否 | 服务端端口，默认 `3000` |
 | `DATABASE_PATH` | 否 | SQLite 文件路径 |
 | `CORS_ALLOWED_ORIGINS` | 建议 | 允许访问的客户端域名，逗号分隔 |
-| `PUBLIC_API_BASE_URL` | 建议 | 对外公开访问的 API 地址 |
+| `PUBLIC_API_BASE_URL` | 建议 | 对外公开访问的 Web 根地址，例如 `https://app.your-domain.com` |
 | `USER_API_KEY_ENCRYPTION_SECRET` | 强烈建议 | 世界主人专属 API Key 的加密密钥 |
+
+根 compose 额外支持：
+
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `APP_PORT` | 否 | Web 服务映射到宿主机的端口，默认 `80` |
 
 ## 升级
 

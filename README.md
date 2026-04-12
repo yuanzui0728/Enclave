@@ -52,13 +52,20 @@ cp api/.env.example api/.env
 docker compose up -d
 ```
 
+根 compose 默认会同时启动：
+- `web`：生产 Web 客户端，默认端口 `80`
+- `api`：Core API，默认端口 `3000`
+
 数据库默认统一保存在仓库根目录的 `data/database.sqlite`。重启服务不会清空数据；如果旧环境里存在 `api/database.sqlite` 或 `api/data/database.sqlite`，服务启动时会自动迁移到新位置。
 
 健康检查：
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost/healthz
+curl http://localhost/health
 ```
+
+如果走同域部署，`api/.env` 中的 `PUBLIC_API_BASE_URL` 应填写公开 Web 站点根地址，例如 `https://app.your-domain.com`，不要带 `/api`。
 
 首次进入客户端后的流程：
 
