@@ -1,4 +1,8 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+import {
+  isNativeMobileBridgeAvailable,
+  shareFileWithNativeShell,
+} from "./mobile-bridge";
 
 export type SaveRemoteFileInput = {
   url: string;
@@ -58,6 +62,43 @@ function saveRemoteFileWithBrowser(input: SaveRemoteFileInput): SaveRemoteFileRe
   };
 }
 
+async function saveRemoteFileWithNativeShell(
+  input: SaveRemoteFileInput,
+): Promise<SaveRemoteFileResult> {
+  const kindLabel = fallbackDownloadLabel(input.kind);
+
+  try {
+    const response = await fetch(input.url, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("failed to fetch file");
+    }
+
+    const blob = await response.blob();
+    const result = await shareFileWithNativeShell({
+      blob,
+      fileName: normalizeDownloadFileName(input.fileName, input.kind),
+      mimeType: blob.type || undefined,
+      title: input.dialogTitle,
+    });
+
+    if (!result.shared) {
+      throw new Error(result.error ?? "failed to share file");
+    }
+
+    return {
+      status: "started",
+      message: `${kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。`,
+    };
+  } catch {
+    return {
+      status: "failed",
+      message: `${kindLabel}保存失败，请稍后再试。`,
+    };
+  }
+}
+
 export async function saveRemoteFile(
   input: SaveRemoteFileInput,
 ): Promise<SaveRemoteFileResult> {
@@ -70,6 +111,14 @@ export async function saveRemoteFile(
   }
 
   const fileName = normalizeDownloadFileName(input.fileName, input.kind);
+  if (isNativeMobileBridgeAvailable()) {
+    return saveRemoteFileWithNativeShell({
+      ...input,
+      fileName,
+      url: normalizedUrl,
+    });
+  }
+
   if (!isDesktopRuntimeAvailable()) {
     return saveRemoteFileWithBrowser({
       ...input,

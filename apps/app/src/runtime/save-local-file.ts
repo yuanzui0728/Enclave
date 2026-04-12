@@ -1,4 +1,8 @@
 import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+import {
+  isNativeMobileBridgeAvailable,
+  shareFileWithNativeShell,
+} from "./mobile-bridge";
 
 export type SaveLocalFileInput = {
   blob: Blob;
@@ -55,10 +59,41 @@ function saveLocalFileWithBrowser(
   };
 }
 
+async function saveLocalFileWithNativeShell(
+  input: SaveLocalFileInput,
+): Promise<SaveLocalFileResult> {
+  const kindLabel = resolveKindLabel(input.kindLabel);
+  const result = await shareFileWithNativeShell({
+    blob: input.blob,
+    fileName: normalizeFileName(input.fileName),
+    mimeType: input.blob.type || undefined,
+    title: input.dialogTitle,
+  });
+
+  if (!result.shared) {
+    return {
+      status: "failed",
+      message: `${kindLabel}保存失败，请稍后再试。`,
+    };
+  }
+
+  return {
+    status: "started",
+    message: `${kindLabel}已打开系统分享面板，可继续保存到文件或转发给其他应用。`,
+  };
+}
+
 export async function saveLocalFile(
   input: SaveLocalFileInput,
 ): Promise<SaveLocalFileResult> {
   const fileName = normalizeFileName(input.fileName);
+  if (isNativeMobileBridgeAvailable()) {
+    return saveLocalFileWithNativeShell({
+      ...input,
+      fileName,
+    });
+  }
+
   if (!isDesktopRuntimeAvailable()) {
     return saveLocalFileWithBrowser({
       ...input,

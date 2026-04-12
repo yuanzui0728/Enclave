@@ -10,6 +10,13 @@ export type MobileBridgeSharePayload = {
   url?: string;
 };
 
+export type MobileBridgeNativeFileSharePayload = {
+  blob: Blob;
+  fileName: string;
+  mimeType?: string;
+  title?: string;
+};
+
 export type MobileBridgeFileAsset = {
   path: string;
   webPath?: string;
@@ -29,6 +36,11 @@ export type MobileBridgeFilePickResult = {
   error: string | null;
 };
 
+export type MobileBridgeFileShareResult = {
+  shared: boolean;
+  error: string | null;
+};
+
 export type MobileBridgeLaunchTarget = MobilePushLaunchTarget;
 
 export type MobileBridgeLocalNotificationPayload = {
@@ -45,6 +57,12 @@ type MobileBridgePlugin = {
   openExternalUrl(options: { url: string }): Promise<void>;
   openAppSettings(): Promise<void>;
   share(options: MobileBridgeSharePayload): Promise<void>;
+  shareFile(options: {
+    base64Data: string;
+    fileName: string;
+    mimeType?: string;
+    title?: string;
+  }): Promise<void>;
   pickImages(options?: {
     multiple?: boolean;
   }): Promise<{ assets: MobileBridgeImageAsset[] }>;
@@ -113,6 +131,44 @@ export async function shareWithNativeShell(payload: MobileBridgeSharePayload) {
   }
 }
 
+export async function shareFileWithNativeShell(
+  payload: MobileBridgeNativeFileSharePayload,
+): Promise<MobileBridgeFileShareResult> {
+  if (!isNativeMobileBridgeAvailable()) {
+    return {
+      shared: false,
+      error: "native mobile bridge is unavailable",
+    };
+  }
+
+  const normalizedFileName = payload.fileName.trim();
+  if (!normalizedFileName) {
+    return {
+      shared: false,
+      error: "file name is required",
+    };
+  }
+
+  try {
+    const base64Data = await encodeBlobAsBase64(payload.blob);
+    await mobileBridge.shareFile({
+      base64Data,
+      fileName: normalizedFileName,
+      mimeType: payload.mimeType?.trim() || undefined,
+      title: payload.title?.trim() || undefined,
+    });
+    return {
+      shared: true,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      shared: false,
+      error: error instanceof Error ? error.message : "failed to share file",
+    };
+  }
+}
+
 export async function pickImagesWithNativeShell(multiple = false) {
   if (!isNativeMobileBridgeAvailable()) {
     return [];
@@ -168,6 +224,23 @@ export async function captureImageWithNativeShell(): Promise<MobileBridgeImageCa
       error: error instanceof Error ? error.message : "failed to capture image",
     };
   }
+}
+
+async function encodeBlobAsBase64(blob: Blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  const chunkSize = 0x8000;
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  if (typeof btoa !== "function") {
+    throw new Error("base64 encoder is unavailable");
+  }
+
+  return btoa(binary);
 }
 
 export async function readNativePushToken() {
