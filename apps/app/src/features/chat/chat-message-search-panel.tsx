@@ -456,7 +456,7 @@ export function ChatMessageSearchPanel({
           ) : null}
 
           <ChatDetailsSection title="分类浏览">
-            <div className="grid grid-cols-2 gap-2 p-3">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               {SEARCH_CATEGORIES.map((category) => {
                 const Icon = category.icon;
                 const active = activeCategory === category.id;
@@ -466,40 +466,45 @@ export function ChatMessageSearchPanel({
                     type="button"
                     onClick={() => setActiveCategory(category.id)}
                     className={cn(
-                      "rounded-[12px] border px-3 py-3 text-left transition-colors",
+                      "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors",
                       active
-                        ? "border-[rgba(7,193,96,0.18)] bg-white shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
-                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+                        ? "bg-[rgba(247,251,248,0.96)]"
+                        : "bg-white hover:bg-[color:var(--surface-console)]",
                     )}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            "flex h-9 w-9 items-center justify-center rounded-[10px]",
-                            active
-                              ? "bg-[color:var(--brand-primary)] text-white"
-                              : "bg-white text-[color:var(--text-secondary)]",
-                          )}
-                        >
-                          <Icon size={18} />
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-[10px]",
+                          active
+                            ? "bg-[rgba(7,193,96,0.12)] text-[#15803d]"
+                            : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+                        )}
+                      >
+                        <Icon size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                          {category.label}
                         </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
-                            {category.label}
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
-                            {category.description}
-                          </div>
+                        <div className="mt-0.5 text-[12px] text-[color:var(--text-muted)]">
+                          {category.description}
                         </div>
                       </div>
-                      <div className="shrink-0 text-right">
-                        <div className="text-[18px] font-semibold leading-none text-[color:var(--text-primary)]">
-                          {categoryCounts[category.id]}
-                        </div>
-                        <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-                          条
-                        </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[17px] font-semibold leading-none text-[color:var(--text-primary)]">
+                        {categoryCounts[category.id]}
+                      </div>
+                      <div
+                        className={cn(
+                          "mt-1 text-[11px]",
+                          active
+                            ? "text-[#15803d]"
+                            : "text-[color:var(--text-muted)]",
+                        )}
+                      >
+                        {active ? "当前" : "条"}
                       </div>
                     </div>
                   </button>
