@@ -1410,12 +1410,12 @@ function ConversationCardLink({
   ) => void;
 }) {
   const className = active
-    ? "flex items-center gap-3 rounded-[10px] border border-[rgba(7,193,96,0.16)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+    ? "flex items-center gap-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
     : contextMenuOpen
       ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5"
       : conversation.isPinned
-        ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[rgba(240,244,242,0.92)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[rgba(7,193,96,0.12)] hover:bg-[rgba(237,243,239,0.96)]"
-        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[rgba(7,193,96,0.10)] hover:bg-white/80";
+        ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[rgba(240,244,242,0.92)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[rgba(237,243,239,0.96)]"
+        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80";
   const preview = getConversationPreviewParts(
     conversation,
     localMessageActionState,
@@ -1603,7 +1603,7 @@ function renderConversationPreviewText(text: string): ReactNode {
         className={
           segment.tone === "all"
             ? "rounded-[7px] bg-[#fff4df] px-1 py-0.5 text-[#b67206]"
-            : "rounded-[7px] bg-[rgba(7,193,96,0.12)] px-1 py-0.5 text-[#0d8a51]"
+            : "rounded-[7px] bg-[rgba(7,193,96,0.07)] px-1 py-0.5 text-[color:var(--brand-primary)]"
         }
       >
         {segment.text}
