@@ -1971,6 +1971,7 @@ export function ChatMessageList({
                   ) : directCallInvite ? (
                     <DirectCallInviteMessage
                       own={isUser}
+                      variant={variant}
                       invite={directCallInvite}
                       onOpen={
                         selectionMode ||
@@ -1987,6 +1988,7 @@ export function ChatMessageList({
                   ) : groupCallInvite ? (
                     <GroupCallInviteMessage
                       own={isUser}
+                      variant={variant}
                       invite={groupCallInvite}
                       onOpen={
                         selectionMode ||
@@ -2020,6 +2022,7 @@ export function ChatMessageList({
                   ) : groupRelaySummary ? (
                     <GroupRelaySummaryMessage
                       own={isUser}
+                      variant={variant}
                       summary={groupRelaySummary}
                       onOpen={
                         selectionMode ||
@@ -3759,10 +3762,12 @@ function VoiceMessage({
 
 function GroupRelaySummaryMessage({
   own,
+  variant,
   summary,
   onOpen,
 }: {
   own: boolean;
+  variant: "mobile" | "desktop";
   summary: ReturnType<typeof parseGroupRelaySummaryMessage>;
   onOpen?: () => void;
 }) {
@@ -3770,6 +3775,7 @@ function GroupRelaySummaryMessage({
     return null;
   }
 
+  const isDesktop = variant === "desktop";
   const completionTimeLabel = resolveGroupRelayCompletionTime(summary);
   const publishRangeLabel = resolveGroupRelayPublishRangeLabel(summary);
   const publishStageBadge = resolveGroupRelayPublishStageBadge(summary);
@@ -3777,10 +3783,14 @@ function GroupRelaySummaryMessage({
   const ctaCopy = resolveGroupRelayCtaCopy(summary);
   const card = (
     <div
-      className={`w-[252px] rounded-[18px] border px-4 py-4 shadow-none ${
-        own
-          ? "border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-          : "border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))]"
+      className={`border px-4 py-4 shadow-none ${
+        isDesktop
+          ? own
+            ? "w-[252px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
+            : "w-[252px] rounded-[18px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))]"
+          : own
+            ? "w-[244px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
+            : "w-[244px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -3832,30 +3842,62 @@ function GroupRelaySummaryMessage({
 
       <div className="mt-3 space-y-2">
         {summary.timestampLabel ? (
-          <ResultCardMetric label="时间" value={summary.timestampLabel} />
+          <ResultCardMetric
+            label="时间"
+            value={summary.timestampLabel}
+            variant={variant}
+          />
         ) : null}
         {completionTimeLabel ? (
-          <ResultCardMetric label="完成时间" value={completionTimeLabel} />
+          <ResultCardMetric
+            label="完成时间"
+            value={completionTimeLabel}
+            variant={variant}
+          />
         ) : null}
         {typeof publishRangeLabel === "string" ? (
-          <ResultCardMetric label="起止时间" value={publishRangeLabel} />
+          <ResultCardMetric
+            label="起止时间"
+            value={publishRangeLabel}
+            variant={variant}
+          />
         ) : null}
         {summary.activeRelayCountLabel ? (
-          <ResultCardMetric label="进行中" value={summary.activeRelayCountLabel} />
+          <ResultCardMetric
+            label="进行中"
+            value={summary.activeRelayCountLabel}
+            variant={variant}
+          />
         ) : null}
         {summary.pendingMemberCountLabel ? (
-          <ResultCardMetric label="待确认" value={summary.pendingMemberCountLabel} />
+          <ResultCardMetric
+            label="待确认"
+            value={summary.pendingMemberCountLabel}
+            variant={variant}
+          />
         ) : null}
         {summary.publishCountLabel ? (
-          <ResultCardMetric label="回填次数" value={summary.publishCountLabel} />
+          <ResultCardMetric
+            label="回填次数"
+            value={summary.publishCountLabel}
+            variant={variant}
+          />
         ) : null}
         {summary.resultSummaryLabel ? (
-          <ResultCardMetric label="结果摘要" value={summary.resultSummaryLabel} />
+          <ResultCardMetric
+            label="结果摘要"
+            value={summary.resultSummaryLabel}
+            variant={variant}
+          />
         ) : null}
         {summary.summaryLines.map((line) => (
           <div
             key={line}
-            className="rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+            className={
+              isDesktop
+                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+            }
           >
             {line}
           </div>
@@ -3863,7 +3905,11 @@ function GroupRelaySummaryMessage({
       </div>
 
       {onOpen ? (
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
+        <div
+          className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+            isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
+          }`}
+        >
           <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
             {ctaCopy.description}
           </div>
@@ -4008,10 +4054,12 @@ function resolveRenderableMessageText(message: ChatRenderableMessage) {
 
 function GroupCallInviteMessage({
   own,
+  variant,
   invite,
   onOpen,
 }: {
   own: boolean;
+  variant: "mobile" | "desktop";
   invite: ReturnType<typeof parseGroupCallInviteMessage>;
   onOpen?: () => void;
 }) {
@@ -4019,6 +4067,7 @@ function GroupCallInviteMessage({
     return null;
   }
 
+  const isDesktop = variant === "desktop";
   const canReopenCall = Boolean(onOpen);
   const footerCopy = resolveGroupCallFooterCopy(invite, canReopenCall);
   const completionBadge = resolveGroupCallCompletionBadge(invite);
@@ -4026,10 +4075,14 @@ function GroupCallInviteMessage({
   const card = (
     <div
       className={cn(
-        "w-[264px] rounded-[18px] border px-4 py-4 shadow-none",
-        own
-          ? "border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-          : "border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]",
+        "border px-4 py-4 shadow-none",
+        isDesktop
+          ? own
+            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
+            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]"
+          : own
+            ? "w-[248px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
+            : "w-[248px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -4065,9 +4118,14 @@ function GroupCallInviteMessage({
         <ResultCardMetric
           label="当前状态"
           value={formatGroupCallStatusLabel(invite.kind, invite.status)}
+          variant={variant}
         />
         {invite.timestampLabel ? (
-          <ResultCardMetric label="时间" value={invite.timestampLabel} />
+          <ResultCardMetric
+            label="时间"
+            value={invite.timestampLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.status === "ended" &&
         invite.startedAt &&
@@ -4075,40 +4133,63 @@ function GroupCallInviteMessage({
           <ResultCardMetric
             label="起止时间"
             value={formatGroupCallRangeSummary(invite.startedAt, invite.recordedAt)}
+            variant={variant}
           />
         ) : null}
         {invite.durationLabel ? (
-          <ResultCardMetric label="本轮时长" value={invite.durationLabel} />
+          <ResultCardMetric
+            label="本轮时长"
+            value={invite.durationLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.sourceLabel ? (
-          <ResultCardMetric label="发起端" value={invite.sourceLabel} />
+          <ResultCardMetric
+            label="发起端"
+            value={invite.sourceLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.snapshotLabel ? (
-          <ResultCardMetric label="人数快照" value={invite.snapshotLabel} />
+          <ResultCardMetric
+            label="人数快照"
+            value={invite.snapshotLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.activeCount ? (
           <div className="grid grid-cols-2 gap-2">
             <ResultCardMetric
               label="当前在线"
               value={`${invite.activeCount.current}/${invite.activeCount.total}`}
+              variant={variant}
             />
             <ResultCardMetric
               label="待加入"
               value={`${invite.waitingCount ?? Math.max(invite.activeCount.total - invite.activeCount.current, 0)} 人`}
+              variant={variant}
             />
           </div>
         ) : null}
         {invite.summaryLines.map((line) => (
           <div
             key={line}
-            className="rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+            className={
+              isDesktop
+                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+            }
           >
             {line}
           </div>
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
+      <div
+        className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+          isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
+        }`}
+      >
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {footerCopy.description}
         </div>
@@ -4140,9 +4221,24 @@ function GroupCallInviteMessage({
   );
 }
 
-function ResultCardMetric({ label, value }: { label: string; value: string }) {
+function ResultCardMetric({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: string;
+  variant: "mobile" | "desktop";
+}) {
+  const isDesktop = variant === "desktop";
   return (
-    <div className="rounded-[14px] bg-white/72 px-3 py-2">
+    <div
+      className={
+        isDesktop
+          ? "rounded-[14px] bg-white/72 px-3 py-2"
+          : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2"
+      }
+    >
       <div className="text-[10px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
@@ -4155,10 +4251,12 @@ function ResultCardMetric({ label, value }: { label: string; value: string }) {
 
 function DirectCallInviteMessage({
   own,
+  variant,
   invite,
   onOpen,
 }: {
   own: boolean;
+  variant: "mobile" | "desktop";
   invite: ReturnType<typeof parseDirectCallInviteMessage>;
   onOpen?: () => void;
 }) {
@@ -4166,16 +4264,21 @@ function DirectCallInviteMessage({
     return null;
   }
 
+  const isDesktop = variant === "desktop";
   const canReopenCall = Boolean(onOpen);
   const footerCopy = resolveDirectCallFooterCopy(invite, canReopenCall);
 
   const card = (
     <div
       className={cn(
-        "w-[264px] rounded-[18px] border px-4 py-4 shadow-none",
-        own
-          ? "border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-          : "border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]",
+        "border px-4 py-4 shadow-none",
+        isDesktop
+          ? own
+            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
+            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]"
+          : own
+            ? "w-[248px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
+            : "w-[248px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -4204,28 +4307,49 @@ function DirectCallInviteMessage({
           <ResultCardMetric
             label="当前状态"
             value={resolveDirectCallStatusLabel(invite)}
+            variant={variant}
           />
         ) : null}
         {invite.timestampLabel ? (
-          <ResultCardMetric label="时间" value={invite.timestampLabel} />
+          <ResultCardMetric
+            label="时间"
+            value={invite.timestampLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.durationLabel ? (
-          <ResultCardMetric label="最近一轮" value={invite.durationLabel} />
+          <ResultCardMetric
+            label="最近一轮"
+            value={invite.durationLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.sourceLabel ? (
-          <ResultCardMetric label="发起端" value={invite.sourceLabel} />
+          <ResultCardMetric
+            label="发起端"
+            value={invite.sourceLabel}
+            variant={variant}
+          />
         ) : null}
         {invite.summaryLines.map((line) => (
           <div
             key={line}
-            className="rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+            className={
+              isDesktop
+                ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+            }
           >
             {line}
           </div>
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/6 pt-3">
+      <div
+        className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+          isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
+        }`}
+      >
         <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
           {footerCopy.description}
         </div>
