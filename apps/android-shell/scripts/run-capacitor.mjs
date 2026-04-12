@@ -271,12 +271,8 @@ function updateAndroidProjectConfig(config) {
   }
 
   const namespace = config.appId;
-  const socketBaseUrl = config.runtime.socketBaseUrl || config.runtime.apiBaseUrl;
   const xmlAppName = escapeXml(config.appName);
   const xmlAppId = escapeXml(config.appId);
-  const xmlApiBaseUrl = escapeXml(config.runtime.apiBaseUrl);
-  const xmlSocketBaseUrl = escapeXml(socketBaseUrl);
-  const xmlEnvironment = escapeXml(config.runtime.environment);
   const xmlAllowCleartextTraffic = config.allowCleartextTraffic ? "true" : "false";
 
   let buildGradle = readFileSync(androidBuildGradlePath, "utf8");
@@ -301,25 +297,6 @@ function updateAndroidProjectConfig(config) {
       "android manifest insert usesCleartextTraffic",
     );
   }
-  manifest = replaceRequired(
-    /(<meta-data\s+android:name="yinjie\.api_base_url"\s+android:value=")(.*?)("\s*\/>)/,
-    `$1${xmlApiBaseUrl}$3`,
-    manifest,
-    "android manifest api_base_url",
-  );
-  manifest = replaceRequired(
-    /(<meta-data\s+android:name="yinjie\.socket_base_url"\s+android:value=")(.*?)("\s*\/>)/,
-    `$1${xmlSocketBaseUrl}$3`,
-    manifest,
-    "android manifest socket_base_url",
-  );
-  manifest = replaceRequired(
-    /(<meta-data\s+android:name="yinjie\.environment"\s+android:value=")(.*?)("\s*\/>)/,
-    `$1${xmlEnvironment}$3`,
-    manifest,
-    "android manifest environment",
-  );
-
   let strings = readFileSync(androidStringsPath, "utf8");
   strings = replaceRequired(/(<string name="app_name">)(.*?)(<\/string>)/, `$1${xmlAppName}$3`, strings, "android app_name");
   strings = replaceRequired(

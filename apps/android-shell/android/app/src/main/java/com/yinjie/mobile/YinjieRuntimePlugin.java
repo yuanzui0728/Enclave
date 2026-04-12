@@ -13,6 +13,14 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import org.json.JSONException;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 @CapacitorPlugin(name = "YinjieRuntime")
 public class YinjieRuntimePlugin extends Plugin {
     @PluginMethod
@@ -31,9 +39,37 @@ public class YinjieRuntimePlugin extends Plugin {
             putIfPresent(result, "appVersionName", packageInfo.versionName);
             result.put("appVersionCode", PackageInfoCompat.getLongVersionCode(packageInfo));
 
-            putIfPresent(result, "apiBaseUrl", readMetaValue(metaData, "yinjie.api_base_url"));
-            putIfPresent(result, "socketBaseUrl", readMetaValue(metaData, "yinjie.socket_base_url"));
-            putIfPresent(result, "environment", readMetaValue(metaData, "yinjie.environment"));
+            JSObject bundledRuntimeConfig = readBundledRuntimeConfig();
+            putIfPresent(
+                result,
+                "apiBaseUrl",
+                readRuntimeValue(
+                    bundledRuntimeConfig,
+                    "apiBaseUrl",
+                    metaData,
+                    "yinjie.api_base_url"
+                )
+            );
+            putIfPresent(
+                result,
+                "socketBaseUrl",
+                readRuntimeValue(
+                    bundledRuntimeConfig,
+                    "socketBaseUrl",
+                    metaData,
+                    "yinjie.socket_base_url"
+                )
+            );
+            putIfPresent(
+                result,
+                "environment",
+                readRuntimeValue(
+                    bundledRuntimeConfig,
+                    "environment",
+                    metaData,
+                    "yinjie.environment"
+                )
+            );
             if (result.has("apiBaseUrl")) {
                 result.put("worldAccessMode", "local");
                 result.put("configStatus", "configured");
@@ -43,6 +79,45 @@ public class YinjieRuntimePlugin extends Plugin {
         } catch (PackageManager.NameNotFoundException exception) {
             call.reject("failed to read android runtime metadata", exception);
         }
+    }
+
+    private JSObject readBundledRuntimeConfig() {
+        try (
+            InputStream inputStream = getContext().getAssets().open("public/runtime-config.json");
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8)
+            )
+        ) {
+            StringBuilder content = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                content.append(line);
+            }
+
+            return new JSObject(content.toString());
+        } catch (IOException | JSONException exception) {
+            return null;
+        }
+    }
+
+    private String readRuntimeValue(
+        JSObject bundledRuntimeConfig,
+        String bundledKey,
+        Bundle metaData,
+        String metaKey
+    ) {
+        if (bundledRuntimeConfig != null) {
+            String bundledValue = bundledRuntimeConfig.getString(bundledKey);
+            if (bundledValue != null) {
+                bundledValue = bundledValue.trim();
+                if (!bundledValue.isEmpty()) {
+                    return bundledValue;
+                }
+            }
+        }
+
+        return readMetaValue(metaData, metaKey);
     }
 
     private String readMetaValue(Bundle metaData, String key) {
