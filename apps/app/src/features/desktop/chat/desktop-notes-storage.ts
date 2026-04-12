@@ -1,3 +1,5 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+
 export type DesktopNoteRecord = {
   id: string;
   title: string;
@@ -9,6 +11,7 @@ export type DesktopNoteRecord = {
 
 const DESKTOP_NOTES_STORAGE_KEY = "yinjie-desktop-notes";
 const UNTITLED_NOTE_TITLE = "无标题笔记";
+let desktopNotesNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -46,13 +49,85 @@ function buildNotePresentation(content: string) {
   };
 }
 
-function writeDesktopNotes(notes: DesktopNoteRecord[]) {
+function normalizeDesktopNoteRecords(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as DesktopNoteRecord[];
+  }
+
+  return value
+    .filter(
+      (item) =>
+        typeof item?.id === "string" &&
+        typeof item?.content === "string" &&
+        typeof item?.createdAt === "string" &&
+        typeof item?.updatedAt === "string",
+    )
+    .map((item) => {
+      const normalizedContent = normalizeContent(item.content);
+      const presentation = buildNotePresentation(normalizedContent);
+      return {
+        id: item.id,
+        content: normalizedContent,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        title: presentation.title,
+        excerpt: presentation.excerpt,
+      } satisfies DesktopNoteRecord;
+    })
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+function parseDesktopNoteRecords(raw: string | null | undefined) {
+  if (!raw) {
+    return [] as DesktopNoteRecord[];
+  }
+
+  try {
+    return normalizeDesktopNoteRecords(JSON.parse(raw));
+  } catch {
+    return [] as DesktopNoteRecord[];
+  }
+}
+
+function queueNativeDesktopNotesWrite(notes: DesktopNoteRecord[]) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(notes);
+  desktopNotesNativeWriteQueue = desktopNotesNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_notes_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
+function writeDesktopNotes(
+  notes: DesktopNoteRecord[],
+  options?: {
+    syncNative?: boolean;
+  },
+) {
   const storage = getStorage();
   if (!storage) {
     return;
   }
 
   storage.setItem(DESKTOP_NOTES_STORAGE_KEY, JSON.stringify(notes));
+  if (options?.syncNative !== false) {
+    queueNativeDesktopNotesWrite(notes);
+  }
+}
+
+function getLatestDesktopNoteUpdateTime(notes: DesktopNoteRecord[]) {
+  return notes.reduce((latest, note) => {
+    const updatedAt = Date.parse(note.updatedAt);
+    return Number.isFinite(updatedAt) && updatedAt > latest ? updatedAt : latest;
+  }, 0);
 }
 
 export function readDesktopNotes() {
@@ -62,35 +137,46 @@ export function readDesktopNotes() {
   }
 
   const raw = storage.getItem(DESKTOP_NOTES_STORAGE_KEY);
-  if (!raw) {
-    return [] as DesktopNoteRecord[];
+  return parseDesktopNoteRecords(raw);
+}
+
+export async function hydrateDesktopNotesFromNative() {
+  const localNotes = readDesktopNotes();
+  if (!isDesktopRuntimeAvailable()) {
+    return localNotes;
   }
 
   try {
-    const parsed = JSON.parse(raw) as DesktopNoteRecord[];
-    if (!Array.isArray(parsed)) {
-      return [] as DesktopNoteRecord[];
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_notes_store");
+
+    if (!result.exists) {
+      if (localNotes.length) {
+        queueNativeDesktopNotesWrite(localNotes);
+      }
+      return localNotes;
     }
 
-    return parsed
-      .filter(
-        (item) =>
-          typeof item?.id === "string" &&
-          typeof item?.content === "string" &&
-          typeof item?.createdAt === "string" &&
-          typeof item?.updatedAt === "string",
-      )
-      .map((item) => {
-        const presentation = buildNotePresentation(item.content);
-        return {
-          ...item,
-          title: presentation.title,
-          excerpt: presentation.excerpt,
-        };
-      })
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    const nativeNotes = parseDesktopNoteRecords(result.contents ?? null);
+    if (
+      getLatestDesktopNoteUpdateTime(localNotes) >
+      getLatestDesktopNoteUpdateTime(nativeNotes)
+    ) {
+      if (localNotes.length) {
+        queueNativeDesktopNotesWrite(localNotes);
+      }
+      return localNotes;
+    }
+
+    writeDesktopNotes(nativeNotes, {
+      syncNative: false,
+    });
+    return nativeNotes;
   } catch {
-    return [] as DesktopNoteRecord[];
+    return localNotes;
   }
 }
 

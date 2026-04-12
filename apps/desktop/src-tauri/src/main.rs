@@ -88,6 +88,14 @@ struct DesktopSaveBinaryFileInput {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
+struct DesktopTextStoreReadResult {
+    exists: bool,
+    contents: Option<String>,
+    message: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 struct DesktopFileSaveResult {
     success: bool,
     cancelled: bool,
@@ -158,6 +166,8 @@ fn main() {
             desktop_save_remote_file,
             desktop_save_text_file,
             desktop_save_binary_file,
+            desktop_read_notes_store,
+            desktop_write_notes_store,
             desktop_window_toggle_maximize,
             probe_core_api_health,
             start_core_api,
@@ -467,6 +477,62 @@ async fn desktop_save_binary_file(
         ensure_parent_dir_exists(&target_file_path)?;
         std::fs::write(&target_file_path, input.bytes).map_err(|error| error.to_string())?;
         Ok(saved_file_result(&target_file_path))
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_read_notes_store(
+    app: tauri::AppHandle,
+) -> Result<DesktopTextStoreReadResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-notes.json");
+
+        match std::fs::read_to_string(&target_file_path) {
+            Ok(contents) => Ok(DesktopTextStoreReadResult {
+                exists: true,
+                contents: Some(contents),
+                message: format!(
+                    "Read desktop notes store from {}",
+                    target_file_path.display()
+                ),
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                Ok(DesktopTextStoreReadResult {
+                    exists: false,
+                    contents: None,
+                    message: "Desktop notes store has not been created yet.".to_string(),
+                })
+            }
+            Err(error) => Err(error.to_string()),
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_write_notes_store(
+    app: tauri::AppHandle,
+    contents: String,
+) -> Result<DesktopOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-notes.json");
+        ensure_parent_dir_exists(&target_file_path)?;
+        std::fs::write(&target_file_path, contents).map_err(|error| error.to_string())?;
+
+        Ok(DesktopOperationResult {
+            success: true,
+            message: format!(
+                "Saved desktop notes store to {}",
+                target_file_path.display()
+            ),
+        })
     })
     .await
     .map_err(|error| error.to_string())?
