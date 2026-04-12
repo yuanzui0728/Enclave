@@ -267,15 +267,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.emitThreadMessage(convId, message);
       }
 
-      const conv = await this.chatService.getConversation(convId);
-      if (conv?.type === 'group') {
-        this.emitConversationUpdated({
-          id: convId,
-          type: conv.type,
-          title: conv.title,
-          participants: conv.participants,
-        });
-      }
     } catch (error) {
       this.server
         .to(convId)

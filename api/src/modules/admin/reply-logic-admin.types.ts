@@ -453,7 +453,7 @@ export interface ReplyLogicConversationSnapshot {
   actors: ReplyLogicActorSnapshot[];
   narrativeArcs: ReplyLogicNarrativeArcSummary[];
   branchSummary: {
-    kind: 'direct' | 'stored_group' | 'formal_group';
+    kind: 'direct' | 'formal_group';
     title: string;
     notes: string[];
   };
