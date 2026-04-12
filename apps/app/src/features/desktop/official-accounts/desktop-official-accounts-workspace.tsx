@@ -319,8 +319,8 @@ export function DesktopOfficialAccountsWorkspace({
               onClick={() => setAccountFilter("all")}
               className={
                 accountFilter === "all"
-                  ? "rounded-full border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d] shadow-none hover:bg-[rgba(7,193,96,0.12)]"
-                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                  ? "rounded-full border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)] shadow-none hover:bg-[rgba(7,193,96,0.09)]"
+                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
               }
             >
               全部
@@ -332,8 +332,8 @@ export function DesktopOfficialAccountsWorkspace({
               onClick={() => setAccountFilter("following")}
               className={
                 accountFilter === "following"
-                  ? "rounded-full border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d] shadow-none hover:bg-[rgba(7,193,96,0.12)]"
-                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                  ? "rounded-full border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)] shadow-none hover:bg-[rgba(7,193,96,0.09)]"
+                  : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
               }
             >
               已关注
@@ -394,7 +394,7 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
           {account ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[#15803d]">
+              <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[color:var(--brand-primary)]">
                 {account.accountType === "service" ? "服务号" : "订阅号"}
               </span>
               <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[color:var(--text-muted)]">
@@ -416,8 +416,8 @@ export function DesktopOfficialAccountsWorkspace({
                 disabled={followMutation.isPending}
                 className={
                   account.isFollowing
-                    ? "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
-                    : "rounded-full bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                    ? "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    : "rounded-full bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                 }
               >
                 {followMutation.isPending
@@ -430,7 +430,7 @@ export function DesktopOfficialAccountsWorkspace({
                 type="button"
                 variant="secondary"
                 onClick={toggleAccountFavorite}
-                className="rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                className="rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 {accountFavoriteSourceId &&
                 favoriteSourceIds.includes(accountFavoriteSourceId)
