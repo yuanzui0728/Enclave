@@ -1034,7 +1034,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             type="button"
             onClick={handleBack}
             disabled={leavingScreen}
-            className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white transition active:bg-white/12"
+            className={cn("mt-0.5", mobileCallIconButtonClass())}
             aria-label="返回聊天"
           >
             <ArrowLeft size={18} />
@@ -1064,12 +1064,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             onClick={() => activeCall.setAudioMuted((current) => !current)}
             disabled={leavingScreen}
             className={cn(
-              "mt-0.5 flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 transition active:bg-white/12 disabled:opacity-55",
-              activeCall.audioMuted
-                ? "bg-white text-[#020617]"
-                : showHeaderStatusRow
-                  ? "bg-white/12 text-white"
-                  : "bg-white/8 text-white/82",
+              "mt-0.5",
+              mobileCallIconButtonClass(
+                activeCall.audioMuted
+                  ? "solid"
+                  : showHeaderStatusRow
+                    ? "raised"
+                    : "default",
+              ),
             )}
             aria-label={activeCall.audioMuted ? "取消静音播放" : "静音播放"}
           >
@@ -1458,15 +1460,15 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           </div>
 
           <div className="mt-4 flex items-center justify-center gap-3">
-            <button
-              type="button"
+            <MobileCallActionButton
+              tone="danger"
               onClick={handleBack}
               disabled={leavingScreen}
-              className="flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-full bg-[rgba(239,68,68,0.16)] px-4 text-sm font-medium text-[#fecaca] transition active:opacity-90 disabled:opacity-55"
+              className="h-12 min-w-[132px]"
             >
               <PhoneOff size={16} />
               {leavingScreen ? "挂断中..." : "挂断"}
-            </button>
+            </MobileCallActionButton>
           </div>
         </div>
       </div>
@@ -1522,18 +1524,35 @@ function MobileCallMetaChip({
 }
 
 function MobileCallActionButton({
+  tone = "default",
   className,
   ...props
-}: ComponentProps<"button">) {
+}: ComponentProps<"button"> & { tone?: "default" | "danger" }) {
   return (
     <button
       type="button"
       className={cn(
-        "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm font-medium text-white transition active:bg-white/14 disabled:opacity-45",
+        "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition disabled:opacity-45",
+        tone === "danger"
+          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[#fecaca] active:bg-[#ef4444]/20"
+          : "border-white/12 bg-white/10 text-white active:bg-white/14",
         className,
       )}
       {...props}
     />
+  );
+}
+
+function mobileCallIconButtonClass(
+  tone: "default" | "raised" | "solid" = "default",
+) {
+  return cn(
+    "flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 transition active:bg-white/12 disabled:opacity-55",
+    tone === "solid"
+      ? "bg-white text-[#020617]"
+      : tone === "raised"
+        ? "bg-white/12 text-white"
+        : "bg-white/8 text-white/82",
   );
 }
 
