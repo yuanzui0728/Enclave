@@ -257,6 +257,446 @@ Web 手机版已经依赖这些原生能力：
 4. `feat(ios-shell): align runtime push and privacy integration`
 5. `docs(mobile): refresh android ios sync runbook`
 
+## 微信参照基线（2026-04-12 检索）
+
+说明：
+- 公开可稳定检索到的官方来源，主要能确认 WeChat 当前公开功能面、版本节奏和平台差异
+- 更细的手势、转场、权限前置文案、弹层密度等交互细节，仍需要在真机上补一次实际录屏对照
+- 下述“遇到差异时怎么做”的规则，是基于这些官方来源和平台官方规范做出的执行推断
+
+已确认的公开基线：
+- iOS App Store 页面当前显示：
+  - `Version 8.0.70`
+  - 日期为 `Mar 21, 2026`
+  - 公开功能面包括：
+    - 文本 / 图片 / 语音 / 视频 / 位置消息
+    - 最多 `500` 人群聊
+    - 最多 `15` 人群视频
+    - `Moments`
+    - `Official Accounts`
+    - `Mini Programs`
+    - `Easy Mode`
+- Android Google Play 页面当前显示：
+  - `Updated on Apr 10, 2026`
+  - `What's New in WeChat V8.0.69`
+  - 公开功能面包括：
+    - 文本 / 图片 / 语音 / 视频 / 位置消息
+    - 最多 `500` 人群聊
+    - 最多 `9` 人群视频
+    - `Moments`
+    - `Status`
+    - `Channels`
+    - `Official Accounts`
+    - `Mini Programs`
+    - `Custom Stickers`
+
+从这组基线可以得到两个执行判断：
+- 微信在 iOS / Android 上保持的是“功能面大体一致”，不是“所有交互细节完全一致”
+- 微信自己也接受平台差异：
+  - 例如群视频上限在官方商店文案里就不一致
+  - 所以隐界移动壳不应追求 Web / Android / iOS 绝对一模一样，而应追求：
+    - 核心能力一致
+    - 关键路径一致
+    - 平台交互合理且像该平台上的微信
+
+## 差异决策总则
+
+### Rule 1：先统一语义，再允许交互分流
+
+- 同一个能力在三端必须先保证：
+  - 路由语义一致
+  - 数据契约一致
+  - 状态变更一致
+  - 用户结果一致
+- 在这个前提下，允许：
+  - Android 交互更偏 Material / 系统返回逻辑
+  - iOS 交互更偏导航栏 / 边缘返回 / 原生弹层
+  - Web 壳版维持同一业务骨架，但不强迫模拟所有原生细节
+
+### Rule 2：遇到系统级冲突时，平台规则优先，微信做表现参考
+
+- 适用于：
+  - 权限
+  - 通知
+  - 分享
+  - 外链跳转
+  - 摄像头 / 麦克风
+  - 文件读写
+  - 后台 / 前台恢复
+- 判定顺序固定为：
+  - 平台系统限制
+  - 目标平台上的微信常见做法
+  - 隐界现有 Web 交互
+
+### Rule 3：微信 iOS 和微信 Android 不同，就允许隐界 iOS / Android 不同
+
+- 不做“跨平台强行统一 UI”
+- 只统一这些内容：
+  - 信息架构
+  - 功能入口命名
+  - 用户心智
+  - 主路径结果
+- 允许不同这些内容：
+  - 返回手势
+  - 权限请求时机
+  - Action Sheet / Bottom Sheet 形态
+  - 通知样式落点
+  - 键盘顶起与安全区细节
+
+### Rule 4：Web 壳做不到原生效果时，采用“微信式降级”而不是“桌面网页式替代”
+
+- 优先保留主任务完成能力
+- 不优先追求视觉等价
+- 降级表现应尽量像微信移动端常见做法：
+  - 底部动作面板
+  - 明确的“去设置开启”提示
+  - 明确的“暂不支持此能力”而不是静默失败
+  - 从当前聊天 / 当前场景回跳，而不是跳到陌生页面
+
+### Rule 5：所有差异都必须落成记录，不靠临场判断
+
+- 每个差异项都要写入执行对照表：
+  - 功能
+  - Web 当前行为
+  - 微信 Android 参考处理
+  - 微信 iOS 参考处理
+  - 隐界 Android 决策
+  - 隐界 iOS 决策
+  - 负责人
+  - 是否阻塞发版
+
+## 差异处理矩阵
+
+### 1. 导航、返回、进入方式
+
+目标：
+- 用户从消息、通知、分享、外链进入任意页面后，都能按平台直觉返回
+
+执行规则：
+- Android：
+  - 优先跟系统返回键与侧滑返回保持一致
+  - `MainActivity` / 路由栈要支持通知点击、分享回跳、冷启动落点恢复
+  - 顶部返回按钮是冗余保障，不是唯一出口
+- iOS：
+  - 优先跟导航栏返回和左缘手势保持一致
+  - 模态页优先支持下拉关闭或明确关闭按钮
+  - 不做 Android 式“系统返回优先”心智
+- Web 壳：
+  - 保证浏览器历史栈与应用内返回不打架
+  - 不把浏览器后退变成随机离开应用
+
+微信参照判断：
+- 若微信 Android 与 iOS 的返回方式不同，隐界就分别跟各自平台
+- 不追求“一个页面三端按钮摆位完全一致”
+
+准备动作：
+- 盘点所有来自外部入口的路由：
+  - 通知点击
+  - 本地通知
+  - 分享回流
+  - 深链
+  - 外链打开后回跳
+- 单独检查这些页：
+  - `chat`
+  - `group`
+  - `official-account-article`
+  - `chat-voice-call`
+  - `chat-video-call`
+  - `group-voice-call`
+  - `group-video-call`
+
+### 2. 输入栏、键盘、安全区
+
+目标：
+- 输入体验对齐微信移动端，而不是桌面网页聊天框
+
+执行规则：
+- Android：
+  - 以键盘顶起后的稳定布局为主
+  - 输入栏、语音按钮、加号面板、表情面板必须跟随 IME 变化
+  - 优先解决遮挡、跳闪、滚动错位
+- iOS：
+  - 以安全区、底部 Home Indicator、键盘跟手感为主
+  - 面板高度、圆角、间距更偏 iOS 微信风格
+  - 下方弹层更像 sheet，不像抽屉
+- Web 壳：
+  - 禁止依赖 hover
+  - 禁止出现桌面式右键、焦点样式、输入框固定高度假设
+
+微信参照判断：
+- 语音 / 键盘切换、加号入口、表情入口应保持微信式主路径
+- 若 Web 当前实现与移动端微信心智冲突，以微信为准，不以网页现状为准
+
+准备动作：
+- 重点审计：
+  - `apps/app/src/components/chat-composer.tsx`
+  - `apps/app/src/components/mobile-shell.tsx`
+  - `apps/app/src/index.css`
+  - `apps/app/src/features/chat/conversation-thread-panel.tsx`
+  - `apps/app/src/features/chat/group-chat-thread-panel.tsx`
+- 单列 3 类问题：
+  - 键盘遮挡
+  - 安全区缺口
+  - 面板开合抖动
+
+### 3. 图片、相册、拍照、录音、摄像头
+
+目标：
+- 所有媒体相关能力都按移动原生习惯完成，不让 WebView 成为短板
+
+执行规则：
+- Android：
+  - 图片优先走系统选取器 / Document Picker
+  - `CAMERA` / `RECORD_AUDIO` 权限按动作触发时请求
+  - WebView 侧若触发 `PermissionRequest`，只能按需授予具体资源
+- iOS：
+  - 图片优先走系统照片选择器
+  - 相机 / 麦克风权限请求必须与具体动作强绑定
+  - 首次请求前要有一层微信式前置解释文案
+- Web 壳：
+  - 能调用原生桥就走原生桥
+  - 不能走桥时再退回浏览器能力
+
+微信参照判断：
+- 权限不是启动即弹，而是在用户点“发语音 / 视频通话 / 拍照 / 录音”时再弹
+- 被拒绝后不是死掉，而是给出“去设置开启”路径
+
+准备动作：
+- Android 补齐并验证：
+  - `android.permission.CAMERA`
+  - `android.permission.RECORD_AUDIO`
+- iOS 补齐并验证：
+  - `NSCameraUsageDescription`
+  - `NSMicrophoneUsageDescription`
+- 检查这些实现点：
+  - `apps/app/src/features/chat/use-speech-input.ts`
+  - `apps/app/src/features/chat/use-self-camera-preview.ts`
+  - `apps/app/src/runtime/mobile-bridge.ts`
+  - `apps/ios-shell/ios/App/App/Plugins/YinjieMobileBridgePlugin.swift`
+  - `apps/android-shell/android/app/src/main/java/com/yinjie/mobile/YinjieMobileBridgePlugin.java`
+
+### 4. 通知、本地提醒、冷启动恢复
+
+目标：
+- 通知申请时机、通知呈现、点击后落点恢复，都像微信移动端而不是像网页推送 demo
+
+执行规则：
+- Android：
+  - Android 13+ 明确走 `POST_NOTIFICATIONS` 运行时权限
+  - 不在首次启动无上下文弹权限
+  - 在用户触发提醒相关能力时再申请
+  - 点击通知必须恢复到准确场景
+- iOS：
+  - 申请通知权限必须“有上下文”
+  - 需要和系统通知设置、Focus 行为兼容
+  - 点击通知优先回到对应会话 / 群聊 / 路由
+- Web 壳：
+  - 浏览器通知只作为 fallback
+  - 不以浏览器通知行为倒逼原生端
+
+微信参照判断：
+- 消息提醒属于“需要时再开”的能力，不是冷启动强推权限
+- 进入会话后的回跳要准确，不能把所有通知都落回消息列表首页
+
+准备动作：
+- 统一 launch target 契约，避免 Android / iOS 结构继续分叉
+- 核查：
+  - `apps/app/src/features/shell/mobile-notification-launch-bridge.tsx`
+  - `apps/app/src/runtime/mobile-bridge.ts`
+  - `apps/android-shell/android/app/src/main/java/com/yinjie/mobile/YinjieFirebaseMessagingService.java`
+  - `apps/ios-shell/ios/App/App/AppDelegate.swift`
+
+### 5. 分享、外链、文件打开
+
+目标：
+- 分享和打开外链时更像微信的移动端处理，而不是桌面浏览器跳新标签
+
+执行规则：
+- Android：
+  - 走系统 chooser
+  - 文件或图片分享走 `content://` / `FileProvider` 兼容思路
+- iOS：
+  - 走系统 share sheet
+  - 外链用系统浏览器打开，不在 WebView 里硬塞第三方网页
+- Web 壳：
+  - `navigator.share` 可用时用，否则降级
+  - 外链退化为新窗口打开
+
+微信参照判断：
+- 入口是 App 内 action sheet
+- 最终动作交给系统分享能力
+- 分享完成后仍能回到当前场景
+
+准备动作：
+- 检查：
+  - `openExternalUrl`
+  - `shareWithNativeShell`
+  - 图片 / 文件保存路径与返回文案
+
+### 6. 语音通话、视频通话、群通话
+
+目标：
+- 先保证能稳定开始、持续、结束和回跳，再追视觉还原
+
+执行规则：
+- Android：
+  - 先解权限、前后台切换、通知/任务栈问题
+  - UI 可次优，但通话主路径必须稳
+- iOS：
+  - 先解麦克风 / 摄像头授权与安全区
+  - 界面层更偏沉浸式，操作区更收束
+- Web 壳：
+  - 若做不到原生级后台保活，就明确维持前台会话模式
+  - 不伪装成已具备系统通话整合
+
+微信参照判断：
+- 微信里通话是高优先级场景
+- 这里优先学的是：
+  - 入口简单
+  - 失败可解释
+  - 回到聊天自然
+- 不是先追完全一致的铃声/系统来电形态
+
+准备动作：
+- 重点校验：
+  - 麦克风权限
+  - 摄像头权限
+  - 中途切后台再回来
+  - 通话中收到通知
+  - 结束后回到正确会话
+
+### 7. 发现、公众号、视频号、小程序等内容页
+
+目标：
+- 这些不是原生桥重灾区，但容易因为滚动、手势、返回逻辑而“像 H5 页面”
+
+执行规则：
+- Android / iOS：
+  - 主入口、二级页、详情页层级要清晰
+  - 不要出现桌面站式大浮层、悬浮 hover 交互
+  - 保证滚动容器、顶部栏、回跳动作稳定
+- Web 壳：
+  - 只保留移动端信息密度
+  - 避免桌面布局残留
+
+微信参照判断：
+- 这些页面更应参考微信的信息架构和跳转层级
+- 不需要强行复制微信的具体视觉装饰
+
+## 执行前资产准备
+
+### 环境准备
+
+- Android：
+  - Android Studio
+  - 至少一个 API 33+ 模拟器
+  - 至少一台真机
+- iOS：
+  - macOS
+  - Xcode
+  - 至少一台可安装调试包的 iPhone
+- 服务：
+  - 可访问的远程 `apiBaseUrl`
+  - 可访问的 `socketBaseUrl`
+  - 推送与通知测试环境
+
+### 对照准备
+
+- 准备两台参考设备：
+  - 安装当前可用微信 iOS 版本
+  - 安装当前可用微信 Android 版本
+- 为下列场景各录一段 15-30 秒对照视频：
+  - 单聊输入
+  - 发图
+  - 长按消息
+  - 通知点击回到会话
+  - 语音权限申请
+  - 视频权限申请
+  - 公众号文章进入与返回
+
+### 文档准备
+
+- 在执行期新增一份“移动端差异对照表”，字段固定为：
+  - 场景
+  - Web 当前
+  - 微信 Android
+  - 微信 iOS
+  - 隐界 Android 方案
+  - 隐界 iOS 方案
+  - 是否必须本轮完成
+
+## 真正开工时的任务拆分
+
+### P0：不解决就无法说“已同步到 Android / iOS”
+
+- 统一移动 Web 构建与同步链路
+- Android 权限补齐：
+  - `CAMERA`
+  - `RECORD_AUDIO`
+- iOS 权限与运行时字段补齐：
+  - `NSCameraUsageDescription`
+  - `NSMicrophoneUsageDescription`
+  - `YinjieApiBaseUrl`
+  - `YinjieSocketBaseUrl`
+  - `YinjieEnvironment`
+  - `YinjiePublicAppName`
+- 通知申请与点击回跳收口
+- 安全存储、分享、图片选取桥接核验
+
+### P1：影响体验，需按微信对齐
+
+- 键盘 / 安全区 / 底部面板稳定性
+- 聊天页长按、加号、表情、语音切换体验
+- 搜一搜、发现、公众号、视频号等页面的移动层级与回跳
+- 语音 / 视频通话前台体验
+
+### P2：收尾与发版准备
+
+- README / doctor / runbook 收口
+- 权限文案统一
+- Accessibility / Easy Mode 风格补偿
+- 真机回归记录沉淀
+
+## 验收口径
+
+只有同时满足下面几条，才算“Web 手机版已更新到 Android 和 iOS”：
+
+- 最新 `apps/app` 产物能稳定进入两个壳
+- Android / iOS 的关键原生能力没有因壳缺口失效
+- 关键路径交互在目标平台上不违背微信式心智
+- 权限、通知、分享、媒体、回跳四大类系统能力均已验证
+- 差异项都有明确记录，不存在“这个先随便做，后面再看”的无主项
+
+## 外部参考链接
+
+- WeChat iOS App Store：
+  - https://apps.apple.com/us/app/wechat/id414478124
+- WeChat Android Google Play：
+  - https://play.google.com/store/apps/details?hl=en_US&id=com.tencent.mm
+- Apple Support：iPhone 硬件权限说明
+  - https://support.apple.com/en-afri/guide/iphone/iph168c4bbd5/ios
+- Apple Developer：通知权限应在上下文中申请
+  - https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications
+- Apple Support：按 App 管理通知
+  - https://support.apple.com/en-us/120681
+- Android Developers：通知运行时权限
+  - https://developer.android.com/develop/ui/views/notifications/notification-permission
+- Android Developers：运行时权限请求
+  - https://developer.android.com/guide/topics/permissions/requesting
+- Android Developers：WebView `PermissionRequest`
+  - https://developer.android.com/reference/android/webkit/PermissionRequest
+
+## 补充结论
+
+- 接下来不是直接“开始同步代码”，而是先建立一套稳定执行准则：
+  - 功能统一
+  - 平台分流
+  - 微信参考
+  - 系统优先
+- 只要这套准则先立住，后面做 Android / iOS 适配时就不会陷入：
+  - 一边修一边改口径
+  - Web 要求、原生限制、微信心智三者互相打架
+
 ## 风险与阻塞
 
 - 当前工作树里已有未提交改动：
