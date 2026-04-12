@@ -1,3 +1,5 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+
 export type MiniProgramsStoredState = {
   activeMiniProgramId: string | null;
   recentMiniProgramIds: string[];
@@ -10,6 +12,7 @@ export type MiniProgramsStoredState = {
 
 const MINI_PROGRAMS_STORAGE_KEY = "yinjie-mini-programs-state";
 const MAX_RECENT_MINI_PROGRAMS = 8;
+let miniProgramsNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -114,55 +117,130 @@ export function getDefaultMiniProgramsState(): MiniProgramsStoredState {
   };
 }
 
+function normalizeMiniProgramsState(
+  state: Partial<MiniProgramsStoredState> | null | undefined,
+): MiniProgramsStoredState {
+  return {
+    activeMiniProgramId:
+      typeof state?.activeMiniProgramId === "string"
+        ? state.activeMiniProgramId
+        : null,
+    recentMiniProgramIds: sanitizeIds(state?.recentMiniProgramIds).slice(
+      0,
+      MAX_RECENT_MINI_PROGRAMS,
+    ),
+    pinnedMiniProgramIds: sanitizeIds(state?.pinnedMiniProgramIds),
+    launchCountById: sanitizeNumberRecord(state?.launchCountById),
+    lastOpenedAtById: sanitizeTimestampRecord(state?.lastOpenedAtById),
+    completedTaskIdsByMiniProgramId: sanitizeStringArrayRecord(
+      state?.completedTaskIdsByMiniProgramId,
+    ),
+    groupRelayPublishCountBySourceGroupId: sanitizeNumberRecord(
+      state?.groupRelayPublishCountBySourceGroupId,
+    ),
+  };
+}
+
+function parseMiniProgramsState(raw: string | null | undefined) {
+  if (!raw) {
+    return getDefaultMiniProgramsState();
+  }
+
+  try {
+    return normalizeMiniProgramsState(
+      JSON.parse(raw) as Partial<MiniProgramsStoredState>,
+    );
+  } catch {
+    return getDefaultMiniProgramsState();
+  }
+}
+
+function getLatestMiniProgramsTimestamp(state: MiniProgramsStoredState) {
+  return Object.values(state.lastOpenedAtById).reduce((latest, value) => {
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
+  }, 0);
+}
+
+function queueNativeMiniProgramsStateWrite(state: MiniProgramsStoredState) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(state);
+  miniProgramsNativeWriteQueue = miniProgramsNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_mini_programs_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
 export function readMiniProgramsState() {
   const storage = getStorage();
   if (!storage) {
     return getDefaultMiniProgramsState();
   }
 
-  const raw = storage.getItem(MINI_PROGRAMS_STORAGE_KEY);
-  if (!raw) {
-    return getDefaultMiniProgramsState();
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<MiniProgramsStoredState>;
-    return {
-      activeMiniProgramId:
-        typeof parsed.activeMiniProgramId === "string"
-          ? parsed.activeMiniProgramId
-          : null,
-      recentMiniProgramIds: sanitizeIds(parsed.recentMiniProgramIds).slice(
-        0,
-        MAX_RECENT_MINI_PROGRAMS,
-      ),
-      pinnedMiniProgramIds: sanitizeIds(parsed.pinnedMiniProgramIds),
-      launchCountById: Object.fromEntries(
-        Object.entries(parsed.launchCountById ?? {}).filter(
-          (entry): entry is [string, number] =>
-            typeof entry[0] === "string" && typeof entry[1] === "number",
-        ),
-      ),
-      lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
-      completedTaskIdsByMiniProgramId: sanitizeStringArrayRecord(
-        parsed.completedTaskIdsByMiniProgramId,
-      ),
-      groupRelayPublishCountBySourceGroupId: sanitizeNumberRecord(
-        parsed.groupRelayPublishCountBySourceGroupId,
-      ),
-    };
-  } catch {
-    return getDefaultMiniProgramsState();
-  }
+  return parseMiniProgramsState(storage.getItem(MINI_PROGRAMS_STORAGE_KEY));
 }
 
-export function writeMiniProgramsState(state: MiniProgramsStoredState) {
+export function writeMiniProgramsState(
+  state: MiniProgramsStoredState,
+  options?: {
+    syncNative?: boolean;
+  },
+) {
   const storage = getStorage();
   if (!storage) {
-    return;
+    return state;
   }
 
   storage.setItem(MINI_PROGRAMS_STORAGE_KEY, JSON.stringify(state));
+  if (options?.syncNative !== false) {
+    queueNativeMiniProgramsStateWrite(state);
+  }
+
+  return state;
+}
+
+export async function hydrateMiniProgramsStateFromNative() {
+  const localState = readMiniProgramsState();
+  if (!isDesktopRuntimeAvailable()) {
+    return localState;
+  }
+
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_mini_programs_store");
+
+    if (!result.exists) {
+      queueNativeMiniProgramsStateWrite(localState);
+      return localState;
+    }
+
+    const nativeState = parseMiniProgramsState(result.contents ?? null);
+    if (
+      getLatestMiniProgramsTimestamp(localState) >
+      getLatestMiniProgramsTimestamp(nativeState)
+    ) {
+      queueNativeMiniProgramsStateWrite(localState);
+      return localState;
+    }
+
+    writeMiniProgramsState(nativeState, {
+      syncNative: false,
+    });
+    return nativeState;
+  } catch {
+    return localState;
+  }
 }
 
 export function markMiniProgramOpened(
