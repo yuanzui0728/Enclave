@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -713,39 +714,43 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
         <div className="mt-4 space-y-3">
           {showWorkspacePrimer ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               首次进入可先点下方成员席位切换“已加入/待加入”，再点“同步最新状态”把在线人数回写到群聊卡片。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {showResumeHint ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               当前沿用了上一端的群通话快照，可继续调整在线成员后再同步到群聊。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
-          {workspaceSummaryLines.map((line) => (
-            <InlineNotice key={line} tone="info">
-              {line}
-            </InlineNotice>
-          ))}
+          {workspaceSummaryLines.length ? (
+            <MobileCallNotice tone="info">
+              <div className="space-y-1">
+                {workspaceSummaryLines.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
+              </div>
+            </MobileCallNotice>
+          ) : null}
           {mode === "video" ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               当前群视频页先承载移动工作台状态，本地摄像头开关只影响当前页面提示，不会上传真实画面。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {!hasSyncedStatus && !syncStatusMutation.isError ? (
-            <InlineNotice tone="warning">
+            <MobileCallNotice tone="warning">
               {syncStatusMutation.isPending
                 ? "正在把最新在线人数同步到群聊。"
                 : "成员状态刚有变化，系统会自动刷新群通话卡片。"}
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
             <ErrorBlock message={syncStatusMutation.error.message} />
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               这次群状态没有回写成功。你可以继续调整成员席位，确认后再手动重试同步。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
             <div className="flex flex-wrap gap-2">
@@ -773,9 +778,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             <ErrorBlock message={endStatusMutation.error.message} />
           ) : null}
           {endStatusMutation.error instanceof Error ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               结束群通话失败了，但当前工作台还在。你可以重试结束，或者先继续保留这一轮状态。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {endStatusMutation.error instanceof Error ? (
             <div className="flex flex-wrap gap-2">
@@ -800,9 +805,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           ) : null}
           {leavingScreen ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               正在结束当前群通话并返回群聊，请稍候。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
         </div>
 
@@ -962,6 +967,30 @@ function buildInitialJoinedMemberIds(
   }
 
   return Array.from(new Set(joinedMembers));
+}
+
+function MobileCallNotice({
+  tone = "info",
+  className,
+  ...props
+}: ComponentProps<typeof InlineNotice>) {
+  return (
+    <InlineNotice
+      tone={tone}
+      className={cn(
+        "rounded-[20px] px-4 py-3 text-[12px] leading-6 shadow-none",
+        tone === "warning"
+          ? "border-[#f59e0b]/24 bg-[#f59e0b]/10 text-[#fde68a]"
+          : tone === "danger"
+            ? "border-[#f87171]/24 bg-[#ef4444]/10 text-[#fecaca]"
+            : tone === "success"
+              ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
+              : "border-white/12 bg-white/8 text-white/74",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 function CallMetricCard({
