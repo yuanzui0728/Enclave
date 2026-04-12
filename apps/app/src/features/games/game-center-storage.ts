@@ -1,3 +1,5 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+
 export type GameCenterStoredState = {
   activeGameId: string | null;
   recentGameIds: string[];
@@ -14,6 +16,7 @@ export type GameCenterStoredState = {
 
 const GAME_CENTER_STORAGE_KEY = "yinjie-game-center-state";
 const MAX_RECENT_GAMES = 6;
+let gameCenterNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -38,7 +41,8 @@ function sanitizeTimestampRecord(value: unknown) {
 
   return Object.fromEntries(
     Object.entries(value).filter(
-      (entry): entry is [string, string] => typeof entry[0] === "string" && typeof entry[1] === "string",
+      (entry): entry is [string, string] =>
+        typeof entry[0] === "string" && typeof entry[1] === "string",
     ),
   );
 }
@@ -81,59 +85,138 @@ export function getDefaultGameCenterState(): GameCenterStoredState {
   };
 }
 
+function normalizeGameCenterState(
+  state: Partial<GameCenterStoredState> | null | undefined,
+): GameCenterStoredState {
+  return {
+    activeGameId:
+      typeof state?.activeGameId === "string" ? state.activeGameId : null,
+    recentGameIds: sanitizeIds(state?.recentGameIds).slice(0, MAX_RECENT_GAMES),
+    pinnedGameIds: sanitizeIds(state?.pinnedGameIds),
+    launchCountById: Object.fromEntries(
+      Object.entries(state?.launchCountById ?? {}).filter(
+        (entry): entry is [string, number] =>
+          typeof entry[0] === "string" && typeof entry[1] === "number",
+      ),
+    ),
+    lastOpenedAtById: sanitizeTimestampRecord(state?.lastOpenedAtById),
+    eventActionStatusById: sanitizeTimestampRecord(state?.eventActionStatusById),
+    lastInviteConversationIdByActivityId: sanitizeTimestampRecord(
+      state?.lastInviteConversationIdByActivityId,
+    ),
+    lastInviteConversationPathByActivityId: sanitizeTimestampRecord(
+      state?.lastInviteConversationPathByActivityId,
+    ),
+    lastInviteConversationTitleByActivityId: sanitizeTimestampRecord(
+      state?.lastInviteConversationTitleByActivityId,
+    ),
+    friendInviteStatusByActivityId: sanitizeTimestampRecord(
+      state?.friendInviteStatusByActivityId,
+    ),
+    friendInviteSentAtByActivityId: sanitizeTimestampRecord(
+      state?.friendInviteSentAtByActivityId,
+    ),
+  };
+}
+
+function parseGameCenterState(raw: string | null | undefined) {
+  if (!raw) {
+    return getDefaultGameCenterState();
+  }
+
+  try {
+    return normalizeGameCenterState(JSON.parse(raw) as Partial<GameCenterStoredState>);
+  } catch {
+    return getDefaultGameCenterState();
+  }
+}
+
+function getLatestGameCenterTimestamp(state: GameCenterStoredState) {
+  return Object.values({
+    ...state.lastOpenedAtById,
+    ...state.friendInviteSentAtByActivityId,
+  }).reduce((latest, value) => {
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp) && timestamp > latest ? timestamp : latest;
+  }, 0);
+}
+
+function queueNativeGameCenterStateWrite(state: GameCenterStoredState) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(state);
+  gameCenterNativeWriteQueue = gameCenterNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_game_center_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
 export function readGameCenterState() {
   const storage = getStorage();
   if (!storage) {
     return getDefaultGameCenterState();
   }
 
-  const raw = storage.getItem(GAME_CENTER_STORAGE_KEY);
-  if (!raw) {
-    return getDefaultGameCenterState();
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<GameCenterStoredState>;
-    return {
-      activeGameId: typeof parsed.activeGameId === "string" ? parsed.activeGameId : null,
-      recentGameIds: sanitizeIds(parsed.recentGameIds).slice(0, MAX_RECENT_GAMES),
-      pinnedGameIds: sanitizeIds(parsed.pinnedGameIds),
-      launchCountById: Object.fromEntries(
-        Object.entries(parsed.launchCountById ?? {}).filter(
-          (entry): entry is [string, number] =>
-            typeof entry[0] === "string" && typeof entry[1] === "number",
-        ),
-      ),
-      lastOpenedAtById: sanitizeTimestampRecord(parsed.lastOpenedAtById),
-      eventActionStatusById: sanitizeTimestampRecord(parsed.eventActionStatusById),
-      lastInviteConversationIdByActivityId: sanitizeTimestampRecord(
-        parsed.lastInviteConversationIdByActivityId,
-      ),
-      lastInviteConversationPathByActivityId: sanitizeTimestampRecord(
-        parsed.lastInviteConversationPathByActivityId,
-      ),
-      lastInviteConversationTitleByActivityId: sanitizeTimestampRecord(
-        parsed.lastInviteConversationTitleByActivityId,
-      ),
-      friendInviteStatusByActivityId: sanitizeTimestampRecord(
-        parsed.friendInviteStatusByActivityId,
-      ),
-      friendInviteSentAtByActivityId: sanitizeTimestampRecord(
-        parsed.friendInviteSentAtByActivityId,
-      ),
-    };
-  } catch {
-    return getDefaultGameCenterState();
-  }
+  return parseGameCenterState(storage.getItem(GAME_CENTER_STORAGE_KEY));
 }
 
-export function writeGameCenterState(state: GameCenterStoredState) {
+export function writeGameCenterState(
+  state: GameCenterStoredState,
+  options?: {
+    syncNative?: boolean;
+  },
+) {
   const storage = getStorage();
   if (!storage) {
-    return;
+    return state;
   }
 
   storage.setItem(GAME_CENTER_STORAGE_KEY, JSON.stringify(state));
+  if (options?.syncNative !== false) {
+    queueNativeGameCenterStateWrite(state);
+  }
+
+  return state;
+}
+
+export async function hydrateGameCenterStateFromNative() {
+  const localState = readGameCenterState();
+  if (!isDesktopRuntimeAvailable()) {
+    return localState;
+  }
+
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_game_center_store");
+
+    if (!result.exists) {
+      queueNativeGameCenterStateWrite(localState);
+      return localState;
+    }
+
+    const nativeState = parseGameCenterState(result.contents ?? null);
+    if (getLatestGameCenterTimestamp(localState) > getLatestGameCenterTimestamp(nativeState)) {
+      queueNativeGameCenterStateWrite(localState);
+      return localState;
+    }
+
+    writeGameCenterState(nativeState, {
+      syncNative: false,
+    });
+    return nativeState;
+  } catch {
+    return localState;
+  }
 }
 
 export function markGameOpened(
