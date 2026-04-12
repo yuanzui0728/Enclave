@@ -137,9 +137,6 @@ export function ProfileSettingsPage() {
     <>
       {desktopMode ? null : (
         <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
-          <div className="mb-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
-            管理你的资料、专属 AI 配置和协议说明。
-          </div>
           <div className="flex gap-1 rounded-[12px] bg-[#f5f5f5] p-1">
             {settingsTabs.map((tab) => (
               <button
@@ -164,7 +161,7 @@ export function ProfileSettingsPage() {
         <MobileSettingsSection
           desktop={desktopMode}
           title="个人资料"
-          description="这里的名称和签名会用于移动端资料页和世界主人展示。"
+          description={desktopMode ? "这里的名称和签名会用于移动端资料页和世界主人展示。" : undefined}
         >
           <div className="space-y-3">
             <MobileFieldGroup label="显示名称">
@@ -209,7 +206,11 @@ export function ProfileSettingsPage() {
         <MobileSettingsSection
           desktop={desktopMode}
           title="AI 设置"
-          description="你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。"
+          description={
+            desktopMode
+              ? "你可以为当前世界主人单独配置专属 API Key 和兼容 Base URL。"
+              : "专属 API Key 与兼容 Base URL"
+          }
         >
           {ownerQuery.isLoading ? (
             <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
@@ -292,13 +293,10 @@ export function ProfileSettingsPage() {
           {desktopMode ? null : (
             <section className="mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <div className="px-4 py-4">
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                  协议与规范
-                </div>
-                <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                  查看当前世界的隐私、服务条款和社区规范说明。
-                </div>
+              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                协议与规范
               </div>
+            </div>
               <MobileLinkRow
                 label="隐私政策"
                 subtitle="了解资料、会话和运行数据如何被处理"
@@ -536,10 +534,10 @@ function MobileSettingsSection({
   return (
     <section
       className={cn(
-        "space-y-4",
+        "space-y-3",
         desktop
           ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]"
-          : "mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4",
+          : "mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3",
       )}
     >
       <div>
@@ -547,7 +545,7 @@ function MobileSettingsSection({
           {title}
         </div>
         {description ? (
-          <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
             {description}
           </div>
         ) : null}
