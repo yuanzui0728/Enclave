@@ -327,12 +327,19 @@ export function ChatMessageSearchPanel({
   const activeCategoryMeta =
     SEARCH_CATEGORIES.find((item) => item.id === activeCategory) ??
     SEARCH_CATEGORIES[0];
+  const resetFilters = () => {
+    setKeyword("");
+    setSenderFilter("all");
+    setMessageTypeFilter("all");
+    setDateFilter("all");
+    setSpecificDate("");
+  };
 
   return (
     <ChatDetailsShell title="查找聊天记录" subtitle={subtitle} onBack={onBack}>
       <ChatDetailsSection title="搜索" variant="wechat">
         <div className="px-4 py-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5">
+          <label className="flex items-center gap-2 rounded-[11px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
             <Search
               size={16}
               className="shrink-0 text-[color:var(--text-dim)]"
@@ -342,10 +349,10 @@ export function ChatMessageSearchPanel({
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="搜索"
-              className="min-w-0 flex-1 bg-transparent text-[15px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             <SearchStatPill label={`当前范围 ${indexedMessages.length} 条`} />
             <SearchStatPill
               label={
@@ -360,41 +367,35 @@ export function ChatMessageSearchPanel({
             ) : null}
           </div>
           {activeFilterLabels.length ? (
-            <div className="mt-3 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-3 py-3">
+            <div className="mt-2.5 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
                   已筛选 {activeFilterLabels.length} 项
                 </div>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setKeyword("");
-                    setSenderFilter("all");
-                    setMessageTypeFilter("all");
-                    setDateFilter("all");
-                    setSpecificDate("");
-                  }}
-                  className="h-7 rounded-full px-2.5 text-[11px] text-[color:var(--text-secondary)]"
+                  onClick={resetFilters}
+                  className="h-6.5 rounded-full px-2 text-[10px] text-[color:var(--text-secondary)]"
                 >
                   清空
                 </Button>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {activeFilterLabels.map((label) => (
                   <SearchStatPill key={label} label={label} tone="active" />
                 ))}
               </div>
             </div>
           ) : null}
-          <div className="mt-3 space-y-3 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-3 py-3">
+          <div className="mt-2.5 space-y-3 rounded-[10px] bg-[color:var(--surface-panel)] px-3 py-3">
             <div>
-              <div className="text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+              <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 时间
               </div>
-              <div className="-mx-3 mt-2 overflow-x-auto px-3">
-                <div className="flex min-w-max gap-2">
+              <div className="-mx-3 mt-1.5 overflow-x-auto px-3">
+                <div className="flex min-w-max gap-1.5">
                   {SEARCH_DATE_FILTERS.map((item) => (
                     <SearchFilterChip
                       key={item.id}
@@ -411,11 +412,11 @@ export function ChatMessageSearchPanel({
               </div>
             </div>
             <div>
-              <div className="text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+              <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 类型
               </div>
-              <div className="-mx-3 mt-2 overflow-x-auto px-3">
-                <div className="flex min-w-max gap-2">
+              <div className="-mx-3 mt-1.5 overflow-x-auto px-3">
+                <div className="flex min-w-max gap-1.5">
                   {availableMessageTypeFilters.map((item) => (
                     <SearchFilterChip
                       key={item.id}
@@ -430,34 +431,44 @@ export function ChatMessageSearchPanel({
             </div>
           </div>
           <div
-            className={`mt-3 grid gap-2 ${
-              enableSenderFilter ? "grid-cols-2" : "grid-cols-1"
+            className={`mt-2.5 grid gap-2 ${
+              enableSenderFilter ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
             }`}
           >
-            <input
-              type="date"
-              value={specificDate}
-              onChange={(event) => {
-                setSpecificDate(event.target.value);
-                if (event.target.value) {
-                  setDateFilter("all");
-                }
-              }}
-              className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)]"
-            />
+            <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+              <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                指定日期
+              </span>
+              <input
+                type="date"
+                value={specificDate}
+                onChange={(event) => {
+                  setSpecificDate(event.target.value);
+                  if (event.target.value) {
+                    setDateFilter("all");
+                  }
+                }}
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none"
+              />
+            </label>
             {enableSenderFilter ? (
-              <select
-                value={senderFilter}
-                onChange={(event) => setSenderFilter(event.target.value)}
-                className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[14px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)]"
-              >
-                <option value="all">全部成员</option>
-                {senderOptions.map((senderName) => (
-                  <option key={senderName} value={senderName}>
-                    {senderName}
-                  </option>
-                ))}
-              </select>
+              <label className="flex min-w-0 flex-col gap-1 rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+                <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                  成员
+                </span>
+                <select
+                  value={senderFilter}
+                  onChange={(event) => setSenderFilter(event.target.value)}
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none"
+                >
+                  <option value="all">全部成员</option>
+                  {senderOptions.map((senderName) => (
+                    <option key={senderName} value={senderName}>
+                      {senderName}
+                    </option>
+                  ))}
+                </select>
+              </label>
             ) : null}
           </div>
         </div>
@@ -1063,11 +1074,13 @@ function SearchStatPill({
   return (
     <span
       className={cn(
-        "rounded-[7px] px-2.5 py-1 text-[11px]",
-        tone === "brand" && "bg-[#ededed] text-[color:var(--text-primary)]",
-        tone === "blue" && "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
-        tone === "active" && "bg-[rgba(7,193,96,0.1)] text-[#15803d]",
-        tone === "neutral" && "bg-[#ededed] text-[color:var(--text-muted)]",
+        "rounded-full px-2.5 py-1 text-[10px] leading-none",
+        tone === "brand" &&
+          "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]",
+        tone === "blue" && "bg-[rgba(59,130,246,0.08)] text-[#2563eb]",
+        tone === "active" && "bg-[rgba(7,193,96,0.12)] text-[#15803d]",
+        tone === "neutral" &&
+          "bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]",
       )}
     >
       {label}
@@ -1089,10 +1102,10 @@ function SearchFilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-[12px] transition",
+        "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
         active
-          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(247,251,248,0.96)] text-[#15803d]"
-          : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] text-[#15803d]"
+          : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
       )}
     >
       {children}
