@@ -184,7 +184,7 @@ export function FavoritesPage() {
                   className={cn(
                     "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
                     activeCategory === item.id
-                      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
+                      ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--text-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
                   )}
                 >
@@ -243,7 +243,7 @@ export function FavoritesPage() {
                       <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
                         {selectedFavorite.title}
                       </div>
-                      <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
+                      <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
                         {selectedFavorite.badge}
                       </span>
                     </div>
@@ -283,7 +283,7 @@ export function FavoritesPage() {
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to={selectedFavorite.to as never}
-                    className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-sm font-medium text-white transition hover:bg-[#06ad56]"
+                    className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
                   >
                     打开内容
                   </Link>
@@ -359,7 +359,7 @@ export function FavoritesPage() {
                 className={cn(
                   "flex w-full items-start gap-4 rounded-[14px] border px-4 py-4 text-left transition",
                   item.sourceId === selectedFavoriteSourceId
-                    ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.06)] shadow-[var(--shadow-soft)]"
+                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
                     : "border-[color:var(--border-faint)] bg-white hover:bg-[rgba(255,255,255,0.92)]",
                 )}
               >
@@ -373,7 +373,7 @@ export function FavoritesPage() {
                     <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                       {item.title}
                     </div>
-                    <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] font-medium text-[#15803d]">
+                    <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
                       {item.badge}
                     </span>
                   </div>
