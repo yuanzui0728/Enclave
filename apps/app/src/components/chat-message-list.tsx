@@ -1957,7 +1957,7 @@ export function ChatMessageList({
                     <StickerMessage
                       url={message.attachment.url}
                       label={message.attachment.label ?? displayText}
-                      maxSize={isDesktop ? 160 : 132}
+                      maxSize={isDesktop ? 160 : 124}
                     />
                   ) : message.type === "image" &&
                     message.attachment?.kind === "image" ? (
@@ -1965,7 +1965,7 @@ export function ChatMessageList({
                       url={message.attachment.url}
                       label={message.attachment.fileName || displayText}
                       variant={variant}
-                      maxSize={isDesktop ? 180 : 144}
+                      maxSize={isDesktop ? 180 : 136}
                       onOpen={
                         selectionMode
                           ? undefined
@@ -3510,10 +3510,10 @@ function ImageMessage({
   if (loadFailed) {
     return (
       <div
-        className={`flex h-28 w-28 items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
+        className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
           isDesktop
-            ? "rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
-            : "rounded-[18px] border border-[color:var(--border-subtle)] bg-white"
+            ? "h-28 w-28 rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-white"
         }`}
       >
         {label || "[图片]"}
@@ -3529,7 +3529,7 @@ function ImageMessage({
       className={`bg-white object-cover shadow-none ${
         isDesktop
           ? "rounded-[16px] border border-black/6"
-          : "rounded-[14px] border border-[color:var(--border-subtle)]"
+          : "rounded-[13px] border border-[color:var(--border-subtle)]"
       }`}
       style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
       loading="lazy"
