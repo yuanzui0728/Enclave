@@ -8,15 +8,15 @@ public class YinjieRuntimePlugin: CAPPlugin {
         let bundledConfig = readBundledRuntimeConfig()
 
         let apiBaseUrl =
-            nonEmptyString(info["YinjieApiBaseUrl"] as? String) ??
-            nonEmptyString(bundledConfig["apiBaseUrl"] as? String)
+            nonEmptyString(bundledConfig["apiBaseUrl"] as? String) ??
+            nonEmptyString(info["YinjieApiBaseUrl"] as? String)
         let socketBaseUrl =
-            nonEmptyString(info["YinjieSocketBaseUrl"] as? String) ??
             nonEmptyString(bundledConfig["socketBaseUrl"] as? String) ??
+            nonEmptyString(info["YinjieSocketBaseUrl"] as? String) ??
             apiBaseUrl
         let environment =
-            nonEmptyString(info["YinjieEnvironment"] as? String) ??
             nonEmptyString(bundledConfig["environment"] as? String) ??
+            nonEmptyString(info["YinjieEnvironment"] as? String) ??
             "production"
         let publicAppName =
             nonEmptyString(info["YinjiePublicAppName"] as? String) ??
@@ -34,6 +34,8 @@ public class YinjieRuntimePlugin: CAPPlugin {
 
         if let apiBaseUrl {
             result["apiBaseUrl"] = apiBaseUrl
+            result["worldAccessMode"] = "local"
+            result["configStatus"] = "configured"
         }
 
         if let socketBaseUrl {
