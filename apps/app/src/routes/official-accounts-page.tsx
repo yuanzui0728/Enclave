@@ -59,10 +59,9 @@ function MobileOfficialAccountsPage() {
   );
 
   return (
-    <AppPage className="space-y-0 px-0 py-0">
+    <AppPage className="space-y-0 bg-[#f5f5f5] px-0 py-0">
       <TabPageTopBar
         title="公众号"
-        subtitle="通讯录内的内容账号入口"
         titleAlign="center"
         leftActions={
           <Button
@@ -73,7 +72,7 @@ function MobileOfficialAccountsPage() {
             }
             variant="ghost"
             size="icon"
-            className="border border-white/70 bg-white/82 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:bg-white"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
           >
             <ArrowLeft size={18} />
           </Button>
@@ -94,20 +93,22 @@ function MobileOfficialAccountsPage() {
         </label>
       </TabPageTopBar>
 
-      <div className="space-y-3 px-3 py-3">
+      <div className="pb-8">
         {accountsQuery.isLoading ? <LoadingBlock label="正在读取公众号..." /> : null}
         {accountsQuery.isError && accountsQuery.error instanceof Error ? (
-          <ErrorBlock message={accountsQuery.error.message} />
+          <div className="px-3 pt-3">
+            <ErrorBlock message={accountsQuery.error.message} />
+          </div>
         ) : null}
 
         {followedAccounts.length ? (
-          <section className="space-y-2">
-            <div className="px-1">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
+              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
                 最近关注
               </div>
               <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-                已关注的公众号会优先出现在这里。
+                已关注的 {followedAccounts.length} 个公众号会优先显示在这里。
               </div>
             </div>
 
@@ -115,7 +116,6 @@ function MobileOfficialAccountsPage() {
               <OfficialAccountListItem
                 key={account.id}
                 account={account}
-                compact
                 onClick={() => {
                   void navigate({
                     to: "/official-accounts/$accountId",
@@ -128,15 +128,15 @@ function MobileOfficialAccountsPage() {
         ) : null}
 
         {filteredAccounts.length ? (
-          <section className="space-y-2">
-            <div className="px-1 pt-1">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
+              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
                 {followedAccounts.length ? "更多公众号" : "全部公众号"}
               </div>
               <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
                 {followedAccounts.length
-                  ? "还没关注的账号继续在这里浏览。"
-                  : "内容账号与服务账号统一收口在通讯录内浏览。"}
+                  ? `还有 ${otherAccounts.length} 个公众号可继续浏览。`
+                  : `当前共有 ${filteredAccounts.length} 个内容账号与服务账号。`}
               </div>
             </div>
 
@@ -144,7 +144,6 @@ function MobileOfficialAccountsPage() {
               <OfficialAccountListItem
                 key={`all-${account.id}`}
                 account={account}
-                compact
                 onClick={() => {
                   void navigate({
                     to: "/official-accounts/$accountId",
@@ -159,10 +158,12 @@ function MobileOfficialAccountsPage() {
         {!accountsQuery.isLoading &&
         !accountsQuery.isError &&
         !filteredAccounts.length ? (
-          <EmptyState
-            title="没有找到匹配的公众号"
-            description="换个名字、简称或关键词试试。"
-          />
+          <div className="px-3 pt-6">
+            <EmptyState
+              title="没有找到匹配的公众号"
+              description="换个名字、简称或关键词试试。"
+            />
+          </div>
         ) : null}
       </div>
     </AppPage>
