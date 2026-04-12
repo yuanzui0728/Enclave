@@ -218,7 +218,7 @@ export function ContactDetailPane({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-transparent px-3 py-1 text-xs text-[color:var(--text-dim)] transition-colors hover:border-[color:var(--border-faint)] hover:bg-[rgba(7,193,96,0.06)]"
+                  className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-xs text-[color:var(--text-dim)] transition-colors hover:bg-[color:var(--surface-console)]"
                   onClick={() => {
                     setIsEditingProfile(false);
                     setProfileForm({
@@ -234,7 +234,7 @@ export function ContactDetailPane({
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-[#07c160] px-3 py-1 text-xs text-white transition-colors hover:brightness-105 disabled:opacity-60"
+                  className="rounded-full bg-[color:var(--brand-primary)] px-3 py-1 text-xs text-white transition-opacity hover:opacity-95 disabled:opacity-60"
                   onClick={async () => {
                     await handleProfileSave();
                     setIsEditingProfile(false);
@@ -247,7 +247,7 @@ export function ContactDetailPane({
             ) : (
               <button
                 type="button"
-                className="rounded-full border border-transparent px-3 py-1 text-xs text-[color:var(--text-secondary)] transition-colors hover:border-[color:var(--border-faint)] hover:bg-[rgba(7,193,96,0.06)]"
+                className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-xs text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--surface-console)]"
                 onClick={() => setIsEditingProfile(true)}
               >
                 编辑
