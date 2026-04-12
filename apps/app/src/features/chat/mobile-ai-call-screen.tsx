@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1155,10 +1156,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
         <div className="mt-4 space-y-3">
           {showSpeechWarning && speechStatus ? (
-            <InlineNotice tone="warning">
+            <MobileCallNotice tone="warning">
               {speechStatus.speechMessage}
               {speechProviderSummary ? ` 当前链路：${speechProviderSummary}。` : ""}
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {showDiagnosticsToggle ? (
             <div className="flex justify-start">
@@ -1185,25 +1186,25 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </div>
           ) : null}
           {showPermissionPrimer ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               首次使用请先允许麦克风权限。若自动播报被拦截，可直接补播这一句。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {showPermissionRequestHint ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               正在请求麦克风权限，请在弹窗里点允许。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {showVideoFirstTurnPrimer ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               数字人已接通。先按住底部按钮说第一句，松开后会自动回复。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {isVideoMode &&
           cameraEnabled &&
           cameraPreview.error &&
           cameraPreview.status !== "requesting-permission" ? (
-            <InlineNotice
+            <MobileCallNotice
               tone="warning"
               className="flex items-center justify-between gap-3"
             >
@@ -1211,50 +1212,52 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               {cameraPreview.permissionDenied &&
               isNativeMobileBridgeAvailable() ? (
                 <InlineNoticeActionButton
+                  className="border-current/28 bg-white/12 active:bg-white/16"
                   onClick={() => {
                     void openAppSettings();
                   }}
                 />
               ) : null}
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {isVideoMode &&
           !digitalHumanCall.sessionError &&
           digitalHumanGatewayCopy?.noticeMessage ? (
-            <InlineNotice tone={digitalHumanGatewayCopy.noticeTone}>
+            <MobileCallNotice tone={digitalHumanGatewayCopy.noticeTone}>
               {digitalHumanGatewayCopy.noticeMessage}
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {isVideoMode && digitalHumanCall.sessionError ? (
             <ErrorBlock message={digitalHumanCall.sessionError} />
           ) : null}
           {leavingScreen ? (
-            <InlineNotice tone="info">
+            <MobileCallNotice tone="info">
               正在结束通话并返回聊天。
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
           {speech.error ? (
             speech.permissionDenied && isNativeMobileBridgeAvailable() ? (
-              <InlineNotice
+              <MobileCallNotice
                 tone="warning"
                 className="flex items-center justify-between gap-3"
               >
                 <span>{speech.error}</span>
                 <InlineNoticeActionButton
+                  className="border-current/28 bg-white/12 active:bg-white/16"
                   onClick={() => {
                     void openAppSettings();
                   }}
                 />
-              </InlineNotice>
+              </MobileCallNotice>
             ) : (
               <ErrorBlock message={speech.error} />
             )
           ) : null}
           {videoRecoveryMessage ? (
-            <InlineNotice
+            <MobileCallNotice
               tone={
                 hasVideoPlaybackFailure &&
                 !hasVideoSessionFailure &&
@@ -1264,7 +1267,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               }
             >
               {videoRecoveryMessage}
-            </InlineNotice>
+            </MobileCallNotice>
           ) : null}
           {showPlaybackNudge ? (
             <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/12 bg-white/8 px-4 py-3 text-[12px] leading-6 text-white/74">
@@ -1480,6 +1483,30 @@ function formatCallLatency(durationMs: number) {
   }
 
   return `${(durationMs / 1000).toFixed(1)}s`;
+}
+
+function MobileCallNotice({
+  tone = "info",
+  className,
+  ...props
+}: ComponentProps<typeof InlineNotice>) {
+  return (
+    <InlineNotice
+      tone={tone}
+      className={cn(
+        "rounded-[20px] px-4 py-3 text-[12px] leading-6 shadow-none",
+        tone === "warning"
+          ? "border-[#f59e0b]/24 bg-[#f59e0b]/10 text-[#fde68a]"
+          : tone === "danger"
+            ? "border-[#f87171]/24 bg-[#ef4444]/10 text-[#fecaca]"
+            : tone === "success"
+              ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
+              : "border-white/12 bg-white/8 text-white/74",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 type CallBubbleProps = {
