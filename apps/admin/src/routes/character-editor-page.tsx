@@ -199,6 +199,7 @@ export function CharacterEditorPage() {
           metrics={[
             { label: "可保存", value: canSave ? "是" : "否" },
             { label: "关系类型", value: formatRelationshipType(draft.relationshipType ?? "expert") },
+            { label: "角色来源", value: formatCharacterSourceType(draft.sourceType) },
             { label: "擅长领域数", value: (draft.expertDomains?.length ?? 0) || 0 },
             { label: "触发场景数", value: (draft.triggerScenes?.length ?? 0) || 0 },
           ]}
@@ -211,6 +212,8 @@ export function CharacterEditorPage() {
             <MetricCard label="关系" value={draft.relationship || "待填写"} />
             <MetricCard label="在线" value={draft.isOnline ? "在线" : "离线"} />
             <MetricCard label="模板" value={draft.isTemplate ? "是" : "否"} />
+            <MetricCard label="角色来源" value={formatCharacterSourceType(draft.sourceType)} />
+            <MetricCard label="删除策略" value={formatDeletionPolicy(draft.deletionPolicy)} />
           </div>
         </Card>
       </div>
@@ -643,7 +646,33 @@ function formatRelationshipType(type: Character["relationshipType"]) {
       return "导师";
     case "custom":
       return "自定义";
+    case "self":
+      return "自己";
     default:
       return type;
+  }
+}
+
+function formatCharacterSourceType(sourceType?: Character["sourceType"]) {
+  switch (sourceType) {
+    case "default_seed":
+      return "默认保底";
+    case "preset_catalog":
+      return "名人预设";
+    case "manual_admin":
+      return "后台手工";
+    default:
+      return "后台手工";
+  }
+}
+
+function formatDeletionPolicy(policy?: Character["deletionPolicy"]) {
+  switch (policy) {
+    case "protected":
+      return "受保护";
+    case "archive_allowed":
+      return "允许删除";
+    default:
+      return "允许删除";
   }
 }

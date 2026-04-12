@@ -167,6 +167,8 @@ export function CharacterRuntimePage() {
             <MetricCard label="活跃时间窗" value={snapshot.observability.activeWindow.label} />
             <MetricCard label="记忆摘要" value={draft.profile.memorySummary ? "已填写" : "未填写"} />
             <MetricCard label="叙事弧线" value={snapshot.narrativeArc ? "有" : "无"} />
+            <MetricCard label="角色来源" value={formatCharacterSourceType(draft.sourceType)} />
+            <MetricCard label="删除策略" value={formatDeletionPolicy(draft.deletionPolicy)} />
           </div>
         </Card>
       </div>
@@ -660,6 +662,30 @@ function parseOptionalHour(value: string) {
 
 function formatMode(value?: string | null) {
   return value === "manual" ? "人工锁定" : "自动调度";
+}
+
+function formatCharacterSourceType(sourceType?: Character["sourceType"]) {
+  switch (sourceType) {
+    case "default_seed":
+      return "默认保底";
+    case "preset_catalog":
+      return "名人预设";
+    case "manual_admin":
+      return "后台手工";
+    default:
+      return "后台手工";
+  }
+}
+
+function formatDeletionPolicy(policy?: Character["deletionPolicy"]) {
+  switch (policy) {
+    case "protected":
+      return "受保护";
+    case "archive_allowed":
+      return "允许删除";
+    default:
+      return "允许删除";
+  }
 }
 
 function formatActivity(value?: string | null) {

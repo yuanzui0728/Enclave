@@ -33,7 +33,7 @@ export class CharacterEntity {
   @Column({ default: 'manual_admin' })
   sourceType: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   sourceKey?: string | null;
 
   @Column({ default: 'archive_allowed' })
