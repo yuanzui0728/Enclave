@@ -1,4 +1,23 @@
 services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/app/Dockerfile
+    ports:
+      - "${APP_PORT:-80}:80"
+    environment:
+      - APP_API_UPSTREAM=http://api:3000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   api:
     build:
       context: ./api
