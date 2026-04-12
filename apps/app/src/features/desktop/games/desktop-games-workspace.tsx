@@ -19,7 +19,10 @@ import {
   formatTimestamp,
 } from "../../../lib/format";
 import { getConversationPreviewParts } from "../../../lib/conversation-preview";
-import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import {
+  getConversationThreadLabel,
+  isPersistedGroupConversation,
+} from "../../../lib/conversation-route";
 import { EmptyState } from "../../../components/empty-state";
 import { GameCenterSessionPanel } from "../../games/game-center-session-panel";
 import {
@@ -785,7 +788,7 @@ function InviteConversationRow({
             {conversation.title}
           </div>
           <span className="text-[11px] text-[color:var(--text-muted)]">
-            {isPersistedGroupConversation(conversation) ? "群聊" : "单聊"}
+            {getConversationThreadLabel(conversation)}
           </span>
         </div>
         <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">

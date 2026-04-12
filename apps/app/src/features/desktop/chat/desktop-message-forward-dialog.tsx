@@ -5,7 +5,10 @@ import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
-import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import {
+  getConversationThreadLabel,
+  isPersistedGroupConversation,
+} from "../../../lib/conversation-route";
 import { formatMessageTimestamp, parseTimestamp } from "../../../lib/format";
 
 export type DesktopMessageForwardPreviewItem = {
@@ -338,7 +341,7 @@ export function DesktopMessageForwardDialog({
                           {conversation.title}
                         </div>
                         <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                          {isGroup ? "群聊" : "单聊"} · 最近活跃{" "}
+                          {getConversationThreadLabel(conversation)} · 最近活跃{" "}
                           {formatMessageTimestamp(conversation.lastActivityAt)}
                         </div>
                       </div>
