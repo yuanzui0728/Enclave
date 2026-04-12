@@ -36,6 +36,7 @@ type MobileBridgePlugin = {
   pickImages(options?: {
     multiple?: boolean;
   }): Promise<{ assets: MobileBridgeImageAsset[] }>;
+  captureImage(): Promise<{ asset: MobileBridgeImageAsset | null }>;
   getPushToken(): Promise<{ token: string | null }>;
   getNotificationPermissionState(): Promise<{ state: string }>;
   requestNotificationPermission(): Promise<{ state: string }>;
@@ -109,6 +110,19 @@ export async function pickImagesWithNativeShell(multiple = false) {
     return result.assets ?? [];
   } catch {
     return [];
+  }
+}
+
+export async function captureImageWithNativeShell() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return null;
+  }
+
+  try {
+    const result = await mobileBridge.captureImage();
+    return result.asset ?? null;
+  } catch {
+    return null;
   }
 }
 

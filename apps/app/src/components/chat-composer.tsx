@@ -56,6 +56,7 @@ import {
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
+  captureImageWithNativeShell,
   isNativeMobileBridgeAvailable,
   pickImagesWithNativeShell,
   type MobileBridgeImageAsset,
@@ -1045,8 +1046,30 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
+    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+      void pickCameraWithNativeShell();
+      return;
+    }
     cameraInputRef.current?.click();
   };
+
+  const pickCameraWithNativeShell = useEffectEvent(async () => {
+    const asset = await captureImageWithNativeShell();
+    if (!asset) {
+      return;
+    }
+
+    try {
+      const file = await readNativeBridgeImageAssetFile(asset, 0);
+      await applyImageDraftFiles([file]);
+    } catch (fileError) {
+      setAttachmentError(
+        fileError instanceof Error
+          ? fileError.message
+          : "读取图片失败，请换一张再试。",
+      );
+    }
+  });
 
   const pickAlbumWithNativeShell = useEffectEvent(async () => {
     const assets = await pickImagesWithNativeShell(true);
