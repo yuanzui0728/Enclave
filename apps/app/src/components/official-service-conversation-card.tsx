@@ -26,10 +26,10 @@ export function OfficialServiceConversationCard({
           : "flex w-full items-center gap-3 px-4 py-3.5 text-left",
         isDesktop
           ? active
-            ? "border border-[color:var(--border-brand)] bg-[linear-gradient(135deg,rgba(255,247,234,0.98),rgba(255,255,255,0.94))] shadow-[0_8px_18px_rgba(180,100,20,0.08)]"
+            ? "border border-[rgba(7,193,96,0.16)] bg-[linear-gradient(135deg,rgba(244,252,247,0.98),rgba(255,255,255,0.94))] shadow-[0_8px_18px_rgba(7,193,96,0.08)]"
             : "border border-transparent hover:bg-[color:var(--surface-card-hover)]"
           : active
-            ? "bg-[rgba(255,246,228,0.72)]"
+            ? "bg-[rgba(7,193,96,0.08)]"
             : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
