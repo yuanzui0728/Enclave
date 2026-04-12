@@ -244,8 +244,8 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             ) : null}
           </AppSection>
 
-          <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-            <div>
+          <AppSection className="overflow-hidden border-black/5 bg-white px-0 py-0 shadow-none">
+            <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 最近文章
               </div>
@@ -258,7 +258,6 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               <OfficialArticleCard
                 key={article.id}
                 article={article}
-                compact
                 favorite={favoriteSourceIds.includes(
                   `official-article-${article.id}`,
                 )}

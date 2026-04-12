@@ -8,7 +8,6 @@ import {
 } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
   LoadingBlock,
@@ -109,11 +108,11 @@ function MobileSubscriptionInboxPage() {
 
         {inboxQuery.data?.groups.length ? (
           inboxQuery.data.groups.map((group) => (
-            <AppSection
+            <section
               key={group.account.id}
-              className="space-y-4 border-black/5 bg-white shadow-none"
+              className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
             >
-              <div>
+              <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -124,7 +123,7 @@ function MobileSubscriptionInboxPage() {
                   }}
                   className="text-left"
                 >
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
                     {group.account.name}
                   </div>
                   <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
@@ -139,7 +138,6 @@ function MobileSubscriptionInboxPage() {
                 <OfficialArticleCard
                   key={delivery.id}
                   article={delivery.article}
-                  compact
                   onClick={() => {
                     void navigate({
                       to: "/official-accounts/articles/$articleId",
@@ -148,7 +146,7 @@ function MobileSubscriptionInboxPage() {
                   }}
                 />
               ))}
-            </AppSection>
+            </section>
           ))
         ) : !inboxQuery.isLoading ? (
           <EmptyState
