@@ -53,6 +53,7 @@ import {
 } from "../features/chat/stickers/recent-stickers";
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useChatPreferencesStore } from "../store/chat-preferences-store";
 
 type ChatComposerProps = {
   value: string;
@@ -272,6 +273,9 @@ export function ChatComposer({
   onSubmit,
 }: ChatComposerProps) {
   const runtimeConfig = useAppRuntimeConfig();
+  const sendMessageShortcut = useChatPreferencesStore(
+    (state) => state.sendMessageShortcut,
+  );
   const baseUrl = speechInput?.baseUrl ?? runtimeConfig.apiBaseUrl;
   const { keyboardInset, keyboardOpen } = useKeyboardInset();
   const isDesktop = variant === "desktop";
@@ -2027,6 +2031,8 @@ export function ChatComposer({
   const handleDesktopInputKeyDown = (
     event: KeyboardEvent<HTMLInputElement>,
   ) => {
+    const commandKey = event.metaKey || event.ctrlKey;
+
     if (mentionPickerOpen) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
@@ -2054,7 +2060,12 @@ export function ChatComposer({
       }
     }
 
-    if (event.key === "Enter" && value.trim()) {
+    const shouldSend =
+      event.key === "Enter" &&
+      value.trim() &&
+      (sendMessageShortcut === "enter" ? !commandKey : commandKey);
+
+    if (shouldSend) {
       event.preventDefault();
       onSubmit();
     }
