@@ -124,6 +124,8 @@ export function DesktopChannelsWorkspace({
   );
   const selectedSidebarItemClassName =
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]";
+  const activeFavoriteActionClassName =
+    "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
   const authorSummaries = useMemo(() => {
     const map = new Map<
       string,
@@ -409,9 +411,9 @@ export function DesktopChannelsWorkspace({
                   </div>
                 </div>
 
-                <div className="space-y-5 px-6 py-5">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
+                  <div className="space-y-5 px-6 py-5">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-3">
                         <AvatarChip
                           name={selectedPost.authorName}
@@ -431,7 +433,7 @@ export function DesktopChannelsWorkspace({
                       <div className="mt-4 text-[15px] leading-8 text-[color:var(--text-primary)]">
                         {selectedPost.text}
                       </div>
-                    </div>
+                      </div>
 
                     <div className="flex items-center gap-2">
                       <Button
@@ -439,6 +441,7 @@ export function DesktopChannelsWorkspace({
                         size="sm"
                         onClick={() => onLike(selectedPost.id)}
                         disabled={likePendingPostId === selectedPost.id}
+                        className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                       >
                         <ThumbsUp size={15} />
                         {likePendingPostId === selectedPost.id
@@ -449,6 +452,7 @@ export function DesktopChannelsWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => setSelectedPostId(selectedPost.id)}
+                        className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                       >
                         <MessageCircleMore size={15} />
                         {selectedPost.commentCount} 评论
@@ -457,6 +461,9 @@ export function DesktopChannelsWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => onToggleFavorite(selectedPost)}
+                        className={isPostFavorite(selectedPost.id)
+                          ? activeFavoriteActionClassName
+                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"}
                       >
                         <Bookmark size={15} />
                         {isPostFavorite(selectedPost.id) ? "取消收藏" : "收藏"}
@@ -464,15 +471,21 @@ export function DesktopChannelsWorkspace({
                     </div>
                   </div>
 
-                  <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
-                    <div className="flex items-center gap-2">
+                  <div className="border-t border-[color:var(--border-faint)] px-6 py-4">
+                    <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+                      <span>评论会直接留在当前内容上下文里。</span>
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
+                        {selectedPost.commentCount} 条评论
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
                       <TextField
                         value={commentDrafts[selectedPost.id] ?? ""}
                         onChange={(event) =>
                           onCommentChange(selectedPost.id, event.target.value)
                         }
                         placeholder="写下你对这条视频号内容的评论..."
-                        className="min-w-0 flex-1 rounded-xl bg-white"
+                        className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
                       />
                       <Button
                         variant="primary"
@@ -482,6 +495,7 @@ export function DesktopChannelsWorkspace({
                           commentPendingPostId === selectedPost.id
                         }
                         onClick={() => onCommentSubmit(selectedPost.id)}
+                        className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                       >
                         {commentPendingPostId === selectedPost.id
                           ? "发送中..."
