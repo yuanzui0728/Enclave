@@ -619,7 +619,7 @@ function MobileChannelsCard({
             size="sm"
             disabled={!commentDraft.trim() || commentPending}
             onClick={onCommentSubmit}
-            className="bg-[#07c160] text-white hover:bg-[#06ad56]"
+            className="bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
             {commentPending ? "发送中..." : "发送"}
           </Button>
@@ -649,7 +649,7 @@ function ActionRailButton({
       <span
         className={cn(
           "flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur",
-          active && "bg-[rgba(7,193,96,0.85)]",
+          active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_rgba(7,193,96,0.14)]",
         )}
       >
         {children}
