@@ -212,10 +212,10 @@ function DesktopGroupContactsPage() {
   }, [filteredGroups, selectedGroupId]);
 
   return (
-    <AppPage className="h-full min-h-0 space-y-0 bg-[#f3f3f3] px-0 py-0">
+    <AppPage className="h-full min-h-0 space-y-0 bg-[color:var(--bg-app)] px-0 py-0">
       <div className="flex h-full min-h-0">
-        <section className="flex w-[340px] shrink-0 flex-col border-r border-black/6 bg-[#f7f7f7]">
-          <div className="border-b border-black/6 px-4 py-4">
+        <section className="flex w-[340px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
@@ -240,13 +240,13 @@ function DesktopGroupContactsPage() {
                     }),
                   });
                 }}
-                className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
               >
                 发起群聊
               </Button>
             </div>
 
-            <label className="mt-3 flex items-center gap-2 rounded-[10px] border border-black/8 bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+            <label className="mt-3 flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
               <Search size={15} className="shrink-0" />
               <input
                 type="search"
@@ -258,7 +258,7 @@ function DesktopGroupContactsPage() {
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[#f5f5f5] pb-4">
+          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
             {groupsQuery.isLoading ? (
               <div className="px-3 pt-3">
                 <LoadingBlock label="正在读取群聊..." />
@@ -306,7 +306,7 @@ function DesktopGroupContactsPage() {
 
             {filteredGroups.length ? (
               <section className="px-3 py-3">
-                <div className="overflow-hidden rounded-[16px] border border-black/6 bg-white shadow-[0_10px_32px_rgba(15,23,42,0.04)]">
+                <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
                   {filteredGroups.map((group, index) => {
                     const isSelected = group.id === selectedGroup?.id;
 
@@ -318,10 +318,10 @@ function DesktopGroupContactsPage() {
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "bg-[rgba(15,23,42,0.06)]"
-                            : "bg-white hover:bg-[#f5f5f5]",
+                            ? "bg-[rgba(7,193,96,0.08)]"
+                            : "bg-white hover:bg-[color:var(--surface-console)]",
                           index > 0
-                            ? "border-t border-black/6"
+                            ? "border-t border-[color:var(--border-faint)]"
                             : undefined,
                         )}
                       >
@@ -350,10 +350,10 @@ function DesktopGroupContactsPage() {
           </div>
         </section>
 
-        <section className="min-w-0 flex-1 bg-[#f3f3f3]">
+        <section className="min-w-0 flex-1 bg-[color:var(--bg-app)]">
           <div className="flex h-full min-h-0 items-center justify-center p-8">
             {selectedGroup ? (
-              <div className="w-full max-w-[520px] rounded-[18px] border border-black/6 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+              <div className="w-full max-w-[520px] rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
                 <div className="flex items-center gap-4">
                   <GroupAvatarChip name={selectedGroup.name} size="wechat" />
                   <div className="min-w-0">
@@ -370,7 +370,7 @@ function DesktopGroupContactsPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-[12px] border border-black/6 bg-[#fafafa] px-5 py-4 text-sm leading-6 text-[color:var(--text-muted)]">
+                <div className="mt-6 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-5 py-4 text-sm leading-6 text-[color:var(--text-muted)]">
                   {getGroupDescription(selectedGroup)}
                 </div>
 
@@ -390,7 +390,7 @@ function DesktopGroupContactsPage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="flex-1 rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                    className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
                     onClick={() => {
                       void navigate({
                         to: "/group/$groupId/details",
