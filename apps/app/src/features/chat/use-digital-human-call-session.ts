@@ -298,6 +298,27 @@ export function useDigitalHumanCallSession({
   ]);
 
   useEffect(() => {
+    if (!enabled || typeof document === "undefined") {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") {
+        return;
+      }
+
+      autoSubmitRecordingRef.current = false;
+      stopReplyPlayback();
+      speechCancelRef.current();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [enabled, stopReplyPlayback]);
+
+  useEffect(() => {
     if (!enabled || !session?.id || session.status === "ended") {
       return;
     }
