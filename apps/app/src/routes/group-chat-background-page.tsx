@@ -390,9 +390,9 @@ export function GroupChatBackgroundPage() {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="min-h-full bg-[#f3f3f3] px-4 py-4">
+      <AppPage className="min-h-full bg-[color:var(--bg-app)] px-4 py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
-          <div className="flex items-center justify-between rounded-[14px] border border-black/6 bg-[#f7f7f7] px-5 py-4">
+          <div className="flex items-center justify-between rounded-[16px] border border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
             <div>
               <div className="text-xs tracking-[0.12em] text-[color:var(--text-dim)]">
                 群聊背景
@@ -409,7 +409,7 @@ export function GroupChatBackgroundPage() {
                   params: { groupId },
                 });
               }}
-              className="rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
               返回群聊
             </Button>
@@ -459,7 +459,7 @@ function SectionCard({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-4 rounded-[12px] border border-black/6 bg-white p-5">
+    <section className="space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
       <div>
         <div className="text-lg font-semibold text-[color:var(--text-primary)]">
           {title}
@@ -467,7 +467,7 @@ function SectionCard({
         <div className="mt-1 text-sm leading-6 text-[color:var(--text-secondary)]">
           {description}
         </div>
-        <div className="mt-3 inline-flex rounded-[8px] bg-[#f3f3f3] px-3 py-1 text-xs text-[color:var(--text-muted)]">
+        <div className="mt-3 inline-flex rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-xs text-[color:var(--text-muted)]">
           当前：{status}
         </div>
       </div>
@@ -492,12 +492,12 @@ function PresetGrid({
           onClick={() => onSelect(preset)}
           className={`overflow-hidden rounded-[12px] border text-left transition ${
             preset.assetId === selectedAssetId
-              ? "border-[#07c160] bg-white"
-              : "border-black/6 bg-white hover:bg-[#fafafa]"
+              ? "border-[rgba(7,193,96,0.22)] bg-white shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+              : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]"
           }`}
         >
           <div
-            className="h-28 bg-[#f3f3f3]"
+            className="h-28 bg-[color:var(--surface-console)]"
             style={{
               backgroundImage: `url("${preset.thumbnailUrl ?? preset.url}")`,
               backgroundPosition: "center",
@@ -531,8 +531,8 @@ function ModeChip({
       onClick={onClick}
       className={`rounded-[8px] border px-4 py-2 text-sm transition ${
         active
-          ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-          : "border-transparent bg-[#ececec] text-[color:var(--text-secondary)]"
+          ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white"
       } disabled:cursor-not-allowed disabled:opacity-45`}
     >
       {label}
@@ -548,7 +548,7 @@ function EmptyPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-[12px] border border-dashed border-black/8 bg-white px-5 py-8 text-center">
+    <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
       <div className="text-lg font-semibold text-[color:var(--text-primary)]">
         {title}
       </div>
