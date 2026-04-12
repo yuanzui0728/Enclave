@@ -165,7 +165,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     {account.accountType === "service" ? "服务号" : "订阅号"}
                   </span>
                   {account.isVerified ? (
-                    <span className="rounded-full bg-[rgba(93,103,201,0.12)] px-3 py-1 text-[#4951a3]">
+                    <span className="rounded-full bg-[rgba(37,99,235,0.12)] px-3 py-1 text-[#2563eb]">
                       已认证
                     </span>
                   ) : null}
