@@ -170,6 +170,8 @@ fn main() {
             desktop_write_feedback_store,
             desktop_read_live_companion_store,
             desktop_write_live_companion_store,
+            desktop_read_lock_store,
+            desktop_write_lock_store,
             desktop_read_mobile_handoff_store,
             desktop_write_mobile_handoff_store,
             desktop_read_notes_store,
@@ -592,6 +594,62 @@ async fn desktop_write_live_companion_store(
             success: true,
             message: format!(
                 "Saved desktop live companion store to {}",
+                target_file_path.display()
+            ),
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_read_lock_store(
+    app: tauri::AppHandle,
+) -> Result<DesktopTextStoreReadResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-lock.json");
+
+        match std::fs::read_to_string(&target_file_path) {
+            Ok(contents) => Ok(DesktopTextStoreReadResult {
+                exists: true,
+                contents: Some(contents),
+                message: format!(
+                    "Read desktop lock store from {}",
+                    target_file_path.display()
+                ),
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                Ok(DesktopTextStoreReadResult {
+                    exists: false,
+                    contents: None,
+                    message: "Desktop lock store has not been created yet.".to_string(),
+                })
+            }
+            Err(error) => Err(error.to_string()),
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_write_lock_store(
+    app: tauri::AppHandle,
+    contents: String,
+) -> Result<DesktopOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-lock.json");
+        ensure_parent_dir_exists(&target_file_path)?;
+        std::fs::write(&target_file_path, contents).map_err(|error| error.to_string())?;
+
+        Ok(DesktopOperationResult {
+            success: true,
+            message: format!(
+                "Saved desktop lock store to {}",
                 target_file_path.display()
             ),
         })
