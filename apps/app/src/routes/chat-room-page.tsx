@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
+import { getConversations } from "@yinjie/contracts";
 import { AppPage } from "@yinjie/ui";
 import {
   buildChatCallReturnSearch,
@@ -14,12 +16,16 @@ import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-work
 import { resolveGameInviteRouteContext } from "../features/games/game-invite-route";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
+import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function ChatRoomPage() {
   const { conversationId } = useParams({ from: "/chat/$conversationId" });
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const runtimeConfig = useAppRuntimeConfig();
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
@@ -28,6 +34,26 @@ export function ChatRoomPage() {
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+  });
+  const activeConversation =
+    conversationsQuery.data?.find((item) => item.id === conversationId) ?? null;
+
+  useEffect(() => {
+    if (!activeConversation || !isPersistedGroupConversation(activeConversation)) {
+      return;
+    }
+
+    void navigate({
+      to: "/group/$groupId",
+      params: { groupId: activeConversation.id },
+      search: search || undefined,
+      hash,
+      replace: true,
+    });
+  }, [activeConversation, hash, navigate, search]);
 
   useEffect(() => {
     const nextAction = parseChatComposeShortcutAction(search);
