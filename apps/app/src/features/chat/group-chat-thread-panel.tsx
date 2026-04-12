@@ -41,9 +41,7 @@ import {
 import { buildMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
 import {
-  buildChatUnreadMarkerDomId,
   findFirstUnreadMessageId,
-  hasLoadedReadBoundary,
 } from "./chat-unread-marker";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
@@ -119,7 +117,6 @@ export function GroupChatThreadPanel({
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const isDesktop = variant === "desktop";
-  const unreadMarkerScrolledRef = useRef(false);
   const loadMoreRequestRef = useRef<{
     previousCount: number;
     scrollHeight: number;
@@ -167,7 +164,6 @@ export function GroupChatThreadPanel({
     setUnreadSnapshotReady(false);
     setMessageLimit(INITIAL_MESSAGE_LIMIT);
     setHasOlderMessages(true);
-    unreadMarkerScrolledRef.current = false;
     loadMoreRequestRef.current = null;
   }, [baseUrl, groupId]);
 
@@ -349,13 +345,6 @@ export function GroupChatThreadPanel({
       ),
     [initialUnreadCount, initialUnreadCutoff, orderedMessages],
   );
-  const shouldLoadOlderForUnreadMarker =
-    initialUnreadCount > 0 &&
-    Boolean(initialUnreadCutoff) &&
-    hasOlderMessages &&
-    !messagesQuery.isFetching &&
-    !hasLoadedReadBoundary(orderedMessages, initialUnreadCutoff);
-
   const sendError =
     sendMutation.error instanceof Error ? sendMutation.error.message : null;
   const effectiveBackground = backgroundQuery.data?.effectiveBackground ?? null;
@@ -422,29 +411,6 @@ export function GroupChatThreadPanel({
 
     return () => window.cancelAnimationFrame(frame);
   }, [hasHighlightedMessage, highlightedMessageId, scrollAnchorRef]);
-
-  useEffect(() => {
-    if (
-      highlightedMessageId ||
-      !unreadMarkerMessageId ||
-      unreadMarkerScrolledRef.current
-    ) {
-      return;
-    }
-
-    unreadMarkerScrolledRef.current = true;
-    const markerId = buildChatUnreadMarkerDomId({
-      id: groupId,
-      type: "group",
-    });
-
-    window.requestAnimationFrame(() => {
-      const markerSelector = escapeIdSelector(markerId);
-      scrollAnchorRef.current
-        ?.querySelector<HTMLElement>(`#${markerSelector}`)
-        ?.scrollIntoView({ behavior: "auto", block: "center" });
-    });
-  }, [groupId, highlightedMessageId, scrollAnchorRef, unreadMarkerMessageId]);
 
   const sendAttachmentMessage = async (
     payload: ChatComposerAttachmentPayload,
@@ -574,14 +540,6 @@ export function GroupChatThreadPanel({
     scrollAnchorRef,
     suppressNextPendingCount,
   ]);
-
-  useEffect(() => {
-    if (!shouldLoadOlderForUnreadMarker) {
-      return;
-    }
-
-    void loadOlderMessages();
-  }, [loadOlderMessages, shouldLoadOlderForUnreadMarker]);
 
   useEffect(() => {
     if (

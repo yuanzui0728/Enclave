@@ -71,6 +71,10 @@ export function useScrollAnchor<T extends HTMLElement>(itemCount: number) {
     previousItemCountRef.current = itemCount;
 
     if (!initializedRef.current) {
+      if (itemCount === 0) {
+        return;
+      }
+
       initializedRef.current = true;
       window.requestAnimationFrame(() => {
         scrollToBottom("auto");
