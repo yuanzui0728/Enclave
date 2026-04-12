@@ -49,8 +49,10 @@ export function ChatSettingRow({
         disabled ? "opacity-60" : undefined,
         isWechat &&
           cn(
-            "min-h-[52px] px-4",
-            interactive && !disabled && "hover:bg-[color:var(--surface-console)]",
+            "min-h-[50px] px-4",
+            interactive &&
+              !disabled &&
+              "active:bg-[color:var(--surface-card-hover)]",
           ),
         className,
       )}
@@ -58,7 +60,7 @@ export function ChatSettingRow({
       aria-checked={isSwitch ? checked : undefined}
       aria-disabled={disabled}
     >
-      <span className={cn("text-[16px]", isWechat && "text-[15px] text-[#111827]")}>
+      <span className={cn("text-[16px]", isWechat && "text-[14px] text-[#111827]")}>
         {label}
       </span>
       <span className="flex shrink-0 items-center gap-2">
@@ -66,7 +68,7 @@ export function ChatSettingRow({
           <span
             className={cn(
               "max-w-[11rem] truncate text-[14px] text-[color:var(--text-muted)]",
-              isWechat && "max-w-[12rem] text-[13px] text-[#8c8c8c]",
+              isWechat && "max-w-[12rem] text-[12px] text-[#8c8c8c]",
             )}
           >
             {value}
@@ -76,7 +78,7 @@ export function ChatSettingRow({
           <span
             className={cn(
               "relative h-8 w-13 rounded-full border transition-colors",
-              isWechat && "h-7 w-11",
+              isWechat && "h-6.5 w-11",
               checked
                 ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
                 : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
@@ -85,10 +87,10 @@ export function ChatSettingRow({
             <span
               className={cn(
                 "absolute top-1 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
-                isWechat && "top-0.5 h-6 w-6",
+                isWechat && "top-[1px] h-5.5 w-5.5",
                 checked
                   ? isWechat
-                    ? "left-4"
+                    ? "left-[18px]"
                     : "translate-x-6 left-1"
                   : "left-1 translate-x-0",
               )}

@@ -292,7 +292,12 @@ export function GroupChatDetailsPage() {
       ) : null}
       {notice ? (
         <div className="px-3">
-          <InlineNotice tone="info">{notice}</InlineNotice>
+          <InlineNotice
+            tone="info"
+            className="rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+          >
+            {notice}
+          </InlineNotice>
         </div>
       ) : null}
 
@@ -301,6 +306,17 @@ export function GroupChatDetailsPage() {
           <EmptyState
             title="群聊不存在"
             description="这个群聊暂时不可用，返回消息列表再试一次。"
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({ to: "/tabs/chat" });
+                }}
+                className="rounded-full border border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] text-[color:var(--text-primary)]"
+              >
+                返回消息列表
+              </button>
+            }
           />
         </div>
       ) : null}
@@ -313,12 +329,12 @@ export function GroupChatDetailsPage() {
               <button
                 type="button"
                 onClick={() => setMemberGridExpanded((current) => !current)}
-                className="flex min-h-12 w-full items-center justify-center border-t border-black/5 px-4 text-[15px] text-[#576b95]"
+                className="flex min-h-11 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[14px] text-[#576b95]"
               >
                 {memberGridExpanded ? "收起群成员" : "查看更多群成员"}
               </button>
             ) : null}
-            <div className="divide-y divide-black/5 border-t border-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)] border-t border-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="群主"
                 value={ownerDisplayName}
@@ -347,7 +363,7 @@ export function GroupChatDetailsPage() {
           </ChatDetailsSection>
 
           <ChatDetailsSection title="群聊资料" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="群聊名称"
                 value={groupQuery.data.name}
@@ -408,7 +424,7 @@ export function GroupChatDetailsPage() {
           </ChatDetailsSection>
 
           <ChatDetailsSection title="聊天设置" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="消息免打扰"
                 variant="wechat"
@@ -501,7 +517,7 @@ export function GroupChatDetailsPage() {
           />
 
           <ChatDetailsSection title="危险操作" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="隐藏聊天"
                 disabled={busy}

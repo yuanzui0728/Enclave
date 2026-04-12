@@ -471,7 +471,12 @@ export function ChatDetailsPage() {
       ) : null}
       {notice ? (
         <div className="px-3">
-          <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+          <InlineNotice
+            tone={notice.tone}
+            className="rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+          >
+            {notice.message}
+          </InlineNotice>
         </div>
       ) : null}
       {entryNotice ? (
@@ -498,6 +503,7 @@ export function ChatDetailsPage() {
                 params: { conversationId },
               });
             }}
+            compact
           />
         </div>
       ) : null}
@@ -507,6 +513,17 @@ export function ChatDetailsPage() {
           <EmptyState
             title="会话不存在"
             description="这段聊天暂时不可用，返回消息列表再试一次。"
+            action={
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({ to: "/tabs/chat" });
+                }}
+                className="rounded-full border border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] text-[color:var(--text-primary)]"
+              >
+                返回消息列表
+              </button>
+            }
           />
         </div>
       ) : null}
@@ -518,7 +535,7 @@ export function ChatDetailsPage() {
           </ChatDetailsSection>
 
           <ChatDetailsSection title="聊天记录" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="查找聊天记录"
                 variant="wechat"
@@ -533,7 +550,7 @@ export function ChatDetailsPage() {
           </ChatDetailsSection>
 
           <ChatDetailsSection title="消息设置" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="消息免打扰"
                 variant="wechat"
@@ -580,7 +597,7 @@ export function ChatDetailsPage() {
           />
 
           <ChatDetailsSection title="聊天扩展" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="保存到通讯录"
                 value={isFriend ? "已添加" : undefined}
@@ -605,7 +622,7 @@ export function ChatDetailsPage() {
           </ChatDetailsSection>
 
           <ChatDetailsSection title="聊天管理" variant="wechat">
-            <div className="divide-y divide-black/5">
+            <div className="divide-y divide-[color:var(--border-faint)]">
               <ChatSettingRow
                 label="更多聊天操作"
                 value={
