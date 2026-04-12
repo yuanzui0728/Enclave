@@ -111,7 +111,7 @@ export function GroupMessageContextMenu({
 
       <div
         style={{ left, top }}
-        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-black/8 bg-white py-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.14)]"
+        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white py-1.5 shadow-[var(--shadow-overlay)]"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {onReply ? (
@@ -227,7 +227,7 @@ function ContextMenuButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition hover:bg-[#f5f5f5] ${
+      className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition hover:bg-[color:var(--surface-console)] ${
         danger
           ? "text-[color:var(--state-danger-text)]"
           : "text-[color:var(--text-primary)]"
@@ -248,5 +248,5 @@ function ContextMenuButton({
 }
 
 function MenuDivider() {
-  return <div className="mx-3 my-1 border-t border-black/6" />;
+  return <div className="mx-3 my-1 border-t border-[color:var(--border-faint)]" />;
 }
