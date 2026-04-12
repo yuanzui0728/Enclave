@@ -452,12 +452,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
           ) : null}
 
           {standaloneDesktopRoute ? null : (
-            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/6 bg-[linear-gradient(180deg,#2f393c,#252d30)] p-2.5 shadow-[0_18px_36px_rgba(15,23,42,0.20)] lg:flex lg:flex-col">
+            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2.5 shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
               <Link
                 to="/tabs/profile"
                 className={cn(
                   "group mb-3 flex justify-center rounded-[16px] px-2 py-1.5",
-                  profileRouteActive ? "bg-white/10 shadow-[0_8px_18px_rgba(15,23,42,0.18)]" : undefined,
+                  profileRouteActive ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]" : undefined,
                 )}
                 aria-label="打开我的资料"
               >
@@ -465,8 +465,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
                   className={cn(
                     "rounded-[16px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     profileRouteActive
-                      ? "border-[rgba(7,193,96,0.42)] bg-[rgba(7,193,96,0.12)] shadow-[0_10px_24px_rgba(7,193,96,0.12)]"
-                      : "border-transparent bg-white/4 group-hover:border-white/12 group-hover:bg-white/8",
+                      ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
+                      : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
                   )}
                 >
                   <AvatarChip
@@ -489,7 +489,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
               </nav>
 
-              <div className="relative mt-3 border-t border-white/8 pt-3">
+              <div className="relative mt-3 border-t border-white/10 pt-3">
                 <div className="flex flex-col gap-2">
                   {desktopBottomNavItems.map((item) => (
                     <DesktopActionButton
@@ -788,7 +788,7 @@ function DesktopWindowButton({
         "flex h-8 w-8 items-center justify-center rounded-[10px] border text-[color:var(--text-muted)] transition-[background-color,color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         danger
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-danger)] hover:bg-[color:var(--state-danger-bg)] hover:text-[color:var(--state-danger-text)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-subtle)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}
@@ -812,16 +812,16 @@ function DesktopNavLink({
       className={cn(
         "group flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "bg-white/10 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
-          : "text-white/68 hover:bg-white/7 hover:text-white",
+          ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
+          : "text-white/68 hover:bg-white/8 hover:text-white",
       )}
     >
       <div
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
           active
-            ? "border-[rgba(7,193,96,0.32)] bg-[rgba(7,193,96,0.18)] text-[#b7ffd7]"
-            : "border-transparent bg-white/6 text-white/80 group-hover:border-white/10 group-hover:bg-white/10",
+            ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
+            : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
         <Icon size={18} />
@@ -850,16 +850,16 @@ function DesktopActionButton({
       className={cn(
         "group flex w-full flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "bg-white/10 text-white shadow-[0_10px_22px_rgba(15,23,42,0.16)]"
-          : "text-white/68 hover:bg-white/7 hover:text-white",
+          ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
+          : "text-white/68 hover:bg-white/8 hover:text-white",
       )}
     >
       <div
         className={cn(
           "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
           active
-            ? "border-[rgba(7,193,96,0.32)] bg-[rgba(7,193,96,0.18)] text-[#b7ffd7]"
-            : "border-transparent bg-white/6 text-white/80 group-hover:border-white/10 group-hover:bg-white/10",
+            ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
+            : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
         <Icon size={18} />
@@ -883,9 +883,9 @@ function DesktopMoreMenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.08)]"
+      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
