@@ -605,7 +605,7 @@ export function ConversationThreadPanel({
           speechInput={{
             baseUrl,
             conversationId,
-            enabled: runtimeConfig.appPlatform === "web",
+            enabled: runtimeConfig.appPlatform !== "desktop",
           }}
           onChange={(value) => {
             handleDismissRouteContextNotice();
