@@ -394,6 +394,28 @@ export function GamesPage() {
         setSuccessNotice("已打开系统分享面板。");
         return;
       }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setNoticeTone("info");
+        setSuccessNotice("当前设备暂时无法打开系统分享，请稍后重试。");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(link);
+        applyFriendInvite(activityId, "invited");
+        setSelectedGameId(activity.gameId);
+        setNoticeTone("success");
+        setSuccessNotice("系统分享暂时不可用，已复制组局链接。");
+      } catch {
+        setNoticeTone("info");
+        setSuccessNotice("系统分享失败，请稍后重试。");
+      }
+      return;
     }
 
     if (
@@ -439,6 +461,26 @@ export function GamesPage() {
         setSuccessNotice("已打开系统分享面板。");
         return;
       }
+
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.clipboard ||
+        typeof navigator.clipboard.writeText !== "function"
+      ) {
+        setNoticeTone("info");
+        setSuccessNotice("当前设备暂时无法打开系统分享，请稍后重试。");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(link);
+        setNoticeTone("success");
+        setSuccessNotice("系统分享暂时不可用，已复制入口链接。");
+      } catch {
+        setNoticeTone("info");
+        setSuccessNotice("系统分享失败，请稍后重试。");
+      }
+      return;
     }
 
     if (
