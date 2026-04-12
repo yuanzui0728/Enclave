@@ -32,6 +32,7 @@ import {
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
+  hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -76,6 +77,7 @@ export function DesktopChatFilesPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "";
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseDesktopChatFilesRouteState(hash);
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -98,6 +100,49 @@ export function DesktopChatFilesPage() {
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, []);
+
+  useEffect(() => {
+    if (!nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavoriteSourceIds() {
+      const favoriteSourceIds = (await hydrateDesktopFavoritesFromNative()).map(
+        (item) => item.sourceId,
+      );
+      if (cancelled) {
+        return;
+      }
+
+      setFavoriteSourceIds((current) =>
+        JSON.stringify(current) === JSON.stringify(favoriteSourceIds)
+          ? current
+          : favoriteSourceIds,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFavoriteSourceIds();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFavoriteSourceIds();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [nativeDesktopFavorites]);
 
   useEffect(() => {
     if (!actionNotice) {
