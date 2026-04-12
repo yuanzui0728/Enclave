@@ -41,7 +41,7 @@ export function DesktopChatSidePanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.18)] hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
             aria-label="关闭侧栏"
           >
             <X size={16} />
