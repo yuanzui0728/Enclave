@@ -90,7 +90,7 @@ function MobileTagsPage() {
         }
       >
         <div className="pt-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-black/5 bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -105,12 +105,12 @@ function MobileTagsPage() {
 
       <div className="pb-8">
         {friendsQuery.isLoading ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <LoadingBlock label="正在读取标签..." />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
@@ -118,7 +118,7 @@ function MobileTagsPage() {
         {!friendsQuery.isLoading &&
         !friendsQuery.isError &&
         !tagGroups.length ? (
-          <div className="px-3 pt-6">
+          <div className="px-4 pt-6">
             <EmptyState
               title={hasSearchText ? "没有找到匹配的标签" : "还没有联系人标签"}
               description={
@@ -158,7 +158,7 @@ function MobileTagsPage() {
                       });
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[rgba(7,193,96,0.05)]",
+                      "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                       index > 0
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
@@ -173,9 +173,11 @@ function MobileTagsPage() {
                       <div className="truncate text-[16px] text-[color:var(--text-primary)]">
                         {getFriendDisplayName(item)}
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-                        {item.character.name}
-                      </div>
+                      {getFriendDisplayName(item) !== item.character.name ? (
+                        <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                          {item.character.name}
+                        </div>
+                      ) : null}
                     </div>
                   </button>
                 ))}
