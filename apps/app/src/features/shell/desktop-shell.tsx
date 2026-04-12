@@ -24,6 +24,7 @@ import {
 } from "./desktop-nav-config";
 import {
   clearDesktopLocked,
+  hydrateDesktopLockSnapshotFromNative,
   readDesktopLockSnapshot,
   saveDesktopLockPasscode,
   setDesktopLocked,
@@ -126,6 +127,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const [lockPasscodeLength, setLockPasscodeLength] = useState<number | null>(
     () => readDesktopLockSnapshot().passcodeLength,
   );
+  const [lockStoreReady, setLockStoreReady] = useState(!nativeDesktopShell);
   const [unlockPasscode, setUnlockPasscode] = useState("");
   const [setupPasscode, setSetupPasscode] = useState("");
   const [setupPasscodeConfirm, setSetupPasscodeConfirm] = useState("");
@@ -148,6 +150,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (!nativeDesktopShell) {
+      setLockStoreReady(true);
       setDesktopWindow(null);
       setIsMaximized(false);
       return;
@@ -190,6 +193,50 @@ export function DesktopShell({ children }: PropsWithChildren) {
       cancelled = true;
       setDesktopWindow(null);
       unlistenResize?.();
+    };
+  }, [nativeDesktopShell]);
+
+  useEffect(() => {
+    if (!nativeDesktopShell) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncDesktopLockSnapshot = async () => {
+      const snapshot = await hydrateDesktopLockSnapshotFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setIsLocked(snapshot.isLocked);
+      setLockMode(snapshot.passcodeDigest ? "unlock" : "setup");
+      setLockedAt(snapshot.lockedAt);
+      setLockPasscodeLength(snapshot.passcodeLength);
+      setLockStoreReady(true);
+    };
+
+    const handleFocus = () => {
+      void syncDesktopLockSnapshot();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncDesktopLockSnapshot();
+      }
+    };
+
+    void syncDesktopLockSnapshot();
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [nativeDesktopShell]);
 
@@ -396,6 +443,10 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setLockError(null);
     setLockNotice("桌面锁定口令已设置，请输入口令解锁。");
   };
+
+  if (nativeDesktopShell && !lockStoreReady) {
+    return null;
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
