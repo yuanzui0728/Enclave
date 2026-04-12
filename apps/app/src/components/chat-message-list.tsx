@@ -1583,7 +1583,7 @@ export function ChatMessageList({
   };
 
   return (
-    <div className={isDesktop ? "space-y-4" : "space-y-4"}>
+    <div className={isDesktop ? "space-y-4" : "space-y-3.5"}>
       {entryNotice && pendingDirectCallInvite ? (
         <DigitalHumanEntryNotice
           tone={entryNotice.tone}
@@ -1622,7 +1622,7 @@ export function ChatMessageList({
             className={
               isDesktop
                 ? "inline-flex min-h-9 items-center justify-center rounded-full border border-black/6 bg-[#f7f7f7] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex min-h-8 items-center justify-center rounded-full bg-[rgba(0,0,0,0.08)] px-3.5 text-[12px] text-[#7d7d7d] transition active:bg-[rgba(0,0,0,0.12)] disabled:opacity-60"
+                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(15,23,42,0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
             {loadingOlderMessages ? "正在加载更早消息..." : "查看更多消息"}
@@ -1705,7 +1705,7 @@ export function ChatMessageList({
             </div>
           </div>
         ) : (
-          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-black/6 bg-[rgba(247,247,247,0.96)] px-1 py-2.5 backdrop-blur-xl">
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-[color:var(--border-subtle)] bg-[rgba(247,247,247,0.96)] px-1 py-2.5 backdrop-blur-xl">
             <button
               type="button"
               onClick={resetSelectionMode}
@@ -1782,7 +1782,7 @@ export function ChatMessageList({
                   className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
                     isDesktop
                       ? "border border-black/6 bg-[#f7f7f7]"
-                      : "border border-black/5 bg-[rgba(255,255,255,0.82)] shadow-none"
+                      : "border border-[color:var(--border-subtle)] bg-white/88 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
@@ -1814,7 +1814,7 @@ export function ChatMessageList({
                   className={
                     isDesktop
                       ? "inline-flex rounded-full bg-transparent px-2.5 py-0.5 text-[11px] text-[#9a9a9a] transition hover:bg-white/50"
-                      : "inline-flex rounded-full bg-[rgba(0,0,0,0.08)] px-3 py-1 text-[11px] text-[#7d7d7d] transition active:bg-[rgba(0,0,0,0.12)]"
+                      : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-white/88 px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
                   }
                   aria-label={
                     detailedTimestampMode
@@ -2073,7 +2073,7 @@ export function ChatMessageList({
         );
       })}
       {selectionMode && !isDesktop ? (
-        <div className="sticky bottom-0 z-20 border-t border-black/6 bg-[rgba(247,247,247,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2.5 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-20 border-t border-[color:var(--border-subtle)] bg-[rgba(247,247,247,0.98)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)] pt-2.5 backdrop-blur-xl">
           <div className="grid grid-cols-4 gap-2">
             <SelectionModeActionButton
               icon={<Star size={17} />}
@@ -2544,21 +2544,25 @@ function UnreadMarkerDivider({
     <div id={id} className="flex items-center gap-3 py-1.5">
       <div
         className={
-          isDesktop ? "h-px flex-1 bg-black/8" : "h-px flex-1 bg-black/8"
+          isDesktop
+            ? "h-px flex-1 bg-black/8"
+            : "h-px flex-1 bg-[rgba(7,193,96,0.14)]"
         }
       />
       <div
         className={
           isDesktop
             ? "rounded-full border border-black/6 bg-[#f7f7f7] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
-            : "rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1 text-[11px] font-medium text-[#07a35a]"
+            : "rounded-full border border-[rgba(7,193,96,0.16)] bg-white/88 px-3 py-1 text-[11px] font-medium text-[#07a35a]"
         }
       >
         {label}
       </div>
       <div
         className={
-          isDesktop ? "h-px flex-1 bg-black/10" : "h-px flex-1 bg-black/8"
+          isDesktop
+            ? "h-px flex-1 bg-black/10"
+            : "h-px flex-1 bg-[rgba(7,193,96,0.14)]"
         }
       />
     </div>
@@ -2689,7 +2693,7 @@ function SharedHistorySummaryNotice({
         "mx-auto max-w-[84%] rounded-[16px] border px-4 py-3 text-center",
         isDesktop
           ? "border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)]"
-          : "border-black/5 bg-[rgba(255,255,255,0.92)]",
+          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
         highlighted
           ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
           : "",
