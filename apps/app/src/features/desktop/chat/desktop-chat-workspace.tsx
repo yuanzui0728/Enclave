@@ -85,7 +85,11 @@ import {
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
 } from "../../../lib/conversation-preview";
-import { isPersistedGroupConversation } from "../../../lib/conversation-route";
+import {
+  getConversationThreadPath,
+  getConversationThreadType,
+  isPersistedGroupConversation,
+} from "../../../lib/conversation-route";
 import { formatConversationTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
@@ -725,9 +729,7 @@ export function DesktopChatWorkspace({
       hash: buildDesktopMobileCallHandoffHash({
         kind,
         conversationId: activeConversation.id,
-        conversationType: isPersistedGroupConversation(activeConversation)
-          ? "group"
-          : "direct",
+        conversationType: getConversationThreadType(activeConversation),
         title: activeConversation.title,
       }),
     });
@@ -746,16 +748,11 @@ export function DesktopChatWorkspace({
   }
 
   function handleOpenConversationWindow(conversation: ConversationListItem) {
-    const returnTo = isPersistedGroupConversation(conversation)
-      ? `/group/${conversation.id}`
-      : `/chat/${conversation.id}`;
     const opened = openDesktopChatWindow({
       conversationId: conversation.id,
-      conversationType: isPersistedGroupConversation(conversation)
-        ? "group"
-        : "direct",
+      conversationType: getConversationThreadType(conversation),
       title: conversation.title,
-      returnTo,
+      returnTo: getConversationThreadPath(conversation),
     });
 
     setConversationContextMenu(null);
