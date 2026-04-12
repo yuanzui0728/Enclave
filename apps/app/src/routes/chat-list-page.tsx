@@ -1027,23 +1027,23 @@ function ConversationListItemLink({
   const content = (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-3",
+        "flex items-center gap-2.5 px-4 py-3",
         isPinned ? "bg-[color:var(--surface-panel)]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       <AvatarChip name={conversation.title} size="wechat" />
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
             <div className="truncate text-[15px] font-normal text-[color:var(--text-primary)]">
               {conversation.title}
             </div>
-            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[12px] leading-[1.35] text-[color:var(--text-muted)]">
               {preview.prefix}
               {preview.text}
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
             <div className="text-[10px] text-[color:var(--text-dim)]">
               {formatConversationTimestamp(
                 visibleLastMessage?.createdAt ??
@@ -1068,7 +1068,7 @@ function ConversationListItemLink({
                 ) : (
                   <div
                     className={cn(
-                      "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[11px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.22)]",
+                      "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                       conversation.unreadCount > 9 ? "min-w-6" : undefined,
                     )}
                   >
@@ -1148,8 +1148,8 @@ function ConversationListItemLink({
           onClick={onTogglePinned}
           className="flex w-[72px] items-center justify-center bg-[#c7c7cc] text-white"
         >
-          <div className="flex flex-col items-center gap-1 text-[11px]">
-            <Pin size={15} />
+          <div className="flex flex-col items-center gap-1 text-[10px]">
+            <Pin size={14} />
             <span>{conversation.isPinned ? "取消置顶" : "置顶"}</span>
           </div>
         </button>
@@ -1161,8 +1161,8 @@ function ConversationListItemLink({
             muteActionClassName,
           )}
         >
-          <div className="flex flex-col items-center gap-1 text-[11px]">
-            <BellOff size={15} />
+          <div className="flex flex-col items-center gap-1 text-[10px]">
+            <BellOff size={14} />
             <span>{conversation.isMuted ? "取消免打扰" : "免打扰"}</span>
           </div>
         </button>
@@ -1172,11 +1172,11 @@ function ConversationListItemLink({
             onClick={onToggleReadState}
             className="flex w-[72px] items-center justify-center bg-[#5b8efc] text-white"
           >
-            <div className="flex flex-col items-center gap-1 text-[11px]">
+            <div className="flex flex-col items-center gap-1 text-[10px]">
               {conversation.unreadCount > 0 ? (
-                <CheckCheck size={15} />
+                <CheckCheck size={14} />
               ) : (
-                <Circle size={15} />
+                <Circle size={14} />
               )}
               <span>{readActionLabel}</span>
             </div>
@@ -1187,8 +1187,8 @@ function ConversationListItemLink({
           onClick={onHide}
           className="flex w-[72px] items-center justify-center bg-[#fa5151] text-white"
         >
-          <div className="flex flex-col items-center gap-1 text-[11px]">
-            <Trash2 size={15} />
+          <div className="flex flex-col items-center gap-1 text-[10px]">
+            <Trash2 size={14} />
             <span>删除</span>
           </div>
         </button>
