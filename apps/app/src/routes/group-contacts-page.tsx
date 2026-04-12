@@ -237,7 +237,7 @@ function DesktopGroupContactsPage() {
                     }),
                   });
                 }}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 发起群聊
               </Button>
@@ -315,7 +315,7 @@ function DesktopGroupContactsPage() {
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "bg-[rgba(7,193,96,0.08)]"
+                            ? "bg-[rgba(7,193,96,0.07)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
                             : "bg-white hover:bg-[color:var(--surface-console)]",
                           index > 0
                             ? "border-t border-[color:var(--border-faint)]"
@@ -374,7 +374,7 @@ function DesktopGroupContactsPage() {
                 <div className="mt-6 flex gap-3">
                   <Button
                     type="button"
-                    className="flex-1 rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+                    className="flex-1 rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
                     onClick={() => {
                       void navigate({
                         to: "/group/$groupId",
@@ -387,7 +387,7 @@ function DesktopGroupContactsPage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                    className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                     onClick={() => {
                       void navigate({
                         to: "/group/$groupId/details",
