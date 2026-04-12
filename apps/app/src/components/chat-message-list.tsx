@@ -26,6 +26,7 @@ import {
   Pause,
   Play,
   Printer,
+  Share2,
   Star,
   Trash2,
   X,
@@ -92,6 +93,7 @@ import {
   isNativeMobileBridgeAvailable,
   openAppSettings,
   requestNotificationPermission,
+  shareWithNativeShell,
 } from "../runtime/mobile-bridge";
 import { openRemoteFile } from "../runtime/open-remote-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
@@ -717,6 +719,54 @@ export function ChatMessageList({
     } catch {
       setActionNotice({
         message: "复制失败，请稍后再试。",
+        tone: "danger",
+      });
+    }
+  };
+
+  const shareLocationSummary = async (
+    attachment: Extract<MessageAttachment, { kind: "location_card" }>,
+  ) => {
+    const summary = buildLocationAttachmentSummary(attachment);
+    if (!isNativeMobileBridgeAvailable()) {
+      await copyToClipboard(summary, "位置内容已复制。");
+      return;
+    }
+
+    const shared = await shareWithNativeShell({
+      title: attachment.title,
+      text: summary,
+    });
+
+    if (shared) {
+      setActionNotice({
+        message: "已打开系统分享面板。",
+        tone: "success",
+      });
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setActionNotice({
+        message: "当前设备暂时无法打开系统分享，请稍后重试。",
+        tone: "danger",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setActionNotice({
+        message: "系统分享暂时不可用，已复制位置内容。",
+        tone: "success",
+      });
+    } catch {
+      setActionNotice({
+        message: "系统分享失败，请稍后重试。",
         tone: "danger",
       });
     }
@@ -2633,11 +2683,8 @@ export function ChatMessageList({
             setLocationViewerMessageId(null);
             jumpToMessage(activeLocation.id);
           }}
-          onCopy={() => {
-            void copyToClipboard(
-              buildLocationAttachmentSummary(activeLocation.attachment),
-              "位置内容已复制。",
-            );
+          onShareOrCopy={() => {
+            void shareLocationSummary(activeLocation.attachment);
           }}
         />
       ) : null}
@@ -4740,15 +4787,17 @@ function LocationViewerOverlay({
   attachment,
   onClose,
   onLocate,
-  onCopy,
+  onShareOrCopy,
 }: {
   variant: "mobile" | "desktop";
   attachment: Extract<MessageAttachment, { kind: "location_card" }>;
   onClose: () => void;
   onLocate: () => void;
-  onCopy: () => void;
+  onShareOrCopy: () => void;
 }) {
   const isDesktop = variant === "desktop";
+  const nativeMobileShareSupported =
+    !isDesktop && isNativeMobileBridgeAvailable();
 
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md">
@@ -4818,8 +4867,11 @@ function LocationViewerOverlay({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2">
-          <ViewerActionButton label="复制位置" onClick={onCopy}>
-            <Copy size={16} />
+          <ViewerActionButton
+            label={nativeMobileShareSupported ? "系统分享" : "复制位置"}
+            onClick={onShareOrCopy}
+          >
+            {nativeMobileShareSupported ? <Share2 size={16} /> : <Copy size={16} />}
           </ViewerActionButton>
           <ViewerActionButton label="定位消息" onClick={onLocate}>
             <LocateFixed size={16} />
