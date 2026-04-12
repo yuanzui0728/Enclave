@@ -634,8 +634,14 @@ export function GroupQrPage() {
       {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
 
       {groupQuery.data ? (
-        <section className="space-y-5 rounded-[28px] border border-black/5 bg-white p-5 shadow-[var(--shadow-section)]">
-          <div className="flex items-start gap-4">
+        <section
+          className={
+            isDesktopLayout
+              ? "space-y-5 rounded-[28px] border border-black/5 bg-white p-5 shadow-[var(--shadow-section)]"
+              : "-mx-3 space-y-4 border-y border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4"
+          }
+        >
+          <div className={`flex items-start ${isDesktopLayout ? "gap-4" : "gap-3"}`}>
             <GroupAvatarChip
               name={groupQuery.data.name}
               members={membersQuery.data?.map((item) => item.memberId) ?? []}
@@ -655,9 +661,17 @@ export function GroupQrPage() {
           </div>
 
           {currentReturnSourceConversation ? (
-            <section className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-4">
+            <section
+              className={
+                isDesktopLayout
+                  ? "flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-4"
+                  : "space-y-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-4"
+              }
+            >
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium tracking-[0.16em] text-[#15803d]">
+                <div
+                  className={`text-xs font-medium ${isDesktopLayout ? "tracking-[0.16em] text-[#15803d]" : "tracking-[0.12em] text-[#15803d]"}`}
+                >
                   当前回流来源
                 </div>
                 <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -667,39 +681,54 @@ export function GroupQrPage() {
                   这次是从聊天线程直接回到群邀请页，可继续转发或回到原会话。
                 </div>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  void navigate({
-                    to: buildConversationPath(currentReturnSourceConversation),
-                  });
-                }}
-                className="shrink-0 rounded-full"
-              >
-                回到会话
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  void sendToConversation(currentReturnSourceConversation);
-                }}
-                className="shrink-0 rounded-full"
-              >
-                再发回这个会话
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void navigate({
+                      to: buildConversationPath(currentReturnSourceConversation),
+                    });
+                  }}
+                  className="shrink-0 rounded-full"
+                >
+                  回到会话
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    void sendToConversation(currentReturnSourceConversation);
+                  }}
+                  className="shrink-0 rounded-full"
+                >
+                  再发回这个会话
+                </Button>
+              </div>
             </section>
           ) : null}
 
-          <div className="overflow-hidden rounded-[24px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(247,251,248,0.98),rgba(255,255,255,0.98))] p-5 shadow-none">
+          <div
+            className={
+              isDesktopLayout
+                ? "overflow-hidden rounded-[24px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(247,251,248,0.98),rgba(255,255,255,0.98))] p-5 shadow-none"
+                : "overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-5 shadow-none"
+            }
+          >
             <div
               className="mx-auto w-full max-w-[420px]"
               dangerouslySetInnerHTML={{ __html: qrSvgMarkup }}
             />
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div
+            className={
+              isDesktopLayout
+                ? "grid gap-3 sm:grid-cols-4"
+                : "grid grid-cols-2 gap-px overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--border-subtle)]"
+            }
+          >
             <ActionCard
+              compact={!isDesktopLayout}
               icon={<Link2 size={16} />}
               title="复制群链接"
               description="把当前群聊入口发给别的设备继续打开。"
@@ -708,6 +737,7 @@ export function GroupQrPage() {
               }}
             />
             <ActionCard
+              compact={!isDesktopLayout}
               icon={<Share2 size={16} />}
               title="复制邀请文案"
               description="带上群链接和邀请码，一次性发给对方。"
@@ -716,6 +746,7 @@ export function GroupQrPage() {
               }}
             />
             <ActionCard
+              compact={!isDesktopLayout}
               icon={<Copy size={16} />}
               title="发到手机"
               description="把当前群邀请入口复制到手机，并进入接力历史。"
@@ -724,6 +755,7 @@ export function GroupQrPage() {
               }}
             />
             <ActionCard
+              compact={!isDesktopLayout}
               icon={<Download size={16} />}
               title="保存邀请卡"
               description="保存当前邀请卡 SVG，后续可继续转发。"
@@ -731,7 +763,13 @@ export function GroupQrPage() {
             />
           </div>
 
-          <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-4 py-4 text-sm leading-7 text-[color:var(--text-secondary)]">
+          <div
+            className={
+              isDesktopLayout
+                ? "rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-4 py-4 text-sm leading-7 text-[color:var(--text-secondary)]"
+                : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
+            }
+          >
             当前邀请卡会承载群聊链接和邀请码。
             在同一世界实例内打开链接，可直接回到这个群聊。
           </div>
@@ -1565,11 +1603,13 @@ export function GroupQrPage() {
 }
 
 function ActionCard({
+  compact = false,
   description,
   icon,
   onClick,
   title,
 }: {
+  compact?: boolean;
   description: string;
   icon: React.ReactNode;
   onClick: () => void;
@@ -1579,15 +1619,31 @@ function ActionCard({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-[22px] border border-black/5 bg-white px-4 py-4 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+      className={
+        compact
+          ? "bg-white px-4 py-4 text-left shadow-none transition hover:bg-[color:var(--surface-card-hover)]"
+          : "rounded-[22px] border border-black/5 bg-white px-4 py-4 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+      }
     >
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(7,193,96,0.1)] text-[#15803d]">
+      <div
+        className={`flex items-center justify-center bg-[rgba(7,193,96,0.1)] text-[#15803d] ${
+          compact ? "h-8 w-8 rounded-[12px]" : "h-9 w-9 rounded-full"
+        }`}
+      >
         {icon}
       </div>
-      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
+      <div
+        className={`font-medium text-[color:var(--text-primary)] ${
+          compact ? "mt-2 text-[13px]" : "mt-3 text-sm"
+        }`}
+      >
         {title}
       </div>
-      <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+      <div
+        className={`text-[color:var(--text-secondary)] ${
+          compact ? "mt-1 text-[11px] leading-5" : "mt-1 text-xs leading-6"
+        }`}
+      >
         {description}
       </div>
     </button>
