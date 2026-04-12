@@ -1,9 +1,11 @@
 import type { FavoriteCategory, FavoriteRecord } from "@yinjie/contracts";
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
 export type DesktopFavoriteCategory = FavoriteCategory;
 export type DesktopFavoriteRecord = FavoriteRecord;
 
 const DESKTOP_FAVORITES_STORAGE_KEY = "yinjie-desktop-favorites";
+let desktopFavoritesNativeWriteQueue: Promise<void> = Promise.resolve();
 
 function getStorage() {
   if (typeof window === "undefined") {
@@ -13,13 +15,87 @@ function getStorage() {
   return window.localStorage;
 }
 
-function writeDesktopFavorites(favorites: DesktopFavoriteRecord[]) {
-  const storage = getStorage();
-  if (!storage) {
+function normalizeDesktopFavorites(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as DesktopFavoriteRecord[];
+  }
+
+  return value
+    .filter(
+      (item): item is DesktopFavoriteRecord =>
+        typeof item?.id === "string" &&
+        typeof item.sourceId === "string" &&
+        typeof item.category === "string" &&
+        typeof item.title === "string" &&
+        typeof item.description === "string" &&
+        typeof item.meta === "string" &&
+        typeof item.to === "string" &&
+        typeof item.badge === "string" &&
+        typeof item.collectedAt === "string",
+    )
+    .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
+}
+
+function parseDesktopFavorites(raw: string | null | undefined) {
+  if (!raw) {
+    return [] as DesktopFavoriteRecord[];
+  }
+
+  try {
+    return normalizeDesktopFavorites(JSON.parse(raw));
+  } catch {
+    return [] as DesktopFavoriteRecord[];
+  }
+}
+
+function getLatestDesktopFavoriteTimestamp(favorites: DesktopFavoriteRecord[]) {
+  return favorites.reduce((latest, item) => {
+    const collectedAt = Date.parse(item.collectedAt);
+    return Number.isFinite(collectedAt) && collectedAt > latest
+      ? collectedAt
+      : latest;
+  }, 0);
+}
+
+function queueNativeDesktopFavoritesWrite(favorites: DesktopFavoriteRecord[]) {
+  if (!isDesktopRuntimeAvailable()) {
     return;
   }
 
-  storage.setItem(DESKTOP_FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+  const contents = JSON.stringify(favorites);
+  desktopFavoritesNativeWriteQueue = desktopFavoritesNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_favorites_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
+function writeDesktopFavorites(
+  favorites: DesktopFavoriteRecord[],
+  options?: {
+    syncNative?: boolean;
+  },
+) {
+  const storage = getStorage();
+  if (!storage) {
+    return favorites;
+  }
+
+  if (favorites.length) {
+    storage.setItem(DESKTOP_FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+  } else {
+    storage.removeItem(DESKTOP_FAVORITES_STORAGE_KEY);
+  }
+
+  if (options?.syncNative !== false) {
+    queueNativeDesktopFavoritesWrite(favorites);
+  }
+
+  return favorites;
 }
 
 export function readDesktopFavorites() {
@@ -28,33 +104,46 @@ export function readDesktopFavorites() {
     return [] as DesktopFavoriteRecord[];
   }
 
-  const raw = storage.getItem(DESKTOP_FAVORITES_STORAGE_KEY);
-  if (!raw) {
-    return [] as DesktopFavoriteRecord[];
+  return parseDesktopFavorites(storage.getItem(DESKTOP_FAVORITES_STORAGE_KEY));
+}
+
+export async function hydrateDesktopFavoritesFromNative() {
+  const localFavorites = readDesktopFavorites();
+  if (!isDesktopRuntimeAvailable()) {
+    return localFavorites;
   }
 
   try {
-    const parsed = JSON.parse(raw) as DesktopFavoriteRecord[];
-    if (!Array.isArray(parsed)) {
-      return [] as DesktopFavoriteRecord[];
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_favorites_store");
+
+    if (!result.exists) {
+      if (localFavorites.length) {
+        queueNativeDesktopFavoritesWrite(localFavorites);
+      }
+      return localFavorites;
     }
 
-    return parsed
-      .filter(
-        (item) =>
-          typeof item?.id === "string" &&
-          typeof item?.sourceId === "string" &&
-          typeof item?.category === "string" &&
-          typeof item?.title === "string" &&
-          typeof item?.description === "string" &&
-          typeof item?.meta === "string" &&
-          typeof item?.to === "string" &&
-          typeof item?.badge === "string" &&
-          typeof item?.collectedAt === "string",
-      )
-      .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
+    const nativeFavorites = parseDesktopFavorites(result.contents ?? null);
+    if (
+      getLatestDesktopFavoriteTimestamp(localFavorites) >
+      getLatestDesktopFavoriteTimestamp(nativeFavorites)
+    ) {
+      if (localFavorites.length) {
+        queueNativeDesktopFavoritesWrite(localFavorites);
+      }
+      return localFavorites;
+    }
+
+    writeDesktopFavorites(nativeFavorites, {
+      syncNative: false,
+    });
+    return nativeFavorites;
   } catch {
-    return [] as DesktopFavoriteRecord[];
+    return localFavorites;
   }
 }
 
@@ -113,7 +202,10 @@ export function mergeDesktopFavoriteRecords(
     remoteFavorites.map((favorite) => favorite.sourceId),
   );
 
-  return [...remoteFavorites, ...localFavorites.filter((favorite) => !remoteSourceIdSet.has(favorite.sourceId))].sort(
-    (left, right) => right.collectedAt.localeCompare(left.collectedAt),
-  );
+  return [
+    ...remoteFavorites,
+    ...localFavorites.filter(
+      (favorite) => !remoteSourceIdSet.has(favorite.sourceId),
+    ),
+  ].sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
 }
