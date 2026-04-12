@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronLeft,
@@ -56,6 +57,8 @@ import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
   isNativeMobileBridgeAvailable,
+  pickImagesWithNativeShell,
+  type MobileBridgeImageAsset,
   openAppSettings,
 } from "../runtime/mobile-bridge";
 import { useChatPreferencesStore } from "../store/chat-preferences-store";
@@ -1028,6 +1031,10 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
+    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+      void pickAlbumWithNativeShell();
+      return;
+    }
     albumInputRef.current?.click();
   };
 
@@ -1040,6 +1047,28 @@ export function ChatComposer({
     setMobilePlusNotice(null);
     cameraInputRef.current?.click();
   };
+
+  const pickAlbumWithNativeShell = useEffectEvent(async () => {
+    const assets = await pickImagesWithNativeShell(true);
+    if (!assets.length) {
+      return;
+    }
+
+    try {
+      const files = await Promise.all(
+        assets
+          .slice(0, MAX_ALBUM_IMAGE_COUNT)
+          .map((asset, index) => readNativeBridgeImageAssetFile(asset, index)),
+      );
+      await applyImageDraftFiles(files);
+    } catch (fileError) {
+      setAttachmentError(
+        fileError instanceof Error
+          ? fileError.message
+          : "读取图片失败，请换一张再试。",
+      );
+    }
+  });
 
   const pickFile = () => {
     if (attachmentBusy) {
@@ -4725,6 +4754,120 @@ async function createImageDraft(file: File): Promise<ImageDraft> {
     URL.revokeObjectURL(previewUrl);
     throw error;
   }
+}
+
+async function readNativeBridgeImageAssetFile(
+  asset: MobileBridgeImageAsset,
+  index: number,
+) {
+  const source = resolveNativeBridgeImageAssetSource(asset);
+  if (!source) {
+    throw new Error("读取图片失败，请重新选择。");
+  }
+
+  const response = await fetch(source);
+  if (!response.ok) {
+    throw new Error("读取图片失败，请重新选择。");
+  }
+
+  const blob = await response.blob();
+  const mimeType =
+    normalizeAssetValue(asset.mimeType) ||
+    blob.type ||
+    resolveImageMimeTypeFromFileName(asset.fileName) ||
+    "image/jpeg";
+  const fileName = resolveNativeBridgeImageAssetFileName(
+    asset.fileName,
+    index,
+    mimeType,
+  );
+
+  return new File([blob], fileName, { type: mimeType });
+}
+
+function resolveNativeBridgeImageAssetSource(asset: MobileBridgeImageAsset) {
+  const webPath = normalizeAssetValue(asset.webPath);
+  if (webPath) {
+    return webPath;
+  }
+
+  const path = normalizeAssetValue(asset.path);
+  if (!path) {
+    return null;
+  }
+
+  if (path.startsWith("file://") || path.startsWith("/") || path.startsWith("content://")) {
+    return Capacitor.convertFileSrc(path);
+  }
+
+  return path;
+}
+
+function resolveNativeBridgeImageAssetFileName(
+  fileName: string | undefined,
+  index: number,
+  mimeType: string,
+) {
+  const normalizedFileName = normalizeAssetValue(fileName);
+  if (normalizedFileName) {
+    return normalizedFileName;
+  }
+
+  return `image-${index + 1}.${resolveImageExtensionFromMimeType(mimeType)}`;
+}
+
+function resolveImageMimeTypeFromFileName(fileName?: string) {
+  const normalizedFileName = normalizeAssetValue(fileName)?.toLowerCase();
+  if (!normalizedFileName) {
+    return null;
+  }
+
+  if (
+    normalizedFileName.endsWith(".jpg") ||
+    normalizedFileName.endsWith(".jpeg")
+  ) {
+    return "image/jpeg";
+  }
+
+  if (normalizedFileName.endsWith(".png")) {
+    return "image/png";
+  }
+
+  if (normalizedFileName.endsWith(".webp")) {
+    return "image/webp";
+  }
+
+  if (normalizedFileName.endsWith(".gif")) {
+    return "image/gif";
+  }
+
+  if (normalizedFileName.endsWith(".heic")) {
+    return "image/heic";
+  }
+
+  return null;
+}
+
+function resolveImageExtensionFromMimeType(mimeType: string) {
+  switch (mimeType) {
+    case "image/png":
+      return "png";
+    case "image/webp":
+      return "webp";
+    case "image/gif":
+      return "gif";
+    case "image/heic":
+      return "heic";
+    case "image/jpg":
+    case "image/jpeg":
+    default:
+      return "jpg";
+  }
+}
+
+function normalizeAssetValue(value: string | undefined | null) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }
 
 function waitForCaptureVideo(video: HTMLVideoElement) {
