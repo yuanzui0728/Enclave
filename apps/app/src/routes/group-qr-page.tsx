@@ -18,7 +18,11 @@ import {
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
-import { isPersistedGroupConversation } from "../lib/conversation-route";
+import {
+  getConversationThreadLabel,
+  getConversationThreadPath,
+  isPersistedGroupConversation,
+} from "../lib/conversation-route";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
   createGroupInviteDeliveryBatchId,
@@ -1591,9 +1595,7 @@ function ActionCard({
 }
 
 function buildConversationPath(conversation: ConversationListItem) {
-  return isPersistedGroupConversation(conversation)
-    ? `/group/${conversation.id}`
-    : `/chat/${conversation.id}`;
+  return getConversationThreadPath(conversation);
 }
 
 function resolveDeliveredBatchLabel(
@@ -1622,7 +1624,7 @@ function resolvePendingReturnMetaSummary(
   deliveryBatchRankById: Record<string, number>,
 ) {
   return [
-    isPersistedGroupConversation(conversation) ? "群聊" : "单聊",
+    getConversationThreadLabel(conversation),
     resolveDeliveredBatchLabel(target, deliveryBatchRankById),
     `待回流 ${formatPendingReturnDuration(target.deliveredAt)}`,
     `上次发送于 ${formatConversationTimestamp(target.deliveredAt)}`,
