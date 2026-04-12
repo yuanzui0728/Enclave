@@ -606,7 +606,7 @@ export function GamesPage() {
 
       <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Clock3 size={16} className="text-[color:var(--brand-secondary)]" />
+          <Clock3 size={16} className="text-[#15803d]" />
           最近玩过
         </div>
         <div className="flex gap-3 overflow-x-auto pb-1">
@@ -641,7 +641,7 @@ export function GamesPage() {
 
       <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <UsersRound size={16} className="text-[color:var(--brand-secondary)]" />
+          <UsersRound size={16} className="text-[#15803d]" />
           好友在玩
         </div>
         <div className="space-y-3">
@@ -706,20 +706,20 @@ export function GamesPage() {
         <MobileRankingSection
           title="热门榜"
           entries={gameCenterHotRankings}
-          icon={<Flame size={16} className="text-[color:var(--brand-primary)]" />}
+          icon={<Flame size={16} className="text-[#15803d]" />}
           onSelectGame={setSelectedGameId}
         />
         <MobileRankingSection
           title="新游榜"
           entries={gameCenterNewRankings}
-          icon={<Sparkles size={16} className="text-[color:var(--brand-secondary)]" />}
+          icon={<Sparkles size={16} className="text-[#15803d]" />}
           onSelectGame={setSelectedGameId}
         />
       </div>
 
       <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Play size={16} className="text-[color:var(--brand-secondary)]" />
+          <Play size={16} className="text-[#15803d]" />
           为你推荐
         </div>
         <div className="space-y-3">
@@ -789,7 +789,7 @@ export function GamesPage() {
 
       <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
         <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Gift size={16} className="text-[color:var(--brand-primary)]" />
+          <Gift size={16} className="text-[#15803d]" />
           福利活动
         </div>
         <div className="space-y-3">
@@ -894,14 +894,14 @@ function MobileRankingSection({
                 {entry.rank}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                    {game.name}
+                  <div className="flex items-center gap-2">
+                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                      {game.name}
+                    </div>
+                    {entry.rank === 1 ? (
+                    <Trophy size={14} className="text-[#15803d]" />
+                    ) : null}
                   </div>
-                  {entry.rank === 1 ? (
-                    <Trophy size={14} className="text-[color:var(--brand-primary)]" />
-                  ) : null}
-                </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                   {game.playersLabel}
                 </div>

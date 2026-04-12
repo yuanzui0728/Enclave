@@ -29,6 +29,12 @@ export function GameCenterSessionPanel({
   onLaunch,
 }: GameCenterSessionPanelProps) {
   const tone = getGameCenterToneStyle(game.tone);
+  const metricAccentClass = compact
+    ? "text-[#15803d]"
+    : "text-[color:var(--brand-secondary)]";
+  const rewardAccentClass = compact
+    ? "text-[#15803d]"
+    : "text-[color:var(--brand-primary)]";
 
   return (
     <section
@@ -73,17 +79,17 @@ export function GameCenterSessionPanel({
 
       <div className={cn("mt-4 grid gap-3", compact ? "grid-cols-1" : "sm:grid-cols-3")}>
         <SessionMetric
-          icon={<Clock3 size={15} className="text-[color:var(--brand-secondary)]" />}
+          icon={<Clock3 size={15} className={metricAccentClass} />}
           label="预计节奏"
           value={game.estimatedDuration}
         />
         <SessionMetric
-          icon={<Sparkles size={15} className="text-[color:var(--brand-primary)]" />}
+          icon={<Sparkles size={15} className={rewardAccentClass} />}
           label="本局奖励"
           value={game.rewardLabel}
         />
         <SessionMetric
-          icon={<Flag size={15} className="text-[color:var(--brand-secondary)]" />}
+          icon={<Flag size={15} className={metricAccentClass} />}
           label="开局次数"
           value={`${launchCount} 次`}
           detail={
@@ -106,12 +112,26 @@ export function GameCenterSessionPanel({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <Button variant="primary" onClick={() => onLaunch(game.id)}>
+        <Button
+          variant="primary"
+          onClick={() => onLaunch(game.id)}
+          className={
+            compact ? "bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]" : undefined
+          }
+        >
           <Play size={16} />
           {isActive ? "继续游戏" : "开始游戏"}
         </Button>
         {onCopyToMobile ? (
-          <Button variant="secondary" onClick={() => onCopyToMobile(game.id)}>
+          <Button
+            variant="secondary"
+            onClick={() => onCopyToMobile(game.id)}
+            className={
+              compact
+                ? "border-black/5 bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                : undefined
+            }
+          >
             <Smartphone size={16} />
             发到手机
           </Button>
