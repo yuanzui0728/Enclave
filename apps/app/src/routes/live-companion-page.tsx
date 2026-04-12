@@ -152,7 +152,7 @@ export function LiveCompanionPage() {
       title="直播伴侣"
       subtitle="把开播前准备、状态检查和参考内容收在一起。"
       toolbar={
-        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
           {activeSession ? "直播中" : "待开播"}
         </div>
       }
@@ -205,7 +205,7 @@ export function LiveCompanionPage() {
                         className={cn(
                           "rounded-full px-2.5 py-1 text-[10px] font-medium",
                           item.passed
-                            ? "bg-[rgba(7,193,96,0.10)] text-[#15803d]"
+                            ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                             : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
                         )}
                       >
@@ -250,7 +250,7 @@ export function LiveCompanionPage() {
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <RadioTower
                   size={16}
-                  className="text-[#16a34a]"
+                  className="text-[color:var(--brand-primary)]"
                 />
                 <span>开播准备</span>
               </div>
@@ -448,7 +448,7 @@ export function LiveCompanionPage() {
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <BadgeCheck
                     size={16}
-                    className="text-[#16a34a]"
+                    className="text-[color:var(--brand-primary)]"
                   />
                   <span>开播检查</span>
                 </div>
@@ -465,7 +465,7 @@ export function LiveCompanionPage() {
                         className={cn(
                           "rounded-md px-2.5 py-1 text-[11px] font-medium",
                           item.passed
-                            ? "bg-[rgba(34,197,94,0.10)] text-[#15803d]"
+                            ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                             : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
                         )}
                       >
@@ -533,7 +533,7 @@ export function LiveCompanionPage() {
                 </div>
                 <Link
                   to="/tabs/channels"
-                  className="inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
                 >
                   打开视频号
                 </Link>
@@ -628,7 +628,7 @@ export function LiveCompanionPage() {
                             "rounded-md px-2.5 py-1 text-[11px] font-medium",
                             item.status === "live"
                               ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
-                              : "bg-[rgba(34,197,94,0.10)] text-[#15803d]",
+                              : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
                           )}
                         >
                           {item.status === "live" ? "直播中" : "已结束"}
@@ -705,8 +705,8 @@ function SelectorCard({
             className={cn(
               "rounded-xl border px-3 py-2 text-xs font-medium transition",
               value === item.id
-                ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
-                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white",
             )}
           >
             {item.label}
@@ -735,7 +735,7 @@ function ToggleCard({
       className={cn(
         "rounded-[18px] border px-4 py-4 text-left transition",
         checked
-          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
       )}
     >
@@ -747,7 +747,7 @@ function ToggleCard({
           className={cn(
             "rounded-md px-2.5 py-1 text-[11px] font-medium",
             checked
-              ? "bg-white text-[#15803d]"
+              ? "bg-white text-[color:var(--brand-primary)]"
               : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]",
           )}
         >
