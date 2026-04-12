@@ -63,6 +63,7 @@ import {
   type MobileBridgeImageAsset,
   openAppSettings,
 } from "../runtime/mobile-bridge";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveLocalFile } from "../runtime/save-local-file";
 import { useChatPreferencesStore } from "../store/chat-preferences-store";
 
@@ -142,6 +143,12 @@ type ScreenshotAnnotation = {
   x2: number;
   y2: number;
   text?: string;
+};
+
+type DesktopScreenshotNoticeState = {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
 };
 
 type ScreenshotShortcutHelpGroupId =
@@ -334,9 +341,8 @@ export function ChatComposer({
     useState<ScreenshotAnnotationResizeDraft | null>(null);
   const [, setDesktopScreenshotAnnotationMove] =
     useState<ScreenshotAnnotationMoveDraft | null>(null);
-  const [desktopScreenshotNotice, setDesktopScreenshotNotice] = useState<
-    string | null
-  >(null);
+  const [desktopScreenshotNotice, setDesktopScreenshotNotice] =
+    useState<DesktopScreenshotNoticeState | null>(null);
   const [desktopScreenshotShortcutHelpOpen, setDesktopScreenshotShortcutHelpOpen] =
     useState(false);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
@@ -2026,9 +2032,9 @@ export function ChatComposer({
         }),
       ]);
       setAttachmentError(null);
-      setDesktopScreenshotNotice(
-        mode === "cropped" ? "裁剪后的截图已复制。" : "截图已复制到剪贴板。",
-      );
+      setDesktopScreenshotNotice({
+        message: mode === "cropped" ? "裁剪后的截图已复制。" : "截图已复制到剪贴板。",
+      });
     } catch (copyError) {
       setDesktopScreenshotNotice(null);
       setAttachmentError(
@@ -2070,7 +2076,28 @@ export function ChatComposer({
         return;
       }
 
-      setDesktopScreenshotNotice(result.message);
+      const canRevealSavedFile =
+        result.status === "saved" && Boolean(result.savedPath?.trim());
+      const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+      setDesktopScreenshotNotice({
+        message: result.message,
+        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+        onAction:
+          savedPath
+            ? () => {
+                void revealSavedFile(savedPath).then((revealed) => {
+                  setDesktopScreenshotNotice({
+                    message: revealed
+                      ? mode === "cropped"
+                        ? "已打开裁剪截图所在位置。"
+                        : "已打开截图所在位置。"
+                      : "打开所在位置失败，请稍后再试。",
+                  });
+                });
+              }
+            : undefined,
+      });
     } catch (saveError) {
       setDesktopScreenshotNotice(null);
       setAttachmentError(
@@ -3315,7 +3342,7 @@ function DesktopScreenshotEditor({
   draft: ImageDraft;
   error: string | null;
   imageRef: React.RefObject<HTMLImageElement | null>;
-  notice: string | null;
+  notice: DesktopScreenshotNoticeState | null;
   pending: boolean;
   selection: ScreenshotSelectionDraft | null;
   shortcutHelpOpen: boolean;
@@ -4592,10 +4619,17 @@ function DesktopScreenshotEditor({
 
             {notice ? (
               <InlineNotice
-                className="border-white/10 bg-white/8 text-xs text-white"
+                className="flex items-center justify-between gap-3 border-white/10 bg-white/8 text-xs text-white"
                 tone="info"
               >
-                {notice}
+                <span>{notice.message}</span>
+                {notice.actionLabel && notice.onAction ? (
+                  <InlineNoticeActionButton
+                    label={notice.actionLabel}
+                    onClick={notice.onAction}
+                    className="border-white/14 bg-white/10 text-white"
+                  />
+                ) : null}
               </InlineNotice>
             ) : null}
             {error ? (
