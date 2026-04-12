@@ -252,7 +252,7 @@ export function DesktopChatHistoryPage() {
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[12px] border px-3 py-2.5 text-left transition",
                     conversation.id === selectedConversationId
-                      ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.08)]"
+                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
                       : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/80",
                   )}
                 >
