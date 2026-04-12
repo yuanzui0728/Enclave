@@ -12,6 +12,13 @@ import {
   type MiniProgramsStoredState,
 } from "./mini-programs-storage";
 
+function areMiniProgramsStatesEqual(
+  left: MiniProgramsStoredState,
+  right: MiniProgramsStoredState,
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function useMiniProgramsState() {
   const [state, setState] = useState<MiniProgramsStoredState>(() =>
     readMiniProgramsState(),
@@ -27,7 +34,11 @@ export function useMiniProgramsState() {
         return;
       }
 
-      setState(hydratedState);
+      setState((current) =>
+        areMiniProgramsStatesEqual(current, hydratedState)
+          ? current
+          : hydratedState,
+      );
       setStateReady(true);
     }
 
@@ -35,6 +46,47 @@ export function useMiniProgramsState() {
 
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktopRuntimeAvailable()) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncStateFromNative() {
+      const hydratedState = await hydrateMiniProgramsStateFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setState((current) =>
+        areMiniProgramsStatesEqual(current, hydratedState)
+          ? current
+          : hydratedState,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncStateFromNative();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncStateFromNative();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
