@@ -836,10 +836,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   onClick={() => toggleJoinedState(member.memberId)}
                   disabled={leavingScreen || member.memberType === "user"}
                   className={cn(
-                    "rounded-[20px] border px-4 py-3 text-left transition",
+                    "rounded-[18px] border px-3.5 py-3 text-left transition",
                     joined
-                      ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.10)]"
-                      : "border-white/12 bg-white/5",
+                      ? "border-[rgba(34,197,94,0.22)] bg-[rgba(34,197,94,0.10)]"
+                      : "border-white/12 bg-white/6",
                     member.memberType === "user"
                       ? "cursor-default"
                       : "active:bg-white/12",
@@ -854,14 +854,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <div className="truncate text-sm font-medium text-white">
+                        <div className="truncate text-[13px] font-medium text-white">
                           {member.memberName ?? member.memberId}
                         </div>
-                        <span className="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-white/64">
+                        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[10px] text-white/64">
                           {roleLabel}
                         </span>
                       </div>
-                      <div className="mt-1 text-[12px] text-white/50">
+                      <div className="mt-1 text-[11px] leading-5 text-white/52">
                         {member.memberType === "user"
                           ? "世界主人始终保留在当前群通话工作台"
                           : joined
@@ -871,10 +871,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                     </div>
                     <span
                       className={cn(
-                        "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium",
+                        "shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium",
                         joined
-                          ? "bg-[rgba(34,197,94,0.18)] text-[#bbf7d0]"
-                          : "bg-white/8 text-white/58",
+                          ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.16)] text-[#bbf7d0]"
+                          : "border-white/10 bg-white/8 text-white/58",
                       )}
                     >
                       {joined ? "已加入" : "待加入"}
