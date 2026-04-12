@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
@@ -7,6 +7,8 @@ import { describeRequestError } from "../../lib/request-error";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+
+const REMOTE_GUARD_FAILURE_THRESHOLD = 2;
 
 export function DesktopRuntimeGuard() {
   const navigate = useNavigate();
@@ -20,6 +22,10 @@ export function DesktopRuntimeGuard() {
   const needsRemoteConfiguration = runtimeContext.deploymentMode === "remote-connected" && requiresRemoteServiceConfiguration();
   const onEntryRoute = pathname === "/setup" || pathname === "/onboarding" || pathname === "/welcome";
   const attemptedAutostartRef = useRef(false);
+  const [remoteProbeState, setRemoteProbeState] = useState({
+    hasSuccessfulProbe: false,
+    consecutiveFailures: 0,
+  });
   const {
     desktopAvailable,
     desktopStatusQuery,
@@ -53,6 +59,46 @@ export function DesktopRuntimeGuard() {
     startMutation.mutate();
   }, [desktopAvailable, desktopStatusQuery.data, hasDesktopRuntimeControl, startMutation]);
 
+  useEffect(() => {
+    setRemoteProbeState({
+      hasSuccessfulProbe: false,
+      consecutiveFailures: 0,
+    });
+  }, [runtimeConfig.apiBaseUrl]);
+
+  useEffect(() => {
+    if (hasDesktopRuntimeControl || needsRemoteConfiguration) {
+      return;
+    }
+
+    if (remoteStatusQuery.errorUpdatedAt > remoteStatusQuery.dataUpdatedAt && remoteStatusQuery.error instanceof Error) {
+      setRemoteProbeState((current) => ({
+        hasSuccessfulProbe: current.hasSuccessfulProbe,
+        consecutiveFailures: current.consecutiveFailures + 1,
+      }));
+      return;
+    }
+
+    if (remoteStatusQuery.dataUpdatedAt > 0) {
+      setRemoteProbeState((current) => {
+        if (current.hasSuccessfulProbe && current.consecutiveFailures === 0) {
+          return current;
+        }
+
+        return {
+          hasSuccessfulProbe: true,
+          consecutiveFailures: 0,
+        };
+      });
+    }
+  }, [
+    hasDesktopRuntimeControl,
+    needsRemoteConfiguration,
+    remoteStatusQuery.dataUpdatedAt,
+    remoteStatusQuery.error,
+    remoteStatusQuery.errorUpdatedAt,
+  ]);
+
   if (isMobileRuntime) {
     return null;
   }
@@ -66,10 +112,14 @@ export function DesktopRuntimeGuard() {
   }
 
   const desktopUnavailable = hasDesktopRuntimeControl && (!desktopStatusQuery.data || !desktopStatusQuery.data.reachable);
+  const remoteProbeUnavailable =
+    remoteStatusQuery.error instanceof Error &&
+    (!remoteProbeState.hasSuccessfulProbe ||
+      remoteProbeState.consecutiveFailures >= REMOTE_GUARD_FAILURE_THRESHOLD);
   const remoteUnavailable =
     !hasDesktopRuntimeControl &&
     (needsRemoteConfiguration ||
-      remoteStatusQuery.error instanceof Error ||
+      remoteProbeUnavailable ||
       remoteStatusQuery.data?.coreApi.healthy === false);
 
   if (!desktopUnavailable && !remoteUnavailable) {
