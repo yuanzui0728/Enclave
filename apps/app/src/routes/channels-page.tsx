@@ -33,6 +33,7 @@ import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopChannelsWorkspace } from "../features/desktop/channels/desktop-channels-workspace";
 import {
+  hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -53,6 +54,7 @@ export function ChannelsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const ownerId = useWorldOwnerStore((state) => state.id);
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -151,6 +153,49 @@ export function ChannelsPage() {
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, []);
+
+  useEffect(() => {
+    if (!nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavoriteSourceIds() {
+      const favoriteSourceIds = (await hydrateDesktopFavoritesFromNative()).map(
+        (item) => item.sourceId,
+      );
+      if (cancelled) {
+        return;
+      }
+
+      setFavoriteSourceIds((current) =>
+        JSON.stringify(current) === JSON.stringify(favoriteSourceIds)
+          ? current
+          : favoriteSourceIds,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFavoriteSourceIds();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFavoriteSourceIds();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [nativeDesktopFavorites]);
 
   useEffect(() => {
     if (!successNotice) {
