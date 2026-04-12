@@ -88,7 +88,7 @@ function MobileStarredFriendsPage() {
         }
       >
         <div className="pt-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-black/5 bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -103,18 +103,18 @@ function MobileStarredFriendsPage() {
 
       <div className="pb-8">
         {friendsQuery.isLoading ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <LoadingBlock label="正在读取星标朋友..." />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
 
         {!friendsQuery.isLoading && !friendsQuery.isError && !filteredFriends.length ? (
-          <div className="px-3 pt-6">
+          <div className="px-4 pt-6">
             <EmptyState
               title={normalizedSearchText ? "没有找到匹配的星标朋友" : "还没有星标朋友"}
               description={
@@ -139,7 +139,7 @@ function MobileStarredFriendsPage() {
                   });
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors hover:bg-[rgba(7,193,96,0.05)]",
+                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                   index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                 )}
               >
@@ -151,10 +151,6 @@ function MobileStarredFriendsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[16px] text-[color:var(--text-primary)]">
                     {item.character.name}
-                  </div>
-                  <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-                    {item.character.currentStatus?.trim() ||
-                      `${item.character.relationship} · 亲密度 ${item.friendship.intimacyLevel}`}
                   </div>
                 </div>
                 <Star
