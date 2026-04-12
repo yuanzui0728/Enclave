@@ -286,9 +286,9 @@ export function MobileChatPlusPanel({
   const unavailableFallbackLabel = unavailableAction?.fallbackLabel;
 
   return (
-    <div className="mt-2 min-h-[248px] overflow-hidden border-t border-black/6 bg-[#f1f1f1] shadow-none">
+    <div className="mt-1.5 min-h-[232px] overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] shadow-none">
       {activeView === "root" ? (
-        <div className="pb-5 pt-4">
+        <div className="pb-4 pt-3">
           <div
             ref={rootPagerRef}
             className="relative flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -307,7 +307,7 @@ export function MobileChatPlusPanel({
               {rootActionPages.map((page, pageIndex) => (
                 <div
                   key={`page-${pageIndex}`}
-                  className="grid min-w-full shrink-0 snap-start grid-cols-4 grid-rows-2 gap-y-5 px-4"
+                  className="grid min-w-full shrink-0 snap-start grid-cols-4 grid-rows-2 gap-y-4.5 px-3.5"
                 >
                   {page.map((item, slotIndex) => {
                     if (!item) {
@@ -315,10 +315,10 @@ export function MobileChatPlusPanel({
                         <div
                           key={`placeholder-${pageIndex}-${slotIndex}`}
                           aria-hidden="true"
-                          className="flex flex-col items-center gap-2 opacity-0 select-none"
+                          className="flex select-none flex-col items-center gap-1.5 opacity-0"
                         >
-                          <div className="h-14 w-14 rounded-[14px] border border-transparent" />
-                          <div className="min-h-[2.15rem] w-full" />
+                          <div className="h-13 w-13 rounded-[12px] border border-transparent" />
+                          <div className="min-h-[2rem] w-full" />
                         </div>
                       );
                     }
@@ -398,26 +398,26 @@ export function MobileChatPlusPanel({
                         disabled={busy}
                         aria-disabled={itemDisabled ? "true" : undefined}
                         className={cn(
-                          "flex flex-col items-center gap-2 text-center",
+                          "flex flex-col items-center gap-1.5 text-center",
                           itemDisabled ? "opacity-80" : "disabled:opacity-60",
                         )}
                       >
                         <div
                           className={cn(
-                            "flex h-14 w-14 items-center justify-center rounded-[14px] border bg-white text-white shadow-none",
+                            "flex h-13 w-13 items-center justify-center rounded-[12px] border bg-white text-white shadow-none",
                             itemDisabled ? "border-black/6" : "border-black/6",
                             itemDisabled ? null : item.iconClassName,
                             itemDisabled ? "bg-[#cfcfcf]" : null,
                           )}
                         >
-                          <Icon size={22} />
+                          <Icon size={20} />
                         </div>
-                        <div className="min-h-[2.15rem] text-center">
-                          <div className="text-[12px] text-[#5f5f5f]">
+                        <div className="min-h-[2rem] text-center">
+                          <div className="text-[11px] text-[#5f5f5f]">
                             {item.label}
                           </div>
                           {itemDisabledLabel ? (
-                            <div className="mt-0.5 text-[10px] text-[#a0a0a0]">
+                            <div className="mt-0.5 text-[9px] text-[#a0a0a0]">
                               {itemDisabledLabel}
                             </div>
                           ) : null}
@@ -431,7 +431,7 @@ export function MobileChatPlusPanel({
           </div>
 
           {rootActionPages.length > 1 ? (
-            <div className="mt-4 flex items-center justify-center gap-1.5">
+            <div className="mt-3 flex items-center justify-center gap-1.5">
               {rootActionPages.map((_, pageIndex) => (
                 <button
                   key={`dot-${pageIndex}`}
@@ -456,22 +456,22 @@ export function MobileChatPlusPanel({
           ) : null}
 
           {unavailableAction ? (
-            <div className="mx-3 mt-4 rounded-[18px] border border-black/6 bg-white px-4 py-3 shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
+            <div className="mx-3 mt-3 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3 shadow-none">
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-white",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-white",
                     unavailableAction.iconClassName,
                   )}
                 >
                   {UnavailableIcon ? <UnavailableIcon size={18} /> : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-[#111827]">
+                  <div className="text-[12px] font-medium text-[#111827]">
                     {unavailableAction.unavailableTitle ??
                       `${unavailableAction.label} 暂未接入`}
                   </div>
-                  <div className="mt-1 text-[12px] leading-5 text-[#7a7a7a]">
+                  <div className="mt-1 text-[11px] leading-[18px] text-[#7a7a7a]">
                     {unavailableAction.unavailableDescription ??
                       "当前版本先保留这个入口位，后续再补完整链路。"}
                   </div>
@@ -488,7 +488,7 @@ export function MobileChatPlusPanel({
                         unavailableAction.key,
                       );
                     }}
-                    className="mr-2 rounded-full bg-[#07c160] px-3 py-1.5 text-[12px] font-medium text-white transition active:opacity-90"
+                    className="mr-2 rounded-full bg-[#07c160] px-3 py-1.5 text-[11px] font-medium text-white transition active:opacity-90"
                   >
                     {unavailableFallbackLabel}
                   </button>
@@ -496,7 +496,7 @@ export function MobileChatPlusPanel({
                 <button
                   type="button"
                   onClick={() => setUnavailableAction(null)}
-                  className="rounded-full bg-[#f5f5f5] px-3 py-1.5 text-[12px] font-medium text-[#5f5f5f] transition active:bg-[#ebebeb]"
+                  className="rounded-full bg-[#f5f5f5] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[#ebebeb]"
                 >
                   知道了
                 </button>
@@ -507,7 +507,7 @@ export function MobileChatPlusPanel({
       ) : null}
 
       {activeView === "contacts" ? (
-        <div className="pb-4">
+        <div className="pb-3.5">
           <PanelHeader title="选择名片" onBack={() => setActiveView("root")} />
           {friendsQuery.isLoading ? (
             <LoadingBlock
@@ -516,7 +516,7 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {friendsQuery.data?.length ? (
-            <div className="mx-3 max-h-72 overflow-auto rounded-[10px] bg-white">
+            <div className="mx-2.5 max-h-64 overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
               {friendsQuery.data.map(({ character }, index) => (
                 <button
                   key={character.id}
@@ -533,7 +533,7 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
+                    "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
                     index > 0 ? "border-t border-black/[0.06]" : undefined,
                   )}
                 >
@@ -543,10 +543,10 @@ export function MobileChatPlusPanel({
                     size="wechat"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm text-[color:var(--text-primary)]">
+                    <div className="truncate text-[13px] text-[color:var(--text-primary)]">
                       {character.name}
                     </div>
-                    <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                    <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
                       {character.relationship || "世界联系人"}
                     </div>
                   </div>
@@ -563,7 +563,7 @@ export function MobileChatPlusPanel({
       ) : null}
 
       {activeView === "favorites" ? (
-        <div className="pb-4">
+        <div className="pb-3.5">
           <PanelHeader title="发送收藏" onBack={() => setActiveView("root")} />
           {favoritesQuery.isLoading && !favoriteRecords.length ? (
             <LoadingBlock
@@ -572,7 +572,7 @@ export function MobileChatPlusPanel({
             />
           ) : null}
           {favoriteRecords.length ? (
-            <div className="mx-3 max-h-72 overflow-auto rounded-[10px] bg-white">
+            <div className="mx-2.5 max-h-64 overflow-auto rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
               {favoriteRecords.map((item, index) => (
                 <button
                   key={item.id}
@@ -582,7 +582,7 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
+                    "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
                     index > 0 ? "border-t border-black/[0.06]" : undefined,
                   )}
                 >
@@ -593,17 +593,17 @@ export function MobileChatPlusPanel({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="truncate text-sm text-[color:var(--text-primary)]">
+                      <div className="truncate text-[13px] text-[color:var(--text-primary)]">
                         {item.title}
                       </div>
                       <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2 py-0.5 text-[10px] text-[#07c160]">
                         {item.badge}
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+                    <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
                       {item.meta}
                     </div>
-                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                    <div className="mt-1.5 line-clamp-2 text-[11px] leading-[18px] text-[color:var(--text-secondary)]">
                       {item.description}
                     </div>
                   </div>
@@ -619,9 +619,9 @@ export function MobileChatPlusPanel({
       ) : null}
 
       {activeView === "locations" ? (
-        <div className="pb-4">
+        <div className="pb-3.5">
           <PanelHeader title="选择位置" onBack={() => setActiveView("root")} />
-          <div className="mx-3 overflow-hidden rounded-[10px] bg-white">
+          <div className="mx-2.5 overflow-hidden rounded-[14px] border border-[color:var(--border-subtle)] bg-white">
             {CHAT_LOCATION_SCENES.map((scene) => (
               <button
                 key={scene.id}
@@ -633,12 +633,12 @@ export function MobileChatPlusPanel({
                   }
                 }}
                 disabled={busy}
-                className="block w-full px-4 py-3 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60"
+                className="block w-full px-4 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60"
               >
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                   {scene.title}
                 </div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]">
                   {scene.subtitle}
                 </div>
               </button>
@@ -652,16 +652,16 @@ export function MobileChatPlusPanel({
 
 function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <div className="relative flex items-center justify-center px-4 pb-2 pt-3">
+    <div className="relative flex items-center justify-center px-4 pb-1.5 pt-2.5">
       <button
         type="button"
         onClick={onBack}
-        className="absolute left-3 flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition active:bg-[#e5e5e5]"
+        className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition active:bg-white"
         aria-label="返回"
       >
         <ChevronLeft size={16} />
       </button>
-      <div className="text-sm font-medium text-[#111827]">{title}</div>
+      <div className="text-[13px] font-medium text-[#111827]">{title}</div>
     </div>
   );
 }
