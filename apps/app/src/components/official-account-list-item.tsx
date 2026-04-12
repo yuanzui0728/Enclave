@@ -23,12 +23,12 @@ export function OfficialAccountListItem({
       className={cn(
         "flex w-full items-center gap-3 text-left transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+          ? "rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : "border-b border-[color:var(--border-faint)] bg-white px-4 py-3.5 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
-            ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
-            : "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)]"
+            ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+            : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]"
           : undefined,
       )}
     >
@@ -47,7 +47,7 @@ export function OfficialAccountListItem({
           <Radio size={12} className="shrink-0" />
           <span>{account.accountType === "service" ? "服务号" : "订阅号"}</span>
           {account.isFollowing ? (
-            <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[#15803d]">
+            <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
               已关注
             </span>
           ) : null}

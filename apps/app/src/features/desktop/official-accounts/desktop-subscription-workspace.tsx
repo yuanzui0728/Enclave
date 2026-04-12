@@ -181,7 +181,7 @@ export function DesktopSubscriptionWorkspace() {
                   {group.account.name}
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[#15803d]">
+                  <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]">
                     {group.unreadCount > 0
                       ? `${group.unreadCount} 条未读推送`
                       : "最近推送"}
@@ -200,8 +200,8 @@ export function DesktopSubscriptionWorkspace() {
                     onClick={() => setActiveArticleId(delivery.articleId)}
                     className={`w-full rounded-[16px] border px-4 py-3 text-left transition ${
                       activeArticleId === delivery.articleId
-                        ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] shadow-[var(--shadow-section)]"
-                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-section)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
