@@ -171,7 +171,10 @@ export function DesktopFeedbackPage() {
 
             <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <AlertCircle size={16} className="text-[#15803d]" />
+                <AlertCircle
+                  size={16}
+                  className="text-[color:var(--brand-primary)]"
+                />
                 <span>最近反馈</span>
               </div>
 
@@ -349,7 +352,7 @@ export function DesktopFeedbackPage() {
                       className={cn(
                         "rounded-[12px] border p-4 text-left transition",
                         draft.category === item.id
-                          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.04)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                       )}
                     >
@@ -358,7 +361,7 @@ export function DesktopFeedbackPage() {
                           size={16}
                           className={cn(
                             draft.category === item.id
-                              ? "text-[#17803d]"
+                              ? "text-[color:var(--brand-primary)]"
                               : "text-[color:var(--text-secondary)]",
                           )}
                         />
@@ -410,7 +413,7 @@ export function DesktopFeedbackPage() {
                       className={cn(
                         "flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium transition",
                         draft.priority === item.id
-                          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] text-[#17803d]"
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
                       )}
                     >
@@ -464,7 +467,7 @@ export function DesktopFeedbackPage() {
                     includeSystemSnapshot: event.target.checked,
                   }))
                 }
-                className="mt-1 h-4 w-4 rounded border-[color:var(--border-faint)] text-[#07c160]"
+                className="mt-1 h-4 w-4 rounded border-[color:var(--border-faint)] text-[color:var(--brand-primary)]"
               />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -480,7 +483,7 @@ export function DesktopFeedbackPage() {
               <Button
                 type="button"
                 onClick={() => void handleSubmitFeedback()}
-                className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
               >
                 <Send size={15} />
                 保存反馈
@@ -597,7 +600,7 @@ function FeedbackTextarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-h-[116px] w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:border-[rgba(7,193,96,0.18)] focus:border-[rgba(7,193,96,0.18)]"
+        className="min-h-[116px] w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)]"
       />
     </div>
   );
