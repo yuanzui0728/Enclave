@@ -40,6 +40,7 @@ import { parseDesktopMobileCallHandoffHash } from "../features/desktop/chat/desk
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationPreviewParts } from "../lib/conversation-preview";
 import {
+  hydrateMobileHandoffHistoryFromNative,
   pushMobileHandoffRecord,
   readMobileHandoffHistory,
   resolveMobileHandoffLink,
@@ -158,6 +159,7 @@ export function DesktopMobilePage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopHandoff = runtimeConfig.appPlatform === "desktop";
   const baseUrl = runtimeConfig.apiBaseUrl;
   const hash = useRouterState({ select: (state) => state.location.hash });
   const ownerName = useWorldOwnerStore((state) => state.username);
@@ -260,6 +262,29 @@ export function DesktopMobilePage() {
       ? "视频通话"
       : "语音通话"
     : "";
+
+  useEffect(() => {
+    if (!nativeDesktopHandoff) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function hydrateHandoffHistory() {
+      const history = await hydrateMobileHandoffHistoryFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setHandoffHistory(history);
+    }
+
+    void hydrateHandoffHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nativeDesktopHandoff]);
   const callHandoffTitle =
     callHandoffState?.title?.trim() ||
     (callHandoffState?.conversationType === "group" ? "当前群聊" : "当前聊天");
