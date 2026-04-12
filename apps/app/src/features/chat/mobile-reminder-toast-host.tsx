@@ -22,6 +22,8 @@ import { useMessageReminders } from "./use-message-reminders";
 import { useChatReminderEntries } from "./use-chat-reminder-entries";
 import { showLocalNotification } from "../../runtime/mobile-bridge";
 
+const EMPTY_CONVERSATIONS = Object.freeze([]);
+
 export function MobileReminderToastHost() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
@@ -45,10 +47,14 @@ export function MobileReminderToastHost() {
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(baseUrl),
   });
+  const conversations = useMemo(
+    () => conversationsQuery.data ?? EMPTY_CONVERSATIONS,
+    [conversationsQuery.data],
+  );
 
   const { dueReminderEntries: dueReminders } = useChatReminderEntries({
     reminders,
-    conversations: conversationsQuery.data ?? [],
+    conversations,
   });
   const activeReminder = useMemo(
     () =>
@@ -77,11 +83,12 @@ export function MobileReminderToastHost() {
   });
 
   useEffect(() => {
-    setDismissedMessageIds((current) =>
-      current.filter((item) =>
+    setDismissedMessageIds((current) => {
+      const next = current.filter((item) =>
         dueReminders.some((reminder) => reminder.messageId === item),
-      ),
-    );
+      );
+      return next.length === current.length ? current : next;
+    });
   }, [dueReminders]);
 
   useEffect(() => {

@@ -14,6 +14,8 @@ import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entri
 import { MobileReminderToastHost } from "../features/chat/mobile-reminder-toast-host";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
+const EMPTY_CONVERSATIONS = Object.freeze([]);
+
 const tabs = [
   { to: "/tabs/chat", label: "消息", icon: MessageCircleMore },
   { to: "/tabs/contacts", label: "通讯录", icon: UsersRound },
@@ -34,17 +36,21 @@ export function MobileShell({ children }: PropsWithChildren) {
     queryFn: () => getConversations(runtimeConfig.apiBaseUrl),
     enabled: showTabs,
   });
+  const conversationList = useMemo(
+    () => conversations ?? EMPTY_CONVERSATIONS,
+    [conversations],
+  );
 
   const chatUnreadCount = useMemo(
     () =>
-      (conversations ?? [])
+      conversationList
         .filter((c) => !c.isMuted && c.unreadCount > 0)
         .reduce((sum, c) => sum + c.unreadCount, 0),
-    [conversations],
+    [conversationList],
   );
   const { dueReminderCount } = useChatReminderEntries({
     reminders,
-    conversations: conversations ?? [],
+    conversations: conversationList,
   });
 
   useEffect(() => {

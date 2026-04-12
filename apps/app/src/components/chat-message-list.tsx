@@ -351,14 +351,16 @@ export function ChatMessageList({
         : null,
     );
     setSelectedMessageIds((current) =>
-      current.filter((item) => messages.some((message) => message.id === item)),
+      filterStableStringIds(
+        current,
+        (item) => messages.some((message) => message.id === item),
+      ),
     );
     setForwardMessages((current) =>
-      current?.length
-        ? current.filter((item) =>
-            messages.some((message) => message.id === item.id),
-          )
-        : null,
+      filterStableMessageList(
+        current,
+        (item) => messages.some((message) => message.id === item.id),
+      ),
     );
     setSelectionAnchorMessageId((current) =>
       current && messages.some((message) => message.id === current)
@@ -391,7 +393,7 @@ export function ChatMessageList({
 
   useEffect(() => {
     setSelectionMode(false);
-    setSelectedMessageIds([]);
+    setSelectedMessageIds((current) => (current.length ? [] : current));
     setSelectionAnchorMessageId(null);
     setForwardMessages(null);
   }, [isDesktop]);
@@ -401,7 +403,7 @@ export function ChatMessageList({
       return;
     }
 
-    setSelectedMessageIds([]);
+    setSelectedMessageIds((current) => (current.length ? [] : current));
     setSelectionAnchorMessageId(null);
   }, [selectionMode]);
 
@@ -447,10 +449,12 @@ export function ChatMessageList({
 
   const syncFavoriteSourceIds = useCallback(
     (remoteFavorites: Awaited<ReturnType<typeof getFavorites>> = []) => {
-      setFavoriteSourceIds(
-        mergeDesktopFavoriteRecords(remoteFavorites, readDesktopFavorites()).map(
-          (item) => item.sourceId,
-        ),
+      const nextSourceIds = mergeDesktopFavoriteRecords(
+        remoteFavorites,
+        readDesktopFavorites(),
+      ).map((item) => item.sourceId);
+      setFavoriteSourceIds((current) =>
+        areStringListsEqual(current, nextSourceIds) ? current : nextSourceIds,
       );
     },
     [],
@@ -2603,6 +2607,52 @@ function writeDetailedTimestampMode(enabled: boolean) {
     DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
     enabled ? "1" : "0",
   );
+}
+
+function areStringListsEqual(
+  left: readonly string[],
+  right: readonly string[],
+) {
+  if (left === right) {
+    return true;
+  }
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => item === right[index]);
+}
+
+function filterStableStringIds(
+  current: string[],
+  predicate: (value: string) => boolean,
+) {
+  const next = current.filter(predicate);
+  return areStringListsEqual(current, next) ? current : next;
+}
+
+function filterStableMessageList(
+  current: ChatRenderableMessage[] | null,
+  predicate: (value: ChatRenderableMessage) => boolean,
+) {
+  if (!current?.length) {
+    return null;
+  }
+
+  const next = current.filter(predicate);
+  if (!next.length) {
+    return null;
+  }
+
+  if (
+    next.length === current.length &&
+    next.every((item, index) => item.id === current[index]?.id)
+  ) {
+    return current;
+  }
+
+  return next;
 }
 
 function parseSharedHistorySummaryMessage(text: string) {

@@ -47,6 +47,10 @@ export function useConversationThread(conversationId: string) {
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
   const scrollAnchor = useScrollAnchor<HTMLDivElement>(messages.length);
+  const {
+    ref: scrollAnchorRef,
+    suppressNextPendingCount,
+  } = scrollAnchor;
   const loadMoreRequestRef = useRef<{
     previousCount: number;
     scrollHeight: number;
@@ -424,8 +428,8 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
-    const element = scrollAnchor.ref.current;
-    scrollAnchor.suppressNextPendingCount();
+    const element = scrollAnchorRef.current;
+    suppressNextPendingCount();
     loadMoreRequestRef.current = {
       previousCount: messagesQuery.data?.length ?? 0,
       scrollHeight: element?.scrollHeight ?? 0,
@@ -436,7 +440,8 @@ export function useConversationThread(conversationId: string) {
     hasOlderMessages,
     messagesQuery.data?.length,
     messagesQuery.isFetching,
-    scrollAnchor,
+    scrollAnchorRef,
+    suppressNextPendingCount,
   ]);
 
   return {
