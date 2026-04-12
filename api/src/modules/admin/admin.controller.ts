@@ -52,6 +52,11 @@ export class AdminController {
     return this.adminService.installCharacterPreset(presetKey);
   }
 
+  @Post('characters/presets/install-batch')
+  installCharacterPresetBatch(@Body() body: { presetKeys?: string[] | null }) {
+    return this.adminService.installCharacterPresetBatch(body.presetKeys ?? []);
+  }
+
   @Post('characters')
   createCharacter(@Body() body: Partial<CharacterEntity>) {
     return this.adminService.createCharacter(body);

@@ -87,6 +87,10 @@ export class AdminService {
     return this.charactersService.installCelebrityPreset(presetKey);
   }
 
+  installCharacterPresetBatch(presetKeys: string[]) {
+    return this.charactersService.installCelebrityPresetBatch(presetKeys);
+  }
+
   async createCharacter(data: Partial<CharacterEntity>) {
     const entity = this.characterRepo.create(data);
     return this.characterRepo.save(entity);

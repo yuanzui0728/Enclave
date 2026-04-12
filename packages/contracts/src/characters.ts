@@ -1,6 +1,7 @@
 export type RelationshipType = "family" | "friend" | "expert" | "mentor" | "custom" | "self";
 export type CharacterSourceType = "default_seed" | "preset_catalog" | "manual_admin";
 export type CharacterDeletionPolicy = "protected" | "archive_allowed";
+export type CharacterPresetGroupKey = "technology_and_product" | "business_and_investing" | "public_expression";
 export type ResponseLength = "short" | "medium" | "long";
 export type EmojiUsage = "none" | "occasional" | "frequent";
 
@@ -99,6 +100,10 @@ export interface Character {
 
 export interface CharacterPresetSummary {
   presetKey: string;
+  groupKey: CharacterPresetGroupKey;
+  groupLabel: string;
+  groupDescription: string;
+  groupOrder: number;
   id: string;
   name: string;
   avatar: string;
@@ -108,6 +113,12 @@ export interface CharacterPresetSummary {
   installed: boolean;
   installedCharacterId?: string | null;
   installedCharacterName?: string | null;
+}
+
+export interface InstallCharacterPresetsResult {
+  presetKeys: string[];
+  installedCount: number;
+  installedCharacters: Character[];
 }
 
 export type CharacterDraft = Partial<Character>;
