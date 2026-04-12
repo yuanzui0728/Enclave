@@ -1217,7 +1217,7 @@ function FriendListRow({
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
           ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
-          : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
+          : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
           ? "border border-[rgba(7,193,96,0.16)] bg-[rgba(240,247,243,0.94)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
@@ -1233,13 +1233,15 @@ function FriendListRow({
         <div className="truncate text-[16px] text-[color:var(--text-primary)]">
           {item.character.name}
         </div>
-        <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-          {pendingCharacterId === item.character.id
-            ? "正在打开会话..."
-            : item.character.currentStatus?.trim() ||
-              item.character.relationship ||
-              "保持联系"}
-        </div>
+        {desktop ? (
+          <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+            {pendingCharacterId === item.character.id
+              ? "正在打开会话..."
+              : item.character.currentStatus?.trim() ||
+                item.character.relationship ||
+                "保持联系"}
+          </div>
+        ) : null}
       </div>
       {desktop && item.friendship.isStarred ? (
         <Star
@@ -1273,7 +1275,7 @@ function WorldCharacterRow({
         "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] text-left transition-colors",
         desktop
           ? "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
-          : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
+          : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
         active
           ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(240,247,243,0.94)] shadow-[0_8px_22px_rgba(15,23,42,0.03)]"
@@ -1289,11 +1291,13 @@ function WorldCharacterRow({
         <div className="truncate text-[16px] text-[color:var(--text-primary)]">
           {item.character.name}
         </div>
-        <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-          {item.character.relationship ||
-            item.character.currentStatus?.trim() ||
-            "查看角色资料"}
-        </div>
+        {desktop ? (
+          <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+            {item.character.relationship ||
+              item.character.currentStatus?.trim() ||
+              "查看角色资料"}
+          </div>
+        ) : null}
       </div>
     </button>
   );
