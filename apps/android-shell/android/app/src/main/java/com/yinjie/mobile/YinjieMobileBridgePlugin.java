@@ -150,6 +150,15 @@ public class YinjieMobileBridgePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void pickFile(PluginCall call) {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+
+        startActivityForResult(call, intent, "pickFileResult");
+    }
+
+    @PluginMethod
     public void captureImage(PluginCall call) {
         if (getPermissionState("camera") != PermissionState.GRANTED) {
             requestPermissionForAlias("camera", call, "cameraPermissionResult");
@@ -184,6 +193,36 @@ public class YinjieMobileBridgePlugin extends Plugin {
             assets.put(buildAsset(data.getData()));
         }
 
+        call.resolve(response);
+    }
+
+    @ActivityCallback
+    private void pickFileResult(PluginCall call, ActivityResult result) {
+        JSObject response = new JSObject();
+        response.put("asset", JSObject.NULL);
+
+        if (call == null) {
+            return;
+        }
+
+        if (
+            result == null ||
+            result.getResultCode() != Activity.RESULT_OK ||
+            result.getData() == null
+        ) {
+            call.resolve(response);
+            return;
+        }
+
+        Intent data = result.getData();
+        Uri uri = data.getData();
+        if (uri == null) {
+            call.resolve(response);
+            return;
+        }
+
+        persistReadPermission(uri, data.getFlags());
+        response.put("asset", buildAsset(uri));
         call.resolve(response);
     }
 
@@ -412,6 +451,23 @@ public class YinjieMobileBridgePlugin extends Plugin {
             if (cursor != null) {
                 cursor.close();
             }
+        }
+    }
+
+    private void persistReadPermission(Uri uri, int flags) {
+        if (uri == null || uri.getScheme() == null || !"content".equalsIgnoreCase(uri.getScheme())) {
+            return;
+        }
+
+        int takeFlags = flags & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if (takeFlags == 0) {
+            takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        }
+
+        try {
+            getContext().getContentResolver().takePersistableUriPermission(uri, takeFlags);
+        } catch (SecurityException exception) {
+            // Some providers do not grant persistable permissions; the picker result can still be used immediately.
         }
     }
 
