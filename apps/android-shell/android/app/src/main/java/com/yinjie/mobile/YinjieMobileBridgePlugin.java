@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -15,6 +16,8 @@ import android.os.Build;
 import android.provider.OpenableColumns;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.util.Base64;
+import android.webkit.MimeTypeMap;
 
 import androidx.activity.result.ActivityResult;
 import androidx.core.app.NotificationCompat;
@@ -36,6 +39,7 @@ import com.getcapacitor.annotation.PermissionCallback;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileOutputStream;
 
 @CapacitorPlugin(
     name = "YinjieMobileBridge",
@@ -132,6 +136,53 @@ public class YinjieMobileBridgePlugin extends Plugin {
             call.resolve();
         } catch (Exception exception) {
             call.reject("failed to open share sheet", exception);
+        }
+    }
+
+    @PluginMethod
+    public void shareFile(PluginCall call) {
+        String base64Data = normalize(call.getString("base64Data"));
+        String fileName = normalize(call.getString("fileName"));
+        String mimeType = normalize(call.getString("mimeType"));
+        String title = normalize(call.getString("title"));
+
+        if (base64Data == null || fileName == null) {
+            call.reject("base64Data and fileName are required");
+            return;
+        }
+
+        File sharedFile;
+        try {
+            sharedFile = writeSharedFile(base64Data, fileName);
+        } catch (IOException | IllegalArgumentException exception) {
+            call.reject("failed to prepare shared file", exception);
+            return;
+        }
+
+        Uri fileUri = FileProvider.getUriForFile(
+            getContext(),
+            getContext().getPackageName() + ".fileprovider",
+            sharedFile
+        );
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType(resolveMimeType(fileName, mimeType));
+        shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+        shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        shareIntent.setClipData(ClipData.newRawUri(fileName, fileUri));
+        if (title != null) {
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, title);
+        }
+
+        Intent chooser = Intent.createChooser(shareIntent, title != null ? title : "Share");
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        try {
+            getContext().startActivity(chooser);
+            call.resolve();
+        } catch (Exception exception) {
+            call.reject("failed to open file share sheet", exception);
         }
     }
 
@@ -469,6 +520,48 @@ public class YinjieMobileBridgePlugin extends Plugin {
         } catch (SecurityException exception) {
             // Some providers do not grant persistable permissions; the picker result can still be used immediately.
         }
+    }
+
+    private File writeSharedFile(String base64Data, String fileName) throws IOException {
+        byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+        File directory = new File(getContext().getCacheDir(), "yinjie-shared");
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("failed to create shared file directory");
+        }
+
+        File sharedFile = new File(directory, sanitizeFileName(fileName));
+        if (sharedFile.exists() && !sharedFile.delete()) {
+            throw new IOException("failed to replace shared file");
+        }
+
+        try (FileOutputStream outputStream = new FileOutputStream(sharedFile)) {
+            outputStream.write(bytes);
+            outputStream.flush();
+        }
+
+        return sharedFile;
+    }
+
+    private String resolveMimeType(String fileName, String mimeType) {
+        if (mimeType != null) {
+            return mimeType;
+        }
+
+        String extension = MimeTypeMap.getFileExtensionFromUrl(fileName);
+        if (extension != null) {
+            String resolvedMimeType =
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.toLowerCase());
+            if (resolvedMimeType != null) {
+                return resolvedMimeType;
+            }
+        }
+
+        return "application/octet-stream";
+    }
+
+    private String sanitizeFileName(String fileName) {
+        String sanitized = fileName.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+        return sanitized.isEmpty() ? "shared-file" : sanitized;
     }
 
     private SharedPreferences getPreferences() {
