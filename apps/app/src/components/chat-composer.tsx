@@ -2692,7 +2692,7 @@ export function ChatComposer({
             <button
               type="button"
               onClick={commitSpeechInput}
-              className="shrink-0 text-[color:var(--brand-primary)]"
+              className="shrink-0 text-[#15803d]"
             >
               插入输入框
             </button>
@@ -2718,7 +2718,7 @@ export function ChatComposer({
               <button
                 type="button"
                 onClick={commitSpeechInput}
-                className="inline-flex items-center gap-1 text-[color:var(--brand-primary)]"
+                className="inline-flex items-center gap-1 text-[#15803d]"
               >
                 <WandSparkles size={12} />
                 插入输入框
@@ -2728,7 +2728,7 @@ export function ChatComposer({
               <button
                 type="button"
                 onClick={speech.stop}
-                className="text-[color:var(--brand-primary)]"
+                className="text-[#15803d]"
               >
                 停止
               </button>

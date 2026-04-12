@@ -28,7 +28,7 @@ export function MobileChatAttachmentPreview({
   onSend,
 }: MobileChatAttachmentPreviewProps) {
   return (
-    <div className="mb-2 rounded-[22px] border border-white/80 bg-white/92 p-3 shadow-[var(--shadow-soft)]">
+    <div className="mb-2 rounded-[22px] border border-black/5 bg-white p-3 shadow-none">
       <div className="flex items-center gap-3">
         {kind === "images" && imagePreviews?.length ? (
           <div className="grid max-h-[11.5rem] w-[11.5rem] grid-cols-3 gap-1 overflow-auto pr-1">
@@ -54,7 +54,7 @@ export function MobileChatAttachmentPreview({
             ))}
           </div>
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-[18px] border border-white/75 bg-[linear-gradient(135deg,rgba(196,181,253,0.22),rgba(129,140,248,0.18))] text-[color:var(--brand-primary)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] text-[#15803d]">
             <FileText size={24} />
           </div>
         )}
@@ -90,6 +90,7 @@ export function MobileChatAttachmentPreview({
           variant="ghost"
           onClick={onCancel}
           disabled={pending}
+          className="hover:bg-black/4"
         >
           取消
         </Button>
@@ -98,6 +99,7 @@ export function MobileChatAttachmentPreview({
           variant="primary"
           onClick={() => void onSend()}
           disabled={pending}
+          className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
         >
           {pending ? "发送中..." : kind === "images" ? "发送图片" : "发送文件"}
         </Button>
