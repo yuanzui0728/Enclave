@@ -29,12 +29,14 @@
 
 当前 iOS 壳优先从以下位置向 Web 层提供运行时配置：
 
-1. `Info.plist`
+1. bundle 内 `runtime-config.json`
+2. `Info.plist`
    - `YinjieApiBaseUrl`
    - `YinjieSocketBaseUrl`
    - `YinjieEnvironment`
    - `YinjiePublicAppName`
-2. bundle 内 `runtime-config.json`
+
+其中 `apiBaseUrl` / `socketBaseUrl` / `environment` 现在以同步进壳的 `runtime-config.json` 为准，`Info.plist` 只保留兜底与静态展示字段。
 
 原生 plugin：
 
