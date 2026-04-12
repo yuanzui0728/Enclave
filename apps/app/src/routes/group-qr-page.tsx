@@ -775,7 +775,13 @@ export function GroupQrPage() {
           </div>
 
           {activeDeliveredConversation ? (
-            <section className="flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-4">
+            <section
+              className={
+                isDesktopLayout
+                  ? "flex items-center justify-between gap-3 rounded-[20px] border border-[rgba(15,23,42,0.08)] bg-[rgba(255,255,255,0.72)] px-4 py-4"
+                  : "flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3"
+              }
+            >
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近投递到 {activeDeliveredConversation.conversationTitle}
@@ -877,8 +883,14 @@ export function GroupQrPage() {
           ) : null}
 
           {validReopenRecords.length ? (
-            <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
-              <div>
+            <section
+              className={
+                isDesktopLayout
+                  ? "space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4"
+                  : "overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
+              }
+            >
+              <div className={isDesktopLayout ? undefined : "px-4 py-4"}>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   最近从这些会话回到邀请页
                 </div>
@@ -887,11 +899,21 @@ export function GroupQrPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div
+                className={
+                  isDesktopLayout
+                    ? "space-y-2"
+                    : "divide-y divide-[color:var(--border-subtle)] border-t border-[color:var(--border-subtle)]"
+                }
+              >
                 {validReopenRecords.map((record) => (
                   <div
                     key={`${record.conversationPath}:${record.reopenedAt}`}
-                    className="flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+                    className={
+                      isDesktopLayout
+                        ? "flex items-center justify-between gap-3 rounded-[18px] border border-[rgba(15,23,42,0.08)] bg-white px-4 py-3"
+                        : "flex items-center justify-between gap-3 bg-white px-4 py-3"
+                    }
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -917,8 +939,14 @@ export function GroupQrPage() {
             </section>
           ) : null}
 
-          <section className="space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4">
-            <div>
+          <section
+            className={
+              isDesktopLayout
+                ? "space-y-3 rounded-[22px] border border-black/5 bg-white px-4 py-4"
+                : "overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
+            }
+          >
+            <div className={isDesktopLayout ? undefined : "px-4 py-4"}>
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 发到最近会话
               </div>
@@ -1274,7 +1302,11 @@ export function GroupQrPage() {
                     onClick={() => {
                       void sendToConversation(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+                    className={
+                      isDesktopLayout
+                        ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+                        : "flex w-full items-center justify-between gap-3 rounded-[16px] border border-[color:var(--border-subtle)] bg-white px-4 py-3 text-left shadow-none transition active:bg-[color:var(--surface-card-hover)]"
+                    }
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
@@ -1339,141 +1371,179 @@ export function GroupQrPage() {
               </div>
             ) : null}
             {!conversationsQuery.isLoading && !recentConversations.length ? (
-              <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/72 px-4 py-4 text-sm text-[color:var(--text-secondary)]">
+              <div
+                className={
+                  isDesktopLayout
+                    ? "rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/72 px-4 py-4 text-sm text-[color:var(--text-secondary)]"
+                    : "border-t border-dashed border-[color:var(--border-subtle)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
+                }
+              >
                 还没有可投递的最近会话。
               </div>
             ) : null}
             {currentReturnSourceConversation ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void sendToConversation(currentReturnSourceConversation);
-                }}
-                className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.18)] hover:bg-white"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
-                    优先回发给来源会话
-                  </div>
-                  <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
-                    {currentReturnSourceConversation.title}
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span
-                      className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
-                        currentReturnSourceConversation,
-                        deliveredTargetByPath[
-                          buildConversationPath(currentReturnSourceConversation)
-                        ],
-                        "优先处理",
-                      ).tone}`}
-                    >
-                      {
-                        resolveConversationActionStatus(
+              <div className={isDesktopLayout ? undefined : "border-t border-[color:var(--border-subtle)]"}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void sendToConversation(currentReturnSourceConversation);
+                  }}
+                  className={
+                    isDesktopLayout
+                      ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.96)] px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.18)] hover:bg-white"
+                      : "flex w-full items-center justify-between gap-3 bg-[rgba(247,251,248,0.96)] px-4 py-3 text-left shadow-none transition active:bg-white"
+                  }
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
+                      优先回发给来源会话
+                    </div>
+                    <div className="mt-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
+                      {currentReturnSourceConversation.title}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                      <span
+                        className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
                           currentReturnSourceConversation,
                           deliveredTargetByPath[
                             buildConversationPath(currentReturnSourceConversation)
                           ],
                           "优先处理",
-                        ).label
-                      }
-                    </span>
+                        ).tone}`}
+                      >
+                        {
+                          resolveConversationActionStatus(
+                            currentReturnSourceConversation,
+                            deliveredTargetByPath[
+                              buildConversationPath(currentReturnSourceConversation)
+                            ],
+                            "优先处理",
+                          ).label
+                        }
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {resolveConversationActionDescription(
+                        currentReturnSourceConversation,
+                        deliveredTargetByPath[
+                          buildConversationPath(currentReturnSourceConversation)
+                        ],
+                        "来源会话",
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      {resolveConversationMetaSummary(
+                        currentReturnSourceConversation,
+                        deliveredTargetByPath[
+                          buildConversationPath(currentReturnSourceConversation)
+                        ],
+                        deliveryBatchRankById,
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {resolveConversationActionDescription(
+                  <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
+                    {resolveConversationActionLabel(
                       currentReturnSourceConversation,
                       deliveredTargetByPath[
                         buildConversationPath(currentReturnSourceConversation)
                       ],
-                      "来源会话",
+                      "优先处理",
                     )}
-                  </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {resolveConversationMetaSummary(
-                      currentReturnSourceConversation,
-                      deliveredTargetByPath[
-                        buildConversationPath(currentReturnSourceConversation)
-                      ],
-                      deliveryBatchRankById,
-                    )}
-                  </div>
-                </div>
-                <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
-                  {resolveConversationActionLabel(
-                    currentReturnSourceConversation,
-                    deliveredTargetByPath[
-                      buildConversationPath(currentReturnSourceConversation)
-                    ],
-                    "优先处理",
-                  )}
-                </span>
-              </button>
+                  </span>
+                </button>
+              </div>
             ) : null}
             {relatedReturnConversations.length ? (
-              <div className="space-y-2">
-                <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
-                  来源会话附近相关会话
+              <div
+                className={
+                  isDesktopLayout
+                    ? "space-y-2"
+                    : "border-t border-[color:var(--border-subtle)]"
+                }
+              >
+                <div className={isDesktopLayout ? undefined : "px-4 py-3"}>
+                  <div className="text-xs font-medium tracking-[0.14em] text-[#15803d]">
+                    来源会话附近相关会话
+                  </div>
                 </div>
-                {relatedReturnConversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    type="button"
-                    onClick={() => {
-                      void sendToConversation(conversation);
-                    }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span
-                          className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
+                <div
+                  className={
+                    isDesktopLayout
+                      ? "space-y-2"
+                      : "divide-y divide-[color:var(--border-subtle)]"
+                  }
+                >
+                  {relatedReturnConversations.map((conversation) => (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      onClick={() => {
+                        void sendToConversation(conversation);
+                      }}
+                      className={
+                        isDesktopLayout
+                          ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+                          : "flex w-full items-center justify-between gap-3 bg-white px-4 py-3 text-left shadow-none transition active:bg-[color:var(--surface-card-hover)]"
+                      }
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
+                          <span
+                            className={`rounded-full px-2.5 py-1 font-medium ${resolveConversationActionStatus(
+                              conversation,
+                              deliveredTargetByPath[buildConversationPath(conversation)],
+                              "优先处理",
+                            ).tone}`}
+                          >
+                            {
+                              resolveConversationActionStatus(
+                                conversation,
+                                deliveredTargetByPath[
+                                  buildConversationPath(conversation)
+                                ],
+                                "优先处理",
+                              ).label
+                            }
+                          </span>
+                        </div>
+                        <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                          {conversation.title}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          {resolveConversationActionDescription(
                             conversation,
                             deliveredTargetByPath[buildConversationPath(conversation)],
-                            "优先处理",
-                          ).tone}`}
-                        >
-                          {
-                            resolveConversationActionStatus(
-                              conversation,
-                              deliveredTargetByPath[
-                                buildConversationPath(conversation)
-                              ],
-                              "优先处理",
-                            ).label
-                          }
-                        </span>
+                            "相关会话",
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          {resolveConversationMetaSummary(
+                            conversation,
+                            deliveredTargetByPath[buildConversationPath(conversation)],
+                            deliveryBatchRankById,
+                          )}
+                        </div>
                       </div>
-                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                        {conversation.title}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {resolveConversationActionDescription(
+                      <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
+                        {resolveConversationActionLabel(
                           conversation,
                           deliveredTargetByPath[buildConversationPath(conversation)],
-                          "相关会话",
+                          "优先处理",
                         )}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        {resolveConversationMetaSummary(
-                          conversation,
-                          deliveredTargetByPath[buildConversationPath(conversation)],
-                          deliveryBatchRankById,
-                        )}
-                      </div>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-3 py-1 text-xs text-[#15803d]">
-                      {resolveConversationActionLabel(
-                        conversation,
-                        deliveredTargetByPath[buildConversationPath(conversation)],
-                        "优先处理",
-                      )}
-                    </span>
-                  </button>
-                ))}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
             {prioritizedRecentConversations.length ? (
-              <div className="space-y-2">
+              <div
+                className={
+                  isDesktopLayout
+                    ? "space-y-2"
+                    : "divide-y divide-[color:var(--border-subtle)] border-t border-[color:var(--border-subtle)]"
+                }
+              >
                 {prioritizedRecentConversations.map((conversation) => (
                   <button
                     key={conversation.id}
@@ -1481,7 +1551,11 @@ export function GroupQrPage() {
                     onClick={() => {
                       void sendToConversation(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+                    className={
+                      isDesktopLayout
+                        ? "flex w-full items-center justify-between gap-3 rounded-[18px] border border-black/5 bg-white px-4 py-3 text-left shadow-none transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(247,251,248,0.92)]"
+                        : "flex w-full items-center justify-between gap-3 bg-white px-4 py-3 text-left shadow-none transition active:bg-[color:var(--surface-card-hover)]"
+                    }
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px]">
