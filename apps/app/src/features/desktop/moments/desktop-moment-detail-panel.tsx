@@ -50,6 +50,12 @@ export function DesktopMomentDetailPanel({
   const likedByOwner = Boolean(
     ownerId && moment.likes.some((like) => like.authorId === ownerId),
   );
+  const residentCommentCount = moment.comments.filter(
+    (comment) => comment.authorType === "character",
+  ).length;
+  const ownerCommentCount = moment.comments.filter(
+    (comment) => comment.authorType === "user",
+  ).length;
 
   useEffect(() => {
     scrollViewportRef.current?.scrollTo({ top: 0 });
@@ -135,14 +141,13 @@ export function DesktopMomentDetailPanel({
             {moment.text}
           </div>
 
-          <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
-            <span>{moment.likeCount} 赞</span>
-            <span className="mx-2 text-[color:var(--text-dim)]">/</span>
-            <span>{moment.commentCount} 评论</span>
-            <span className="mx-2 text-[color:var(--text-dim)]">/</span>
-            <span>
-              {moment.authorType === "character" ? "角色动态" : "我的动态"}
-            </span>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <DetailMetric label="点赞" value={String(moment.likeCount)} />
+            <DetailMetric label="评论" value={String(moment.commentCount)} />
+            <DetailMetric
+              label="动态类型"
+              value={moment.authorType === "character" ? "角色动态" : "我的动态"}
+            />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -186,8 +191,13 @@ export function DesktopMomentDetailPanel({
 
         {moment.likes.length > 0 ? (
           <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
-              点赞的人
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
+                点赞的人
+              </div>
+              <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                {moment.likeCount} 人
+              </span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {moment.likes.map((like) => (
@@ -212,6 +222,10 @@ export function DesktopMomentDetailPanel({
               {moment.commentCount} 条
             </span>
           </div>
+          <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            共 {moment.commentCount} 条评论，其中 {residentCommentCount} 条来自角色，
+            {ownerCommentCount} 条来自世界主人。
+          </div>
 
           {moment.comments.length > 0 ? (
             <div className="mt-4 space-y-3">
@@ -224,6 +238,16 @@ export function DesktopMomentDetailPanel({
                     <span className="font-medium text-[color:var(--text-primary)]">
                       {comment.authorName}
                     </span>
+                    <span
+                      className={cn(
+                        "rounded-md border px-2 py-0.5 text-[10px] font-medium",
+                        comment.authorType === "character"
+                          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+                      )}
+                    >
+                      {comment.authorType === "character" ? "角色" : "世界主人"}
+                    </span>
                     <span className="text-[color:var(--text-dim)]">
                       {formatTimestamp(comment.createdAt)}
                     </span>
@@ -235,7 +259,7 @@ export function DesktopMomentDetailPanel({
               ))}
             </div>
           ) : (
-            <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+            <div className="mt-4 rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
               还没有评论，你可以成为第一个回应的人。
             </div>
           )}
@@ -266,6 +290,19 @@ export function DesktopMomentDetailPanel({
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
+      <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-2 text-[15px] font-semibold text-[color:var(--text-primary)]">
+        {value}
       </div>
     </div>
   );

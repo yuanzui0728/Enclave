@@ -264,7 +264,7 @@ export function DesktopFeedDetailPanel({
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+                <div className="mt-4 rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
                   还没有评论，你可以成为第一个回应的人。
                 </div>
               )}
