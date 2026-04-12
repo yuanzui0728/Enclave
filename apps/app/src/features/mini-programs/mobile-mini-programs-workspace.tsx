@@ -5,7 +5,7 @@ import {
   InlineNotice,
   cn,
 } from "@yinjie/ui";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, Share2 } from "lucide-react";
 import { EmptyState } from "../../components/empty-state";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 import { formatConversationTimestamp } from "../../lib/format";
@@ -37,6 +37,7 @@ type MobileMiniProgramsWorkspaceProps = {
   successNotice?: string;
   noticeTone?: "success" | "info";
   visibleMiniPrograms: MiniProgramEntry[];
+  onCopyMiniProgramToMobile?: (miniProgramId: string) => void;
   onBack: () => void;
   onCategoryChange: (categoryId: MiniProgramCategoryId) => void;
   onDismissActiveMiniProgram: () => void;
@@ -61,6 +62,7 @@ export function MobileMiniProgramsWorkspace({
   successNotice,
   noticeTone = "success",
   visibleMiniPrograms,
+  onCopyMiniProgramToMobile,
   onBack,
   onCategoryChange,
   onDismissActiveMiniProgram,
@@ -241,6 +243,10 @@ export function MobileMiniProgramsWorkspace({
           tasks={panelTasks}
           compact
           onDismiss={panelIsActive ? onDismissActiveMiniProgram : undefined}
+          onCopyToMobile={onCopyMiniProgramToMobile}
+          copyActionHint="当前先由轻工作台承接上下文，也可以直接通过系统分享发给联系人或其他应用。"
+          copyActionIcon={<Share2 size={16} />}
+          copyActionLabel="系统分享"
           onOpen={onOpenMiniProgram}
           onToggleTask={onToggleMiniProgramTask}
           onTogglePinned={onTogglePinnedMiniProgram}

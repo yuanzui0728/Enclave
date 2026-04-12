@@ -21,6 +21,10 @@ import {
   buildGroupRelaySummaryMessage,
 } from "../features/mini-programs/group-relay-message";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 
 function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
@@ -57,6 +61,8 @@ export function MiniProgramsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const locationSearch = useRouterState({
@@ -237,6 +243,19 @@ export function MiniProgramsPage() {
     const path = `/discover/mini-programs?${query.toString()}`;
     const link = resolveMobileHandoffLink(path);
 
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${miniProgram?.name ?? "小程序"} 入口`,
+        text: `${miniProgram?.name ?? "小程序"}\n${link}`,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setSuccessNotice("已打开系统分享面板。");
+        return;
+      }
+    }
+
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
@@ -379,6 +398,9 @@ export function MiniProgramsPage() {
       successNotice={successNotice}
       noticeTone={noticeTone}
       visibleMiniPrograms={visibleMiniPrograms}
+      onCopyMiniProgramToMobile={
+        nativeMobileShareSupported ? handleCopyMiniProgramToMobile : undefined
+      }
       onBack={handleBack}
       onCategoryChange={setActiveCategory}
       onDismissActiveMiniProgram={dismissActiveMiniProgram}

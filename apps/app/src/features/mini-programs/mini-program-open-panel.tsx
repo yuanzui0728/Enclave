@@ -26,6 +26,9 @@ type MiniProgramOpenPanelProps = {
   compact?: boolean;
   onDismiss?: () => void;
   onCopyToMobile?: (miniProgramId: string) => void;
+  copyActionHint?: string;
+  copyActionIcon?: ReactNode;
+  copyActionLabel?: string;
   onOpen: (miniProgramId: string) => void;
   onToggleTask: (miniProgramId: string, taskId: string) => void;
   onTogglePinned: (miniProgramId: string) => void;
@@ -41,11 +44,19 @@ export function MiniProgramOpenPanel({
   compact = false,
   onDismiss,
   onCopyToMobile,
+  copyActionHint,
+  copyActionIcon,
+  copyActionLabel,
   onOpen,
   onToggleTask,
   onTogglePinned,
 }: MiniProgramOpenPanelProps) {
   const tone = getMiniProgramToneStyle(miniProgram.tone);
+  const resolvedCopyActionHint =
+    copyActionHint ??
+    "当前先由轻工作台承接上下文，也可以直接发到手机继续处理。";
+  const resolvedCopyActionIcon = copyActionIcon ?? <Smartphone size={16} />;
+  const resolvedCopyActionLabel = copyActionLabel ?? "发到手机";
 
   return (
     <section
@@ -187,8 +198,8 @@ export function MiniProgramOpenPanel({
             onClick={() => onCopyToMobile(miniProgram.id)}
             className="border-white/80 bg-white/88"
           >
-            <Smartphone size={16} />
-            发到手机
+            {resolvedCopyActionIcon}
+            {resolvedCopyActionLabel}
           </Button>
         ) : null}
         <Button
@@ -200,7 +211,9 @@ export function MiniProgramOpenPanel({
         </Button>
         <div className="flex items-center text-xs leading-6 text-[color:var(--text-muted)]">
           {isActive
-            ? "当前先由轻工作台承接上下文，也可以直接发到手机继续处理。"
+            ? onCopyToMobile
+              ? resolvedCopyActionHint
+              : "当前先由轻工作台承接上下文。"
             : "打开后会同步更新最近使用、打开次数和当前承接面板。"}
         </div>
       </div>
