@@ -25,6 +25,7 @@ import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
   clearDesktopFeedbackDraft,
   defaultDesktopFeedbackDraft,
+  hydrateDesktopFeedbackFromNative,
   pushDesktopFeedbackRecord,
   readDesktopFeedbackDraft,
   readDesktopFeedbackHistory,
@@ -91,6 +92,7 @@ const priorityOptions: Array<{
 export function DesktopFeedbackPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopFeedback = runtimeConfig.appPlatform === "desktop";
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerSignature = useWorldOwnerStore((state) => state.signature);
   const baseUrl = runtimeConfig.apiBaseUrl;
@@ -107,6 +109,9 @@ export function DesktopFeedbackPage() {
     onAction?: () => void;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackStoreReady, setFeedbackStoreReady] = useState(
+    () => !nativeDesktopFeedback,
+  );
 
   const systemStatusQuery = useQuery({
     queryKey: ["desktop-feedback-system-status", baseUrl],
@@ -114,8 +119,39 @@ export function DesktopFeedbackPage() {
   });
 
   useEffect(() => {
+    if (!nativeDesktopFeedback) {
+      setFeedbackStoreReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    setFeedbackStoreReady(false);
+
+    async function hydrateFeedbackStore() {
+      const store = await hydrateDesktopFeedbackFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setDraft(store.draft);
+      setHistory(store.history);
+      setFeedbackStoreReady(true);
+    }
+
+    void hydrateFeedbackStore();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nativeDesktopFeedback]);
+
+  useEffect(() => {
+    if (!feedbackStoreReady) {
+      return;
+    }
+
     writeDesktopFeedbackDraft(draft);
-  }, [draft]);
+  }, [draft, feedbackStoreReady]);
 
   useEffect(() => {
     if (!notice) {
