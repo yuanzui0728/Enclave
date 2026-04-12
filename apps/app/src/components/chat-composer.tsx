@@ -500,6 +500,21 @@ export function ChatComposer({
     closeMobileSpeechSheet();
   };
 
+  const collapseMobileTransientState = useEffectEvent(() => {
+    if (isDesktop) {
+      return;
+    }
+
+    mobileSpeechAutoCommitRef.current = false;
+    if (speech.status !== "idle") {
+      speech.cancel();
+    }
+    closeMobileSpeechSheet();
+    closeMobileTransientSurfaces();
+    setMobileMentionDismissed(true);
+    blurActiveElement();
+  });
+
   const commitSpeechInput = useEffectEvent(() => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
@@ -658,6 +673,28 @@ export function ChatComposer({
     setMobileInputMode("text");
     closeMobileSpeechSheet();
   }, [closeMobileSpeechSheet, showSpeechEntry]);
+
+  useEffect(() => {
+    if (isDesktop || typeof document === "undefined") {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        collapseMobileTransientState();
+      }
+    };
+    const handlePageHide = () => {
+      collapseMobileTransientState();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [isDesktop]);
 
   useEffect(() => {
     if (
