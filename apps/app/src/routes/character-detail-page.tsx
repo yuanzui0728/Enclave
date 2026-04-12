@@ -463,7 +463,7 @@ export function CharacterDetailPage() {
                   {friendship?.isStarred ? (
                     <Star
                       size={16}
-                      className="shrink-0 text-[#f59e0b]"
+                      className="shrink-0 text-[#d4a72c]"
                       fill="currentColor"
                     />
                   ) : null}

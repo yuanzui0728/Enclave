@@ -159,7 +159,7 @@ function MobileStarredFriendsPage() {
                 </div>
                 <Star
                   size={16}
-                  className="shrink-0 text-[#f59e0b]"
+                  className="shrink-0 text-[#d4a72c]"
                   fill="currentColor"
                 />
               </button>
@@ -369,7 +369,7 @@ function DesktopStarredFriendsPage() {
                     </div>
                     <Star
                       size={16}
-                      className="shrink-0 text-[#f59e0b]"
+                      className="shrink-0 text-[#d4a72c]"
                       fill="currentColor"
                     />
                   </button>

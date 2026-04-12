@@ -642,7 +642,7 @@ export function ContactsPage() {
           ? `${starredFriendCount} 位常联系好友`
           : "查看星标朋友",
       icon: Star,
-      iconClassName: "bg-[linear-gradient(135deg,#fbbf24,#f59e0b)]",
+      iconClassName: "bg-[linear-gradient(135deg,#f3d56b,#d4a72c)]",
       onClick: () => handleShortcutNavigate("/contacts/starred"),
     },
     {
@@ -661,7 +661,7 @@ export function ContactsPage() {
       label: "标签",
       subtitle: tagCount > 0 ? `${tagCount} 个联系人标签` : "查看联系人标签",
       icon: Tag,
-      iconClassName: "bg-[linear-gradient(135deg,#fb923c,#f97316)]",
+      iconClassName: "bg-[linear-gradient(135deg,#34d399,#07c160)]",
       onClick: () => handleShortcutNavigate("/contacts/tags"),
     },
     {
