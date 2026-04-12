@@ -181,6 +181,27 @@ export function useVoiceCallSession({
     };
   }, [stopReplyPlayback]);
 
+  useEffect(() => {
+    if (!enabled || typeof document === "undefined") {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") {
+        return;
+      }
+
+      autoSubmitRecordingRef.current = false;
+      stopReplyPlayback();
+      speechCancelRef.current();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [enabled, stopReplyPlayback]);
+
   const startRecordingTurn = useCallback(async () => {
     if (!enabled) {
       return;
