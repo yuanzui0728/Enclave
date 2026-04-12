@@ -3452,27 +3452,39 @@ function ReplyQuoteCard({
           onJump(messageId);
         }
       }}
-      className={`mb-2 w-full overflow-hidden rounded-[12px] border px-3 py-2 ${
+      className={`w-full overflow-hidden border text-left transition ${
         align === "right"
           ? isDesktop
-            ? "border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] text-[color:var(--text-primary)]"
-            : "border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[12px] border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[11px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
-            ? "border-black/6 bg-[#f7f7f7] text-[color:var(--text-primary)]"
-            : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]"
-      } text-left transition ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
+            ? "mb-2 rounded-[12px] border-black/6 bg-[#f7f7f7] px-3 py-2 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[11px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+      } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
-      <div className="flex items-center gap-2">
-        <div className="truncate text-[11px] font-medium text-[color:var(--text-secondary)]">
+      <div className={`flex items-center ${isDesktop ? "gap-2" : "gap-1.5"}`}>
+        <div
+          className={`truncate font-medium text-[color:var(--text-secondary)] ${
+            isDesktop ? "text-[11px]" : "text-[10px]"
+          }`}
+        >
           回复 {senderName}
         </div>
         {modeLabel ? (
-          <div className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+          <div
+            className={`rounded-full bg-black/5 text-[color:var(--text-muted)] ${
+              isDesktop ? "px-2 py-0.5 text-[10px]" : "px-1.5 py-px text-[9px]"
+            }`}
+          >
             {modeLabel}
           </div>
         ) : null}
       </div>
-      <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
+      <div
+        className={`line-clamp-2 text-[color:var(--text-muted)] ${
+          isDesktop ? "mt-1 text-[12px] leading-5" : "mt-0.5 text-[11px] leading-[18px]"
+        }`}
+      >
         {renderTextWithMentions(previewText)}
       </div>
     </button>
@@ -3581,25 +3593,37 @@ function ContactCardMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className={`flex items-center ${isDesktop ? "gap-3" : "gap-2.5"}`}>
         <AvatarChip
           name={attachment.name}
           src={attachment.avatar}
           size="wechat"
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+          <div
+            className={`truncate font-medium text-[color:var(--text-primary)] ${
+              isDesktop ? "text-sm" : "text-[13px]"
+            }`}
+          >
             {attachment.name}
           </div>
-          <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+          <div
+            className={`truncate text-[color:var(--text-muted)] ${
+              isDesktop ? "mt-0.5 text-xs" : "mt-px text-[11px]"
+            }`}
+          >
             {attachment.relationship || "世界联系人"}
           </div>
         </div>
       </div>
-      <div className="mt-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+      <div
+        className={`flex items-center gap-2 uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
+          isDesktop ? "mt-3 text-[11px]" : "mt-2.5 text-[10px]"
+        }`}
+      >
         <ContactRound size={12} />
         <span>角色名片</span>
       </div>
@@ -3637,29 +3661,41 @@ function FileAttachmentMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
-      <div className="flex items-center gap-3">
+      <div className={`flex items-center ${isDesktop ? "gap-3" : "gap-2.5"}`}>
         <div
           className={`flex items-center justify-center text-[color:var(--text-secondary)] ${
             isDesktop
               ? "h-12 w-12 rounded-[14px] bg-[#f3f4f6]"
-              : "h-11 w-11 rounded-[12px] bg-[color:var(--surface-console)]"
+              : "h-10 w-10 rounded-[11px] bg-[color:var(--surface-console)]"
           }`}
         >
-          <FileText size={20} />
+          <FileText size={isDesktop ? 20 : 18} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+          <div
+            className={`truncate font-medium text-[color:var(--text-primary)] ${
+              isDesktop ? "text-sm" : "text-[13px]"
+            }`}
+          >
             {attachment.fileName}
           </div>
-          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+          <div
+            className={`text-[color:var(--text-muted)] ${
+              isDesktop ? "mt-1 text-xs" : "mt-0.5 text-[11px]"
+            }`}
+          >
             {formatFileSize(attachment.size)}
           </div>
         </div>
       </div>
-      <div className="mt-3 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+      <div
+        className={`uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
+          isDesktop ? "mt-3 text-[11px]" : "mt-2.5 text-[10px]"
+        }`}
+      >
         文件
       </div>
     </div>
@@ -3696,18 +3732,30 @@ function LocationCardMessage({
       className={`bg-white shadow-none ${
         isDesktop
           ? "w-[220px] rounded-[16px] border border-black/6 p-3"
-          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+          : "w-[204px] rounded-[13px] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+      <div
+        className={`flex items-center gap-2 uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
+          isDesktop ? "text-[11px]" : "text-[10px]"
+        }`}
+      >
         <MapPin size={12} />
         <span>位置</span>
       </div>
-      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
+      <div
+        className={`font-medium text-[color:var(--text-primary)] ${
+          isDesktop ? "mt-3 text-sm" : "mt-2.5 text-[13px]"
+        }`}
+      >
         {attachment.title}
       </div>
       {attachment.subtitle ? (
-        <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+        <div
+          className={`text-[color:var(--text-muted)] ${
+            isDesktop ? "mt-1 text-xs leading-5" : "mt-0.5 text-[11px] leading-[18px]"
+          }`}
+        >
           {attachment.subtitle}
         </div>
       ) : null}
@@ -3780,7 +3828,11 @@ function VoiceMessage({
 
   return (
     <div
-      className={`flex min-w-[148px] max-w-[220px] items-center gap-3 px-3 py-2.5 ${
+      className={`flex items-center ${
+        isDesktop
+          ? "min-w-[148px] max-w-[220px] gap-3 px-3 py-2.5"
+          : "min-w-[140px] max-w-[208px] gap-2.5 px-2.5 py-2"
+      } ${
         own
           ? "bg-[#95ec69] text-[#111827]"
           : isDesktop
@@ -3802,24 +3854,24 @@ function VoiceMessage({
       >
         {playing ? <Pause size={16} /> : <Play size={16} className="ml-0.5" />}
       </button>
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <div className={`flex min-w-0 flex-1 items-center ${isDesktop ? "gap-1.5" : "gap-1"}`}>
         <span
-          className={`h-2.5 w-1 rounded-full ${playing ? "animate-pulse" : ""} ${
+          className={`${isDesktop ? "h-2.5 w-1" : "h-2 w-1"} rounded-full ${playing ? "animate-pulse" : ""} ${
             own ? "bg-[#3d7f1a]" : "bg-[#9ca3af]"
           }`}
         />
         <span
-          className={`h-4 w-1 rounded-full ${playing ? "animate-pulse [animation-delay:90ms]" : ""} ${
+          className={`${isDesktop ? "h-4 w-1" : "h-3.5 w-1"} rounded-full ${playing ? "animate-pulse [animation-delay:90ms]" : ""} ${
             own ? "bg-[#4a8f24]" : "bg-[#6b7280]"
           }`}
         />
         <span
-          className={`h-6 w-1 rounded-full ${playing ? "animate-pulse [animation-delay:180ms]" : ""} ${
+          className={`${isDesktop ? "h-6 w-1" : "h-5 w-1"} rounded-full ${playing ? "animate-pulse [animation-delay:180ms]" : ""} ${
             own ? "bg-[#5aa72c]" : "bg-[#4b5563]"
           }`}
         />
       </div>
-      <span className="shrink-0 text-xs tabular-nums text-black/60">
+      <span className={`shrink-0 tabular-nums text-black/60 ${isDesktop ? "text-xs" : "text-[11px]"}`}>
         {formatVoiceDurationLabel(attachment.durationMs)}
       </span>
       <audio ref={audioRef} src={attachment.url} preload="none" />
@@ -3850,14 +3902,14 @@ function GroupRelaySummaryMessage({
   const ctaCopy = resolveGroupRelayCtaCopy(summary);
   const card = (
     <div
-      className={`border px-4 py-4 shadow-none ${
+      className={`border shadow-none ${
         isDesktop
           ? own
-            ? "w-[252px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-            : "w-[252px] rounded-[18px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))]"
+            ? "w-[252px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[252px] rounded-[18px] border-[rgba(245,158,11,0.16)] bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[244px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
-            : "w-[244px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
+            ? "w-[236px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[236px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
@@ -3907,7 +3959,7 @@ function GroupRelaySummaryMessage({
         </div>
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
         {summary.timestampLabel ? (
           <ResultCardMetric
             label="时间"
@@ -3963,7 +4015,7 @@ function GroupRelaySummaryMessage({
             className={
               isDesktop
                 ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -3973,16 +4025,16 @@ function GroupRelaySummaryMessage({
 
       {onOpen ? (
         <div
-          className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+          className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
             isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
           }`}
         >
-          <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <div className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}>
             {ctaCopy.description}
           </div>
           <div
             className={cn(
-              "text-[11px] font-medium",
+              isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
               resolveResultCardFooterActionClassName(ctaCopy.tone),
             )}
           >
@@ -4142,14 +4194,14 @@ function GroupCallInviteMessage({
   const card = (
     <div
       className={cn(
-        "border px-4 py-4 shadow-none",
+        "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]"
+            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[248px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
-            : "w-[248px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
+            ? "w-[238px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[238px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -4181,7 +4233,7 @@ function GroupCallInviteMessage({
         </div>
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
         <ResultCardMetric
           label="当前状态"
           value={formatGroupCallStatusLabel(invite.kind, invite.status)}
@@ -4225,7 +4277,7 @@ function GroupCallInviteMessage({
           />
         ) : null}
         {invite.activeCount ? (
-          <div className="grid grid-cols-2 gap-2">
+          <div className={isDesktop ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-1.5"}>
             <ResultCardMetric
               label="当前在线"
               value={`${invite.activeCount.current}/${invite.activeCount.total}`}
@@ -4244,7 +4296,7 @@ function GroupCallInviteMessage({
             className={
               isDesktop
                 ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -4253,20 +4305,20 @@ function GroupCallInviteMessage({
       </div>
 
       <div
-        className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+        className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
           isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
         }`}
       >
-        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}>
           {footerCopy.description}
         </div>
-          <div
-            className={cn(
-              "text-[11px] font-medium",
-              resolveResultCardFooterActionClassName(footerCopy.tone),
-            )}
-          >
-            {footerCopy.actionLabel}
+        <div
+          className={cn(
+            isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
+            resolveResultCardFooterActionClassName(footerCopy.tone),
+          )}
+        >
+          {footerCopy.actionLabel}
         </div>
       </div>
     </div>
@@ -4303,13 +4355,21 @@ function ResultCardMetric({
       className={
         isDesktop
           ? "rounded-[14px] bg-white/72 px-3 py-2"
-          : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2"
+          : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
       }
     >
-      <div className="text-[10px] uppercase tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div
+        className={`uppercase tracking-[0.12em] text-[color:var(--text-dim)] ${
+          isDesktop ? "text-[10px]" : "text-[9px]"
+        }`}
+      >
         {label}
       </div>
-      <div className="mt-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+      <div
+        className={`font-medium text-[color:var(--text-primary)] ${
+          isDesktop ? "mt-1 text-[13px]" : "mt-0.5 text-[12px]"
+        }`}
+      >
         {value}
       </div>
     </div>
@@ -4338,14 +4398,14 @@ function DirectCallInviteMessage({
   const card = (
     <div
       className={cn(
-        "border px-4 py-4 shadow-none",
+        "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))]"
-            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))]"
+            ? "w-[264px] rounded-[18px] border-[rgba(110,168,62,0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[18px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[248px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)]"
-            : "w-[248px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
+            ? "w-[238px] rounded-[15px] border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] px-3 py-3"
+            : "w-[238px] rounded-[15px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -4369,7 +4429,7 @@ function DirectCallInviteMessage({
         />
       </div>
 
-      <div className="mt-3 space-y-2">
+      <div className={isDesktop ? "mt-3 space-y-2" : "mt-2.5 space-y-1.5"}>
         {invite.connectionStatus ? (
           <ResultCardMetric
             label="当前状态"
@@ -4404,7 +4464,7 @@ function DirectCallInviteMessage({
             className={
               isDesktop
                 ? "rounded-[14px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                : "rounded-[11px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -4413,20 +4473,20 @@ function DirectCallInviteMessage({
       </div>
 
       <div
-        className={`mt-4 flex items-center justify-between gap-3 pt-3 ${
+        className={`${isDesktop ? "mt-4 gap-3 pt-3" : "mt-3 gap-2.5 pt-2.5"} flex items-center justify-between ${
           isDesktop ? "border-t border-black/6" : "border-t border-[color:var(--border-subtle)]"
         }`}
       >
-        <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}>
           {footerCopy.description}
         </div>
-          <div
-            className={cn(
-              "text-[11px] font-medium",
-              resolveResultCardFooterActionClassName(footerCopy.tone),
-            )}
-          >
-            {footerCopy.actionLabel}
+        <div
+          className={cn(
+            isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
+            resolveResultCardFooterActionClassName(footerCopy.tone),
+          )}
+        >
+          {footerCopy.actionLabel}
         </div>
       </div>
     </div>
