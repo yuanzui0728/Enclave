@@ -139,7 +139,7 @@ function MobileTagsPage() {
               >
                 <div className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-2 text-[15px] font-medium text-[color:var(--text-primary)]">
-                    <Tag size={15} className="text-[#f97316]" />
+                    <Tag size={15} className="text-[#15803d]" />
                     <span>{group.tag}</span>
                   </div>
                   <div className="text-xs text-[color:var(--text-muted)]">
@@ -158,7 +158,7 @@ function MobileTagsPage() {
                       });
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[rgba(249,115,22,0.05)]",
+                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[rgba(7,193,96,0.05)]",
                       index > 0
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
@@ -524,11 +524,11 @@ function DesktopTagsPage() {
                           ? "border-t border-[color:var(--border-faint)]"
                           : undefined,
                         selectedTag === group.tag
-                          ? "bg-[rgba(249,115,22,0.10)]"
-                          : "hover:bg-[rgba(249,115,22,0.05)]",
+                          ? "bg-[rgba(7,193,96,0.10)]"
+                          : "hover:bg-[rgba(7,193,96,0.05)]",
                       )}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#fb923c,#f97316)] text-white shadow-[0_10px_20px_rgba(249,115,22,0.22)]">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#1fc86a,#07c160)] text-white shadow-[0_10px_20px_rgba(7,193,96,0.20)]">
                         <Tag size={16} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -567,8 +567,8 @@ function DesktopTagsPage() {
                             ? "border-t border-[color:var(--border-faint)]"
                             : undefined,
                           selectedCharacterId === item.character.id
-                            ? "bg-[rgba(249,115,22,0.08)]"
-                            : "hover:bg-[rgba(249,115,22,0.04)]",
+                            ? "bg-[rgba(7,193,96,0.08)]"
+                            : "hover:bg-[rgba(7,193,96,0.04)]",
                         )}
                       >
                         <AvatarChip

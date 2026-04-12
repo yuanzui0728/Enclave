@@ -139,7 +139,7 @@ function MobileStarredFriendsPage() {
                   });
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors hover:bg-[rgba(249,115,22,0.05)]",
+                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors hover:bg-[rgba(7,193,96,0.05)]",
                   index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                 )}
               >
@@ -341,7 +341,7 @@ function DesktopStarredFriendsPage() {
                       startChatMutation.mutate(item.character.id)
                     }
                     className={cn(
-                      "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors hover:bg-[rgba(249,115,22,0.05)]",
+                      "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors hover:bg-[rgba(7,193,96,0.05)]",
                       index > 0
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
