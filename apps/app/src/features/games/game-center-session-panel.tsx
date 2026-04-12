@@ -39,7 +39,9 @@ export function GameCenterSessionPanel({
   return (
     <section
       className={cn(
-        "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]",
+        compact
+          ? "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]"
+          : "rounded-[24px] border p-5 shadow-[var(--shadow-card)]",
         tone.mutedPanelClassName,
       )}
     >
@@ -70,7 +72,12 @@ export function GameCenterSessionPanel({
             variant="ghost"
             size="icon"
             onClick={onDismiss}
-            className="shrink-0 rounded-2xl border border-white/80 bg-white/72"
+            className={cn(
+              "shrink-0 border",
+              compact
+                ? "rounded-2xl border-white/80 bg-white/72"
+                : "rounded-[14px] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
+            )}
           >
             <X size={16} />
           </Button>
@@ -79,16 +86,19 @@ export function GameCenterSessionPanel({
 
       <div className={cn("mt-4 grid gap-3", compact ? "grid-cols-1" : "sm:grid-cols-3")}>
         <SessionMetric
+          compact={compact}
           icon={<Clock3 size={15} className={metricAccentClass} />}
           label="预计节奏"
           value={game.estimatedDuration}
         />
         <SessionMetric
+          compact={compact}
           icon={<Sparkles size={15} className={rewardAccentClass} />}
           label="本局奖励"
           value={game.rewardLabel}
         />
         <SessionMetric
+          compact={compact}
           icon={<Flag size={15} className={metricAccentClass} />}
           label="开局次数"
           value={`${launchCount} 次`}
@@ -104,14 +114,24 @@ export function GameCenterSessionPanel({
         {game.tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-white/82 px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]"
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]",
+              compact
+                ? "bg-white/82"
+                : "border border-white/72 bg-white/88",
+            )}
           >
             {tag}
           </span>
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div
+        className={cn(
+          "mt-5 flex flex-wrap gap-3",
+          compact ? "" : "border-t border-white/74 pt-4",
+        )}
+      >
         <Button
           variant="primary"
           onClick={() => onLaunch(game.id)}
@@ -136,7 +156,12 @@ export function GameCenterSessionPanel({
             发到手机
           </Button>
         ) : null}
-        <div className="flex items-center text-xs leading-6 text-[color:var(--text-muted)]">
+        <div
+          className={cn(
+            "text-xs leading-6 text-[color:var(--text-muted)]",
+            compact ? "flex items-center" : "w-full",
+          )}
+        >
           {isActive
             ? "当前先由游戏中心工作区承接会话，后续再接真实小游戏容器。"
             : "开始后会写入当前会话、最近玩过和开局次数。"}
@@ -147,18 +172,27 @@ export function GameCenterSessionPanel({
 }
 
 function SessionMetric({
+  compact = false,
   icon,
   label,
   value,
   detail,
 }: {
+  compact?: boolean;
   icon: ReactNode;
   label: string;
   value: string;
   detail?: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-white/80 bg-white/82 px-4 py-4">
+    <div
+      className={cn(
+        "rounded-[22px] border px-4 py-4",
+        compact
+          ? "border-white/80 bg-white/82"
+          : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
+      )}
+    >
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
         {icon}
         {label}
