@@ -25,13 +25,13 @@ export function MobileChatThreadHeader({
   const titleRightInset = 46 + actions.length * 46;
 
   return (
-    <header className="border-b border-black/5 bg-[#f7f7f7] px-1.5 py-2">
-      <div className="relative flex min-h-11 items-center gap-1.5">
+    <header className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2 py-1.5">
+      <div className="relative flex min-h-11 items-center gap-2">
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-black/6"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
             aria-label="返回"
           >
             <ArrowLeft size={20} />
@@ -57,18 +57,18 @@ export function MobileChatThreadHeader({
           ) : null}
         </div>
 
-        {actions.map((action) => {
-          const Icon = action.icon;
+          {actions.map((action) => {
+            const Icon = action.icon;
 
-          return (
-            <button
-              key={action.key}
-              type="button"
-              onClick={action.onClick}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-black/6"
-              aria-label={action.label}
-              title={action.label}
-            >
+            return (
+              <button
+                key={action.key}
+                type="button"
+                onClick={action.onClick}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
+                aria-label={action.label}
+                title={action.label}
+              >
               <Icon size={19} />
             </button>
           );
@@ -77,7 +77,7 @@ export function MobileChatThreadHeader({
         <button
           type="button"
           onClick={onMore}
-          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-black/6"
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[#111827] transition active:bg-[color:var(--surface-card-hover)]"
           aria-label={moreLabel}
         >
           <Ellipsis size={20} />

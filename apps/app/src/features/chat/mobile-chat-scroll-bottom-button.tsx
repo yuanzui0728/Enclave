@@ -11,18 +11,27 @@ export function MobileChatScrollBottomButton({
 }: MobileChatScrollBottomButtonProps) {
   const badgeLabel =
     pendingCount > 99 ? "99+" : pendingCount > 0 ? String(pendingCount) : null;
+  const hasPending = pendingCount > 0;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex h-10 items-center gap-2 rounded-full border border-black/8 bg-white/96 px-3 pl-2.5 text-[13px] text-[#111827] shadow-[0_10px_24px_rgba(15,23,42,0.14)] backdrop-blur active:bg-[#f5f5f5]"
+      className="flex h-9 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white/96 px-3 pl-2.5 text-[12px] text-[#111827] shadow-[0_8px_18px_rgba(15,23,42,0.12)] backdrop-blur active:bg-[color:var(--surface-card-hover)]"
       aria-label={pendingCount > 0 ? `查看 ${pendingCount} 条新消息` : "回到底部"}
     >
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#07c160] text-white">
+      <span
+        className={`flex h-5 w-5 items-center justify-center rounded-full ${
+          hasPending
+            ? "bg-[#07c160] text-white"
+            : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]"
+        }`}
+      >
         <ChevronDown size={14} />
       </span>
-      <span>{pendingCount > 0 ? `${badgeLabel} 条新消息` : "回到底部"}</span>
+      <span className={hasPending ? "text-[#15803d]" : undefined}>
+        {pendingCount > 0 ? `${badgeLabel} 条新消息` : "回到底部"}
+      </span>
     </button>
   );
 }
