@@ -13,16 +13,18 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.OpenableColumns;
+import android.provider.MediaStore;
 import android.provider.Settings;
 
 import androidx.activity.result.ActivityResult;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.getcapacitor.JSArray;
-import com.getcapacitor.JSObject;
 import com.getcapacitor.FileUtils;
+import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -32,10 +34,14 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
+import java.io.File;
+import java.io.IOException;
+
 @CapacitorPlugin(
     name = "YinjieMobileBridge",
     permissions = {
-        @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notifications")
+        @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notifications"),
+        @Permission(strings = { Manifest.permission.CAMERA }, alias = "camera")
     }
 )
 public class YinjieMobileBridgePlugin extends Plugin {
@@ -53,6 +59,7 @@ public class YinjieMobileBridgePlugin extends Plugin {
     private static final String EXTRA_TARGET_SOURCE = "yinjie_target_source";
     private static final String CHANNEL_ID = "yinjie_messages";
     private static final String CHANNEL_NAME = "隐界消息";
+    private Uri pendingCameraCaptureUri;
 
     @PluginMethod
     public void openExternalUrl(PluginCall call) {
@@ -142,6 +149,16 @@ public class YinjieMobileBridgePlugin extends Plugin {
         startActivityForResult(call, intent, "pickImagesResult");
     }
 
+    @PluginMethod
+    public void captureImage(PluginCall call) {
+        if (getPermissionState("camera") != PermissionState.GRANTED) {
+            requestPermissionForAlias("camera", call, "cameraPermissionResult");
+            return;
+        }
+
+        startCaptureImage(call);
+    }
+
     @ActivityCallback
     private void pickImagesResult(PluginCall call, ActivityResult result) {
         JSObject response = new JSObject();
@@ -167,6 +184,51 @@ public class YinjieMobileBridgePlugin extends Plugin {
             assets.put(buildAsset(data.getData()));
         }
 
+        call.resolve(response);
+    }
+
+    @PermissionCallback
+    private void cameraPermissionResult(PluginCall call) {
+        if (call == null) {
+            return;
+        }
+
+        if (getPermissionState("camera") != PermissionState.GRANTED) {
+            call.reject("camera permission is not granted");
+            return;
+        }
+
+        startCaptureImage(call);
+    }
+
+    @ActivityCallback
+    private void captureImageResult(PluginCall call, ActivityResult result) {
+        JSObject response = new JSObject();
+        response.put("asset", JSObject.NULL);
+
+        Uri capturedUri = pendingCameraCaptureUri;
+        pendingCameraCaptureUri = null;
+
+        if (call == null) {
+            return;
+        }
+
+        if (
+            result == null ||
+            result.getResultCode() != Activity.RESULT_OK ||
+            capturedUri == null
+        ) {
+            if (capturedUri != null && "file".equalsIgnoreCase(capturedUri.getScheme())) {
+                File cleanupFile = new File(capturedUri.getPath());
+                if (cleanupFile.exists()) {
+                    cleanupFile.delete();
+                }
+            }
+            call.resolve(response);
+            return;
+        }
+
+        response.put("asset", buildAsset(capturedUri));
         call.resolve(response);
     }
 
@@ -291,6 +353,43 @@ public class YinjieMobileBridgePlugin extends Plugin {
         }
 
         return asset;
+    }
+
+    private void startCaptureImage(PluginCall call) {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (intent.resolveActivity(getContext().getPackageManager()) == null) {
+            call.reject("camera app is unavailable");
+            return;
+        }
+
+        Uri captureUri;
+        try {
+            captureUri = createTemporaryImageUri();
+        } catch (IOException exception) {
+            call.reject("failed to prepare camera capture", exception);
+            return;
+        }
+
+        pendingCameraCaptureUri = captureUri;
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, captureUri);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+        startActivityForResult(call, intent, "captureImageResult");
+    }
+
+    private Uri createTemporaryImageUri() throws IOException {
+        File imageFile = File.createTempFile(
+            "yinjie-camera-",
+            ".jpg",
+            getContext().getCacheDir()
+        );
+
+        return FileProvider.getUriForFile(
+            getContext(),
+            getContext().getPackageName() + ".fileprovider",
+            imageFile
+        );
     }
 
     private String readDisplayName(Uri uri) {
