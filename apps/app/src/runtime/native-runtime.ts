@@ -13,6 +13,14 @@ type YinjieRuntimePlugin = {
 
 const yinjieRuntime = registerPlugin<YinjieRuntimePlugin>("YinjieRuntime");
 
+function resolveBundledRuntimeConfigUrl() {
+  if (import.meta.env.DEV) {
+    return `${import.meta.env.BASE_URL}runtime-config.json`;
+  }
+
+  return new URL(/* @vite-ignore */ "../runtime-config.json", import.meta.url).toString();
+}
+
 export function isNativeAndroidRuntime() {
   return Capacitor.getPlatform() === "android" && Capacitor.isNativePlatform();
 }
@@ -37,7 +45,7 @@ export async function readNativeRuntimeConfig() {
   }
 
   try {
-    const response = await fetch("/runtime-config.json", { cache: "no-store" });
+    const response = await fetch(resolveBundledRuntimeConfigUrl(), { cache: "no-store" });
     if (!response.ok) {
       return null;
     }

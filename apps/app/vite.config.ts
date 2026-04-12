@@ -67,7 +67,8 @@ function resolveManualChunk(id: string) {
   return undefined;
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === "build" ? "./" : "/",
   plugins: [react(), tailwindcss()],
   build: {
     rollupOptions: {
@@ -110,4 +111,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
