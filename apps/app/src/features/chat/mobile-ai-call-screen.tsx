@@ -1052,9 +1052,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className={phaseChipClass}>{statusLabel}</span>
                 {activeCall.audioMuted ? (
-                  <span className="inline-flex items-center rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] text-white/62">
+                  <MobileCallMetaChip>
                     已静音播放
-                  </span>
+                  </MobileCallMetaChip>
                 ) : null}
               </div>
             ) : null}
@@ -1279,62 +1279,55 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               className="flex items-center justify-between gap-3"
             >
               <div className="min-w-0 flex-1">{playbackNudgeMessage}</div>
-              <button
-                type="button"
+              <MobileCallActionButton
                 onClick={() => {
                   void activeCall.replayLastTurn();
                 }}
                 disabled={leavingScreen}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-3.5 text-[12px] text-white transition active:bg-white/14 disabled:opacity-45"
+                className="h-10 shrink-0 px-3.5 text-[12px]"
               >
                 <Volume2 size={15} />
                 补播这一句
-              </button>
+              </MobileCallActionButton>
             </MobileCallNotice>
           ) : null}
           {videoRecoveryMessage ? (
             <div className="flex flex-wrap gap-2">
               {(hasVideoSessionFailure || hasVideoRenderFailure) ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={handleRetryDigitalHumanConnection}
                   disabled={
                     leavingScreen ||
                     digitalHumanCall.sessionState === "connecting"
                   }
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <RotateCcw size={16} />
                   重试连接数字人
-                </button>
+                </MobileCallActionButton>
               ) : null}
               {(hasVideoSessionFailure || hasVideoRenderFailure) ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={() => {
                     void handleSwitchToVoiceCall();
                   }}
                   disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <PhoneOff size={16} />
                   改用语音通话
-                </button>
+                </MobileCallActionButton>
               ) : null}
             </div>
           ) : null}
           {showTurnRecoveryActions ? (
             <div className="flex flex-wrap gap-2">
               {showTurnRecoveryActions ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={handleRetryCurrentTurn}
                   disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <RotateCcw size={16} />
                   重新录这一轮
-                </button>
+                </MobileCallActionButton>
               ) : null}
             </div>
           ) : null}
@@ -1364,11 +1357,10 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {showBottomShortcutRow ? (
             <div className="flex flex-wrap items-center justify-center gap-3">
               {isVideoMode ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={handleToggleCamera}
                   disabled={leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
+                  className="h-12 min-w-[120px] px-4"
                 >
                   {cameraEnabled ? <CameraOff size={16} /> : <Camera size={16} />}
                   {!cameraEnabled
@@ -1380,31 +1372,29 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                         : cameraPreview.supported
                           ? "重试摄像头"
                           : "摄像头不可用"}
-                </button>
+                </MobileCallActionButton>
               ) : null}
               {showReplayShortcut ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={() => {
                     void activeCall.replayLastTurn();
                   }}
                   disabled={activeCall.turnMutation.isPending || leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
+                  className="h-12 min-w-[120px] px-4"
                 >
                   <RotateCcw size={16} />
                   重播上一句
-                </button>
+                </MobileCallActionButton>
               ) : null}
               {showBackShortcut ? (
-                <button
-                  type="button"
+                <MobileCallActionButton
                   onClick={handleBack}
                   disabled={leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
+                  className="h-12 min-w-[120px] px-4"
                 >
                   <MessageCircleMore size={16} />
                   {leavingScreen ? "返回中..." : "切回聊天"}
-                </button>
+                </MobileCallActionButton>
               ) : null}
             </div>
           ) : null}
@@ -1509,6 +1499,37 @@ function MobileCallNotice({
             : tone === "success"
               ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
               : "border-white/12 bg-white/8 text-white/74",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function MobileCallMetaChip({
+  className,
+  ...props
+}: ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] text-white/62",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function MobileCallActionButton({
+  className,
+  ...props
+}: ComponentProps<"button">) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm font-medium text-white transition active:bg-white/14 disabled:opacity-45",
         className,
       )}
       {...props}
