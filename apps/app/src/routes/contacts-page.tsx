@@ -1041,9 +1041,9 @@ export function ContactsPage() {
         <TabPageTopBar
           title="通讯录"
           titleAlign="center"
-          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
         >
-          <div className="pt-3">
+          <div className="pt-2">
             <button
               type="button"
               onClick={() => {
@@ -1056,7 +1056,7 @@ export function ContactsPage() {
                   }),
                 });
               }}
-              className="flex w-full items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]"
+              className="flex w-full items-center gap-2 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2 text-[13px] text-[color:var(--text-dim)]"
               aria-label="打开搜一搜"
             >
               <Search size={15} className="shrink-0" />
@@ -1067,48 +1067,48 @@ export function ContactsPage() {
 
         <div className="pb-8">
           {notice ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <InlineNotice tone="info">{notice}</InlineNotice>
             </div>
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={friendsQuery.error.message} />
             </div>
           ) : null}
           {charactersQuery.isError && charactersQuery.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={charactersQuery.error.message} />
             </div>
           ) : null}
           {friendRequestsQuery.isError &&
           friendRequestsQuery.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={friendRequestsQuery.error.message} />
             </div>
           ) : null}
           {savedGroupsQuery.isError &&
           savedGroupsQuery.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={savedGroupsQuery.error.message} />
             </div>
           ) : null}
           {startChatMutation.isError &&
           startChatMutation.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={startChatMutation.error.message} />
             </div>
           ) : null}
           {setStarredMutation.isError &&
           setStarredMutation.error instanceof Error ? (
-            <div className="px-3 pt-3">
+            <div className="px-3 pt-2.5">
               <ErrorBlock message={setStarredMutation.error.message} />
             </div>
           ) : null}
 
           <ContactShortcutList
             items={mobileShortcutItems}
-            className="mt-2 border-x-0 shadow-none"
+            className="mt-1.5 border-x-0 shadow-none"
           />
 
           <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
@@ -1307,7 +1307,7 @@ function SectionHeader({
         "z-10 px-4 py-1.5 text-xs font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
-          : "sticky top-[88px] bg-[rgba(247,247,247,0.94)] backdrop-blur",
+          : "sticky top-[82px] bg-[rgba(247,247,247,0.94)] backdrop-blur",
       )}
     >
       {title}

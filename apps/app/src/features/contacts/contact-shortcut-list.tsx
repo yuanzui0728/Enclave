@@ -47,8 +47,8 @@ export function ContactShortcutList({
                   ? "cursor-not-allowed px-4 py-3.5"
                   : "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
                 : item.disabled
-                  ? "cursor-not-allowed px-4 py-3.5"
-                  : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
+                  ? "cursor-not-allowed px-4 py-3"
+                  : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
               item.disabled ? "opacity-60" : "",
               index > 0
                 ? "border-t border-[color:var(--border-faint)]"
@@ -59,15 +59,18 @@ export function ContactShortcutList({
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-[12px] text-white",
                 "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
-                compact ? "h-10 w-10" : "h-10 w-10",
+                compact ? "h-10 w-10" : "h-9 w-9",
                 item.iconClassName,
               )}
             >
-              <Icon size={compact ? 18 : 19} />
+              <Icon size={compact ? 18 : 17} />
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+              <div className={cn(
+                "truncate text-[color:var(--text-primary)]",
+                compact ? "text-[16px]" : "text-[15px]",
+              )}>
                 {item.label}
               </div>
               {!compact && item.disabledLabel ? (
@@ -88,15 +91,15 @@ export function ContactShortcutList({
             </div>
 
             {item.badgeCount ? (
-              <div className="flex min-w-5 items-center justify-center rounded-full bg-[#e74c3c] px-1.5 py-0.5 text-[11px] font-medium leading-none text-white">
+              <div className="flex min-w-4.5 items-center justify-center rounded-full bg-[#e74c3c] px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
                 {item.badgeCount > 99 ? "99+" : item.badgeCount}
               </div>
             ) : null}
 
             {item.disabled ? null : (
               <ChevronRight
-                size={16}
-                className="shrink-0 text-[color:var(--text-dim)]"
+                size={15}
+                className="shrink-0 text-[color:var(--text-muted)]"
               />
             )}
           </button>
