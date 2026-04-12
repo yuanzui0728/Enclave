@@ -370,7 +370,7 @@ export function DesktopDirectCallPanel({
       <div className="flex min-w-0 flex-[1.06] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#1f8f4f]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
               {kind === "video" ? <Video size={13} /> : <Mic size={13} />}
               {callLabel}
             </div>
@@ -391,7 +391,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             返回聊天
           </Button>
@@ -574,7 +574,7 @@ export function DesktopDirectCallPanel({
                 }
               }}
               disabled={micMuted || activeCall.busy || !speech.supported}
-              className="rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56] disabled:bg-[#07c160] disabled:text-white"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95 disabled:bg-[color:var(--brand-primary)] disabled:text-white"
             >
               <Mic size={16} />
               {recordButtonLabel}
@@ -587,7 +587,7 @@ export function DesktopDirectCallPanel({
               void activeCall.replayLastTurn();
             }}
             disabled={!latestTurn}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             <RotateCcw size={16} />
             重播上一句
@@ -596,7 +596,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             切回聊天
           </Button>
@@ -629,7 +629,7 @@ export function DesktopDirectCallPanel({
             className={cn(
               "rounded-full border px-3 py-1 text-[11px] font-medium",
               activeCall.playbackState === "playing"
-                ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
+                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                 : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
             )}
           >
@@ -780,11 +780,11 @@ function CallControlButton({
       className={cn(
         "inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-sm transition",
         active
-          ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
         disabled
           ? "cursor-not-allowed opacity-45"
-          : "hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+          : "hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {icon}

@@ -155,7 +155,7 @@ export function DesktopGroupCallPanel({
       <div className="flex min-w-0 flex-[1.08] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#1f8f4f]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
               {kind === "voice" ? <Mic size={13} /> : <Video size={13} />}
               {callKindLabel}
             </div>
@@ -181,7 +181,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             返回聊天
           </Button>
@@ -262,7 +262,7 @@ export function DesktopGroupCallPanel({
               })
             }
             disabled={inviteNoticePending}
-            className="rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+            className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
             <UserPlus size={16} />
             {inviteNoticePending
@@ -275,7 +275,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={onOpenMobileHandoff}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
           >
             <Smartphone size={16} />
             到手机继续
@@ -313,7 +313,7 @@ export function DesktopGroupCallPanel({
               点击角色成员可切换为已加入或待加入，快速模拟群通话调度。
             </div>
           </div>
-          <div className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#1f8f4f]">
+          <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
             {activeCount}/{members.length} 已加入
           </div>
         </div>
@@ -337,8 +337,8 @@ export function DesktopGroupCallPanel({
                 className={cn(
                   "rounded-[12px] border px-4 py-4 text-left transition",
                   joined
-                    ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
-                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   member.memberType === "user"
                     ? "cursor-default"
                     : "",
@@ -374,7 +374,7 @@ export function DesktopGroupCallPanel({
                     className={cn(
                       "rounded-full px-2.5 py-1 text-[10px] font-medium",
                       joined
-                        ? "bg-[rgba(7,193,96,0.12)] text-[#1f8f4f]"
+                        ? "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                         : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
                     )}
                   >
@@ -448,8 +448,8 @@ function CallControlButton({
       className={cn(
         "inline-flex h-10 items-center gap-2 rounded-[10px] border px-4 text-sm transition",
         active
-          ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.08)] text-[#1f8f4f]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {icon}
