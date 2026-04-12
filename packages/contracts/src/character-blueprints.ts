@@ -2,6 +2,7 @@ import type { Character } from "./characters";
 
 export type CharacterBlueprintSourceType =
   | "default_seed"
+  | "preset_catalog"
   | "manual_admin"
   | "template_clone"
   | "ai_generated";

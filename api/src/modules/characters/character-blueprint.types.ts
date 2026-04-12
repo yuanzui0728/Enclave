@@ -2,6 +2,7 @@ import type { CharacterEntity } from './character.entity';
 
 export type CharacterBlueprintSourceTypeValue =
   | 'default_seed'
+  | 'preset_catalog'
   | 'manual_admin'
   | 'template_clone'
   | 'ai_generated';

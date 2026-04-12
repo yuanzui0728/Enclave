@@ -747,6 +747,8 @@ export class CharacterBlueprintService {
         character.id as (typeof DEFAULT_CHARACTER_IDS)[number],
       )
         ? 'default_seed'
+        : character.sourceType === 'preset_catalog'
+          ? 'preset_catalog'
         : 'manual_admin';
     const blueprint = this.blueprintRepo.create({
       id: `blueprint_${character.id}`,

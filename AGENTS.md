@@ -148,6 +148,7 @@
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
+- `Character` 表现已扩展字段：`sourceType`、`sourceKey`、`deletionPolicy`，用于区分默认保底角色 / 名人预设角色 / 后台手工角色，以及是否允许后台删除
 - 会话管理路由：
   - `POST /api/conversations/:id/pin`
   - `POST /api/conversations/:id/strong-reminder`
@@ -259,6 +260,11 @@
 - `POST /api/admin/characters/:id/factory/publish`
 - `GET /api/admin/characters/:id/factory/revisions`
 - `POST /api/admin/characters/:id/factory/revisions/:revisionId/restore`
+
+## 管理后台角色预设路由
+
+- `GET /api/admin/characters/presets`
+- `POST /api/admin/characters/presets/:presetKey/install`
 
 ## 系统评测路由
 

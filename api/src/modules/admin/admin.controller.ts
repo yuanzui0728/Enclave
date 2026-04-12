@@ -42,6 +42,16 @@ export class AdminController {
     return this.adminService.findAllCharacters();
   }
 
+  @Get('characters/presets')
+  listCharacterPresets() {
+    return this.adminService.listCharacterPresets();
+  }
+
+  @Post('characters/presets/:presetKey/install')
+  installCharacterPreset(@Param('presetKey') presetKey: string) {
+    return this.adminService.installCharacterPreset(presetKey);
+  }
+
   @Post('characters')
   createCharacter(@Body() body: Partial<CharacterEntity>) {
     return this.adminService.createCharacter(body);

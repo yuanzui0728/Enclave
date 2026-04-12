@@ -30,6 +30,15 @@ export class CharacterEntity {
   @Column({ default: 'auto' })
   onlineMode: string;
 
+  @Column({ default: 'manual_admin' })
+  sourceType: string;
+
+  @Column({ nullable: true })
+  sourceKey?: string | null;
+
+  @Column({ default: 'archive_allowed' })
+  deletionPolicy: string;
+
   @Column({ default: false })
   isTemplate: boolean;
 

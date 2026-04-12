@@ -8,6 +8,7 @@ import { SystemConfigEntity } from '../config/config.entity';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { resolveDatabasePath } from '../../database/database-path';
+import { CharactersService } from '../characters/characters.service';
 
 @Injectable()
 export class AdminService {
@@ -23,6 +24,7 @@ export class AdminService {
     @InjectRepository(SystemConfigEntity)
     private configRepo: Repository<SystemConfigEntity>,
     private readonly config: ConfigService,
+    private readonly charactersService: CharactersService,
   ) {}
 
   async getStats() {
@@ -74,7 +76,15 @@ export class AdminService {
   }
 
   findAllCharacters() {
-    return this.characterRepo.find();
+    return this.characterRepo.find({ order: { name: 'ASC' } });
+  }
+
+  listCharacterPresets() {
+    return this.charactersService.listCelebrityPresets();
+  }
+
+  installCharacterPreset(presetKey: string) {
+    return this.charactersService.installCelebrityPreset(presetKey);
   }
 
   async createCharacter(data: Partial<CharacterEntity>) {
@@ -88,7 +98,7 @@ export class AdminService {
   }
 
   async deleteCharacter(id: string) {
-    await this.characterRepo.delete(id);
+    await this.charactersService.delete(id);
     return { success: true };
   }
 }
