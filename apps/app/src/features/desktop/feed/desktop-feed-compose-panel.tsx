@@ -59,7 +59,7 @@ export function DesktopFeedComposePanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
             aria-label="关闭发帖面板"
           >
             <X size={16} />
@@ -104,7 +104,7 @@ export function DesktopFeedComposePanel({
                 variant="primary"
                 disabled={!text.trim() || createPending}
                 onClick={onCreate}
-                className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               >
                 {createPending ? "发布中..." : "发布到广场"}
               </Button>
