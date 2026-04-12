@@ -754,24 +754,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           ) : null}
           {syncStatusMutation.error instanceof Error ? (
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
+              <MobileCallActionButton
                 onClick={handleRetrySyncStatus}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Users size={16} />
                 重试同步状态
-              </button>
-              <button
-                type="button"
+              </MobileCallActionButton>
+              <MobileCallActionButton
                 onClick={handleContinueAfterSyncError}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Mic size={16} />
                 继续调整成员
-              </button>
+              </MobileCallActionButton>
             </div>
           ) : null}
           {endStatusMutation.error instanceof Error ? (
@@ -784,24 +780,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           ) : null}
           {endStatusMutation.error instanceof Error ? (
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
+              <MobileCallActionButton
                 onClick={handleRetryEndCall}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <PhoneOff size={16} />
                 重试结束通话
-              </button>
-              <button
-                type="button"
+              </MobileCallActionButton>
+              <MobileCallActionButton
                 onClick={handleContinueAfterEndError}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Users size={16} />
                 继续保留当前状态
-              </button>
+              </MobileCallActionButton>
             </div>
           ) : null}
           {leavingScreen ? (
@@ -898,16 +890,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         </section>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="secondary"
+          <MobileCallActionButton
             onClick={() => {
               setCallTipsDismissed(true);
               syncStatusMutation.reset();
               void syncCurrentStatus();
             }}
             disabled={syncStatusMutation.isPending || !totalCount || leavingScreen}
-            className="h-12 rounded-full border-white/12 bg-white/10 text-white shadow-none active:bg-white/14"
+            className="h-12 w-full min-w-0"
           >
             <Users size={16} />
             {syncStatusMutation.isPending
@@ -915,21 +905,20 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               : hasSyncedStatus
                 ? "已同步群状态"
                 : "同步最新状态"}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
+          </MobileCallActionButton>
+          <MobileCallActionButton
+            tone="danger"
             onClick={() => {
               void handleEndCall();
             }}
             disabled={endStatusMutation.isPending || leavingScreen}
-            className="h-12 rounded-full border-[#fca5a5]/26 bg-[#ef4444]/14 text-[#fecaca] shadow-none hover:bg-[#ef4444]/20"
+            className="h-12 w-full min-w-0"
           >
             <PhoneOff size={16} />
             {leavingScreen || endStatusMutation.isPending
               ? "结束中..."
               : "结束通话"}
-          </Button>
+          </MobileCallActionButton>
         </div>
       </div>
     </AppPage>
@@ -986,6 +975,26 @@ function MobileCallNotice({
             : tone === "success"
               ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
               : "border-white/12 bg-white/8 text-white/74",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function MobileCallActionButton({
+  tone = "default",
+  className,
+  ...props
+}: ComponentProps<"button"> & { tone?: "default" | "danger" }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition active:translate-y-[0.5px] disabled:opacity-45",
+        tone === "danger"
+          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[#fecaca] active:bg-[#ef4444]/20"
+          : "border-white/12 bg-white/10 text-white active:bg-white/14",
         className,
       )}
       {...props}
