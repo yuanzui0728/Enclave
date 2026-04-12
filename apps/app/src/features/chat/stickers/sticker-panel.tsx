@@ -34,19 +34,25 @@ export function StickerPanel({
     <div
       className={
         isMobile
-          ? "mt-2 overflow-hidden border-t border-black/6 bg-[#f1f1f1]"
+          ? "mt-1.5 overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
           : "absolute bottom-full left-0 z-40 mb-3 w-[360px] rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,254,250,0.98),rgba(255,246,235,0.98))] p-3 shadow-[0_16px_32px_rgba(120,74,22,0.16)]"
       }
     >
-      <div className={isMobile ? "flex h-[248px] flex-col" : undefined}>
+      <div className={isMobile ? "flex h-[232px] flex-col" : undefined}>
         <div
           className={
             isMobile
-              ? "flex items-center justify-between px-3 pb-2 pt-3"
+              ? "flex items-center justify-between px-3 pb-1.5 pt-2.5"
               : "flex items-center justify-between px-1 pb-2"
           }
         >
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          <div
+            className={
+              isMobile
+                ? "text-[13px] font-medium text-[color:var(--text-primary)]"
+                : "text-sm font-medium text-[color:var(--text-primary)]"
+            }
+          >
             表情包
           </div>
           <button
@@ -54,7 +60,7 @@ export function StickerPanel({
             onClick={onClose}
             className={
               isMobile
-                ? "rounded-full px-2 py-1 text-xs text-[#7b7f84] transition active:bg-[#e5e5e5]"
+                ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#7b7f84] transition active:bg-[#f5f5f5]"
                 : "rounded-full px-2 py-1 text-xs text-[color:var(--text-secondary)] transition hover:bg-white/80"
             }
           >
@@ -62,19 +68,23 @@ export function StickerPanel({
           </button>
         </div>
 
-        <div className={isMobile ? "min-h-0 flex-1 overflow-y-auto px-3 pb-3" : undefined}>
+        <div
+          className={
+            isMobile ? "min-h-0 flex-1 overflow-y-auto px-3 pb-2.5" : undefined
+          }
+        >
           {recentStickers.length ? (
-            <section className="pb-3">
+            <section className={isMobile ? "pb-2.5" : "pb-3"}>
               <div
                 className={
                   isMobile
-                    ? "pb-2 text-[12px] text-[#7b7f84]"
+                    ? "pb-1.5 text-[10px] text-[#7b7f84]"
                     : "px-1 pb-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--text-muted)]"
                 }
               >
                 {isMobile ? "最近使用" : "最近"}
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className={isMobile ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-4 gap-2"}>
                 {recentStickers.slice(0, 4).map((sticker) => (
                   <StickerButton
                     key={`recent-${sticker.packId}-${sticker.stickerId}`}
@@ -87,7 +97,7 @@ export function StickerPanel({
             </section>
           ) : null}
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className={isMobile ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-4 gap-2"}>
             {activePack.stickers.map((sticker) => (
               <StickerButton
                 key={`${activePack.id}-${sticker.id}`}
@@ -110,7 +120,7 @@ export function StickerPanel({
         <div
           className={
             isMobile
-              ? "flex gap-2 overflow-x-auto border-t border-black/6 bg-[#f7f7f7] px-3 py-2"
+              ? "flex gap-1.5 overflow-x-auto border-t border-[color:var(--border-subtle)] bg-white/78 px-3 py-2"
               : "flex gap-2 overflow-x-auto pb-3"
           }
         >
@@ -123,9 +133,9 @@ export function StickerPanel({
                 onClick={() => onPackChange(pack.id)}
                 className={
                   isMobile
-                    ? `shrink-0 rounded-[10px] border px-3 py-1.5 text-xs transition ${
+                    ? `shrink-0 rounded-[10px] border px-2.5 py-1 text-[11px] transition ${
                         active
-                          ? "border-black/10 bg-white text-[#111827]"
+                          ? "border-[color:var(--border-subtle)] bg-white text-[#111827]"
                           : "border-transparent bg-transparent text-[#7b7f84]"
                       }`
                     : `shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
@@ -160,7 +170,7 @@ function StickerButton({
       onClick={() => onSelect(sticker)}
       className={
         compact
-          ? "group flex flex-col items-center justify-center rounded-[12px] border border-black/[0.06] bg-white p-2.5 transition active:bg-[#f5f5f5]"
+          ? "group flex flex-col items-center justify-center rounded-[11px] border border-[color:var(--border-subtle)] bg-white p-2 transition active:bg-[color:var(--surface-card-hover)]"
           : "group flex flex-col items-center gap-1 rounded-[18px] border border-white/80 bg-white/76 p-2 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_8px_18px_rgba(160,90,10,0.12)]"
       }
       title={sticker.label ?? sticker.stickerId}
@@ -170,7 +180,7 @@ function StickerButton({
         alt={sticker.label ?? sticker.stickerId}
         className={
           compact
-            ? "h-14 w-14 rounded-[12px] object-contain"
+            ? "h-12 w-12 rounded-[10px] object-contain"
             : "h-16 w-16 rounded-[16px] object-contain"
         }
         loading="lazy"
