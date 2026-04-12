@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { Button, cn } from "@yinjie/ui";
-import { Clock3, Flag, Play, Smartphone, Sparkles, X } from "lucide-react";
+import { Clock3, Flag, Play, Share2, Smartphone, Sparkles, X } from "lucide-react";
 import { formatConversationTimestamp } from "../../lib/format";
+import { isNativeMobileBridgeAvailable } from "../../runtime/mobile-bridge";
 import {
   getGameCenterToneStyle,
   type GameCenterGame,
@@ -33,14 +34,18 @@ export function GameCenterSessionPanel({
   onLaunch,
 }: GameCenterSessionPanelProps) {
   const tone = getGameCenterToneStyle(game.tone);
+  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
   const metricAccentClass = compact
     ? "text-[#15803d]"
     : "text-[color:var(--brand-secondary)]";
   const rewardAccentClass = compact
     ? "text-[#15803d]"
     : "text-[color:var(--brand-primary)]";
-  const resolvedCopyActionIcon = copyActionIcon ?? <Smartphone size={16} />;
-  const resolvedCopyActionLabel = copyActionLabel ?? "发到手机";
+  const resolvedCopyActionIcon =
+    copyActionIcon ??
+    (nativeMobileShareSupported ? <Share2 size={16} /> : <Smartphone size={16} />);
+  const resolvedCopyActionLabel =
+    copyActionLabel ?? (nativeMobileShareSupported ? "系统分享" : "发到手机");
 
   return (
     <section
