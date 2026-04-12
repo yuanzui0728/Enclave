@@ -57,6 +57,13 @@ const editorActions: EditorAction[] = [
   },
 ];
 
+function areDesktopNotesEqual(
+  left: DesktopNoteRecord[],
+  right: DesktopNoteRecord[],
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function DesktopNotesWorkspace({
   selectedNoteId,
   onSelectNote,
@@ -172,6 +179,87 @@ export function DesktopNotesWorkspace({
     );
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
+
+  useEffect(() => {
+    if (!nativeDesktopNotes) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function refreshNotesFromNative() {
+      if (
+        saveState === "saving" ||
+        (activeNote && activeNote.content !== editorValue)
+      ) {
+        return;
+      }
+
+      const existingNotes = await hydrateDesktopNotesFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setNotes((current) =>
+        areDesktopNotesEqual(current, existingNotes) ? current : existingNotes,
+      );
+
+      if (!existingNotes.length) {
+        return;
+      }
+
+      const preferredNoteId = activeNoteId ?? selectedNoteId;
+      const nextActiveNoteId = resolveSelectedNoteId(
+        existingNotes,
+        preferredNoteId,
+      );
+      const nextActiveNote =
+        existingNotes.find((item) => item.id === nextActiveNoteId) ??
+        existingNotes[0];
+
+      if (!nextActiveNote) {
+        return;
+      }
+
+      setActiveNoteId((current) =>
+        current === nextActiveNote.id ? current : nextActiveNote.id,
+      );
+      setEditorValue((current) =>
+        current === nextActiveNote.content ? current : nextActiveNote.content,
+      );
+      if (nextActiveNote.id !== preferredNoteId) {
+        onSelectNote?.(nextActiveNote.id);
+      }
+    }
+
+    const handleFocus = () => {
+      void refreshNotesFromNative();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void refreshNotesFromNative();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    activeNote,
+    activeNoteId,
+    editorValue,
+    nativeDesktopNotes,
+    onSelectNote,
+    saveState,
+    selectedNoteId,
+  ]);
 
   function handleCreateNote() {
     const createdNote = createDesktopNote();
