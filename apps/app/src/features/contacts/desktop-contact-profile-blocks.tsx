@@ -66,7 +66,7 @@ export function DesktopContactProfileHeader({
   return (
     <div
       className={cn(
-        "border-b border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(244,251,247,0.92),rgba(255,255,255,0.98))]",
+        "border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl",
         compact ? "px-4 py-4" : "px-8 py-7",
       )}
     >
@@ -219,7 +219,7 @@ export function DesktopContactProfileToggleRow({
       type="button"
       onClick={onToggle}
       disabled={disabled || !onToggle}
-      className="flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors hover:bg-[rgba(7,193,96,0.06)] disabled:opacity-60"
+      className="flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors hover:bg-[color:var(--surface-console)] disabled:opacity-60"
       role="switch"
       aria-checked={checked}
     >
@@ -227,13 +227,15 @@ export function DesktopContactProfileToggleRow({
       <div className="flex flex-1 justify-end">
         <span
           className={cn(
-            "relative h-7 w-11 rounded-full transition-colors",
-            checked ? "bg-[#07c160]" : "bg-[#d8d8d8]",
+            "relative h-7 w-11 rounded-full border transition-colors",
+            checked
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
           )}
         >
           <span
             className={cn(
-              "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+              "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
               checked ? "left-4" : "left-0.5",
             )}
           />
@@ -265,7 +267,7 @@ export function DesktopContactProfileActionRow({
         "flex w-full items-center gap-4 px-8 py-3 text-left text-sm transition-colors",
         danger
           ? "hover:bg-[rgba(239,68,68,0.05)]"
-          : "hover:bg-[rgba(7,193,96,0.06)]",
+          : "hover:bg-[color:var(--surface-console)]",
         disabled && "opacity-60",
       )}
     >
