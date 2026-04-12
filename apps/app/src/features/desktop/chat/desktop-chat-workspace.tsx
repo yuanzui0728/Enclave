@@ -809,7 +809,7 @@ export function DesktopChatWorkspace({
                 <button
                   type="button"
                   onClick={() => openDesktopSearch()}
-                  className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-[color:var(--text-dim)] transition hover:bg-[rgba(7,193,96,0.08)] hover:text-[color:var(--text-primary)]"
+                  className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-[color:var(--text-dim)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
                   aria-label="在搜一搜中搜索"
                   title="回车或点击进入搜一搜"
                 >
@@ -820,7 +820,7 @@ export function DesktopChatWorkspace({
                 <button
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[rgba(7,193,96,0.08)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                   aria-label="打开快捷菜单"
                 >
                   <Plus size={17} strokeWidth={2.2} />
@@ -836,9 +836,9 @@ export function DesktopChatWorkspace({
                           key={item.key}
                           type="button"
                           onClick={() => handleQuickAction(item.key)}
-                          className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.08)]"
+                          className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(7,193,96,0.10)] text-[color:var(--brand-primary)]">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
                             <Icon size={16} />
                           </div>
                           <span>{item.label}</span>
