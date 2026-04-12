@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Clock3, FileText, ListTodo, Plus, Rows3, Trash2 } from "lucide-react";
-import { Button, cn } from "@yinjie/ui";
+import {
+  Clock3,
+  Download,
+  FileText,
+  ListTodo,
+  Plus,
+  Rows3,
+  Trash2,
+} from "lucide-react";
+import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "../../../components/inline-notice-action-button";
 import { EmptyState } from "../../../components/empty-state";
 import { DesktopUtilityShell } from "../desktop-utility-shell";
 import {
@@ -11,7 +20,9 @@ import {
   updateDesktopNote,
   type DesktopNoteRecord,
 } from "./desktop-notes-storage";
+import { revealSavedFile } from "../../../runtime/reveal-saved-file";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
+import { saveGeneratedFile } from "../../../runtime/save-generated-file";
 
 type DesktopNotesWorkspaceProps = {
   selectedNoteId?: string;
@@ -56,6 +67,12 @@ export function DesktopNotesWorkspace({
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [editorValue, setEditorValue] = useState("");
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
+  const [actionNotice, setActionNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const notesStorageLabel = nativeDesktopNotes
     ? "桌面端保存在当前设备"
@@ -144,6 +161,18 @@ export function DesktopNotesWorkspace({
     return () => window.clearTimeout(timer);
   }, [activeNote, editorValue]);
 
+  useEffect(() => {
+    if (!actionNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setActionNotice(null),
+      actionNotice.actionLabel ? 5000 : 2200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [actionNotice]);
+
   function handleCreateNote() {
     const createdNote = createDesktopNote();
     setNotes((current) => [createdNote, ...current]);
@@ -184,6 +213,47 @@ export function DesktopNotesWorkspace({
     onSelectNote?.(nextNote.id);
   }
 
+  async function handleExportNote() {
+    if (!activeNote) {
+      return;
+    }
+
+    const result = await saveGeneratedFile({
+      contents: editorValue,
+      fileName: buildDesktopNoteExportFileName(activeNote.title, activeNote.updatedAt),
+      mimeType: "text/plain;charset=utf-8",
+      dialogTitle: "导出笔记",
+      kindLabel: "笔记",
+    });
+
+    if (result.status === "cancelled") {
+      return;
+    }
+
+    const canRevealSavedFile =
+      result.status === "saved" && Boolean(result.savedPath?.trim());
+    const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+    setActionNotice({
+      message: result.message,
+      tone: result.status === "failed" ? "danger" : "success",
+      actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+      onAction:
+        savedPath
+          ? () => {
+              void revealSavedFile(savedPath).then((revealed) => {
+                setActionNotice({
+                  message: revealed
+                    ? "已打开笔记所在位置。"
+                    : "打开所在位置失败，请稍后再试。",
+                  tone: revealed ? "success" : "danger",
+                });
+              });
+            }
+          : undefined,
+    });
+  }
+
   function handleInsertSnippet(snippet: string) {
     const target = editorRef.current;
 
@@ -217,6 +287,17 @@ export function DesktopNotesWorkspace({
       }
       toolbar={
         <div className="flex items-center gap-2">
+          {activeNote ? (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleExportNote()}
+              className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
+            >
+              <Download size={15} />
+              导出笔记
+            </Button>
+          ) : null}
           <div
             className={cn(
               "rounded-full border px-3 py-1 text-[11px] font-medium",
@@ -315,6 +396,20 @@ export function DesktopNotesWorkspace({
     >
       {activeNote ? (
         <div className="space-y-5 p-6">
+          {actionNotice ? (
+            <InlineNotice
+              className="flex items-center justify-between gap-3 text-xs"
+              tone={actionNotice.tone}
+            >
+              <span>{actionNotice.message}</span>
+              {actionNotice.actionLabel && actionNotice.onAction ? (
+                <InlineNoticeActionButton
+                  label={actionNotice.actionLabel}
+                  onClick={actionNotice.onAction}
+                />
+              ) : null}
+            </InlineNotice>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             {editorActions.map((action) => {
               const Icon = action.icon;
@@ -398,4 +493,15 @@ function formatNoteTimestamp(value: string, withTime = false) {
         hour: "2-digit",
         minute: "2-digit",
       }).format(date);
+}
+
+function buildDesktopNoteExportFileName(title: string, updatedAt: string) {
+  const normalizedTitle = title
+    .trim()
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .replace(/\s+/g, "-");
+  const date = Number.isNaN(Date.parse(updatedAt))
+    ? new Date().toISOString().slice(0, 10)
+    : updatedAt.slice(0, 10);
+  return `${normalizedTitle || "desktop-note"}-${date}.txt`;
 }
