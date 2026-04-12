@@ -28,54 +28,54 @@ export function MobileChatAttachmentPreview({
   onSend,
 }: MobileChatAttachmentPreviewProps) {
   return (
-    <div className="mb-2 rounded-[22px] border border-black/5 bg-white p-3 shadow-none">
-      <div className="flex items-center gap-3">
+    <div className="mb-1.5 rounded-[18px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
+      <div className="flex items-center gap-2.5">
         {kind === "images" && imagePreviews?.length ? (
-          <div className="grid max-h-[11.5rem] w-[11.5rem] grid-cols-3 gap-1 overflow-auto pr-1">
+          <div className="grid max-h-[10rem] w-[10rem] grid-cols-3 gap-1 overflow-auto pr-1">
             {imagePreviews.map((item, index) => (
               <div key={`${item.fileName}-${index}`} className="relative">
                 <img
                   src={item.previewUrl}
                   alt={item.fileName}
-                  className="h-14 w-14 rounded-[14px] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
+                  className="h-12 w-12 rounded-[12px] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
                 />
                 {onRemoveImage ? (
                   <button
                     type="button"
                     onClick={() => onRemoveImage(index)}
                     disabled={pending}
-                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70 disabled:opacity-45"
+                    className="absolute right-0.5 top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70 disabled:opacity-45"
                     aria-label={`移除${item.fileName}`}
                   >
-                    <X size={12} />
+                    <X size={11} />
                   </button>
                 ) : null}
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] text-[#15803d]">
-            <FileText size={24} />
+          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] text-[#15803d]">
+            <FileText size={22} />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
             {kind === "images" && imagePreviews && imagePreviews.length > 1
               ? `已选 ${imagePreviews.length} 张图片`
               : fileName}
           </div>
-          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+          <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]">
             {kind === "images"
               ? "将按顺序逐张发送图片。"
               : "发送前确认一下文件内容。"}
           </div>
           {kind === "images" ? (
-            <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+            <div className="mt-0.5 text-[10px] text-[color:var(--text-dim)]">
               最多支持 9 张图片一起发送，可逐张移除。
             </div>
           ) : null}
           {kind === "file" ? (
-            <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+            <div className="mt-0.5 text-[10px] text-[color:var(--text-dim)]">
               {[mimeType, size ? formatFileSize(size) : null]
                 .filter(Boolean)
                 .join(" · ")}
@@ -84,13 +84,13 @@ export function MobileChatAttachmentPreview({
         </div>
       </div>
 
-      <div className="mt-3 flex justify-end gap-2">
+      <div className="mt-2.5 flex justify-end gap-2">
         <Button
           type="button"
           variant="ghost"
           onClick={onCancel}
           disabled={pending}
-          className="hover:bg-black/4"
+          className="h-8 rounded-full px-3 text-[12px] hover:bg-black/4"
         >
           取消
         </Button>
@@ -99,7 +99,7 @@ export function MobileChatAttachmentPreview({
           variant="primary"
           onClick={() => void onSend()}
           disabled={pending}
-          className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+          className="h-8 rounded-full bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
         >
           {pending ? "发送中..." : kind === "images" ? "发送图片" : "发送文件"}
         </Button>
