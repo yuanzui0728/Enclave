@@ -405,7 +405,7 @@ export function MobileChatPlusPanel({
                         <div
                           className={cn(
                             "flex h-13 w-13 items-center justify-center rounded-[12px] border bg-white text-white shadow-none",
-                            itemDisabled ? "border-black/6" : "border-black/6",
+                            "border-[color:var(--border-subtle)]",
                             itemDisabled ? null : item.iconClassName,
                             itemDisabled ? "bg-[#cfcfcf]" : null,
                           )}
@@ -496,7 +496,7 @@ export function MobileChatPlusPanel({
                 <button
                   type="button"
                   onClick={() => setUnavailableAction(null)}
-                  className="rounded-full bg-[#f5f5f5] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[#ebebeb]"
+                  className="rounded-full bg-[color:var(--surface-panel)] px-3 py-1.5 text-[11px] font-medium text-[#5f5f5f] transition active:bg-[color:var(--surface-card-hover)]"
                 >
                   知道了
                 </button>
@@ -533,8 +533,10 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
-                    index > 0 ? "border-t border-black/[0.06]" : undefined,
+                    "flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+                    index > 0
+                      ? "border-t border-[color:var(--border-subtle)]"
+                      : undefined,
                   )}
                 >
                   <AvatarChip
@@ -582,8 +584,10 @@ export function MobileChatPlusPanel({
                   }
                   disabled={busy}
                   className={cn(
-                    "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60",
-                    index > 0 ? "border-t border-black/[0.06]" : undefined,
+                    "flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+                    index > 0
+                      ? "border-t border-[color:var(--border-subtle)]"
+                      : undefined,
                   )}
                 >
                   <AvatarChip
@@ -633,7 +637,7 @@ export function MobileChatPlusPanel({
                   }
                 }}
                 disabled={busy}
-                className="block w-full px-4 py-2.5 text-left transition-colors active:bg-[#f5f5f5] disabled:opacity-60"
+                className="block w-full px-4 py-2.5 text-left transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
               >
                 <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                   {scene.title}
@@ -656,7 +660,7 @@ function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
       <button
         type="button"
         onClick={onBack}
-        className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition active:bg-white"
+        className="absolute left-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-card-hover)]"
         aria-label="返回"
       >
         <ChevronLeft size={16} />
