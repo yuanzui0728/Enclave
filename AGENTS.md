@@ -234,7 +234,7 @@
 ## 管理后台页面（`apps/admin/src/routes/`）
 
 - `dashboard-page.tsx`：实例级概览、Provider、诊断与运维入口
-- `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要
+- `characters-page.tsx`：角色注册表，查看在线状态与活动状态摘要，并支持名人预设分组筛选与批量安装
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
 - `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、字段来源、发布映射 diff、已发布版本与版本记录
 - `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、scheduler 最近执行结果、生活状态、记忆摘要、叙事进度与生活逻辑可观测性，并直接修改运行时字段
@@ -265,6 +265,7 @@
 
 - `GET /api/admin/characters/presets`
 - `POST /api/admin/characters/presets/:presetKey/install`
+- `POST /api/admin/characters/presets/install-batch`
 
 ## 系统评测路由
 

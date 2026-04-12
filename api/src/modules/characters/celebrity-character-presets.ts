@@ -1,7 +1,20 @@
 import type { CharacterEntity } from './character.entity';
 
+export type CelebrityCharacterPresetGroupKey =
+  | 'technology_and_product'
+  | 'business_and_investing'
+  | 'public_expression';
+
+export interface CelebrityCharacterPresetGroup {
+  key: CelebrityCharacterPresetGroupKey;
+  label: string;
+  description: string;
+  sortOrder: number;
+}
+
 export interface CelebrityCharacterPreset {
   presetKey: string;
+  groupKey: CelebrityCharacterPresetGroupKey;
   id: string;
   name: string;
   avatar: string;
@@ -11,9 +24,34 @@ export interface CelebrityCharacterPreset {
   character: Partial<CharacterEntity>;
 }
 
+const PRESET_GROUPS: Record<
+  CelebrityCharacterPresetGroupKey,
+  CelebrityCharacterPresetGroup
+> = {
+  technology_and_product: {
+    key: 'technology_and_product',
+    label: '科技与产品',
+    description: '偏工程、产品定义、技术路线和高标准体验打磨。',
+    sortOrder: 10,
+  },
+  business_and_investing: {
+    key: 'business_and_investing',
+    label: '经营与投资',
+    description: '偏经营定力、组织管理、资本配置和长期主义判断。',
+    sortOrder: 20,
+  },
+  public_expression: {
+    key: 'public_expression',
+    label: '公众表达',
+    description: '偏舞台沟通、谈判姿态和高对抗场景下的表达风格。',
+    sortOrder: 30,
+  },
+};
+
 const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   {
     presetKey: 'elon_musk',
+    groupKey: 'technology_and_product',
     id: 'char-celebrity-elon-musk',
     name: '马斯克',
     avatar: '🚀',
@@ -94,6 +132,7 @@ const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: 'donald_trump',
+    groupKey: 'public_expression',
     id: 'char-celebrity-donald-trump',
     name: '特朗普',
     avatar: '🏛️',
@@ -174,6 +213,7 @@ const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: 'steve_jobs',
+    groupKey: 'technology_and_product',
     id: 'char-celebrity-steve-jobs',
     name: '乔布斯',
     avatar: '🍎',
@@ -254,6 +294,7 @@ const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: 'warren_buffett',
+    groupKey: 'business_and_investing',
     id: 'char-celebrity-warren-buffett',
     name: '巴菲特',
     avatar: '📈',
@@ -334,6 +375,7 @@ const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: 'ren_zhengfei',
+    groupKey: 'business_and_investing',
     id: 'char-celebrity-ren-zhengfei',
     name: '任正非',
     avatar: '📡',
@@ -414,6 +456,7 @@ const PRESET_CHARACTERS: CelebrityCharacterPreset[] = [
   },
   {
     presetKey: 'inasamori_kazuo',
+    groupKey: 'business_and_investing',
     id: 'char-celebrity-inamori-kazuo',
     name: '稻盛和夫',
     avatar: '🌱',
@@ -498,6 +541,18 @@ export const CELEBRITY_CHARACTER_PRESETS = PRESET_CHARACTERS;
 
 export function listCelebrityCharacterPresets() {
   return CELEBRITY_CHARACTER_PRESETS;
+}
+
+export function getCelebrityCharacterPresetGroup(
+  groupKey: CelebrityCharacterPresetGroupKey,
+) {
+  return PRESET_GROUPS[groupKey];
+}
+
+export function listCelebrityCharacterPresetGroups() {
+  return Object.values(PRESET_GROUPS).sort(
+    (left, right) => left.sortOrder - right.sortOrder,
+  );
 }
 
 export function getCelebrityCharacterPreset(presetKey: string) {

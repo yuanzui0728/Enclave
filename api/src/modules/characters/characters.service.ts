@@ -29,6 +29,7 @@ import { ModerationReportEntity } from '../moderation/moderation-report.entity';
 import { DEFAULT_CHARACTER_IDS } from './default-characters';
 import {
   getCelebrityCharacterPreset,
+  getCelebrityCharacterPresetGroup,
   listCelebrityCharacterPresets,
 } from './celebrity-character-presets';
 
@@ -78,9 +79,14 @@ export class CharactersService {
     );
 
     return listCelebrityCharacterPresets().map((preset) => {
+      const group = getCelebrityCharacterPresetGroup(preset.groupKey);
       const installedCharacter = installedBySourceKey.get(preset.presetKey);
       return {
         presetKey: preset.presetKey,
+        groupKey: group.key,
+        groupLabel: group.label,
+        groupDescription: group.description,
+        groupOrder: group.sortOrder,
         id: preset.id,
         name: preset.name,
         avatar: preset.avatar,
@@ -120,6 +126,40 @@ export class CharactersService {
         isTemplate: false,
       }),
     );
+  }
+
+  async installCelebrityPresetBatch(presetKeys: string[]) {
+    const normalizedPresetKeys = Array.from(
+      new Set(
+        presetKeys
+          .map((presetKey) => presetKey.trim())
+          .filter((presetKey) => presetKey.length > 0),
+      ),
+    );
+    if (normalizedPresetKeys.length === 0) {
+      throw new BadRequestException('至少选择一个名人预设。');
+    }
+
+    const missingPresetKeys = normalizedPresetKeys.filter(
+      (presetKey) => !getCelebrityCharacterPreset(presetKey),
+    );
+    if (missingPresetKeys.length > 0) {
+      throw new NotFoundException(
+        `Preset ${missingPresetKeys.join(', ')} not found`,
+      );
+    }
+
+    const installedCharacters = await Promise.all(
+      normalizedPresetKeys.map((presetKey) =>
+        this.installCelebrityPreset(presetKey),
+      ),
+    );
+
+    return {
+      presetKeys: normalizedPresetKeys,
+      installedCount: installedCharacters.length,
+      installedCharacters,
+    };
   }
 
   async delete(id: string): Promise<void> {

@@ -3,6 +3,7 @@ import type {
   CharacterBlueprintRevision,
   CharacterPresetSummary,
   CharacterFactorySnapshot,
+  InstallCharacterPresetsResult,
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
@@ -124,6 +125,11 @@ export const adminApi = {
   installCharacterPreset: (presetKey: string) =>
     adminFetch<Character>(`/characters/presets/${presetKey}/install`, {
       method: "POST",
+    }),
+  installCharacterPresetBatch: (presetKeys: string[]) =>
+    adminFetch<InstallCharacterPresetsResult>("/characters/presets/install-batch", {
+      method: "POST",
+      body: JSON.stringify({ presetKeys }),
     }),
   deleteCharacter: (id: string) =>
     adminFetch<{ success: boolean }>(`/characters/${id}`, { method: "DELETE" }),
