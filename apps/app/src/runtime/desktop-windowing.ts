@@ -2,10 +2,16 @@ import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 
 export const DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT =
   "yinjie:desktop:navigate-main-window";
+export const DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT =
+  "yinjie:desktop:navigate-standalone-window";
 const MAIN_WINDOW_LABEL = "main";
 
 export type DesktopMainWindowNavigatePayload = {
   targetPath?: string;
+};
+
+export type DesktopStandaloneWindowNavigatePayload = {
+  targetPath: string;
 };
 
 export type DesktopStandaloneWindowOptions = {
@@ -71,6 +77,19 @@ export async function openDesktopStandaloneWindow(
     const existingWindow = await WebviewWindow.getByLabel(options.label);
 
     if (existingWindow) {
+      try {
+        const { emitTo } = await import("@tauri-apps/api/event");
+        await emitTo<DesktopStandaloneWindowNavigatePayload>(
+          options.label,
+          DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
+          {
+            targetPath: options.url,
+          },
+        );
+      } catch {
+        // Ignore cross-window route sync failures and keep focusing the existing window.
+      }
+
       try {
         await existingWindow.setTitle(options.title);
       } catch {

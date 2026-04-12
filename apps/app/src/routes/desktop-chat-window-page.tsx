@@ -9,13 +9,16 @@ import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-work
 import { parseDesktopChatWindowRouteHash } from "../features/desktop/chat/desktop-chat-window-route-state";
 import {
   closeCurrentDesktopWindow,
+  DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
   focusMainDesktopWindow,
+  type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function DesktopChatWindowPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(
     () => parseDesktopChatWindowRouteHash(hash),
@@ -50,6 +53,57 @@ export function DesktopChatWindowPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [fallbackPath]);
+
+  useEffect(() => {
+    if (!nativeDesktopShell) {
+      return;
+    }
+
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+
+    async function bindStandaloneWindowNavigation() {
+      try {
+        const { getCurrentWindow } = await import("@tauri-apps/api/window");
+        const currentWindow = getCurrentWindow();
+
+        unlisten =
+          await currentWindow.listen<DesktopStandaloneWindowNavigatePayload>(
+            DESKTOP_STANDALONE_WINDOW_NAVIGATE_EVENT,
+            ({ payload }) => {
+              const nextTarget = payload.targetPath.trim();
+              if (
+                typeof window !== "undefined" &&
+                nextTarget &&
+                `${window.location.pathname}${window.location.hash}` !==
+                  nextTarget
+              ) {
+                window.location.assign(nextTarget);
+                return;
+              }
+
+              if (typeof window !== "undefined") {
+                window.focus();
+              }
+            },
+          );
+
+        if (cancelled) {
+          unlisten?.();
+          unlisten = null;
+        }
+      } catch {
+        // Ignore event binding failures outside the native Tauri shell.
+      }
+    }
+
+    void bindStandaloneWindowNavigation();
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [nativeDesktopShell]);
 
   if (!routeState) {
     return (
