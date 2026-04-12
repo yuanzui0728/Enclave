@@ -616,13 +616,13 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
 
   return (
     <AppPage className="flex min-h-[100dvh] flex-col space-y-0 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.18),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_40%,#020617_100%)] px-0 py-0 text-white">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.72)] px-3 py-3 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-white/8 bg-[rgba(2,6,23,0.72)] px-3 py-3 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleBack}
             disabled={leavingScreen}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16"
+            className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white transition active:bg-white/12"
             aria-label="返回群聊"
           >
             <ArrowLeft size={18} />
@@ -640,7 +640,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
-        <section className="rounded-[28px] border border-white/10 bg-[rgba(15,23,42,0.76)] px-4 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+        <section className="rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center gap-4">
             <GroupAvatarChip
               name={groupName}
@@ -753,7 +753,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 type="button"
                 onClick={handleRetrySyncStatus}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Users size={16} />
                 重试同步状态
@@ -762,7 +762,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 type="button"
                 onClick={handleContinueAfterSyncError}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Mic size={16} />
                 继续调整成员
@@ -783,7 +783,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 type="button"
                 onClick={handleRetryEndCall}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <PhoneOff size={16} />
                 重试结束通话
@@ -792,7 +792,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 type="button"
                 onClick={handleContinueAfterEndError}
                 disabled={leavingScreen}
-                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Users size={16} />
                 继续保留当前状态
@@ -806,15 +806,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           ) : null}
         </div>
 
-        <section className="mt-4 min-h-0 flex-1 rounded-[28px] border border-white/10 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+        <section className="mt-4 min-h-0 flex-1 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-medium text-white">成员席位</div>
-              <div className="mt-1 text-[12px] leading-5 text-white/56">
+              <div className="mt-1 text-[12px] leading-5 text-white/58">
                 点击角色成员可切换为已加入或待加入，快速同步这一轮群通话状态。
               </div>
             </div>
-            <div className="rounded-full bg-white/8 px-3 py-1 text-[11px] text-white/72">
+            <div className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] text-white/72">
               {activeCount}/{totalCount} 已加入
             </div>
           </div>
@@ -839,10 +839,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                     "rounded-[20px] border px-4 py-3 text-left transition",
                     joined
                       ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.10)]"
-                      : "border-white/10 bg-white/4",
+                      : "border-white/12 bg-white/5",
                     member.memberType === "user"
                       ? "cursor-default"
-                      : "active:bg-white/10",
+                      : "active:bg-white/12",
                     leavingScreen ? "opacity-60" : null,
                   )}
                 >
@@ -902,7 +902,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               void syncCurrentStatus();
             }}
             disabled={syncStatusMutation.isPending || !totalCount || leavingScreen}
-            className="h-12 rounded-full border-white/10 bg-white/8 text-white shadow-none hover:bg-white/12"
+            className="h-12 rounded-full border-white/12 bg-white/10 text-white shadow-none active:bg-white/14"
           >
             <Users size={16} />
             {syncStatusMutation.isPending
@@ -974,10 +974,10 @@ function CallMetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[20px] border border-white/10 bg-white/4 px-3 py-3">
+    <div className="rounded-[18px] border border-white/12 bg-white/6 px-3 py-3">
       <div className="text-[11px] tracking-[0.12em] text-white/45">{label}</div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
-      <div className="mt-1 text-[11px] leading-5 text-white/48">{detail}</div>
+      <div className="mt-1 text-[11px] leading-5 text-white/54">{detail}</div>
     </div>
   );
 }
@@ -1001,10 +1001,10 @@ function CallControlButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm transition disabled:opacity-55",
+        "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm transition active:bg-white/12 disabled:opacity-55",
         active
           ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.12)] text-[#bbf7d0]"
-          : "border-white/10 bg-white/4 text-white/72",
+          : "border-white/12 bg-white/6 text-white/72",
       )}
     >
       {icon}
