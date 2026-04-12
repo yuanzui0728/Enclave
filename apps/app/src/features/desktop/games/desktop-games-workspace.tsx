@@ -135,6 +135,10 @@ export function DesktopGamesWorkspace({
 
   const selectedTone = getGameCenterToneStyle(selectedGame.tone);
   const selectedPinned = pinnedGameIds.includes(selectedGame.id);
+  const selectedSidebarItemClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]";
+  const selectedContentCardClassName =
+    "shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
 
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
@@ -165,7 +169,7 @@ export function DesktopGamesWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                      ? selectedSidebarItemClassName
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
@@ -197,7 +201,7 @@ export function DesktopGamesWorkspace({
                       className={cn(
                         "w-full rounded-[18px] border px-3 py-3 text-left transition",
                         selectedGame.id === game.id
-                          ? tone.mutedPanelClassName
+                          ? selectedSidebarItemClassName
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                       )}
                     >
@@ -247,7 +251,7 @@ export function DesktopGamesWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border border-[rgba(15,23,42,0.06)] px-3 py-3 text-left transition hover:bg-white",
                     selectedGame.id === game.id
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                      ? selectedSidebarItemClassName
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
                   )}
                 >
@@ -391,7 +395,7 @@ export function DesktopGamesWorkspace({
                         : "按当前频道继续筛选，让桌面端浏览更接近微信的游戏中心。"}
                     </div>
                   </div>
-                  <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                  <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[11px] font-medium text-[color:var(--text-secondary)]">
                     {browseGames.length} 个入口
                   </div>
                 </div>
@@ -406,6 +410,7 @@ export function DesktopGamesWorkspace({
                         className={cn(
                           "rounded-[24px] border p-4 transition",
                           tone.mutedPanelClassName,
+                          selectedGame.id === game.id && selectedContentCardClassName,
                         )}
                       >
                         <div className="flex items-start justify-between gap-4">
@@ -544,7 +549,7 @@ export function DesktopGamesWorkspace({
                                 正在玩 {game.name}
                               </span>
                               {friendInviteStatusByActivityId[activity.id] ? (
-                                <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)]">
+                                <span className="rounded-full border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)]">
                                   已邀约
                                 </span>
                               ) : null}
@@ -676,7 +681,7 @@ export function DesktopGamesWorkspace({
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gift
                     size={16}
-                    className="text-[#16a34a]"
+                    className="text-[color:var(--brand-primary)]"
                   />
                   活动与福利
                 </div>
@@ -734,7 +739,7 @@ export function DesktopGamesWorkspace({
                 <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                   <Gamepad2
                     size={16}
-                    className="text-[#16a34a]"
+                    className="text-[color:var(--brand-secondary)]"
                   />
                   首版说明
                 </div>
