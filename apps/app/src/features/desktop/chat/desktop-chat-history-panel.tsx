@@ -249,13 +249,13 @@ export function DesktopChatHistoryPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b border-black/6 bg-[#f7f7f7] px-4 py-3">
+      <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-3 backdrop-blur-xl">
         <input
           type="search"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
           placeholder="搜索聊天记录"
-          className="h-9 w-full rounded-[10px] border border-black/8 bg-white px-3 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-black/12"
+          className="h-9 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
         />
         <div className="mt-3 flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap gap-2">
@@ -293,7 +293,7 @@ export function DesktopChatHistoryPanel({
                 params: { conversationId: conversation.id },
               });
             }}
-            className="h-8 shrink-0 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+            className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
           >
             完整搜索
             <ArrowUpRight className="size-3.5" />
@@ -319,8 +319,8 @@ export function DesktopChatHistoryPanel({
               className={cn(
                 "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                 typeFilter === item.id
-                  ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                  : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
+                  ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]"
+                  : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
               )}
             >
               {item.label}
@@ -340,8 +340,8 @@ export function DesktopChatHistoryPanel({
               className={cn(
                 "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                 dateFilter === item.id
-                  ? "border-[#d6d6d6] bg-white text-[color:var(--text-primary)]"
-                  : "border-transparent bg-[#ececec] text-[color:var(--text-muted)] hover:border-black/6 hover:bg-[#e6e6e6]",
+                  ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]"
+                  : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
               )}
             >
               {item.label}
@@ -359,7 +359,7 @@ export function DesktopChatHistoryPanel({
                 setDateFilter("all");
               }
             }}
-            className="h-9 min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
+            className="h-9 min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]"
           />
           {specificDate ? (
             <Button
@@ -367,7 +367,7 @@ export function DesktopChatHistoryPanel({
               variant="secondary"
               size="sm"
               onClick={() => setSpecificDate("")}
-              className="h-8 shrink-0 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+              className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
             >
               清除日期
             </Button>
@@ -384,7 +384,7 @@ export function DesktopChatHistoryPanel({
             <select
               value={senderFilter}
               onChange={(event) => setSenderFilter(event.target.value)}
-              className="min-w-0 flex-1 rounded-[10px] border border-black/8 bg-white px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-black/12"
+              className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--border-brand)]"
             >
               <option value="all">全部成员</option>
               {senderOptions.map((senderName) => (
@@ -405,7 +405,7 @@ export function DesktopChatHistoryPanel({
                   setSpecificDate("");
                   setSenderFilter("all");
                 }}
-                className="h-8 shrink-0 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+                className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
               >
                 清空筛选
               </Button>
@@ -424,7 +424,7 @@ export function DesktopChatHistoryPanel({
                 setDateFilter("all");
                 setSpecificDate("");
               }}
-              className="h-8 rounded-[8px] border-black/8 bg-white px-3 text-[12px] shadow-none hover:bg-[#efefef]"
+              className="h-8 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
             >
               清空筛选
             </Button>
@@ -462,13 +462,13 @@ export function DesktopChatHistoryPanel({
         ) : null}
 
         {visibleSections.length ? (
-          <div className="bg-white">
+          <div className="bg-[rgba(255,255,255,0.68)]">
             {visibleSections.map((section) => (
               <section key={section.key}>
-                <div className="sticky top-0 z-[1] border-y border-black/6 bg-[#f6f6f6] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                <div className="sticky top-0 z-[1] border-y border-[color:var(--border-faint)] bg-white/84 px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] backdrop-blur-xl">
                   {section.label}
                 </div>
-                <div className="divide-y divide-black/6">
+                <div className="divide-y divide-[color:var(--border-faint)]">
                   {section.rows.map((row) => (
                     <button
                       key={row.id}
@@ -489,7 +489,7 @@ export function DesktopChatHistoryPanel({
                           hash: `chat-message-${row.id}`,
                         });
                       }}
-                      className="block w-full px-4 py-3 text-left transition hover:bg-[#f8f8f8]"
+                      className="block w-full px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -500,7 +500,7 @@ export function DesktopChatHistoryPanel({
                         </div>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span className="shrink-0 rounded-[7px] bg-[#f1f3f5] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                        <span className="shrink-0 rounded-[7px] border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                           {row.typeLabel}
                         </span>
                         {row.reminderAt ? (
@@ -521,7 +521,7 @@ export function DesktopChatHistoryPanel({
               </section>
             ))}
             {isPartialResult ? (
-              <div className="border-t border-black/6 bg-[#f6f6f6] px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="border-t border-[color:var(--border-faint)] bg-white/82 px-4 py-3 text-[12px] text-[color:var(--text-muted)]">
                 当前仅展示前 {MAX_VISIBLE_ROWS}{" "}
                 条命中结果，可继续扩大检索范围或进入完整搜索。
               </div>
@@ -530,7 +530,7 @@ export function DesktopChatHistoryPanel({
         ) : null}
 
         {!messagesQuery.isLoading && historyRows.length > 0 ? (
-          <div className="border-t border-black/6 bg-[#f3f3f3] px-4 py-3">
+          <div className="border-t border-[color:var(--border-faint)] bg-white/78 px-4 py-3 backdrop-blur-xl">
             <Button
               type="button"
               variant="secondary"
@@ -539,7 +539,7 @@ export function DesktopChatHistoryPanel({
                 setHistoryLimit((current) => current + HISTORY_LIMIT_STEP)
               }
               disabled={messagesQuery.isFetching || !mayHaveEarlierMessages}
-              className="h-8 w-full rounded-[8px] border-black/8 bg-white text-[12px] shadow-none hover:bg-[#efefef]"
+              className="h-8 w-full rounded-[8px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
             >
               {messagesQuery.isFetching
                 ? "正在加载更早消息..."
@@ -856,10 +856,12 @@ function HistoryStatPill({
   return (
     <span
       className={cn(
-        "rounded-[7px] px-2.5 py-1 text-[11px]",
-        tone === "brand" && "bg-[#ededed] text-[color:var(--text-primary)]",
+        "rounded-[7px] border px-2.5 py-1 text-[11px]",
+        tone === "brand" &&
+          "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
-        tone === "neutral" && "bg-[#ededed] text-[color:var(--text-muted)]",
+        tone === "neutral" &&
+          "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
       )}
     >
       {label}
