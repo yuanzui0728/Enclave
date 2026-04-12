@@ -5,6 +5,7 @@ import {
   AlertCircle,
   Bug,
   ClipboardList,
+  Download,
   Gauge,
   Lightbulb,
   MessageSquareText,
@@ -19,6 +20,7 @@ import {
   TextField,
   cn,
 } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
   clearDesktopFeedbackDraft,
@@ -34,6 +36,8 @@ import {
 } from "../features/desktop/feedback/desktop-feedback-storage";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
+import { saveGeneratedFile } from "../runtime/save-generated-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -96,7 +100,12 @@ export function DesktopFeedbackPage() {
   const [history, setHistory] = useState<DesktopFeedbackRecord[]>(() =>
     readDesktopFeedbackHistory(),
   );
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const systemStatusQuery = useQuery({
@@ -312,7 +321,20 @@ export function DesktopFeedbackPage() {
       }
     >
       <div className="p-5">
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        {notice ? (
+          <InlineNotice
+            className="flex items-center justify-between gap-3"
+            tone={notice.tone}
+          >
+            <span>{notice.message}</span>
+            {notice.actionLabel && notice.onAction ? (
+              <InlineNoticeActionButton
+                label={notice.actionLabel}
+                onClick={notice.onAction}
+              />
+            ) : null}
+          </InlineNotice>
+        ) : null}
         {error ? <InlineNotice tone="info">{error}</InlineNotice> : null}
         {systemStatusQuery.isError &&
         systemStatusQuery.error instanceof Error ? (
@@ -500,10 +522,22 @@ export function DesktopFeedbackPage() {
               <Button
                 type="button"
                 variant="secondary"
+                onClick={() => void handleSaveFeedbackPackage()}
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                <Download size={15} />
+                保存反馈包
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   setDraft({ ...defaultDesktopFeedbackDraft });
                   clearDesktopFeedbackDraft();
-                  setNotice("反馈草稿已清空。");
+                  setNotice({
+                    message: "反馈草稿已清空。",
+                    tone: "success",
+                  });
                   setError(null);
                 }}
                 className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
@@ -544,11 +578,14 @@ export function DesktopFeedbackPage() {
     setDraft({ ...defaultDesktopFeedbackDraft });
     clearDesktopFeedbackDraft();
     setError(null);
-    setNotice("反馈已保存到本地工作区。");
+    setNotice({
+      message: "反馈已保存到本地工作区。",
+      tone: "success",
+    });
   }
 
-  async function handleCopyFeedbackPackage() {
-    const feedbackPackage = [
+  function buildFeedbackPackage() {
+    return [
       `反馈分类：${resolveCategoryLabel(draft.category)}`,
       `优先级：${resolvePriorityLabel(draft.priority)}`,
       `标题：${draft.title.trim() || "未填写"}`,
@@ -560,6 +597,20 @@ export function DesktopFeedbackPage() {
       `世界主人：${ownerName || "世界主人"}`,
       `诊断摘要：${diagnosticSummary}`,
     ].join("\n");
+  }
+
+  function buildFeedbackPackageFileName() {
+    const normalizedTitle =
+      draft.title
+        .trim()
+        .replace(/[\\/:*?"<>|]/g, "-")
+        .replace(/\s+/g, "-") || "desktop-feedback";
+    const date = new Date().toISOString().slice(0, 10);
+    return `${normalizedTitle}-${date}.txt`;
+  }
+
+  async function handleCopyFeedbackPackage() {
+    const feedbackPackage = buildFeedbackPackage();
 
     if (
       typeof navigator === "undefined" ||
@@ -573,10 +624,51 @@ export function DesktopFeedbackPage() {
     try {
       await navigator.clipboard.writeText(feedbackPackage);
       setError(null);
-      setNotice("反馈包已复制，可直接发给产品或开发继续跟进。");
+      setNotice({
+        message: "反馈包已复制，可直接发给产品或开发继续跟进。",
+        tone: "success",
+      });
     } catch {
       setError("复制反馈包失败，请稍后重试。");
     }
+  }
+
+  async function handleSaveFeedbackPackage() {
+    const result = await saveGeneratedFile({
+      contents: buildFeedbackPackage(),
+      fileName: buildFeedbackPackageFileName(),
+      mimeType: "text/plain;charset=utf-8",
+      dialogTitle: "保存反馈包",
+      kindLabel: "反馈包",
+    });
+
+    if (result.status === "cancelled") {
+      return;
+    }
+
+    const canRevealSavedFile =
+      result.status === "saved" && Boolean(result.savedPath?.trim());
+    const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+    setNotice({
+      message: result.message,
+      tone: result.status === "failed" ? "danger" : "success",
+      actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+      onAction:
+        savedPath
+          ? () => {
+              void revealSavedFile(savedPath).then((revealed) => {
+                setNotice({
+                  message: revealed
+                    ? "已打开反馈包所在位置。"
+                    : "打开所在位置失败，请稍后再试。",
+                  tone: revealed ? "success" : "danger",
+                });
+              });
+            }
+          : undefined,
+    });
+    setError(null);
   }
 }
 
