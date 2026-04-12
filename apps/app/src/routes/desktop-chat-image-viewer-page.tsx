@@ -198,7 +198,7 @@ export function DesktopChatImageViewerPage() {
             <Button
               type="button"
               onClick={() => focusMainWindow(fallbackPath)}
-              className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
             >
               回到消息页
             </Button>
