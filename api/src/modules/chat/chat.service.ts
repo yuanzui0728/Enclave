@@ -163,7 +163,8 @@ export class ChatService {
       unreadCount: number;
     })[] = [];
     for (const rawConversation of convs) {
-      const conv = await this.normalizeLegacyConversationEntity(rawConversation);
+      const conv =
+        await this.normalizeLegacyConversationEntity(rawConversation);
       const cutoff = this.getVisibleMessageCutoff(conv);
       const lastMsgEntity = await this.msgRepo.findOne({
         where: this.buildMessageWhere(conv.id, cutoff),
@@ -657,12 +658,14 @@ export class ChatService {
       entity,
       aiEntity.createdAt ?? new Date(),
     );
-    history.push({
-      role: 'assistant',
-      content: reply.text,
-      parts: this.buildTextAiParts(reply.text),
-      characterId: charId,
-    });
+    if (this.shouldIncludeAssistantMessageInHistory(reply.text)) {
+      history.push({
+        role: 'assistant',
+        content: reply.text,
+        parts: this.buildTextAiParts(reply.text),
+        characterId: charId,
+      });
+    }
     this.conversationHistory.set(convId, history);
     results.push(this._entityToMessage(aiEntity));
 
@@ -734,21 +737,33 @@ export class ChatService {
       ),
       order: { createdAt: 'ASC' },
     });
-    const rebuiltHistory = allMsgs.map((message) => {
+    const rebuiltHistory: ChatMessage[] = [];
+    for (const message of allMsgs) {
+      if (message.senderType === 'system') {
+        continue;
+      }
+
       const attachment = this.parseAttachment(message);
       const baseText =
         message.senderType === 'user'
           ? message.text
           : sanitizeAiText(message.text);
 
-      return {
+      if (
+        message.senderType === 'character' &&
+        !this.shouldIncludeAssistantMessageInHistory(baseText)
+      ) {
+        continue;
+      }
+
+      rebuiltHistory.push({
         role: message.senderType === 'user' ? 'user' : 'assistant',
         content: this.buildMessagePromptText(baseText, attachment),
         parts: this.buildAiParts(baseText, attachment),
         characterId:
           message.senderType === 'character' ? message.senderId : undefined,
-      } satisfies ChatMessage;
-    });
+      });
+    }
 
     this.conversationHistory.set(conversation.id, rebuiltHistory);
     return rebuiltHistory;
@@ -799,6 +814,21 @@ export class ChatService {
     }
 
     return new Date(Math.max(...timestamps));
+  }
+
+  private shouldIncludeAssistantMessageInHistory(text: string) {
+    const normalized = sanitizeAiText(text).trim();
+    if (!normalized) {
+      return false;
+    }
+
+    return !(
+      normalized.startsWith('消息已送达，但') ||
+      normalized.includes('没有配置可用的 AI Key') ||
+      normalized.includes('AI Provider Key 无效') ||
+      normalized.includes('AI Key 无效') ||
+      normalized.includes('专属 AI Key 已失效')
+    );
   }
 
   private getSortableTimestamp(value?: Date): number {
@@ -881,7 +911,9 @@ export class ChatService {
     entity: ConversationEntity,
   ): Promise<ConversationEntity> {
     const normalizedParticipants = [
-      ...new Set((entity.participants ?? []).map((item) => item.trim()).filter(Boolean)),
+      ...new Set(
+        (entity.participants ?? []).map((item) => item.trim()).filter(Boolean),
+      ),
     ];
     const primaryCharacterId = normalizedParticipants[0];
     const normalizedTitle = entity.title?.trim() ?? '';
@@ -973,7 +1005,11 @@ export class ChatService {
   }
 
   private resolveStrongReminderDurationHours(durationHours?: number) {
-    if (!Number.isFinite(durationHours) || !durationHours || durationHours <= 0) {
+    if (
+      !Number.isFinite(durationHours) ||
+      !durationHours ||
+      durationHours <= 0
+    ) {
       return this.defaultStrongReminderHours;
     }
 
