@@ -33,7 +33,7 @@ export function SearchResultCard({
       className={
         layout === "mobile"
           ? "flex w-full items-start gap-3 rounded-[18px] bg-white/88 px-4 py-3 text-left transition hover:bg-white"
-          : "flex w-full items-start gap-3 rounded-[20px] border border-black/6 bg-white px-4 py-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition hover:border-black/10 hover:bg-[#fcfcfc]"
+          : "flex w-full items-start gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
       }
     >
       <AvatarChip
