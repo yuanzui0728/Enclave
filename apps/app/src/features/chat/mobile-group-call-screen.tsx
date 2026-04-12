@@ -640,8 +640,8 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
-        <section className="rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3.5">
+        <section className="rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4.5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center gap-4">
             <GroupAvatarChip
               name={groupName}
@@ -656,7 +656,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-3.5 grid grid-cols-3 gap-2.5">
             <CallMetricCard
               label="当前在线"
               value={`${activeCount} 人`}
@@ -674,7 +674,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             />
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2.5">
+          <div className="mt-3.5 flex flex-wrap gap-2">
             <CallControlButton
               active={!muted}
               disabled={leavingScreen}
@@ -712,7 +712,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           </div>
         </section>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3.5 space-y-2.5">
           {showWorkspacePrimer ? (
             <MobileCallNotice tone="info">
               首次进入可先点下方成员席位切换“已加入/待加入”，再点“同步最新状态”把在线人数回写到群聊卡片。
@@ -803,7 +803,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           ) : null}
         </div>
 
-        <section className="mt-4 min-h-0 flex-1 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+        <section className="mt-3.5 min-h-0 flex-1 rounded-[28px] border border-white/8 bg-[rgba(15,23,42,0.76)] px-4 py-4 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-medium text-white">成员席位</div>
@@ -816,7 +816,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             </MobileCallMetaChip>
           </div>
 
-          <div className="mt-4 grid gap-3">
+          <div className="mt-3.5 grid gap-2.5">
             {visibleMembers.map((member) => {
               const joined = joinedMemberIds.includes(member.memberId);
               const roleLabel =
@@ -833,7 +833,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                   onClick={() => toggleJoinedState(member.memberId)}
                   disabled={leavingScreen || member.memberType === "user"}
                   className={cn(
-                    "rounded-[18px] border px-3.5 py-3 text-left transition",
+                    "rounded-[18px] border px-3.5 py-2.5 text-left transition",
                     joined
                       ? "border-[rgba(34,197,94,0.22)] bg-[rgba(34,197,94,0.10)]"
                       : "border-white/12 bg-white/6",
@@ -858,7 +858,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                           {roleLabel}
                         </MobileCallMetaChip>
                       </div>
-                      <div className="mt-1 text-[11px] leading-5 text-white/52">
+                      <div className="mt-0.5 text-[11px] leading-[18px] text-white/52">
                         {member.memberType === "user"
                           ? "世界主人始终保留在当前群通话工作台"
                           : joined
@@ -888,7 +888,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
           ) : null}
         </section>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-3.5 grid grid-cols-2 gap-2.5">
           <MobileCallActionButton
             onClick={() => {
               setCallTipsDismissed(true);
