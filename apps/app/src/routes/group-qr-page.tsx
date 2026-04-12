@@ -47,6 +47,10 @@ import {
 } from "../lib/format";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 
@@ -57,6 +61,8 @@ export function GroupQrPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const search = useRouterState({ select: (state) => state.location.search });
   const [notice, setNotice] = useState<{
     message: string;
@@ -591,6 +597,21 @@ export function GroupQrPage() {
     }
   }
 
+  async function shareInvite() {
+    const groupName = groupQuery.data?.name ?? "隐界群聊";
+    const shared = await shareWithNativeShell({
+      title: `${groupName} 邀请`,
+      text: inviteText,
+    });
+
+    if (shared) {
+      showNotice("已打开系统分享面板。");
+      return;
+    }
+
+    await copyText(inviteText, "群邀请文案已复制。");
+  }
+
   async function sendToConversation(conversation: ConversationListItem) {
     const conversationPath = isPersistedGroupConversation(conversation)
       ? `/group/${conversation.id}`
@@ -793,10 +814,21 @@ export function GroupQrPage() {
             />
             <ActionCard
               compact={!isDesktopLayout}
-              icon={<Copy size={16} />}
-              title="发到手机"
-              description="把当前群邀请入口复制到手机，并进入接力历史。"
+              icon={
+                nativeMobileShareSupported ? <Share2 size={16} /> : <Copy size={16} />
+              }
+              title={nativeMobileShareSupported ? "系统分享" : "发到手机"}
+              description={
+                nativeMobileShareSupported
+                  ? "直接通过系统分享面板发给联系人或其他应用。"
+                  : "把当前群邀请入口复制到手机，并进入接力历史。"
+              }
               onClick={() => {
+                if (nativeMobileShareSupported) {
+                  void shareInvite();
+                  return;
+                }
+
                 void sendToMobile();
               }}
             />
