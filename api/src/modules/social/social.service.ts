@@ -9,6 +9,9 @@ import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { DEFAULT_CHARACTER_IDS } from '../characters/default-characters';
+import { ChatService } from '../chat/chat.service';
+
+const ACTIVE_FRIENDSHIP_STATUSES = new Set(['friend', 'close', 'best']);
 
 @Injectable()
 export class SocialService {
@@ -26,6 +29,7 @@ export class SocialService {
     private readonly ai: AiOrchestratorService,
     private readonly narrativeService: NarrativeService,
     private readonly worldOwnerService: WorldOwnerService,
+    private readonly chatService: ChatService,
   ) {}
 
   async getPendingRequests(): Promise<FriendRequestEntity[]> {
@@ -41,24 +45,15 @@ export class SocialService {
     const req = await this.friendRequestRepo.findOneBy({ id: requestId, ownerId: owner.id });
     if (!req) throw new Error('Request not found');
 
-    req.status = 'accepted';
-    await this.friendRequestRepo.save(req);
-
-    const existing = await this.friendshipRepo.findOneBy({ ownerId: owner.id, characterId: req.characterId });
-    if (existing) {
-      existing.status = 'friend';
-      await this.narrativeService.ensureArc(req.characterId, req.characterName);
-      return this.friendshipRepo.save(existing);
+    const shouldNotifyConversation = req.status !== 'accepted';
+    if (shouldNotifyConversation) {
+      req.status = 'accepted';
+      await this.friendRequestRepo.save(req);
     }
 
-    const friendship = this.friendshipRepo.create({
-      ownerId: owner.id,
-      characterId: req.characterId,
-      intimacyLevel: 10,
+    return this.activateFriendship(owner.id, req.characterId, req.characterName, {
+      notifyConversation: shouldNotifyConversation,
     });
-    const saved = await this.friendshipRepo.save(friendship);
-    await this.narrativeService.ensureArc(req.characterId, req.characterName);
-    return saved;
   }
 
   async declineRequest(requestId: string): Promise<void> {
@@ -256,13 +251,29 @@ export class SocialService {
     return { character: char, greeting };
   }
 
-  async sendFriendRequest(characterId: string, greeting: string): Promise<FriendRequestEntity> {
+  async sendFriendRequest(
+    characterId: string,
+    greeting: string,
+    options?: { autoAccept?: boolean },
+  ): Promise<FriendRequestEntity> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const char = await this.characterRepo.findOneBy({ id: characterId });
     if (!char) throw new Error('Character not found');
 
     const existing = await this.friendRequestRepo.findOneBy({ ownerId: owner.id, characterId, status: 'pending' });
-    if (existing) return existing;
+    if (existing) {
+      if (!options?.autoAccept) {
+        return existing;
+      }
+
+      existing.status = 'accepted';
+      existing.expiresAt = null;
+      const savedExisting = await this.friendRequestRepo.save(existing);
+      await this.activateFriendship(owner.id, char.id, char.name, {
+        notifyConversation: true,
+      });
+      return savedExisting;
+    }
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -273,12 +284,20 @@ export class SocialService {
       characterId,
       characterName: char.name,
       characterAvatar: char.avatar,
-      triggerScene: 'shake',
+      triggerScene: options?.autoAccept ? 'manual_add' : 'shake',
       greeting,
-      status: 'pending',
-      expiresAt: tomorrow,
+      status: options?.autoAccept ? 'accepted' : 'pending',
+      expiresAt: options?.autoAccept ? null : tomorrow,
     });
-    return this.friendRequestRepo.save(req);
+    const saved = await this.friendRequestRepo.save(req);
+
+    if (options?.autoAccept) {
+      await this.activateFriendship(owner.id, char.id, char.name, {
+        notifyConversation: true,
+      });
+    }
+
+    return saved;
   }
 
   async blockCharacter(characterId: string, reason?: string): Promise<{
@@ -359,6 +378,48 @@ export class SocialService {
     friendship.intimacyLevel = Math.min(100, Math.max(0, friendship.intimacyLevel + delta));
     friendship.lastInteractedAt = new Date();
     await this.friendshipRepo.save(friendship);
+  }
+
+  private async activateFriendship(
+    ownerId: string,
+    characterId: string,
+    characterName: string,
+    options?: { notifyConversation?: boolean },
+  ): Promise<FriendshipEntity> {
+    const existing = await this.friendshipRepo.findOneBy({ ownerId, characterId });
+    let friendship: FriendshipEntity;
+    let shouldNotifyConversation = options?.notifyConversation === true;
+
+    if (existing) {
+      if (ACTIVE_FRIENDSHIP_STATUSES.has(existing.status)) {
+        friendship = existing;
+        shouldNotifyConversation = false;
+      } else {
+        existing.status = 'friend';
+        friendship = await this.friendshipRepo.save(existing);
+      }
+    } else {
+      friendship = await this.friendshipRepo.save(
+        this.friendshipRepo.create({
+          ownerId,
+          characterId,
+          intimacyLevel: 10,
+          status: 'friend',
+        }),
+      );
+    }
+
+    await this.narrativeService.ensureArc(characterId, characterName);
+
+    if (shouldNotifyConversation) {
+      const conversation = await this.chatService.getOrCreateConversation(characterId);
+      await this.chatService.saveSystemMessage(
+        conversation.id,
+        `你已添加了${characterName}，现在可以开始聊天了。`,
+      );
+    }
+
+    return friendship;
   }
 }
 

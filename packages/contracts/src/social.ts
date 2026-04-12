@@ -42,6 +42,7 @@ export interface BlockedCharacter {
 export interface SendFriendRequestRequest {
   characterId: string;
   greeting: string;
+  autoAccept?: boolean;
 }
 
 export interface SetFriendStarredRequest {
