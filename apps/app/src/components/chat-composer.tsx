@@ -46,6 +46,7 @@ import { MobileMentionPickerSheet } from "../features/chat/mobile-mention-picker
 import { useSpeechInput } from "../features/chat/use-speech-input";
 import {
   buildFavoriteShareText,
+  hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   type DesktopFavoriteRecord,
@@ -299,6 +300,7 @@ export function ChatComposer({
   onSubmit,
 }: ChatComposerProps) {
   const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const sendMessageShortcut = useChatPreferencesStore(
     (state) => state.sendMessageShortcut,
   );
@@ -814,6 +816,66 @@ export function ChatComposer({
       ),
     );
   }, [desktopPlusMenuOpen, desktopPlusMenuView, favoritesQuery.data]);
+
+  useEffect(() => {
+    if (
+      !isDesktop ||
+      !desktopPlusMenuOpen ||
+      desktopPlusMenuView !== "favorites"
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncDesktopFavoriteRecords = async () => {
+      if (nativeDesktopFavorites) {
+        await hydrateDesktopFavoritesFromNative();
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setDesktopFavoriteRecords((current) => {
+        const nextRecords = mergeDesktopFavoriteRecords(
+          favoritesQuery.data ?? [],
+          readDesktopFavorites(),
+        );
+        return JSON.stringify(current) === JSON.stringify(nextRecords)
+          ? current
+          : nextRecords;
+      });
+    };
+
+    const handleFocus = () => {
+      void syncDesktopFavoriteRecords();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncDesktopFavoriteRecords();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    desktopPlusMenuOpen,
+    desktopPlusMenuView,
+    favoritesQuery.data,
+    isDesktop,
+    nativeDesktopFavorites,
+  ]);
 
   useEffect(() => {
     return () => {
