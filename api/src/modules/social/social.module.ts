@@ -9,6 +9,7 @@ import { CharacterEntity } from '../characters/character.entity';
 import { AiModule } from '../ai/ai.module';
 import { NarrativeModule } from '../narrative/narrative.module';
 import { AuthModule } from '../auth/auth.module';
+import { ChatModule } from '../chat/chat.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from '../auth/auth.module';
     AiModule,
     NarrativeModule,
     AuthModule,
+    ChatModule,
   ],
   providers: [SocialService],
   controllers: [SocialController],

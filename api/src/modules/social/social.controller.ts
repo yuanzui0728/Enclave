@@ -63,8 +63,15 @@ export class SocialController {
   }
 
   @Post('friend-requests/send')
-  sendFriendRequest(@Body() body: { characterId: string; greeting: string }) {
-    return this.socialService.sendFriendRequest(body.characterId, body.greeting);
+  sendFriendRequest(
+    @Body()
+    body: { characterId: string; greeting: string; autoAccept?: boolean },
+  ) {
+    return this.socialService.sendFriendRequest(
+      body.characterId,
+      body.greeting,
+      { autoAccept: body.autoAccept === true },
+    );
   }
 
   @Post('block')
