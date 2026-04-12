@@ -48,13 +48,16 @@ export function DesktopFeedRow({
     }
   }, [commentDraft, commentLoading]);
 
+  const activeRowClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
+
   return (
     <article
       onClick={onOpenDetail}
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-section)]"
+          ? activeRowClassName
           : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-section)]",
       )}
     >
@@ -92,7 +95,7 @@ export function DesktopFeedRow({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                   post.authorType === "character"
-                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                    ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -104,7 +107,7 @@ export function DesktopFeedRow({
                 {post.authorType === "character" ? "居民" : "世界主人"}
               </span>
               {post.aiReacted ? (
-                <span className="rounded-md border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                <span className="rounded-md border border-[rgba(7,193,96,0.12)] bg-white px-2 py-1 text-[10px] font-medium text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]">
                   AI 已回应
                 </span>
               ) : null}

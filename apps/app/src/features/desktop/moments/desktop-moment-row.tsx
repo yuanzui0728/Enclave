@@ -61,14 +61,19 @@ export function DesktopMomentRow({
     }
   }, [commentDraft, commentLoading]);
 
+  const activeRowClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
+  const activeActionClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
+
   return (
     <article
       onClick={onOpenDetail}
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-section)]"
-          : "border-[color:var(--border-faint)] bg-white hover:shadow-[var(--shadow-section)]",
+          ? activeRowClassName
+          : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-section)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -105,7 +110,7 @@ export function DesktopMomentRow({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium tracking-[0.12em]",
                   moment.authorType === "character"
-                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                    ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -149,7 +154,7 @@ export function DesktopMomentRow({
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-[background-color,border-color,color] disabled:opacity-55",
                   likedByOwner
-                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                    ? activeActionClassName
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
