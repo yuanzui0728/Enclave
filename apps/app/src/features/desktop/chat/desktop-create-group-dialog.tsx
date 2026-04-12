@@ -715,11 +715,11 @@ export function DesktopCreateGroupDialog({
         className={cn(
           "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
           checked
-            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)]"
+            ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
             : isSourceFriend
-              ? "border-[rgba(7,193,96,0.10)] bg-[rgba(7,193,96,0.04)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[rgba(7,193,96,0.08)]"
+              ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.05)] hover:border-[rgba(7,193,96,0.14)] hover:bg-[rgba(7,193,96,0.07)]"
               : "hover:border-[color:var(--border-faint)] hover:bg-white",
-          focused ? "ring-1 ring-[rgba(7,193,96,0.24)]" : "",
+          focused ? "ring-1 ring-[rgba(7,193,96,0.18)]" : "",
         )}
       >
         <AvatarChip
@@ -733,7 +733,7 @@ export function DesktopCreateGroupDialog({
               {displayName}
             </div>
             {isSourceFriend ? (
-              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
+              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                 当前聊天
               </span>
             ) : null}
@@ -751,7 +751,7 @@ export function DesktopCreateGroupDialog({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             checked
-              ? "border-[#07c160] bg-[#07c160] text-white"
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
               : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
           )}
         >
@@ -801,7 +801,7 @@ export function DesktopCreateGroupDialog({
               发起群聊
             </div>
             <div className="mt-1 flex items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#07c160]" />
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
               群名称会按成员自动生成，创建后可在聊天信息里修改。
             </div>
           </div>
@@ -814,7 +814,7 @@ export function DesktopCreateGroupDialog({
             }}
             disabled={createMutation.isPending}
             aria-label="关闭"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X size={16} />
           </button>
@@ -836,7 +836,7 @@ export function DesktopCreateGroupDialog({
           </div>
 
           {seedMemberIds.length ? (
-            <div className="mb-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[#f3fff8] px-3 py-2.5 text-[12px] leading-5 text-[#2f7a4c]">
+            <div className="mb-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
               已按当前聊天默认勾选
               {sourceFriendName ? `“${sourceFriendName}”` : "对方"}
               ，你可以继续添加其他联系人。
@@ -883,8 +883,8 @@ export function DesktopCreateGroupDialog({
                       className={cn(
                         "flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition",
                         isSourceFriend
-                          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] hover:bg-[rgba(7,193,96,0.12)]"
-                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] hover:bg-[rgba(7,193,96,0.08)]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                       )}
                     >
                       <AvatarChip
@@ -894,7 +894,7 @@ export function DesktopCreateGroupDialog({
                       />
                       <span className="max-w-24 truncate">{displayName}</span>
                       {isSourceFriend ? (
-                        <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                        <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                           当前聊天
                         </span>
                       ) : null}
@@ -941,7 +941,7 @@ export function DesktopCreateGroupDialog({
                         setSelectedMessageIds([]);
                       }
                     }}
-                    className="mt-0.5 h-4 w-4 rounded border-black/20 text-[#07c160] focus:ring-[#07c160]"
+                    className="mt-0.5 h-4 w-4 rounded border-black/20 text-[color:var(--brand-primary)] focus:ring-[color:var(--brand-primary)]"
                   />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -1368,7 +1368,7 @@ export function DesktopCreateGroupDialog({
               variant="secondary"
               onClick={onClose}
               disabled={createMutation.isPending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
               取消
             </Button>
@@ -1377,7 +1377,7 @@ export function DesktopCreateGroupDialog({
               variant="primary"
               onClick={handleCreate}
               disabled={!selectedIds.length || createMutation.isPending}
-              className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
             >
               {createMutation.isPending ? "正在创建..." : "创建群聊"}
             </Button>
