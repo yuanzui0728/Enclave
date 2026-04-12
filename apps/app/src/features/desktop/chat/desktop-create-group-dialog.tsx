@@ -1045,7 +1045,10 @@ export function DesktopCreateGroupDialog({
                         >
                           <div className="space-y-3">
                           {shareableMessageSections.map((section) => (
-                            <div key={section.key} className="rounded-[10px] bg-[#fcfcfc] px-2 py-2">
+                            <div
+                              key={section.key}
+                              className="rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-2"
+                            >
                               <div className="sticky top-0 z-10 -mx-1.5 mb-1 bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-dim)] backdrop-blur">
                                 {section.label}
                               </div>
@@ -1094,7 +1097,7 @@ export function DesktopCreateGroupDialog({
                                         continuedFromPrevious ? "py-0.5" : "py-1.5",
                                         checked
                                           ? "bg-[rgba(7,193,96,0.05)]"
-                                          : "hover:bg-[#f7f7f7] active:bg-[#f3f3f3]",
+                                          : "hover:bg-white active:bg-[color:var(--surface-console)]",
                                         focused
                                           ? "ring-1 ring-[rgba(7,193,96,0.24)]"
                                           : "",
@@ -1156,8 +1159,8 @@ export function DesktopCreateGroupDialog({
                                           checked
                                             ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.10)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
                                             : isGroupLead
-                                              ? "border-black/6 bg-white group-hover:border-black/10 group-hover:bg-[#fcfcfc] group-active:bg-[#f8f8f8]"
-                                              : "border-[rgba(15,23,42,0.05)] bg-[#fcfcfc] group-hover:border-[rgba(15,23,42,0.08)] group-hover:bg-[#fafafa] group-active:bg-[#f5f5f5]",
+                                              ? "border-[color:var(--border-faint)] bg-white group-hover:border-[rgba(7,193,96,0.16)] group-hover:bg-[color:var(--surface-console)] group-active:bg-[rgba(247,250,250,0.92)]"
+                                              : "border-[rgba(15,23,42,0.05)] bg-[color:var(--surface-console)] group-hover:border-[rgba(7,193,96,0.12)] group-hover:bg-white group-active:bg-[rgba(247,250,250,0.92)]",
                                           focused && !checked
                                             ? "shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
                                             : "",
@@ -1171,7 +1174,7 @@ export function DesktopCreateGroupDialog({
                                             <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
                                               {message.senderName}
                                             </span>
-                                            <span className="rounded-full bg-[#f4f4f4] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+                                            <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
                                               {formatMessageTypeLabel(message)}
                                             </span>
                                             {focused ? (
@@ -1184,7 +1187,7 @@ export function DesktopCreateGroupDialog({
                                                 "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                                                 checked
                                                   ? "border-[#07c160] bg-[#07c160] text-white"
-                                                  : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
                                               )}
                                             >
                                               <Check size={12} strokeWidth={2.8} />
@@ -1196,7 +1199,7 @@ export function DesktopCreateGroupDialog({
                                               "absolute right-3 top-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                                               checked
                                                 ? "border-[#07c160] bg-[#07c160] text-white"
-                                                : "border-black/10 bg-[#f5f5f5] text-transparent",
+                                                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
                                             )}
                                           >
                                             <Check size={12} strokeWidth={2.8} />
