@@ -1493,14 +1493,14 @@ function CallBubble({ label, text, align }: CallBubbleProps) {
     <section
       className={
         align === "right"
-          ? "ml-auto max-w-[88%] rounded-[24px] rounded-br-[10px] bg-[#34d399]/12 px-4 py-3 text-right"
-          : "mr-auto max-w-[88%] rounded-[24px] rounded-bl-[10px] bg-white/8 px-4 py-3 text-left"
+          ? "ml-auto max-w-[86%] rounded-[22px] rounded-br-[10px] border border-[rgba(34,197,94,0.18)] bg-[rgba(34,197,94,0.12)] px-3.5 py-2.5 text-right"
+          : "mr-auto max-w-[86%] rounded-[22px] rounded-bl-[10px] border border-white/10 bg-white/8 px-3.5 py-2.5 text-left"
       }
     >
-      <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+      <div className="text-[10px] tracking-[0.08em] text-white/42">
         {label}
       </div>
-      <div className="mt-1 text-[15px] leading-7 text-white/92">{text}</div>
+      <div className="mt-1 text-[14px] leading-6 text-white/92">{text}</div>
     </section>
   );
 }
