@@ -54,8 +54,8 @@ export function DesktopFeedRow({
       className={cn(
         "cursor-pointer rounded-[16px] border px-4 py-4 transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)] shadow-[var(--shadow-section)]"
-          : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:shadow-[var(--shadow-section)]",
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-section)]"
+          : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-section)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -92,7 +92,7 @@ export function DesktopFeedRow({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                   post.authorType === "character"
-                    ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                 )}
               >
@@ -104,7 +104,7 @@ export function DesktopFeedRow({
                 {post.authorType === "character" ? "居民" : "世界主人"}
               </span>
               {post.aiReacted ? (
-                <span className="rounded-md border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2 py-1 text-[10px] font-medium text-[#15803d]">
+                <span className="rounded-md border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
                   AI 已回应
                 </span>
               ) : null}
@@ -133,7 +133,7 @@ export function DesktopFeedRow({
                   event.stopPropagation();
                   onLike();
                 }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:opacity-55"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:opacity-55"
               >
                 <Heart size={14} />
                 {likeLoading ? "处理中..." : "点赞"}
@@ -144,7 +144,7 @@ export function DesktopFeedRow({
                   event.stopPropagation();
                   setShowComposer((current) => !current);
                 }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 <MessageCircle size={14} />
                 评论
@@ -159,7 +159,7 @@ export function DesktopFeedRow({
                   "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] transition-[background-color,color,border-color]",
                   favorite
                     ? "border-[#ead9a6] bg-[#fbf7e8] text-amber-700"
-                    : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:border-[#ead9a6] hover:bg-[#fffaf0] hover:text-[color:var(--text-primary)]",
+                    : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
                 <Star size={14} className={favorite ? "fill-current" : ""} />
@@ -194,7 +194,7 @@ export function DesktopFeedRow({
                     event.stopPropagation();
                     onOpenDetail();
                   }}
-                  className="mt-3 text-[12px] font-medium text-[#15803d]"
+                  className="mt-3 text-[12px] font-medium text-[color:var(--brand-primary)]"
                 >
                   查看全部 {post.commentCount} 条评论
                 </button>
@@ -221,7 +221,7 @@ export function DesktopFeedRow({
                   event.stopPropagation();
                   onCommentSubmit();
                 }}
-                className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               >
                 {commentLoading ? "发送中..." : "发送"}
               </Button>

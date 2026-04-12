@@ -67,7 +67,7 @@ export function DesktopFeedDetailPanel({
           type="button"
           onClick={onClose}
           aria-label="关闭详情"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
         >
           <X size={16} />
         </button>
@@ -120,7 +120,7 @@ export function DesktopFeedDetailPanel({
                       className={cn(
                         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                         post.authorType === "character"
-                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                       )}
                     >
@@ -184,7 +184,7 @@ export function DesktopFeedDetailPanel({
                   size="sm"
                   disabled={likeLoading}
                   onClick={onLike}
-                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   <Heart size={14} />
                   {likeLoading ? "处理中..." : "点赞"}
@@ -196,7 +196,7 @@ export function DesktopFeedDetailPanel({
                   className={
                     favorite
                       ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11] shadow-none"
-                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[#d8d1a9] hover:bg-[#fffaf0]"
+                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                   }
                 >
                   <Star size={14} className={favorite ? "fill-current" : ""} />
@@ -206,7 +206,7 @@ export function DesktopFeedDetailPanel({
                   variant="secondary"
                   size="sm"
                   onClick={onSelectAuthor}
-                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   查看 TA 的公开动态
                 </Button>
@@ -238,7 +238,7 @@ export function DesktopFeedDetailPanel({
                           className={cn(
                             "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                             comment.authorType === "character"
-                              ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+                              ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                               : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
                           )}
                         >
@@ -272,7 +272,7 @@ export function DesktopFeedDetailPanel({
                   size="sm"
                   disabled={!commentDraft.trim() || commentLoading}
                   onClick={onCommentSubmit}
-                  className="bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                  className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                 >
                   {commentLoading ? "发送中..." : "发送"}
                 </Button>
