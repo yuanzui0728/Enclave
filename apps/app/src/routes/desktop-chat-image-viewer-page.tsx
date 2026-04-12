@@ -3,6 +3,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -16,8 +17,9 @@ import {
   X,
 } from "lucide-react";
 import { getConversations } from "@yinjie/contracts";
-import { Button } from "@yinjie/ui";
+import { Button, InlineNotice } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import {
   buildDesktopChatImageViewerRouteHash,
   parseDesktopChatImageViewerRouteHash,
@@ -31,6 +33,7 @@ import {
   focusMainDesktopWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -129,6 +132,12 @@ export function DesktopChatImageViewerPage() {
   const fallbackPath = activeItem?.returnTo ?? routeReturnTo ?? "/tabs/chat";
   const imageElementRef = useRef<HTMLImageElement | null>(null);
   const autoPrintTokenRef = useRef<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
 
   const requestCurrentWindowPrint = useCallback(() => {
     if (typeof window === "undefined") {
@@ -137,6 +146,42 @@ export function DesktopChatImageViewerPage() {
 
     window.print();
     return true;
+  }, []);
+
+  const handleImageSave = useCallback((input: { url: string; fileName: string }) => {
+    void saveRemoteFile({
+      url: input.url,
+      fileName: input.fileName,
+      kind: "image",
+      dialogTitle: "保存图片",
+    }).then((result) => {
+      if (result.status === "cancelled") {
+        return;
+      }
+
+      const canRevealSavedFile =
+        result.status === "saved" && Boolean(result.savedPath?.trim());
+      const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+      setSaveNotice({
+        message: result.message,
+        tone: result.status === "failed" ? "danger" : "success",
+        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+        onAction:
+          savedPath
+            ? () => {
+                void revealSavedFile(savedPath).then((revealed) => {
+                  setSaveNotice({
+                    message: revealed
+                      ? "已打开所在位置。"
+                      : "打开所在位置失败，请稍后再试。",
+                    tone: revealed ? "success" : "danger",
+                  });
+                });
+              }
+            : undefined,
+      });
+    });
   }, []);
 
   const navigateToItem = useCallback(
@@ -173,11 +218,9 @@ export function DesktopChatImageViewerPage() {
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        void saveRemoteFile({
+        handleImageSave({
           url: activeItem.imageUrl,
           fileName: activeItem.title,
-          kind: "image",
-          dialogTitle: "保存图片",
         });
         return;
       }
@@ -215,6 +258,7 @@ export function DesktopChatImageViewerPage() {
     activeItem,
     activeItemIndex,
     fallbackPath,
+    handleImageSave,
     navigateToItem,
     requestCurrentWindowPrint,
     viewerItems,
@@ -252,6 +296,18 @@ export function DesktopChatImageViewerPage() {
 
     triggerPrint();
   }, [activeItem, requestCurrentWindowPrint, routeState?.printToken]);
+
+  useEffect(() => {
+    if (!saveNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setSaveNotice(null),
+      saveNotice.actionLabel ? 5000 : 2200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [saveNotice]);
 
   useEffect(() => {
     if (!nativeDesktopShell) {
@@ -376,11 +432,9 @@ export function DesktopChatImageViewerPage() {
           <StandaloneActionButton
             label="保存图片"
             onClick={() => {
-              void saveRemoteFile({
+              handleImageSave({
                 url: activeItem.imageUrl,
                 fileName: activeItem.title,
-                kind: "image",
-                dialogTitle: "保存图片",
               });
             }}
           >
@@ -428,6 +482,23 @@ export function DesktopChatImageViewerPage() {
         >
           <ChevronRight size={22} />
         </ViewerNavButton>
+      ) : null}
+
+      {saveNotice ? (
+        <div className="yj-desktop-image-print-hidden px-5 pt-3">
+          <InlineNotice
+            className="flex items-center justify-between gap-3 text-xs"
+            tone={saveNotice.tone}
+          >
+            <span>{saveNotice.message}</span>
+            {saveNotice.actionLabel && saveNotice.onAction ? (
+              <InlineNoticeActionButton
+                label={saveNotice.actionLabel}
+                onClick={saveNotice.onAction}
+              />
+            ) : null}
+          </InlineNotice>
+        </div>
       ) : null}
 
       <div className="yj-desktop-image-print-stage flex min-h-0 flex-1 items-center justify-center px-16 py-8">

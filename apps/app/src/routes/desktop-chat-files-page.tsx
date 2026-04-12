@@ -17,10 +17,11 @@ import {
   FileText,
   X,
 } from "lucide-react";
-import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import {
   buildDesktopChatFilesRouteHash,
   parseDesktopChatFilesRouteState,
@@ -48,6 +49,7 @@ import {
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
 import { openExternalUrl } from "../runtime/external-url";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -85,11 +87,29 @@ export function DesktopChatFilesPage() {
   const [viewerAttachmentId, setViewerAttachmentId] = useState<string | null>(
     null,
   );
+  const [saveNotice, setSaveNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const localMessageActionState = useLocalChatMessageActionState();
 
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, []);
+
+  useEffect(() => {
+    if (!saveNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setSaveNotice(null),
+      saveNotice.actionLabel ? 5000 : 2200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [saveNotice]);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -260,6 +280,46 @@ export function DesktopChatFilesPage() {
     );
   }, [imageRows]);
 
+  const handleAttachmentSave = (input: {
+    url: string;
+    fileName: string;
+    kind: "image" | "file";
+  }) => {
+    void saveRemoteFile({
+      url: input.url,
+      fileName: input.fileName,
+      kind: input.kind,
+      dialogTitle: input.kind === "image" ? "保存图片" : "保存文件",
+    }).then((result) => {
+      if (result.status === "cancelled") {
+        return;
+      }
+
+      const canRevealSavedFile =
+        result.status === "saved" && Boolean(result.savedPath?.trim());
+      const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+      setSaveNotice({
+        message: result.message,
+        tone: result.status === "failed" ? "danger" : "success",
+        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+        onAction:
+          savedPath
+            ? () => {
+                void revealSavedFile(savedPath).then((revealed) => {
+                  setSaveNotice({
+                    message: revealed
+                      ? "已打开所在位置。"
+                      : "打开所在位置失败，请稍后再试。",
+                    tone: revealed ? "success" : "danger",
+                  });
+                });
+              }
+            : undefined,
+      });
+    });
+  };
+
   if (!isDesktopLayout) {
     return null;
   }
@@ -411,6 +471,20 @@ export function DesktopChatFilesPage() {
         }
       >
         <div className="space-y-3 p-4">
+          {saveNotice ? (
+            <InlineNotice
+              className="flex items-center justify-between gap-3 text-xs"
+              tone={saveNotice.tone}
+            >
+              <span>{saveNotice.message}</span>
+              {saveNotice.actionLabel && saveNotice.onAction ? (
+                <InlineNoticeActionButton
+                  label={saveNotice.actionLabel}
+                  onClick={saveNotice.onAction}
+                />
+              ) : null}
+            </InlineNotice>
+          ) : null}
           {allAttachmentsQuery.isLoading ? (
             <LoadingBlock label="正在读取附件..." />
           ) : null}
@@ -495,17 +569,13 @@ export function DesktopChatFilesPage() {
                             variant="secondary"
                             size="sm"
                             onClick={() => {
-                              void saveRemoteFile({
+                              handleAttachmentSave({
                                 url: item.attachment.url,
                                 fileName: item.attachment.fileName,
                                 kind:
                                   item.attachment.kind === "image"
                                     ? "image"
                                     : "file",
-                                dialogTitle:
-                                  item.attachment.kind === "image"
-                                    ? "保存图片"
-                                    : "保存文件",
                               });
                             }}
                             className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
@@ -635,11 +705,10 @@ export function DesktopChatFilesPage() {
             });
           }}
           onSave={() =>
-            void saveRemoteFile({
+            handleAttachmentSave({
               url: activeImage.attachment.url,
               fileName: activeImage.attachment.fileName,
               kind: "image",
-              dialogTitle: "保存图片",
             })
           }
         />
