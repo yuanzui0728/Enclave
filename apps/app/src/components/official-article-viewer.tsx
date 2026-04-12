@@ -1,8 +1,12 @@
 import { useState } from "react";
 import type { OfficialAccountArticleDetail } from "@yinjie/contracts";
-import { ArrowRight, Copy, Newspaper, Star } from "lucide-react";
+import { ArrowRight, Copy, Newspaper, Share2, Star } from "lucide-react";
 import { Button, InlineNotice } from "@yinjie/ui";
 import { formatTimestamp } from "../lib/format";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 
 export function OfficialArticleViewer({
   article,
@@ -19,30 +23,72 @@ export function OfficialArticleViewer({
   onOpenArticle?: (articleId: string) => void;
   onToggleFavorite?: (article: OfficialAccountArticleDetail) => void;
 }) {
-  const [copyNotice, setCopyNotice] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState<{
+    message: string;
+    tone: "success" | "info";
+  } | null>(null);
+  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+
+  const articlePath = `/official-accounts/articles/${article.id}`;
+  const articleUrl =
+    typeof window === "undefined"
+      ? articlePath
+      : `${window.location.origin}${articlePath}`;
 
   async function handleCopyLink() {
-    const articlePath = `/official-accounts/articles/${article.id}`;
-    const articleUrl =
-      typeof window === "undefined"
-        ? articlePath
-        : `${window.location.origin}${articlePath}`;
-
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      setCopyNotice("当前环境暂不支持复制链接。");
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制链接。",
+        tone: "info",
+      });
       return;
     }
 
     try {
       await navigator.clipboard.writeText(articleUrl);
-      setCopyNotice("文章链接已复制。");
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制文章链接。"
+          : "文章链接已复制。",
+        tone: "success",
+      });
     } catch {
-      setCopyNotice("复制失败，请稍后重试。");
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制失败，请稍后重试。",
+        tone: "info",
+      });
     }
+  }
+
+  async function handleShareArticle() {
+    if (!nativeMobileShareSupported) {
+      await handleCopyLink();
+      return;
+    }
+
+    const shared = await shareWithNativeShell({
+      title: article.title,
+      text: `${accountName ?? article.account.name}\n${article.title}`,
+      url: articleUrl,
+    });
+
+    if (shared) {
+      setShareNotice({
+        message: "已打开系统分享面板。",
+        tone: "success",
+      });
+      return;
+    }
+
+    await handleCopyLink();
   }
 
   return (
@@ -85,11 +131,11 @@ export function OfficialArticleViewer({
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => void handleCopyLink()}
+            onClick={() => void handleShareArticle()}
             className="rounded-xl"
           >
-            <Copy size={14} />
-            复制链接
+            {nativeMobileShareSupported ? <Share2 size={14} /> : <Copy size={14} />}
+            {nativeMobileShareSupported ? "系统分享" : "复制链接"}
           </Button>
         </div>
       </div>
@@ -101,12 +147,12 @@ export function OfficialArticleViewer({
         <span>{formatTimestamp(article.publishedAt)}</span>
         <span>{article.readCount} 阅读</span>
       </div>
-      {copyNotice ? (
+      {shareNotice ? (
         <InlineNotice
           className="mt-4 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
-          tone={copyNotice.includes("已复制") ? "success" : "info"}
+          tone={shareNotice.tone}
         >
-          {copyNotice}
+          {shareNotice.message}
         </InlineNotice>
       ) : null}
       {article.coverImage ? (
