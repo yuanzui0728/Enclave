@@ -40,7 +40,7 @@ export function DesktopPlaceholderWorkspace({
           </div>
           <a
             href={mobileFallbackTo}
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[#07c160] px-4 text-sm font-medium text-white hover:bg-[#06ad56]"
+            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white hover:opacity-95"
           >
             返回继续使用
           </a>
@@ -54,7 +54,7 @@ export function DesktopPlaceholderWorkspace({
       title={title}
       subtitle={description}
       toolbar={
-        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+        <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
           {badge}
         </div>
       }
@@ -111,7 +111,7 @@ export function DesktopPlaceholderWorkspace({
               variant="primary"
               size="lg"
               onClick={onCtaClick}
-              className="mt-5 rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+              className="mt-5 rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
             >
               {ctaLabel}
             </Button>
