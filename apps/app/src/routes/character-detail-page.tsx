@@ -35,6 +35,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
+import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -59,6 +60,9 @@ export function CharacterDetailPage() {
     tone: "success" | "info" | "warning";
     message: string;
   } | null>(null);
+  const [dangerSheetAction, setDangerSheetAction] = useState<
+    "block" | "delete" | null
+  >(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const { entryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
@@ -135,6 +139,7 @@ export function CharacterDetailPage() {
 
   useEffect(() => {
     setNotice(null);
+    setDangerSheetAction(null);
     setIsEditingProfile(false);
     resetEntryGuard();
     setProfileForm({
@@ -327,6 +332,59 @@ export function CharacterDetailPage() {
     }
     openCallMutation.mutate("video");
   };
+  const handleBlockAction = () => {
+    if (isDesktopLayout) {
+      const confirmed = window.confirm(
+        isBlocked
+          ? "确认把这个角色移出黑名单吗？"
+          : "加入黑名单后，将不再接收这个角色的互动。确认继续吗？",
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      blockMutation.mutate(isBlocked);
+      return;
+    }
+
+    setDangerSheetAction("block");
+  };
+  const handleDeleteFriendAction = () => {
+    if (isDesktopLayout) {
+      if (!window.confirm("确认删除这个联系人吗？")) {
+        return;
+      }
+
+      deleteFriendMutation.mutate();
+      return;
+    }
+
+    setDangerSheetAction("delete");
+  };
+  const dangerSheetConfig =
+    dangerSheetAction === "block"
+      ? {
+          title: isBlocked ? "移出黑名单" : "加入黑名单",
+          description: isBlocked
+            ? "移出后将恢复正常联系与互动。"
+            : "加入黑名单后，将不再接收这个角色的互动。",
+          confirmLabel: isBlocked ? "移出黑名单" : "加入黑名单",
+          confirmDescription: isBlocked
+            ? "恢复正常联系"
+            : "后续互动会被拦截",
+          confirmDanger: !isBlocked,
+          onConfirm: () => blockMutation.mutate(isBlocked),
+        }
+      : dangerSheetAction === "delete"
+        ? {
+            title: "删除联系人",
+            description: "删除后会从通讯录移除这个联系人。",
+            confirmLabel: "删除联系人",
+            confirmDescription: "此操作不可恢复",
+            confirmDanger: true,
+            onConfirm: () => deleteFriendMutation.mutate(),
+          }
+        : null;
 
   return (
     <AppPage
@@ -710,18 +768,7 @@ export function CharacterDetailPage() {
                     : "不再接收对方互动"
               }
               danger
-              onClick={() => {
-                const confirmed = window.confirm(
-                  isBlocked
-                    ? "确认把这个角色移出黑名单吗？"
-                    : "加入黑名单后，将不再接收这个角色的互动。确认继续吗？",
-                );
-                if (!confirmed) {
-                  return;
-                }
-
-                blockMutation.mutate(isBlocked);
-              }}
+              onClick={handleBlockAction}
               disabled={blockMutation.isPending}
             />
             {isFriend ? (
@@ -733,17 +780,38 @@ export function CharacterDetailPage() {
                     : "从通讯录移除"
                 }
                 danger
-                onClick={() => {
-                  if (!window.confirm("确认删除这个联系人吗？")) {
-                    return;
-                  }
-
-                  deleteFriendMutation.mutate();
-                }}
+                onClick={handleDeleteFriendAction}
                 disabled={deleteFriendMutation.isPending}
               />
             ) : null}
           </ProfileSection>
+
+          {!isDesktopLayout ? (
+            <MobileDetailsActionSheet
+              open={dangerSheetConfig !== null}
+              title={dangerSheetConfig?.title ?? ""}
+              description={dangerSheetConfig?.description}
+              onClose={() => setDangerSheetAction(null)}
+              actions={
+                dangerSheetConfig
+                  ? [
+                      {
+                        key: "confirm",
+                        label: dangerSheetConfig.confirmLabel,
+                        description: dangerSheetConfig.confirmDescription,
+                        danger: dangerSheetConfig.confirmDanger,
+                        disabled:
+                          blockMutation.isPending || deleteFriendMutation.isPending,
+                        onClick: () => {
+                          setDangerSheetAction(null);
+                          dangerSheetConfig.onConfirm();
+                        },
+                      },
+                    ]
+                  : []
+              }
+            />
+          ) : null}
         </div>
       ) : null}
     </AppPage>
