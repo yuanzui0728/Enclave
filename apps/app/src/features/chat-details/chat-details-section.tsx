@@ -30,8 +30,8 @@ export function ChatDetailsSection({
       ) : null}
       <div
         className={cn(
-          "overflow-hidden rounded-[12px] border border-black/6 bg-white",
-          isWechat && "rounded-[12px] border-black/5 shadow-none",
+          "overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-white",
+          isWechat && "rounded-[12px] border-[color:var(--border-faint)] shadow-none",
         )}
       >
         {children}

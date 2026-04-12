@@ -50,7 +50,7 @@ export function ChatSettingRow({
         isWechat &&
           cn(
             "min-h-[52px] px-4",
-            interactive && !disabled && "hover:bg-[#fafafa]",
+            interactive && !disabled && "hover:bg-[color:var(--surface-console)]",
           ),
         className,
       )}
@@ -75,14 +75,16 @@ export function ChatSettingRow({
         {isSwitch ? (
           <span
             className={cn(
-              "relative h-8 w-13 rounded-full transition-colors",
+              "relative h-8 w-13 rounded-full border transition-colors",
               isWechat && "h-7 w-11",
-              checked ? "bg-[#07c160]" : "bg-[#d5d5d5]",
+              checked
+                ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
             )}
           >
             <span
               className={cn(
-                "absolute top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+                "absolute top-1 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
                 isWechat && "top-0.5 h-6 w-6",
                 checked
                   ? isWechat

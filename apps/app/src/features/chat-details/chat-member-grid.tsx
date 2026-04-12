@@ -47,8 +47,8 @@ export function ChatMemberGrid({
                     item.kind === "remove"
                       ? "border-[rgba(220,38,38,0.25)] bg-[rgba(254,242,242,0.8)] text-red-500"
                       : isWechat
-                        ? "border-[#d9d9d9] bg-[#f7f7f7] text-[#8c8c8c]"
-                        : "border-black/10 bg-[#f7f7f7] text-[color:var(--text-secondary)]",
+                        ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-muted)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                   )}
                 >
                   {item.kind === "remove" ? "−" : "+"}
