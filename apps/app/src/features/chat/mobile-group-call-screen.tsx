@@ -634,10 +634,10 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               {groupName}
             </div>
           </div>
-          <div className="rounded-full border border-[#34d399]/22 bg-[#34d399]/10 px-3 py-1 text-[11px] text-[#bbf7d0]">
+          <MobileCallMetaChip tone="success">
             {effectiveSource === "desktop" ? "沿用桌面来源" : "手机端发起"}
+          </MobileCallMetaChip>
         </div>
-      </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
@@ -811,9 +811,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                 点击角色成员可切换为已加入或待加入，快速同步这一轮群通话状态。
               </div>
             </div>
-            <div className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] text-white/72">
+            <MobileCallMetaChip>
               {activeCount}/{totalCount} 已加入
-            </div>
+            </MobileCallMetaChip>
           </div>
 
           <div className="mt-4 grid gap-3">
@@ -854,9 +854,9 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                         <div className="truncate text-[13px] font-medium text-white">
                           {member.memberName ?? member.memberId}
                         </div>
-                        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-0.5 text-[10px] text-white/64">
+                        <MobileCallMetaChip className="px-2 py-0.5 text-[10px] text-white/64">
                           {roleLabel}
-                        </span>
+                        </MobileCallMetaChip>
                       </div>
                       <div className="mt-1 text-[11px] leading-5 text-white/52">
                         {member.memberType === "user"
@@ -866,16 +866,15 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                             : "点击后可加入本轮群通话"}
                       </div>
                     </div>
-                    <span
+                    <MobileCallMetaChip
+                      tone={joined ? "success" : "default"}
                       className={cn(
-                        "shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-medium",
-                        joined
-                          ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.16)] text-[#bbf7d0]"
-                          : "border-white/10 bg-white/8 text-white/58",
+                        "shrink-0 px-2.5 py-1 text-[10px] font-medium",
+                        joined ? null : "text-white/58",
                       )}
                     >
                       {joined ? "已加入" : "待加入"}
-                    </span>
+                    </MobileCallMetaChip>
                   </div>
                 </button>
               );
@@ -975,6 +974,25 @@ function MobileCallNotice({
             : tone === "success"
               ? "border-[#34d399]/24 bg-[#34d399]/10 text-[#d1fae5]"
               : "border-white/12 bg-white/8 text-white/74",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function MobileCallMetaChip({
+  tone = "default",
+  className,
+  ...props
+}: ComponentProps<"span"> & { tone?: "default" | "success" }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full border px-3 py-1 text-[11px]",
+        tone === "success"
+          ? "border-[#34d399]/24 bg-[#34d399]/14 text-[#bbf7d0]"
+          : "border-white/10 bg-white/8 text-white/72",
         className,
       )}
       {...props}
