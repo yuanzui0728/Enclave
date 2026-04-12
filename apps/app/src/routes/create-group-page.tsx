@@ -426,17 +426,17 @@ export function CreateGroupPage() {
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title="选择联系人"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-black/6 bg-[#f7f7f7] px-4 py-3 text-[#111827] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[#111827]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
             onClick={handleBack}
             aria-label="返回"
           >
@@ -452,7 +452,7 @@ export function CreateGroupPage() {
               "h-9 rounded-full px-3 text-[15px] font-medium transition",
               selectedIds.length && !createMutation.isPending
                 ? "bg-[#07c160] text-white active:opacity-90"
-                : "text-[#b9b9b9]",
+                : "text-[color:var(--text-dim)]",
             )}
           >
             {createMutation.isPending
@@ -464,12 +464,12 @@ export function CreateGroupPage() {
         }
       >
         <div className="space-y-3 pt-3">
-          <div className="rounded-[12px] bg-white px-4 py-3">
+          <div className="-mx-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[13px] font-medium text-[#111827]">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 已选联系人
               </div>
-              <div className="text-[12px] text-[#8c8c8c]">
+              <div className="text-[12px] text-[color:var(--text-muted)]">
                 {selectedIds.length ? `${selectedIds.length} 人` : "未选择"}
               </div>
             </div>
@@ -495,7 +495,7 @@ export function CreateGroupPage() {
                           <X size={10} />
                         </span>
                       </div>
-                      <span className="w-full truncate text-[11px] text-[#5f5f5f]">
+                      <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
                         {displayName}
                       </span>
                     </button>
@@ -503,7 +503,7 @@ export function CreateGroupPage() {
                 })}
               </div>
             ) : (
-              <div className="mt-3 text-[12px] leading-5 text-[#8c8c8c]">
+              <div className="mt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
                 先选择联系人，再开始一个新的群聊。
               </div>
             )}
@@ -512,19 +512,19 @@ export function CreateGroupPage() {
           {(routeState.source === "chat-details" ||
             routeState.source === "desktop-chat") &&
           routeState.seedMemberIds.length ? (
-            <div className="rounded-[12px] bg-[#f3fff8] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
+            <div className="-mx-4 border-y border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
               已按当前单聊默认勾选对方，你可以继续添加其他联系人。
             </div>
           ) : null}
 
-          <label className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2.5 text-sm text-[#8c8c8c]">
+          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="搜索"
-              className="min-w-0 flex-1 bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#a3a3a3]"
+              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -532,17 +532,17 @@ export function CreateGroupPage() {
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]">
         {friendsQuery.isLoading ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <LoadingBlock label="正在读取联系人..." />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
         {createMutation.isError && createMutation.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={createMutation.error.message} />
           </div>
         ) : null}
@@ -550,7 +550,7 @@ export function CreateGroupPage() {
         {!friendsQuery.isLoading &&
         !friendsQuery.isError &&
         !friendItems.length ? (
-          <div className="px-3 pt-6">
+          <div className="px-4 pt-6">
             <EmptyState
               title="还没有可拉进群的人"
               description="先去通讯录里建立一些关系，再回来创建群聊。"
@@ -562,7 +562,7 @@ export function CreateGroupPage() {
         !friendsQuery.isError &&
         friendItems.length > 0 &&
         !filteredFriends.length ? (
-          <div className="px-3 pt-6">
+          <div className="px-4 pt-6">
             <EmptyState
               title="没有找到联系人"
               description="换个名字、备注名或关系关键词试试。"
@@ -571,13 +571,13 @@ export function CreateGroupPage() {
         ) : null}
 
         {filteredSections.length ? (
-          <div className="pt-2">
+          <div>
             {filteredSections.map((section) => (
               <section key={section.key} className="mt-2">
-                <div className="px-4 py-1.5 text-[12px] text-[#8c8c8c]">
+                <div className="px-4 py-1.5 text-[12px] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
-                <div className="border-y border-black/6 bg-white">
+                <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
                   {section.items.map((item, index) => (
                     <FriendSelectionRow
                       key={item.character.id}
@@ -633,9 +633,10 @@ function FriendSelectionRow({
             ? "rounded-[12px] border border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] px-4 py-3 shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[#f3fff8] px-4 py-3"
-            : "bg-white px-4 py-3",
-        !isDesktop && withDivider ? "border-t border-black/6" : "",
+            ? "bg-[rgba(7,193,96,0.06)] px-4 py-3.5"
+            : "bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5",
+        !isDesktop && withDivider ? "border-t border-[color:var(--border-faint)]" : "",
+        !isDesktop && !disabled ? "hover:bg-[color:var(--surface-card-hover)]" : "",
       )}
     >
       <AvatarChip name={name} src={src} size={isDesktop ? "md" : "wechat"} />
@@ -643,9 +644,11 @@ function FriendSelectionRow({
         <div className="truncate text-[15px] text-[color:var(--text-primary)]">
           {name}
         </div>
-        <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-          {relationship || "世界联系人"}
-        </div>
+        {isDesktop ? (
+          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+            {relationship || "世界联系人"}
+          </div>
+        ) : null}
       </div>
       <div
         className={cn(
@@ -655,7 +658,7 @@ function FriendSelectionRow({
             ? "border-[#07c160] bg-[#07c160] text-white"
             : isDesktop
               ? "border-[color:var(--border-faint)] bg-white text-transparent"
-              : "border-black/10 bg-[#f5f5f5] text-transparent",
+              : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",
         )}
       >
         <Check size={isDesktop ? 14 : 12} strokeWidth={2.8} />
