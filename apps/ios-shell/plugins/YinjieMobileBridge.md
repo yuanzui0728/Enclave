@@ -13,15 +13,16 @@
 1. `openExternalUrl({ url })`
 2. `share({ title?, text?, url? })`
 3. `shareFile({ base64Data, fileName, mimeType?, title? })`
-4. `pickImages({ multiple? })`
-5. `pickFile()`
-6. `captureImage()`
-7. `getPushToken()`
-8. `getNotificationPermissionState()`
-9. `requestNotificationPermission()`
-10. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
-11. `getPendingLaunchTarget()`
-12. `clearPendingLaunchTarget()`
+4. `openFile({ base64Data, fileName, mimeType?, title? })`
+5. `pickImages({ multiple? })`
+6. `pickFile()`
+7. `captureImage()`
+8. `getPushToken()`
+9. `getNotificationPermissionState()`
+10. `requestNotificationPermission()`
+11. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
+12. `getPendingLaunchTarget()`
+13. `clearPendingLaunchTarget()`
 
 ## 返回结构
 
@@ -61,6 +62,17 @@
   "fileName": "需求文档.pdf",
   "mimeType": "application/pdf",
   "title": "保存文件"
+}
+```
+
+### openFile
+
+```json
+{
+  "base64Data": "<base64>",
+  "fileName": "需求文档.pdf",
+  "mimeType": "application/pdf",
+  "title": "打开文件"
 }
 ```
 
@@ -125,6 +137,7 @@
 - `openExternalUrl(_ call: CAPPluginCall)`
 - `share(_ call: CAPPluginCall)`
 - `shareFile(_ call: CAPPluginCall)`
+- `openFile(_ call: CAPPluginCall)`
 - `pickImages(_ call: CAPPluginCall)`
 - `pickFile(_ call: CAPPluginCall)`
 - `captureImage(_ call: CAPPluginCall)`
@@ -140,18 +153,20 @@
 1. 打开外链：`UIApplication.shared.open`
 2. 分享：`UIActivityViewController`
 3. 文件分享：把 base64 文件落到临时目录，再通过 `UIActivityViewController` 交给系统“存储到文件/转发”
-4. 图片选择：`PHPickerViewController`
-5. 文件选择：`UIDocumentPickerViewController`
-6. 拍照：`UIImagePickerController(sourceType: .camera)`
-7. Push token：已注册到 APNs 后缓存于原生层
-8. 通知权限：`UNUserNotificationCenter`
-9. 本地提醒通知：`UNUserNotificationCenter` 本地通知
-10. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
+4. 文件预览：把 base64 文件落到临时目录，再通过 `UIDocumentInteractionController` 打开系统预览/“在其他应用中打开”
+5. 图片选择：`PHPickerViewController`
+6. 文件选择：`UIDocumentPickerViewController`
+7. 拍照：`UIImagePickerController(sourceType: .camera)`
+8. Push token：已注册到 APNs 后缓存于原生层
+9. 通知权限：`UNUserNotificationCenter`
+10. 本地提醒通知：`UNUserNotificationCenter` 本地通知
+11. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 当前 stub 行为：
 
 - `pickImages` 会通过 `PHPickerViewController` 选择图片
 - `shareFile` 会把 Web 层传入的二进制文件写到临时目录，再打开系统分享面板
+- `openFile` 会把 Web 层传入的二进制文件写到临时目录，再打开系统文件预览或“在其他应用中打开”
 - `pickFile` 会通过 `UIDocumentPickerViewController` 选择文件，并把结果复制到临时目录再返回给 Web 层
 - `captureImage` 会通过系统相机拍照，并把结果写到临时目录再返回给 Web 层
 - 选中的资源会复制到临时目录，再以 `path / webPath / fileName / mimeType` 返回给 Web 层

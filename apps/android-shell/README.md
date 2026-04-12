@@ -62,6 +62,7 @@ Current Android-side implementation status:
   - `openExternalUrl` is wired
   - `share` is wired
   - `shareFile` writes a temp file into app cache and opens the Android share sheet through `FileProvider`
+  - `openFile` writes a temp file into app cache and opens Android file preview apps through `ACTION_VIEW`
   - `pickImages` opens Android document picker and returns portable file assets
   - `pickFile` opens Android document picker and returns a single portable file asset
   - `captureImage` opens the system camera and returns a captured image asset through `FileProvider`
@@ -78,6 +79,7 @@ Expected `YinjieMobileBridge` methods:
 - `openExternalUrl({ url })`
 - `share({ title?, text?, url? })`
 - `shareFile({ base64Data, fileName, mimeType?, title? })`
+- `openFile({ base64Data, fileName, mimeType?, title? })`
 - `pickImages({ multiple? })`
 - `pickFile()`
 - `captureImage()`
