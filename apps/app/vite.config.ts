@@ -67,8 +67,16 @@ function resolveManualChunk(id: string) {
   return undefined;
 }
 
+function resolveAppBase(command: "build" | "serve") {
+  if (command !== "build") {
+    return "/";
+  }
+
+  return process.env.YINJIE_APP_BUILD_BASE === "relative" ? "./" : "/";
+}
+
 export default defineConfig(({ command }) => ({
-  base: command === "build" ? "./" : "/",
+  base: resolveAppBase(command),
   plugins: [react(), tailwindcss()],
   build: {
     rollupOptions: {

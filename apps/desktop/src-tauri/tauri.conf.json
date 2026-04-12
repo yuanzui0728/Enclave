@@ -5,7 +5,7 @@
   "identifier": "com.yinjie.runtime",
   "build": {
     "beforeDevCommand": "pnpm --dir ../app dev",
-    "beforeBuildCommand": "pnpm --dir ../app build",
+    "beforeBuildCommand": "YINJIE_APP_BUILD_BASE=relative pnpm --dir ../app build",
     "devUrl": "http://127.0.0.1:5180",
     "frontendDist": "../../app/dist"
   },

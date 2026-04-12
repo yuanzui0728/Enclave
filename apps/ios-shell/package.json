@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:web": "pnpm --dir ../app build",
+    "build:web": "YINJIE_APP_BUILD_BASE=relative pnpm --dir ../app build",
     "prepare:web": "pnpm run build:web && node ./scripts/inject-runtime-config.mjs",
     "sync": "pnpm run prepare:web && cap sync ios",
     "configure": "node ./scripts/configure-ios-project.mjs",
