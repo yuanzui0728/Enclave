@@ -80,11 +80,15 @@ export function DesktopFeedComposePanel({
               </div>
             </div>
 
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+              当前先支持纯文本公开动态，发布后会直接进入世界公开流顶部。
+            </div>
+
             <TextAreaField
               value={text}
               onChange={(event) => onTextChange(event.target.value)}
               placeholder="写点想让世界居民都能看到的内容..."
-              className="mt-5 min-h-[200px] resize-none rounded-2xl border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+              className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:bg-white focus:shadow-none"
               autoFocus
             />
 
@@ -94,20 +98,31 @@ export function DesktopFeedComposePanel({
               </div>
             ) : null}
 
-            <div className="mt-4 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-              <span>发布后会直接插入到公开流顶部。</span>
-              <span>{text.trim().length}/600</span>
-            </div>
+            <div className="mt-5 border-t border-[color:var(--border-faint)] pt-4">
+              <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+                <span>发布后会直接插入到公开流顶部。</span>
+                <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
+                  {text.trim().length}/600
+                </span>
+              </div>
 
-            <div className="mt-5 flex items-center justify-end">
-              <Button
-                variant="primary"
-                disabled={!text.trim() || createPending}
-                onClick={onCreate}
-                className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-              >
-                {createPending ? "发布中..." : "发布到广场"}
-              </Button>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={onClose}
+                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                >
+                  取消
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={!text.trim() || createPending}
+                  onClick={onCreate}
+                  className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                >
+                  {createPending ? "发布中..." : "发布到广场"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
