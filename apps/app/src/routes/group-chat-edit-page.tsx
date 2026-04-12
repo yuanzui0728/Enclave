@@ -137,23 +137,23 @@ function GroupChatEditPage({
         <LoadingBlock label="正在读取群聊信息..." />
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-4">
           <ErrorBlock message={groupQuery.error.message} />
         </div>
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-4">
           <ErrorBlock message={membersQuery.error.message} />
         </div>
       ) : null}
       {saveMutation.isError && saveMutation.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-4">
           <ErrorBlock message={saveMutation.error.message} />
         </div>
       ) : null}
 
       {!groupQuery.isLoading && !groupQuery.data ? (
-        <div className="px-3">
+        <div className="px-4">
           <EmptyState
             title="群聊不存在"
             description="这个群聊暂时不可用，返回上一页再试一次。"
@@ -164,18 +164,7 @@ function GroupChatEditPage({
       {groupQuery.data ? (
         <>
           <ChatDetailsSection
-            title={mode === "name" ? "当前内容" : "当前昵称"}
-            variant="wechat"
-          >
-            <div className="px-4 py-4">
-              <div className="rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)]">
-                {initialValue.trim() || "暂未设置"}
-              </div>
-            </div>
-          </ChatDetailsSection>
-
-          <ChatDetailsSection
-            title={mode === "name" ? "修改群聊名称" : "修改群昵称"}
+            title={mode === "name" ? "新的群聊名称" : "新的群昵称"}
             variant="wechat"
           >
             <div className="px-4 py-4">
@@ -185,20 +174,23 @@ function GroupChatEditPage({
                 placeholder={
                   mode === "name" ? "请输入群聊名称" : "请输入我在本群的昵称"
                 }
-                className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)]"
+                className="h-11 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
-              <div className="mt-3 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
                 <span>
                   {mode === "name"
-                    ? "群聊名称会同步显示在聊天顶部、消息列表和群信息页。"
-                    : "这个昵称会显示在群成员资料里，也会影响群聊里的昵称展示。"}
+                    ? "会同步显示在聊天顶部和消息列表。"
+                    : "只在当前群聊里显示。"}
                 </span>
                 <span>{trimmedDraft.length} 字</span>
+              </div>
+              <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                当前内容：{initialValue.trim() || "暂未设置"}
               </div>
             </div>
           </ChatDetailsSection>
 
-          <div className="px-3">
+          <div className="px-4">
             <Button
               type="button"
               variant="primary"
