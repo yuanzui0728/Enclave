@@ -15,6 +15,7 @@ import {
   ChatMessage,
   PersonalityProfile,
   AiKeyOverride,
+  AiProviderAuthError,
 } from './ai.types';
 import { PromptBuilderService } from './prompt-builder.service';
 import { sanitizeAiText } from './ai-text-sanitizer';
@@ -313,10 +314,7 @@ export class AiOrchestratorService {
       try {
         return await request();
       } catch (error) {
-        if (
-          attempt >= maxAttempts ||
-          !this.isTransientSpeechFailure(error)
-        ) {
+        if (attempt >= maxAttempts || !this.isTransientSpeechFailure(error)) {
           throw error;
         }
 
@@ -666,9 +664,18 @@ export class AiOrchestratorService {
             );
           } catch (fallbackError) {
             this.logger.error('AI provider fallback error', fallbackError);
+            if (this.isAuthenticationFailure(fallbackError)) {
+              throw new AiProviderAuthError('instance_default');
+            }
             throw fallbackError;
           }
         }
+
+        throw new AiProviderAuthError('owner_custom');
+      }
+
+      if (this.isAuthenticationFailure(err)) {
+        throw new AiProviderAuthError('instance_default');
       }
 
       this.logger.error('AI provider error', err);

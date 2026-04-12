@@ -99,6 +99,23 @@ export interface AiKeyOverride {
   apiBase?: string;
 }
 
+export type AiProviderAuthFailureSource = 'owner_custom' | 'instance_default';
+
+export class AiProviderAuthError extends Error {
+  readonly source: AiProviderAuthFailureSource;
+
+  constructor(source: AiProviderAuthFailureSource, message?: string) {
+    super(
+      message ??
+        (source === 'owner_custom'
+          ? 'OWNER_CUSTOM_API_KEY_INVALID'
+          : 'INSTANCE_PROVIDER_API_KEY_INVALID'),
+    );
+    this.name = 'AiProviderAuthError';
+    this.source = source;
+  }
+}
+
 export interface GenerateReplyOptions {
   profile: PersonalityProfile;
   conversationHistory: ChatMessage[];

@@ -10,6 +10,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
+import { AiProviderAuthError } from '../ai/ai.types';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import type {
   ContactCardAttachment,
@@ -266,7 +267,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       for (const message of messages) {
         this.emitThreadMessage(convId, message);
       }
-
     } catch (error) {
       this.server
         .to(convId)
@@ -294,6 +294,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private describeReplyFailure(error: unknown) {
+    if (error instanceof AiProviderAuthError) {
+      if (error.source === 'owner_custom') {
+        return '消息已送达，但你当前保存的专属 AI Key 已失效。请到“我 > 设置”里更新，或先清除专属 API Key 后再试。';
+      }
+
+      return '消息已送达，但当前隐界实例的 AI Provider Key 无效，暂时无法生成回复。请检查实例后台 Provider 配置，或在“我 > 设置”里改用可用的专属 API Key。';
+    }
+
     if (
       error instanceof Error &&
       /invalid token|api key|authentication/i.test(error.message)
