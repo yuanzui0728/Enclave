@@ -21,6 +21,7 @@ import { EmptyState } from "../components/empty-state";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import { SocialPostCard } from "../components/social-post-card";
 import {
+  hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -48,6 +49,7 @@ export function MomentsPage() {
   const ownerUsername = useWorldOwnerStore((state) => state.username);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const [text, setText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
@@ -144,6 +146,49 @@ export function MomentsPage() {
   useEffect(() => {
     setFavoriteSourceIds(readDesktopFavorites().map((item) => item.sourceId));
   }, []);
+
+  useEffect(() => {
+    if (!nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavoriteSourceIds() {
+      const favoriteSourceIds = (await hydrateDesktopFavoritesFromNative()).map(
+        (item) => item.sourceId,
+      );
+      if (cancelled) {
+        return;
+      }
+
+      setFavoriteSourceIds((current) =>
+        JSON.stringify(current) === JSON.stringify(favoriteSourceIds)
+          ? current
+          : favoriteSourceIds,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFavoriteSourceIds();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFavoriteSourceIds();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [nativeDesktopFavorites]);
 
   useEffect(() => {
     if (!successNotice) {
