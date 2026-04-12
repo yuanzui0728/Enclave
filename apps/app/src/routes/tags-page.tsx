@@ -436,10 +436,10 @@ function DesktopTagsPage() {
   );
 
   return (
-    <AppPage className="h-full min-h-0 space-y-0 bg-[linear-gradient(180deg,rgba(255,252,245,0.96),rgba(255,248,236,0.98))] px-0 py-0">
+    <AppPage className="h-full min-h-0 space-y-0 bg-[color:var(--bg-app)] px-0 py-0">
       <div className="flex h-full min-h-0">
-        <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,253,248,0.98),rgba(255,248,238,0.96))]">
-          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+        <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-base font-medium text-[color:var(--text-primary)]">
@@ -451,7 +451,7 @@ function DesktopTagsPage() {
               </div>
             </div>
 
-            <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(255,249,238,0.85)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+            <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
               <Search size={15} className="shrink-0" />
               <input
                 type="search"
@@ -463,7 +463,7 @@ function DesktopTagsPage() {
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,249,238,0.72)] pb-4">
+          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
             {notice ? (
               <div className="px-3 pt-3">
                 <InlineNotice tone="info">{notice}</InlineNotice>
@@ -512,7 +512,7 @@ function DesktopTagsPage() {
 
             {tagGroups.length ? (
               <>
-                <section className="mt-3 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+                <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
                   {tagGroups.map((group, index) => (
                     <button
                       key={group.tag}
@@ -525,10 +525,10 @@ function DesktopTagsPage() {
                           : undefined,
                         selectedTag === group.tag
                           ? "bg-[rgba(7,193,96,0.10)]"
-                          : "hover:bg-[rgba(7,193,96,0.05)]",
+                          : "hover:bg-[color:var(--surface-console)]",
                       )}
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#1fc86a,#07c160)] text-white shadow-[0_10px_20px_rgba(7,193,96,0.20)]">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#17803d]">
                         <Tag size={16} />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -544,8 +544,8 @@ function DesktopTagsPage() {
                 </section>
 
                 {selectedGroup ? (
-                  <section className="mt-3 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-                    <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
+                  <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+                    <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-3 backdrop-blur-xl">
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
                         {selectedGroup.tag}
                       </div>
@@ -568,7 +568,7 @@ function DesktopTagsPage() {
                             : undefined,
                           selectedCharacterId === item.character.id
                             ? "bg-[rgba(7,193,96,0.08)]"
-                            : "hover:bg-[rgba(7,193,96,0.04)]",
+                            : "hover:bg-[color:var(--surface-console)]",
                         )}
                       >
                         <AvatarChip
