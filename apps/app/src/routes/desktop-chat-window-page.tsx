@@ -51,7 +51,7 @@ export function DesktopChatWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
         <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] tracking-[0.12em] text-[#15803d]">
+          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
             独立聊天窗口
           </div>
           <EmptyState
@@ -64,7 +64,7 @@ export function DesktopChatWindowPage() {
               onClick={() => {
                 focusMainChatWindow("/tabs/chat");
               }}
-              className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
             >
               回到消息页
             </Button>
@@ -82,7 +82,7 @@ export function DesktopChatWindowPage() {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
         <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] tracking-[0.12em] text-[#15803d]">
+          <div className="mb-5 inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--brand-primary)]">
             独立聊天窗口
           </div>
           <EmptyState
@@ -95,7 +95,7 @@ export function DesktopChatWindowPage() {
               onClick={() => {
                 focusMainChatWindow(fallbackPath);
               }}
-              className="h-9 rounded-[9px] bg-[#07c160] px-4 text-white hover:bg-[#06ad56]"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
             >
               回到消息页
             </Button>
@@ -109,7 +109,7 @@ export function DesktopChatWindowPage() {
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-4 py-3 backdrop-blur-xl">
         <div className="min-w-0">
-          <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[#15803d]">
+          <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[color:var(--brand-primary)]">
             {headerType === "group" ? "群聊独立窗口" : "聊天独立窗口"}
           </div>
           <div className="mt-2 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
@@ -161,7 +161,7 @@ function StandaloneActionButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >
       {children}
     </button>
