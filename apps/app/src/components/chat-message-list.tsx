@@ -1868,7 +1868,7 @@ export function ChatMessageList({
                 isHighlighted
                   ? "bg-[rgba(255,224,120,0.15)] shadow-[0_0_0_1px_rgba(255,191,0,0.16)]"
                   : isSelected
-                    ? "bg-[rgba(7,193,96,0.08)] shadow-[0_0_0_1px_rgba(7,193,96,0.16)]"
+                    ? "bg-[rgba(7,193,96,0.06)] shadow-[0_0_0_1px_rgba(7,193,96,0.12)]"
                     : ""
               }`}
             >
@@ -3513,10 +3513,10 @@ function SelectionToggle({
         event.stopPropagation();
         onClick();
       }}
-      className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs transition ${
+      className={`mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium transition ${
         checked
-          ? "border-[rgba(7,193,96,0.22)] bg-[#07c160] text-white shadow-[0_8px_18px_rgba(7,193,96,0.20)]"
-          : "border-black/10 bg-white text-transparent hover:border-[rgba(7,193,96,0.28)]"
+          ? "border-[rgba(7,193,96,0.2)] bg-[#07c160] text-white shadow-[0_4px_10px_rgba(7,193,96,0.16)]"
+          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[rgba(7,193,96,0.24)]"
       }`}
       aria-label={checked ? "取消选择消息" : "选择消息"}
     >
