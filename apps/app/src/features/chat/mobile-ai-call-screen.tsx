@@ -1084,7 +1084,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-4">
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom,0px)+24px)] pt-3.5">
         {isVideoMode ? (
           <section className="relative">
             <DigitalHumanPlayer
@@ -1141,22 +1141,22 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </div>
           </section>
         ) : (
-          <div className="flex flex-col items-center text-center pt-2">
+          <div className="flex flex-col items-center pt-1.5 text-center">
             <AvatarChip name={characterName} src={characterAvatar} size="xl" />
-            <div className="mt-4 text-[28px] font-semibold tracking-[0.01em]">
+            <div className="mt-3.5 text-[28px] font-semibold tracking-[0.01em]">
               {characterName}
             </div>
             <div className="mt-1 text-sm text-white/62">{characterStatus}</div>
-            <div className="mt-5">
+            <div className="mt-4">
               <span className={phaseChipClass}>{statusLabel}</span>
             </div>
-            <div className="mt-2 text-[13px] leading-6 text-white/58">
+            <div className="mt-1.5 max-w-[280px] text-[13px] leading-5 text-white/58">
               {statusHint}
             </div>
           </div>
         )}
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3.5 space-y-2.5">
           {showSpeechWarning && speechStatus ? (
             <MobileCallNotice tone="warning">
               {speechStatus.speechMessage}
@@ -1338,7 +1338,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           ) : null}
         </div>
 
-        <div className="mt-4 grid gap-3">
+        <div className="mt-3.5 grid gap-2.5">
           <CallBubble
             label="我"
             text={
@@ -1355,9 +1355,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           />
         </div>
 
-        <div className="mt-auto pt-6">
+        <div className="mt-auto pt-5">
           {showBottomShortcutRow ? (
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
               {isVideoMode ? (
                 <MobileCallActionButton
                   onClick={handleToggleCamera}
@@ -1401,7 +1401,11 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </div>
           ) : null}
 
-          <div className={showBottomShortcutRow ? "mt-5 flex justify-center" : "mt-3 flex justify-center"}>
+          <div
+            className={
+              showBottomShortcutRow ? "mt-4.5 flex justify-center" : "mt-2.5 flex justify-center"
+            }
+          >
             <button
               type="button"
               onPointerDown={(event) => {
@@ -1459,7 +1463,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </button>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-3">
+          <div className="mt-3.5 flex items-center justify-center gap-3">
             <MobileCallActionButton
               tone="danger"
               onClick={handleBack}
