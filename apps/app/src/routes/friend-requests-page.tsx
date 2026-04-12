@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@yinjie/contracts";
-import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -78,71 +78,140 @@ export function FriendRequestsPage() {
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {requestsQuery.isLoading ? (
-          <LoadingBlock label="正在读取好友请求..." />
+          <div className="px-4 pt-4">
+            <LoadingBlock label="正在读取好友请求..." />
+          </div>
         ) : null}
         {requestsQuery.isError && requestsQuery.error instanceof Error ? (
-          <ErrorBlock message={requestsQuery.error.message} />
+          <div className="px-4 pt-4">
+            <ErrorBlock message={requestsQuery.error.message} />
+          </div>
         ) : null}
         {successNotice ? (
-          <InlineNotice tone="success">{successNotice}</InlineNotice>
+          <div className="px-4 pt-4">
+            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          </div>
         ) : null}
 
-        {(requestsQuery.data ?? []).map((request) => (
-          <div
-            key={request.id}
-            className="rounded-[28px] border border-black/5 bg-white p-4 shadow-none"
-          >
-            <div className="flex items-start gap-3">
-              <AvatarChip name={request.characterName} src={request.characterAvatar} />
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">{request.characterName}</div>
-                <div className="mt-3 rounded-[18px] border border-black/5 bg-[#f5f5f5] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                  {request.greeting || "想认识你。"}
-                </div>
-                {request.triggerScene ? (
-                  <div className="mt-2 inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[11px] font-medium text-[#15803d]">
-                    来自场景 {request.triggerScene}
-                  </div>
-                ) : null}
-              </div>
-            </div>
+        {(requestsQuery.data ?? []).length ? (
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            {(requestsQuery.data ?? []).map((request, index) => (
+              <div
+                key={request.id}
+                className={cn(
+                  "px-4 py-3.5",
+                  index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <AvatarChip
+                    name={request.characterName}
+                    src={request.characterAvatar}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+                          {request.characterName}
+                        </div>
+                        <div className="mt-0.5 text-[12px] text-[color:var(--text-muted)]">
+                          {getFriendRequestSourceLabel(request.triggerScene)}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
+                        {formatFriendRequestDate(request.createdAt)}
+                      </div>
+                    </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Button
-                disabled={acceptMutation.isPending || declineMutation.isPending}
-                onClick={() => acceptMutation.mutate(request.id)}
-                variant="primary"
-                size="lg"
-                className="rounded-2xl bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
-              >
-                {acceptMutation.isPending && acceptMutation.variables === request.id ? "接受中..." : "接受"}
-              </Button>
-              <Button
-                disabled={acceptMutation.isPending || declineMutation.isPending}
-                onClick={() => declineMutation.mutate(request.id)}
-                variant="secondary"
-                size="lg"
-                className="rounded-2xl border-black/5 bg-[#f5f5f5] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
-              >
-                {declineMutation.isPending && declineMutation.variables === request.id ? "处理中..." : "拒绝"}
-              </Button>
-            </div>
-          </div>
-        ))}
+                    <div className="mt-2 rounded-[14px] bg-[color:var(--surface-card-hover)] px-3 py-2.5 text-[14px] leading-6 text-[color:var(--text-secondary)]">
+                      {request.greeting || "想认识你。"}
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                      <Button
+                        disabled={acceptMutation.isPending || declineMutation.isPending}
+                        onClick={() => declineMutation.mutate(request.id)}
+                        variant="secondary"
+                        size="sm"
+                        className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
+                      >
+                        {declineMutation.isPending && declineMutation.variables === request.id
+                          ? "处理中..."
+                          : "拒绝"}
+                      </Button>
+                      <Button
+                        disabled={acceptMutation.isPending || declineMutation.isPending}
+                        onClick={() => acceptMutation.mutate(request.id)}
+                        variant="primary"
+                        size="sm"
+                        className="rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                      >
+                        {acceptMutation.isPending && acceptMutation.variables === request.id
+                          ? "接受中..."
+                          : "接受"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
         {acceptMutation.isError && acceptMutation.error instanceof Error ? (
-          <ErrorBlock message={acceptMutation.error.message} />
+          <div className="px-4 pt-4">
+            <ErrorBlock message={acceptMutation.error.message} />
+          </div>
         ) : null}
         {declineMutation.isError && declineMutation.error instanceof Error ? (
-          <ErrorBlock message={declineMutation.error.message} />
+          <div className="px-4 pt-4">
+            <ErrorBlock message={declineMutation.error.message} />
+          </div>
         ) : null}
 
         {!requestsQuery.isLoading && !requestsQuery.isError && !requestsQuery.data?.length ? (
-          <EmptyState title="暂时没有新的好友请求" description="去发现页摇一摇，或等待场景触发新的相遇。" />
+          <div className="px-4 pt-6">
+            <EmptyState title="暂时没有新的好友请求" description="去发现页摇一摇，或等待场景触发新的相遇。" />
+          </div>
         ) : null}
       </div>
     </AppPage>
   );
+}
+
+function getFriendRequestSourceLabel(triggerScene?: string) {
+  if (!triggerScene) {
+    return "新的朋友";
+  }
+
+  if (triggerScene === "shake") {
+    return "来自摇一摇";
+  }
+
+  return `来自 ${triggerScene}`;
+}
+
+function formatFriendRequestDate(createdAt: string) {
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const now = new Date();
+  const sameYear = date.getFullYear() === now.getFullYear();
+  const sameMonth = sameYear && date.getMonth() === now.getMonth();
+  const sameDay = sameMonth && date.getDate() === now.getDate();
+
+  if (sameDay) {
+    return "今天";
+  }
+
+  const formatter = new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(date).replace(/\//g, "-");
 }
