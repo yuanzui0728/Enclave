@@ -31,15 +31,12 @@ ensure_cache_dir() {
 
 backup_generated_files() {
   BACKUP_DIR="$(mktemp -d)"
-
-  cp "$ROOT_DIR/apps/app/public/runtime-config.json" "$BACKUP_DIR/runtime-config.json"
   cp "$ROOT_DIR/apps/android-shell/android/app/src/main/AndroidManifest.xml" "$BACKUP_DIR/AndroidManifest.xml"
 }
 
 restore_generated_files() {
   [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]] || return 0
 
-  cp "$BACKUP_DIR/runtime-config.json" "$ROOT_DIR/apps/app/public/runtime-config.json"
   cp "$BACKUP_DIR/AndroidManifest.xml" "$ROOT_DIR/apps/android-shell/android/app/src/main/AndroidManifest.xml"
   rm -rf "$BACKUP_DIR"
 }

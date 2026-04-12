@@ -133,7 +133,7 @@ ensure_device() {
 
 warn_if_backend_unreachable() {
   local api_base_url=""
-  api_base_url="$(node -e "const fs=require('fs'); const path=require('path'); const file=path.join(process.argv[1], 'apps/app/public/runtime-config.json'); const cfg=JSON.parse(fs.readFileSync(file,'utf8')); process.stdout.write(cfg.apiBaseUrl || '');" "$ROOT_DIR")"
+  api_base_url="$(node -e "const fs=require('fs'); const path=require('path'); const root=process.argv[1]; const basePath=path.join(root,'apps/android-shell/android-shell.config.json'); const localPath=path.join(root,'apps/android-shell/android-shell.config.local.json'); const base=JSON.parse(fs.readFileSync(basePath,'utf8')); const local=fs.existsSync(localPath) ? JSON.parse(fs.readFileSync(localPath,'utf8')) : {}; const runtime={...(base.runtime||{}), ...(local.runtime||{})}; process.stdout.write((runtime.apiBaseUrl || '').trim());" "$ROOT_DIR")"
 
   if [[ -z "$api_base_url" ]]; then
     log "No apiBaseUrl configured. The app may stop at runtime setup."

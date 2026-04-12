@@ -29,7 +29,8 @@ This package hosts the Capacitor-based Android container for `apps/app`.
 - A local override example is provided in `apps/android-shell/android-shell.config.local.example.json`.
 - Release signing placeholders can be provided through `apps/android-shell/android-signing.local.properties`.
 - The current Capacitor Android dependency graph compiles with Java 21.
-- `android:configure` writes app id, app name, version, manifest runtime metadata, and `apps/app/public/runtime-config.json`.
+- `android:configure` writes app id, app name, version, and manifest runtime metadata.
+- `android:sync` / `android:apk` / `android:bundle` build `apps/app` with the shared mobile-shell entry and inject `apps/app/dist/runtime-config.json`.
 - `pnpm android:doctor` will fail the production endpoint check until `runtime.apiBaseUrl` is configured.
 - `pnpm android:doctor` now also checks whether the active Java runtime is at least 21.
 - Production defaults disable cleartext traffic; local debugging can override it in `android-shell.config.local.json`.
@@ -45,7 +46,7 @@ The mobile web layer now expects two Android-side contracts:
    - Provide `socketBaseUrl`
    - Provide `environment`
    - Provide app metadata such as `applicationId`, `versionName`, and `versionCode`
-   - `android:configure` already writes the web fallback file at `apps/app/public/runtime-config.json`
+   - The bundled fallback file is injected at `apps/app/dist/runtime-config.json` after each shell web build
 
 2. Native bridge surface
    - `YinjieSecureStorage`

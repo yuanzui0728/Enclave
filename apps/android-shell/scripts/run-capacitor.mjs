@@ -11,7 +11,7 @@ const androidProjectDir = resolve(shellDir, "android");
 const shellConfigPath = resolve(shellDir, "android-shell.config.json");
 const shellConfigLocalPath = resolve(shellDir, "android-shell.config.local.json");
 const capacitorConfigPath = resolve(shellDir, "capacitor.config.json");
-const appRuntimeConfigPath = resolve(appDir, "public/runtime-config.json");
+const appBundledRuntimeConfigPath = resolve(appDir, "dist/runtime-config.json");
 const signingPropertiesPath = resolve(shellDir, "android-signing.local.properties");
 const androidBuildGradlePath = resolve(androidProjectDir, "app/build.gradle");
 const androidManifestPath = resolve(androidProjectDir, "app/src/main/AndroidManifest.xml");
@@ -234,7 +234,7 @@ function updateCapacitorConfig(config) {
   return writeTextFile(capacitorConfigPath, `${JSON.stringify(nextConfig, null, 2)}\n`);
 }
 
-function updateAppRuntimeConfig(config) {
+function buildBundledAppRuntimeConfig(config) {
   const nextRuntimeConfig = {
     publicAppName: config.appName,
     environment: config.runtime.environment,
@@ -254,7 +254,15 @@ function updateAppRuntimeConfig(config) {
     nextRuntimeConfig.socketBaseUrl = socketBaseUrl;
   }
 
-  return writeTextFile(appRuntimeConfigPath, `${JSON.stringify(nextRuntimeConfig, null, 2)}\n`);
+  return nextRuntimeConfig;
+}
+
+function writeBundledAppRuntimeConfig(config) {
+  const nextRuntimeConfig = buildBundledAppRuntimeConfig(config);
+  return writeTextFile(
+    appBundledRuntimeConfigPath,
+    `${JSON.stringify(nextRuntimeConfig, null, 2)}\n`,
+  );
 }
 
 function updateAndroidProjectConfig(config) {
@@ -349,10 +357,6 @@ function configureAndroidShell() {
     changedPaths.push(capacitorConfigPath);
   }
 
-  if (updateAppRuntimeConfig(config)) {
-    changedPaths.push(appRuntimeConfigPath);
-  }
-
   if (updateAndroidProjectConfig(config)) {
     changedPaths.push(androidBuildGradlePath, androidManifestPath, androidStringsPath);
   }
@@ -364,6 +368,11 @@ function ensureWebBuild() {
   run("node", [resolve(workspaceDir, "scripts/build-mobile-shell-web.mjs")], {
     cwd: workspaceDir,
   });
+
+  const config = loadShellConfig();
+  if (writeBundledAppRuntimeConfig(config)) {
+    console.log(`updated  ${appBundledRuntimeConfigPath}`);
+  }
 }
 
 function runGradle(taskName) {
@@ -396,8 +405,8 @@ if (command === "doctor") {
   const checks = [
     ["android-shell.config.json", existsSync(shellConfigPath) && !shellConfigError],
     ["capacitor.config.json", existsSync(resolve(shellDir, "capacitor.config.json"))],
-    ["apps/app/public/runtime-config.json", existsSync(appRuntimeConfigPath)],
     ["apps/app/dist", existsSync(resolve(appDir, "dist"))],
+    ["apps/app/dist/runtime-config.json", existsSync(appBundledRuntimeConfigPath)],
     ["android project", existsSync(androidProjectDir)],
     ["java runtime", hasCommand("java", ["-version"])],
     ["java runtime >= 21", javaMajorVersion !== null && javaMajorVersion >= 21],
