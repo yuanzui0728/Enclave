@@ -23,7 +23,7 @@ export function NotesPage() {
             variant="primary"
             size="lg"
             onClick={() => navigate({ to: "/tabs/chat" })}
-            className="mt-6 w-full rounded-xl bg-[#07c160] text-white hover:bg-[#06ad56]"
+            className="mt-6 w-full rounded-xl bg-[color:var(--brand-primary)] text-white hover:opacity-95"
           >
             返回消息
           </Button>
