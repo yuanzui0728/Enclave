@@ -156,7 +156,7 @@ export function DesktopFeedDetailPanel({
                 className={cn(
                   "mt-4 rounded-[16px] border px-4 py-3",
                   post.aiReacted
-                    ? "border-[rgba(34,197,94,0.16)] bg-[rgba(236,253,245,0.92)]"
+                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
                 )}
               >
@@ -265,7 +265,7 @@ export function DesktopFeedDetailPanel({
                   value={commentDraft}
                   onChange={(event) => onCommentChange(event.target.value)}
                   placeholder="在右栏继续写评论..."
-                  className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
+                  className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
                 />
                 <Button
                   variant="primary"
