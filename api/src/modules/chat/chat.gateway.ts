@@ -238,6 +238,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.emitThreadMessage(conversationId, message);
   }
 
+  private async emitSystemNotice(conversationId: string, text: string) {
+    const message = await this.chatService.saveSystemMessage(
+      conversationId,
+      text,
+    );
+    this.emitThreadMessage(conversationId, message);
+  }
+
   private async deliverConversationReply(
     convId: string,
     characterId: string,
@@ -272,7 +280,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(convId)
         .emit('typing_stop', { conversationId: convId, characterId });
       await this.emitConversationFailure(convId);
-      this.emitConversationError(convId, error);
+      const failureMessage = this.describeReplyFailure(error);
+      if (this.shouldPersistReplyFailure(error)) {
+        await this.emitSystemNotice(convId, failureMessage);
+        return;
+      }
+      this.emitConversationError(convId, failureMessage);
     }
   }
 
@@ -287,10 +300,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  private emitConversationError(conversationId: string, error: unknown) {
+  private emitConversationError(conversationId: string, message: string) {
     this.server.to(conversationId).emit('error', {
-      message: this.describeReplyFailure(error),
+      message,
     });
+  }
+
+  private shouldPersistReplyFailure(error: unknown) {
+    return (
+      error instanceof AiProviderAuthError ||
+      (error instanceof Error &&
+        /invalid token|api key|authentication/i.test(error.message))
+    );
   }
 
   private describeReplyFailure(error: unknown) {
