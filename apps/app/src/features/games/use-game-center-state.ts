@@ -13,6 +13,13 @@ import {
   type GameCenterStoredState,
 } from "./game-center-storage";
 
+function areGameCenterStatesEqual(
+  left: GameCenterStoredState,
+  right: GameCenterStoredState,
+) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function useGameCenterState() {
   const [state, setState] = useState<GameCenterStoredState>(() =>
     readGameCenterState(),
@@ -28,7 +35,9 @@ export function useGameCenterState() {
         return;
       }
 
-      setState(hydratedState);
+      setState((current) =>
+        areGameCenterStatesEqual(current, hydratedState) ? current : hydratedState,
+      );
       setStateReady(true);
     }
 
@@ -36,6 +45,45 @@ export function useGameCenterState() {
 
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktopRuntimeAvailable()) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncStateFromNative() {
+      const hydratedState = await hydrateGameCenterStateFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setState((current) =>
+        areGameCenterStatesEqual(current, hydratedState) ? current : hydratedState,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncStateFromNative();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncStateFromNative();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
