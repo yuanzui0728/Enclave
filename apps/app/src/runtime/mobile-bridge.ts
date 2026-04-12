@@ -10,15 +10,22 @@ export type MobileBridgeSharePayload = {
   url?: string;
 };
 
-export type MobileBridgeImageAsset = {
+export type MobileBridgeFileAsset = {
   path: string;
   webPath?: string;
   mimeType?: string;
   fileName?: string;
 };
 
+export type MobileBridgeImageAsset = MobileBridgeFileAsset;
+
 export type MobileBridgeImageCaptureResult = {
   asset: MobileBridgeImageAsset | null;
+  error: string | null;
+};
+
+export type MobileBridgeFilePickResult = {
+  asset: MobileBridgeFileAsset | null;
   error: string | null;
 };
 
@@ -41,6 +48,7 @@ type MobileBridgePlugin = {
   pickImages(options?: {
     multiple?: boolean;
   }): Promise<{ assets: MobileBridgeImageAsset[] }>;
+  pickFile(): Promise<{ asset: MobileBridgeFileAsset | null }>;
   captureImage(): Promise<{ asset: MobileBridgeImageAsset | null }>;
   getPushToken(): Promise<{ token: string | null }>;
   getNotificationPermissionState(): Promise<{ state: string }>;
@@ -115,6 +123,28 @@ export async function pickImagesWithNativeShell(multiple = false) {
     return result.assets ?? [];
   } catch {
     return [];
+  }
+}
+
+export async function pickFileWithNativeShell(): Promise<MobileBridgeFilePickResult> {
+  if (!isNativeMobileBridgeAvailable()) {
+    return {
+      asset: null,
+      error: "native mobile bridge is unavailable",
+    };
+  }
+
+  try {
+    const result = await mobileBridge.pickFile();
+    return {
+      asset: result.asset ?? null,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      asset: null,
+      error: error instanceof Error ? error.message : "failed to pick file",
+    };
   }
 }
 

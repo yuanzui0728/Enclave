@@ -58,7 +58,9 @@ import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
   captureImageWithNativeShell,
+  type MobileBridgeFileAsset,
   isNativeMobileBridgeAvailable,
+  pickFileWithNativeShell,
   pickImagesWithNativeShell,
   type MobileBridgeImageAsset,
   openAppSettings,
@@ -1127,8 +1129,37 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
+    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+      setPlusPanelOpen(false);
+      void pickFileWithNativeShellAsDraft();
+      return;
+    }
     fileInputRef.current?.click();
   };
+
+  const pickFileWithNativeShellAsDraft = useEffectEvent(async () => {
+    const result = await pickFileWithNativeShell();
+    if (!result.asset) {
+      if (result.error) {
+        setAttachmentError(resolveNativeFilePickErrorMessage(result.error));
+      }
+      return;
+    }
+
+    try {
+      const file = await readNativeBridgeFileAsset(result.asset, {
+        fallbackBaseName: "file",
+        fallbackMimeType: "application/octet-stream",
+      });
+      applyGenericFileDraft(file);
+    } catch (fileError) {
+      setAttachmentError(
+        fileError instanceof Error
+          ? fileError.message
+          : "读取文件失败，请重新选择。",
+      );
+    }
+  });
 
   const captureDesktopScreenshot = useCallback(async () => {
     if (!isDesktop || !onSendAttachment || attachmentBusy) {
@@ -4921,32 +4952,51 @@ async function readNativeBridgeImageAssetFile(
   asset: MobileBridgeImageAsset,
   index: number,
 ) {
-  const source = resolveNativeBridgeImageAssetSource(asset);
+  const file = await readNativeBridgeFileAsset(asset, {
+    fallbackBaseName: `image-${index + 1}`,
+    fallbackMimeType: "image/jpeg",
+  });
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("当前只支持图片附件。");
+  }
+
+  return file;
+}
+
+async function readNativeBridgeFileAsset(
+  asset: MobileBridgeFileAsset,
+  options?: {
+    fallbackBaseName?: string;
+    fallbackMimeType?: string;
+  },
+) {
+  const source = resolveNativeBridgeFileAssetSource(asset);
   if (!source) {
-    throw new Error("读取图片失败，请重新选择。");
+    throw new Error("读取文件失败，请重新选择。");
   }
 
   const response = await fetch(source);
   if (!response.ok) {
-    throw new Error("读取图片失败，请重新选择。");
+    throw new Error("读取文件失败，请重新选择。");
   }
 
   const blob = await response.blob();
   const mimeType =
     normalizeAssetValue(asset.mimeType) ||
     blob.type ||
-    resolveImageMimeTypeFromFileName(asset.fileName) ||
-    "image/jpeg";
-  const fileName = resolveNativeBridgeImageAssetFileName(
-    asset.fileName,
-    index,
+    resolveMimeTypeFromFileName(asset.fileName) ||
+    options?.fallbackMimeType ||
+    "application/octet-stream";
+  const fileName = resolveNativeBridgeFileAssetFileName(asset.fileName, {
+    fallbackBaseName: options?.fallbackBaseName ?? "file",
     mimeType,
-  );
+  });
 
   return new File([blob], fileName, { type: mimeType });
 }
 
-function resolveNativeBridgeImageAssetSource(asset: MobileBridgeImageAsset) {
+function resolveNativeBridgeFileAssetSource(asset: MobileBridgeFileAsset) {
   const webPath = normalizeAssetValue(asset.webPath);
   if (webPath) {
     return webPath;
@@ -4964,20 +5014,27 @@ function resolveNativeBridgeImageAssetSource(asset: MobileBridgeImageAsset) {
   return path;
 }
 
-function resolveNativeBridgeImageAssetFileName(
+function resolveNativeBridgeFileAssetFileName(
   fileName: string | undefined,
-  index: number,
-  mimeType: string,
+  options: {
+    fallbackBaseName: string;
+    mimeType: string;
+  },
 ) {
   const normalizedFileName = normalizeAssetValue(fileName);
   if (normalizedFileName) {
     return normalizedFileName;
   }
 
-  return `image-${index + 1}.${resolveImageExtensionFromMimeType(mimeType)}`;
+  const extension = resolveFileExtensionFromMimeType(options.mimeType);
+  if (!extension) {
+    return options.fallbackBaseName;
+  }
+
+  return `${options.fallbackBaseName}.${extension}`;
 }
 
-function resolveImageMimeTypeFromFileName(fileName?: string) {
+function resolveMimeTypeFromFileName(fileName?: string) {
   const normalizedFileName = normalizeAssetValue(fileName)?.toLowerCase();
   if (!normalizedFileName) {
     return null;
@@ -5006,10 +5063,54 @@ function resolveImageMimeTypeFromFileName(fileName?: string) {
     return "image/heic";
   }
 
+  if (normalizedFileName.endsWith(".pdf")) {
+    return "application/pdf";
+  }
+
+  if (normalizedFileName.endsWith(".json")) {
+    return "application/json";
+  }
+
+  if (normalizedFileName.endsWith(".zip")) {
+    return "application/zip";
+  }
+
+  if (normalizedFileName.endsWith(".csv")) {
+    return "text/csv";
+  }
+
+  if (normalizedFileName.endsWith(".md")) {
+    return "text/markdown";
+  }
+
+  if (normalizedFileName.endsWith(".txt")) {
+    return "text/plain";
+  }
+
+  if (normalizedFileName.endsWith(".mp3")) {
+    return "audio/mpeg";
+  }
+
+  if (normalizedFileName.endsWith(".wav")) {
+    return "audio/wav";
+  }
+
+  if (normalizedFileName.endsWith(".m4a")) {
+    return "audio/mp4";
+  }
+
+  if (normalizedFileName.endsWith(".mp4")) {
+    return "video/mp4";
+  }
+
+  if (normalizedFileName.endsWith(".mov")) {
+    return "video/quicktime";
+  }
+
   return null;
 }
 
-function resolveImageExtensionFromMimeType(mimeType: string) {
+function resolveFileExtensionFromMimeType(mimeType: string) {
   switch (mimeType) {
     case "image/png":
       return "png";
@@ -5019,10 +5120,33 @@ function resolveImageExtensionFromMimeType(mimeType: string) {
       return "gif";
     case "image/heic":
       return "heic";
+    case "application/pdf":
+      return "pdf";
+    case "application/json":
+      return "json";
+    case "application/zip":
+      return "zip";
+    case "text/csv":
+      return "csv";
+    case "text/markdown":
+      return "md";
+    case "text/plain":
+      return "txt";
+    case "audio/mpeg":
+      return "mp3";
+    case "audio/wav":
+      return "wav";
+    case "audio/mp4":
+      return "m4a";
+    case "video/mp4":
+      return "mp4";
+    case "video/quicktime":
+      return "mov";
     case "image/jpg":
     case "image/jpeg":
-    default:
       return "jpg";
+    default:
+      return null;
   }
 }
 
@@ -5065,6 +5189,16 @@ function resolveNativeCameraCaptureNotice(
   return {
     message: "打开相机失败，请稍后再试。",
   };
+}
+
+function resolveNativeFilePickErrorMessage(errorMessage: string) {
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  if (normalizedMessage.includes("unavailable")) {
+    return "当前设备暂时无法打开文件选择器，请稍后再试。";
+  }
+
+  return "打开文件失败，请稍后再试。";
 }
 
 function waitForCaptureVideo(video: HTMLVideoElement) {
