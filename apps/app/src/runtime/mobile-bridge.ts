@@ -17,6 +17,11 @@ export type MobileBridgeImageAsset = {
   fileName?: string;
 };
 
+export type MobileBridgeImageCaptureResult = {
+  asset: MobileBridgeImageAsset | null;
+  error: string | null;
+};
+
 export type MobileBridgeLaunchTarget = MobilePushLaunchTarget;
 
 export type MobileBridgeLocalNotificationPayload = {
@@ -113,16 +118,25 @@ export async function pickImagesWithNativeShell(multiple = false) {
   }
 }
 
-export async function captureImageWithNativeShell() {
+export async function captureImageWithNativeShell(): Promise<MobileBridgeImageCaptureResult> {
   if (!isNativeMobileBridgeAvailable()) {
-    return null;
+    return {
+      asset: null,
+      error: "native mobile bridge is unavailable",
+    };
   }
 
   try {
     const result = await mobileBridge.captureImage();
-    return result.asset ?? null;
-  } catch {
-    return null;
+    return {
+      asset: result.asset ?? null,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      asset: null,
+      error: error instanceof Error ? error.message : "failed to capture image",
+    };
   }
 }
 

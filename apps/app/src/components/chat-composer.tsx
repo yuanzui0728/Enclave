@@ -1033,6 +1033,7 @@ export function ChatComposer({
     setAttachmentError(null);
     setMobilePlusNotice(null);
     if (!isDesktop && isNativeMobileBridgeAvailable()) {
+      setPlusPanelOpen(false);
       void pickAlbumWithNativeShell();
       return;
     }
@@ -1047,6 +1048,7 @@ export function ChatComposer({
     setAttachmentError(null);
     setMobilePlusNotice(null);
     if (!isDesktop && isNativeMobileBridgeAvailable()) {
+      setPlusPanelOpen(false);
       void pickCameraWithNativeShell();
       return;
     }
@@ -1054,13 +1056,16 @@ export function ChatComposer({
   };
 
   const pickCameraWithNativeShell = useEffectEvent(async () => {
-    const asset = await captureImageWithNativeShell();
-    if (!asset) {
+    const result = await captureImageWithNativeShell();
+    if (!result.asset) {
+      if (result.error) {
+        setMobilePlusNotice(resolveNativeCameraCaptureNotice(result.error));
+      }
       return;
     }
 
     try {
-      const file = await readNativeBridgeImageAssetFile(asset, 0);
+      const file = await readNativeBridgeImageAssetFile(result.asset, 0);
       await applyImageDraftFiles([file]);
     } catch (fileError) {
       setAttachmentError(
@@ -4891,6 +4896,20 @@ function resolveImageExtensionFromMimeType(mimeType: string) {
 function normalizeAssetValue(value: string | undefined | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
+}
+
+function resolveNativeCameraCaptureNotice(errorMessage: string) {
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  if (normalizedMessage.includes("permission")) {
+    return "相机权限未开启，请到系统设置里允许隐界访问相机后再试。";
+  }
+
+  if (normalizedMessage.includes("unavailable")) {
+    return "当前设备暂时无法打开相机，请先改用相册选图。";
+  }
+
+  return "打开相机失败，请稍后再试。";
 }
 
 function waitForCaptureVideo(video: HTMLVideoElement) {
