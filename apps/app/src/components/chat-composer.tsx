@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getFavorites, type StickerAttachment } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import {
   useCallback,
@@ -53,6 +54,10 @@ import {
 } from "../features/chat/stickers/recent-stickers";
 import { StickerPanel } from "../features/chat/stickers/sticker-panel";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import {
+  isNativeMobileBridgeAvailable,
+  openAppSettings,
+} from "../runtime/mobile-bridge";
 import { useChatPreferencesStore } from "../store/chat-preferences-store";
 
 type ChatComposerProps = {
@@ -2764,10 +2769,17 @@ export function ChatComposer({
         ) : null}
         {composerError && !isDesktop ? (
           <InlineNotice
-            className="mt-1.5 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="mt-1.5 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
             tone="danger"
           >
-            {composerError}
+            <span>{composerError}</span>
+            {speech.permissionDenied && isNativeMobileBridgeAvailable() ? (
+              <InlineNoticeActionButton
+                onClick={() => {
+                  void openAppSettings();
+                }}
+              />
+            ) : null}
           </InlineNotice>
         ) : null}
         {composerPending ? (

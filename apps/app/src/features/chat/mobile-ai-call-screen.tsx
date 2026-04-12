@@ -34,9 +34,14 @@ import {
   VolumeX,
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
+import { InlineNoticeActionButton } from "../../components/inline-notice-action-button";
 import { buildDirectCallInviteMessage } from "./group-call-message";
 import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
+import {
+  isNativeMobileBridgeAvailable,
+  openAppSettings,
+} from "../../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
 import { DigitalHumanPlayer } from "./digital-human-player";
@@ -1198,7 +1203,20 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           cameraEnabled &&
           cameraPreview.error &&
           cameraPreview.status !== "requesting-permission" ? (
-            <InlineNotice tone="warning">{cameraPreview.error}</InlineNotice>
+            <InlineNotice
+              tone="warning"
+              className="flex items-center justify-between gap-3"
+            >
+              <span>{cameraPreview.error}</span>
+              {cameraPreview.permissionDenied &&
+              isNativeMobileBridgeAvailable() ? (
+                <InlineNoticeActionButton
+                  onClick={() => {
+                    void openAppSettings();
+                  }}
+                />
+              ) : null}
+            </InlineNotice>
           ) : null}
           {isVideoMode &&
           !digitalHumanCall.sessionError &&
@@ -1218,7 +1236,23 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           {activeCall.turnMutation.error instanceof Error ? (
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
-          {speech.error ? <ErrorBlock message={speech.error} /> : null}
+          {speech.error ? (
+            speech.permissionDenied && isNativeMobileBridgeAvailable() ? (
+              <InlineNotice
+                tone="warning"
+                className="flex items-center justify-between gap-3"
+              >
+                <span>{speech.error}</span>
+                <InlineNoticeActionButton
+                  onClick={() => {
+                    void openAppSettings();
+                  }}
+                />
+              </InlineNotice>
+            ) : (
+              <ErrorBlock message={speech.error} />
+            )
+          ) : null}
           {videoRecoveryMessage ? (
             <InlineNotice
               tone={

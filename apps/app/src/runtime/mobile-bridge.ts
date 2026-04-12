@@ -31,6 +31,7 @@ export type MobileBridgeLocalNotificationPayload = {
 
 type MobileBridgePlugin = {
   openExternalUrl(options: { url: string }): Promise<void>;
+  openAppSettings(): Promise<void>;
   share(options: MobileBridgeSharePayload): Promise<void>;
   pickImages(options?: {
     multiple?: boolean;
@@ -66,6 +67,19 @@ export async function openExternalUrl(url: string) {
 
   try {
     await mobileBridge.openExternalUrl({ url });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function openAppSettings() {
+  if (!isNativeMobileBridgeAvailable()) {
+    return false;
+  }
+
+  try {
+    await mobileBridge.openAppSettings();
     return true;
   } catch {
     return false;

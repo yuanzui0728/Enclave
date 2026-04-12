@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.OpenableColumns;
+import android.provider.Settings;
 
 import androidx.activity.result.ActivityResult;
 import androidx.core.app.NotificationCompat;
@@ -69,6 +70,20 @@ public class YinjieMobileBridgePlugin extends Plugin {
             call.resolve();
         } catch (Exception exception) {
             call.reject("failed to open external url", exception);
+        }
+    }
+
+    @PluginMethod
+    public void openAppSettings(PluginCall call) {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.fromParts("package", getContext().getPackageName(), null));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        try {
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception exception) {
+            call.reject("failed to open app settings", exception);
         }
     }
 

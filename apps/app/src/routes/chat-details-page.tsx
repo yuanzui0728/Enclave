@@ -16,6 +16,7 @@ import {
   setConversationPinned,
 } from "@yinjie/contracts";
 import { ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
@@ -33,7 +34,11 @@ import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
-import { requestNotificationPermission } from "../runtime/mobile-bridge";
+import {
+  isNativeMobileBridgeAvailable,
+  openAppSettings,
+  requestNotificationPermission,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -49,6 +54,8 @@ export function ChatDetailsPage() {
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);
@@ -195,8 +202,16 @@ export function ChatDetailsPage() {
         });
       } else if (permission === "denied") {
         setNotice({
-          tone: "success",
-          message: "已开启 3 小时强提醒，但系统通知未开启。",
+          tone: "warning",
+          message: isNativeMobileBridgeAvailable()
+            ? "已开启 3 小时强提醒，但系统通知未开启。可前往系统设置继续打开通知。"
+            : "已开启 3 小时强提醒，但系统通知未开启。",
+          actionLabel: isNativeMobileBridgeAvailable() ? "去设置" : undefined,
+          onAction: isNativeMobileBridgeAvailable()
+            ? () => {
+                void openAppSettings();
+              }
+            : undefined,
         });
       } else {
         setNotice({
@@ -473,9 +488,15 @@ export function ChatDetailsPage() {
         <div className="px-3">
           <InlineNotice
             tone={notice.tone}
-            className="rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
           >
-            {notice.message}
+            <span>{notice.message}</span>
+            {notice.actionLabel && notice.onAction ? (
+              <InlineNoticeActionButton
+                label={notice.actionLabel}
+                onClick={notice.onAction}
+              />
+            ) : null}
           </InlineNotice>
         </div>
       ) : null}

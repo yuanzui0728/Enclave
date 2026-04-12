@@ -102,6 +102,7 @@ export function useSelfCameraPreview({
 
   return {
     error,
+    permissionDenied: Boolean(error?.includes("权限被拒绝")),
     status,
     supported,
     videoRef,

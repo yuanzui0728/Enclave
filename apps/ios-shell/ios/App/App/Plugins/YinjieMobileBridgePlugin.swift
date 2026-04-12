@@ -26,6 +26,23 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
     }
 
+    @objc func openAppSettings(_ call: CAPPluginCall) {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else {
+            call.reject("failed to resolve app settings url")
+            return
+        }
+
+        DispatchQueue.main.async {
+            UIApplication.shared.open(url, options: [:]) { success in
+                if success {
+                    call.resolve()
+                } else {
+                    call.reject("failed to open app settings")
+                }
+            }
+        }
+    }
+
     @objc func share(_ call: CAPPluginCall) {
         let title = call.getString("title")?.trimmingCharacters(in: .whitespacesAndNewlines)
         let text = call.getString("text")?.trimmingCharacters(in: .whitespacesAndNewlines)

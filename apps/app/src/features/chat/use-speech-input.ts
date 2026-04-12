@@ -499,6 +499,7 @@ export function useSpeechInput({
     error,
     interimTranscript,
     mode,
+    permissionDenied: Boolean(error?.includes("权限被拒绝")),
     recordedAudio,
     start,
     status,

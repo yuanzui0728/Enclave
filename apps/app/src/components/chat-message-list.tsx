@@ -49,6 +49,7 @@ import {
 } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
+import { InlineNoticeActionButton } from "./inline-notice-action-button";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import {
   hideLocalChatMessage,
@@ -88,7 +89,11 @@ import {
 } from "../lib/format";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import { openExternalUrl } from "../runtime/external-url";
-import { requestNotificationPermission } from "../runtime/mobile-bridge";
+import {
+  isNativeMobileBridgeAvailable,
+  openAppSettings,
+  requestNotificationPermission,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
@@ -243,7 +248,9 @@ export function ChatMessageList({
   >(highlightedMessageId);
   const [actionNotice, setActionNotice] = useState<{
     message: string;
-    tone: "success" | "danger";
+    tone: "success" | "danger" | "warning";
+    actionLabel?: string;
+    onAction?: () => void;
   } | null>(null);
   const [pendingDirectCallInvite, setPendingDirectCallInvite] = useState<{
     source: CallInviteSource | null;
@@ -314,7 +321,10 @@ export function ChatMessageList({
       return;
     }
 
-    const timer = window.setTimeout(() => setActionNotice(null), 2200);
+    const timer = window.setTimeout(
+      () => setActionNotice(null),
+      actionNotice.actionLabel ? 5000 : 2200,
+    );
     return () => window.clearTimeout(timer);
   }, [actionNotice]);
 
@@ -1231,8 +1241,16 @@ export function ChatMessageList({
 
       if (permissionState === "denied") {
         setActionNotice({
-          message: `已设为消息提醒 · ${summary}，系统通知未开启。`,
-          tone: "success",
+          message: isNativeMobileBridgeAvailable()
+            ? `已设为消息提醒 · ${summary}，系统通知未开启。可前往系统设置继续打开通知。`
+            : `已设为消息提醒 · ${summary}，系统通知未开启。`,
+          tone: "warning",
+          actionLabel: isNativeMobileBridgeAvailable() ? "去设置" : undefined,
+          onAction: isNativeMobileBridgeAvailable()
+            ? () => {
+                void openAppSettings();
+              }
+            : undefined,
         });
         return;
       }
@@ -1613,8 +1631,17 @@ export function ChatMessageList({
         />
       ) : null}
       {actionNotice ? (
-        <InlineNotice className="text-xs" tone={actionNotice.tone}>
-          {actionNotice.message}
+        <InlineNotice
+          className="flex items-center justify-between gap-3 text-xs"
+          tone={actionNotice.tone}
+        >
+          <span>{actionNotice.message}</span>
+          {actionNotice.actionLabel && actionNotice.onAction ? (
+            <InlineNoticeActionButton
+              label={actionNotice.actionLabel}
+              onClick={actionNotice.onAction}
+            />
+          ) : null}
         </InlineNotice>
       ) : null}
       {hasOlderMessages || loadingOlderMessages ? (
