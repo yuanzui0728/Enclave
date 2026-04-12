@@ -1772,7 +1772,7 @@ export function ChatMessageList({
 
         if (isSystem || isRecalled) {
           return (
-            <div key={message.id} className="space-y-2">
+            <div key={message.id} className={isDesktop ? "space-y-2" : "space-y-1.5"}>
               {resolvedUnreadMarkerMessageId === message.id ? (
                 <UnreadMarkerDivider
                   id={unreadMarkerDomId}
@@ -1790,10 +1790,10 @@ export function ChatMessageList({
               ) : (
                 <InlineNotice
                   id={`chat-message-${message.id}`}
-                  className={`mx-auto max-w-[84%] rounded-full px-3 py-1.5 text-center text-[11px] text-[color:var(--text-muted)] ${
+                  className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
-                      ? "border border-black/6 bg-[#f7f7f7]"
-                      : "border border-[color:var(--border-subtle)] bg-white/88 shadow-none"
+                      ? "rounded-full border border-black/6 bg-[#f7f7f7] px-3 py-1.5 text-[11px]"
+                      : "rounded-[14px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
@@ -1825,7 +1825,7 @@ export function ChatMessageList({
                   className={
                     isDesktop
                       ? "inline-flex rounded-full bg-transparent px-2.5 py-0.5 text-[11px] text-[#9a9a9a] transition hover:bg-white/50"
-                      : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-white/88 px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
+                      : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
                   }
                   aria-label={
                     detailedTimestampMode
@@ -2575,19 +2575,19 @@ function UnreadMarkerDivider({
   const isDesktop = variant === "desktop";
 
   return (
-    <div id={id} className="flex items-center gap-3 py-1.5">
+    <div id={id} className={`flex items-center ${isDesktop ? "gap-3 py-1.5" : "gap-2.5 py-1"}`}>
       <div
         className={
           isDesktop
             ? "h-px flex-1 bg-black/8"
-            : "h-px flex-1 bg-[rgba(7,193,96,0.14)]"
+            : "h-px flex-1 bg-[rgba(7,193,96,0.1)]"
         }
       />
       <div
         className={
           isDesktop
             ? "rounded-full border border-black/6 bg-[#f7f7f7] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
-            : "rounded-full border border-[rgba(7,193,96,0.16)] bg-white/88 px-3 py-1 text-[11px] font-medium text-[#07a35a]"
+            : "rounded-full border border-[rgba(7,193,96,0.12)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[#059652]"
         }
       >
         {label}
@@ -2596,7 +2596,7 @@ function UnreadMarkerDivider({
         className={
           isDesktop
             ? "h-px flex-1 bg-black/10"
-            : "h-px flex-1 bg-[rgba(7,193,96,0.14)]"
+            : "h-px flex-1 bg-[rgba(7,193,96,0.1)]"
         }
       />
     </div>
@@ -2724,22 +2724,37 @@ function SharedHistorySummaryNotice({
     <div
       id={id}
       className={cn(
-        "mx-auto max-w-[84%] rounded-[16px] border px-4 py-3 text-center",
+        "mx-auto max-w-[84%] border text-center",
         isDesktop
-          ? "border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)]"
-          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]",
+          ? "rounded-[16px] border-black/6 bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
+          : "rounded-[14px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
           ? "ring-2 ring-[rgba(255,191,0,0.34)] ring-offset-2 ring-offset-transparent"
           : "",
       )}
     >
-      <div className="flex items-center justify-center gap-2 text-[12px] font-medium text-[color:var(--text-primary)]">
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-[color:var(--text-secondary)]">
+      <div
+        className={cn(
+          "flex items-center justify-center gap-2 font-medium text-[color:var(--text-primary)]",
+          isDesktop ? "text-[12px]" : "text-[11px]",
+        )}
+      >
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-full bg-black/5 text-[color:var(--text-secondary)]",
+            isDesktop ? "h-6 w-6" : "h-5 w-5",
+          )}
+        >
           <FileText size={13} />
         </span>
         <span>聊天记录已导入当前群聊</span>
       </div>
-      <div className="mt-1.5 text-[11px] leading-5 text-[color:var(--text-muted)]">
+      <div
+        className={cn(
+          "text-[color:var(--text-muted)]",
+          isDesktop ? "mt-1.5 text-[11px] leading-5" : "mt-1 text-[10px] leading-[18px]",
+        )}
+      >
         来自你和 {summary.participantName} 的 {summary.count} 条消息
       </div>
     </div>
