@@ -158,7 +158,7 @@ export function DesktopGroupMemberRemovalPicker({
                   onClose();
                 }
               }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={pending}
               aria-label="关闭"
             >
@@ -187,7 +187,7 @@ export function DesktopGroupMemberRemovalPicker({
                       type="button"
                       onClick={() => toggleSelection(member.id)}
                       disabled={pending}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                       aria-label={`移除 ${member.name}`}
                     >
                       <X size={14} />
@@ -219,7 +219,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="secondary"
                 onClick={onClose}
                 disabled={pending}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 取消
               </Button>
@@ -263,7 +263,7 @@ function CandidateRow({
       className={cn(
         "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
         checked
-          ? "border border-[rgba(7,193,96,0.22)] bg-[rgba(7,193,96,0.08)] shadow-[var(--shadow-soft)]"
+          ? "border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
           : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
       )}
     >
@@ -287,7 +287,7 @@ function SelectionBadge({ checked }: { checked: boolean }) {
       className={cn(
         "h-6 w-6 shrink-0 rounded-full border transition-colors",
         checked
-          ? "border-[#07c160] bg-[#07c160]"
+          ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
       )}
     />
