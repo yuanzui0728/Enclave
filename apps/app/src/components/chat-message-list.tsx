@@ -2609,20 +2609,6 @@ export function ChatMessageList({
                       return;
                     }
 
-                    if (
-                      openPrintWindow({
-                        title:
-                          activeImage.fileName || activeImage.label || "图片",
-                        imageUrl: activeImage.url,
-                      })
-                    ) {
-                      setActionNotice({
-                        message: "已打开图片打印窗口。",
-                        tone: "success",
-                      });
-                      return;
-                    }
-
                     setActionNotice({
                       message: "浏览器阻止了打印窗口，请检查弹窗权限。",
                       tone: "danger",
@@ -3396,75 +3382,6 @@ function buildMergedForwardText(messages: ChatRenderableMessage[]) {
   }
 
   return ["[聊天记录]", ...sections].join("\n");
-}
-
-function openPrintWindow(input: { title: string; imageUrl: string }) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    return false;
-  }
-
-  const escapedTitle = escapeHtml(input.title);
-  const escapedImageUrl = escapeHtml(input.imageUrl);
-  printWindow.document.write(`<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <title>${escapedTitle}</title>
-    <style>
-      html, body {
-        margin: 0;
-        min-height: 100%;
-        background: #0f172a;
-      }
-
-      body {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
-      }
-
-      img {
-        max-width: 100%;
-        max-height: calc(100vh - 48px);
-        object-fit: contain;
-        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
-      }
-    </style>
-  </head>
-  <body>
-    <img src="${escapedImageUrl}" alt="${escapedTitle}" />
-  </body>
-</html>`);
-  printWindow.document.close();
-
-  const printedImage = printWindow.document.querySelector(
-    "img",
-  ) as HTMLImageElement | null;
-  if (printedImage) {
-    printedImage.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
-  } else {
-    printWindow.focus();
-    printWindow.print();
-  }
-
-  return true;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function renderTextWithMentions(text: string): ReactNode {
