@@ -47,6 +47,7 @@ import {
   getConversationThreadType,
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
+import { openExternalUrl } from "../runtime/external-url";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type FileFilter = "all" | "image" | "file";
@@ -480,14 +481,15 @@ export function DesktopChatFilesPage() {
                               预览图片
                             </Button>
                           ) : null}
-                          <a
-                            href={item.attachment.url}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void openExternalUrl(item.attachment.url);
+                            }}
                             className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[12px] font-medium text-white transition hover:opacity-95"
                           >
                             打开附件
-                          </a>
+                          </button>
                           <Button
                             variant="secondary"
                             size="sm"

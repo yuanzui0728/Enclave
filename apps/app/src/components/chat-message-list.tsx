@@ -87,6 +87,7 @@ import {
   parseTimestamp,
 } from "../lib/format";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
+import { openExternalUrl } from "../runtime/external-url";
 import { requestNotificationPermission } from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
@@ -1060,10 +1061,11 @@ export function ChatMessageList({
     }
 
     if (attachment.kind === "file") {
-      window.open(attachment.url, "_blank", "noopener,noreferrer");
-      setActionNotice({
-        message: "已打开文件。",
-        tone: "success",
+      void openExternalUrl(attachment.url).then((opened) => {
+        setActionNotice({
+          message: opened ? "已打开文件。" : "文件打开失败，请稍后再试。",
+          tone: opened ? "success" : "danger",
+        });
       });
     }
   };

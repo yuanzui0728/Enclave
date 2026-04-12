@@ -88,6 +88,7 @@ struct RuntimePaths {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .manage(DesktopWindowState {
             allow_exit: AtomicBool::new(false),
         })
