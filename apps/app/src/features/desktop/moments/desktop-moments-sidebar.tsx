@@ -133,7 +133,7 @@ export function DesktopMomentsSidebar({
                       className={cn(
                         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                         activeAuthorSummary.authorType === "character"
-                          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[#15803d]"
+                          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                       )}
                     >
@@ -199,7 +199,7 @@ export function DesktopMomentsSidebar({
                     key={moment.id}
                     type="button"
                     onClick={() => onSelectMoment(moment.id)}
-                    className="w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-3 text-left transition-[border-color,background-color] hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                    className="w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-3 text-left transition-[background-color] hover:bg-white"
                   >
                     <div className="line-clamp-2 text-[13px] leading-6 text-[color:var(--text-primary)]">
                       {moment.text}
@@ -273,8 +273,8 @@ export function DesktopMomentsSidebar({
                   className={cn(
                     "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition-[border-color,background-color]",
                     activeAuthorId === author.authorId
-                      ? "border-[rgba(7,193,96,0.16)] bg-white shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
                   <AvatarChip
