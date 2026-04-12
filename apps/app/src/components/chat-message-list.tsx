@@ -95,6 +95,7 @@ import {
   requestNotificationPermission,
 } from "../runtime/mobile-bridge";
 import { saveRemoteFile } from "../runtime/save-remote-file";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
@@ -1096,9 +1097,27 @@ export function ChatMessageList({
         return;
       }
 
+      const canRevealSavedFile =
+        result.status === "saved" && Boolean(result.savedPath?.trim());
+      const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
       setActionNotice({
         message: result.message,
         tone: result.status === "failed" ? "danger" : "success",
+        actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+        onAction:
+          savedPath
+            ? () => {
+                void revealSavedFile(savedPath).then((revealed) => {
+                  setActionNotice({
+                    message: revealed
+                      ? "已打开所在位置。"
+                      : "打开所在位置失败，请稍后再试。",
+                    tone: revealed ? "success" : "danger",
+                  });
+                });
+              }
+            : undefined,
       });
     });
   };
