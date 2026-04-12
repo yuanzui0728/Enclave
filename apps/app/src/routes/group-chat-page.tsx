@@ -12,7 +12,10 @@ import {
 import GroupChatThreadPanel from "../features/chat/group-chat-thread-panel-view";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { navigateBackOrFallback } from "../lib/history-back";
-import { resolveGroupInviteRouteContext } from "../lib/group-invite-delivery";
+import {
+  hydrateGroupInviteDeliveryFromNative,
+  resolveGroupInviteRouteContext,
+} from "../lib/group-invite-delivery";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function GroupChatPage() {
@@ -22,11 +25,17 @@ export function GroupChatPage() {
   const search = useRouterState({ select: (state) => state.location.search });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const highlightedMessageId = parseHighlightedMessageId(hash);
-  const routeContext = resolveRouteContext(groupId);
+  const [routeContext, setRouteContext] = useState(() =>
+    resolveRouteContext(groupId),
+  );
   const [routeMobileShortcutAction, setRouteMobileShortcutAction] =
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+
+  useEffect(() => {
+    setRouteContext(resolveRouteContext(groupId));
+  }, [groupId]);
 
   useEffect(() => {
     const nextAction = parseChatComposeShortcutAction(search);
@@ -87,6 +96,37 @@ export function GroupChatPage() {
   const handleRouteMobileShortcutHandled = useCallback(() => {
     setRouteMobileShortcutAction(null);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncRouteContext = async () => {
+      await hydrateGroupInviteDeliveryFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setRouteContext(resolveRouteContext(groupId));
+    };
+
+    void syncRouteContext();
+
+    const handleFocus = () => {
+      void syncRouteContext();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+    };
+  }, [groupId]);
 
   const callReturnNotice =
     routeCallReturnKind === null
