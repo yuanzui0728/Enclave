@@ -18,6 +18,7 @@ import {
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
+import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import {
   getConversationThreadLabel,
   getConversationThreadPath,
@@ -44,6 +45,7 @@ import {
   formatConversationTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
@@ -56,7 +58,12 @@ export function GroupQrPage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
   const search = useRouterState({ select: (state) => state.location.search });
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    tone: "success" | "danger";
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
   const [deliveredConversation, setDeliveredConversation] =
     useState<GroupInviteDeliveryRecord | null>(() =>
       readGroupInviteDeliveryRecord(groupId),
@@ -499,21 +506,28 @@ export function GroupQrPage() {
     navigate,
   ]);
 
+  function showNotice(message: string, tone: "success" | "danger" = "success") {
+    setNotice({
+      message,
+      tone,
+    });
+  }
+
   async function copyText(value: string, successMessage: string) {
     if (
       typeof navigator === "undefined" ||
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      setNotice("当前环境暂不支持复制。");
+      showNotice("当前环境暂不支持复制。", "danger");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(value);
-      setNotice(successMessage);
+      showNotice(successMessage);
     } catch {
-      setNotice("复制失败，请稍后重试。");
+      showNotice("复制失败，请稍后重试。", "danger");
     }
   }
 
@@ -530,7 +544,28 @@ export function GroupQrPage() {
       return;
     }
 
-    setNotice(result.message);
+    const canRevealSavedFile =
+      result.status === "saved" && Boolean(result.savedPath?.trim());
+    const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+
+    setNotice({
+      message: result.message,
+      tone: result.status === "failed" ? "danger" : "success",
+      actionLabel: canRevealSavedFile ? "打开位置" : undefined,
+      onAction:
+        savedPath
+          ? () => {
+              void revealSavedFile(savedPath).then((revealed) => {
+                showNotice(
+                  revealed
+                    ? "已打开邀请卡所在位置。"
+                    : "打开所在位置失败，请稍后再试。",
+                  revealed ? "success" : "danger",
+                );
+              });
+            }
+          : undefined,
+    });
   }
 
   async function sendToMobile() {
@@ -539,7 +574,7 @@ export function GroupQrPage() {
       !navigator.clipboard ||
       typeof navigator.clipboard.writeText !== "function"
     ) {
-      setNotice("当前环境暂不支持复制到手机。");
+      showNotice("当前环境暂不支持复制到手机。", "danger");
       return;
     }
 
@@ -550,9 +585,9 @@ export function GroupQrPage() {
         description: `把 ${groupQuery.data?.name ?? "当前群聊"} 的邀请入口发到手机继续查看和转发。`,
         path: `/group/${groupId}`,
       });
-      setNotice("群邀请入口已复制到手机。");
+      showNotice("群邀请入口已复制到手机。");
     } catch {
-      setNotice("复制到手机失败，请稍后重试。");
+      showNotice("复制到手机失败，请稍后重试。", "danger");
     }
   }
 
@@ -580,7 +615,7 @@ export function GroupQrPage() {
         }),
       );
       setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
-      setNotice(`已把群邀请发到 ${conversation.title}。`);
+      showNotice(`已把群邀请发到 ${conversation.title}。`);
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -589,7 +624,7 @@ export function GroupQrPage() {
 
     const characterId = conversation.participants[0];
     if (!characterId) {
-      setNotice("这条单聊暂时没有可用的角色目标，无法发送群邀请。");
+      showNotice("这条单聊暂时没有可用的角色目标，无法发送群邀请。", "danger");
       return;
     }
 
@@ -615,7 +650,7 @@ export function GroupQrPage() {
       }),
     );
     setDeliveryTargets(readGroupInviteDeliveryTargets(groupId));
-    setNotice(`已把群邀请发到 ${conversation.title}。`);
+    showNotice(`已把群邀请发到 ${conversation.title}。`);
   }
 
   const content = (
@@ -629,7 +664,20 @@ export function GroupQrPage() {
       {membersQuery.isError && membersQuery.error instanceof Error ? (
         <ErrorBlock message={membersQuery.error.message} />
       ) : null}
-      {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+      {notice ? (
+        <InlineNotice
+          className="flex items-center justify-between gap-3"
+          tone={notice.tone}
+        >
+          <span>{notice.message}</span>
+          {notice.actionLabel && notice.onAction ? (
+            <InlineNoticeActionButton
+              label={notice.actionLabel}
+              onClick={notice.onAction}
+            />
+          ) : null}
+        </InlineNotice>
+      ) : null}
 
       {groupQuery.data ? (
         <section
