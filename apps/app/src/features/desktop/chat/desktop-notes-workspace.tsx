@@ -196,7 +196,7 @@ export function DesktopNotesWorkspace({
               "rounded-full border px-3 py-1 text-[11px] font-medium",
               saveState === "saving"
                 ? "border-[rgba(250,173,20,0.18)] bg-[rgba(250,173,20,0.10)] text-[#a16207]"
-                : "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[#15803d]",
+                : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
             )}
           >
             {saveState === "saving" ? "保存中" : "已保存"}
@@ -231,7 +231,7 @@ export function DesktopNotesWorkspace({
                 variant="secondary"
                 size="icon"
                 onClick={handleCreateNote}
-                className="h-9 w-9 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                className="h-9 w-9 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                 aria-label="新建笔记"
               >
                 <Plus size={16} />
@@ -258,8 +258,8 @@ export function DesktopNotesWorkspace({
                     className={cn(
                       "w-full rounded-[16px] border px-4 py-3 text-left transition shadow-[var(--shadow-section)]",
                       note.id === activeNoteId
-                        ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
-                        : "border-[color:var(--border-faint)] bg-white hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                        : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]",
                     )}
                   >
                     <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -297,7 +297,7 @@ export function DesktopNotesWorkspace({
                   key={action.key}
                   type="button"
                   onClick={() => handleInsertSnippet(action.snippet())}
-                  className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-xs text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white hover:text-[color:var(--text-primary)]"
+                  className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-xs text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                 >
                   <Icon size={14} />
                   <span>{action.label}</span>
@@ -331,7 +331,7 @@ export function DesktopNotesWorkspace({
               variant="primary"
               size="lg"
               onClick={handleCreateNote}
-              className="mt-6 h-10 w-full rounded-[10px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+              className="mt-6 h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
             >
               新建笔记
             </Button>
