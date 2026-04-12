@@ -389,46 +389,48 @@ export function CharacterDetailPage() {
   return (
     <AppPage
       className={cn(
-        "min-h-full space-y-0 px-0 py-0 text-[#111827]",
-        isDesktopLayout ? "bg-[#ededed]" : "bg-[#f5f5f5]",
+        "min-h-full space-y-0 px-0 py-0 text-[color:var(--text-primary)]",
+        isDesktopLayout ? "bg-[#ededed]" : "bg-[color:var(--bg-canvas)]",
       )}
     >
-      <header className="sticky top-0 z-20 border-b border-black/5 bg-[rgba(247,247,247,0.95)] px-2 py-2.5 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2.5 backdrop-blur-xl">
         <div className="relative flex min-h-11 items-center gap-1.5">
           <button
             type="button"
             onClick={handleBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#111827] transition active:bg-black/5"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
             aria-label="返回"
           >
             <ArrowLeft size={20} />
           </button>
           <div className="pointer-events-none absolute inset-x-12 text-center">
-            <div className="truncate text-[17px] font-medium text-[#111827]">
+            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
               {isFriend ? "朋友信息" : "详细资料"}
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
-              {character?.relationship || "查看角色资料"}
-            </div>
+            {isDesktopLayout ? (
+              <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+                {character?.relationship || "查看角色资料"}
+              </div>
+            ) : null}
           </div>
           <div className="ml-auto h-10 w-10 shrink-0" aria-hidden="true" />
         </div>
       </header>
 
       {characterQuery.isLoading ? (
-        <div className="px-3 py-4">
+        <div className="px-4 py-4">
           <LoadingBlock label="正在读取朋友资料..." />
         </div>
       ) : null}
 
       {characterQuery.isError && characterQuery.error instanceof Error ? (
-        <div className="px-3 py-4">
+        <div className="px-4 py-4">
           <ErrorBlock message={characterQuery.error.message} />
         </div>
       ) : null}
 
       {!characterQuery.isLoading && !character ? (
-        <div className="px-3 py-4">
+        <div className="px-4 py-4">
           <EmptyState
             title="角色不存在"
             description="这个资料暂时不可用，返回通讯录再试一次。"
@@ -439,7 +441,7 @@ export function CharacterDetailPage() {
       {character ? (
         <div
           className={cn(
-            "space-y-3 px-3 pb-6 pt-3",
+            "space-y-2 px-3 pb-6 pt-3",
             isDesktopLayout ? "mx-auto w-full max-w-[720px]" : undefined,
           )}
         >
@@ -527,7 +529,7 @@ export function CharacterDetailPage() {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="truncate text-[24px] font-medium text-[#111827]">
+                  <div className="truncate text-[24px] font-medium text-[color:var(--text-primary)]">
                     {displayName}
                   </div>
                   {friendship?.isStarred ? (
@@ -538,15 +540,15 @@ export function CharacterDetailPage() {
                     />
                   ) : null}
                 </div>
-                <div className="mt-1 text-sm text-[#6b7280]">
+                <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
                   {remarkName
                     ? `昵称：${character.name}`
                     : character.relationship}
                 </div>
-                <div className="mt-1 text-sm text-[#8c8c8c]">
+                <div className="mt-1 text-sm text-[color:var(--text-muted)]">
                   隐界号：yinjie_{character.id.slice(0, 8)}
                 </div>
-                <div className="mt-3 text-sm leading-6 text-[#4b5563]">
+                <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
                   {signature}
                 </div>
               </div>
@@ -627,7 +629,7 @@ export function CharacterDetailPage() {
               />
             ) : null}
             {isFriend && isEditingProfile ? (
-              <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
+              <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-4 py-3">
                 <div className="space-y-3">
                   <DetailInputField
                     label="备注"
@@ -686,7 +688,7 @@ export function CharacterDetailPage() {
                         tags: friendship?.tags?.join("，") ?? "",
                       });
                     }}
-                    className="flex-1 rounded-full"
+                    className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
                     disabled={updateProfileMutation.isPending}
                   >
                     取消
@@ -694,7 +696,7 @@ export function CharacterDetailPage() {
                   <Button
                     variant="primary"
                     onClick={() => void handleSaveProfile()}
-                    className="flex-1 rounded-full"
+                    className="flex-1 rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
                     disabled={updateProfileMutation.isPending}
                   >
                     {updateProfileMutation.isPending ? "保存中..." : "保存"}
@@ -738,10 +740,10 @@ export function CharacterDetailPage() {
             <ProfileRow label="擅长领域" value={expertiseSummary} multiline />
             <ProfileRow label="语气风格" value={toneSummary} />
             <div className="border-t border-[color:var(--border-faint)] px-4 py-4">
-              <div className="text-xs uppercase tracking-[0.16em] text-[#8c8c8c]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
                 角色简介
               </div>
-              <div className="mt-2 text-sm leading-7 text-[#4b5563]">
+              <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
                 {character.bio?.trim() || "暂时没有更多介绍。"}
               </div>
             </div>
@@ -834,9 +836,9 @@ function ActionPanelButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex min-h-[78px] flex-col items-center justify-center gap-2 bg-white text-[#111827] transition active:bg-[color:var(--surface-console)] disabled:opacity-45"
+      className="flex min-h-[78px] flex-col items-center justify-center gap-2 bg-white text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-console)] disabled:opacity-45"
     >
-      <span className="text-[#606266]">{icon}</span>
+      <span className="text-[color:var(--text-secondary)]">{icon}</span>
       <span className="text-sm">{label}</span>
     </button>
   );
@@ -863,7 +865,7 @@ function ProfileSection({
       <div
         className={cn(
           flatOnMobile
-            ? "px-4 py-2.5 text-[12px] text-[#8c8c8c]"
+            ? "px-4 py-2.5 text-[12px] text-[color:var(--text-muted)]"
             : "px-4 py-3 text-xs uppercase tracking-[0.16em] text-[#8c8c8c]",
         )}
       >
@@ -895,12 +897,12 @@ function ProfileRow({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className="flex w-full items-center gap-4 px-4 py-4 text-left text-sm transition active:bg-[color:var(--surface-console)] disabled:opacity-60"
+        className="flex w-full items-center gap-4 px-4 py-4 text-left text-sm transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
       >
         <div
           className={cn(
             "w-24 shrink-0",
-            danger ? "text-[#d74b45]" : "text-[#111827]",
+            danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
           )}
         >
           {label}
@@ -909,8 +911,8 @@ function ProfileRow({
           className={cn(
             "min-w-0 flex-1 text-right",
             multiline
-              ? "whitespace-pre-wrap break-words text-[#8c8c8c]"
-              : "truncate text-[#8c8c8c]",
+              ? "whitespace-pre-wrap break-words text-[color:var(--text-muted)]"
+              : "truncate text-[color:var(--text-muted)]",
             danger ? "text-[#d74b45]" : undefined,
           )}
         >
@@ -926,14 +928,14 @@ function ProfileRow({
       <div
         className={cn(
           "w-24 shrink-0",
-          danger ? "text-[#d74b45]" : "text-[#111827]",
+          danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
         )}
       >
         {label}
       </div>
       <div
         className={cn(
-          "min-w-0 flex-1 text-right text-[#8c8c8c]",
+          "min-w-0 flex-1 text-right text-[color:var(--text-muted)]",
           multiline ? "whitespace-pre-wrap break-words" : "truncate",
           danger ? "text-[#d74b45]" : undefined,
         )}
@@ -960,11 +962,11 @@ function ProfileSwitchRow({
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left disabled:opacity-60"
+      className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
       role="switch"
       aria-checked={checked}
     >
-      <span className="text-[16px] text-[#111827]">{label}</span>
+      <span className="text-[16px] text-[color:var(--text-primary)]">{label}</span>
       <span
         className={cn(
           "relative h-8 w-13 rounded-full transition-colors",
@@ -995,14 +997,14 @@ function DetailInputField({
 }) {
   return (
     <label className="block">
-      <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[#8c8c8c]">
+      <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
         {label}
       </div>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-sm text-[#111827] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[#a3a3a3]"
+        className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]"
       />
     </label>
   );
