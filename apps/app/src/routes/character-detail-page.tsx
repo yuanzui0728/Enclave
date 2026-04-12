@@ -4,8 +4,10 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ChevronRight,
+  Copy,
   MessageCircleMore,
   Phone,
+  Share2,
   Star,
   Video,
 } from "lucide-react";
@@ -38,6 +40,10 @@ import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-en
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -56,6 +62,8 @@ export function CharacterDetailPage() {
   const isDesktopLayout = useDesktopLayout();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
@@ -347,6 +355,70 @@ export function CharacterDetailPage() {
     }
     openCallMutation.mutate("video");
   };
+  const handleShareCharacterCard = async () => {
+    if (!character) {
+      return;
+    }
+
+    const profilePath = `/character/${character.id}`;
+    const profileUrl =
+      typeof window === "undefined"
+        ? profilePath
+        : `${window.location.origin}${profilePath}`;
+    const profileSummary = [
+      `${displayName} 的隐界名片`,
+      character.relationship?.trim() || "世界联系人",
+      `隐界号：yinjie_${character.id.slice(0, 8)}`,
+      profileUrl,
+    ].join("\n");
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${displayName} 的隐界名片`,
+        text: profileSummary,
+        url: profileUrl,
+      });
+
+      if (shared) {
+        setNotice({
+          tone: "success",
+          message: "已打开系统分享面板。",
+        });
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制名片。",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(profileSummary);
+      setNotice({
+        tone: "success",
+        message: nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制名片摘要。"
+          : "名片摘要已复制。",
+      });
+    } catch {
+      setNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制名片失败，请稍后重试。",
+      });
+    }
+  };
   const handleBlockAction = () => {
     if (isDesktopLayout) {
       const confirmed = window.confirm(
@@ -428,7 +500,18 @@ export function CharacterDetailPage() {
               </div>
             ) : null}
           </div>
-          <div className="ml-auto h-10 w-10 shrink-0" aria-hidden="true" />
+          {character ? (
+            <button
+              type="button"
+              onClick={() => void handleShareCharacterCard()}
+              className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
+              aria-label={nativeMobileShareSupported ? "分享名片" : "复制名片"}
+            >
+              {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+            </button>
+          ) : (
+            <div className="ml-auto h-10 w-10 shrink-0" aria-hidden="true" />
+          )}
         </div>
       </header>
 
