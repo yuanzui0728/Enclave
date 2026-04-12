@@ -1,6 +1,7 @@
 import {
   isNativeMobileBridgeAvailable,
   openFileWithNativeShell,
+  shareFileWithNativeShell,
 } from "./mobile-bridge";
 import { openExternalUrl } from "./external-url";
 
@@ -51,14 +52,30 @@ export async function openRemoteFile(
         title: input.dialogTitle,
       });
 
-      if (!result.opened) {
-        throw new Error(result.error ?? "failed to open file");
+      if (result.opened) {
+        return {
+          opened: true,
+          message: "已打开文件。",
+        };
       }
 
-      return {
-        opened: true,
-        message: "已打开文件。",
-      };
+      const shareResult = await shareFileWithNativeShell({
+        blob,
+        fileName,
+        mimeType: blob.type || input.mimeType?.trim() || undefined,
+        title: input.dialogTitle,
+      });
+
+      if (shareResult.shared) {
+        return {
+          opened: true,
+          message: "当前设备未直接预览，已打开系统面板，可继续在其他应用中打开。",
+        };
+      }
+
+      throw new Error(
+        shareResult.error || result.error || "failed to open file",
+      );
     } catch {
       return {
         opened: false,
