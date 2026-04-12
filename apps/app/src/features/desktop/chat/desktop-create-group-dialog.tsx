@@ -883,7 +883,7 @@ export function DesktopCreateGroupDialog({
                       className={cn(
                         "flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition",
                         isSourceFriend
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] hover:bg-[rgba(7,193,96,0.08)]"
+                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] hover:bg-[rgba(7,193,96,0.07)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                       )}
                     >
@@ -1000,8 +1000,8 @@ export function DesktopCreateGroupDialog({
                                 className={cn(
                                   "rounded-[8px] border px-2.5 py-1 transition",
                                   recentPresetSelectionState.get(count)
-                                    ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                    : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:text-[color:var(--text-primary)]",
+                                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                                    : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                                 )}
                               >
                                 最近{count}条
@@ -1017,8 +1017,8 @@ export function DesktopCreateGroupDialog({
                               className={cn(
                                 "rounded-[8px] border px-2.5 py-1 transition",
                                 allShareableMessagesSelected
-                                  ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:text-[color:var(--text-primary)]",
+                                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                               )}
                             >
                               全选
@@ -1029,8 +1029,8 @@ export function DesktopCreateGroupDialog({
                               className={cn(
                                 "rounded-[8px] border px-2.5 py-1 transition",
                                 selectedMessageIds.length === 0
-                                  ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.10)] text-[#17803d]"
-                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:border-[rgba(7,193,96,0.16)] hover:text-[color:var(--text-primary)]",
+                                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                               )}
                             >
                               清空
@@ -1040,7 +1040,7 @@ export function DesktopCreateGroupDialog({
                         <div
                           tabIndex={0}
                           onKeyDown={handleSharedMessagesKeyDown}
-                          className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-faint)] bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.18)]"
+                          className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-faint)] bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.14)]"
                           aria-label="可分享聊天记录列表"
                         >
                           <div className="space-y-3">
@@ -1099,7 +1099,7 @@ export function DesktopCreateGroupDialog({
                                           ? "bg-[rgba(7,193,96,0.05)]"
                                           : "hover:bg-white active:bg-[color:var(--surface-console)]",
                                         focused
-                                          ? "ring-1 ring-[rgba(7,193,96,0.24)]"
+                                          ? "ring-1 ring-[rgba(7,193,96,0.18)]"
                                           : "",
                                       )}
                                     >
@@ -1113,9 +1113,9 @@ export function DesktopCreateGroupDialog({
                                           className={cn(
                                             "h-3 w-3 rounded-full border-2 bg-white transition-colors duration-150",
                                             checked
-                                              ? "border-[#07c160] bg-[#07c160]"
+                                              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
                                             : focused
-                                                ? "border-[rgba(7,193,96,0.58)] bg-[rgba(7,193,96,0.10)]"
+                                                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
                                                 : "border-[rgba(15,23,42,0.14)] group-hover:border-[rgba(15,23,42,0.22)]",
                                           )}
                                         />
@@ -1125,7 +1125,7 @@ export function DesktopCreateGroupDialog({
                                           "w-10 shrink-0 text-[11px] transition-colors duration-150",
                                           continuedFromPrevious ? "pt-0.5" : "pt-1",
                                           checked
-                                            ? "text-[#17803d]"
+                                            ? "text-[color:var(--brand-primary)]"
                                             : "text-[color:var(--text-dim)] group-hover:text-[color:var(--text-muted)]",
                                         )}
                                       >
@@ -1157,17 +1157,17 @@ export function DesktopCreateGroupDialog({
                                             ? "rounded-[10px] rounded-tl-[6px]"
                                             : "",
                                           checked
-                                            ? "border-[rgba(7,193,96,0.24)] bg-[rgba(7,193,96,0.10)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
+                                            ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
                                             : isGroupLead
-                                              ? "border-[color:var(--border-faint)] bg-white group-hover:border-[rgba(7,193,96,0.16)] group-hover:bg-[color:var(--surface-console)] group-active:bg-[rgba(247,250,250,0.92)]"
-                                              : "border-[rgba(15,23,42,0.05)] bg-[color:var(--surface-console)] group-hover:border-[rgba(7,193,96,0.12)] group-hover:bg-white group-active:bg-[rgba(247,250,250,0.92)]",
+                                              ? "border-[color:var(--border-faint)] bg-white group-hover:border-[color:var(--border-faint)] group-hover:bg-[color:var(--surface-console)] group-active:bg-[rgba(247,250,250,0.92)]"
+                                              : "border-[rgba(15,23,42,0.05)] bg-[color:var(--surface-console)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white group-active:bg-[rgba(247,250,250,0.92)]",
                                           focused && !checked
                                             ? "shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
                                             : "",
                                         )}
                                       >
                                         {focused ? (
-                                          <div className="absolute inset-y-1 left-1 w-[3px] rounded-full bg-[rgba(7,193,96,0.24)]" />
+                                          <div className="absolute inset-y-1 left-1 w-[3px] rounded-full bg-[rgba(7,193,96,0.14)]" />
                                         ) : null}
                                         {!continuedFromPrevious ? (
                                           <div className="flex items-center gap-2">
@@ -1178,7 +1178,7 @@ export function DesktopCreateGroupDialog({
                                               {formatMessageTypeLabel(message)}
                                             </span>
                                             {focused ? (
-                                              <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-1.5 py-0.5 text-[10px] text-[#17803d]">
+                                              <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                                                 键盘焦点
                                               </span>
                                             ) : null}
@@ -1186,7 +1186,7 @@ export function DesktopCreateGroupDialog({
                                               className={cn(
                                                 "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                                                 checked
-                                                  ? "border-[#07c160] bg-[#07c160] text-white"
+                                                  ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                                                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
                                               )}
                                             >
@@ -1198,7 +1198,7 @@ export function DesktopCreateGroupDialog({
                                             className={cn(
                                               "absolute right-3 top-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
                                               checked
-                                                ? "border-[#07c160] bg-[#07c160] text-white"
+                                                ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
                                                 : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
                                             )}
                                           >
@@ -1305,7 +1305,7 @@ export function DesktopCreateGroupDialog({
             <div className="space-y-3">
               {pinnedSourceFriend ? (
                 <div className="mb-3">
-                  <div className="mb-1 rounded-[8px] bg-[rgba(7,193,96,0.08)] px-2 py-1 text-[11px] font-medium tracking-[0.12em] text-[#17803d]">
+                  <div className="mb-1 rounded-[8px] bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
                     当前聊天
                   </div>
                   {renderFriendRow(pinnedSourceFriend)}
