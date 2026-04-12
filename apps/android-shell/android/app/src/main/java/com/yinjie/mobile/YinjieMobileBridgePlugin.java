@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.FileUtils;
 import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -270,8 +271,14 @@ public class YinjieMobileBridgePlugin extends Plugin {
 
     private JSObject buildAsset(Uri uri) {
         JSObject asset = new JSObject();
-        asset.put("path", uri.toString());
-        asset.put("webPath", uri.toString());
+        String filePath = FileUtils.getFileUrlForUri(getContext(), uri);
+        String webPath =
+            bridge != null && bridge.getLocalUrl() != null
+                ? FileUtils.getPortablePath(getContext(), bridge.getLocalUrl(), uri)
+                : null;
+
+        asset.put("path", filePath != null ? filePath : uri.toString());
+        asset.put("webPath", webPath != null ? webPath : uri.toString());
 
         String mimeType = getContext().getContentResolver().getType(uri);
         if (mimeType != null && !mimeType.trim().isEmpty()) {
