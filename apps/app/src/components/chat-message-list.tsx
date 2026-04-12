@@ -1920,6 +1920,7 @@ export function ChatMessageList({
                     <ImageMessage
                       url={message.attachment.url}
                       label={message.attachment.fileName || displayText}
+                      variant={variant}
                       maxSize={isDesktop ? 180 : 144}
                       onOpen={
                         selectionMode
@@ -1931,6 +1932,7 @@ export function ChatMessageList({
                     message.attachment?.kind === "file" ? (
                     <FileAttachmentMessage
                       attachment={message.attachment}
+                      variant={variant}
                       onOpen={
                         selectionMode
                           ? undefined
@@ -1942,11 +1944,13 @@ export function ChatMessageList({
                     <VoiceMessage
                       attachment={message.attachment}
                       own={isUser}
+                      variant={variant}
                     />
                   ) : message.type === "contact_card" &&
                     message.attachment?.kind === "contact_card" ? (
                     <ContactCardMessage
                       attachment={message.attachment}
+                      variant={variant}
                       onOpen={
                         selectionMode
                           ? undefined
@@ -1957,6 +1961,7 @@ export function ChatMessageList({
                     message.attachment?.kind === "location_card" ? (
                     <LocationCardMessage
                       attachment={message.attachment}
+                      variant={variant}
                       onOpen={
                         selectionMode
                           ? undefined
@@ -2040,14 +2045,14 @@ export function ChatMessageList({
                     />
                   ) : (
                     <div
-                      className={`rounded-[16px] px-3.5 py-2.5 text-[15px] leading-6 ${
+                      className={`rounded-[17px] px-3.5 py-2 text-[15px] leading-6 ${
                         isUser
                           ? isDesktop
                             ? "bg-[#95ec69] text-[#111827] shadow-none"
                             : "bg-[#95ec69] text-[#111827] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
                             ? "border border-black/6 bg-white text-[color:var(--text-primary)] shadow-none"
-                            : "border border-black/5 bg-white text-[color:var(--text-primary)] shadow-none"
+                            : "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)] shadow-none"
                       } whitespace-pre-wrap break-words`}
                     >
                       {renderTextWithMentions(displayText)}
@@ -3381,10 +3386,10 @@ function ReplyQuoteCard({
         align === "right"
           ? isDesktop
             ? "border-[rgba(110,168,62,0.24)] bg-[rgba(237,248,223,0.96)] text-[color:var(--text-primary)]"
-            : "border-[rgba(22,163,74,0.16)] bg-[rgba(255,255,255,0.72)] text-[color:var(--text-primary)]"
+            : "border-[rgba(22,163,74,0.14)] bg-[rgba(247,251,248,0.96)] text-[color:var(--text-primary)]"
           : isDesktop
             ? "border-black/6 bg-[#f7f7f7] text-[color:var(--text-primary)]"
-            : "border-black/6 bg-[rgba(248,248,248,0.96)] text-[color:var(--text-primary)]"
+            : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]"
       } text-left transition ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
       <div className="flex items-center gap-2">
@@ -3407,19 +3412,28 @@ function ReplyQuoteCard({
 function ImageMessage({
   url,
   label,
+  variant,
   maxSize,
   onOpen,
 }: {
   url: string;
   label: string;
+  variant: "mobile" | "desktop";
   maxSize: number;
   onOpen?: () => void;
 }) {
+  const isDesktop = variant === "desktop";
   const [loadFailed, setLoadFailed] = useState(false);
 
   if (loadFailed) {
     return (
-      <div className="flex h-28 w-28 items-center justify-center rounded-[22px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
+      <div
+        className={`flex h-28 w-28 items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
+          isDesktop
+            ? "rounded-[22px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            : "rounded-[18px] border border-[color:var(--border-subtle)] bg-white"
+        }`}
+      >
         {label || "[图片]"}
       </div>
     );
@@ -3430,7 +3444,11 @@ function ImageMessage({
       src={url}
       alt={label}
       onError={() => setLoadFailed(true)}
-      className="rounded-[16px] border border-black/6 bg-white object-cover shadow-none"
+      className={`bg-white object-cover shadow-none ${
+        isDesktop
+          ? "rounded-[16px] border border-black/6"
+          : "rounded-[14px] border border-[color:var(--border-subtle)]"
+      }`}
       style={{ maxWidth: `${maxSize}px`, maxHeight: `${maxSize}px` }}
       loading="lazy"
     />
@@ -3480,13 +3498,22 @@ function SelectionToggle({
 
 function ContactCardMessage({
   attachment,
+  variant,
   onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "contact_card" }>;
+  variant: "mobile" | "desktop";
   onOpen?: () => void;
 }) {
+  const isDesktop = variant === "desktop";
   const card = (
-    <div className="w-[220px] rounded-[16px] border border-black/6 bg-white p-3 shadow-none">
+    <div
+      className={`bg-white shadow-none ${
+        isDesktop
+          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <AvatarChip
           name={attachment.name}
@@ -3527,15 +3554,30 @@ function ContactCardMessage({
 
 function FileAttachmentMessage({
   attachment,
+  variant,
   onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "file" }>;
+  variant: "mobile" | "desktop";
   onOpen?: () => void;
 }) {
+  const isDesktop = variant === "desktop";
   const card = (
-    <div className="w-[220px] rounded-[16px] border border-black/6 bg-white p-3 shadow-none">
+    <div
+      className={`bg-white shadow-none ${
+        isDesktop
+          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+      }`}
+    >
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
+        <div
+          className={`flex items-center justify-center text-[color:var(--text-secondary)] ${
+            isDesktop
+              ? "h-12 w-12 rounded-[14px] bg-[#f3f4f6]"
+              : "h-11 w-11 rounded-[12px] bg-[color:var(--surface-console)]"
+          }`}
+        >
           <FileText size={20} />
         </div>
         <div className="min-w-0 flex-1">
@@ -3571,13 +3613,22 @@ function FileAttachmentMessage({
 
 function LocationCardMessage({
   attachment,
+  variant,
   onOpen,
 }: {
   attachment: Extract<MessageAttachment, { kind: "location_card" }>;
+  variant: "mobile" | "desktop";
   onOpen?: () => void;
 }) {
+  const isDesktop = variant === "desktop";
   const card = (
-    <div className="w-[220px] rounded-[16px] border border-black/6 bg-white p-3 shadow-none">
+    <div
+      className={`bg-white shadow-none ${
+        isDesktop
+          ? "w-[220px] rounded-[16px] border border-black/6 p-3"
+          : "w-[212px] rounded-[14px] border border-[color:var(--border-subtle)] p-3"
+      }`}
+    >
       <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
         <MapPin size={12} />
         <span>位置</span>
@@ -3612,10 +3663,13 @@ function LocationCardMessage({
 function VoiceMessage({
   attachment,
   own,
+  variant,
 }: {
   attachment: Extract<MessageAttachment, { kind: "voice" }>;
   own: boolean;
+  variant: "mobile" | "desktop";
 }) {
+  const isDesktop = variant === "desktop";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
 
@@ -3656,17 +3710,23 @@ function VoiceMessage({
 
   return (
     <div
-      className={`flex min-w-[148px] max-w-[220px] items-center gap-3 rounded-[18px] px-3 py-2.5 ${
+      className={`flex min-w-[148px] max-w-[220px] items-center gap-3 px-3 py-2.5 ${
         own
           ? "bg-[#95ec69] text-[#111827]"
-          : "border border-black/5 bg-white text-[color:var(--text-primary)]"
+          : isDesktop
+            ? "rounded-[18px] border border-black/5 bg-white text-[color:var(--text-primary)]"
+            : "rounded-[16px] border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-primary)]"
       }`}
     >
       <button
         type="button"
         onClick={togglePlayback}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          own ? "bg-white/55" : "bg-[#f3f4f6]"
+          own
+            ? "bg-white/55"
+            : isDesktop
+              ? "bg-[#f3f4f6]"
+              : "bg-[color:var(--surface-console)]"
         }`}
         aria-label={playing ? "暂停语音" : "播放语音"}
       >
