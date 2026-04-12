@@ -13,6 +13,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import {
+  hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
   readDesktopFavorites,
   removeDesktopFavorite,
@@ -41,6 +42,7 @@ export function FavoritesPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const [favorites, setFavorites] = useState(() =>
     mergeDesktopFavoriteRecords([], readDesktopFavorites()),
   );
@@ -68,6 +70,51 @@ export function FavoritesPage() {
       ),
     );
   }, [favoritesQuery.data]);
+
+  useEffect(() => {
+    if (!nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavorites() {
+      const localFavorites = await hydrateDesktopFavoritesFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setFavorites((current) => {
+        const nextFavorites = mergeDesktopFavoriteRecords(
+          favoritesQuery.data ?? [],
+          localFavorites,
+        );
+        return JSON.stringify(current) === JSON.stringify(nextFavorites)
+          ? current
+          : nextFavorites;
+      });
+    }
+
+    const handleFocus = () => {
+      void syncFavorites();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFavorites();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [favoritesQuery.data, nativeDesktopFavorites]);
 
   useEffect(() => {
     if (!notice) {
