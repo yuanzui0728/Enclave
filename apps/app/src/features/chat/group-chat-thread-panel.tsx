@@ -1052,7 +1052,7 @@ export function GroupChatThreadPanel({
           speechInput={{
             baseUrl,
             conversationId: groupId,
-            enabled: runtimeConfig.appPlatform === "web",
+            enabled: runtimeConfig.appPlatform !== "desktop",
           }}
           onChange={(value) => {
             handleDismissRouteContextNotice();
