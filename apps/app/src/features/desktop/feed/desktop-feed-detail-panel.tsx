@@ -39,6 +39,8 @@ export function DesktopFeedDetailPanel({
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const activeResidentSurfaceClassName =
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary)]";
+  const activeFavoriteClassName =
+    "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
   const residentCommentCount = post?.comments.filter(
     (comment) => comment.authorType === "character",
   ).length ?? 0;
@@ -197,7 +199,7 @@ export function DesktopFeedDetailPanel({
                   onClick={onToggleFavorite}
                   className={
                     favorite
-                      ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11] shadow-none"
+                      ? activeFavoriteClassName
                       : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                   }
                 >
