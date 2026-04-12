@@ -536,16 +536,26 @@ export function DesktopChannelsWorkspace({
                 <div className="mt-3 text-sm leading-7 text-[color:var(--text-primary)]">
                   {selectedPost.text}
                 </div>
-                <div className="mt-3 text-xs text-[color:var(--text-muted)]">
-                  {selectedPost.likeCount} 赞 · {selectedPost.commentCount} 评论
+                <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[color:var(--text-muted)]">
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
+                    {selectedPost.likeCount} 赞
+                  </span>
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
+                    {selectedPost.commentCount} 评论
+                  </span>
                 </div>
               </>
             ) : null}
           </div>
 
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              最近评论
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                最近评论
+              </div>
+              <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                {selectedPost?.commentsPreview.length ?? 0} 条
+              </span>
             </div>
             <div className="mt-3 space-y-3">
               {selectedPost?.commentsPreview.length ? (
@@ -554,8 +564,23 @@ export function DesktopChannelsWorkspace({
                     key={comment.id}
                     className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
                   >
-                    <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                      {comment.authorName}
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-medium text-[color:var(--text-primary)]">
+                        {comment.authorName}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-md border px-2 py-0.5 text-[10px] font-medium",
+                          comment.authorType === "character"
+                            ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+                        )}
+                      >
+                        {comment.authorType === "character" ? "居民" : "世界主人"}
+                      </span>
+                      <span className="text-[color:var(--text-dim)]">
+                        {formatTimestamp(comment.createdAt)}
+                      </span>
                     </div>
                     <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
                       {comment.text}
@@ -563,7 +588,7 @@ export function DesktopChannelsWorkspace({
                   </div>
                 ))
               ) : (
-                <div className="text-xs leading-6 text-[color:var(--text-muted)]">
+                <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
                   这条内容还没有评论，你可以先开口。
                 </div>
               )}
@@ -571,8 +596,13 @@ export function DesktopChannelsWorkspace({
           </div>
 
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              下一条推荐
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                下一条推荐
+              </div>
+              <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                {nextPosts.slice(0, 5).length} 条
+              </span>
             </div>
             <div className="mt-3 space-y-2">
               {nextPosts.slice(0, 5).map((post) => (
@@ -580,7 +610,7 @@ export function DesktopChannelsWorkspace({
                   key={post.id}
                   type="button"
                   onClick={() => setSelectedPostId(post.id)}
-                  className="w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition hover:bg-white"
+                  className="w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition-[background-color,box-shadow] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
                 >
                   <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
                     {post.text}
