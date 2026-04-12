@@ -20,6 +20,7 @@ import {
   buildOfficialArticleSummaryFavoriteRecord,
 } from "../favorites/official-account-favorite-records";
 import {
+  hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
   removeDesktopFavorite,
   upsertDesktopFavorite,
@@ -37,6 +38,7 @@ export function DesktopOfficialAccountsWorkspace({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [accountFilter, setAccountFilter] = useState<"all" | "following">(
@@ -45,6 +47,49 @@ export function DesktopOfficialAccountsWorkspace({
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
+
+  useEffect(() => {
+    if (!nativeDesktopFavorites) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function syncFavoriteSourceIds() {
+      const favoriteSourceIds = (await hydrateDesktopFavoritesFromNative()).map(
+        (item) => item.sourceId,
+      );
+      if (cancelled) {
+        return;
+      }
+
+      setFavoriteSourceIds((current) =>
+        JSON.stringify(current) === JSON.stringify(favoriteSourceIds)
+          ? current
+          : favoriteSourceIds,
+      );
+    }
+
+    const handleFocus = () => {
+      void syncFavoriteSourceIds();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
+      void syncFavoriteSourceIds();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [nativeDesktopFavorites]);
 
   const accountsQuery = useQuery({
     queryKey: ["app-official-accounts", baseUrl],
