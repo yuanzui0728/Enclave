@@ -642,6 +642,7 @@ export function GroupQrPage() {
     const shared = await shareWithNativeShell({
       title: `${groupName} 邀请`,
       text: inviteText,
+      url: inviteLink,
     });
 
     if (shared) {

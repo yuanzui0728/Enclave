@@ -387,6 +387,7 @@ export function GamesPage() {
       const shared = await shareWithNativeShell({
         title: `${activity.friendName} 的组局邀约`,
         text: `${activity.friendName} 正在玩 ${game?.name ?? "当前游戏"}，邀请你一起玩。\n${link}`,
+        url: link,
       });
 
       if (shared) {
@@ -454,6 +455,7 @@ export function GamesPage() {
       const shared = await shareWithNativeShell({
         title: `${game?.name ?? "游戏中心"} 入口`,
         text: `${game?.name ?? "游戏中心"}\n${link}`,
+        url: link,
       });
 
       if (shared) {

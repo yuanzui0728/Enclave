@@ -247,6 +247,7 @@ export function MiniProgramsPage() {
       const shared = await shareWithNativeShell({
         title: `${miniProgram?.name ?? "小程序"} 入口`,
         text: `${miniProgram?.name ?? "小程序"}\n${link}`,
+        url: link,
       });
 
       if (shared) {
