@@ -462,17 +462,17 @@ function GroupMemberPickerPage({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[#ededed] px-0 py-0">
+    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title={pageTitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-black/6 bg-[#f7f7f7] px-4 py-3 text-[#111827] shadow-none"
+        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[#111827]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
             onClick={() => {
               void navigate({
                 to: "/group/$groupId/details",
@@ -495,7 +495,7 @@ function GroupMemberPickerPage({
                 ? mode === "add"
                   ? "bg-[#07c160] text-white active:opacity-90"
                   : "bg-[#ff4d4f] text-white active:opacity-90"
-                : "text-[#b9b9b9]",
+                : "text-[color:var(--text-dim)]",
             )}
           >
             {submitMutation.isPending
@@ -509,12 +509,12 @@ function GroupMemberPickerPage({
         }
       >
         <div className="space-y-3 pt-3">
-          <div className="rounded-[12px] bg-white px-4 py-3">
+          <div className="-mx-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[13px] font-medium text-[#111827]">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 {mode === "add" ? "已选联系人" : "已选成员"}
               </div>
-              <div className="text-[12px] text-[#8c8c8c]">
+              <div className="text-[12px] text-[color:var(--text-muted)]">
                 {selectedIds.length ? `${selectedIds.length} 人` : "未选择"}
               </div>
             </div>
@@ -538,14 +538,14 @@ function GroupMemberPickerPage({
                         <X size={10} />
                       </span>
                     </div>
-                    <span className="w-full truncate text-[11px] text-[#5f5f5f]">
+                    <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
                       {item.name}
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="mt-3 text-[12px] leading-5 text-[#8c8c8c]">
+              <div className="mt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
                 {mode === "add"
                   ? "选择联系人后，就可以把他们加入当前群聊。"
                   : "选择成员后，就可以把他们从当前群聊移除。"}
@@ -553,14 +553,14 @@ function GroupMemberPickerPage({
             )}
           </div>
 
-          <label className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2.5 text-sm text-[#8c8c8c]">
+          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder={mode === "add" ? "搜索联系人" : "搜索群成员"}
-              className="min-w-0 flex-1 bg-transparent text-sm text-[#111827] outline-none placeholder:text-[#a3a3a3]"
+              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -570,27 +570,27 @@ function GroupMemberPickerPage({
         {groupQuery.isLoading ||
         membersQuery.isLoading ||
         (mode === "add" && friendsQuery.isLoading) ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <LoadingBlock label={loadingLabel} />
           </div>
         ) : null}
         {groupQuery.isError && groupQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={groupQuery.error.message} />
           </div>
         ) : null}
         {membersQuery.isError && membersQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={membersQuery.error.message} />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
         {submitMutation.isError && submitMutation.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-4 pt-4">
             <ErrorBlock message={submitMutation.error.message} />
           </div>
         ) : null}
@@ -600,7 +600,7 @@ function GroupMemberPickerPage({
         !(mode === "add" && friendsQuery.isLoading) &&
         !filteredCandidateItems.length &&
         !submitMutation.isPending ? (
-          <div className="px-3 pt-6">
+          <div className="px-4 pt-6">
             <EmptyState
               title={emptyStateTitle}
               description={emptyStateDescription}
@@ -609,13 +609,13 @@ function GroupMemberPickerPage({
         ) : null}
 
         {candidateSections.length ? (
-          <div className="pt-2">
+          <div>
             {candidateSections.map((section) => (
               <section key={section.key} className="mt-2">
-                <div className="px-4 py-1.5 text-[12px] text-[#8c8c8c]">
+                <div className="px-4 py-1.5 text-[12px] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
-                <div className="border-y border-black/6 bg-white">
+                <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
                   {section.items.map((item, index) => (
                     <CandidateRow
                       key={item.id}
@@ -665,15 +665,16 @@ function CandidateRow({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 px-4 py-3 text-left disabled:opacity-60",
+        "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
             ? "rounded-[12px] border border-[rgba(7,193,96,0.18)] bg-[rgba(240,247,243,0.96)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.06)]"
             : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
-            ? "bg-[#f3fff8]"
-            : "bg-white",
-        !isDesktop && withDivider ? "border-t border-black/6" : "",
+            ? "bg-[rgba(7,193,96,0.06)]"
+            : "bg-[color:var(--bg-canvas-elevated)]",
+        !isDesktop && withDivider ? "border-t border-[color:var(--border-faint)]" : "",
+        !isDesktop && !disabled ? "hover:bg-[color:var(--surface-card-hover)]" : "",
       )}
     >
       <AvatarChip name={name} src={src} size={isDesktop ? "md" : "wechat"} />
@@ -681,9 +682,11 @@ function CandidateRow({
         <div className="truncate text-[15px] text-[color:var(--text-primary)]">
           {name}
         </div>
-        <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-          {subtitle}
-        </div>
+        {isDesktop ? (
+          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+            {subtitle}
+          </div>
+        ) : null}
       </div>
       <span
         className={cn(
@@ -693,7 +696,7 @@ function CandidateRow({
             ? "border-[#07c160] bg-[#07c160] text-white"
             : isDesktop
               ? "border-[color:var(--border-faint)] bg-white text-transparent"
-              : "border-black/10 bg-[#f5f5f5] text-transparent",
+              : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] text-transparent",
         )}
       >
         <Check size={isDesktop ? 14 : 12} strokeWidth={2.8} />
