@@ -87,7 +87,7 @@ export function DesktopChatFilesPage() {
   const [viewerAttachmentId, setViewerAttachmentId] = useState<string | null>(
     null,
   );
-  const [saveNotice, setSaveNotice] = useState<{
+  const [actionNotice, setActionNotice] = useState<{
     message: string;
     tone: "success" | "danger";
     actionLabel?: string;
@@ -100,16 +100,16 @@ export function DesktopChatFilesPage() {
   }, []);
 
   useEffect(() => {
-    if (!saveNotice) {
+    if (!actionNotice) {
       return;
     }
 
     const timer = window.setTimeout(
-      () => setSaveNotice(null),
-      saveNotice.actionLabel ? 5000 : 2200,
+      () => setActionNotice(null),
+      actionNotice.actionLabel ? 5000 : 2200,
     );
     return () => window.clearTimeout(timer);
-  }, [saveNotice]);
+  }, [actionNotice]);
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -299,7 +299,7 @@ export function DesktopChatFilesPage() {
         result.status === "saved" && Boolean(result.savedPath?.trim());
       const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
 
-      setSaveNotice({
+      setActionNotice({
         message: result.message,
         tone: result.status === "failed" ? "danger" : "success",
         actionLabel: canRevealSavedFile ? "打开位置" : undefined,
@@ -307,7 +307,7 @@ export function DesktopChatFilesPage() {
           savedPath
             ? () => {
                 void revealSavedFile(savedPath).then((revealed) => {
-                  setSaveNotice({
+                  setActionNotice({
                     message: revealed
                       ? "已打开所在位置。"
                       : "打开所在位置失败，请稍后再试。",
@@ -316,6 +316,43 @@ export function DesktopChatFilesPage() {
                 });
               }
             : undefined,
+      });
+    });
+  };
+
+  const handleAttachmentOpen = (input: {
+    url: string;
+    kind: "image" | "file";
+  }) => {
+    void openExternalUrl(input.url).then((opened) => {
+      setActionNotice({
+        message:
+          input.kind === "image"
+            ? opened
+              ? "已打开图片。"
+              : "图片打开失败，请稍后再试。"
+            : opened
+              ? "已打开附件。"
+              : "附件打开失败，请稍后再试。",
+        tone: opened ? "success" : "danger",
+      });
+    });
+  };
+
+  const handleOpenInWindow = (item: ImageAttachmentRow) => {
+    void openDesktopChatImageViewerWindow({
+      imageUrl: item.attachment.url,
+      title: item.attachment.fileName,
+      meta: `${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`,
+      returnTo: buildAttachmentMessagePath(item),
+      items: standaloneViewerItems,
+      activeId: item.id,
+    }).then((opened) => {
+      setActionNotice({
+        message: opened
+          ? "已在独立窗口打开图片。"
+          : "浏览器阻止了新窗口，请检查弹窗权限。",
+        tone: opened ? "success" : "danger",
       });
     });
   };
@@ -471,16 +508,16 @@ export function DesktopChatFilesPage() {
         }
       >
         <div className="space-y-3 p-4">
-          {saveNotice ? (
+          {actionNotice ? (
             <InlineNotice
               className="flex items-center justify-between gap-3 text-xs"
-              tone={saveNotice.tone}
+              tone={actionNotice.tone}
             >
-              <span>{saveNotice.message}</span>
-              {saveNotice.actionLabel && saveNotice.onAction ? (
+              <span>{actionNotice.message}</span>
+              {actionNotice.actionLabel && actionNotice.onAction ? (
                 <InlineNoticeActionButton
-                  label={saveNotice.actionLabel}
-                  onClick={saveNotice.onAction}
+                  label={actionNotice.actionLabel}
+                  onClick={actionNotice.onAction}
                 />
               ) : null}
             </InlineNotice>
@@ -559,7 +596,13 @@ export function DesktopChatFilesPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              void openExternalUrl(item.attachment.url);
+                              handleAttachmentOpen({
+                                url: item.attachment.url,
+                                kind:
+                                  item.attachment.kind === "image"
+                                    ? "image"
+                                    : "file",
+                              });
                             }}
                             className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[12px] font-medium text-white transition hover:opacity-95"
                           >
@@ -694,16 +737,7 @@ export function DesktopChatFilesPage() {
               ? () => setViewerAttachmentId(imageRows[activeImageIndex + 1].id)
               : undefined
           }
-          onOpenInWindow={() => {
-            void openDesktopChatImageViewerWindow({
-              imageUrl: activeImage.attachment.url,
-              title: activeImage.attachment.fileName,
-              meta: `${activeImage.conversationTitle} · ${activeImage.senderName} · ${formatMessageTimestamp(activeImage.createdAt)}`,
-              returnTo: buildAttachmentMessagePath(activeImage),
-              items: standaloneViewerItems,
-              activeId: activeImage.id,
-            });
-          }}
+          onOpenInWindow={() => handleOpenInWindow(activeImage)}
           onSave={() =>
             handleAttachmentSave({
               url: activeImage.attachment.url,
