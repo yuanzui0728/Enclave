@@ -1,6 +1,10 @@
 const MOBILE_WEB_LAST_ROUTE_STORAGE_KEY = "yinjie-mobile-web-last-route";
 const MAX_ROUTE_AGE_MS = 1000 * 60 * 60 * 24 * 7;
 const EXCLUDED_PATHNAMES = new Set(["/", "/welcome", "/setup", "/onboarding"]);
+const TRANSIENT_SEARCH_KEYS = new Set(["callReturn", "composeShortcut"]);
+
+const DIRECT_CALL_ROUTE_PATTERN = /^\/chat\/([^/]+)\/(voice-call|video-call)$/;
+const GROUP_CALL_ROUTE_PATTERN = /^\/group\/([^/]+)\/(voice-call|video-call)$/;
 
 type PersistedMobileWebRoute = {
   path: string;
@@ -24,16 +28,52 @@ function resolvePathname(path: string) {
   return pathname || "/";
 }
 
-function isPersistablePath(path: string) {
+function normalizePersistablePath(path: string) {
   if (!path.startsWith("/")) {
-    return false;
+    return null;
   }
 
-  return !EXCLUDED_PATHNAMES.has(resolvePathname(path));
+  const normalizedUrl = new URL(path, "https://yinjie.app");
+  const normalizedPathname = normalizePersistablePathname(
+    normalizedUrl.pathname,
+  );
+
+  if (!normalizedPathname) {
+    return null;
+  }
+
+  for (const key of TRANSIENT_SEARCH_KEYS) {
+    normalizedUrl.searchParams.delete(key);
+  }
+
+  const nextSearch = normalizedUrl.searchParams.toString();
+  const nextHash =
+    normalizedPathname === normalizedUrl.pathname ? normalizedUrl.hash : "";
+
+  return `${normalizedPathname}${nextSearch ? `?${nextSearch}` : ""}${nextHash}`;
+}
+
+function normalizePersistablePathname(pathname: string) {
+  if (EXCLUDED_PATHNAMES.has(pathname)) {
+    return null;
+  }
+
+  const directCallMatch = pathname.match(DIRECT_CALL_ROUTE_PATTERN);
+  if (directCallMatch) {
+    return `/chat/${directCallMatch[1]}`;
+  }
+
+  const groupCallMatch = pathname.match(GROUP_CALL_ROUTE_PATTERN);
+  if (groupCallMatch) {
+    return `/group/${groupCallMatch[1]}`;
+  }
+
+  return pathname;
 }
 
 export function persistMobileWebRoute(path: string) {
-  if (!isPersistablePath(path)) {
+  const normalizedPath = normalizePersistablePath(path);
+  if (!normalizedPath) {
     return;
   }
 
@@ -43,7 +83,7 @@ export function persistMobileWebRoute(path: string) {
   }
 
   const payload: PersistedMobileWebRoute = {
-    path,
+    path: normalizedPath,
     updatedAt: Date.now(),
   };
   storage.setItem(MOBILE_WEB_LAST_ROUTE_STORAGE_KEY, JSON.stringify(payload));
@@ -58,10 +98,14 @@ export function readPersistedMobileWebRoute() {
 
   try {
     const payload = JSON.parse(rawValue) as Partial<PersistedMobileWebRoute>;
+    const normalizedPath =
+      typeof payload.path === "string"
+        ? normalizePersistablePath(payload.path)
+        : null;
     if (
-      typeof payload.path !== "string" ||
+      !normalizedPath ||
       typeof payload.updatedAt !== "number" ||
-      !isPersistablePath(payload.path)
+      !Number.isFinite(payload.updatedAt)
     ) {
       storage?.removeItem(MOBILE_WEB_LAST_ROUTE_STORAGE_KEY);
       return null;
@@ -72,7 +116,17 @@ export function readPersistedMobileWebRoute() {
       return null;
     }
 
-    return payload.path;
+    if (normalizedPath !== payload.path) {
+      storage?.setItem(
+        MOBILE_WEB_LAST_ROUTE_STORAGE_KEY,
+        JSON.stringify({
+          path: normalizedPath,
+          updatedAt: payload.updatedAt,
+        } satisfies PersistedMobileWebRoute),
+      );
+    }
+
+    return normalizedPath;
   } catch {
     storage?.removeItem(MOBILE_WEB_LAST_ROUTE_STORAGE_KEY);
     return null;
