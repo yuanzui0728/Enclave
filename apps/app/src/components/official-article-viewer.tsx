@@ -52,12 +52,12 @@ export function OfficialArticleViewer({
           <button
             type="button"
             onClick={() => onOpenAccount?.(article.account.id)}
-            className="text-left text-xs font-medium tracking-[0.12em] text-[color:var(--text-muted)] transition hover:text-[#15803d]"
+            className="text-left text-xs font-medium tracking-[0.12em] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
           >
             {accountName ?? article.account.name}
           </button>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]">
-            <span className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[#15803d]">
+            <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]">
               {article.account.accountType === "service" ? "服务号" : "订阅号"}
             </span>
             {article.account.isVerified ? (
@@ -122,14 +122,14 @@ export function OfficialArticleViewer({
         {article.summary}
       </div>
       <div
-        className="official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.22)] [&_blockquote]:bg-[rgba(7,193,96,0.08)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
+        className="official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.2)] [&_blockquote]:bg-[rgba(7,193,96,0.07)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
       />
 
       {article.relatedArticles.length ? (
         <section className="mt-10 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5">
           <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-            <Newspaper size={16} className="text-[#15803d]" />
+            <Newspaper size={16} className="text-[color:var(--brand-primary)]" />
             <span>该号更多内容</span>
           </div>
 
@@ -139,7 +139,7 @@ export function OfficialArticleViewer({
                 key={relatedArticle.id}
                 type="button"
                 onClick={() => onOpenArticle?.(relatedArticle.id)}
-                className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                className="flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium leading-6 text-[color:var(--text-primary)]">
