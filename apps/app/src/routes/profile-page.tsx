@@ -36,7 +36,7 @@ export function ProfilePage() {
               </div>
             </div>
             <div className="mt-1 line-clamp-1 text-sm text-[color:var(--text-secondary)]">
-              {signature?.trim() || "管理个人资料、专属 API Key 和世界设置"}
+              {signature?.trim() || "查看与编辑个人资料"}
             </div>
           </div>
           <ChevronRight
@@ -45,16 +45,11 @@ export function ProfilePage() {
           />
         </Link>
 
-        <div className="px-4 py-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
-          在这里管理你的资料、设置和协议说明。
-        </div>
-
         <ProfileEntryGroup className="mt-2">
           <ProfileEntry
             icon={Settings}
             iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
             label="设置"
-            subtitle="个人资料、AI 设置和账号相关配置"
             to="/profile/settings"
           />
         </ProfileEntryGroup>
@@ -64,21 +59,18 @@ export function ProfilePage() {
             icon={ShieldCheck}
             iconClassName="bg-[rgba(64,169,255,0.12)] text-[#1677ff]"
             label="隐私政策"
-            subtitle="查看数据与隐私相关说明"
             to="/legal/privacy"
           />
           <ProfileEntry
             icon={FileText}
             iconClassName="bg-[rgba(250,173,20,0.12)] text-[#d48806]"
             label="服务条款"
-            subtitle="查看使用条款与服务约定"
             to="/legal/terms"
           />
           <ProfileEntry
             icon={BookText}
             iconClassName="bg-[rgba(56,189,248,0.12)] text-[#0891b2]"
             label="社区规范"
-            subtitle="查看世界互动和社区行为规范"
             to="/legal/community"
           />
         </ProfileEntryGroup>
@@ -97,7 +89,7 @@ function ProfileEntryGroup({
   return (
     <div
       className={cn(
-        "overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+        "overflow-hidden border-y border-[color:var(--border-faint)] divide-y divide-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
         className,
       )}
     >
@@ -110,13 +102,11 @@ function ProfileEntry({
   icon: Icon,
   iconClassName,
   label,
-  subtitle,
   to,
 }: {
   icon: React.ElementType;
   iconClassName?: string;
   label: string;
-  subtitle?: string;
   to: string;
 }) {
   return (
@@ -132,15 +122,8 @@ function ProfileEntry({
       >
         <Icon size={18} />
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-[16px] text-[color:var(--text-primary)]">
-          {label}
-        </div>
-        {subtitle ? (
-          <div className="mt-1 truncate text-[13px] text-[color:var(--text-muted)]">
-            {subtitle}
-          </div>
-        ) : null}
+      <div className="min-w-0 flex-1 text-[16px] text-[color:var(--text-primary)]">
+        {label}
       </div>
       <ChevronRight
         size={16}
