@@ -61,7 +61,8 @@ Current Android-side implementation status:
 - `YinjieMobileBridge`
   - `openExternalUrl` is wired
   - `share` is wired
-  - `pickImages` opens Android document picker and returns URI assets
+  - `pickImages` opens Android document picker and returns portable file assets
+  - `captureImage` opens the system camera and returns a captured image asset through `FileProvider`
   - `getPushToken` reads the cached token slot used by `YinjieFirebaseMessagingService`
   - `getNotificationPermissionState` and `requestNotificationPermission` are wired
   - `showLocalNotification` is wired for in-app reminder notifications
@@ -75,6 +76,7 @@ Expected `YinjieMobileBridge` methods:
 - `openExternalUrl({ url })`
 - `share({ title?, text?, url? })`
 - `pickImages({ multiple? })`
+- `captureImage()`
 - `getPushToken()`
 - `getNotificationPermissionState()`
 - `requestNotificationPermission()`

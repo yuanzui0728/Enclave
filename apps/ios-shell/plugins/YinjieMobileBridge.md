@@ -13,12 +13,13 @@
 1. `openExternalUrl({ url })`
 2. `share({ title?, text?, url? })`
 3. `pickImages({ multiple? })`
-4. `getPushToken()`
-5. `getNotificationPermissionState()`
-6. `requestNotificationPermission()`
-7. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
-8. `getPendingLaunchTarget()`
-9. `clearPendingLaunchTarget()`
+4. `captureImage()`
+5. `getPushToken()`
+6. `getNotificationPermissionState()`
+7. `requestNotificationPermission()`
+8. `showLocalNotification({ id?, title, body, route?, conversationId?, groupId?, source? })`
+9. `getPendingLaunchTarget()`
+10. `clearPendingLaunchTarget()`
 
 ## 返回结构
 
@@ -34,6 +35,19 @@
       "fileName": "file.jpg"
     }
   ]
+}
+```
+
+### captureImage
+
+```json
+{
+  "asset": {
+    "path": "/native/path/to/captured.jpg",
+    "webPath": "file:///native/path/to/captured.jpg",
+    "mimeType": "image/jpeg",
+    "fileName": "captured.jpg"
+  }
 }
 ```
 
@@ -85,6 +99,7 @@
 - `openExternalUrl(_ call: CAPPluginCall)`
 - `share(_ call: CAPPluginCall)`
 - `pickImages(_ call: CAPPluginCall)`
+- `captureImage(_ call: CAPPluginCall)`
 - `getPushToken(_ call: CAPPluginCall)`
 - `getNotificationPermissionState(_ call: CAPPluginCall)`
 - `requestNotificationPermission(_ call: CAPPluginCall)`
@@ -97,14 +112,16 @@
 1. 打开外链：`UIApplication.shared.open`
 2. 分享：`UIActivityViewController`
 3. 图片选择：`PHPickerViewController`
-4. Push token：已注册到 APNs 后缓存于原生层
-5. 通知权限：`UNUserNotificationCenter`
-6. 本地提醒通知：`UNUserNotificationCenter` 本地通知
-7. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
+4. 拍照：`UIImagePickerController(sourceType: .camera)`
+5. Push token：已注册到 APNs 后缓存于原生层
+6. 通知权限：`UNUserNotificationCenter`
+7. 本地提醒通知：`UNUserNotificationCenter` 本地通知
+8. 通知点击落点：建议原生层把 payload 缓存到 `UserDefaults["YinjiePendingLaunchTarget"]`
 
 当前 stub 行为：
 
 - `pickImages` 会通过 `PHPickerViewController` 选择图片
+- `captureImage` 会通过系统相机拍照，并把结果写到临时目录再返回给 Web 层
 - 选中的资源会复制到临时目录，再以 `path / webPath / fileName / mimeType` 返回给 Web 层
 - `getPendingLaunchTarget` / `clearPendingLaunchTarget` 当前读取和清理 `UserDefaults["YinjiePendingLaunchTarget"]`
 

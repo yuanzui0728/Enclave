@@ -9,6 +9,7 @@
 - 已接通 `sync` / `open` / `doctor` / `configure` 脚本
 - 预期复用 `apps/app/dist` 作为 Web UI 产物
 - `ios/App/App/Plugins/` 已有 `YinjieRuntime` / `YinjieSecureStorage` / `YinjieMobileBridge` 实现
+- `YinjieMobileBridge` 当前已接通系统图片选择、系统相机拍照、外链、分享、通知权限与通知落点恢复
 - 真实 `AppDelegate.swift` 已缓存 APNs token 与通知点击落点
 - 真实 `Info.plist` 已补运行时键位和相机 / 麦克风权限文案
 - `doctor` 会检查是否在 macOS、是否已生成 `ios/` 工程、`Info.plist` 权限文案、`AppDelegate` push 缓存逻辑以及远程 Core API 地址
