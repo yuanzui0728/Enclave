@@ -74,18 +74,18 @@ export function GroupAnnouncementPage() {
     >
       {groupQuery.isLoading ? <LoadingBlock label="正在读取群公告..." /> : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-4">
           <ErrorBlock message={groupQuery.error.message} />
         </div>
       ) : null}
       {saveMutation.isError && saveMutation.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-4">
           <ErrorBlock message={saveMutation.error.message} />
         </div>
       ) : null}
 
       {!groupQuery.isLoading && !groupQuery.data ? (
-        <div className="px-3">
+        <div className="px-4">
           <EmptyState
             title="群聊不存在"
             description="这个群聊暂时不可用，返回上一页再试一次。"
@@ -95,39 +95,26 @@ export function GroupAnnouncementPage() {
 
       {groupQuery.data ? (
         <>
-          <ChatDetailsSection title="当前公告">
-            <div className="px-4 py-4">
-              <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
-                {draft.trim() ? (
-                  <div className="whitespace-pre-wrap text-[14px] leading-7 text-[color:var(--text-primary)]">
-                    {draft.trim()}
-                  </div>
-                ) : (
-                  <div className="text-[13px] text-[color:var(--text-muted)]">
-                    暂未设置群公告
-                  </div>
-                )}
-              </div>
-            </div>
-          </ChatDetailsSection>
-
-          <ChatDetailsSection title="编辑公告">
+          <ChatDetailsSection title="群公告">
             <div className="px-4 py-4">
               <textarea
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="写一条群公告，群成员会在聊天页看到它。"
                 rows={8}
-                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-[15px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)]"
+                className="min-h-44 w-full resize-none rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[15px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
               />
-              <div className="mt-3 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
                 <span>留空后保存，会清空当前群公告。</span>
                 <span>{draft.trim().length} 字</span>
+              </div>
+              <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                当前公告：{groupQuery.data.announcement?.trim() || "暂未设置"}
               </div>
             </div>
           </ChatDetailsSection>
 
-          <div className="px-3">
+          <div className="px-4">
             <Button
               type="button"
               variant="primary"
