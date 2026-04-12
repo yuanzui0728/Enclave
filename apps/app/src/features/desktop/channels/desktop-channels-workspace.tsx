@@ -21,6 +21,7 @@ import {
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import {
+  hydrateLiveCompanionFromNative,
   readLiveDraft,
   readLiveHistory,
   type LiveDraft,
@@ -90,22 +91,38 @@ export function DesktopChannelsWorkspace({
       return;
     }
 
-    const syncLiveCompanionState = () => {
-      setLiveDraft(readLiveDraft());
-      setLiveHistory(readLiveHistory());
+    let cancelled = false;
+
+    const syncLiveCompanionState = async () => {
+      const store = await hydrateLiveCompanionFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setLiveDraft(store.draft);
+      setLiveHistory(store.history);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        syncLiveCompanionState();
+        void syncLiveCompanionState();
       }
     };
 
-    window.addEventListener("focus", syncLiveCompanionState);
+    const handleFocus = () => {
+      void syncLiveCompanionState();
+    };
+
+    void syncLiveCompanionState();
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("focus", syncLiveCompanionState);
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);

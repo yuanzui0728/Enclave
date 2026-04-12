@@ -24,6 +24,7 @@ import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { useLocalChatMessageActionState } from "../features/chat/local-chat-message-actions";
 import {
+  hydrateLiveCompanionFromNative,
   readLiveDraft,
   readLiveHistory,
   type LiveSessionRecord,
@@ -285,6 +286,47 @@ export function DesktopMobilePage() {
       cancelled = true;
     };
   }, [nativeDesktopHandoff]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncLiveCompanionState = async () => {
+      const store = await hydrateLiveCompanionFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setLiveDraft(store.draft);
+      setLiveHistory(store.history);
+    };
+
+    const handleFocus = () => {
+      void syncLiveCompanionState();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncLiveCompanionState();
+      }
+    };
+
+    void syncLiveCompanionState();
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
   const callHandoffTitle =
     callHandoffState?.title?.trim() ||
     (callHandoffState?.conversationType === "group" ? "当前群聊" : "当前聊天");
@@ -1040,15 +1082,15 @@ export function DesktopMobilePage() {
                     size="sm"
                     variant="secondary"
                     onClick={() => {
-                      const nextLiveDraft = readLiveDraft();
-                      const nextLiveHistory = readLiveHistory();
-                      setLiveDraft(nextLiveDraft);
-                      setLiveHistory(nextLiveHistory);
-                      setNotice(
-                        nextLiveHistory[0]?.title || nextLiveDraft.title.trim()
-                          ? "已刷新直播接力内容。"
-                          : "直播伴侣还没有可同步到手机的内容。",
-                      );
+                      void hydrateLiveCompanionFromNative().then((store) => {
+                        setLiveDraft(store.draft);
+                        setLiveHistory(store.history);
+                        setNotice(
+                          store.history[0]?.title || store.draft.title.trim()
+                            ? "已刷新直播接力内容。"
+                            : "直播伴侣还没有可同步到手机的内容。",
+                        );
+                      });
                     }}
                     className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                   >

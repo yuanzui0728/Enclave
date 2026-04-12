@@ -30,6 +30,7 @@ import { EmptyState } from "../components/empty-state";
 import {
   defaultLiveDraft,
   endLocalLiveSession,
+  hydrateLiveCompanionFromNative,
   readLiveDraft,
   readLiveHistory,
   startLocalLiveSession,
@@ -51,10 +52,14 @@ export function LiveCompanionPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeDesktopLiveCompanion = runtimeConfig.appPlatform === "desktop";
   const ownerName = useWorldOwnerStore((state) => state.username);
   const [draft, setDraft] = useState<LiveDraft>(() => readLiveDraft());
   const [liveHistory, setLiveHistory] = useState<LiveSessionRecord[]>(() =>
     readLiveHistory(),
+  );
+  const [liveStoreReady, setLiveStoreReady] = useState(
+    !nativeDesktopLiveCompanion,
   );
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,8 +75,37 @@ export function LiveCompanionPage() {
   });
 
   useEffect(() => {
+    if (!nativeDesktopLiveCompanion) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function hydrateLiveCompanionStore() {
+      const store = await hydrateLiveCompanionFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setDraft(store.draft);
+      setLiveHistory(store.history);
+      setLiveStoreReady(true);
+    }
+
+    void hydrateLiveCompanionStore();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [nativeDesktopLiveCompanion]);
+
+  useEffect(() => {
+    if (!liveStoreReady) {
+      return;
+    }
+
     writeLiveDraft(draft);
-  }, [draft]);
+  }, [draft, liveStoreReady]);
 
   useEffect(() => {
     if (!notice) {
