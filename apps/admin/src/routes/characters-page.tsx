@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { deleteCharacter, getSystemStatus, listCharacters, type Character } from "@yinjie/contracts";
+import { getSystemStatus, listCharacters, type Character } from "@yinjie/contracts";
 import {
   Button,
   Card,
@@ -21,6 +21,7 @@ import {
   AdminHintCard,
   AdminInfoRow,
 } from "../components/admin-workbench";
+import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
@@ -48,6 +49,10 @@ export function CharactersPage() {
     queryKey: ["admin-characters-crud", baseUrl],
     queryFn: () => listCharacters(baseUrl),
   });
+  const presetsQuery = useQuery({
+    queryKey: ["admin-character-presets", baseUrl],
+    queryFn: () => adminApi.listCharacterPresets(),
+  });
   const systemStatusQuery = useQuery({
     queryKey: ["admin-characters-system-status", baseUrl],
     queryFn: () => getSystemStatus(baseUrl),
@@ -57,17 +62,32 @@ export function CharactersPage() {
   );
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteCharacter(id, baseUrl),
+    mutationFn: (id: string) => adminApi.deleteCharacter(id),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-character-presets", baseUrl] }),
+      ]);
+    },
+  });
+
+  const installPresetMutation = useMutation({
+    mutationFn: (presetKey: string) => adminApi.installCharacterPreset(presetKey),
+    onSuccess: async (character) => {
+      setSelectedCharacterId(character.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-character-presets", baseUrl] }),
       ]);
     },
   });
 
   const deletingCharacterId = deleteMutation.isPending ? deleteMutation.variables : null;
+  const installingPresetKey = installPresetMutation.isPending ? installPresetMutation.variables : null;
 
   const resetDeleteMutation = useEffectEvent(() => {
     deleteMutation.reset();
@@ -138,7 +158,11 @@ export function CharactersPage() {
 
       {charactersQuery.isLoading ? <LoadingBlock label="正在加载角色名册..." /> : null}
       {charactersQuery.isError && charactersQuery.error instanceof Error ? <ErrorBlock message={charactersQuery.error.message} /> : null}
+      {presetsQuery.isError && presetsQuery.error instanceof Error ? <ErrorBlock message={presetsQuery.error.message} /> : null}
       {deleteMutation.isError && deleteMutation.error instanceof Error ? <ErrorBlock message={deleteMutation.error.message} /> : null}
+      {installPresetMutation.isError && installPresetMutation.error instanceof Error ? (
+        <ErrorBlock message={installPresetMutation.error.message} />
+      ) : null}
 
       {!charactersQuery.isLoading && !charactersQuery.isError && (charactersQuery.data?.length ?? 0) === 0 ? (
         <AdminCallout
@@ -206,6 +230,7 @@ export function CharactersPage() {
                     <div className="truncate font-semibold text-[color:var(--text-primary)]">{character.name}</div>
                     <div className="mt-1 truncate text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
                     <div className="mt-2 flex flex-wrap gap-2 text-xs text-[color:var(--text-muted)]">
+                      <span>{formatCharacterSourceType(character.sourceType)}</span>
                       <span>{formatRelationshipType(character.relationshipType)}</span>
                       <span>领域 {character.expertDomains.length}</span>
                       <span>场景 {character.triggerScenes?.length ?? 0}</span>
@@ -276,6 +301,8 @@ export function CharactersPage() {
                   <div>
                     <div className="text-sm font-semibold text-[color:var(--text-primary)]">运行信号</div>
                     <div className="mt-3 grid gap-2 text-sm text-[color:var(--text-secondary)]">
+                      <AdminInfoRow label="角色来源" value={formatCharacterSourceType(selectedCharacter.sourceType)} />
+                      <AdminInfoRow label="删除策略" value={formatDeletionPolicy(selectedCharacter.deletionPolicy)} />
                       <AdminInfoRow label="触发场景" value={selectedCharacter.triggerScenes?.join("、") || "未配置"} />
                       <AdminInfoRow label="互动频率" value={selectedCharacter.activityFrequency || "未配置"} />
                       <AdminInfoRow label="亲密度" value={String(selectedCharacter.intimacyLevel ?? 0)} />
@@ -324,16 +351,24 @@ export function CharactersPage() {
 
                 <AdminDangerZone
                   title="危险操作"
-                  description="删除角色会直接移除这个运营对象。确认不再需要后再执行。"
+                  description={
+                    isProtectedCharacter(selectedCharacter)
+                      ? "默认保底角色不可删除，只允许继续编辑和调整行为逻辑。"
+                      : "删除角色会移除这个世界角色以及它关联的好友、会话、动态和蓝图数据。"
+                  }
                 >
                   <Button
                     onClick={() => deleteMutation.mutate(selectedCharacter.id)}
-                    disabled={deleteMutation.isPending}
+                    disabled={deleteMutation.isPending || isProtectedCharacter(selectedCharacter)}
                     variant="danger"
                     size="lg"
                     className="w-full justify-center"
                   >
-                    {deletingCharacterId === selectedCharacter.id ? "删除中..." : "删除角色"}
+                    {isProtectedCharacter(selectedCharacter)
+                      ? "默认角色不可删除"
+                      : deletingCharacterId === selectedCharacter.id
+                        ? "删除中..."
+                        : "删除角色"}
                   </Button>
                 </AdminDangerZone>
               </div>
@@ -343,9 +378,74 @@ export function CharactersPage() {
           </Card>
 
           <Card className="bg-[color:var(--surface-console)]">
+            <AdminEyebrow>名人预设</AdminEyebrow>
+            <div className="mt-4 space-y-3">
+              {(presetsQuery.data ?? []).map((preset) => {
+                const installing = installingPresetKey === preset.presetKey;
+                return (
+                  <div
+                    key={preset.presetKey}
+                    className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-[color:var(--text-primary)]">
+                          {preset.avatar} {preset.name}
+                        </div>
+                        <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+                          {preset.relationship}
+                        </div>
+                      </div>
+                      <StatusPill tone={preset.installed ? "healthy" : "muted"}>
+                        {preset.installed ? "已安装" : "未安装"}
+                      </StatusPill>
+                    </div>
+                    <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                      {preset.description}
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-[color:var(--text-muted)]">
+                      {preset.expertDomains.map((domain) => (
+                        <span
+                          key={domain}
+                          className="rounded-full border border-[color:var(--border-faint)] bg-white/70 px-3 py-1"
+                        >
+                          {domain}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <div className="text-xs text-[color:var(--text-muted)]">
+                        {preset.installed
+                          ? `已进入世界角色：${preset.installedCharacterName ?? preset.name}`
+                          : "安装后会立刻出现在后台角色中心与用户端世界角色列表。"}
+                      </div>
+                      <Button
+                        variant={preset.installed ? "secondary" : "primary"}
+                        size="sm"
+                        onClick={() => installPresetMutation.mutate(preset.presetKey)}
+                        disabled={preset.installed || installPresetMutation.isPending}
+                      >
+                        {installing ? "安装中..." : preset.installed ? "已安装" : "安装到世界"}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!presetsQuery.isLoading && !(presetsQuery.data ?? []).length ? (
+                <AdminEmptyState
+                  title="当前没有可安装预设"
+                  description="后端预设目录为空时，这里不会显示可安装名人角色。"
+                />
+              ) : null}
+            </div>
+          </Card>
+
+          <Card className="bg-[color:var(--surface-console)]">
             <AdminEyebrow>运营建议</AdminEyebrow>
             <div className="mt-4 space-y-3">
               <AdminHintCard title="新角色创建" detail="先补齐关系、擅长领域和触发场景，再进入编辑页完善提示词和记忆。" />
+              <AdminHintCard title="预设注入" detail="先把名人预设安装到当前世界，再进入编辑页、工厂或运行逻辑台做二次定制。" />
               <AdminHintCard title="角色制造" detail="需要大改人格、口头禅或长期设定时，优先进入工厂页维护配方。" />
               <AdminHintCard title="运行排查" detail="角色回复异常或活动状态不对时，直接进入运行逻辑台看在线模式、活动和最近执行。" />
             </div>
@@ -368,9 +468,39 @@ function formatRelationshipType(type: Character["relationshipType"]) {
       return "导师";
     case "custom":
       return "自定义";
+    case "self":
+      return "自己";
     default:
       return type;
   }
+}
+
+function formatCharacterSourceType(sourceType?: Character["sourceType"]) {
+  switch (sourceType) {
+    case "default_seed":
+      return "默认保底";
+    case "preset_catalog":
+      return "名人预设";
+    case "manual_admin":
+      return "后台手工";
+    default:
+      return "后台手工";
+  }
+}
+
+function formatDeletionPolicy(policy?: Character["deletionPolicy"]) {
+  switch (policy) {
+    case "protected":
+      return "受保护";
+    case "archive_allowed":
+      return "允许删除";
+    default:
+      return "允许删除";
+  }
+}
+
+function isProtectedCharacter(character: Character) {
+  return character.deletionPolicy === "protected" || character.sourceType === "default_seed";
 }
 
 function formatActivity(activity: Character["currentActivity"]) {

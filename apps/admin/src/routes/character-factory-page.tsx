@@ -1137,6 +1137,8 @@ function formatSourceType(value: CharacterFactorySnapshot["blueprint"]["sourceTy
   switch (value) {
     case "default_seed":
       return "内置默认角色";
+    case "preset_catalog":
+      return "名人预设角色";
     case "manual_admin":
       return "后台手工角色";
     case "template_clone":

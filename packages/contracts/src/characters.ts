@@ -1,4 +1,6 @@
-export type RelationshipType = "family" | "friend" | "expert" | "mentor" | "custom";
+export type RelationshipType = "family" | "friend" | "expert" | "mentor" | "custom" | "self";
+export type CharacterSourceType = "default_seed" | "preset_catalog" | "manual_admin";
+export type CharacterDeletionPolicy = "protected" | "archive_allowed";
 export type ResponseLength = "short" | "medium" | "long";
 export type EmojiUsage = "none" | "occasional" | "frequent";
 
@@ -75,6 +77,9 @@ export interface Character {
   bio: string;
   isOnline: boolean;
   onlineMode?: "auto" | "manual";
+  sourceType?: CharacterSourceType;
+  sourceKey?: string | null;
+  deletionPolicy?: CharacterDeletionPolicy;
   isTemplate: boolean;
   expertDomains: string[];
   profile: PersonalityProfile;
@@ -90,6 +95,19 @@ export interface Character {
   currentStatus?: string | null;
   currentActivity?: string | null;
   activityMode?: "auto" | "manual";
+}
+
+export interface CharacterPresetSummary {
+  presetKey: string;
+  id: string;
+  name: string;
+  avatar: string;
+  relationship: string;
+  description: string;
+  expertDomains: string[];
+  installed: boolean;
+  installedCharacterId?: string | null;
+  installedCharacterName?: string | null;
 }
 
 export type CharacterDraft = Partial<Character>;

@@ -1,5 +1,7 @@
 import type {
+  Character,
   CharacterBlueprintRevision,
+  CharacterPresetSummary,
   CharacterFactorySnapshot,
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
@@ -117,6 +119,14 @@ export const adminApi = {
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
+  listCharacterPresets: () =>
+    adminFetch<CharacterPresetSummary[]>("/characters/presets"),
+  installCharacterPreset: (presetKey: string) =>
+    adminFetch<Character>(`/characters/presets/${presetKey}/install`, {
+      method: "POST",
+    }),
+  deleteCharacter: (id: string) =>
+    adminFetch<{ success: boolean }>(`/characters/${id}`, { method: "DELETE" }),
   getCharacterFactory: (id: string) =>
     adminFetch<CharacterFactorySnapshot>(`/characters/${id}/factory`),
   updateCharacterFactory: (id: string, payload: Record<string, unknown>) =>
