@@ -46,7 +46,6 @@ export function ChatDetailsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
-  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
@@ -366,11 +365,6 @@ export function ChatDetailsPage() {
   }, [strongReminderActive]);
 
   const memberItems = [
-    {
-      key: "owner",
-      label: ownerName,
-      src: ownerAvatar,
-    },
     {
       key: targetCharacterId || conversation?.title || "character",
       label: targetCharacter?.name ?? conversation?.title ?? "对方",
