@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Copy, Share2 } from "lucide-react";
 import {
   followOfficialAccount,
   getOfficialAccount,
@@ -11,6 +11,7 @@ import {
   AppPage,
   Button,
   ErrorBlock,
+  InlineNotice,
   LoadingBlock,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -26,6 +27,10 @@ import {
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function OfficialAccountDetailPage() {
@@ -44,9 +49,14 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
+  const [actionNotice, setActionNotice] = useState<{
+    tone: "success" | "info";
+    message: string;
+  } | null>(null);
 
   const accountQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, accountId],
@@ -80,6 +90,71 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
   const account = accountQuery.data;
   const accountFavoriteSourceId = account ? `official-${account.id}` : null;
+
+  async function handleShareAccount() {
+    if (!account) {
+      return;
+    }
+
+    const accountPath = `/official-accounts/${account.id}`;
+    const accountUrl =
+      typeof window === "undefined"
+        ? accountPath
+        : `${window.location.origin}${accountPath}`;
+    const accountSummary = [
+      `${account.name} 公众号`,
+      account.accountType === "service" ? "服务号" : "订阅号",
+      `@${account.handle}`,
+      accountUrl,
+    ].join("\n");
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${account.name} 公众号`,
+        text: accountSummary,
+        url: accountUrl,
+      });
+
+      if (shared) {
+        setActionNotice({
+          tone: "success",
+          message: "已打开系统分享面板。",
+        });
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setActionNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制公众号摘要。",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(accountSummary);
+      setActionNotice({
+        tone: "success",
+        message: nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制公众号摘要。"
+          : "公众号摘要已复制。",
+      });
+    } catch {
+      setActionNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制公众号摘要失败，请稍后重试。",
+      });
+    }
+  }
 
   function toggleAccountFavorite() {
     if (!account) {
@@ -136,6 +211,20 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             <ArrowLeft size={18} />
           </Button>
         }
+        rightActions={
+          account ? (
+            <Button
+              type="button"
+              onClick={() => void handleShareAccount()}
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              aria-label={nativeMobileShareSupported ? "分享公众号" : "复制公众号摘要"}
+            >
+              {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
@@ -147,6 +236,11 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         {accountQuery.isError && accountQuery.error instanceof Error ? (
           <div className="px-3 pt-3">
             <ErrorBlock message={accountQuery.error.message} />
+          </div>
+        ) : null}
+        {actionNotice ? (
+          <div className="px-3 pt-3">
+            <InlineNotice tone={actionNotice.tone}>{actionNotice.message}</InlineNotice>
           </div>
         ) : null}
 
