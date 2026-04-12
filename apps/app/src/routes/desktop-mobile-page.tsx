@@ -35,7 +35,10 @@ import {
   resolveMiniProgramEntries,
   type MiniProgramEntry,
 } from "../features/mini-programs/mini-programs-data";
-import { readMiniProgramsState } from "../features/mini-programs/mini-programs-storage";
+import {
+  hydrateMiniProgramsStateFromNative,
+  readMiniProgramsState,
+} from "../features/mini-programs/mini-programs-storage";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { parseDesktopMobileCallHandoffHash } from "../features/desktop/chat/desktop-mobile-call-handoff-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -316,6 +319,46 @@ export function DesktopMobilePage() {
     };
 
     void syncLiveCompanionState();
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncMiniProgramsState = async () => {
+      const nextMiniProgramsState = await hydrateMiniProgramsStateFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setMiniProgramsState(nextMiniProgramsState);
+    };
+
+    const handleFocus = () => {
+      void syncMiniProgramsState();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncMiniProgramsState();
+      }
+    };
+
+    void syncMiniProgramsState();
 
     window.addEventListener("focus", handleFocus);
     window.addEventListener("storage", handleFocus);
@@ -903,12 +946,15 @@ export function DesktopMobilePage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    const nextMiniProgramsState = readMiniProgramsState();
-                    setMiniProgramsState(nextMiniProgramsState);
-                    setNotice(
-                      nextMiniProgramsState.activeMiniProgramId
-                        ? "已刷新小程序接力内容。"
-                        : "小程序面板里还没有可同步到手机的最近使用。",
+                    void hydrateMiniProgramsStateFromNative().then(
+                      (nextMiniProgramsState) => {
+                        setMiniProgramsState(nextMiniProgramsState);
+                        setNotice(
+                          nextMiniProgramsState.activeMiniProgramId
+                            ? "已刷新小程序接力内容。"
+                            : "小程序面板里还没有可同步到手机的最近使用。",
+                        );
+                      },
                     );
                   }}
                   className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"

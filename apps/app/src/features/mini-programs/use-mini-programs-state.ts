@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import {
   dismissActiveMiniProgram,
+  hydrateMiniProgramsStateFromNative,
   markMiniProgramOpened,
   recordGroupRelayPublish,
   readMiniProgramsState,
@@ -14,10 +16,38 @@ export function useMiniProgramsState() {
   const [state, setState] = useState<MiniProgramsStoredState>(() =>
     readMiniProgramsState(),
   );
+  const [stateReady, setStateReady] = useState(!isDesktopRuntimeAvailable());
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function hydrateState() {
+      const hydratedState = await hydrateMiniProgramsStateFromNative();
+      if (cancelled) {
+        return;
+      }
+
+      setState(hydratedState);
+      setStateReady(true);
+    }
+
+    void hydrateState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!stateReady && isDesktopRuntimeAvailable()) {
+      writeMiniProgramsState(state, {
+        syncNative: false,
+      });
+      return;
+    }
+
     writeMiniProgramsState(state);
-  }, [state]);
+  }, [state, stateReady]);
 
   return {
     ...state,
