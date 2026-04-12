@@ -1027,13 +1027,13 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   return (
     <AppPage className="flex min-h-[100dvh] flex-col space-y-0 bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.22),transparent_32%),linear-gradient(180deg,#111827_0%,#0f172a_42%,#020617_100%)] px-0 py-0 text-white">
       <audio ref={activeCall.audioRef} preload="auto" />
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(2,6,23,0.68)] px-3 py-3 backdrop-blur-xl">
+      <header className="sticky top-0 z-20 border-b border-white/8 bg-[rgba(2,6,23,0.72)] px-3 py-3 backdrop-blur-xl">
         <div className="flex items-start gap-3">
           <button
             type="button"
             onClick={handleBack}
             disabled={leavingScreen}
-            className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition active:bg-white/16"
+            className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white transition active:bg-white/12"
             aria-label="返回聊天"
           >
             <ArrowLeft size={18} />
@@ -1051,7 +1051,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className={phaseChipClass}>{statusLabel}</span>
                 {activeCall.audioMuted ? (
-                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/8 px-3 py-1 text-[11px] text-white/58">
+                  <span className="inline-flex items-center rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] text-white/62">
                     已静音播放
                   </span>
                 ) : null}
@@ -1063,12 +1063,12 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             onClick={() => activeCall.setAudioMuted((current) => !current)}
             disabled={leavingScreen}
             className={cn(
-              "mt-0.5 flex h-10 w-10 items-center justify-center rounded-full transition active:bg-white/16 disabled:opacity-55",
+              "mt-0.5 flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 transition active:bg-white/12 disabled:opacity-55",
               activeCall.audioMuted
                 ? "bg-white text-[#020617]"
                 : showHeaderStatusRow
-                  ? "bg-white/14 text-white"
-                  : "bg-white/10 text-white/82",
+                  ? "bg-white/12 text-white"
+                  : "bg-white/8 text-white/82",
             )}
             aria-label={activeCall.audioMuted ? "取消静音播放" : "静音播放"}
           >
@@ -1165,14 +1165,14 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               <button
                 type="button"
                 onClick={() => setDiagnosticsExpanded((current) => !current)}
-                className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] tracking-[0.08em] text-white/56 transition hover:bg-white/10 hover:text-white/72"
+                className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] tracking-[0.06em] text-white/60 transition active:bg-white/12 active:text-white/76"
               >
                 {diagnosticsExpanded ? "收起链路详情" : "链路详情"}
               </button>
             </div>
           ) : null}
           {diagnosticsExpanded ? (
-            <div className="rounded-[20px] border border-white/10 bg-white/6 px-4 py-3 text-[12px] leading-6 text-white/68">
+            <div className="rounded-[18px] border border-white/12 bg-white/8 px-4 py-3 text-[12px] leading-6 text-white/70">
               {speechStatus ? (
                 <div>
                   当前语音链路：{speechStatus.speechMessage}
@@ -1267,7 +1267,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </InlineNotice>
           ) : null}
           {showPlaybackNudge ? (
-            <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/10 bg-white/6 px-4 py-3 text-[13px] leading-6 text-white/72">
+            <div className="flex items-center justify-between gap-3 rounded-[18px] border border-white/12 bg-white/8 px-4 py-3 text-[12px] leading-6 text-white/74">
               <div className="min-w-0 flex-1">{playbackNudgeMessage}</div>
               <button
                 type="button"
@@ -1275,7 +1275,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   void activeCall.replayLastTurn();
                 }}
                 disabled={leavingScreen}
-                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-3.5 text-[13px] text-white transition disabled:opacity-45"
+                className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-3.5 text-[13px] text-white transition active:bg-white/14 disabled:opacity-45"
               >
                 <Volume2 size={15} />
                 补播这一句
@@ -1292,7 +1292,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                     leavingScreen ||
                     digitalHumanCall.sessionState === "connecting"
                   }
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <RotateCcw size={16} />
                   重试连接数字人
@@ -1305,7 +1305,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                     void handleSwitchToVoiceCall();
                   }}
                   disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <PhoneOff size={16} />
                   改用语音通话
@@ -1320,7 +1320,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   type="button"
                   onClick={handleRetryCurrentTurn}
                   disabled={leavingScreen}
-                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <RotateCcw size={16} />
                   重新录这一轮
@@ -1358,7 +1358,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   type="button"
                   onClick={handleToggleCamera}
                   disabled={leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   {cameraEnabled ? <CameraOff size={16} /> : <Camera size={16} />}
                   {!cameraEnabled
@@ -1379,7 +1379,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                     void activeCall.replayLastTurn();
                   }}
                   disabled={activeCall.turnMutation.isPending || leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <RotateCcw size={16} />
                   重播上一句
@@ -1390,7 +1390,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                   type="button"
                   onClick={handleBack}
                   disabled={leavingScreen}
-                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition disabled:opacity-45"
+                  className="flex h-12 min-w-[120px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white/10 px-4 text-sm text-white transition active:bg-white/14 disabled:opacity-45"
                 >
                   <MessageCircleMore size={16} />
                   {leavingScreen ? "返回中..." : "切回聊天"}
