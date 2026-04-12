@@ -623,7 +623,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             type="button"
             onClick={handleBack}
             disabled={leavingScreen}
-            className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white transition active:bg-white/12"
+            className={mobileCallIconButtonClass()}
             aria-label="返回群聊"
           >
             <ArrowLeft size={18} />
@@ -1020,6 +1020,10 @@ function MobileCallActionButton({
   );
 }
 
+function mobileCallIconButtonClass() {
+  return "flex h-10 w-10 items-center justify-center rounded-[14px] border border-white/10 bg-white/8 text-white/82 transition active:bg-white/12 disabled:opacity-55";
+}
+
 function CallMetricCard({
   label,
   value,
@@ -1057,10 +1061,10 @@ function CallControlButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm transition active:bg-white/12 disabled:opacity-55",
+        "inline-flex h-11 items-center gap-2 rounded-full border px-4.5 text-[13px] font-medium transition active:translate-y-[0.5px] disabled:opacity-55",
         active
-          ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.12)] text-[#bbf7d0]"
-          : "border-white/12 bg-white/6 text-white/72",
+          ? "border-[rgba(34,197,94,0.24)] bg-[rgba(34,197,94,0.14)] text-[#bbf7d0]"
+          : "border-white/10 bg-white/8 text-white/74 active:bg-white/12",
       )}
     >
       {icon}
