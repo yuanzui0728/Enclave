@@ -43,6 +43,8 @@ export function DesktopMomentDetailPanel({
   onSelectAuthor,
 }: DesktopMomentDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const activeActionClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
   const likedByOwner = Boolean(
     ownerId && moment.likes.some((like) => like.authorId === ownerId),
   );
@@ -103,7 +105,7 @@ export function DesktopMomentDetailPanel({
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
                     moment.authorType === "character"
-                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                      ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                   )}
                 >
@@ -149,7 +151,7 @@ export function DesktopMomentDetailPanel({
               onClick={onLike}
               className={
                 likedByOwner
-                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)] shadow-none"
+                  ? activeActionClassName
                   : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
               }
             >

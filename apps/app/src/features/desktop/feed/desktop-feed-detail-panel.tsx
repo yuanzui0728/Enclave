@@ -37,6 +37,8 @@ export function DesktopFeedDetailPanel({
   onToggleFavorite,
 }: DesktopFeedDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const activeResidentSurfaceClassName =
+    "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary)]";
   const residentCommentCount = post?.comments.filter(
     (comment) => comment.authorType === "character",
   ).length ?? 0;
@@ -116,14 +118,14 @@ export function DesktopFeedDetailPanel({
                     >
                       {post.authorName}
                     </button>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
-                        post.authorType === "character"
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
-                      )}
-                    >
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
+                    post.authorType === "character"
+                      ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+                  )}
+                >
                       {post.authorType === "character" ? (
                         <Bot size={11} />
                       ) : (
@@ -156,7 +158,7 @@ export function DesktopFeedDetailPanel({
                 className={cn(
                   "mt-4 rounded-[16px] border px-4 py-3",
                   post.aiReacted
-                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                    ? activeResidentSurfaceClassName
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
                 )}
               >
@@ -169,10 +171,10 @@ export function DesktopFeedDetailPanel({
                     : "这条动态暂时还没有触发居民侧 AI 跟进，现在更像一条公开广播。"}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
-                  <span className="rounded-md bg-white px-2.5 py-1">
+                  <span className="rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
                     居民评论 {residentCommentCount}
                   </span>
-                  <span className="rounded-md bg-white px-2.5 py-1">
+                  <span className="rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
                     主人评论 {ownerCommentCount}
                   </span>
                 </div>
@@ -238,7 +240,7 @@ export function DesktopFeedDetailPanel({
                           className={cn(
                             "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                             comment.authorType === "character"
-                              ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+                              ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
                               : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
                           )}
                         >
