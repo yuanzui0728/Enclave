@@ -107,7 +107,7 @@ export function DesktopChatTextEditDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
@@ -147,7 +147,7 @@ export function DesktopChatTextEditDialog({
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               取消
             </Button>
@@ -155,7 +155,7 @@ export function DesktopChatTextEditDialog({
               type="submit"
               variant="primary"
               disabled={confirmDisabled}
-              className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
             >
               {pending ? "正在保存..." : submitLabel}
             </Button>
