@@ -293,7 +293,7 @@ export function DesktopChatHistoryPanel({
                 params: { conversationId: conversation.id },
               });
             }}
-            className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+            className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
           >
             完整搜索
             <ArrowUpRight className="size-3.5" />
@@ -319,7 +319,7 @@ export function DesktopChatHistoryPanel({
               className={cn(
                 "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                 typeFilter === item.id
-                  ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]"
+                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                   : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
               )}
             >
@@ -340,7 +340,7 @@ export function DesktopChatHistoryPanel({
               className={cn(
                 "rounded-[8px] border px-3 py-1.5 text-[12px] transition",
                 dateFilter === item.id
-                  ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]"
+                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
                   : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-muted)] hover:border-[color:var(--border-faint)] hover:bg-white",
               )}
             >
@@ -367,7 +367,7 @@ export function DesktopChatHistoryPanel({
               variant="secondary"
               size="sm"
               onClick={() => setSpecificDate("")}
-              className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+              className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               清除日期
             </Button>
@@ -405,7 +405,7 @@ export function DesktopChatHistoryPanel({
                   setSpecificDate("");
                   setSenderFilter("all");
                 }}
-                className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="h-8 shrink-0 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 清空筛选
               </Button>
@@ -424,7 +424,7 @@ export function DesktopChatHistoryPanel({
                 setDateFilter("all");
                 setSpecificDate("");
               }}
-              className="h-8 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+              className="h-8 rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               清空筛选
             </Button>
@@ -539,7 +539,7 @@ export function DesktopChatHistoryPanel({
                 setHistoryLimit((current) => current + HISTORY_LIMIT_STEP)
               }
               disabled={messagesQuery.isFetching || !mayHaveEarlierMessages}
-              className="h-8 w-full rounded-[8px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+              className="h-8 w-full rounded-[8px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {messagesQuery.isFetching
                 ? "正在加载更早消息..."
@@ -858,7 +858,7 @@ function HistoryStatPill({
       className={cn(
         "rounded-[7px] border px-2.5 py-1 text-[11px]",
         tone === "brand" &&
-          "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--text-primary)]",
+          "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
         tone === "blue" && "bg-[rgba(59,130,246,0.10)] text-[#2563eb]",
         tone === "neutral" &&
           "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
