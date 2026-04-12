@@ -6,10 +6,12 @@ import { DesktopUtilityShell } from "../desktop-utility-shell";
 import {
   createDesktopNote,
   deleteDesktopNote,
+  hydrateDesktopNotesFromNative,
   readDesktopNotes,
   updateDesktopNote,
   type DesktopNoteRecord,
 } from "./desktop-notes-storage";
+import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 type DesktopNotesWorkspaceProps = {
   selectedNoteId?: string;
@@ -48,11 +50,16 @@ export function DesktopNotesWorkspace({
   selectedNoteId,
   onSelectNote,
 }: DesktopNotesWorkspaceProps) {
+  const runtimeConfig = useAppRuntimeConfig();
+  const nativeDesktopNotes = runtimeConfig.appPlatform === "desktop";
   const [notes, setNotes] = useState<DesktopNoteRecord[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [editorValue, setEditorValue] = useState("");
   const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
+  const notesStorageLabel = nativeDesktopNotes
+    ? "桌面端保存在当前设备"
+    : "桌面端临时保存在当前浏览器";
 
   const activeNote = useMemo(
     () => notes.find((item) => item.id === activeNoteId) ?? null,
@@ -60,29 +67,48 @@ export function DesktopNotesWorkspace({
   );
 
   useEffect(() => {
-    const existingNotes = readDesktopNotes();
+    let cancelled = false;
 
-    if (!existingNotes.length) {
-      const createdNote = createDesktopNote();
-      setNotes([createdNote]);
-      setActiveNoteId(createdNote.id);
-      setEditorValue(createdNote.content);
-      onSelectNote?.(createdNote.id);
-      return;
+    async function initializeNotesWorkspace() {
+      const existingNotes = nativeDesktopNotes
+        ? await hydrateDesktopNotesFromNative()
+        : readDesktopNotes();
+      if (cancelled) {
+        return;
+      }
+
+      if (!existingNotes.length) {
+        const createdNote = createDesktopNote();
+        if (cancelled) {
+          return;
+        }
+
+        setNotes([createdNote]);
+        setActiveNoteId(createdNote.id);
+        setEditorValue(createdNote.content);
+        onSelectNote?.(createdNote.id);
+        return;
+      }
+
+      const resolvedNoteId = resolveSelectedNoteId(existingNotes, selectedNoteId);
+      const resolvedNote =
+        existingNotes.find((item) => item.id === resolvedNoteId) ??
+        existingNotes[0];
+
+      setNotes(existingNotes);
+      setActiveNoteId(resolvedNote.id);
+      setEditorValue(resolvedNote.content);
+      if (resolvedNote.id !== selectedNoteId) {
+        onSelectNote?.(resolvedNote.id);
+      }
     }
 
-    const resolvedNoteId = resolveSelectedNoteId(existingNotes, selectedNoteId);
-    const resolvedNote =
-      existingNotes.find((item) => item.id === resolvedNoteId) ??
-      existingNotes[0];
+    void initializeNotesWorkspace();
 
-    setNotes(existingNotes);
-    setActiveNoteId(resolvedNote.id);
-    setEditorValue(resolvedNote.content);
-    if (resolvedNote.id !== selectedNoteId) {
-      onSelectNote?.(resolvedNote.id);
-    }
-  }, [onSelectNote, selectedNoteId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [nativeDesktopNotes, onSelectNote, selectedNoteId]);
 
   useEffect(() => {
     if (!notes.length) {
@@ -187,7 +213,7 @@ export function DesktopNotesWorkspace({
       subtitle={
         activeNote
           ? `${saveState === "saving" ? "正在自动保存..." : "内容已自动保存"} · 最近编辑 ${formatNoteTimestamp(activeNote.updatedAt, true)}`
-          : "桌面端临时保存在当前浏览器"
+          : notesStorageLabel
       }
       toolbar={
         <div className="flex items-center gap-2">
@@ -224,7 +250,7 @@ export function DesktopNotesWorkspace({
                   笔记
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  桌面端临时保存在当前浏览器
+                  {notesStorageLabel}
                 </div>
               </div>
               <Button
