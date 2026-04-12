@@ -160,8 +160,8 @@ export function DesktopMiniProgramsWorkspace({
                   className={cn(
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
-                      ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                   )}
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -440,7 +440,7 @@ export function DesktopMiniProgramsWorkspace({
                         把当前接龙进度同步回“{launchContext.sourceGroupName}”，减少群成员反复追问。
                       </div>
                     </div>
-                    <div className="rounded-full border border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[11px] font-medium text-[#15803d]">
+                    <div className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
                       群接龙闭环
                     </div>
                   </div>
@@ -605,8 +605,8 @@ function SidebarMiniProgramButton({
       className={cn(
         "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
         active
-          ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.08)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
       )}
     >
       <MiniProgramGlyph miniProgram={miniProgram} size="sm" />
@@ -658,7 +658,7 @@ function MiniProgramGridCard({
         "rounded-[24px] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
       )}
     >
       <div className="flex items-start gap-3">
@@ -701,7 +701,7 @@ function MiniProgramGridCard({
             event.stopPropagation();
             onTogglePinned(miniProgram.id);
           }}
-          className="border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+          className="border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
         >
           {pinned ? "移出常用" : "加入常用"}
         </Button>
@@ -739,7 +739,7 @@ function MiniProgramListRow({
         "w-full rounded-[22px] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:border-[rgba(7,193,96,0.16)] hover:bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
       )}
     >
       <div className="flex items-start gap-3">
@@ -787,7 +787,7 @@ function MiniProgramListRow({
             event.stopPropagation();
             onTogglePinned(miniProgram.id);
           }}
-          className="border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+          className="border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
         >
           {pinned ? "移出常用" : "加入常用"}
         </Button>
