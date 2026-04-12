@@ -291,15 +291,9 @@ export function ProfileSettingsPage() {
       {activeTab === "legal" ? (
         <>
           {desktopMode ? null : (
-            <section className="mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-              <div className="px-4 py-4">
-              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                协议与规范
-              </div>
-            </div>
+            <section className="mt-2 border-y border-[color:var(--border-faint)] divide-y divide-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <MobileLinkRow
                 label="隐私政策"
-                subtitle="了解资料、会话和运行数据如何被处理"
                 onClick={() =>
                   void navigate({
                     to: "/legal/privacy",
@@ -308,7 +302,6 @@ export function ProfileSettingsPage() {
               />
               <MobileLinkRow
                 label="服务条款"
-                subtitle="查看使用规则、责任边界和服务约定"
                 onClick={() =>
                   void navigate({
                     to: "/legal/terms",
@@ -317,7 +310,6 @@ export function ProfileSettingsPage() {
               />
               <MobileLinkRow
                 label="社区规范"
-                subtitle="查看举报、屏蔽和社区互动边界"
                 onClick={() =>
                   void navigate({
                     to: "/legal/community",
@@ -578,22 +570,24 @@ function MobileLinkRow({
   onClick,
 }: {
   label: string;
-  subtitle: string;
+  subtitle?: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 border-t border-[color:var(--border-faint)] px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div className="min-w-0 flex-1">
         <div className="text-[16px] text-[color:var(--text-primary)]">
           {label}
         </div>
-        <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-muted)]">
-          {subtitle}
-        </div>
+        {subtitle ? (
+          <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-muted)]">
+            {subtitle}
+          </div>
+        ) : null}
       </div>
       <div className="text-[color:var(--text-dim)]">›</div>
     </button>
