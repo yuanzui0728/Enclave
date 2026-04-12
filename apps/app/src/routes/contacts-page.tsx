@@ -60,6 +60,7 @@ type ShortcutRoute =
   | "/contacts/tags"
   | "/friend-requests"
   | "/contacts/starred"
+  | "/contacts/world-characters"
   | "/contacts/official-accounts";
 
 type DesktopSelection =
@@ -552,6 +553,11 @@ export function ContactsPage() {
   function handleOpenWorldCharacters() {
     setNotice(null);
 
+    if (!isDesktopLayout) {
+      void navigate({ to: "/contacts/world-characters" });
+      return;
+    }
+
     const willExpand = !showWorldCharacters;
     setShowWorldCharacters(willExpand);
 
@@ -675,11 +681,15 @@ export function ContactsPage() {
     {
       key: "world-characters",
       label: "世界角色",
-      subtitle: showWorldCharacters
-        ? "收起角色目录"
+      subtitle: isDesktopLayout
+        ? showWorldCharacters
+          ? "收起角色目录"
+          : worldCharacterDirectoryItems.length > 0
+            ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
+            : "当前没有新的角色可认识"
         : worldCharacterDirectoryItems.length > 0
           ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
-          : "当前没有新的角色可认识",
+          : "查看世界角色目录",
       icon: BookUser,
       iconClassName: "bg-[linear-gradient(135deg,#22c55e,#0f766e)]",
       onClick: handleOpenWorldCharacters,
@@ -884,7 +894,7 @@ export function ContactsPage() {
                             variant="secondary"
                             onClick={handleOpenWorldCharacters}
                           >
-                            浏览世界角色
+                            {isDesktopLayout ? "浏览世界角色" : "查看世界角色"}
                           </Button>
                         )
                       }
@@ -1135,7 +1145,7 @@ export function ContactsPage() {
                         variant="secondary"
                         onClick={handleOpenWorldCharacters}
                       >
-                        浏览世界角色
+                        查看世界角色
                       </Button>
                     )
                   }
@@ -1157,25 +1167,6 @@ export function ContactsPage() {
               </div>
             ))}
           </section>
-
-          {filteredWorldCharacterItems.length ? (
-            <section
-              id="world-character-directory"
-              className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
-            >
-              <SectionHeader
-                title={normalizedSearchText ? "世界角色结果" : "世界角色"}
-              />
-              {filteredWorldCharacterItems.map((item, index) => (
-                <WorldCharacterRow
-                  key={item.character.id}
-                  item={item}
-                  index={index}
-                  onClick={() => handleOpenProfile(item.character.id)}
-                />
-              ))}
-            </section>
-          ) : null}
         </div>
 
         {!normalizedSearchText && friendSections.length ? (
