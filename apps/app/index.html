@@ -4,9 +4,172 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>隐界</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f5f5f5;
+        color: #111827;
+      }
+
+      #root {
+        min-height: 100vh;
+      }
+
+      .boot-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+
+      .boot-card {
+        width: min(100%, 520px);
+        background: #ffffff;
+        border: 1px solid rgba(17, 24, 39, 0.05);
+        border-radius: 32px;
+        padding: 40px 32px;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .boot-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(7, 193, 96, 0.16);
+        background: rgba(7, 193, 96, 0.08);
+        color: #15803d;
+        font-size: 11px;
+        letter-spacing: 0.34em;
+        text-transform: uppercase;
+      }
+
+      .boot-logo {
+        width: 80px;
+        height: 80px;
+        margin: 24px auto 0;
+        border-radius: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #07c160, #34c759);
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 600;
+        animation: boot-pulse 1.2s ease-in-out infinite;
+      }
+
+      .boot-title {
+        margin: 24px 0 0;
+        font-size: 34px;
+        line-height: 1.2;
+        letter-spacing: 0.08em;
+      }
+
+      .boot-copy {
+        margin: 16px 0 0;
+        font-size: 14px;
+        line-height: 2;
+        color: #6b7280;
+      }
+
+      .boot-steps {
+        margin-top: 24px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .boot-step {
+        border-radius: 22px;
+        border: 1px solid rgba(17, 24, 39, 0.05);
+        background: #fafafa;
+        padding: 12px 16px;
+        text-align: left;
+      }
+
+      .boot-step-label {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #9ca3af;
+      }
+
+      .boot-step-value {
+        margin-top: 8px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .boot-notice {
+        margin-top: 24px;
+        border-radius: 22px;
+        padding: 14px 16px;
+        background: rgba(7, 193, 96, 0.06);
+        border: 1px solid rgba(7, 193, 96, 0.12);
+        text-align: left;
+        font-size: 14px;
+        line-height: 1.8;
+        color: #475569;
+      }
+
+      @media (min-width: 640px) {
+        .boot-steps {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        50% {
+          transform: scale(0.97);
+          opacity: 0.9;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-screen">
+        <div class="boot-card">
+          <div class="boot-badge">Beyond Reality</div>
+          <div class="boot-logo">隐界</div>
+          <h1 class="boot-title">欢迎回到你的世界</h1>
+          <p class="boot-copy">
+            正在连接世界入口并同步这次进入所需的运行信息。
+          </p>
+          <div class="boot-steps">
+            <div class="boot-step">
+              <div class="boot-step-label">Step 1</div>
+              <div class="boot-step-value">确认入口</div>
+            </div>
+            <div class="boot-step">
+              <div class="boot-step-label">Step 2</div>
+              <div class="boot-step-value">同步世界主人</div>
+            </div>
+            <div class="boot-step">
+              <div class="boot-step-label">Step 3</div>
+              <div class="boot-step-value">恢复上次停留</div>
+            </div>
+          </div>
+          <div class="boot-notice">如果网络或入口服务较慢，这个启动页会先保留，避免用户看到空白页面。</div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
   </html>
