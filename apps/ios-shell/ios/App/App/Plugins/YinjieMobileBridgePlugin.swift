@@ -5,8 +5,9 @@ import UIKit
 import UserNotifications
 
 @objc(YinjieMobileBridgePlugin)
-public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate {
+public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     private var pendingImagePickerCall: CAPPluginCall?
+    private var pendingCameraCaptureCall: CAPPluginCall?
 
     @objc func openExternalUrl(_ call: CAPPluginCall) {
         guard let rawUrl = call.getString("url"),
@@ -92,6 +93,29 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         picker.delegate = self
 
         DispatchQueue.main.async {
+            presenter.present(picker, animated: true)
+        }
+    }
+
+    @objc func captureImage(_ call: CAPPluginCall) {
+        guard let presenter = bridge?.viewController else {
+            call.reject("missing presenter for camera picker")
+            return
+        }
+
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            call.reject("camera is unavailable")
+            return
+        }
+
+        pendingCameraCaptureCall = call
+
+        DispatchQueue.main.async {
+            let picker = UIImagePickerController()
+            picker.sourceType = .camera
+            picker.cameraDevice = .rear
+            picker.modalPresentationStyle = .fullScreen
+            picker.delegate = self
             presenter.present(picker, animated: true)
         }
     }
@@ -314,6 +338,112 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
                 completion(nil)
             }
         }
+    }
+
+    public func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        let call = pendingCameraCaptureCall
+        pendingCameraCaptureCall = nil
+
+        DispatchQueue.main.async {
+            picker.dismiss(animated: true) {
+                call?.resolve([
+                    "asset": NSNull()
+                ])
+            }
+        }
+    }
+
+    public func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+    ) {
+        let call = pendingCameraCaptureCall
+        pendingCameraCaptureCall = nil
+
+        DispatchQueue.main.async {
+            picker.dismiss(animated: true) {
+                guard let call else {
+                    return
+                }
+
+                if let imageUrl = info[.imageURL] as? URL,
+                   let asset = self.copyImageAsset(from: imageUrl) {
+                    call.resolve([
+                        "asset": asset
+                    ])
+                    return
+                }
+
+                guard let image = info[.originalImage] as? UIImage,
+                      let imageData = image.jpegData(compressionQuality: 0.92),
+                      let asset = self.writeCapturedCameraImage(data: imageData) else {
+                    call.resolve([
+                        "asset": NSNull()
+                    ])
+                    return
+                }
+
+                call.resolve([
+                    "asset": asset
+                ])
+            }
+        }
+    }
+
+    private func copyImageAsset(from sourceUrl: URL) -> [String: Any]? {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory.appendingPathComponent("yinjie-picker", isDirectory: true)
+
+        do {
+            try fileManager.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let ext = sourceUrl.pathExtension.isEmpty ? "jpg" : sourceUrl.pathExtension
+            let fileName = "\(UUID().uuidString).\(ext)"
+            let destination = tempDir.appendingPathComponent(fileName)
+
+            if fileManager.fileExists(atPath: destination.path) {
+                try fileManager.removeItem(at: destination)
+            }
+
+            try fileManager.copyItem(at: sourceUrl, to: destination)
+
+            return buildImageAsset(destination: destination, fileName: fileName, ext: ext)
+        } catch {
+            return nil
+        }
+    }
+
+    private func writeCapturedCameraImage(data: Data) -> [String: Any]? {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory.appendingPathComponent("yinjie-camera", isDirectory: true)
+
+        do {
+            try fileManager.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let fileName = "\(UUID().uuidString).jpg"
+            let destination = tempDir.appendingPathComponent(fileName)
+
+            if fileManager.fileExists(atPath: destination.path) {
+                try fileManager.removeItem(at: destination)
+            }
+
+            try data.write(to: destination, options: .atomic)
+            return buildImageAsset(destination: destination, fileName: fileName, ext: "jpg")
+        } catch {
+            return nil
+        }
+    }
+
+    private func buildImageAsset(destination: URL, fileName: String, ext: String) -> [String: Any] {
+        var asset: [String: Any] = [
+            "path": destination.path,
+            "webPath": destination.absoluteString,
+            "fileName": fileName
+        ]
+
+        if let mimeType = mimeType(forExtension: ext) {
+            asset["mimeType"] = mimeType
+        }
+
+        return asset
     }
 
     private func mimeType(forExtension ext: String) -> String? {
