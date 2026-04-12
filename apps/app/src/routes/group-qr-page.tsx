@@ -649,7 +649,21 @@ export function GroupQrPage() {
       return;
     }
 
-    await copyText(inviteText, "群邀请文案已复制。");
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      showNotice("当前设备暂时无法打开系统分享，请稍后重试。", "danger");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(inviteText);
+      showNotice("系统分享暂时不可用，已复制群邀请文案。");
+    } catch {
+      showNotice("系统分享失败，请稍后重试。", "danger");
+    }
   }
 
   async function sendToConversation(conversation: ConversationListItem) {
