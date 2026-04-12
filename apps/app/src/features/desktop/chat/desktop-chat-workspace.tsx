@@ -838,7 +838,7 @@ export function DesktopChatWorkspace({
                           onClick={() => handleQuickAction(item.key)}
                           className="flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
                             <Icon size={16} />
                           </div>
                           <span>{item.label}</span>
@@ -880,7 +880,7 @@ export function DesktopChatWorkspace({
                 <section className="overflow-hidden rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)] p-2 shadow-none">
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
                     <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#eaf8ef] text-[#07c160]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]">
                         <BellRing size={14} />
                       </div>
                       <span>消息提醒</span>
@@ -915,7 +915,7 @@ export function DesktopChatWorkspace({
                                       ? "bg-[#fff7e6] text-[#d48806]"
                                       : group.status === "due"
                                         ? "bg-[#fff1f0] text-[#d74b45]"
-                                        : "bg-[#eaf8ef] text-[#07c160]",
+                                        : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
                                   {group.title}
@@ -967,7 +967,7 @@ export function DesktopChatWorkspace({
                                       ? "bg-[#fff7e6] text-[#d48806]"
                                       : group.status === "due"
                                         ? "bg-[#fff1f0] text-[#d74b45]"
-                                        : "bg-[#eaf8ef] text-[#07c160]",
+                                        : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
                                   {group.title}
@@ -1081,6 +1081,7 @@ export function DesktopChatWorkspace({
         ) : activeConversation ? (
           isPersistedGroupConversation(activeConversation) ? (
             <GroupChatThreadPanel
+              key={`group-thread-${activeConversation.id}`}
               groupId={activeConversation.id}
               variant="desktop"
               desktopSidePanelMode={rightPanelMode}
@@ -1102,6 +1103,7 @@ export function DesktopChatWorkspace({
             />
           ) : (
             <ConversationThreadPanel
+              key={`direct-thread-${activeConversation.id}`}
               conversationId={activeConversation.id}
               variant="desktop"
               desktopSidePanelMode={rightPanelMode}
@@ -1296,7 +1298,7 @@ function DesktopReminderCard({
       className={cn(
         "flex items-center gap-2.5 rounded-[14px] border px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[#07c160]/30 bg-white shadow-[0_8px_18px_rgba(7,193,96,0.08)]"
+          ? "border-[rgba(7,193,96,0.14)] bg-white shadow-[0_8px_18px_rgba(7,193,96,0.06)]"
           : "border-white/70 bg-white/88 hover:bg-white",
       )}
     >
@@ -1324,7 +1326,7 @@ function DesktopReminderCard({
                   ? "bg-[#fff7e6] text-[#d48806]"
                   : entry.isDue
                     ? "bg-[#fff1f0] text-[#d74b45]"
-                    : "bg-[#eaf8ef] text-[#07c160]",
+                    : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
                 )}
               >
               {getChatReminderStatusLabel(entry)}

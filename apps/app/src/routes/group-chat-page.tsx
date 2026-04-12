@@ -140,6 +140,7 @@ export function GroupChatPage() {
     <AppPage className="flex h-full min-h-0 flex-col space-y-0 bg-[#ededed] px-0 py-0">
       <div className="h-full min-h-0 flex-1">
         <GroupChatThreadPanel
+          key={groupId}
           groupId={groupId}
           highlightedMessageId={highlightedMessageId}
           routeMobileShortcutAction={routeMobileShortcutAction}
