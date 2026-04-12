@@ -47,8 +47,8 @@ export function ContactShortcutList({
                   ? "cursor-not-allowed px-4 py-3.5"
                   : "px-4 py-3.5 hover:bg-[color:var(--surface-console)]"
                 : item.disabled
-                  ? "cursor-not-allowed px-4 py-3"
-                  : "px-4 py-3 hover:bg-[color:var(--surface-card-hover)]",
+                  ? "cursor-not-allowed px-4 py-3.5"
+                  : "px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
               item.disabled ? "opacity-60" : "",
               index > 0
                 ? "border-t border-[color:var(--border-faint)]"
@@ -58,10 +58,8 @@ export function ContactShortcutList({
             <div
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-[12px] text-white",
-                compact
-                  ? "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
-                  : "shadow-[0_10px_22px_rgba(15,23,42,0.10)]",
-                compact ? "h-10 w-10" : "h-9 w-9",
+                "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
+                compact ? "h-10 w-10" : "h-10 w-10",
                 item.iconClassName,
               )}
             >
