@@ -2,6 +2,10 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default desktop capability for the Yinjie runtime shell.",
-  "windows": ["main"],
+  "windows": [
+    "main",
+    "desktop-chat-window:*",
+    "desktop-chat-image-viewer:*"
+  ],
   "permissions": ["core:default", "core:window:default", "opener:default"]
 }
