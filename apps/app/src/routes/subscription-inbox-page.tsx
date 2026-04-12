@@ -88,29 +88,35 @@ function MobileSubscriptionInboxPage() {
             }
             variant="ghost"
             size="icon"
-            className="text-[color:var(--text-secondary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {inboxQuery.isLoading ? (
-          <LoadingBlock label="正在读取订阅号消息..." />
+          <div className="px-3 pt-3">
+            <LoadingBlock label="正在读取订阅号消息..." />
+          </div>
         ) : null}
         {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-          <ErrorBlock message={inboxQuery.error.message} />
+          <div className="px-3 pt-3">
+            <ErrorBlock message={inboxQuery.error.message} />
+          </div>
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-          <ErrorBlock message={markReadMutation.error.message} />
+          <div className="px-3 pt-3">
+            <ErrorBlock message={markReadMutation.error.message} />
+          </div>
         ) : null}
 
         {inboxQuery.data?.groups.length ? (
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+              className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
             >
               <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
                 <button
@@ -149,10 +155,12 @@ function MobileSubscriptionInboxPage() {
             </section>
           ))
         ) : !inboxQuery.isLoading ? (
-          <EmptyState
-            title="还没有订阅号消息"
-            description="先关注一个订阅号，后续推送会汇总到这里。"
-          />
+          <div className="px-3 pt-6">
+            <EmptyState
+              title="还没有订阅号消息"
+              description="先关注一个订阅号，后续推送会汇总到这里。"
+            />
+          </div>
         ) : null}
       </div>
     </AppPage>
