@@ -29,11 +29,18 @@ export function ChatCallFallbackSection({
   videoValue = "暂未开放",
 }: ChatCallFallbackSectionProps) {
   const isGroup = scope === "group";
+  const isWechat = variant === "wechat";
 
   return (
     <>
       <ChatDetailsSection title="实时通话" variant={variant}>
-        <div className="divide-y divide-black/5">
+        <div
+          className={
+            isWechat
+              ? "divide-y divide-[color:var(--border-faint)]"
+              : "divide-y divide-black/5"
+          }
+        >
           <ChatSettingRow
             label="语音通话"
             value={voiceValue}

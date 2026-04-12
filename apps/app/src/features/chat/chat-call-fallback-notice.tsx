@@ -40,26 +40,26 @@ export function ChatCallFallbackNotice({
     return (
       <section
         className={cn(
-          "overflow-hidden rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-white shadow-[0_16px_32px_rgba(15,23,42,0.06)]",
+          "overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none",
           className,
         )}
       >
-        <div className="flex items-start gap-3 px-4 py-4">
-          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[rgba(7,193,96,0.10)] text-[color:var(--brand-primary)]">
-            <Icon size={18} />
+        <div className="flex items-start gap-3 px-4 py-3.5">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(7,193,96,0.09)] text-[color:var(--brand-primary)]">
+            <Icon size={17} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
               {title}
             </div>
-            <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+            <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-secondary)]">
               {description}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <Button
                 variant={primaryVariant}
                 onClick={onPrimaryAction}
-                className="rounded-full"
+                className="rounded-full px-3.5"
                 disabled={primaryDisabled}
               >
                 {primaryLabel}
@@ -67,7 +67,7 @@ export function ChatCallFallbackNotice({
               <Button
                 variant="secondary"
                 onClick={onSecondaryAction}
-                className="rounded-full"
+                className="rounded-full px-3.5"
                 disabled={secondaryDisabled}
               >
                 {secondaryLabel}
@@ -83,25 +83,25 @@ export function ChatCallFallbackNotice({
     <InlineNotice
       tone="info"
       className={cn(
-        "border-[color:var(--border-faint)] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+        "rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-medium leading-6 text-[color:var(--text-primary)]">
+          <div className="text-[11px] font-medium leading-5 text-[color:var(--text-primary)]">
             {title}
           </div>
-          <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]">
             {description}
           </div>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 gap-1.5">
           <Button
             variant={primaryVariant}
             size="sm"
             onClick={onPrimaryAction}
-            className="rounded-full"
+            className="rounded-full px-3"
             disabled={primaryDisabled}
           >
             {primaryLabel}
@@ -110,7 +110,7 @@ export function ChatCallFallbackNotice({
             variant="secondary"
             size="sm"
             onClick={onSecondaryAction}
-            className="rounded-full"
+            className="rounded-full px-3"
             disabled={secondaryDisabled}
           >
             {secondaryLabel}

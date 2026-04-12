@@ -23,11 +23,11 @@ export function ChatMemberGrid({
   const isWechat = variant === "wechat";
 
   return (
-    <div className={cn("px-4 py-4", isWechat && "px-3 py-3", className)}>
+    <div className={cn("px-4 py-4", isWechat && "px-3 pb-2.5 pt-3", className)}>
       <div
         className={cn(
           "grid grid-cols-5 gap-x-3 gap-y-4",
-          isWechat && "gap-x-2.5 gap-y-3.5",
+          isWechat && "gap-x-2 gap-y-3",
         )}
       >
         {items.map((item) => {
@@ -37,7 +37,7 @@ export function ChatMemberGrid({
               key={item.key}
               type="button"
               onClick={item.onClick}
-              className="flex min-w-0 flex-col items-center gap-1.5 text-center"
+              className="flex min-w-0 flex-col items-center gap-1.5 text-center active:opacity-85"
             >
               {isAction ? (
                 <div
@@ -45,9 +45,9 @@ export function ChatMemberGrid({
                     "flex h-11 w-11 items-center justify-center rounded-[12px] border text-2xl shadow-none transition-colors",
                     isWechat && "h-10 w-10 rounded-[10px] text-[22px]",
                     item.kind === "remove"
-                      ? "border-[rgba(220,38,38,0.25)] bg-[rgba(254,242,242,0.8)] text-red-500"
+                      ? "border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.72)] text-[#d74b45]"
                       : isWechat
-                        ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-muted)]"
+                        ? "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]"
                         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
                   )}
                 >

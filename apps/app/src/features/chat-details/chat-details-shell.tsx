@@ -35,7 +35,7 @@ export function ChatDetailsShell({
             onClick={onBack}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
             aria-label="返回"
           >
             <ArrowLeft size={18} />
