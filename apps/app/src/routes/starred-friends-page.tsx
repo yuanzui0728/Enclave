@@ -260,7 +260,7 @@ function DesktopStarredFriendsPage() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="rounded-full border-[color:var(--border-faint)] bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                className="rounded-full border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
                 onClick={() => {
                   void navigate({ to: "/tabs/contacts" });
                 }}
@@ -342,7 +342,7 @@ function DesktopStarredFriendsPage() {
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
                       selectedCharacterId === item.character.id
-                        ? "bg-[rgba(7,193,96,0.08)] shadow-[inset_3px_0_0_0_#07c160]"
+                        ? "bg-[rgba(7,193,96,0.07)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
                         : undefined,
                     )}
                   >
