@@ -79,6 +79,34 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
     }
 
+    @objc func shareFile(_ call: CAPPluginCall) {
+        guard let base64Data = normalize(call.getString("base64Data")),
+              let fileName = normalize(call.getString("fileName")),
+              let fileData = Data(base64Encoded: base64Data, options: [.ignoreUnknownCharacters]),
+              let presenter = bridge?.viewController else {
+            call.reject("base64Data and fileName are required")
+            return
+        }
+
+        let title = normalize(call.getString("title"))
+
+        guard let fileUrl = writeSharedFile(data: fileData, fileName: fileName) else {
+            call.reject("failed to prepare shared file")
+            return
+        }
+
+        DispatchQueue.main.async {
+            let controller = UIActivityViewController(activityItems: [fileUrl], applicationActivities: nil)
+            if let title, !title.isEmpty {
+                controller.setValue(title, forKey: "subject")
+            }
+
+            presenter.present(controller, animated: true) {
+                call.resolve()
+            }
+        }
+    }
+
     @objc func pickImages(_ call: CAPPluginCall) {
         guard let presenter = bridge?.viewController else {
             call.reject("missing presenter for image picker")
@@ -511,6 +539,25 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
     }
 
+    private func writeSharedFile(data: Data, fileName: String) -> URL? {
+        let fileManager = FileManager.default
+        let tempDir = fileManager.temporaryDirectory.appendingPathComponent("yinjie-shared", isDirectory: true)
+
+        do {
+            try fileManager.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            let destination = tempDir.appendingPathComponent(sanitizeFileName(fileName))
+
+            if fileManager.fileExists(atPath: destination.path) {
+                try fileManager.removeItem(at: destination)
+            }
+
+            try data.write(to: destination, options: .atomic)
+            return destination
+        } catch {
+            return nil
+        }
+    }
+
     private func writeCapturedCameraImage(data: Data) -> [String: Any]? {
         let fileManager = FileManager.default
         let tempDir = fileManager.temporaryDirectory.appendingPathComponent("yinjie-camera", isDirectory: true)
@@ -577,5 +624,14 @@ public class YinjieMobileBridgePlugin: CAPPlugin, PHPickerViewControllerDelegate
         }
 
         return UTType(filenameExtension: normalizedExt)?.preferredMIMEType
+    }
+
+    private func sanitizeFileName(_ fileName: String) -> String {
+        let invalidCharacters = CharacterSet(charactersIn: "\\/:*?\"<>|")
+        let sanitizedScalars = fileName.unicodeScalars.map { scalar in
+            invalidCharacters.contains(scalar) ? "_" : Character(scalar)
+        }
+        let sanitized = String(sanitizedScalars).trimmingCharacters(in: .whitespacesAndNewlines)
+        return sanitized.isEmpty ? "shared-file" : sanitized
     }
 }
