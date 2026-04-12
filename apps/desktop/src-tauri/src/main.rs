@@ -1,17 +1,20 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{
+    fs::File,
+    io::Write,
     path::PathBuf,
     sync::atomic::{AtomicBool, Ordering},
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{
     menu::MenuBuilder,
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Manager, Window, WindowEvent,
 };
+use tauri_plugin_dialog::DialogExt;
 #[cfg(target_os = "macos")]
 use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
 #[cfg(target_os = "windows")]
@@ -59,6 +62,23 @@ struct DesktopOperationResult {
     message: String,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopSaveRemoteFileInput {
+    url: String,
+    file_name: String,
+    dialog_title: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DesktopRemoteFileSaveResult {
+    success: bool,
+    cancelled: bool,
+    saved_path: Option<String>,
+    message: String,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct DesktopRuntimeDiagnostics {
@@ -88,6 +108,7 @@ struct RuntimePaths {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(DesktopWindowState {
             allow_exit: AtomicBool::new(false),
@@ -118,6 +139,7 @@ fn main() {
             desktop_window_drag,
             desktop_window_is_maximized,
             desktop_window_minimize,
+            desktop_save_remote_file,
             desktop_window_toggle_maximize,
             probe_core_api_health,
             start_core_api,
@@ -356,6 +378,72 @@ fn desktop_window_minimize(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn desktop_save_remote_file(
+    app: tauri::AppHandle,
+    input: DesktopSaveRemoteFileInput,
+) -> Result<DesktopRemoteFileSaveResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let url = input.url.trim().to_string();
+        if url.is_empty() {
+            return Err("Missing file URL.".to_string());
+        }
+
+        let file_name = sanitize_download_file_name(&input.file_name);
+        let dialog_title = input
+            .dialog_title
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("保存附件");
+        let Some(target_file_path) = app
+            .dialog()
+            .file()
+            .set_title(dialog_title)
+            .set_file_name(file_name)
+            .blocking_save_file()
+        else {
+            return Ok(DesktopRemoteFileSaveResult {
+                success: false,
+                cancelled: true,
+                saved_path: None,
+                message: "已取消保存。".to_string(),
+            });
+        };
+        let target_file_path = target_file_path
+            .into_path()
+            .map_err(|error| error.to_string())?;
+
+        if let Some(parent_dir) = target_file_path.parent() {
+            std::fs::create_dir_all(parent_dir).map_err(|error| error.to_string())?;
+        }
+
+        let mut response = reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(120))
+            .build()
+            .map_err(|error| error.to_string())?
+            .get(url)
+            .send()
+            .and_then(reqwest::blocking::Response::error_for_status)
+            .map_err(|error| error.to_string())?;
+        let mut output = File::create(&target_file_path).map_err(|error| error.to_string())?;
+
+        response
+            .copy_to(&mut output)
+            .map_err(|error| error.to_string())?;
+        output.flush().map_err(|error| error.to_string())?;
+
+        Ok(DesktopRemoteFileSaveResult {
+            success: true,
+            cancelled: false,
+            saved_path: Some(target_file_path.display().to_string()),
+            message: format!("已保存到 {}", target_file_path.display()),
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
 fn desktop_window_toggle_maximize(window: Window) -> Result<bool, String> {
     let is_maximized = window.is_maximized().map_err(|error| error.to_string())?;
 
@@ -420,6 +508,26 @@ fn probe_remote_health(base_url: &str) -> bool {
         .send()
         .map(|response| response.status().is_success())
         .unwrap_or(false)
+}
+
+fn sanitize_download_file_name(value: &str) -> String {
+    let sanitized = value
+        .trim()
+        .trim_matches('.')
+        .chars()
+        .map(|ch| match ch {
+            '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*' => '_',
+            control if control.is_control() => '_',
+            other => other,
+        })
+        .collect::<String>();
+    let sanitized = sanitized.trim().trim_matches('.').to_string();
+
+    if sanitized.is_empty() {
+        "download".to_string()
+    } else {
+        sanitized
+    }
 }
 
 #[allow(dead_code)]

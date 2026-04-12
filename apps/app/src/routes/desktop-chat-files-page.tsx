@@ -48,6 +48,7 @@ import {
   isPersistedGroupConversation,
 } from "../lib/conversation-route";
 import { openExternalUrl } from "../runtime/external-url";
+import { saveRemoteFile } from "../runtime/save-remote-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type FileFilter = "all" | "image" | "file";
@@ -493,12 +494,20 @@ export function DesktopChatFilesPage() {
                           <Button
                             variant="secondary"
                             size="sm"
-                            onClick={() =>
-                              saveUrlAsFile(
-                                item.attachment.url,
-                                item.attachment.fileName,
-                              )
-                            }
+                            onClick={() => {
+                              void saveRemoteFile({
+                                url: item.attachment.url,
+                                fileName: item.attachment.fileName,
+                                kind:
+                                  item.attachment.kind === "image"
+                                    ? "image"
+                                    : "file",
+                                dialogTitle:
+                                  item.attachment.kind === "image"
+                                    ? "保存图片"
+                                    : "保存文件",
+                              });
+                            }}
                             className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
                           >
                             保存附件
@@ -626,10 +635,12 @@ export function DesktopChatFilesPage() {
             });
           }}
           onSave={() =>
-            saveUrlAsFile(
-              activeImage.attachment.url,
-              activeImage.attachment.fileName,
-            )
+            void saveRemoteFile({
+              url: activeImage.attachment.url,
+              fileName: activeImage.attachment.fileName,
+              kind: "image",
+              dialogTitle: "保存图片",
+            })
           }
         />
       ) : null}
@@ -751,20 +762,6 @@ function resolveAttachmentExtension(fileName: string) {
   }
 
   return fileName.slice(dotIndex + 1).toUpperCase();
-}
-
-function saveUrlAsFile(url: string, fileName: string) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.rel = "noreferrer";
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {

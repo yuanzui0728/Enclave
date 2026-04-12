@@ -25,6 +25,7 @@ import {
   focusMainDesktopWindow,
   type DesktopStandaloneWindowNavigatePayload,
 } from "../runtime/desktop-windowing";
+import { saveRemoteFile } from "../runtime/save-remote-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function DesktopChatImageViewerPage() {
@@ -155,7 +156,12 @@ export function DesktopChatImageViewerPage() {
 
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        saveUrlAsFile(activeItem.imageUrl, activeItem.title);
+        void saveRemoteFile({
+          url: activeItem.imageUrl,
+          fileName: activeItem.title,
+          kind: "image",
+          dialogTitle: "保存图片",
+        });
         return;
       }
 
@@ -286,7 +292,14 @@ export function DesktopChatImageViewerPage() {
         <div className="flex items-center gap-2">
           <StandaloneActionButton
             label="保存图片"
-            onClick={() => saveUrlAsFile(activeItem.imageUrl, activeItem.title)}
+            onClick={() => {
+              void saveRemoteFile({
+                url: activeItem.imageUrl,
+                fileName: activeItem.title,
+                kind: "image",
+                dialogTitle: "保存图片",
+              });
+            }}
           >
             <Download size={16} />
           </StandaloneActionButton>
@@ -477,20 +490,6 @@ function closeCurrentWindow(onBlocked?: () => void) {
       onBlocked();
     }
   }, 120);
-}
-
-function saveUrlAsFile(url: string, fileName: string) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.rel = "noreferrer";
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
 }
 
 function openPrintWindow(input: { title: string; imageUrl: string }) {

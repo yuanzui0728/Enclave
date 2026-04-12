@@ -94,6 +94,7 @@ import {
   openAppSettings,
   requestNotificationPermission,
 } from "../runtime/mobile-bridge";
+import { saveRemoteFile } from "../runtime/save-remote-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
@@ -1080,27 +1081,41 @@ export function ChatMessageList({
     }
   };
 
+  const saveAttachmentFile = (input: {
+    url: string;
+    fileName: string;
+    kind: "image" | "file";
+  }) => {
+    void saveRemoteFile({
+      url: input.url,
+      fileName: input.fileName,
+      kind: input.kind,
+      dialogTitle: input.kind === "image" ? "保存图片" : "保存文件",
+    }).then((result) => {
+      if (result.status === "cancelled") {
+        return;
+      }
+
+      setActionNotice({
+        message: result.message,
+        tone: result.status === "failed" ? "danger" : "success",
+      });
+    });
+  };
+
   const saveAttachment = (message: ChatRenderableMessage) => {
     const attachment = getSaveableAttachment(message);
-    if (!attachment || typeof document === "undefined") {
+    if (!attachment) {
       return;
     }
 
-    const anchor = document.createElement("a");
-    anchor.href = attachment.url;
-    anchor.download =
-      attachment.kind === "file"
-        ? attachment.fileName
-        : attachment.fileName || "image";
-    anchor.rel = "noreferrer";
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-
-    setActionNotice({
-      message:
-        attachment.kind === "image" ? "图片开始下载。" : "文件开始下载。",
-      tone: "success",
+    saveAttachmentFile({
+      url: attachment.url,
+      fileName:
+        attachment.kind === "file"
+          ? attachment.fileName
+          : attachment.fileName || "image",
+      kind: attachment.kind === "image" ? "image" : "file",
     });
   };
 
@@ -2520,10 +2535,11 @@ export function ChatMessageList({
             jumpToMessage(activeImage.id);
           }}
           onSave={() =>
-            saveUrlAsFile(
-              activeImage.url,
-              activeImage.fileName || activeImage.label || "image",
-            )
+            saveAttachmentFile({
+              url: activeImage.url,
+              fileName: activeImage.fileName || activeImage.label || "image",
+              kind: "image",
+            })
           }
           onOpenInWindow={
             isDesktop
@@ -3342,20 +3358,6 @@ function buildMergedForwardText(messages: ChatRenderableMessage[]) {
   }
 
   return ["[聊天记录]", ...sections].join("\n");
-}
-
-function saveUrlAsFile(url: string, fileName: string) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.rel = "noreferrer";
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
 }
 
 function openPrintWindow(input: { title: string; imageUrl: string }) {
