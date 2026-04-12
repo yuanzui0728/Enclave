@@ -1173,7 +1173,8 @@ export function ContactsPage() {
           <ContactIndexList
             items={mobileIndexItems}
             activeKey={activeMobileIndexKey}
-            className="fixed right-1 top-[55%] z-30 -translate-y-1/2"
+            compact
+            className="fixed right-0.5 top-[55%] z-30 -translate-y-1/2"
             onSelect={handleIndexJumpWithBehavior}
           />
         ) : null}

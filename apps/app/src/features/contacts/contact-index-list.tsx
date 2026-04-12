@@ -5,11 +5,13 @@ export function ContactIndexList({
   items,
   activeKey,
   className,
+  compact = false,
   onSelect,
 }: {
   items: Array<{ key: string; indexLabel: string }>;
   activeKey?: string | null;
   className?: string;
+  compact?: boolean;
   onSelect: (key: string, behavior?: ScrollBehavior) => void;
 }) {
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -170,7 +172,10 @@ export function ContactIndexList({
     >
       <div
         className={cn(
-          "flex flex-col items-center gap-0.5 rounded-full bg-[rgba(255,255,255,0.84)] px-1 py-2 text-[10px] shadow-[0_10px_30px_rgba(15,23,42,0.10)] backdrop-blur",
+          "flex flex-col items-center rounded-full bg-[rgba(255,255,255,0.84)] backdrop-blur",
+          compact
+            ? "gap-px px-0.5 py-1.5 text-[9px] shadow-[0_8px_24px_rgba(15,23,42,0.10)]"
+            : "gap-0.5 px-1 py-2 text-[10px] shadow-[0_10px_30px_rgba(15,23,42,0.10)]",
         )}
       >
         {items.map((item) => (
@@ -181,19 +186,22 @@ export function ContactIndexList({
               itemRefs.current[item.key] = node;
             }}
             onClick={(event) => {
-            if (suppressClickRef.current) {
-              suppressClickRef.current = false;
-              event.preventDefault();
-              return;
-            }
+              if (suppressClickRef.current) {
+                suppressClickRef.current = false;
+                event.preventDefault();
+                return;
+              }
 
-            showIndicator(item.indexLabel, 280);
-            onSelect(item.key, "smooth");
-          }}
+              showIndicator(item.indexLabel, 280);
+              onSelect(item.key, "smooth");
+            }}
             aria-label={`跳转到 ${item.indexLabel}`}
             className={cn(
-              "flex h-4 w-4 items-center justify-center rounded-full text-[10px] leading-none transition-colors",
-              activeKey === item.key ? "bg-[rgba(22,163,74,0.14)] font-semibold text-[#16a34a]" : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]",
+              "flex items-center justify-center rounded-full leading-none transition-colors",
+              compact ? "h-3.5 w-3.5 text-[9px]" : "h-4 w-4 text-[10px]",
+              activeKey === item.key
+                ? "bg-[rgba(22,163,74,0.14)] font-semibold text-[#16a34a]"
+                : "text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]",
             )}
           >
             {item.indexLabel}
@@ -203,7 +211,14 @@ export function ContactIndexList({
 
       {indicatorLabel ? (
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-[rgba(22,22,22,0.72)] text-[34px] font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] backdrop-blur">
+          <div
+            className={cn(
+              "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] backdrop-blur",
+              compact
+                ? "h-20 w-20 rounded-[24px] text-[28px]"
+                : "h-24 w-24 rounded-[28px] text-[34px]",
+            )}
+          >
             {indicatorLabel}
           </div>
         </div>
