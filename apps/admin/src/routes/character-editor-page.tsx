@@ -40,6 +40,8 @@ const emptyCharacterDraft: CharacterDraft = {
   relationshipType: "expert",
   bio: "",
   isOnline: false,
+  sourceType: "manual_admin",
+  deletionPolicy: "archive_allowed",
   isTemplate: false,
   expertDomains: [],
   activityFrequency: "medium",

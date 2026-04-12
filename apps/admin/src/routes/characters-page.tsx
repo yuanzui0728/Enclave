@@ -42,6 +42,7 @@ export function CharactersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
   const [relationshipFilter, setRelationshipFilter] = useState<Character["relationshipType"] | "all">("all");
+  const [sourceFilter, setSourceFilter] = useState<Character["sourceType"] | "all">("all");
   const [selectedCharacterId, setSelectedCharacterId] = useState("");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
@@ -110,9 +111,19 @@ export function CharactersPage() {
         (statusFilter === "online" ? character.isOnline : !character.isOnline);
       const matchesRelationship =
         relationshipFilter === "all" || character.relationshipType === relationshipFilter;
-      return matchesSearch && matchesStatus && matchesRelationship;
+      const matchesSource = sourceFilter === "all" || character.sourceType === sourceFilter;
+      return matchesSearch && matchesStatus && matchesRelationship && matchesSource;
     });
-  }, [charactersQuery.data, deferredSearch, relationshipFilter, statusFilter]);
+  }, [charactersQuery.data, deferredSearch, relationshipFilter, sourceFilter, statusFilter]);
+
+  const sourceCounts = useMemo(() => {
+    const list = charactersQuery.data ?? [];
+    return {
+      defaultSeed: list.filter((item) => item.sourceType === "default_seed").length,
+      presetCatalog: list.filter((item) => item.sourceType === "preset_catalog").length,
+      manualAdmin: list.filter((item) => (item.sourceType ?? "manual_admin") === "manual_admin").length,
+    };
+  }, [charactersQuery.data]);
 
   useEffect(() => {
     if (!filteredCharacters.length) {
@@ -210,6 +221,20 @@ export function CharactersPage() {
                 <option value="mentor">导师</option>
                 <option value="custom">自定义</option>
               </SelectField>
+              <SelectField
+                value={sourceFilter}
+                onChange={(event) => setSourceFilter(event.target.value as Character["sourceType"] | "all")}
+              >
+                <option value="all">全部来源</option>
+                <option value="default_seed">默认保底</option>
+                <option value="preset_catalog">名人预设</option>
+                <option value="manual_admin">后台手工</option>
+              </SelectField>
+            </div>
+            <div className="grid gap-2 text-xs text-[color:var(--text-muted)]">
+              <div>默认保底 {sourceCounts.defaultSeed}</div>
+              <div>名人预设 {sourceCounts.presetCatalog}</div>
+              <div>后台手工 {sourceCounts.manualAdmin}</div>
             </div>
           </div>
 
@@ -445,7 +470,7 @@ export function CharactersPage() {
             <AdminEyebrow>运营建议</AdminEyebrow>
             <div className="mt-4 space-y-3">
               <AdminHintCard title="新角色创建" detail="先补齐关系、擅长领域和触发场景，再进入编辑页完善提示词和记忆。" />
-              <AdminHintCard title="预设注入" detail="先把名人预设安装到当前世界，再进入编辑页、工厂或运行逻辑台做二次定制。" />
+              <AdminHintCard title="预设注入" detail="先把名人预设安装到当前世界，再用“来源筛选 -> 名人预设”集中运营这批角色。" />
               <AdminHintCard title="角色制造" detail="需要大改人格、口头禅或长期设定时，优先进入工厂页维护配方。" />
               <AdminHintCard title="运行排查" detail="角色回复异常或活动状态不对时，直接进入运行逻辑台看在线模式、活动和最近执行。" />
             </div>
