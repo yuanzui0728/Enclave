@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import {
   followOfficialAccount,
   getOfficialAccount,
@@ -9,10 +9,8 @@ import {
 } from "@yinjie/contracts";
 import {
   AppPage,
-  AppSection,
   Button,
   ErrorBlock,
-  InlineNotice,
   LoadingBlock,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -133,25 +131,29 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             }
             variant="ghost"
             size="icon"
-            className="text-[color:var(--text-secondary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
           >
             <ArrowLeft size={18} />
           </Button>
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {accountQuery.isLoading ? (
-          <LoadingBlock label="正在读取公众号..." />
+          <div className="px-3 pt-3">
+            <LoadingBlock label="正在读取公众号..." />
+          </div>
         ) : null}
         {accountQuery.isError && accountQuery.error instanceof Error ? (
-          <ErrorBlock message={accountQuery.error.message} />
+          <div className="px-3 pt-3">
+            <ErrorBlock message={accountQuery.error.message} />
+          </div>
         ) : null}
 
         {account ? (
           <>
-          <AppSection className="space-y-5 border-black/5 bg-white p-6 shadow-none">
-            <div className="flex items-center gap-4">
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+            <div className="flex items-center gap-4 px-4 py-4">
               <AvatarChip name={account.name} src={account.avatar} size="lg" />
               <div className="min-w-0">
                 <div className="text-xl font-semibold text-[color:var(--text-primary)]">
@@ -173,12 +175,13 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-3 border-t border-[color:var(--border-faint)] px-4 py-3">
               <Button
                 type="button"
                 onClick={() => followMutation.mutate()}
                 disabled={followMutation.isPending}
                 variant={account.isFollowing ? "secondary" : "primary"}
+                className="w-full rounded-[10px]"
               >
                 {followMutation.isPending
                   ? "处理中..."
@@ -190,6 +193,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 type="button"
                 variant="secondary"
                 onClick={toggleAccountFavorite}
+                className="w-full rounded-[10px]"
               >
                 {accountFavoriteSourceId &&
                 favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -199,58 +203,59 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
             </div>
 
             {followMutation.isError && followMutation.error instanceof Error ? (
-              <ErrorBlock message={followMutation.error.message} />
+              <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
+                <ErrorBlock message={followMutation.error.message} />
+              </div>
             ) : null}
-          </AppSection>
+          </section>
 
-          <AppSection className="space-y-3 border-black/5 bg-white shadow-none">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              {account.accountType === "service" ? "服务消息" : "订阅号消息"}
-            </div>
-            <div className="text-sm leading-7 text-[color:var(--text-secondary)]">
-              {account.accountType === "service"
-                ? "服务号后续会作为独立消息项进入消息页，承接通知、文章卡片和菜单回复。"
-                : "订阅号后续会收口到“消息 -> 订阅号消息”聚合入口，不会长期占据普通私聊列表。"}
-            </div>
-            <InlineNotice tone="info">
-              {account.accountType === "service"
-                ? account.isFollowing
-                  ? "已关注后，这个服务号会作为独立消息项出现在消息列表。"
-                  : "关注后，这个服务号会作为独立消息项出现在消息列表。"
-                : account.isFollowing
-                  ? "已关注后，后续推送会汇总到订阅号消息聚合流。"
-                  : "关注后，后续推送会汇总到订阅号消息聚合流。"}
-            </InlineNotice>
-            {account.isFollowing ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  if (account.accountType === "service") {
-                    void navigate({
-                      to: "/official-accounts/service/$accountId",
-                      params: { accountId: account.id },
-                    });
-                    return;
-                  }
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+            <button
+              type="button"
+              disabled={!account.isFollowing}
+              onClick={() => {
+                if (account.accountType === "service") {
+                  void navigate({
+                    to: "/official-accounts/service/$accountId",
+                    params: { accountId: account.id },
+                  });
+                  return;
+                }
 
-                  void navigate({ to: "/chat/subscription-inbox" });
-                }}
-              >
-                {account.accountType === "service"
-                  ? "打开服务消息"
-                  : "打开订阅号消息"}
-              </Button>
-            ) : null}
-          </AppSection>
+                void navigate({ to: "/chat/subscription-inbox" });
+              }}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default disabled:opacity-80"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                  {account.accountType === "service" ? "服务消息" : "订阅号消息"}
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  {account.isFollowing
+                    ? account.accountType === "service"
+                      ? "已关注，可直接进入服务消息线程。"
+                      : "已关注，后续推送会汇总到订阅号消息。"
+                    : "关注后可从消息页查看这类内容。"}
+                </div>
+              </div>
+              {account.isFollowing ? (
+                <ChevronRight
+                  size={16}
+                  className="shrink-0 text-[color:var(--text-dim)]"
+                />
+              ) : null}
+            </button>
+          </section>
 
-          <AppSection className="overflow-hidden border-black/5 bg-white px-0 py-0 shadow-none">
+          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
             <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 最近文章
               </div>
               <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
-                对齐微信式公众号主页，从账号资料进入最近推送与历史文章。
+                {account.articles.length
+                  ? `${account.articles.length} 篇最近推送`
+                  : "这个公众号还没有公开文章。"}
               </div>
             </div>
 
@@ -270,7 +275,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 onToggleFavorite={() => toggleArticleFavorite(article.id)}
               />
             ))}
-          </AppSection>
+          </section>
           </>
         ) : null}
       </div>
