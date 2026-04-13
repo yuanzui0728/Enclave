@@ -1027,7 +1027,7 @@ function ConversationListItemLink({
   const content = (
     <div
       className={cn(
-        "flex items-center gap-2.5 px-4 py-3",
+        "flex items-center gap-2.5 px-4 py-2.5",
         isPinned ? "bg-[color:var(--surface-panel)]" : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -1035,26 +1035,26 @@ function ConversationListItemLink({
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-normal text-[color:var(--text-primary)]">
+            <div className="truncate text-[14px] font-normal leading-[1.25] text-[color:var(--text-primary)]">
               {conversation.title}
             </div>
-            <div className="mt-0.5 truncate text-[12px] leading-[1.35] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[11px] leading-[1.35] text-[color:var(--text-muted)]">
               {preview.prefix}
               {preview.text}
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-0.5">
-            <div className="text-[10px] text-[color:var(--text-dim)]">
+            <div className="text-[9px] text-[color:var(--text-dim)]">
               {formatConversationTimestamp(
                 visibleLastMessage?.createdAt ??
                   conversation.lastMessage?.createdAt ??
                   conversation.updatedAt,
               )}
             </div>
-            <div className="flex min-h-5 items-center gap-1.5">
+            <div className="flex min-h-[18px] items-center gap-1">
               {conversation.isMuted ? (
                 <BellOff
-                  size={12}
+                  size={11}
                   className="text-[color:var(--text-dim)]"
                   aria-label="消息免打扰"
                 />
@@ -1062,14 +1062,14 @@ function ConversationListItemLink({
               {hasUnreadMessages ? (
                 showMutedUnreadDot ? (
                   <div
-                    className="h-2.5 w-2.5 rounded-full bg-[#b8b8b8]"
+                    className="h-2 w-2 rounded-full bg-[#b8b8b8]"
                     aria-label="有未读消息"
                   />
                 ) : (
                   <div
                     className={cn(
-                      "flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fa5151] px-1.5 text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
-                      conversation.unreadCount > 9 ? "min-w-6" : undefined,
+                      "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#fa5151] px-1 text-[9px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
+                      conversation.unreadCount > 9 ? "min-w-[22px]" : undefined,
                     )}
                   >
                     {conversation.unreadCount > 99
@@ -1079,7 +1079,7 @@ function ConversationListItemLink({
                 )
               ) : isPinned ? (
                 <Pin
-                  size={11}
+                  size={10}
                   className="text-[color:var(--text-dim)]"
                   aria-label="置顶聊天"
                 />
