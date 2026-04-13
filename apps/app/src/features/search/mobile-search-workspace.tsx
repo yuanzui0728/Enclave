@@ -106,16 +106,16 @@ export function MobileSearchWorkspace({
   }, []);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f5f5f5]">
-      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-3 pt-4 backdrop-blur-xl">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-canvas)]">
+      <div className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-2.5 pt-1.5 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent text-[color:var(--text-primary)]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
             aria-label="返回"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </button>
 
           <form
@@ -127,7 +127,7 @@ export function MobileSearchWorkspace({
           >
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
+              className="pointer-events-none absolute left-3 top-1/2 size-[14px] -translate-y-1/2 text-[color:var(--text-dim)]"
             />
             <input
               ref={inputRef}
@@ -135,13 +135,13 @@ export function MobileSearchWorkspace({
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索聊天记录、联系人、公众号和内容"
-              className="h-11 w-full rounded-[14px] border border-black/5 bg-white pl-10 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
+              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[13px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)] focus:bg-white"
             />
             {searchText ? (
               <button
                 type="button"
                 onClick={onClearKeyword}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[color:var(--text-muted)]"
               >
                 清空
               </button>
@@ -149,17 +149,17 @@ export function MobileSearchWorkspace({
           </form>
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-2.5 flex gap-1.5 overflow-x-auto pb-0.5">
           {searchCategoryLabels.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setActiveCategory(item.id)}
               className={cn(
-                "shrink-0 rounded-full px-4 py-2 text-xs font-medium transition",
+                "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
                 activeCategory === item.id
                   ? "bg-[#07c160] text-white"
-                  : "border border-black/5 bg-white text-[color:var(--text-secondary)]",
+                  : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
               )}
             >
               {item.label}
@@ -171,22 +171,22 @@ export function MobileSearchWorkspace({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-3">
         {loading ? <LoadingBlock label="正在准备搜一搜..." /> : null}
         {error ? <ErrorBlock message={error} /> : null}
 
         {!loading && !error && !hasKeyword ? (
-          <div className="space-y-5">
-            <section className="rounded-[22px] border border-black/5 bg-white p-4 shadow-none">
+          <div className="space-y-4">
+            <section className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                   最近搜索
                 </div>
                 {history.length ? (
                   <button
                     type="button"
                     onClick={onClearHistory}
-                    className="text-xs text-[color:var(--text-muted)]"
+                    className="text-[11px] text-[color:var(--text-muted)]"
                   >
                     清空
                   </button>
@@ -194,11 +194,11 @@ export function MobileSearchWorkspace({
               </div>
 
               {history.length ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap gap-1.5">
                   {history.map((item) => (
                     <div
                       key={item.keyword}
-                      className="inline-flex items-center gap-2 rounded-full border border-black/5 bg-[#f5f5f5] px-3 py-2 text-xs text-[color:var(--text-secondary)]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-3 py-1.5 text-[11px] text-[color:var(--text-secondary)]"
                     >
                       <button
                         type="button"
@@ -219,13 +219,13 @@ export function MobileSearchWorkspace({
                   ))}
                 </div>
               ) : (
-                <div className="mt-3 text-xs leading-6 text-[color:var(--text-muted)]">
+                <div className="mt-2.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
                   还没有搜索记录，输入关键词后会保存在这里。
                 </div>
               )}
             </section>
 
-            <section className="grid gap-3">
+            <section className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {quickScopeCards.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -235,21 +235,27 @@ export function MobileSearchWorkspace({
                     onClick={() =>
                       setActiveCategory(item.key as SearchCategory)
                     }
-                    className="flex items-center gap-3 rounded-[22px] border border-black/5 bg-white px-4 py-4 text-left shadow-none"
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left",
+                      "transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                      item.key !== quickScopeCards[0]!.key
+                        ? "border-t border-[color:var(--border-faint)]"
+                        : undefined,
+                    )}
                   >
                     <div
                       className={cn(
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px]",
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px]",
                         item.iconClassName,
                       )}
                     >
-                      <Icon size={18} />
+                      <Icon size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                         {item.title}
                       </div>
-                      <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                      <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
                         {item.description}
                       </div>
                     </div>
@@ -258,12 +264,12 @@ export function MobileSearchWorkspace({
               })}
             </section>
 
-            <section className="rounded-[22px] border border-black/5 bg-white p-4 shadow-none">
-              <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-                <Sparkles size={16} className="text-[#15803d]" />
+            <section className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
+              <div className="flex items-center gap-1.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+                <Sparkles size={15} className="text-[#15803d]" />
                 <span>当前可搜索范围</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-[color:var(--text-secondary)]">
+              <div className="mt-2.5 grid grid-cols-2 gap-2.5 text-[11px] text-[color:var(--text-secondary)]">
                 <ScopeStat
                   label="会话"
                   value={`${scopeCounts.conversations}`}
@@ -287,7 +293,7 @@ export function MobileSearchWorkspace({
         ) : null}
 
         {!loading && !error && hasKeyword && !visibleResults.length ? (
-          <div className="pt-10">
+          <div className="pt-8">
             <EmptyState
               title="没有找到相关内容"
               description="换个关键词，或者切到别的分类试试。"
@@ -297,7 +303,7 @@ export function MobileSearchWorkspace({
 
         {!loading && !error && hasKeyword ? (
           activeCategory === "all" ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {groupedResults.map((section) => {
                 const expanded = Boolean(expandedSections[section.category]);
                 const sectionResults = expanded
@@ -305,9 +311,9 @@ export function MobileSearchWorkspace({
                   : section.results.slice(0, 3);
 
                 return (
-                  <section key={section.category} className="space-y-3">
+                  <section key={section.category} className="space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                         {section.label}
                       </div>
                       {section.results.length > 3 ? (
@@ -319,7 +325,7 @@ export function MobileSearchWorkspace({
                               [section.category]: !current[section.category],
                             }))
                           }
-                          className="text-xs text-[#15803d]"
+                          className="text-[11px] text-[#15803d]"
                         >
                           {expanded
                             ? "收起"
@@ -327,7 +333,7 @@ export function MobileSearchWorkspace({
                         </button>
                       ) : null}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {sectionResults.map((item) => (
                         <SearchResultCard
                           key={item.id}
@@ -343,8 +349,8 @@ export function MobileSearchWorkspace({
               })}
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            <div className="space-y-2.5">
+              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                 {searchCategoryTitles[activeCategory]} · {visibleResults.length}{" "}
                 条
               </div>
@@ -367,9 +373,9 @@ export function MobileSearchWorkspace({
 
 function ScopeStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] bg-[rgba(255,248,239,0.82)] px-3 py-3">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5">
       <div>{label}</div>
-      <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+      <div className="mt-1 text-[13px] font-medium text-[color:var(--text-primary)]">
         {value}
       </div>
     </div>
