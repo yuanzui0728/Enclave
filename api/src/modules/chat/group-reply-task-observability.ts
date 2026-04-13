@@ -5,6 +5,11 @@ export const GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY =
 
 export type GroupReplyIssueSource = 'cancel_reason' | 'error_message';
 export type GroupReplyIssueStatus = 'cancelled' | 'failed';
+export type GroupReplyTaskArchiveStatusCounts = {
+  sent: number;
+  cancelled: number;
+  failed: number;
+};
 
 export type GroupReplyIssueSummaryRecord = {
   key: string;
@@ -14,14 +19,26 @@ export type GroupReplyIssueSummaryRecord = {
   count: number;
 };
 
+export type GroupReplyTaskArchiveDailyStat = {
+  date: string;
+  taskCount: number;
+  turnCount: number;
+  statusCounts: GroupReplyTaskArchiveStatusCounts;
+};
+
+export type GroupReplyTaskArchiveActorStat = {
+  actorCharacterId: string;
+  actorName: string;
+  taskCount: number;
+  statusCounts: GroupReplyTaskArchiveStatusCounts;
+};
+
 export type GroupReplyTaskArchiveBucket = {
   archivedTaskCount: number;
   archivedTurnCount: number;
-  statusCounts: {
-    sent: number;
-    cancelled: number;
-    failed: number;
-  };
+  statusCounts: GroupReplyTaskArchiveStatusCounts;
+  dailyStats: Record<string, GroupReplyTaskArchiveDailyStat>;
+  actorStats: Record<string, GroupReplyTaskArchiveActorStat>;
   issueSummary: GroupReplyIssueSummaryRecord[];
   lastArchivedAt?: string | null;
   lastCutoff?: string | null;
@@ -33,15 +50,44 @@ export type GroupReplyTaskArchiveStore = {
   groups: Record<string, GroupReplyTaskArchiveBucket>;
 };
 
+export function createEmptyGroupReplyTaskArchiveStatusCounts(): GroupReplyTaskArchiveStatusCounts {
+  return {
+    sent: 0,
+    cancelled: 0,
+    failed: 0,
+  };
+}
+
+export function createEmptyGroupReplyTaskArchiveDailyStat(
+  date: string,
+): GroupReplyTaskArchiveDailyStat {
+  return {
+    date,
+    taskCount: 0,
+    turnCount: 0,
+    statusCounts: createEmptyGroupReplyTaskArchiveStatusCounts(),
+  };
+}
+
+export function createEmptyGroupReplyTaskArchiveActorStat(
+  actorCharacterId: string,
+  actorName: string,
+): GroupReplyTaskArchiveActorStat {
+  return {
+    actorCharacterId,
+    actorName,
+    taskCount: 0,
+    statusCounts: createEmptyGroupReplyTaskArchiveStatusCounts(),
+  };
+}
+
 export function createEmptyGroupReplyTaskArchiveBucket(): GroupReplyTaskArchiveBucket {
   return {
     archivedTaskCount: 0,
     archivedTurnCount: 0,
-    statusCounts: {
-      sent: 0,
-      cancelled: 0,
-      failed: 0,
-    },
+    statusCounts: createEmptyGroupReplyTaskArchiveStatusCounts(),
+    dailyStats: {},
+    actorStats: {},
     issueSummary: [],
     lastArchivedAt: null,
     lastCutoff: null,
@@ -133,4 +179,89 @@ export function mergeGroupReplyIssueSummaries(
   return [...merged.values()]
     .sort((left, right) => right.count - left.count)
     .slice(0, limit);
+}
+
+export function normalizeGroupReplyTaskArchiveStore(
+  input: unknown,
+): GroupReplyTaskArchiveStore {
+  const emptyStore = createEmptyGroupReplyTaskArchiveStore();
+  const emptyBucket = createEmptyGroupReplyTaskArchiveBucket();
+  if (!input || typeof input !== 'object') {
+    return emptyStore;
+  }
+
+  const parsed = input as Partial<GroupReplyTaskArchiveStore>;
+  if (parsed.version !== 1) {
+    return emptyStore;
+  }
+
+  return {
+    version: 1,
+    global: normalizeGroupReplyTaskArchiveBucket(parsed.global),
+    groups: Object.fromEntries(
+      Object.entries(parsed.groups ?? {}).map(([groupId, value]) => [
+        groupId,
+        normalizeGroupReplyTaskArchiveBucket(value),
+      ]),
+    ),
+  };
+
+  function normalizeGroupReplyTaskArchiveBucket(
+    bucket: Partial<GroupReplyTaskArchiveBucket> | undefined,
+  ): GroupReplyTaskArchiveBucket {
+    return {
+      ...emptyBucket,
+      ...bucket,
+      statusCounts: {
+        ...emptyBucket.statusCounts,
+        ...(bucket?.statusCounts ?? {}),
+      },
+      dailyStats: Object.fromEntries(
+        Object.entries(bucket?.dailyStats ?? {}).map(([date, value]) => [
+          date,
+          {
+            ...createEmptyGroupReplyTaskArchiveDailyStat(date),
+            ...value,
+            statusCounts: {
+              ...createEmptyGroupReplyTaskArchiveStatusCounts(),
+              ...(value?.statusCounts ?? {}),
+            },
+          },
+        ]),
+      ),
+      actorStats: Object.fromEntries(
+        Object.entries(bucket?.actorStats ?? {}).map(([actorId, value]) => [
+          actorId,
+          {
+            ...createEmptyGroupReplyTaskArchiveActorStat(
+              actorId,
+              value?.actorName ?? actorId,
+            ),
+            ...value,
+            statusCounts: {
+              ...createEmptyGroupReplyTaskArchiveStatusCounts(),
+              ...(value?.statusCounts ?? {}),
+            },
+          },
+        ]),
+      ),
+      issueSummary: bucket?.issueSummary ?? [],
+    };
+  }
+}
+
+export function calculateGroupReplyFailureRate(
+  statusCounts: GroupReplyTaskArchiveStatusCounts,
+) {
+  const total =
+    statusCounts.sent + statusCounts.cancelled + statusCounts.failed;
+  return total > 0 ? statusCounts.failed / total : 0;
+}
+
+export function calculateGroupReplyCancelRate(
+  statusCounts: GroupReplyTaskArchiveStatusCounts,
+) {
+  const total =
+    statusCounts.sent + statusCounts.cancelled + statusCounts.failed;
+  return total > 0 ? statusCounts.cancelled / total : 0;
 }

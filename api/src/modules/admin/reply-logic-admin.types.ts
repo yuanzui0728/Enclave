@@ -579,9 +579,35 @@ export interface ReplyLogicGroupReplyArchiveSummary {
     failed: number;
   };
   failureRate: number;
+  cancelRate: number;
+  trend: ReplyLogicGroupReplyArchiveTrendPoint[];
+  actorSummary: ReplyLogicGroupReplyArchiveActorSummary[];
   issueSummary: ReplyLogicGroupReplyIssueSummary[];
   lastArchivedAt?: string | null;
   lastCutoff?: string | null;
+}
+
+export interface ReplyLogicGroupReplyArchiveTrendPoint {
+  date: string;
+  taskCount: number;
+  turnCount: number;
+  sentCount: number;
+  cancelledCount: number;
+  failedCount: number;
+  failureRate: number;
+  cancelRate: number;
+}
+
+export interface ReplyLogicGroupReplyArchiveActorSummary {
+  actorCharacterId: string;
+  actorName: string;
+  taskCount: number;
+  sentCount: number;
+  cancelledCount: number;
+  failedCount: number;
+  failureRate: number;
+  cancelRate: number;
+  issueRate: number;
 }
 
 export interface ReplyLogicPreviewResult {
