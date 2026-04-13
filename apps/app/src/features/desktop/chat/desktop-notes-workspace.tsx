@@ -127,6 +127,9 @@ export function DesktopNotesWorkspace({
       setNoteId(savedNote.id);
       setEditorState(nextState);
       setSavedSnapshot(nextSnapshot);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = nextState.contentHtml;
+      }
       setNotice({
         tone: "success",
         message: "笔记已保存到收藏。",
