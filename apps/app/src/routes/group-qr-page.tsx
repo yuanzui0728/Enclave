@@ -65,6 +65,7 @@ export function GroupQrPage() {
   const isDesktopLayout = useDesktopLayout();
   const nativeMobileShareSupported =
     !isDesktopLayout && isNativeMobileBridgeAvailable();
+  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
   const search = useRouterState({ select: (state) => state.location.search });
   const [notice, setNotice] = useState<{
     message: string;
@@ -919,26 +920,32 @@ export function GroupQrPage() {
                 void shareInviteTextOnly();
               }}
             />
-            <ActionCard
-              compact={!isDesktopLayout}
-              icon={
-                nativeMobileShareSupported ? <Share2 size={16} /> : <Copy size={16} />
-              }
-              title={nativeMobileShareSupported ? "系统分享" : "发到手机"}
-              description={
-                nativeMobileShareSupported
-                  ? "直接通过系统分享面板发给联系人或其他应用。"
-                  : "把当前群邀请入口复制到手机，并进入接力历史。"
-              }
-              onClick={() => {
-                if (nativeMobileShareSupported) {
-                  void shareInvite();
-                  return;
+            {!mobileWebCopyFallback ? (
+              <ActionCard
+                compact={!isDesktopLayout}
+                icon={
+                  nativeMobileShareSupported ? (
+                    <Share2 size={16} />
+                  ) : (
+                    <Copy size={16} />
+                  )
                 }
+                title={nativeMobileShareSupported ? "系统分享" : "发到手机"}
+                description={
+                  nativeMobileShareSupported
+                    ? "直接通过系统分享面板发给联系人或其他应用。"
+                    : "把当前群邀请入口复制到手机，并进入接力历史。"
+                }
+                onClick={() => {
+                  if (nativeMobileShareSupported) {
+                    void shareInvite();
+                    return;
+                  }
 
-                void sendToMobile();
-              }}
-            />
+                  void sendToMobile();
+                }}
+              />
+            ) : null}
             <ActionCard
               compact={!isDesktopLayout}
               icon={<Download size={16} />}
