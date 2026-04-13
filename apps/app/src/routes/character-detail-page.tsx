@@ -480,15 +480,15 @@ export function CharacterDetailPage() {
         isDesktopLayout ? "bg-[#ededed]" : "bg-[color:var(--bg-canvas)]",
       )}
     >
-      <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2.5 backdrop-blur-xl">
-        <div className="relative flex min-h-11 items-center gap-1.5">
+      <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-2 py-2 backdrop-blur-xl">
+        <div className="relative flex min-h-10 items-center gap-1.5">
           <button
             type="button"
             onClick={handleBack}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
             aria-label="返回"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
           </button>
           <div className="pointer-events-none absolute inset-x-12 text-center">
             <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
@@ -504,31 +504,31 @@ export function CharacterDetailPage() {
             <button
               type="button"
               onClick={() => void handleShareCharacterCard()}
-              className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
+              className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
               aria-label={nativeMobileShareSupported ? "分享名片" : "复制名片"}
             >
-              {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+              {nativeMobileShareSupported ? <Share2 size={17} /> : <Copy size={17} />}
             </button>
           ) : (
-            <div className="ml-auto h-10 w-10 shrink-0" aria-hidden="true" />
+            <div className="ml-auto h-9 w-9 shrink-0" aria-hidden="true" />
           )}
         </div>
       </header>
 
       {characterQuery.isLoading ? (
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <LoadingBlock label="正在读取朋友资料..." />
         </div>
       ) : null}
 
       {characterQuery.isError && characterQuery.error instanceof Error ? (
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <ErrorBlock message={characterQuery.error.message} />
         </div>
       ) : null}
 
       {!characterQuery.isLoading && !character ? (
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <EmptyState
             title="角色不存在"
             description="这个资料暂时不可用，返回通讯录再试一次。"
@@ -539,12 +539,21 @@ export function CharacterDetailPage() {
       {character ? (
         <div
           className={cn(
-            "space-y-2 px-3 pb-6 pt-3",
+            "space-y-1.5 px-3 pb-6 pt-2.5",
             isDesktopLayout ? "mx-auto w-full max-w-[720px]" : undefined,
           )}
         >
           {notice ? (
-            <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+            <InlineNotice
+              tone={notice.tone}
+              className={
+                isDesktopLayout
+                  ? undefined
+                  : "rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              }
+            >
+              {notice.message}
+            </InlineNotice>
           ) : null}
           {entryNotice ? (
             <DigitalHumanEntryNotice
@@ -571,6 +580,7 @@ export function CharacterDetailPage() {
                   ? "正在接通语音..."
                   : entryNotice.voiceLabel
               }
+              compact={!isDesktopLayout}
             />
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
@@ -627,7 +637,12 @@ export function CharacterDetailPage() {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="truncate text-[24px] font-medium text-[color:var(--text-primary)]">
+                  <div
+                    className={cn(
+                      "truncate font-medium text-[color:var(--text-primary)]",
+                      isDesktopLayout ? "text-[24px]" : "text-[22px]",
+                    )}
+                  >
                     {displayName}
                   </div>
                   {friendship?.isStarred ? (
@@ -643,10 +658,22 @@ export function CharacterDetailPage() {
                     ? `昵称：${character.name}`
                     : character.relationship}
                 </div>
-                <div className="mt-1 text-sm text-[color:var(--text-muted)]">
+                <div
+                  className={cn(
+                    "mt-1 text-[color:var(--text-muted)]",
+                    isDesktopLayout ? "text-sm" : "text-[12px]",
+                  )}
+                >
                   隐界号：yinjie_{character.id.slice(0, 8)}
                 </div>
-                <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
+                <div
+                  className={cn(
+                    "text-[color:var(--text-secondary)]",
+                    isDesktopLayout
+                      ? "mt-3 text-sm leading-6"
+                      : "mt-2 text-[13px] leading-5",
+                  )}
+                >
                   {signature}
                 </div>
               </div>
@@ -672,6 +699,7 @@ export function CharacterDetailPage() {
                 label={startChatMutation.isPending ? "正在打开..." : "发消息"}
                 onClick={() => startChatMutation.mutate()}
                 disabled={startChatMutation.isPending}
+                compact={!isDesktopLayout}
               />
               {isFriend ? (
                 <>
@@ -682,6 +710,7 @@ export function CharacterDetailPage() {
                     }
                     onClick={handleVoiceCall}
                     disabled={openCallMutation.isPending}
+                    compact={!isDesktopLayout}
                   />
                   <ActionPanelButton
                     icon={<Video size={18} />}
@@ -690,6 +719,7 @@ export function CharacterDetailPage() {
                     }
                     onClick={handleVideoCall}
                     disabled={openCallMutation.isPending}
+                    compact={!isDesktopLayout}
                   />
                 </>
               ) : (
@@ -704,6 +734,7 @@ export function CharacterDetailPage() {
                   }
                   onClick={() => sendFriendRequestMutation.mutate()}
                   disabled={sendFriendRequestMutation.isPending}
+                  compact={!isDesktopLayout}
                 />
               )}
             </div>
@@ -712,6 +743,7 @@ export function CharacterDetailPage() {
           <ProfileSection
             title={isFriend ? "资料设置" : "基本资料"}
             flatOnMobile={!isDesktopLayout}
+            compact={!isDesktopLayout}
           >
             {isFriend ? (
               <ProfileRow
@@ -721,10 +753,11 @@ export function CharacterDetailPage() {
                   friendship?.tags,
                 )}
                 onClick={() => setIsEditingProfile((current) => !current)}
+                compact={!isDesktopLayout}
               />
             ) : null}
             {isFriend && isEditingProfile ? (
-              <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-4 py-3">
+              <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] px-4 py-2.5">
                 <div className="space-y-3">
                   <DetailInputField
                     label="备注"
@@ -736,6 +769,7 @@ export function CharacterDetailPage() {
                         remarkName: value,
                       }))
                     }
+                    compact={!isDesktopLayout}
                   />
                   <DetailInputField
                     label="地区"
@@ -747,6 +781,7 @@ export function CharacterDetailPage() {
                         region: value,
                       }))
                     }
+                    compact={!isDesktopLayout}
                   />
                   <DetailInputField
                     label="来源"
@@ -758,6 +793,7 @@ export function CharacterDetailPage() {
                         source: value,
                       }))
                     }
+                    compact={!isDesktopLayout}
                   />
                   <DetailInputField
                     label="标签"
@@ -769,9 +805,10 @@ export function CharacterDetailPage() {
                         tags: value,
                       }))
                     }
+                    compact={!isDesktopLayout}
                   />
                 </div>
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-3.5 flex items-center gap-2">
                   <Button
                     variant="secondary"
                     onClick={() => {
@@ -783,7 +820,7 @@ export function CharacterDetailPage() {
                         tags: friendship?.tags?.join("，") ?? "",
                       });
                     }}
-                    className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
+                    className="h-8 flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                     disabled={updateProfileMutation.isPending}
                   >
                     取消
@@ -791,7 +828,7 @@ export function CharacterDetailPage() {
                   <Button
                     variant="primary"
                     onClick={() => void handleSaveProfile()}
-                    className="flex-1 rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                    className="h-8 flex-1 rounded-[10px] bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
                     disabled={updateProfileMutation.isPending}
                   >
                     {updateProfileMutation.isPending ? "保存中..." : "保存"}
@@ -806,6 +843,7 @@ export function CharacterDetailPage() {
                   ? friendship?.region?.trim() || "未设置"
                   : character.relationship || "世界角色"
               }
+              compact={!isDesktopLayout}
             />
             <ProfileRow
               label="来源"
@@ -814,9 +852,19 @@ export function CharacterDetailPage() {
                   ? friendship?.source?.trim() || "未设置"
                   : "世界内自然认识"
               }
+              compact={!isDesktopLayout}
             />
-            <ProfileRow label="标签" value={isFriend ? tagSummary : "未设置"} />
-            <ProfileRow label="个性签名" value={signature} multiline />
+            <ProfileRow
+              label="标签"
+              value={isFriend ? tagSummary : "未设置"}
+              compact={!isDesktopLayout}
+            />
+            <ProfileRow
+              label="个性签名"
+              value={signature}
+              multiline
+              compact={!isDesktopLayout}
+            />
             <ProfileRow
               label="最近互动"
               value={
@@ -826,25 +874,51 @@ export function CharacterDetailPage() {
                     )
                   : formatTimestamp(character.lastActiveAt)
               }
+              compact={!isDesktopLayout}
             />
-            <ProfileRow label="朋友圈" value="后续接入" />
+            <ProfileRow label="朋友圈" value="后续接入" compact={!isDesktopLayout} />
           </ProfileSection>
 
-          <ProfileSection title="更多信息" flatOnMobile={!isDesktopLayout}>
-            <ProfileRow label="当前状态" value={activitySummary} />
-            <ProfileRow label="擅长领域" value={expertiseSummary} multiline />
-            <ProfileRow label="语气风格" value={toneSummary} />
-            <div className="border-t border-[color:var(--border-faint)] px-4 py-4">
-              <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+          <ProfileSection
+            title="更多信息"
+            flatOnMobile={!isDesktopLayout}
+            compact={!isDesktopLayout}
+          >
+            <ProfileRow label="当前状态" value={activitySummary} compact={!isDesktopLayout} />
+            <ProfileRow
+              label="擅长领域"
+              value={expertiseSummary}
+              multiline
+              compact={!isDesktopLayout}
+            />
+            <ProfileRow label="语气风格" value={toneSummary} compact={!isDesktopLayout} />
+            <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
+              <div
+                className={cn(
+                  "text-[color:var(--text-muted)]",
+                  isDesktopLayout
+                    ? "text-xs uppercase tracking-[0.16em]"
+                    : "text-[11px]",
+                )}
+              >
                 角色简介
               </div>
-              <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+              <div
+                className={cn(
+                  "mt-2 text-[color:var(--text-secondary)]",
+                  isDesktopLayout ? "text-sm leading-7" : "text-[13px] leading-6",
+                )}
+              >
                 {character.bio?.trim() || "暂时没有更多介绍。"}
               </div>
             </div>
           </ProfileSection>
 
-          <ProfileSection title="关系管理" flatOnMobile={!isDesktopLayout}>
+          <ProfileSection
+            title="关系管理"
+            flatOnMobile={!isDesktopLayout}
+            compact={!isDesktopLayout}
+          >
             {isFriend ? (
               <ProfileSwitchRow
                 label="设为星标朋友"
@@ -853,6 +927,7 @@ export function CharacterDetailPage() {
                   setStarredMutation.mutate(!(friendship?.isStarred ?? false))
                 }
                 disabled={setStarredMutation.isPending}
+                compact={!isDesktopLayout}
               />
             ) : null}
             <ProfileRow
@@ -867,6 +942,7 @@ export function CharacterDetailPage() {
               danger
               onClick={handleBlockAction}
               disabled={blockMutation.isPending}
+              compact={!isDesktopLayout}
             />
             {isFriend ? (
               <ProfileRow
@@ -879,6 +955,7 @@ export function CharacterDetailPage() {
                 danger
                 onClick={handleDeleteFriendAction}
                 disabled={deleteFriendMutation.isPending}
+                compact={!isDesktopLayout}
               />
             ) : null}
           </ProfileSection>
@@ -920,21 +997,26 @@ function ActionPanelButton({
   label,
   onClick,
   disabled = false,
+  compact = false,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex min-h-[78px] flex-col items-center justify-center gap-2 bg-white text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-console)] disabled:opacity-45"
+      className={cn(
+        "flex flex-col items-center justify-center bg-white text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-console)] disabled:opacity-45",
+        compact ? "min-h-[70px] gap-1.5" : "min-h-[78px] gap-2",
+      )}
     >
       <span className="text-[color:var(--text-secondary)]">{icon}</span>
-      <span className="text-sm">{label}</span>
+      <span className={compact ? "text-[13px]" : "text-sm"}>{label}</span>
     </button>
   );
 }
@@ -943,10 +1025,12 @@ function ProfileSection({
   title,
   children,
   flatOnMobile = false,
+  compact = false,
 }: {
   title: string;
   children: ReactNode;
   flatOnMobile?: boolean;
+  compact?: boolean;
 }) {
   return (
     <section
@@ -960,7 +1044,9 @@ function ProfileSection({
       <div
         className={cn(
           flatOnMobile
-            ? "px-4 py-2.5 text-[12px] text-[color:var(--text-muted)]"
+            ? compact
+              ? "px-4 py-2 text-[11px] text-[color:var(--text-muted)]"
+              : "px-4 py-2.5 text-[12px] text-[color:var(--text-muted)]"
             : "px-4 py-3 text-xs uppercase tracking-[0.16em] text-[#8c8c8c]",
         )}
       >
@@ -978,6 +1064,7 @@ function ProfileRow({
   danger = false,
   disabled = false,
   multiline = false,
+  compact = false,
 }: {
   label: string;
   value: string;
@@ -985,6 +1072,7 @@ function ProfileRow({
   danger?: boolean;
   disabled?: boolean;
   multiline?: boolean;
+  compact?: boolean;
 }) {
   if (onClick) {
     return (
@@ -992,11 +1080,14 @@ function ProfileRow({
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className="flex w-full items-center gap-4 px-4 py-4 text-left text-sm transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+        className={cn(
+          "flex w-full items-center gap-4 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+          compact ? "px-4 py-3 text-[13px]" : "px-4 py-4 text-sm",
+        )}
       >
         <div
           className={cn(
-            "w-24 shrink-0",
+            compact ? "w-[5.5rem] shrink-0" : "w-24 shrink-0",
             danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
           )}
         >
@@ -1013,16 +1104,24 @@ function ProfileRow({
         >
           {value}
         </div>
-        <ChevronRight size={18} className="shrink-0 text-[#c7c7cc]" />
+        <ChevronRight
+          size={compact ? 16 : 18}
+          className="shrink-0 text-[#c7c7cc]"
+        />
       </button>
     );
   }
 
   return (
-    <div className="flex w-full items-center gap-4 px-4 py-4 text-left text-sm">
+    <div
+      className={cn(
+        "flex w-full items-center gap-4 text-left",
+        compact ? "px-4 py-3 text-[13px]" : "px-4 py-4 text-sm",
+      )}
+    >
       <div
         className={cn(
-          "w-24 shrink-0",
+          compact ? "w-[5.5rem] shrink-0" : "w-24 shrink-0",
           danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
         )}
       >
@@ -1046,32 +1145,46 @@ function ProfileSwitchRow({
   checked,
   onToggle,
   disabled = false,
+  compact = false,
 }: {
   label: string;
   checked: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  compact?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
       disabled={disabled}
-      className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+      className={cn(
+        "flex w-full items-center justify-between gap-3 px-4 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
+        compact ? "min-h-12" : "min-h-14",
+      )}
       role="switch"
       aria-checked={checked}
     >
-      <span className="text-[16px] text-[color:var(--text-primary)]">{label}</span>
       <span
         className={cn(
-          "relative h-8 w-13 rounded-full transition-colors",
+          "text-[color:var(--text-primary)]",
+          compact ? "text-[14px]" : "text-[16px]",
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          compact ? "relative h-7 w-11 rounded-full transition-colors" : "relative h-8 w-13 rounded-full transition-colors",
           checked ? "bg-[#07c160]" : "bg-[#d5d5d5]",
         )}
       >
         <span
           className={cn(
-            "absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
-            checked ? "translate-x-6" : "translate-x-0",
+            compact
+              ? "absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform"
+              : "absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow-sm transition-transform",
+            checked ? (compact ? "translate-x-4" : "translate-x-6") : "translate-x-0",
           )}
         />
       </span>
@@ -1084,22 +1197,34 @@ function DetailInputField({
   value,
   placeholder,
   onChange,
+  compact = false,
 }: {
   label: string;
   value: string;
   placeholder: string;
   onChange: (value: string) => void;
+  compact?: boolean;
 }) {
   return (
     <label className="block">
-      <div className="mb-2 text-xs uppercase tracking-[0.12em] text-[color:var(--text-muted)]">
+      <div
+        className={cn(
+          "mb-2 text-[color:var(--text-muted)]",
+          compact ? "text-[11px]" : "text-xs uppercase tracking-[0.12em]",
+        )}
+      >
         {label}
       </div>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-sm text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]"
+        className={cn(
+          "w-full border border-[color:var(--border-faint)] bg-white px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.18)] focus:bg-white placeholder:text-[color:var(--text-dim)]",
+          compact
+            ? "rounded-[11px] py-2.5 text-[13px]"
+            : "rounded-[12px] py-3 text-sm",
+        )}
       />
     </label>
   );
