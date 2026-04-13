@@ -1109,13 +1109,7 @@ function GroupChatDetailsPanel({
         </div>
       ) : null}
 
-      <DesktopWechatGroupSection
-        title={
-          group
-            ? `${groupMembers.length} 人群聊 · 群主 ${ownerDisplayName}`
-            : undefined
-        }
-      >
+      <DesktopWechatGroupSection>
         {membersQuery.isLoading ? (
           <div className="px-4 py-5">
             <LoadingBlock label="正在读取群成员..." />
@@ -1172,14 +1166,6 @@ function GroupChatDetailsPanel({
               to: "/desktop/chat-files",
               hash: buildDesktopChatFilesRouteHash(conversation.id),
             });
-          }}
-        />
-        <DesktopWechatGroupRow
-          label="搜索群成员"
-          value="按昵称查找"
-          onClick={() => {
-            setMemberBrowserAutoFocusSearch(true);
-            setMemberBrowserOpen(true);
           }}
         />
       </DesktopWechatGroupSection>
@@ -1260,14 +1246,6 @@ function GroupChatDetailsPanel({
               params: { groupId: conversation.id },
             });
           }}
-        />
-      </DesktopWechatGroupSection>
-
-      <DesktopWechatGroupSection title="更多信息">
-        <DesktopWechatInfoRow label="群主" value={ownerDisplayName} />
-        <DesktopWechatInfoRow
-          label="最近活跃"
-          value={formatTimestamp(conversation.lastActivityAt) || "刚刚"}
         />
       </DesktopWechatGroupSection>
 
@@ -1628,23 +1606,6 @@ function DesktopWechatGroupRow({
         ) : null}
       </span>
     </button>
-  );
-}
-
-function DesktopWechatInfoRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex min-h-[46px] items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] px-4 py-3 text-left last:border-b-0">
-      <span className="text-[14px] text-[#111111]">{label}</span>
-      <span className="max-w-[10.5rem] truncate text-right text-[12px] text-[#8c8c8c]">
-        {value}
-      </span>
-    </div>
   );
 }
 
