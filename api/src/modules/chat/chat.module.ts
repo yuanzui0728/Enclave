@@ -11,6 +11,7 @@ import { ChatBackgroundsService } from './chat-backgrounds.service';
 import {
   ChatAttachmentController,
   ChatController,
+  ChatStickerController,
   DigitalHumanCallsController,
   FavoritesController,
   GroupController,
@@ -33,6 +34,8 @@ import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
+import { ChatCustomStickerEntity } from './custom-sticker.entity';
+import { CustomStickersService } from './custom-stickers.service';
 
 @Module({
   imports: [
@@ -47,6 +50,7 @@ import { GroupMessageEntity } from './group-message.entity';
       GroupEntity,
       GroupMemberEntity,
       GroupMessageEntity,
+      ChatCustomStickerEntity,
     ]),
   ],
   providers: [
@@ -59,10 +63,12 @@ import { GroupMessageEntity } from './group-message.entity';
     DigitalHumanCallsService,
     MockDigitalHumanProviderAdapter,
     VoiceCallsService,
+    CustomStickersService,
   ],
   controllers: [
     ChatController,
     ChatAttachmentController,
+    ChatStickerController,
     VoiceCallsController,
     DigitalHumanCallsController,
     FavoritesController,

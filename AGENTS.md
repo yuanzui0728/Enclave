@@ -90,9 +90,11 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（27个，物理表保持兼容）
+## 数据库实体（28个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
+
+**表情**：ChatCustomSticker
 
 **朋友圈**：MomentPost · MomentComment · MomentLike · MomentEntity（legacy）
 
@@ -185,6 +187,11 @@
   - `DELETE /api/groups/:id/members/:memberId`
   - `POST /api/chat/attachments`
   - `GET /api/chat/attachments/:fileName`
+  - `GET /api/chat/stickers/catalog`
+  - `POST /api/chat/stickers/custom`
+  - `POST /api/chat/stickers/custom/from-message`
+  - `DELETE /api/chat/stickers/custom/:id`
+  - `GET /api/chat/stickers/assets/:fileName`
   - `POST /api/chat/backgrounds`
   - `GET /api/chat/backgrounds/:fileName`
   - `POST /api/chat/digital-human-calls/sessions`

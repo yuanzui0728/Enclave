@@ -26,6 +26,7 @@ import {
 } from './favorites.service';
 import { GroupService } from './group.service';
 import { DigitalHumanCallsService } from './digital-human-calls.service';
+import { CustomStickersService } from './custom-stickers.service';
 import { VoiceCallsService } from './voice-calls.service';
 import {
   MessageRemindersService,
@@ -206,6 +207,92 @@ export class ChatAttachmentController {
       this.chatService.normalizeAttachmentFileName(fileName),
       {
         root: this.chatService.getAttachmentStorageDir(),
+      },
+    );
+  }
+}
+
+@Controller('chat/stickers')
+export class ChatStickerController {
+  constructor(
+    private readonly customStickersService: CustomStickersService,
+  ) {}
+
+  @Get('catalog')
+  getCatalog() {
+    return this.customStickersService.getStickerCatalog();
+  }
+
+  @Post('custom')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 6 * 1024 * 1024,
+      },
+    }),
+  )
+  createCustomSticker(
+    @UploadedFile() file: UploadedAttachmentFile | undefined,
+    @Body() body: { label?: string; keywords?: string; width?: string; height?: string },
+  ) {
+    if (!file) {
+      throw new BadRequestException('请先选择一个表情文件。');
+    }
+
+    return this.customStickersService.createCustomSticker(file, {
+      label: body.label,
+      keywords: body.keywords,
+      width: body.width ? Number(body.width) : undefined,
+      height: body.height ? Number(body.height) : undefined,
+    });
+  }
+
+  @Post('custom/from-message')
+  createCustomStickerFromMessage(
+    @Body()
+    body: {
+      threadType?: 'conversation' | 'group';
+      threadId?: string;
+      messageId?: string;
+      label?: string;
+      keywords?: string;
+    },
+  ) {
+    const threadType = body.threadType;
+    const threadId = body.threadId?.trim();
+    const messageId = body.messageId?.trim();
+
+    if (threadType !== 'conversation' && threadType !== 'group') {
+      throw new BadRequestException('缺少合法的 threadType。');
+    }
+
+    if (!threadId || !messageId) {
+      throw new BadRequestException('缺少 threadId 或 messageId。');
+    }
+
+    return this.customStickersService.createCustomStickerFromMessage({
+      threadType,
+      threadId,
+      messageId,
+      label: body.label,
+      keywords: body.keywords,
+    });
+  }
+
+  @Delete('custom/:id')
+  deleteCustomSticker(@Param('id') id: string) {
+    return this.customStickersService.deleteCustomSticker(id);
+  }
+
+  @Get('assets/:fileName')
+  getCustomStickerAsset(
+    @Param('fileName') fileName: string,
+    @Res() response: Response,
+  ) {
+    return response.sendFile(
+      this.customStickersService.normalizeCustomStickerFileName(fileName),
+      {
+        root: this.customStickersService.getCustomStickerStorageDir(),
       },
     );
   }

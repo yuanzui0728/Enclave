@@ -36,6 +36,7 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { ChatGateway } from './chat.gateway';
+import { CustomStickersService } from './custom-stickers.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -133,6 +134,7 @@ export class GroupService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
+    private readonly customStickersService: CustomStickersService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -569,7 +571,7 @@ export class GroupService {
     senderAvatar?: string,
   ): Promise<GroupMessage> {
     const group = await this.requireAccessibleGroup(groupId);
-    const normalizedInput = this.normalizeOutgoingMessageInput(input);
+    const normalizedInput = await this.normalizeOutgoingMessageInput(input);
     const message = this.messageRepo.create({
       groupId,
       senderId,
@@ -695,7 +697,9 @@ export class GroupService {
     }
   }
 
-  private normalizeOutgoingMessageInput(input: SendGroupMessageInput): {
+  private async normalizeOutgoingMessageInput(
+    input: SendGroupMessageInput,
+  ): Promise<{
     type:
       | 'text'
       | 'image'
@@ -709,15 +713,38 @@ export class GroupService {
     promptText: string;
     aiParts: AiMessagePart[];
     attachment?: MessageAttachment;
-  } {
+  }> {
+    if (input.type === 'sticker') {
+      const attachment =
+        await this.customStickersService.resolveStickerAttachment({
+          sourceType: input.attachment.sourceType,
+          packId: input.attachment.packId,
+          stickerId: input.attachment.stickerId,
+        });
+      if (!attachment) {
+        throw new NotFoundException('Sticker not found');
+      }
+
+      const fallbackText =
+        input.text?.trim() || this.getAttachmentFallbackText(attachment);
+      const promptText = this.buildMessagePromptText(fallbackText, attachment);
+
+      return {
+        type: 'sticker',
+        text: fallbackText,
+        promptText,
+        aiParts: this.buildAiParts(fallbackText, attachment),
+        attachment,
+      };
+    }
+
     if (
       input.type === 'image' ||
       input.type === 'file' ||
       input.type === 'voice' ||
       input.type === 'contact_card' ||
       input.type === 'location_card' ||
-      input.type === 'note_card' ||
-      input.type === 'sticker'
+      input.type === 'note_card'
     ) {
       if (!input.attachment || input.attachment.kind !== input.type) {
         throw new Error('Attachment payload is invalid');
