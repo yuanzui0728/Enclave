@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   AppPage,
   AppSection,
@@ -6,7 +7,6 @@ import {
   cn,
 } from "@yinjie/ui";
 import { ArrowLeft, Copy, Search, Share2 } from "lucide-react";
-import { EmptyState } from "../../components/empty-state";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 import { formatConversationTimestamp } from "../../lib/format";
 import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
@@ -162,9 +162,12 @@ export function MobileMiniProgramsWorkspace({
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+      <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         {successNotice ? (
-          <InlineNotice className="text-[12px] leading-5" tone={noticeTone}>
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone={noticeTone}
+          >
             {successNotice}
           </InlineNotice>
         ) : null}
@@ -267,10 +270,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 最近使用
               </div>
-              <div className="mt-0.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
                 模拟微信里最近打开的小程序快捷入口。
               </div>
             </div>
@@ -301,10 +304,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 我的小程序
               </div>
-              <div className="mt-0.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
                 这里承接微信式固定常用入口。
               </div>
             </div>
@@ -330,15 +333,26 @@ export function MobileMiniProgramsWorkspace({
               ))}
             </div>
           ) : (
-            <EmptyState
+            <MobileMiniProgramsStatusCard
+              badge="常用"
               title="还没有加入我的小程序"
               description="在推荐卡片或列表里点“加入常用”，这里就会像微信一样沉淀你的固定入口。"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={() => onSelectMiniProgram(selectedMiniProgram.id)}
+                >
+                  先看看当前推荐
+                </Button>
+              }
             />
           )}
         </AppSection>
 
         <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-          <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
             今日推荐
           </div>
           <div className="space-y-2.5">
@@ -377,10 +391,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                 全部小程序
               </div>
-              <div className="mt-0.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
                 {searchText
                   ? `搜索“${searchText.trim()}”命中 ${visibleMiniPrograms.length} 个结果。`
                   : "按分类浏览当前可用的小程序目录。"}
@@ -408,9 +422,23 @@ export function MobileMiniProgramsWorkspace({
               ))}
             </div>
           ) : (
-            <EmptyState
+            <MobileMiniProgramsStatusCard
+              badge="搜索"
               title="没有匹配的小程序"
               description="换个关键词，或者切回“全部”分类继续浏览。"
+              action={
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                  onClick={() => {
+                    onSearchTextChange("");
+                    onCategoryChange("all");
+                  }}
+                >
+                  清空筛选
+                </Button>
+              }
             />
           )}
         </AppSection>
@@ -429,6 +457,33 @@ function MobileMetric({ label, value }: { label: string; value: string }) {
         {value}
       </div>
     </div>
+  );
+}
+
+function MobileMiniProgramsStatusCard({
+  badge,
+  title,
+  description,
+  action,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+}) {
+  return (
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#07c160]">
+        {badge}
+      </div>
+      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
 
