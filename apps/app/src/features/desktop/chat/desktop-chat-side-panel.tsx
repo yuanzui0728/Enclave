@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import type { DesktopChatSidePanelMode } from "./desktop-chat-header-actions";
 
@@ -7,6 +7,7 @@ type DesktopChatSidePanelProps = {
   mode: Exclude<DesktopChatSidePanelMode, null>;
   title: string;
   subtitle?: string;
+  onBack?: () => void;
   onClose: () => void;
   children: ReactNode;
   className?: string;
@@ -16,6 +17,7 @@ export function DesktopChatSidePanel({
   mode,
   title,
   subtitle,
+  onBack,
   onClose,
   children,
   className,
@@ -42,7 +44,18 @@ export function DesktopChatSidePanel({
         {historyMode ? (
           <>
             <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
-              <div aria-hidden="true" className="h-7 w-7" />
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
+                  aria-label="返回聊天信息"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+              ) : (
+                <div aria-hidden="true" className="h-7 w-7" />
+              )}
               <div className="truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]">
                 {title}
               </div>
