@@ -69,13 +69,13 @@ function MobileStarredFriendsPage() {
       <TabPageTopBar
         title="星标朋友"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
                 void navigate({ to: "/tabs/contacts" });
@@ -83,7 +83,7 @@ function MobileStarredFriendsPage() {
             }
             aria-label="返回通讯录"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -91,25 +91,25 @@ function MobileStarredFriendsPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({ to: "/contacts/tags" });
             }}
             aria-label="查看联系人标签"
           >
-            <Tag size={18} />
+            <Tag size={17} />
           </Button>
         }
       >
-        <div className="pt-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
-            <Search size={15} className="shrink-0" />
+        <div className="pt-1.5">
+          <label className="flex h-7.5 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
+            <Search size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索星标朋友"
-              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -117,18 +117,18 @@ function MobileStarredFriendsPage() {
 
       <div className="pb-8">
         {friendsQuery.isLoading ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <LoadingBlock label="正在读取星标朋友..." />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
 
         {!friendsQuery.isLoading && !friendsQuery.isError && !filteredFriends.length ? (
-          <div className="px-4 pt-6">
+          <div className="px-4 pt-4">
             <EmptyState
               title={normalizedSearchText ? "没有找到匹配的星标朋友" : "还没有星标朋友"}
               description={
@@ -141,7 +141,7 @@ function MobileStarredFriendsPage() {
         ) : null}
 
         {filteredFriends.length ? (
-          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {filteredFriends.map((item, index) => (
               <button
                 key={item.character.id}
@@ -153,7 +153,7 @@ function MobileStarredFriendsPage() {
                   });
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                   index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                 )}
               >
@@ -163,12 +163,12 @@ function MobileStarredFriendsPage() {
                   size="wechat"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+                  <div className="truncate text-[14px] text-[color:var(--text-primary)]">
                     {item.character.name}
                   </div>
                 </div>
                 <Star
-                  size={16}
+                  size={14}
                   className="shrink-0 text-[#d4a72c]"
                   fill="currentColor"
                 />
