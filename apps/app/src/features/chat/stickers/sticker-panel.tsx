@@ -368,6 +368,17 @@ export function StickerPanel({
     () => new Set(collapsingStickerKeys),
     [collapsingStickerKeys],
   );
+  const focusedManageSticker = useMemo(() => {
+    if (!focusedManageDeleteKey) {
+      return null;
+    }
+
+    return (
+      activeItems.find(
+        (item) => getStickerIdentity(item.sticker) === focusedManageDeleteKey,
+      )?.sticker ?? null
+    );
+  }, [activeItems, focusedManageDeleteKey]);
   const highlightedSearchItem = useMemo(() => {
     if (!searching || searchPending || activeItems.length === 0) {
       return null;
@@ -873,6 +884,12 @@ export function StickerPanel({
               !isMobile && customManageMode && Boolean(canDelete)
             }
             deleting={collapsingStickerKeySet.has(stickerKey)}
+            deleteFocused={
+              !isMobile &&
+              customManageMode &&
+              Boolean(canDelete) &&
+              focusedManageDeleteKey === stickerKey
+            }
             deleteButtonRef={(node) => {
               if (node) {
                 manageDeleteButtonRefs.current.set(stickerKey, node);
@@ -911,6 +928,11 @@ export function StickerPanel({
             }}
             onDeleteFocus={() => {
               if (customManageKeyboardActive && canDelete) {
+                setFocusedManageDeleteKey(stickerKey);
+              }
+            }}
+            onDeleteHover={() => {
+              if (!isMobile && customManageMode && canDelete) {
                 setFocusedManageDeleteKey(stickerKey);
               }
             }}
@@ -1276,6 +1298,13 @@ export function StickerPanel({
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
                   Delete 删除
                 </span>
+                {focusedManageSticker ? (
+                  <span className="max-w-[140px] truncate rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
+                    当前：
+                    {focusedManageSticker.label ??
+                      focusedManageSticker.stickerId}
+                  </span>
+                ) : null}
                 {customDeleteFeedback?.lastDeletedLabel ? (
                   <span
                     className={`rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a] ${
@@ -1523,12 +1552,14 @@ function StickerButton({
   sticker,
   highlighted = false,
   deleting = false,
+  deleteFocused = false,
   showDelete = false,
   deleteAlwaysVisible = false,
   selectionDisabled = false,
   onDelete,
   onHover,
   onDeleteFocus,
+  onDeleteHover,
   onDeleteKeyDown,
   onSelect,
 }: {
@@ -1538,12 +1569,14 @@ function StickerButton({
   sticker: StickerAttachment;
   highlighted?: boolean;
   deleting?: boolean;
+  deleteFocused?: boolean;
   showDelete?: boolean;
   deleteAlwaysVisible?: boolean;
   selectionDisabled?: boolean;
   onDelete?: () => void;
   onHover?: () => void;
   onDeleteFocus?: () => void;
+  onDeleteHover?: () => void;
   onDeleteKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
   onSelect: (sticker: StickerAttachment) => void;
 }) {
@@ -1557,7 +1590,7 @@ function StickerButton({
               deleting
                 ? "pointer-events-none scale-[0.84] opacity-0 saturate-50"
                 : ""
-            }`
+            } ${deleteFocused ? "border-[rgba(160,90,10,0.35)]" : ""}`
           : `group relative flex flex-col items-center gap-1 rounded-[18px] border bg-white/76 p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_8px_18px_rgba(160,90,10,0.12)] ${
               highlighted
                 ? "border-[rgba(160,90,10,0.38)] bg-white shadow-[0_10px_22px_rgba(160,90,10,0.18)]"
@@ -1565,6 +1598,10 @@ function StickerButton({
             } ${
               deleting
                 ? "pointer-events-none scale-[0.8] opacity-0 saturate-50"
+                : ""
+            } ${
+              deleteFocused
+                ? "border-[rgba(160,90,10,0.42)] bg-white shadow-[0_10px_24px_rgba(160,90,10,0.16)] ring-1 ring-[rgba(160,90,10,0.18)]"
                 : ""
             }`
       }
@@ -1575,13 +1612,18 @@ function StickerButton({
             ref={deleteButtonRef}
             type="button"
             onFocus={onDeleteFocus}
+            onMouseEnter={onDeleteHover}
             onKeyDown={onDeleteKeyDown}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               onDelete();
             }}
-            className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(15,23,42,0.72)] text-white transition ${
+            className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-white transition ${
+              deleteFocused
+                ? "bg-[#9a5a0a] shadow-[0_4px_12px_rgba(160,90,10,0.28)]"
+                : "bg-[rgba(15,23,42,0.72)]"
+            } ${
               deleteAlwaysVisible
                 ? "opacity-100"
                 : "opacity-0 group-hover:opacity-100"
