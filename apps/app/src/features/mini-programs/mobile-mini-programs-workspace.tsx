@@ -174,7 +174,7 @@ export function MobileMiniProgramsWorkspace({
 
         <section
           className={cn(
-            "relative overflow-hidden rounded-[18px] p-4 shadow-none",
+            "relative overflow-hidden rounded-[16px] p-3.5 shadow-none",
             selectedTone.heroCardClassName,
           )}
         >
@@ -183,15 +183,15 @@ export function MobileMiniProgramsWorkspace({
             <div className="absolute bottom-0 left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
           </div>
           <div className="relative">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-3.5">
               <div className="min-w-0">
-                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-white/82">
+                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2 py-0.5 text-[9px] font-medium tracking-[0.12em] text-white/82">
                   {selectedMiniProgram.badge}
                 </div>
-                <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
+                <div className="mt-2.5 text-[22px] font-semibold leading-tight text-white">
                   {selectedMiniProgram.name}
                 </div>
-                <div className="mt-1.5 text-[13px] leading-[1.35rem] text-white/82">
+                <div className="mt-1 text-[12px] leading-[1.35rem] text-white/82">
                   {selectedMiniProgram.slogan}
                 </div>
               </div>
@@ -202,28 +202,28 @@ export function MobileMiniProgramsWorkspace({
               />
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
+            <div className="mt-3.5 grid grid-cols-2 gap-2">
               <MobileMetric label="最近状态" value={selectedMiniProgram.serviceLabel} />
               <MobileMetric label="更新" value={selectedMiniProgram.updateNote} />
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-1.5">
+            <div className="mt-3.5 flex flex-wrap gap-1.5">
               {selectedMiniProgram.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] text-white/82"
+                  className="rounded-full border border-white/18 bg-white/10 px-2 py-0.5 text-[9px] text-white/82"
                 >
                   {tag}
                 </span>
               ))}
             </div>
 
-            <div className="mt-4 flex gap-2.5">
+            <div className="mt-3.5 flex gap-2">
               <Button
                 variant="secondary"
                 size="lg"
                 onClick={() => onOpenMiniProgram(selectedMiniProgram.id)}
-                className="h-9 flex-1 border-white/18 bg-white text-[12px] text-[color:var(--text-primary)] hover:bg-white/92"
+                className="h-8.5 flex-1 border-white/18 bg-white px-3 text-[11px] text-[color:var(--text-primary)] hover:bg-white/92"
               >
                 打开小程序
               </Button>
@@ -231,7 +231,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onTogglePinnedMiniProgram(selectedMiniProgram.id)}
-                className="h-9 border-white/18 bg-white/10 px-3 text-[12px] text-white hover:bg-white/18"
+                className="h-8.5 border-white/18 bg-white/10 px-3 text-[11px] text-white hover:bg-white/18"
               >
                 {pinnedMiniProgramIds.includes(selectedMiniProgram.id)
                   ? "已加入"
@@ -449,11 +449,11 @@ export function MobileMiniProgramsWorkspace({
 
 function MobileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] border border-white/18 bg-white/12 px-3 py-2.5 backdrop-blur-sm">
-      <div className="text-[10px] uppercase tracking-[0.12em] text-white/68">
+    <div className="rounded-[15px] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
+      <div className="text-[9px] uppercase tracking-[0.12em] text-white/68">
         {label}
       </div>
-      <div className="mt-1.5 text-[13px] font-medium leading-5 text-white">
+      <div className="mt-1 text-[12px] font-medium leading-5 text-white">
         {value}
       </div>
     </div>
