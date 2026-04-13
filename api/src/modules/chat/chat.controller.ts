@@ -37,6 +37,7 @@ import type {
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
+  NoteCardAttachment,
   StickerAttachment,
 } from './chat.types';
 
@@ -684,6 +685,11 @@ export class GroupController {
           type: 'location_card';
           text?: string;
           attachment: LocationCardAttachment;
+        }
+      | {
+          type: 'note_card';
+          text?: string;
+          attachment: NoteCardAttachment;
         }
       | {
           type: 'sticker';

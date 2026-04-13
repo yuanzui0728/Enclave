@@ -91,7 +91,8 @@ type FavoriteMessageSnapshot = {
     | 'file'
     | 'voice'
     | 'contact_card'
-    | 'location_card';
+    | 'location_card'
+    | 'note_card';
   attachment?: MessageAttachment;
   createdAt: Date;
 };
@@ -405,6 +406,12 @@ export class FavoritesService {
       return snapshot.attachment?.kind === 'location_card'
         ? `[位置] ${snapshot.attachment.title}`
         : '[位置]';
+    }
+
+    if (snapshot.type === 'note_card') {
+      return snapshot.attachment?.kind === 'note_card'
+        ? `[笔记] ${snapshot.attachment.title}`
+        : '[笔记]';
     }
 
     if (snapshot.type === 'sticker') {

@@ -26,6 +26,7 @@ import {
   ImageAttachment,
   LocationCardAttachment,
   MessageAttachment,
+  NoteCardAttachment,
   StickerAttachment,
   VoiceAttachment,
 } from './chat.types';
@@ -100,6 +101,11 @@ type SendGroupMessageInput =
       type: 'location_card';
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      type: 'note_card';
+      text?: string;
+      attachment: NoteCardAttachment;
     }
   | {
       type: 'sticker';
@@ -697,6 +703,7 @@ export class GroupService {
       | 'voice'
       | 'contact_card'
       | 'location_card'
+      | 'note_card'
       | 'sticker';
     text: string;
     promptText: string;
@@ -709,6 +716,7 @@ export class GroupService {
       input.type === 'voice' ||
       input.type === 'contact_card' ||
       input.type === 'location_card' ||
+      input.type === 'note_card' ||
       input.type === 'sticker'
     ) {
       if (!input.attachment || input.attachment.kind !== input.type) {
@@ -834,6 +842,10 @@ export class GroupService {
       ];
     }
 
+    if (attachment.kind === 'note_card') {
+      return this.buildTextAiParts(promptText);
+    }
+
     return [
       {
         type: 'text',
@@ -890,6 +902,18 @@ export class GroupService {
       return `分享了一个位置：${attachment.title}${attachment.subtitle ? `，${attachment.subtitle}` : ''}`.trim();
     }
 
+    if (attachment.kind === 'note_card') {
+      const detailParts = [
+        `分享了一条笔记：${attachment.title}`,
+        attachment.excerpt ? `摘要：${attachment.excerpt}` : '',
+        attachment.tags.length
+          ? `标签：${attachment.tags.map((tag) => `#${tag}`).join(' ')}`
+          : '',
+      ].filter(Boolean);
+      const captionText = caption ? `，补充说明：${caption}` : '';
+      return `${detailParts.join('，')}${captionText}`.trim();
+    }
+
     return caption
       ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`
       : `发送了一个表情包：${attachment.label ?? attachment.stickerId}`;
@@ -920,6 +944,10 @@ export class GroupService {
       return `[位置] ${attachment.title}`.trim();
     }
 
+    if (attachment.kind === 'note_card') {
+      return `[笔记] ${attachment.title}`.trim();
+    }
+
     return `[表情] ${attachment.label ?? attachment.stickerId}`.trim();
   }
 
@@ -939,7 +967,8 @@ export class GroupService {
         | 'file'
         | 'voice'
         | 'contact_card'
-        | 'location_card',
+        | 'location_card'
+        | 'note_card',
       text:
         entity.senderType === 'user'
           ? entity.text

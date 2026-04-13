@@ -4,6 +4,7 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
   MessageAttachment,
+  NoteCardAttachment,
   StickerAttachment,
   UploadableAttachment,
   VoiceAttachment,
@@ -20,7 +21,8 @@ export type MessageType =
   | "file"
   | "voice"
   | "contact_card"
-  | "location_card";
+  | "location_card"
+  | "note_card";
 export type GroupMemberType = "user" | "character";
 export type ChatMessageSearchCategory = "all" | "media" | "files" | "links";
 
@@ -242,6 +244,13 @@ export type SendGroupMessageRequest =
       type: "location_card";
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      senderId?: string;
+      senderType?: GroupMemberType;
+      type: "note_card";
+      text?: string;
+      attachment: NoteCardAttachment;
     }
   | {
       senderId?: string;

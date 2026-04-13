@@ -19,6 +19,7 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
   Message,
+  NoteCardAttachment,
 } from './chat.types';
 
 type SendMessagePayload =
@@ -65,6 +66,13 @@ type SendMessagePayload =
       type: 'location_card';
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: 'note_card';
+      text?: string;
+      attachment: NoteCardAttachment;
     };
 
 const configuredSocketOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',')
@@ -146,6 +154,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
               ? (payload.text ?? `[名片] ${payload.attachment.name}`)
               : payload.type === 'location_card'
                 ? (payload.text ?? `[位置] ${payload.attachment.title}`)
+                : payload.type === 'note_card'
+                  ? (payload.text ?? `[笔记] ${payload.attachment.title}`)
                 : payload.text;
 
     try {

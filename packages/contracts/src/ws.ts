@@ -3,6 +3,7 @@ import type {
   FileAttachment,
   ImageAttachment,
   LocationCardAttachment,
+  NoteCardAttachment,
   VoiceAttachment,
 } from "./attachments";
 import type { GroupMessage, Message } from "./chat";
@@ -77,6 +78,13 @@ export type SendMessagePayload =
       type: "location_card";
       text?: string;
       attachment: LocationCardAttachment;
+    }
+  | {
+      conversationId: string;
+      characterId: string;
+      type: "note_card";
+      text?: string;
+      attachment: NoteCardAttachment;
     };
 
 export interface TypingPayload {

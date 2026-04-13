@@ -51,13 +51,35 @@ export interface LocationCardAttachment {
   subtitle?: string;
 }
 
+export interface NoteCardAttachmentAsset {
+  id: string;
+  kind: 'image' | 'file';
+  fileName: string;
+  url: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface NoteCardAttachment {
+  kind: 'note_card';
+  noteId: string;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  assets: NoteCardAttachmentAsset[];
+  updatedAt: string;
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
   | FileAttachment
   | VoiceAttachment
   | ContactCardAttachment
-  | LocationCardAttachment;
+  | LocationCardAttachment
+  | NoteCardAttachment;
 
 export interface Message {
   id: string;
@@ -74,7 +96,8 @@ export interface Message {
     | 'file'
     | 'voice'
     | 'contact_card'
-    | 'location_card';
+    | 'location_card'
+    | 'note_card';
   text: string;
   attachment?: MessageAttachment;
   createdAt: Date;
@@ -95,7 +118,8 @@ export interface GroupMessage {
     | 'file'
     | 'voice'
     | 'contact_card'
-    | 'location_card';
+    | 'location_card'
+    | 'note_card';
   text: string;
   attachment?: MessageAttachment;
   createdAt: Date;

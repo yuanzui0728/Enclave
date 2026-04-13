@@ -1,3 +1,5 @@
+import type { FavoriteNoteAsset } from "./favorites";
+
 export interface StickerAttachment {
   kind: "sticker";
   packId: string;
@@ -51,13 +53,24 @@ export interface LocationCardAttachment {
   subtitle?: string;
 }
 
+export interface NoteCardAttachment {
+  kind: "note_card";
+  noteId: string;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  assets: FavoriteNoteAsset[];
+  updatedAt: string;
+}
+
 export type MessageAttachment =
   | StickerAttachment
   | ImageAttachment
   | FileAttachment
   | VoiceAttachment
   | ContactCardAttachment
-  | LocationCardAttachment;
+  | LocationCardAttachment
+  | NoteCardAttachment;
 
 export type UploadableAttachment =
   | ImageAttachment
