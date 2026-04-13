@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Newspaper, Search } from "lucide-react";
 import { listOfficialAccounts } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
@@ -77,6 +77,20 @@ function MobileOfficialAccountsPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
           >
             <ArrowLeft size={18} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            onClick={() => {
+              void navigate({ to: "/chat/subscription-inbox" });
+            }}
+            aria-label="打开订阅号消息"
+          >
+            <Newspaper size={18} />
           </Button>
         }
       >
