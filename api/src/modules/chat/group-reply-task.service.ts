@@ -20,10 +20,13 @@ import {
 } from './group-reply.types';
 import {
   buildGroupReplyIssueSummaryFromTasks,
+  createEmptyGroupReplyTaskArchiveActorStat,
   createEmptyGroupReplyTaskArchiveBucket,
+  createEmptyGroupReplyTaskArchiveDailyStat,
   createEmptyGroupReplyTaskArchiveStore,
   GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
   mergeGroupReplyIssueSummaries,
+  normalizeGroupReplyTaskArchiveStore,
   type GroupReplyTaskArchiveStore,
 } from './group-reply-task-observability';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
@@ -589,6 +592,7 @@ export class GroupReplyTaskService {
   ) {
     bucket.archivedTaskCount += tasks.length;
     bucket.archivedTurnCount += new Set(tasks.map((task) => task.turnId)).size;
+    const turnIdsByDate = new Map<string, Set<string>>();
 
     for (const task of tasks) {
       if (task.status === 'sent') {
@@ -598,6 +602,51 @@ export class GroupReplyTaskService {
       } else if (task.status === 'failed') {
         bucket.statusCounts.failed += 1;
       }
+
+      const archiveDate = task.triggerMessageCreatedAt
+        .toISOString()
+        .slice(0, 10);
+      const dailyStat =
+        bucket.dailyStats[archiveDate] ??
+        createEmptyGroupReplyTaskArchiveDailyStat(archiveDate);
+      dailyStat.taskCount += 1;
+      if (task.status === 'sent') {
+        dailyStat.statusCounts.sent += 1;
+      } else if (task.status === 'cancelled') {
+        dailyStat.statusCounts.cancelled += 1;
+      } else if (task.status === 'failed') {
+        dailyStat.statusCounts.failed += 1;
+      }
+      bucket.dailyStats[archiveDate] = dailyStat;
+
+      const turnIds = turnIdsByDate.get(archiveDate) ?? new Set<string>();
+      turnIds.add(task.turnId);
+      turnIdsByDate.set(archiveDate, turnIds);
+
+      const actorStat =
+        bucket.actorStats[task.actorCharacterId] ??
+        createEmptyGroupReplyTaskArchiveActorStat(
+          task.actorCharacterId,
+          task.actorName,
+        );
+      actorStat.actorName = task.actorName;
+      actorStat.taskCount += 1;
+      if (task.status === 'sent') {
+        actorStat.statusCounts.sent += 1;
+      } else if (task.status === 'cancelled') {
+        actorStat.statusCounts.cancelled += 1;
+      } else if (task.status === 'failed') {
+        actorStat.statusCounts.failed += 1;
+      }
+      bucket.actorStats[task.actorCharacterId] = actorStat;
+    }
+
+    for (const [date, turnIds] of turnIdsByDate.entries()) {
+      const dailyStat =
+        bucket.dailyStats[date] ??
+        createEmptyGroupReplyTaskArchiveDailyStat(date);
+      dailyStat.turnCount += turnIds.size;
+      bucket.dailyStats[date] = dailyStat;
     }
 
     bucket.issueSummary = mergeGroupReplyIssueSummaries(
@@ -618,36 +667,7 @@ export class GroupReplyTaskService {
     }
 
     try {
-      const parsed = JSON.parse(raw) as GroupReplyTaskArchiveStore;
-      if (parsed?.version === 1) {
-        const emptyBucket = createEmptyGroupReplyTaskArchiveBucket();
-        return {
-          version: 1,
-          global: {
-            ...emptyBucket,
-            ...parsed.global,
-            statusCounts: {
-              ...emptyBucket.statusCounts,
-              ...(parsed.global?.statusCounts ?? {}),
-            },
-            issueSummary: parsed.global?.issueSummary ?? [],
-          },
-          groups: Object.fromEntries(
-            Object.entries(parsed.groups ?? {}).map(([groupId, value]) => [
-              groupId,
-              {
-                ...emptyBucket,
-                ...value,
-                statusCounts: {
-                  ...emptyBucket.statusCounts,
-                  ...(value?.statusCounts ?? {}),
-                },
-                issueSummary: value?.issueSummary ?? [],
-              },
-            ]),
-          ),
-        };
-      }
+      return normalizeGroupReplyTaskArchiveStore(JSON.parse(raw));
     } catch {
       // ignore invalid archived stats payload and recreate it
     }

@@ -13,9 +13,10 @@ import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
 import { GroupReplyTaskService } from '../chat/group-reply-task.service';
 import {
   buildGroupReplyIssueSummaryFromTasks,
-  createEmptyGroupReplyTaskArchiveBucket,
-  createEmptyGroupReplyTaskArchiveStore,
+  calculateGroupReplyCancelRate,
+  calculateGroupReplyFailureRate,
   GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+  normalizeGroupReplyTaskArchiveStore,
   type GroupReplyTaskArchiveStore,
 } from '../chat/group-reply-task-observability';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
@@ -36,6 +37,8 @@ import type {
   ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
   ReplyLogicGroupReplyArchiveSummary,
+  ReplyLogicGroupReplyArchiveActorSummary,
+  ReplyLogicGroupReplyArchiveTrendPoint,
   ReplyLogicGroupReplyCandidateSummary,
   ReplyLogicGroupReplyIssueSummary,
   ReplyLogicGroupReplyRuntimeSummary,
@@ -1265,45 +1268,16 @@ export class ReplyLogicAdminService {
       GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
     );
     if (!raw) {
-      return createEmptyGroupReplyTaskArchiveStore();
+      return normalizeGroupReplyTaskArchiveStore(null);
     }
 
     try {
-      const parsed = JSON.parse(raw) as GroupReplyTaskArchiveStore;
-      if (parsed?.version === 1) {
-        const emptyBucket = createEmptyGroupReplyTaskArchiveBucket();
-        return {
-          version: 1,
-          global: {
-            ...emptyBucket,
-            ...parsed.global,
-            statusCounts: {
-              ...emptyBucket.statusCounts,
-              ...(parsed.global?.statusCounts ?? {}),
-            },
-            issueSummary: parsed.global?.issueSummary ?? [],
-          },
-          groups: Object.fromEntries(
-            Object.entries(parsed.groups ?? {}).map(([storedGroupId, value]) => [
-              storedGroupId,
-              {
-                ...emptyBucket,
-                ...value,
-                statusCounts: {
-                  ...emptyBucket.statusCounts,
-                  ...(value?.statusCounts ?? {}),
-                },
-                issueSummary: value?.issueSummary ?? [],
-              },
-            ]),
-          ),
-        };
-      }
+      return normalizeGroupReplyTaskArchiveStore(JSON.parse(raw));
     } catch {
       // ignore invalid archived stats payload and recreate it
     }
 
-    return createEmptyGroupReplyTaskArchiveStore();
+    return normalizeGroupReplyTaskArchiveStore(null);
   }
 
   private toGroupReplyArchiveSummary(
@@ -1315,17 +1289,56 @@ export class ReplyLogicAdminService {
       return null;
     }
 
-    const terminalTaskCount =
-      bucket.statusCounts.sent +
-      bucket.statusCounts.cancelled +
-      bucket.statusCounts.failed;
-
     return {
       archivedTaskCount: bucket.archivedTaskCount,
       archivedTurnCount: bucket.archivedTurnCount,
       statusCounts: { ...bucket.statusCounts },
-      failureRate:
-        terminalTaskCount > 0 ? bucket.statusCounts.failed / terminalTaskCount : 0,
+      failureRate: calculateGroupReplyFailureRate(bucket.statusCounts),
+      cancelRate: calculateGroupReplyCancelRate(bucket.statusCounts),
+      trend: Object.values(bucket.dailyStats)
+        .sort((left, right) => left.date.localeCompare(right.date))
+        .slice(-14)
+        .map(
+          (item): ReplyLogicGroupReplyArchiveTrendPoint => ({
+            date: item.date,
+            taskCount: item.taskCount,
+            turnCount: item.turnCount,
+            sentCount: item.statusCounts.sent,
+            cancelledCount: item.statusCounts.cancelled,
+            failedCount: item.statusCounts.failed,
+            failureRate: calculateGroupReplyFailureRate(item.statusCounts),
+            cancelRate: calculateGroupReplyCancelRate(item.statusCounts),
+          }),
+        ),
+      actorSummary: Object.values(bucket.actorStats)
+        .sort((left, right) => {
+          const rightIssueCount =
+            right.statusCounts.failed + right.statusCounts.cancelled;
+          const leftIssueCount =
+            left.statusCounts.failed + left.statusCounts.cancelled;
+          if (rightIssueCount !== leftIssueCount) {
+            return rightIssueCount - leftIssueCount;
+          }
+          return right.taskCount - left.taskCount;
+        })
+        .slice(0, 8)
+        .map(
+          (item): ReplyLogicGroupReplyArchiveActorSummary => ({
+            actorCharacterId: item.actorCharacterId,
+            actorName: item.actorName,
+            taskCount: item.taskCount,
+            sentCount: item.statusCounts.sent,
+            cancelledCount: item.statusCounts.cancelled,
+            failedCount: item.statusCounts.failed,
+            failureRate: calculateGroupReplyFailureRate(item.statusCounts),
+            cancelRate: calculateGroupReplyCancelRate(item.statusCounts),
+            issueRate:
+              item.taskCount > 0
+                ? (item.statusCounts.failed + item.statusCounts.cancelled) /
+                  item.taskCount
+                : 0,
+          }),
+        ),
       issueSummary: bucket.issueSummary,
       lastArchivedAt: bucket.lastArchivedAt ?? null,
       lastCutoff: bucket.lastCutoff ?? null,
