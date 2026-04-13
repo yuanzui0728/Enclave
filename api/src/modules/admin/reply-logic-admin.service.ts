@@ -11,6 +11,13 @@ import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
 import { GroupReplyTaskService } from '../chat/group-reply-task.service';
+import {
+  buildGroupReplyIssueSummaryFromTasks,
+  createEmptyGroupReplyTaskArchiveBucket,
+  createEmptyGroupReplyTaskArchiveStore,
+  GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+  type GroupReplyTaskArchiveStore,
+} from '../chat/group-reply-task-observability';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { SystemConfigService } from '../config/config.service';
 import { PromptBuilderService } from '../ai/prompt-builder.service';
@@ -28,6 +35,7 @@ import type {
   ReplyLogicCharacterSnapshot,
   ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
+  ReplyLogicGroupReplyArchiveSummary,
   ReplyLogicGroupReplyCandidateSummary,
   ReplyLogicGroupReplyIssueSummary,
   ReplyLogicGroupReplyRuntimeSummary,
@@ -1067,7 +1075,7 @@ export class ReplyLogicAdminService {
   private async loadGroupReplyRuntime(
     groupId: string,
   ): Promise<ReplyLogicGroupReplyRuntimeSummary> {
-    const [pendingTaskCount, processingTaskCount, failedTaskCount, taskEntities] =
+    const [pendingTaskCount, processingTaskCount, failedTaskCount, taskEntities, archiveStore] =
       await Promise.all([
         this.groupReplyTaskRepo.count({
           where: { groupId, status: 'pending' },
@@ -1086,6 +1094,7 @@ export class ReplyLogicAdminService {
           },
           take: 96,
         }),
+        this.readGroupReplyArchiveStore(),
       ]);
 
     const tasksByTurn = new Map<string, GroupReplyTaskEntity[]>();
@@ -1098,12 +1107,13 @@ export class ReplyLogicAdminService {
     const recentTurns = [...tasksByTurn.values()]
       .slice(0, 8)
       .map((tasks) => this.toGroupReplyTurnSummary(tasks));
-    const issueSummary = this.buildGroupReplyIssueSummary(taskEntities);
+    const issueSummary = buildGroupReplyIssueSummaryFromTasks(taskEntities, 8);
 
     return {
       pendingTaskCount,
       processingTaskCount,
       failedTaskCount,
+      archiveSummary: this.toGroupReplyArchiveSummary(groupId, archiveStore),
       issueSummary,
       recentTurns,
       notes: [
@@ -1250,64 +1260,76 @@ export class ReplyLogicAdminService {
     }
   }
 
-  private buildGroupReplyIssueSummary(
-    tasks: GroupReplyTaskEntity[],
-  ): ReplyLogicGroupReplyIssueSummary[] {
-    const issueCounts = new Map<string, ReplyLogicGroupReplyIssueSummary>();
-
-    for (const task of tasks) {
-      if (task.status === 'cancelled' && task.cancelReason) {
-        const key = `cancel:${task.cancelReason}`;
-        const existing = issueCounts.get(key);
-        issueCounts.set(key, {
-          key,
-          label: this.formatGroupReplyIssueLabel('cancel_reason', task.cancelReason),
-          source: 'cancel_reason',
-          status: 'cancelled',
-          count: (existing?.count ?? 0) + 1,
-        });
-      }
-
-      if (task.status === 'failed' && task.errorMessage) {
-        const normalizedError = this.normalizeGroupReplyErrorMessage(
-          task.errorMessage,
-        );
-        const key = `error:${normalizedError}`;
-        const existing = issueCounts.get(key);
-        issueCounts.set(key, {
-          key,
-          label: this.formatGroupReplyIssueLabel('error_message', normalizedError),
-          source: 'error_message',
-          status: 'failed',
-          count: (existing?.count ?? 0) + 1,
-        });
-      }
+  private async readGroupReplyArchiveStore(): Promise<GroupReplyTaskArchiveStore> {
+    const raw = await this.systemConfig.getConfig(
+      GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+    );
+    if (!raw) {
+      return createEmptyGroupReplyTaskArchiveStore();
     }
 
-    return [...issueCounts.values()]
-      .sort((left, right) => right.count - left.count)
-      .slice(0, 8);
-  }
-
-  private normalizeGroupReplyErrorMessage(message: string) {
-    return message.trim().slice(0, 80) || 'unknown_error';
-  }
-
-  private formatGroupReplyIssueLabel(
-    source: ReplyLogicGroupReplyIssueSummary['source'],
-    value: string,
-  ) {
-    if (source === 'cancel_reason') {
-      if (value === 'superseded_by_new_user_message') {
-        return '新用户消息覆盖了旧轮任务';
+    try {
+      const parsed = JSON.parse(raw) as GroupReplyTaskArchiveStore;
+      if (parsed?.version === 1) {
+        const emptyBucket = createEmptyGroupReplyTaskArchiveBucket();
+        return {
+          version: 1,
+          global: {
+            ...emptyBucket,
+            ...parsed.global,
+            statusCounts: {
+              ...emptyBucket.statusCounts,
+              ...(parsed.global?.statusCounts ?? {}),
+            },
+            issueSummary: parsed.global?.issueSummary ?? [],
+          },
+          groups: Object.fromEntries(
+            Object.entries(parsed.groups ?? {}).map(([storedGroupId, value]) => [
+              storedGroupId,
+              {
+                ...emptyBucket,
+                ...value,
+                statusCounts: {
+                  ...emptyBucket.statusCounts,
+                  ...(value?.statusCounts ?? {}),
+                },
+                issueSummary: value?.issueSummary ?? [],
+              },
+            ]),
+          ),
+        };
       }
-      if (value === 'actor_missing') {
-        return '角色缺失或画像不可用';
-      }
-      return value;
+    } catch {
+      // ignore invalid archived stats payload and recreate it
     }
 
-    return value;
+    return createEmptyGroupReplyTaskArchiveStore();
+  }
+
+  private toGroupReplyArchiveSummary(
+    groupId: string,
+    store: GroupReplyTaskArchiveStore,
+  ): ReplyLogicGroupReplyArchiveSummary | null {
+    const bucket = store.groups[groupId];
+    if (!bucket || bucket.archivedTaskCount < 1) {
+      return null;
+    }
+
+    const terminalTaskCount =
+      bucket.statusCounts.sent +
+      bucket.statusCounts.cancelled +
+      bucket.statusCounts.failed;
+
+    return {
+      archivedTaskCount: bucket.archivedTaskCount,
+      archivedTurnCount: bucket.archivedTurnCount,
+      statusCounts: { ...bucket.statusCounts },
+      failureRate:
+        terminalTaskCount > 0 ? bucket.statusCounts.failed / terminalTaskCount : 0,
+      issueSummary: bucket.issueSummary,
+      lastArchivedAt: bucket.lastArchivedAt ?? null,
+      lastCutoff: bucket.lastCutoff ?? null,
+    };
   }
 
   private async loadNarrativeArcs(ownerId: string, characterIds: string[]) {

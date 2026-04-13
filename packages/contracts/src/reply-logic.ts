@@ -547,6 +547,7 @@ export interface ReplyLogicGroupReplyRuntimeSummary {
   pendingTaskCount: number;
   processingTaskCount: number;
   failedTaskCount: number;
+  archiveSummary?: ReplyLogicGroupReplyArchiveSummary | null;
   issueSummary: ReplyLogicGroupReplyIssueSummary[];
   recentTurns: ReplyLogicGroupReplyTurnSummary[];
   notes: string[];
@@ -584,6 +585,20 @@ export interface ReplyLogicGroupReplyIssueSummary {
   source: "cancel_reason" | "error_message";
   status: "cancelled" | "failed";
   count: number;
+}
+
+export interface ReplyLogicGroupReplyArchiveSummary {
+  archivedTaskCount: number;
+  archivedTurnCount: number;
+  statusCounts: {
+    sent: number;
+    cancelled: number;
+    failed: number;
+  };
+  failureRate: number;
+  issueSummary: ReplyLogicGroupReplyIssueSummary[];
+  lastArchivedAt?: string | null;
+  lastCutoff?: string | null;
 }
 
 export interface ReplyLogicPreviewRequest {
