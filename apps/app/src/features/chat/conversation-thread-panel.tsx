@@ -304,14 +304,8 @@ export function ConversationThreadPanel({
       }`}
     >
       {isDesktop ? (
-        <header className="relative z-20 flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-3 backdrop-blur-xl">
-          <button
-            type="button"
-            onClick={() => onToggleDesktopDetails?.()}
-            className="min-w-0 flex-1 rounded-[10px] px-1 py-1 text-left transition hover:bg-[color:var(--surface-console)]"
-            aria-label="打开聊天信息"
-            title="打开聊天信息"
-          >
+        <header className="relative z-20 flex items-center gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white px-6 py-3">
+          <div className="min-w-0 flex-1 px-1 py-1">
             <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
               {conversationTitle}
             </div>
@@ -321,7 +315,7 @@ export function ConversationThreadPanel({
                 <span>{subtitle}</span>
               </div>
             ) : null}
-          </button>
+          </div>
 
           <div className="hidden items-center xl:flex">
             <DesktopChatHeaderActions

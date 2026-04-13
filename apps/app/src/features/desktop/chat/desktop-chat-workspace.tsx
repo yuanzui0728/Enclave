@@ -1185,8 +1185,8 @@ export function DesktopChatWorkspace({
       {activeConversation && rightPanelMode ? (
         <DesktopChatSidePanel
           mode={rightPanelMode}
-          title={rightPanelMode === "history" ? "聊天记录" : "聊天信息"}
-          subtitle={activeConversation.title}
+          title={activeConversation.title}
+          subtitle={rightPanelMode === "history" ? "聊天记录" : "聊天信息"}
           onClose={() => {
             setRightPanelMode(null);
             setDetailsAnnouncementRequest(null);

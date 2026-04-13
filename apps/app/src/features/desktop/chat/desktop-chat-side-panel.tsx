@@ -23,35 +23,30 @@ export function DesktopChatSidePanel({
   return (
     <aside
       className={cn(
-        "absolute bottom-0 right-0 top-[64px] z-20 hidden w-[340px] border-l border-[color:var(--border-faint)] bg-[rgba(249,251,251,0.96)] shadow-[-14px_0_36px_rgba(15,23,42,0.06)] backdrop-blur-xl xl:flex xl:flex-col",
+        "absolute bottom-0 right-0 top-[64px] z-20 hidden w-[340px] border-l border-[rgba(0,0,0,0.06)] bg-[#f5f5f5] xl:flex xl:flex-col",
         className,
       )}
       data-mode={mode}
     >
-      <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-3 backdrop-blur-xl">
+      <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#f5f5f5] px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-              {mode === "history" ? "聊天记录面板" : "聊天信息面板"}
-            </div>
-            <div className="mt-1 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
               {title}
+            </div>
+            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+              {subtitle ?? (mode === "history" ? "聊天记录" : "聊天信息")}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
             aria-label="关闭侧栏"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
-        {subtitle ? (
-          <div className="mt-2 truncate text-[12px] text-[color:var(--text-muted)]">
-            {subtitle}
-          </div>
-        ) : null}
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">{children}</div>

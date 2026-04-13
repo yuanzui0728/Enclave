@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Info, Phone, Search, Video } from "lucide-react";
+import { MoreHorizontal, Phone, Search, Video } from "lucide-react";
 import { cn } from "@yinjie/ui";
 
 export type DesktopChatSidePanelMode = "history" | "details" | null;
@@ -87,10 +87,10 @@ export function DesktopChatHeaderActions({
 
       <DesktopChatHeaderButton
         active={activePanelMode === "details"}
-        label="聊天信息"
+        label="更多"
         onClick={() => onToggleDetails?.()}
       >
-        <Info size={16} />
+        <MoreHorizontal size={16} />
       </DesktopChatHeaderButton>
     </div>
   );
@@ -114,10 +114,10 @@ function DesktopChatHeaderButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex h-[36px] w-[36px] items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,box-shadow,color]",
+        "flex h-8 w-8 items-center justify-center rounded-[8px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color]",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-white text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
-          : "hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+          ? "bg-[rgba(0,0,0,0.055)] text-[color:var(--text-primary)]"
+          : "hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}
