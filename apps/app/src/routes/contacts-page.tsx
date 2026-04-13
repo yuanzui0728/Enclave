@@ -1,4 +1,11 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -53,6 +60,10 @@ import {
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../features/contacts/contact-utils";
+import {
+  DesktopSearchDropdownPanel,
+  useDesktopSearchLauncher,
+} from "../features/search/desktop-search-launcher";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -133,6 +144,10 @@ export function ContactsPage() {
   >(null);
   const previousBaseUrlRef = useRef(baseUrl);
   const startChatResetRef = useRef<() => void>(() => {});
+  const desktopSearchLauncher = useDesktopSearchLauncher({
+    keyword: searchText,
+    source: "contacts",
+  });
   const effectiveSearchText = isDesktopLayout ? searchText : "";
   const deferredSearchText = useDeferredValue(effectiveSearchText);
 
@@ -592,6 +607,15 @@ export function ContactsPage() {
     void navigate({ to });
   }
 
+  function handleDesktopSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    desktopSearchLauncher.openSearch();
+  }
+
   function handleMobileQuickActionNavigate(to: "/group/new" | "/friend-requests") {
     setIsQuickMenuOpen(false);
     setNotice(null);
@@ -764,16 +788,33 @@ export function ContactsPage() {
                   </div>
                 </div>
 
-                <label className="mt-3 flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
-                  <Search size={15} className="shrink-0" />
-                  <input
-                    type="search"
-                    value={searchText}
-                    onChange={(event) => setSearchText(event.target.value)}
-                    placeholder="搜索"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
-                  />
-                </label>
+                <div
+                  ref={desktopSearchLauncher.containerRef}
+                  className="relative mt-3"
+                >
+                  <label
+                    onClick={() => desktopSearchLauncher.setIsOpen(true)}
+                    className="flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none"
+                  >
+                    <Search size={15} className="shrink-0" />
+                    <input
+                      type="search"
+                      value={searchText}
+                      onChange={(event) => setSearchText(event.target.value)}
+                      onFocus={() => desktopSearchLauncher.setIsOpen(true)}
+                      onKeyDown={handleDesktopSearchKeyDown}
+                      placeholder="搜索"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                    />
+                  </label>
+                  {desktopSearchLauncher.isOpen ? (
+                    <DesktopSearchDropdownPanel
+                      history={desktopSearchLauncher.history}
+                      keyword={searchText}
+                      onOpenSearch={desktopSearchLauncher.openSearch}
+                    />
+                  ) : null}
+                </div>
               </div>
 
               <div className="px-3 py-3">
