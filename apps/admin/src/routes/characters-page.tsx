@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { getSystemStatus, listCharacters, type Character } from "@yinjie/contracts";
+import { listCharacters, type Character } from "@yinjie/contracts";
 import {
   Button,
   Card,
@@ -23,7 +23,6 @@ import {
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
-import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 function relationshipTone(type: Character["relationshipType"]) {
   switch (type) {
@@ -54,14 +53,6 @@ export function CharactersPage() {
     queryKey: ["admin-character-presets", baseUrl],
     queryFn: () => adminApi.listCharacterPresets(),
   });
-  const systemStatusQuery = useQuery({
-    queryKey: ["admin-characters-system-status", baseUrl],
-    queryFn: () => getSystemStatus(baseUrl),
-  });
-  const digitalHumanSummary = buildDigitalHumanAdminSummary(
-    systemStatusQuery.data?.digitalHumanGateway,
-  );
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteCharacter(id),
     onSuccess: async () => {
@@ -137,15 +128,6 @@ export function CharactersPage() {
     });
   }, [charactersQuery.data, deferredSearch, relationshipFilter, sourceFilter, statusFilter]);
 
-  const sourceCounts = useMemo(() => {
-    const list = charactersQuery.data ?? [];
-    return {
-      defaultSeed: list.filter((item) => item.sourceType === "default_seed").length,
-      presetCatalog: list.filter((item) => item.sourceType === "preset_catalog").length,
-      manualAdmin: list.filter((item) => (item.sourceType ?? "manual_admin") === "manual_admin").length,
-    };
-  }, [charactersQuery.data]);
-
   const presetGroups = useMemo(() => {
     const groups = new Map<
       string,
@@ -213,27 +195,6 @@ export function CharactersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminCallout
-        title="角色运营路径"
-        description="先筛角色，再在中间看摘要，右侧直接进入编辑、工厂和运行逻辑台。"
-        tone="muted"
-      />
-      <AdminCallout
-        title={
-          digitalHumanSummary.ready
-            ? "数字人链路已进入可联调状态"
-            : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
-        }
-        description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
-        tone={digitalHumanSummary.ready ? "success" : "warning"}
-        actions={
-          digitalHumanSummary.ready ? null : (
-            <Link to="/setup">
-              <Button variant="secondary">前往设置页补齐配置</Button>
-            </Link>
-          )
-        }
-      />
 
       {charactersQuery.isLoading ? <LoadingBlock label="正在加载角色名册..." /> : null}
       {charactersQuery.isError && charactersQuery.error instanceof Error ? <ErrorBlock message={charactersQuery.error.message} /> : null}
@@ -273,19 +234,20 @@ export function CharactersPage() {
             </Link>
           </div>
 
-          <div className="mt-4 space-y-3">
-            <TextField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索角色、关系或擅长领域" />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <SelectField value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "online" | "offline")}>
+          <div className="mt-4 space-y-2">
+            <TextField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索角色名、关系或领域" />
+            <div className="flex gap-2">
+              <SelectField value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "all" | "online" | "offline")} className="flex-1">
                 <option value="all">全部状态</option>
-                <option value="online">仅看在线</option>
-                <option value="offline">仅看离线</option>
+                <option value="online">在线</option>
+                <option value="offline">离线</option>
               </SelectField>
               <SelectField
                 value={relationshipFilter}
                 onChange={(event) => setRelationshipFilter(event.target.value as Character["relationshipType"] | "all")}
+                className="flex-1"
               >
-                <option value="all">全部关系类型</option>
+                <option value="all">全部关系</option>
                 <option value="family">家人</option>
                 <option value="friend">朋友</option>
                 <option value="expert">专家</option>
@@ -295,48 +257,53 @@ export function CharactersPage() {
               <SelectField
                 value={sourceFilter}
                 onChange={(event) => setSourceFilter(event.target.value as Character["sourceType"] | "all")}
+                className="flex-1"
               >
                 <option value="all">全部来源</option>
-                <option value="default_seed">默认保底</option>
-                <option value="preset_catalog">名人预设</option>
-                <option value="manual_admin">后台手工</option>
+                <option value="default_seed">保底</option>
+                <option value="preset_catalog">预设</option>
+                <option value="manual_admin">手工</option>
               </SelectField>
-            </div>
-            <div className="grid gap-2 text-xs text-[color:var(--text-muted)]">
-              <div>默认保底 {sourceCounts.defaultSeed}</div>
-              <div>名人预设 {sourceCounts.presetCatalog}</div>
-              <div>后台手工 {sourceCounts.manualAdmin}</div>
             </div>
           </div>
 
           <div className="mt-4 space-y-2">
             {filteredCharacters.map((character) => (
-              <button
+              <div
                 key={character.id}
-                type="button"
-                onClick={() => setSelectedCharacterId(character.id)}
                 className={
                   character.id === selectedCharacterId
-                    ? "block w-full rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3.5 text-left shadow-[var(--shadow-soft)] ring-1 ring-[color:var(--brand-primary)]/15"
-                    : "block w-full rounded-[20px] border border-transparent bg-[color:var(--surface-card)] px-4 py-3.5 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card-hover)]"
+                    ? "rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] p-3 shadow-[var(--shadow-soft)] ring-1 ring-[color:var(--brand-primary)]/15"
+                    : "rounded-[20px] border border-transparent bg-[color:var(--surface-card)] p-3 shadow-[var(--shadow-soft)] transition hover:border-[color:var(--border-subtle)]"
                 }
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold text-[color:var(--text-primary)]">{character.name}</div>
-                    <div className="mt-1 truncate text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-[color:var(--text-muted)]">
-                      <span>{formatCharacterSourceType(character.sourceType)}</span>
-                      <span>{formatRelationshipType(character.relationshipType)}</span>
-                      <span>领域 {character.expertDomains.length}</span>
-                      <span>场景 {character.triggerScenes?.length ?? 0}</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCharacterId(character.id)}
+                  className="w-full text-left"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold text-[color:var(--text-primary)]">{character.name}</div>
+                      <div className="mt-0.5 truncate text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
                     </div>
+                    <StatusPill tone={character.isOnline ? "healthy" : "muted"}>
+                      {character.isOnline ? "在线" : "离线"}
+                    </StatusPill>
                   </div>
-                  <StatusPill tone={character.isOnline ? "healthy" : "muted"}>
-                    {character.isOnline ? "在线" : "离线"}
-                  </StatusPill>
+                </button>
+                <div className="mt-2 flex items-center gap-2">
+                  <Link to="/characters/$characterId" params={{ characterId: character.id }} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full justify-center">编辑</Button>
+                  </Link>
+                  <Link to="/characters/$characterId/factory" params={{ characterId: character.id }} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full justify-center">工厂</Button>
+                  </Link>
+                  <Link to="/characters/$characterId/runtime" params={{ characterId: character.id }} className="flex-1">
+                    <Button variant="secondary" size="sm" className="w-full justify-center">调试</Button>
+                  </Link>
                 </div>
-              </button>
+              </div>
             ))}
 
             {!filteredCharacters.length && !charactersQuery.isLoading ? (

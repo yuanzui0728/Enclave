@@ -1,7 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  getSystemStatus,
   updateCharacter,
   type BehavioralPatterns,
   type Character,
@@ -35,7 +34,6 @@ import {
 } from "@yinjie/ui";
 import {
   AdminActionFeedback,
-  AdminCallout,
   AdminCodeBlock,
   AdminDraftStatusPill,
   AdminEmptyState,
@@ -43,20 +41,17 @@ import {
   AdminInfoRow,
   AdminInfoRows,
   AdminNoteList,
-  AdminPageHero,
   AdminPromptSectionList,
   AdminRecordCard,
   AdminSelectableCard,
   AdminSectionHeader,
   AdminSelectField as SelectFieldBlock,
-  AdminSectionNav,
   AdminSubpanel,
   AdminTextArea as TextAreaBlock,
   AdminTextField as FieldBlock,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
-import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type InspectorScope = "character" | "conversation";
 
@@ -107,11 +102,6 @@ export function ReplyLogicPage() {
     queryKey: ["admin-reply-logic-overview", baseUrl],
     queryFn: () => adminApi.getReplyLogicOverview(),
   });
-  const systemStatusQuery = useQuery({
-    queryKey: ["admin-reply-logic-system-status", baseUrl],
-    queryFn: () => getSystemStatus(baseUrl),
-  });
-
   useEffect(() => {
     if (!overviewQuery.data) {
       return;
@@ -157,9 +147,6 @@ export function ReplyLogicPage() {
   });
 
   const overview = overviewQuery.data;
-  const digitalHumanSummary = buildDigitalHumanAdminSummary(
-    systemStatusQuery.data?.digitalHumanGateway,
-  );
   const selectedCharacter = useMemo(
     () => overview?.characters.find((item) => item.id === activeCharacterId) ?? null,
     [activeCharacterId, overview?.characters],
@@ -414,19 +401,6 @@ export function ReplyLogicPage() {
       ? `已保存实例级推理服务：${providerSetup.providerSaveMutation.data.model}`
       : "这里保存的是实例级兜底推理服务；如果世界主人配置了个人 API 密钥，聊天主链路仍会优先使用个人配置。");
 
-  const currentStatusRows = [
-    { label: "当前范围", value: scope === "character" ? "角色" : "会话" },
-    {
-      label: "当前目标",
-      value:
-        scope === "character"
-          ? selectedCharacter?.name ?? "未选择角色"
-          : selectedConversation?.title ?? "未选择会话",
-    },
-    { label: "角色草稿", value: isCharacterDraftDirty ? "未保存" : "已同步" },
-    { label: "运行规则", value: isRuntimeRulesDraftDirty ? "未保存" : "已同步" },
-    { label: "数字人状态", value: digitalHumanSummary.statusLabel },
-  ];
   const targetSummaryRows =
     scope === "character" && selectedCharacter
       ? [
@@ -484,86 +458,69 @@ export function ReplyLogicPage() {
 
       {overview ? (
         <>
-          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <AdminPageHero
-              eyebrow="回复调试"
-              title="先选目标，再看真实快照，最后修改保存。"
-              description="这页已经支持同页修改角色配置、候选消息预演、运行规则，以及 Prompt 构建模板。保存后会刷新真实运行快照。"
-              actions={
-                <>
-                  <Button onClick={() => void refreshAll()} variant="secondary" size="lg">
-                    刷新快照
-                  </Button>
-                  <Button
-                    onClick={saveRuntimeRulesDraft}
-                    variant="primary"
-                    size="lg"
-                    disabled={!isRuntimeRulesDraftDirty || runtimeRulesSaveMutation.isPending}
-                  >
-                    {runtimeRulesSaveMutation.isPending ? "保存规则中..." : "保存运行规则"}
-                  </Button>
-                </>
-              }
-              metrics={[
-                { label: "角色数", value: overview.characters.length },
-                { label: "会话数", value: overview.conversations.length },
-                { label: "当前模型", value: overview.provider.model },
-                { label: "数字人", value: digitalHumanSummary.statusLabel },
-                { label: "世界上下文", value: overview.worldContext?.text || "暂无快照" },
-              ]}
-            />
-
-            <AdminInfoRows title="当前状态" rows={currentStatusRows} />
-          </div>
-          <AdminCallout
-            tone={digitalHumanSummary.ready ? "success" : "warning"}
-            title={
-              digitalHumanSummary.ready
-                ? "数字人链路已进入可联调状态"
-                : `数字人当前阻塞：${digitalHumanSummary.statusLabel}`
-            }
-            description={`${digitalHumanSummary.description} ${digitalHumanSummary.nextStep}`}
-          />
-
           <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)_440px]">
-            <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
-              <AdminSectionNav
-                title="段落导航"
-                items={[
-                  { label: "真实快照", detail: "角色或会话的运行快照", onClick: () => jumpToSection("reply-logic-inspector") },
-                  { label: "候选预演", detail: "输入消息并预演生成链路", onClick: () => jumpToSection("reply-logic-preview") },
-                  { label: "配置抽屉", detail: "修改角色和实例运行配置", onClick: () => jumpToSection("reply-logic-config") },
-                  { label: "运行规则", detail: "维护全局规则与提示语", onClick: () => jumpToSection("reply-logic-rules") },
-                ]}
-              />
+            <div className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+              {/* Quick actions */}
+              <div className="flex gap-2">
+                <Button onClick={() => void refreshAll()} variant="secondary" size="sm" className="flex-1 justify-center">
+                  刷新快照
+                </Button>
+                <Button
+                  onClick={saveRuntimeRulesDraft}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1 justify-center"
+                  disabled={!isRuntimeRulesDraftDirty || runtimeRulesSaveMutation.isPending}
+                >
+                  {runtimeRulesSaveMutation.isPending ? "保存中..." : "保存规则"}
+                </Button>
+              </div>
+
+              {/* Jump links */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "快照", id: "reply-logic-inspector" },
+                  { label: "预演", id: "reply-logic-preview" },
+                  { label: "配置", id: "reply-logic-config" },
+                  { label: "规则", id: "reply-logic-rules" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => jumpToSection(item.id)}
+                    className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-1 text-xs text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-strong)] hover:text-[color:var(--text-primary)]"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
 
               <Card className="bg-[color:var(--surface-console)]">
-                <SectionHeading>工作范围</SectionHeading>
-                <div className="mt-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setScope("character")}
-                      className={
-                        scope === "character"
-                          ? "rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-sm font-medium text-[color:var(--brand-primary)]"
-                          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
-                      }
-                    >
-                      按角色查看
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScope("conversation")}
-                      className={
-                        scope === "conversation"
-                          ? "rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-4 py-3 text-sm font-medium text-[color:var(--brand-primary)]"
-                          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
-                      }
-                    >
-                      按会话查看
-                    </button>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScope("character")}
+                    className={
+                      scope === "character"
+                        ? "rounded-[16px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-2 text-sm font-medium text-[color:var(--brand-primary)]"
+                        : "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
+                    }
+                  >
+                    按角色
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScope("conversation")}
+                    className={
+                      scope === "conversation"
+                        ? "rounded-[16px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-2 text-sm font-medium text-[color:var(--brand-primary)]"
+                        : "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:text-[color:var(--text-primary)]"
+                    }
+                  >
+                    按会话
+                  </button>
+                </div>
+                <div className="mt-3 space-y-3">
 
                   {scope === "character" ? (
                     <TargetListCard
@@ -595,7 +552,7 @@ export function ReplyLogicPage() {
                 </div>
               </Card>
 
-              <AdminInfoRows title="当前目标摘要" rows={targetSummaryRows} />
+              <AdminInfoRows title="目标摘要" rows={targetSummaryRows} />
 
               <AdminInfoRows title="真实运行推理服务" rows={providerSummaryRows} />
 
@@ -1542,13 +1499,6 @@ function ReplyPreviewPanel({
             {preview ? "已生成预演" : "等待预演"}
           </StatusPill>
         }
-      />
-
-      <AdminCallout
-        className="mt-4"
-        title="预演说明"
-        description="这里会按当前角色配置、当前可见历史、当前世界上下文和当前状态门，预演这条用户消息会如何进入模型。"
-        tone="muted"
       />
 
       {scope === "conversation" ? (

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Button, StatusPill } from "@yinjie/ui";
-import { AdminCompactStatusCard, AdminEyebrow } from "./admin-workbench";
+import { Button } from "@yinjie/ui";
+import { AdminEyebrow } from "./admin-workbench";
 import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 
 type SidebarLink = {
@@ -38,9 +38,23 @@ type AdminSidebarProps = {
 };
 
 const NAV_LINK =
-  "group block rounded-[24px] border border-transparent px-4 py-3 transition-[background-color,border-color,transform,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:shadow-[var(--shadow-soft)]";
+  "block rounded-[20px] border border-transparent px-3.5 py-2.5 text-sm text-[color:var(--text-secondary)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]";
 const NAV_LINK_ACTIVE =
-  "rounded-[24px] border border-[color:var(--border-brand)] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-soft)]";
+  "block rounded-[20px] border border-[color:var(--border-brand)] bg-[color:var(--surface-card)] px-3.5 py-2.5 text-sm font-semibold text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]";
+
+function StatusDot({ tone }: { tone: "healthy" | "warning" | "muted" }) {
+  return (
+    <span
+      className={
+        tone === "healthy"
+          ? "inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+          : tone === "warning"
+            ? "inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
+            : "inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[color:var(--border-strong)]"
+      }
+    />
+  );
+}
 
 export function AdminSidebar({
   secret,
@@ -88,88 +102,74 @@ export function AdminSidebar({
   }
   const issueCount = issues.length;
 
+  const statusItems = [
+    { label: "接口", tone: coreApiHealthy ? "healthy" : "warning" } as const,
+    { label: "推理", tone: providerReady ? "healthy" : "warning" } as const,
+    {
+      label: "主人",
+      tone: ownerCount === 1 ? "healthy" : "warning",
+    } as const,
+    {
+      label: "数字人",
+      tone: digitalHumanSummary.ready ? "healthy" : "warning",
+    } as const,
+  ];
+
   return (
     <aside className="flex h-full flex-col border-b border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]/92 px-4 py-4 shadow-[var(--shadow-shell)] backdrop-blur xl:px-5 xl:py-5 lg:border-b-0 lg:border-r">
-      <div className="rounded-[28px] border border-[color:var(--border-subtle)] bg-[linear-gradient(160deg,rgba(255,255,255,0.96),rgba(255,247,235,0.92))] p-5 shadow-[var(--shadow-card)]">
-        <AdminEyebrow className="tracking-[0.3em]">隐界 Admin</AdminEyebrow>
-        <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">运营控制台</div>
-        <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-          先看实例健康，再进入角色、回复逻辑和评测工作区。
+      {/* Brand header */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--text-muted)]">隐界</div>
+          <div className="text-base font-semibold leading-tight text-[color:var(--text-primary)]">运营控制台</div>
         </div>
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-4 lg:grid-cols-1">
-        <AdminCompactStatusCard
-          label="核心接口"
-          value={coreApiHealthy ? "在线" : "待恢复"}
-          tone={coreApiHealthy ? "healthy" : "warning"}
-        />
-        <AdminCompactStatusCard
-          label="推理服务"
-          value={providerReady ? "已配置" : "待配置"}
-          tone={providerReady ? "healthy" : "warning"}
-        />
-        <AdminCompactStatusCard
-          label="世界主人"
-          value={ownerCount == null ? "加载中" : `${ownerCount} 个`}
-          tone={ownerCount === 1 ? "healthy" : "warning"}
-        />
-        <AdminCompactStatusCard
-          label="数字人"
-          value={digitalHumanSummary.statusLabel}
-          tone={digitalHumanSummary.ready ? "healthy" : "warning"}
-        />
-      </div>
-
-      <section
-        className={
-          issueCount > 0
-            ? "mt-4 rounded-[26px] border border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))] p-4 shadow-[var(--shadow-soft)]"
-            : "mt-4 rounded-[26px] border border-emerald-200 bg-[linear-gradient(160deg,rgba(236,253,245,0.96),rgba(220,252,231,0.92))] p-4 shadow-[var(--shadow-soft)]"
-        }
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <AdminEyebrow>优先处理</AdminEyebrow>
-            <div className="mt-2 text-sm font-semibold text-[color:var(--text-primary)]">
-              {issueCount > 0 ? `当前有 ${issueCount} 项待处理` : "实例已达到可操作状态"}
-            </div>
-          </div>
-          <StatusPill tone={issueCount > 0 ? "warning" : "healthy"}>
-            {issueCount > 0 ? "待处理" : "已就绪"}
-          </StatusPill>
-        </div>
-
         {issueCount > 0 ? (
-          <div className="mt-3 space-y-2">
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+            {issueCount} 项待处理
+          </span>
+        ) : (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            已就绪
+          </span>
+        )}
+      </div>
+
+      {/* Compact status row */}
+      <div className="mt-3 flex items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-3 py-2">
+        {statusItems.map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <StatusDot tone={item.tone} />
+            <span className="text-xs text-[color:var(--text-muted)]">{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Issues panel — only shown when there are problems */}
+      {issueCount > 0 ? (
+        <section className="mt-3 rounded-[20px] border border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))] p-3 shadow-[var(--shadow-soft)]">
+          <div className="space-y-2">
             {issues.map((issue) => (
               <Link
                 key={issue.label}
                 to={issue.to}
-                className="block rounded-[18px] border border-amber-200/70 bg-white/70 px-3 py-3 transition hover:border-amber-300 hover:bg-white"
+                className="block rounded-[14px] border border-amber-200/70 bg-white/70 px-3 py-2.5 transition hover:border-amber-300 hover:bg-white"
               >
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">{issue.label}</div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-secondary)]">{issue.detail}</div>
+                <div className="mt-0.5 text-xs leading-5 text-[color:var(--text-secondary)]">{issue.detail}</div>
               </Link>
             ))}
           </div>
-        ) : (
-          <div className="mt-3 text-sm leading-6 text-[color:var(--text-secondary)]">
-            可以直接进入角色、回复逻辑和评测工作区处理日常运营动作。
-          </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <nav className="mt-5 flex-1 space-y-5 overflow-y-auto pr-1">
+      {/* Main nav */}
+      <nav className="mt-4 flex-1 space-y-5 overflow-y-auto pr-1">
         <section>
-          <AdminEyebrow className="px-3">主导航</AdminEyebrow>
-          <div className="mt-3 space-y-2">
+          <AdminEyebrow className="px-1">导航</AdminEyebrow>
+          <div className="mt-2 space-y-1">
             {navLinks.map((item) => (
               <Link key={item.to} to={item.to} className={NAV_LINK} activeProps={{ className: NAV_LINK_ACTIVE }}>
-                <div className="text-sm font-semibold text-[color:var(--text-primary)]">{item.label}</div>
-                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)] transition group-hover:text-[color:var(--text-secondary)]">
-                  {item.hint}
-                </div>
+                {item.label}
               </Link>
             ))}
           </div>
@@ -177,18 +177,16 @@ export function AdminSidebar({
 
         {contextLinks?.length ? (
           <section>
-            <AdminEyebrow className="px-3">
-              {contextTitle ?? "当前上下文"}
-            </AdminEyebrow>
-            <div className="mt-3 space-y-2 rounded-[26px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] p-3 shadow-[var(--shadow-soft)]">
+            <AdminEyebrow className="px-1">{contextTitle ?? "当前上下文"}</AdminEyebrow>
+            <div className="mt-2 space-y-1 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] p-2">
               {contextLinks.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
                   className={
                     item.active
-                      ? "block rounded-[18px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-2.5 text-sm font-medium text-[color:var(--brand-primary)]"
-                      : "block rounded-[18px] border border-transparent px-3 py-2.5 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
+                      ? "block rounded-[14px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-2 text-sm font-medium text-[color:var(--brand-primary)]"
+                      : "block rounded-[14px] border border-transparent px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
                   }
                 >
                   {item.label}
@@ -199,16 +197,17 @@ export function AdminSidebar({
         ) : null}
       </nav>
 
-      <section className="mt-5 rounded-[26px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] p-4 shadow-[var(--shadow-soft)]">
-        <AdminEyebrow>管理密钥</AdminEyebrow>
+      {/* Secret — compact when configured */}
+      <div className="mt-4 border-t border-[color:var(--border-faint)] pt-4">
         {editingSecret ? (
-          <div className="mt-3 space-y-3">
+          <div className="space-y-2">
+            <AdminEyebrow className="px-1">管理密钥</AdminEyebrow>
             <input
               type="password"
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
               placeholder="输入后台密钥"
-              className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2.5 text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none transition focus:border-[color:var(--border-brand)]"
+              className="w-full rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm text-[color:var(--text-primary)] placeholder-[color:var(--text-muted)] outline-none transition focus:border-[color:var(--border-brand)]"
               onKeyDown={(event) => event.key === "Enter" && onSaveSecret()}
             />
             <Button variant="primary" size="sm" className="w-full justify-center" onClick={onSaveSecret}>
@@ -216,20 +215,20 @@ export function AdminSidebar({
             </Button>
           </div>
         ) : (
-          <div className="mt-3">
-            <div className="text-sm text-[color:var(--text-secondary)]">
-              {secret ? "已配置，可直接访问后台接口。" : "未配置，当前无法访问后台管理接口。"}
-            </div>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <span className="text-xs text-[color:var(--text-muted)]">
+              {secret ? "密钥已配置" : "密钥未配置"}
+            </span>
             <button
               type="button"
-              className="mt-3 text-sm font-medium text-[color:var(--brand-primary)] transition hover:text-[color:var(--brand-secondary)]"
+              className="text-xs font-medium text-[color:var(--brand-primary)] transition hover:text-[color:var(--brand-secondary)]"
               onClick={onEditSecret}
             >
-              {secret ? "修改密钥" : "立即配置"}
+              {secret ? "修改" : "立即配置"}
             </button>
           </div>
         )}
-      </section>
+      </div>
     </aside>
   );
 }

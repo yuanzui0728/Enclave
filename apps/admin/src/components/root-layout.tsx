@@ -108,7 +108,6 @@ export function RootLayout() {
           <AdminTopbar
             eyebrow={routeMeta.eyebrow}
             title={routeMeta.title}
-            description={routeMeta.description}
             statusLabel={shellStatus.label}
             statusTone={shellStatus.tone}
             statusDetailLabel={shellStatus.detailLabel}
