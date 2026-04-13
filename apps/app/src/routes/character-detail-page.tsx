@@ -539,22 +539,72 @@ export function CharacterDetailPage() {
 
       {characterQuery.isLoading ? (
         <div className="px-4 py-3">
-          <LoadingBlock label="正在读取朋友资料..." />
+          {isDesktopLayout ? (
+            <LoadingBlock label="正在读取朋友资料..." />
+          ) : (
+            <MobileCharacterStatusCard
+              badge="读取中"
+              title="正在读取朋友资料"
+              description="稍等一下，正在同步这个联系人的资料和关系状态。"
+              tone="loading"
+            />
+          )}
         </div>
       ) : null}
 
       {characterQuery.isError && characterQuery.error instanceof Error ? (
         <div className="px-4 py-3">
-          <ErrorBlock message={characterQuery.error.message} />
+          {isDesktopLayout ? (
+            <ErrorBlock message={characterQuery.error.message} />
+          ) : (
+            <MobileCharacterStatusCard
+              badge="联系人"
+              title="联系人资料暂时不可用"
+              description={characterQuery.error.message}
+              tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void characterQuery.refetch();
+                  }}
+                  className="rounded-full"
+                >
+                  重新加载
+                </Button>
+              }
+            />
+          )}
         </div>
       ) : null}
 
       {!characterQuery.isLoading && !character ? (
         <div className="px-4 py-3">
-          <EmptyState
-            title="角色不存在"
-            description="这个资料暂时不可用，返回通讯录再试一次。"
-          />
+          {isDesktopLayout ? (
+            <EmptyState
+              title="角色不存在"
+              description="这个资料暂时不可用，返回通讯录再试一次。"
+            />
+          ) : (
+            <MobileCharacterStatusCard
+              badge="联系人"
+              title="角色不存在"
+              description="这个资料暂时不可用，返回通讯录再试一次。"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    void navigate({ to: "/tabs/contacts" });
+                  }}
+                  className="rounded-full"
+                >
+                  返回通讯录
+                </Button>
+              }
+            />
+          )}
         </div>
       ) : null}
 
@@ -606,41 +656,101 @@ export function CharacterDetailPage() {
             />
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-            <ErrorBlock message={friendsQuery.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={friendsQuery.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {friendsQuery.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {friendRequestsQuery.isError &&
           friendRequestsQuery.error instanceof Error ? (
-            <ErrorBlock message={friendRequestsQuery.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={friendRequestsQuery.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {friendRequestsQuery.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {blockedQuery.isError && blockedQuery.error instanceof Error ? (
-            <ErrorBlock message={blockedQuery.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={blockedQuery.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {blockedQuery.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {startChatMutation.isError &&
           startChatMutation.error instanceof Error ? (
-            <ErrorBlock message={startChatMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={startChatMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {startChatMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {openCallMutation.isError &&
           openCallMutation.error instanceof Error ? (
-            <ErrorBlock message={openCallMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={openCallMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {openCallMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {sendFriendRequestMutation.isError &&
           sendFriendRequestMutation.error instanceof Error ? (
-            <ErrorBlock message={sendFriendRequestMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={sendFriendRequestMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {sendFriendRequestMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {setStarredMutation.isError &&
           setStarredMutation.error instanceof Error ? (
-            <ErrorBlock message={setStarredMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={setStarredMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {setStarredMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {updateProfileMutation.isError &&
           updateProfileMutation.error instanceof Error ? (
-            <ErrorBlock message={updateProfileMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={updateProfileMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {updateProfileMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {blockMutation.isError && blockMutation.error instanceof Error ? (
-            <ErrorBlock message={blockMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={blockMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {blockMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
           {deleteFriendMutation.isError &&
           deleteFriendMutation.error instanceof Error ? (
-            <ErrorBlock message={deleteFriendMutation.error.message} />
+            isDesktopLayout ? (
+              <ErrorBlock message={deleteFriendMutation.error.message} />
+            ) : (
+              <MobileCharacterErrorNotice>
+                {deleteFriendMutation.error.message}
+              </MobileCharacterErrorNotice>
+            )
           ) : null}
 
           <section
@@ -1017,6 +1127,67 @@ export function CharacterDetailPage() {
         </div>
       ) : null}
     </AppPage>
+  );
+}
+
+function MobileCharacterStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
+  );
+}
+
+function MobileCharacterErrorNotice({ children }: { children: ReactNode }) {
+  return (
+    <InlineNotice
+      tone="danger"
+      className="rounded-[11px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+    >
+      {children}
+    </InlineNotice>
   );
 }
 
