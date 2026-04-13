@@ -3018,7 +3018,7 @@ export function ChatComposer({
         ) : null}
         {mobilePlusNotice && !isDesktop && !plusPanelOpen ? (
           <InlineNotice
-            className="mt-1.5 flex items-center justify-between gap-2.5 rounded-[12px] border-[rgba(96,165,250,0.18)] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="mt-1 flex items-center justify-between gap-2 rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             tone="info"
           >
             <span className="min-w-0 flex-1">{mobilePlusNotice.message}</span>
@@ -3026,14 +3026,14 @@ export function ChatComposer({
               <InlineNoticeActionButton
                 label={mobilePlusNotice.actionLabel}
                 onClick={mobilePlusNotice.onAction}
-                className="border-[#60a5fa]/22 bg-white text-[#1d4ed8]"
+                className="border-[#60a5fa]/20 bg-white text-[#1d4ed8]"
               />
             ) : null}
           </InlineNotice>
         ) : null}
         {speechDisabledReason ? (
           <InlineNotice
-            className="mt-1.5 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="mt-1 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             tone="muted"
           >
             {speechDisabledReason}
@@ -3044,14 +3044,14 @@ export function ChatComposer({
         speech.status === "ready" &&
         speechDisplayText ? (
           <InlineNotice
-            className="mt-1.5 flex items-center justify-between gap-2.5 rounded-[12px] border-[rgba(7,193,96,0.14)] bg-[rgba(247,251,248,0.98)] px-3 py-2 text-[11px] leading-[18px] text-[#166534] shadow-none"
+            className="mt-1 flex items-center justify-between gap-2 rounded-[11px] border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[10px] leading-4 text-[#166534] shadow-none"
             tone="info"
           >
             <span className="truncate">识别完成：{speechDisplayText}</span>
             <button
               type="button"
               onClick={commitSpeechInput}
-              className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#15803d]"
+              className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#15803d]"
             >
               插入输入框
             </button>
@@ -3106,7 +3106,7 @@ export function ChatComposer({
         ) : null}
         {composerError && !isDesktop ? (
           <InlineNotice
-            className="mt-1.5 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="mt-1 flex items-center justify-between gap-2.5 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             tone="danger"
           >
             <span>{composerError}</span>
@@ -3120,8 +3120,8 @@ export function ChatComposer({
           </InlineNotice>
         ) : null}
         {composerPending ? (
-          <div className="mt-1.5 flex items-center gap-1.5 px-1 text-[11px] text-[color:var(--text-muted)]">
-            <SendHorizontal size={11} />
+          <div className="mt-1 flex items-center gap-1.5 px-0.5 text-[10px] text-[color:var(--text-muted)]">
+            <SendHorizontal size={10} />
             <span>正在发送...</span>
           </div>
         ) : null}
@@ -4918,17 +4918,17 @@ function ReplyPreviewBar({
   const isDesktop = variant === "desktop";
   return (
     <div
-      className={`mb-3 flex items-start justify-between gap-3 ${
+      className={`flex items-start justify-between gap-2.5 ${
         isDesktop
-          ? "rounded-[10px] border border-black/6 bg-[#f7f7f7] px-4 py-2.5"
-          : "rounded-[12px] border-l-[2px] border-l-[#07c160] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-2 shadow-none"
+          ? "mb-3 rounded-[10px] border border-black/6 bg-[#f7f7f7] px-4 py-2.5"
+          : "mb-2.5 rounded-[11px] border border-[rgba(7,193,96,0.12)] border-l-[2px] border-l-[#07c160] bg-[rgba(255,255,255,0.96)] px-2.5 py-1.5 shadow-none"
       }`}
     >
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div
             className={`text-[11px] font-medium ${
-              isDesktop ? "text-[#07a35a]" : "text-[#07c160]"
+              isDesktop ? "text-[#07a35a]" : "text-[10px] text-[#07c160]"
             }`}
           >
             回复 {senderName}
@@ -4938,7 +4938,7 @@ function ReplyPreviewBar({
               className={`rounded-full px-2 py-0.5 text-[10px] ${
                 isDesktop
                   ? "bg-white text-[color:var(--text-dim)]"
-                  : "bg-[rgba(7,193,96,0.12)] text-[#07c160]"
+                  : "bg-[rgba(7,193,96,0.1)] text-[9px] text-[#07c160]"
               }`}
             >
               {modeLabel}
@@ -4950,7 +4950,7 @@ function ReplyPreviewBar({
             "mt-1 text-[13px] leading-5",
             isDesktop
               ? "line-clamp-2 text-[color:var(--text-secondary)]"
-              : "line-clamp-1 text-[12px] text-[#5f6368]",
+              : "line-clamp-1 text-[11px] leading-4 text-[#5f6368]",
           )}
         >
           {text}
@@ -4963,11 +4963,11 @@ function ReplyPreviewBar({
           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition ${
             isDesktop
               ? "h-7 w-7 rounded-[7px] hover:bg-white hover:text-[color:var(--text-primary)]"
-              : "h-7 w-7 active:bg-[#dcdcdc]"
+              : "h-6.5 w-6.5 active:bg-black/[0.05]"
           }`}
           aria-label="取消回复"
         >
-          <X size={15} />
+          <X size={14} />
         </button>
       ) : null}
     </div>
