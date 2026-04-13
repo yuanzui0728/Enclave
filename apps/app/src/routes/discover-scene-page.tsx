@@ -11,7 +11,6 @@ import {
 import { triggerSceneFriendRequest } from "@yinjie/contracts";
 import {
   AppPage,
-  ErrorBlock,
   InlineNotice,
   LoadingBlock,
   cn,
@@ -114,7 +113,16 @@ function MobileDiscoverScenePage() {
       heroTitle="选择一个地点"
       heroDescription="不同地点会触发不同角色的靠近方式，并把结果写进新的好友申请。"
       heroVisual={<MapPin size={28} />}
-      notice={message ? <InlineNotice tone="info">{message}</InlineNotice> : null}
+      notice={
+        message ? (
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone="info"
+          >
+            {message}
+          </InlineNotice>
+        ) : null
+      }
       onBack={() =>
         navigateBackOrFallback(() => {
           void navigate({ to: "/tabs/discover" });
@@ -158,7 +166,12 @@ function MobileDiscoverScenePage() {
       </section>
 
       {sceneMutation.isError && sceneMutation.error instanceof Error ? (
-        <ErrorBlock message={sceneMutation.error.message} />
+        <InlineNotice
+          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          tone="danger"
+        >
+          {sceneMutation.error.message}
+        </InlineNotice>
       ) : null}
     </MobileDiscoverToolShell>
   );

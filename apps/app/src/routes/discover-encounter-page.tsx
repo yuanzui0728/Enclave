@@ -6,7 +6,6 @@ import { sendFriendRequest, shake } from "@yinjie/contracts";
 import {
   AppPage,
   Button,
-  ErrorBlock,
   InlineNotice,
   LoadingBlock,
 } from "@yinjie/ui";
@@ -99,7 +98,10 @@ function MobileDiscoverEncounterPage() {
       }
       notice={
         message ? (
-          <InlineNotice tone={message.includes("好友申请") ? "success" : "info"}>
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone={message.includes("好友申请") ? "success" : "info"}
+          >
             {message}
           </InlineNotice>
         ) : null
@@ -131,7 +133,12 @@ function MobileDiscoverEncounterPage() {
       </section>
 
       {shakeMutation.isError && shakeMutation.error instanceof Error ? (
-        <ErrorBlock message={shakeMutation.error.message} />
+        <InlineNotice
+          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          tone="danger"
+        >
+          {shakeMutation.error.message}
+        </InlineNotice>
       ) : null}
     </MobileDiscoverToolShell>
   );
