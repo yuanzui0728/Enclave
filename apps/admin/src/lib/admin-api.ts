@@ -7,6 +7,8 @@ import type {
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
+  ReplyLogicGroupReplyTaskCleanupResult,
+  ReplyLogicGroupReplyTaskRetryResult,
   ReplyLogicOverview,
   ReplyLogicPreviewRequest,
   ReplyLogicPreviewResult,
@@ -176,6 +178,19 @@ export const adminApi = {
     }),
   getReplyLogicConversationSnapshot: (id: string) =>
     adminFetch<ReplyLogicConversationSnapshot>(`/reply-logic/conversations/${id}`),
+  retryReplyLogicGroupReplyTask: (taskId: string) =>
+    adminFetch<ReplyLogicGroupReplyTaskRetryResult>(`/reply-logic/group-reply-tasks/${taskId}/retry`, {
+      method: "POST",
+    }),
+  cleanupReplyLogicGroupReplyTasks: (payload?: {
+    olderThanDays?: number | null;
+    groupId?: string | null;
+    statuses?: string[] | null;
+  }) =>
+    adminFetch<ReplyLogicGroupReplyTaskCleanupResult>("/reply-logic/group-reply-tasks/cleanup", {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    }),
   previewReplyLogicConversation: (id: string, payload: ReplyLogicPreviewRequest) =>
     adminFetch<ReplyLogicPreviewResult>(`/reply-logic/conversations/${id}/preview`, {
       method: "POST",

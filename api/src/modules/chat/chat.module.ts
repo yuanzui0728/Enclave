@@ -86,6 +86,12 @@ import { CustomStickersService } from './custom-stickers.service';
     ChatBackgroundAssetsController,
     GroupController,
   ],
-  exports: [ChatService, ChatBackgroundsService, GroupService, ChatGateway],
+  exports: [
+    ChatService,
+    ChatBackgroundsService,
+    GroupService,
+    ChatGateway,
+    GroupReplyTaskService,
+  ],
 })
 export class ChatModule {}

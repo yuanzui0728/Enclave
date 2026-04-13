@@ -156,6 +156,23 @@ export class AdminController {
     return this.replyLogicAdminService.getConversationSnapshot(id);
   }
 
+  @Post('reply-logic/group-reply-tasks/cleanup')
+  cleanupReplyLogicGroupReplyTasks(
+    @Body()
+    body: {
+      olderThanDays?: number | null;
+      groupId?: string | null;
+      statuses?: string[] | null;
+    },
+  ) {
+    return this.replyLogicAdminService.cleanupGroupReplyTasks(body);
+  }
+
+  @Post('reply-logic/group-reply-tasks/:taskId/retry')
+  retryReplyLogicGroupReplyTask(@Param('taskId') taskId: string) {
+    return this.replyLogicAdminService.retryGroupReplyTask(taskId);
+  }
+
   @Post('reply-logic/conversations/:id/preview')
   previewReplyLogicConversation(
     @Param('id') id: string,

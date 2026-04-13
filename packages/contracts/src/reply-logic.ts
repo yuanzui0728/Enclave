@@ -551,6 +551,22 @@ export interface ReplyLogicGroupReplyRuntimeSummary {
   notes: string[];
 }
 
+export interface ReplyLogicGroupReplyTaskRetryResult {
+  taskId: string;
+  groupId: string;
+  status: ReplyLogicGroupReplyTaskStatus;
+  executeAfter: string;
+  note: string;
+}
+
+export interface ReplyLogicGroupReplyTaskCleanupResult {
+  deletedCount: number;
+  cutoff: string;
+  statuses: ReplyLogicGroupReplyTaskStatus[];
+  groupId?: string | null;
+  note: string;
+}
+
 export interface ReplyLogicPreviewRequest {
   userMessage: string;
   actorCharacterId?: string;

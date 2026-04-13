@@ -10,6 +10,7 @@ import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
 import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
+import { GroupReplyTaskService } from '../chat/group-reply-task.service';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { SystemConfigService } from '../config/config.service';
 import { PromptBuilderService } from '../ai/prompt-builder.service';
@@ -30,6 +31,8 @@ import type {
   ReplyLogicGroupReplyCandidateSummary,
   ReplyLogicGroupReplyRuntimeSummary,
   ReplyLogicGroupReplySelectionDisposition,
+  ReplyLogicGroupReplyTaskCleanupResult,
+  ReplyLogicGroupReplyTaskRetryResult,
   ReplyLogicGroupReplyTaskSummary,
   ReplyLogicGroupReplyTaskStatus,
   ReplyLogicGroupReplyTurnSummary,
@@ -93,6 +96,7 @@ export class ReplyLogicAdminService {
     private readonly worldService: WorldService,
     private readonly ai: AiOrchestratorService,
     private readonly replyLogicRules: ReplyLogicRulesService,
+    private readonly groupReplyTaskService: GroupReplyTaskService,
     private readonly schedulerTelemetry: SchedulerTelemetryService,
   ) {}
 
@@ -487,6 +491,45 @@ export class ReplyLogicAdminService {
       userMessage,
       actor,
       notes: [runtimeRules.inspectorTemplates.previewFormalGroup],
+    };
+  }
+
+  async retryGroupReplyTask(
+    taskId: string,
+  ): Promise<ReplyLogicGroupReplyTaskRetryResult> {
+    const task = await this.groupReplyTaskService.retryTask(taskId);
+    return {
+      taskId: task.id,
+      groupId: task.groupId,
+      status: task.status as ReplyLogicGroupReplyTaskStatus,
+      executeAfter: task.executeAfter.toISOString(),
+      note: '任务已重新入队，会在下一轮扫描时尽快执行。',
+    };
+  }
+
+  async cleanupGroupReplyTasks(input?: {
+    olderThanDays?: number | null;
+    groupId?: string | null;
+    statuses?: string[] | null;
+  }): Promise<ReplyLogicGroupReplyTaskCleanupResult> {
+    const result = await this.groupReplyTaskService.cleanupTasks({
+      olderThanDays: input?.olderThanDays ?? undefined,
+      groupId: input?.groupId?.trim() || undefined,
+      statuses: (input?.statuses ?? []).filter(
+        (status): status is ReplyLogicGroupReplyTaskStatus =>
+          ['sent', 'cancelled', 'failed'].includes(status),
+      ),
+    });
+
+    return {
+      deletedCount: result.deletedCount,
+      cutoff: result.cutoff.toISOString(),
+      statuses: result.statuses as ReplyLogicGroupReplyTaskStatus[],
+      groupId: result.groupId,
+      note:
+        result.deletedCount > 0
+          ? '已清理超出保留期的终态任务。'
+          : '当前没有命中清理条件的终态任务。',
     };
   }
 

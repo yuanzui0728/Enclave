@@ -270,6 +270,8 @@
 - `GET /api/admin/reply-logic/characters/:id`
 - `POST /api/admin/reply-logic/characters/:id/preview`
 - `GET /api/admin/reply-logic/conversations/:id`
+- `POST /api/admin/reply-logic/group-reply-tasks/cleanup`
+- `POST /api/admin/reply-logic/group-reply-tasks/:taskId/retry`
 - `POST /api/admin/reply-logic/conversations/:id/preview`
 
 ## 管理后台角色工厂路由

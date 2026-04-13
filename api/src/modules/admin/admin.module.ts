@@ -18,6 +18,7 @@ import { AiModule } from '../ai/ai.module';
 import { WorldModule } from '../world/world.module';
 import { SystemConfigModule } from '../config/config.module';
 import { CharactersModule } from '../characters/characters.module';
+import { ChatModule } from '../chat/chat.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
 import { SchedulerModule } from '../scheduler/scheduler.module';
 import { MomentPostEntity } from '../moments/moment-post.entity';
@@ -28,6 +29,7 @@ import { FeedPostEntity } from '../feed/feed-post.entity';
     AuthModule,
     AiModule,
     CharactersModule,
+    ChatModule,
     WorldModule,
     SystemConfigModule,
     SchedulerModule,

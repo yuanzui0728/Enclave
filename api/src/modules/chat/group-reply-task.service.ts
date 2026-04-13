@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
-import { LessThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { type AiMessagePart, type ChatMessage } from '../ai/ai.types';
 import { CharacterEntity } from '../characters/character.entity';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
@@ -21,6 +21,12 @@ import { GroupReplyOrchestratorService } from './group-reply-orchestrator.servic
 
 const GROUP_REPLY_TASK_BATCH_SIZE = 12;
 const GROUP_REPLY_PROCESSING_RETRY_MS = 2 * 60 * 1000;
+const GROUP_REPLY_TASK_RETENTION_DAYS = 14;
+const GROUP_REPLY_TASK_TERMINAL_STATUSES: GroupReplyTaskStatus[] = [
+  'sent',
+  'cancelled',
+  'failed',
+];
 
 @Injectable()
 export class GroupReplyTaskService {
@@ -153,6 +159,85 @@ export class GroupReplyTaskService {
     );
   }
 
+  async retryTask(taskId: string) {
+    const task = await this.taskRepo.findOneBy({ id: taskId });
+    if (!task) {
+      throw new NotFoundException(`Group reply task ${taskId} not found`);
+    }
+    if (task.status === 'pending' || task.status === 'processing') {
+      throw new BadRequestException('Task is already queued or processing');
+    }
+    if (task.status === 'sent') {
+      throw new BadRequestException('Sent task cannot be retried');
+    }
+    if (await this.hasNewerUserMessage(task)) {
+      throw new BadRequestException(
+        'Task is stale because a newer user message already arrived',
+      );
+    }
+
+    task.status = 'pending';
+    task.executeAfter = new Date();
+    task.lastAttemptAt = null;
+    task.sentAt = null;
+    task.cancelledAt = null;
+    task.cancelReason = null;
+    task.errorMessage = null;
+    await this.taskRepo.save(task);
+    return task;
+  }
+
+  async cleanupTasks(input?: {
+    olderThanDays?: number;
+    groupId?: string;
+    statuses?: GroupReplyTaskStatus[];
+  }) {
+    const olderThanDays = Math.max(
+      1,
+      Math.round(input?.olderThanDays ?? GROUP_REPLY_TASK_RETENTION_DAYS),
+    );
+    const statuses = (input?.statuses?.length
+      ? input.statuses
+      : GROUP_REPLY_TASK_TERMINAL_STATUSES
+    ).filter((status): status is GroupReplyTaskStatus =>
+      GROUP_REPLY_TASK_TERMINAL_STATUSES.includes(status),
+    );
+    if (!statuses.length) {
+      throw new BadRequestException('Cleanup requires terminal task statuses');
+    }
+
+    const cutoff = new Date(
+      Date.now() - olderThanDays * 24 * 60 * 60 * 1000,
+    );
+    const staleTasks = await this.taskRepo.find({
+      where: {
+        ...(input?.groupId ? { groupId: input.groupId } : {}),
+        status: In(statuses),
+        updatedAt: LessThanOrEqual(cutoff),
+      },
+      take: 1000,
+      order: {
+        updatedAt: 'ASC',
+      },
+    });
+    if (!staleTasks.length) {
+      return {
+        deletedCount: 0,
+        cutoff,
+        statuses,
+        groupId: input?.groupId ?? null,
+      };
+    }
+
+    await this.taskRepo.delete(staleTasks.map((task) => task.id));
+    return {
+      deletedCount: staleTasks.length,
+      cutoff,
+      statuses,
+      groupId: input?.groupId ?? null,
+    };
+  }
+
   @Cron('*/3 * * * * *')
   async processDueTasks() {
     if (this.processing) {
@@ -181,6 +266,16 @@ export class GroupReplyTaskService {
       }
     } finally {
       this.processing = false;
+    }
+  }
+
+  @Cron('17 4 * * *')
+  async cleanupTerminalTasks() {
+    const result = await this.cleanupTasks();
+    if (result.deletedCount > 0) {
+      this.logger.log(
+        `Cleaned up ${result.deletedCount} stale group reply tasks older than ${GROUP_REPLY_TASK_RETENTION_DAYS} days`,
+      );
     }
   }
 
