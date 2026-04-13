@@ -18,7 +18,6 @@ import {
 } from "@yinjie/contracts";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
-import { ContactIndexList } from "../../contacts/contact-index-list";
 import {
   buildContactSections,
   createFriendDirectoryItems,
@@ -29,7 +28,11 @@ import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 
 const MAX_SHARED_MESSAGE_COUNT = 100;
 const DEFAULT_SHARED_MESSAGE_COUNT = 3;
-const SHARE_HISTORY_PRESET_COUNTS = [DEFAULT_SHARED_MESSAGE_COUNT, 5, 9] as const;
+const SHARE_HISTORY_PRESET_COUNTS = [
+  DEFAULT_SHARED_MESSAGE_COUNT,
+  5,
+  9,
+] as const;
 
 type DesktopCreateGroupDialogProps = {
   open: boolean;
@@ -57,19 +60,12 @@ export function DesktopCreateGroupDialog({
   const [messageSelectionNotice, setMessageSelectionNotice] = useState<
     string | null
   >(null);
-  const [friendIndexIndicatorLabel, setFriendIndexIndicatorLabel] = useState<
-    string | null
-  >(null);
-  const [activeFriendIndexKey, setActiveFriendIndexKey] = useState<string | null>(
-    null,
-  );
   const [focusedFriendIndex, setFocusedFriendIndex] = useState(0);
   const [focusedMessageIndex, setFocusedMessageIndex] = useState(0);
   const seededSelectionRef = useRef("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const friendListScrollRef = useRef<HTMLDivElement | null>(null);
   const friendItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const friendSectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const messageItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const friendsQuery = useQuery({
@@ -78,7 +74,11 @@ export function DesktopCreateGroupDialog({
     enabled: open,
   });
   const shareableMessagesQuery = useQuery({
-    queryKey: ["desktop-create-group-shareable-messages", baseUrl, conversationId],
+    queryKey: [
+      "desktop-create-group-shareable-messages",
+      baseUrl,
+      conversationId,
+    ],
     queryFn: () =>
       getConversationMessages(conversationId!, baseUrl, {
         limit: MAX_SHARED_MESSAGE_COUNT,
@@ -86,7 +86,10 @@ export function DesktopCreateGroupDialog({
     enabled: open && Boolean(conversationId),
   });
 
-  const friendItems = useMemo(() => friendsQuery.data ?? [], [friendsQuery.data]);
+  const friendItems = useMemo(
+    () => friendsQuery.data ?? [],
+    [friendsQuery.data],
+  );
   const sortedFriendItems = useMemo(
     () => createFriendDirectoryItems(friendItems),
     [friendItems],
@@ -113,7 +116,9 @@ export function DesktopCreateGroupDialog({
     [friendMap, seedMemberIds],
   );
   const sourceFriendId = sourceFriend?.character.id ?? null;
-  const sourceFriendName = sourceFriend ? getFriendDisplayName(sourceFriend) : null;
+  const sourceFriendName = sourceFriend
+    ? getFriendDisplayName(sourceFriend)
+    : null;
   const filteredFriends = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
     return sortedFriendItems.filter((item) => {
@@ -135,7 +140,9 @@ export function DesktopCreateGroupDialog({
   const pinnedSourceFriend = useMemo(
     () =>
       sourceFriendId
-        ? filteredFriends.find((item) => item.character.id === sourceFriendId) ?? null
+        ? (filteredFriends.find(
+            (item) => item.character.id === sourceFriendId,
+          ) ?? null)
         : null,
     [filteredFriends, sourceFriendId],
   );
@@ -148,20 +155,14 @@ export function DesktopCreateGroupDialog({
   );
   const orderedFilteredFriends = useMemo(
     () =>
-      pinnedSourceFriend ? [pinnedSourceFriend, ...directoryFriends] : directoryFriends,
+      pinnedSourceFriend
+        ? [pinnedSourceFriend, ...directoryFriends]
+        : directoryFriends,
     [directoryFriends, pinnedSourceFriend],
   );
   const friendSections = useMemo(
     () => buildContactSections(directoryFriends),
     [directoryFriends],
-  );
-  const friendIndexItems = useMemo(
-    () =>
-      friendSections.map((section) => ({
-        key: section.key,
-        indexLabel: section.indexLabel,
-      })),
-    [friendSections],
   );
   const friendPositionMap = useMemo(
     () =>
@@ -204,9 +205,13 @@ export function DesktopCreateGroupDialog({
           name: defaultGroupName,
           memberIds: selectedIds,
           sourceConversationId:
-            shareHistory && selectedMessageIds.length ? conversationId : undefined,
+            shareHistory && selectedMessageIds.length
+              ? conversationId
+              : undefined,
           sharedMessageIds:
-            shareHistory && selectedMessageIds.length ? selectedMessageIds : undefined,
+            shareHistory && selectedMessageIds.length
+              ? selectedMessageIds
+              : undefined,
         },
         baseUrl,
       ),
@@ -254,18 +259,12 @@ export function DesktopCreateGroupDialog({
       return;
     }
 
-    const timer = window.setTimeout(() => setMessageSelectionNotice(null), 2200);
+    const timer = window.setTimeout(
+      () => setMessageSelectionNotice(null),
+      2200,
+    );
     return () => window.clearTimeout(timer);
   }, [messageSelectionNotice]);
-
-  useEffect(() => {
-    if (!friendIndexIndicatorLabel) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => setFriendIndexIndicatorLabel(null), 850);
-    return () => window.clearTimeout(timer);
-  }, [friendIndexIndicatorLabel]);
 
   useEffect(() => {
     if (!open || !shareHistory || selectedMessageIds.length > 0) {
@@ -296,18 +295,6 @@ export function DesktopCreateGroupDialog({
       Math.min(Math.max(current, 0), orderedFilteredFriends.length - 1),
     );
   }, [orderedFilteredFriends.length]);
-
-  useEffect(() => {
-    const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
-    if (focusedFriend?.character.id === sourceFriendId) {
-      setActiveFriendIndexKey(null);
-      return;
-    }
-
-    setActiveFriendIndexKey(
-      focusedFriend?.indexLabel ?? null,
-    );
-  }, [focusedFriendIndex, orderedFilteredFriends, sourceFriendId]);
 
   useEffect(() => {
     if (!shareableMessages.length) {
@@ -492,9 +479,6 @@ export function DesktopCreateGroupDialog({
       if (nextIndex !== -1) {
         event.preventDefault();
         setFocusedFriendIndex(nextIndex);
-        setFriendIndexIndicatorLabel(
-          orderedFilteredFriends[nextIndex]?.indexLabel ?? null,
-        );
         searchInputRef.current?.focus();
       }
       return;
@@ -511,9 +495,7 @@ export function DesktopCreateGroupDialog({
     }
   };
 
-  const handleSearchKeyDown = (
-    event: ReactKeyboardEvent<HTMLInputElement>,
-  ) => {
+  const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape" && searchTerm.trim()) {
       event.preventDefault();
       event.stopPropagation();
@@ -607,94 +589,6 @@ export function DesktopCreateGroupDialog({
     }
   };
 
-  const jumpToFriendSection = (
-    sectionKey: string,
-    behavior: ScrollBehavior = "smooth",
-  ) => {
-    const targetSection = friendSections.find((section) => section.key === sectionKey);
-    const firstItem = targetSection?.items[0];
-    if (!targetSection || !firstItem) {
-      return;
-    }
-
-    const nextIndex = friendPositionMap.get(firstItem.character.id);
-    if (typeof nextIndex === "number") {
-      setFocusedFriendIndex(nextIndex);
-    }
-
-    friendSectionRefs.current[sectionKey]?.scrollIntoView({
-      block: "start",
-      behavior,
-    });
-    searchInputRef.current?.focus();
-  };
-
-  const syncActiveFriendSectionFromScroll = useCallback(() => {
-    const scrollContainer = friendListScrollRef.current;
-    if (!scrollContainer || !friendSections.length) {
-      return;
-    }
-
-    if (pinnedSourceFriend) {
-      const pinnedNode = friendItemRefs.current[pinnedSourceFriend.character.id];
-      if (pinnedNode) {
-        const pinnedRect = pinnedNode.getBoundingClientRect();
-        const containerRect = scrollContainer.getBoundingClientRect();
-        if (pinnedRect.bottom > containerRect.top + 24) {
-          setActiveFriendIndexKey(null);
-          return;
-        }
-      }
-    }
-
-    const containerTop = scrollContainer.getBoundingClientRect().top;
-    let nextSectionKey = friendSections[0]?.key ?? null;
-
-    for (const section of friendSections) {
-      const sectionNode = friendSectionRefs.current[section.key];
-      if (!sectionNode) {
-        continue;
-      }
-
-      const offset = sectionNode.getBoundingClientRect().top - containerTop;
-      if (offset <= 20) {
-        nextSectionKey = section.key;
-        continue;
-      }
-
-      break;
-    }
-
-    setActiveFriendIndexKey(nextSectionKey);
-  }, [friendSections, pinnedSourceFriend]);
-
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const focusedFriend = orderedFilteredFriends[focusedFriendIndex];
-      setActiveFriendIndexKey(
-        focusedFriend?.character.id === sourceFriendId
-          ? null
-          : focusedFriend?.indexLabel ?? null,
-      );
-      return;
-    }
-
-    const frameId = window.requestAnimationFrame(() => {
-      syncActiveFriendSectionFromScroll();
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, [
-    focusedFriendIndex,
-    friendSections,
-    open,
-    orderedFilteredFriends,
-    pinnedSourceFriend,
-    searchTerm,
-    syncActiveFriendSectionFromScroll,
-    sourceFriendId,
-  ]);
-
   const renderFriendRow = (item: FriendDirectoryItem) => {
     const displayName = getFriendDisplayName(item);
     const aliasName =
@@ -719,27 +613,23 @@ export function DesktopCreateGroupDialog({
         aria-pressed={checked}
         aria-current={focused ? "true" : undefined}
         className={cn(
-          "flex w-full items-center gap-3.5 rounded-[10px] border border-transparent px-3.5 py-2.5 text-left transition disabled:opacity-60",
+          "flex w-full items-center gap-3 rounded-none border-b border-transparent px-4 py-2.5 text-left transition disabled:opacity-60",
           checked
-            ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
+            ? "bg-[rgba(7,193,96,0.08)]"
             : isSourceFriend
-              ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.05)] hover:border-[rgba(7,193,96,0.14)] hover:bg-[rgba(7,193,96,0.07)]"
-              : "hover:border-[color:var(--border-faint)] hover:bg-white",
-          focused ? "ring-1 ring-[rgba(7,193,96,0.18)]" : "",
+              ? "bg-[rgba(7,193,96,0.04)] hover:bg-[rgba(7,193,96,0.06)]"
+              : "hover:bg-[rgba(0,0,0,0.028)]",
+          focused ? "bg-[rgba(7,193,96,0.05)]" : "",
         )}
       >
-        <AvatarChip
-          name={displayName}
-          src={item.character.avatar}
-          size="md"
-        />
+        <AvatarChip name={displayName} src={item.character.avatar} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <div className="truncate text-[14px] text-[color:var(--text-primary)]">
               {displayName}
             </div>
             {isSourceFriend ? (
-              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+              <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
                 当前聊天
               </span>
             ) : null}
@@ -755,13 +645,13 @@ export function DesktopCreateGroupDialog({
         </div>
         <div
           className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+            "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
             checked
               ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
+              : "border-[rgba(15,23,42,0.14)] bg-white text-transparent",
           )}
         >
-          <Check size={12} strokeWidth={2.8} />
+          <Check size={12} strokeWidth={3} />
         </div>
       </button>
     );
@@ -785,7 +675,7 @@ export function DesktopCreateGroupDialog({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.24)] p-6 backdrop-blur-[3px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
       <button
         type="button"
         aria-label="关闭发起群聊弹层"
@@ -798,18 +688,12 @@ export function DesktopCreateGroupDialog({
       />
 
       <div
-        className="relative flex h-[min(720px,82vh)] w-full max-w-[640px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onKeyDown={handleDialogKeyDown}
       >
-        <div className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-          <div className="min-w-0">
-            <div className="text-[18px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">
-              发起群聊
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
-              群名称会按成员自动生成，创建后可在聊天信息里修改。
-            </div>
+        <div className="relative border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-6 py-4 text-center">
+          <div className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]">
+            选择联系人
           </div>
           <button
             type="button"
@@ -820,35 +704,13 @@ export function DesktopCreateGroupDialog({
             }}
             disabled={createMutation.isPending}
             aria-label="关闭"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="absolute right-4 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition hover:bg-black/[0.04] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-6 py-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <div className="text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-primary)]">
-                选择成员
-              </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                先补齐要拉进群的人，再决定要不要带上聊天上下文。
-              </div>
-            </div>
-            <div className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
-              已选 {selectedIds.length}
-            </div>
-          </div>
-
-          {seedMemberIds.length ? (
-            <div className="mb-3 rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
-              已按当前聊天默认勾选
-              {sourceFriendName ? `“${sourceFriendName}”` : "对方"}
-              ，你可以继续添加其他联系人。
-            </div>
-          ) : null}
-
+        <div className="border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3">
           <label className="relative block">
             <Search
               size={16}
@@ -875,9 +737,9 @@ export function DesktopCreateGroupDialog({
             ) : null}
           </label>
 
-          <div className="mt-3 min-h-9 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-3 py-2.5">
+          <div className="mt-3 min-h-[72px] rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white px-3 py-3">
             {selectedFriends.length ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-3 overflow-x-auto pb-1">
                 {selectedFriends.map((item) => {
                   const displayName = getFriendDisplayName(item);
                   const isSourceFriend = item.character.id === sourceFriendId;
@@ -886,400 +748,61 @@ export function DesktopCreateGroupDialog({
                       key={item.character.id}
                       type="button"
                       onClick={() => toggleSelection(item.character.id)}
-                      className={cn(
-                        "flex items-center gap-2 rounded-[8px] border px-3 py-1.5 text-left text-[12px] text-[color:var(--text-primary)] transition",
-                        isSourceFriend
-                          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] hover:bg-[rgba(7,193,96,0.07)]"
-                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
-                      )}
+                      className="flex w-14 shrink-0 flex-col items-center gap-1 text-center"
                     >
-                      <AvatarChip
-                        name={displayName}
-                        src={item.character.avatar}
-                        size="sm"
-                      />
-                      <span className="max-w-24 truncate">{displayName}</span>
+                      <div className="relative">
+                        <AvatarChip
+                          name={displayName}
+                          src={item.character.avatar}
+                          size="wechat"
+                        />
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white">
+                          <X size={10} />
+                        </span>
+                      </div>
+                      <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+                        {displayName}
+                      </span>
                       {isSourceFriend ? (
-                        <span className="rounded-full bg-white/80 px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
-                          当前聊天
+                        <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                          当前
                         </span>
                       ) : null}
-                      <X size={12} className="text-[color:var(--text-muted)]" />
                     </button>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-[12px] text-[color:var(--text-muted)]">
-                先选择联系人，再开始一个新的群聊。
+              <div className="flex min-h-[42px] items-center text-[12px] text-[color:var(--text-muted)]">
+                已选联系人会显示在这里
               </div>
             )}
           </div>
-
-          {conversationId ? (
-            <div className="mt-4 border-t border-dashed border-[color:var(--border-faint)] pt-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-primary)]">
-                    聊天上下文
-                  </div>
-                  <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                    {sourceFriendName
-                      ? `从你和“${sourceFriendName}”的聊天里带几条最近消息进群，减少重新说明成本。`
-                      : "从当前单聊里带几条最近消息进群，减少重新说明成本。"}
-                  </div>
-                </div>
-                <div className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
-                  {shareHistory ? `已选 ${selectedMessageIds.length}` : "可选"}
-                </div>
-              </div>
-
-              <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
-                <label className="flex items-start gap-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={shareHistory}
-                    onChange={(event) => {
-                      const nextChecked = event.target.checked;
-                      setShareHistory(nextChecked);
-                      setMessageSelectionNotice(null);
-                      if (!nextChecked) {
-                        setSelectedMessageIds([]);
-                      }
-                    }}
-                    className="mt-0.5 h-4 w-4 rounded border-black/20 text-[color:var(--brand-primary)] focus:ring-[color:var(--brand-primary)]"
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-medium text-[color:var(--text-primary)]">
-                      {sourceFriendName
-                        ? `分享与“${sourceFriendName}”的聊天记录`
-                        : "分享聊天记录"}
-                    </span>
-                    <span className="mt-1 block text-[12px] leading-5 text-[color:var(--text-muted)]">
-                      从当前单聊里挑选几条最近消息，一并带进新群。
-                    </span>
-                  </span>
-                </label>
-
-                {shareHistory ? (
-                  <div className="mt-3">
-                    {messageSelectionNotice ? (
-                      <InlineNotice className="mb-3 text-xs" tone="muted">
-                        {messageSelectionNotice}
-                      </InlineNotice>
-                    ) : null}
-                    {shareableMessagesQuery.isLoading ? (
-                      <LoadingBlock
-                        className="px-0 py-3 text-left"
-                        label="正在读取最近聊天记录..."
-                      />
-                    ) : null}
-                    {shareableMessagesQuery.isError &&
-                    shareableMessagesQuery.error instanceof Error ? (
-                      <ErrorBlock message={shareableMessagesQuery.error.message} />
-                    ) : null}
-                    {!shareableMessagesQuery.isLoading &&
-                    !shareableMessagesQuery.isError &&
-                    !shareableMessages.length ? (
-                      <div className="rounded-[10px] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
-                        当前单聊里还没有可分享的消息。
-                      </div>
-                    ) : null}
-                    {!shareableMessagesQuery.isLoading &&
-                    !shareableMessagesQuery.isError &&
-                    shareableMessages.length ? (
-                      <>
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <div className="text-[12px] text-[color:var(--text-muted)]">
-                            已选择 {selectedMessageIds.length} /{" "}
-                            {Math.min(
-                              MAX_SHARED_MESSAGE_COUNT,
-                              shareableMessages.length,
-                            )} 条
-                          </div>
-                          <div className="flex flex-wrap items-center justify-end gap-2 text-[12px]">
-                            {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
-                              <button
-                                key={count}
-                                type="button"
-                                onClick={() => selectRecentMessages(count)}
-                                className={cn(
-                                  "rounded-[8px] border px-2.5 py-1 transition",
-                                  recentPresetSelectionState.get(count)
-                                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                                    : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
-                                )}
-                              >
-                                最近{count}条
-                              </button>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                applyMessageSelection(
-                                  shareableMessages.map((message) => message.id),
-                                )
-                              }
-                              className={cn(
-                                "rounded-[8px] border px-2.5 py-1 transition",
-                                allShareableMessagesSelected
-                                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
-                              )}
-                            >
-                              全选
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedMessageIds([])}
-                              className={cn(
-                                "rounded-[8px] border px-2.5 py-1 transition",
-                                selectedMessageIds.length === 0
-                                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
-                                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
-                              )}
-                            >
-                              清空
-                            </button>
-                          </div>
-                        </div>
-                        <div
-                          tabIndex={0}
-                          onKeyDown={handleSharedMessagesKeyDown}
-                          className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-faint)] bg-white p-1.5 outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.14)]"
-                          aria-label="可分享聊天记录列表"
-                        >
-                          <div className="space-y-3">
-                          {shareableMessageSections.map((section) => (
-                            <div
-                              key={section.key}
-                              className="rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-2"
-                            >
-                              <div className="sticky top-0 z-10 -mx-1.5 mb-1 bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--text-dim)] backdrop-blur">
-                                {section.label}
-                              </div>
-                              <div className="relative space-y-2 pl-12">
-                                <div className="absolute bottom-3 left-[33px] top-3 w-px bg-[rgba(15,23,42,0.08)]" />
-                                {section.items.map((message, index) => {
-                                  const previousMessage = section.items[index - 1];
-                                  const nextMessage = section.items[index + 1];
-                                  const continuedFromPrevious =
-                                    isShareableMessageContinuation(
-                                      message,
-                                      previousMessage,
-                                    );
-                                  const continuedToNext =
-                                    isShareableMessageContinuation(
-                                      nextMessage,
-                                      message,
-                                    );
-                                  const messageGroupPosition =
-                                    getShareableMessageGroupPosition(
-                                      continuedFromPrevious,
-                                      continuedToNext,
-                                    );
-                                  const checked = selectedMessageIds.includes(message.id);
-                                  const focused =
-                                    shareableMessagePositionMap.get(message.id) ===
-                                    focusedMessageIndex;
-                                  const isGroupLead = !continuedFromPrevious;
-                                  const timeLabel = formatShareableMessageTime(
-                                    message.createdAt,
-                                  );
-                                  return (
-                                    <button
-                                      key={message.id}
-                                      type="button"
-                                      ref={(node) => {
-                                        messageItemRefs.current[message.id] = node;
-                                      }}
-                                      onClick={() =>
-                                        toggleMessageSelection(message.id)
-                                      }
-                                      aria-pressed={checked}
-                                      aria-current={focused ? "true" : undefined}
-                                      className={cn(
-                                        "group relative flex w-full items-start gap-3 rounded-[12px] px-2 text-left transition duration-150 active:translate-y-[1px]",
-                                        continuedFromPrevious ? "py-0.5" : "py-1.5",
-                                        checked
-                                          ? "bg-[rgba(7,193,96,0.05)]"
-                                          : "hover:bg-white active:bg-[color:var(--surface-console)]",
-                                        focused
-                                          ? "ring-1 ring-[rgba(7,193,96,0.18)]"
-                                          : "",
-                                      )}
-                                    >
-                                      <div
-                                        className={cn(
-                                          "absolute left-7 flex -translate-x-1/2 items-center justify-center",
-                                          continuedFromPrevious ? "top-3" : "top-4",
-                                        )}
-                                      >
-                                        <div
-                                          className={cn(
-                                            "h-3 w-3 rounded-full border-2 bg-white transition-colors duration-150",
-                                            checked
-                                              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
-                                            : focused
-                                                ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
-                                                : "border-[rgba(15,23,42,0.14)] group-hover:border-[rgba(15,23,42,0.22)]",
-                                          )}
-                                        />
-                                      </div>
-                                      <div
-                                        className={cn(
-                                          "w-10 shrink-0 text-[11px] transition-colors duration-150",
-                                          continuedFromPrevious ? "pt-0.5" : "pt-1",
-                                          checked
-                                            ? "text-[color:var(--brand-primary)]"
-                                            : "text-[color:var(--text-dim)] group-hover:text-[color:var(--text-muted)]",
-                                        )}
-                                      >
-                                        <span
-                                          aria-hidden={continuedFromPrevious}
-                                          className={continuedFromPrevious ? "invisible" : undefined}
-                                        >
-                                          {timeLabel}
-                                        </span>
-                                      </div>
-                                      <div
-                                        className={cn(
-                                          "relative min-w-0 flex-1 border px-3 transition",
-                                          continuedFromPrevious ? "py-2" : "py-2.5",
-                                          continuedFromPrevious ? "pr-10" : "",
-                                          isGroupLead
-                                            ? "shadow-[0_1px_0_rgba(15,23,42,0.02)]"
-                                            : "shadow-none",
-                                          messageGroupPosition === "single"
-                                            ? "rounded-[10px]"
-                                            : "",
-                                          messageGroupPosition === "start"
-                                            ? "rounded-[10px] rounded-bl-[6px]"
-                                            : "",
-                                          messageGroupPosition === "middle"
-                                            ? "rounded-[6px]"
-                                            : "",
-                                          messageGroupPosition === "end"
-                                            ? "rounded-[10px] rounded-tl-[6px]"
-                                            : "",
-                                          checked
-                                            ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
-                                            : isGroupLead
-                                              ? "border-[color:var(--border-faint)] bg-white group-hover:border-[color:var(--border-faint)] group-hover:bg-[color:var(--surface-console)] group-active:bg-[rgba(247,250,250,0.92)]"
-                                              : "border-[rgba(15,23,42,0.05)] bg-[color:var(--surface-console)] group-hover:border-[color:var(--border-faint)] group-hover:bg-white group-active:bg-[rgba(247,250,250,0.92)]",
-                                          focused && !checked
-                                            ? "shadow-[0_0_0_1px_rgba(7,193,96,0.05)]"
-                                            : "",
-                                        )}
-                                      >
-                                        {focused ? (
-                                          <div className="absolute inset-y-1 left-1 w-[3px] rounded-full bg-[rgba(7,193,96,0.14)]" />
-                                        ) : null}
-                                        {!continuedFromPrevious ? (
-                                          <div className="flex items-center gap-2">
-                                            <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
-                                              {message.senderName}
-                                            </span>
-                                            <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
-                                              {formatMessageTypeLabel(message)}
-                                            </span>
-                                            {focused ? (
-                                              <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
-                                                键盘焦点
-                                              </span>
-                                            ) : null}
-                                            <div
-                                              className={cn(
-                                                "ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                                                checked
-                                                  ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-                                                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
-                                              )}
-                                            >
-                                              <Check size={12} strokeWidth={2.8} />
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div
-                                            className={cn(
-                                              "absolute right-3 top-2 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                                              checked
-                                                ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-                                                : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-transparent",
-                                            )}
-                                          >
-                                            <Check size={12} strokeWidth={2.8} />
-                                          </div>
-                                        )}
-                                        <div
-                                          className={cn(
-                                            "line-clamp-2 text-[12px] leading-5",
-                                            continuedFromPrevious ? "" : "mt-1",
-                                            isGroupLead
-                                              ? "text-[color:var(--text-primary)]"
-                                              : "text-[color:var(--text-secondary)]",
-                                          )}
-                                        >
-                                          {getMessagePreviewText(message)}
-                                        </div>
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+          {seedMemberIds.length ? (
+            <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+              已默认选择
+              {sourceFriendName ? `“${sourceFriendName}”` : "当前聊天对象"}
             </div>
           ) : null}
         </div>
 
         <div
           ref={friendListScrollRef}
-          onScroll={() => {
-            if (!searchTerm.trim()) {
-              syncActiveFriendSectionFromScroll();
-            }
-          }}
-          className="min-h-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] px-3 py-3"
+          className="min-h-0 flex-1 overflow-auto bg-white"
         >
-          <div className="mb-3 flex items-center justify-between gap-3 px-3">
-            <div>
-              <div className="text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-primary)]">
-                联系人列表
-              </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
-                可用 `↑/↓`、`Alt+字母` 或右侧索引快速定位联系人。
-              </div>
-            </div>
-            <div className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
-              {searchTerm.trim()
-                ? `${filteredFriends.length} 条结果`
-                : `${filteredFriends.length} 位可选`}
-            </div>
-          </div>
-
-          <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-2 shadow-[var(--shadow-soft)]">
-          <div className="mb-2 flex items-center justify-between gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[11px] text-[color:var(--text-dim)]">
-            <span>{searchTerm.trim() ? `搜索：${searchTerm.trim()}` : "联系人目录"}</span>
-            <span>{searchTerm.trim() ? "按名称 / 备注 / 关系筛选，Esc 清空" : "按首字母分组"}</span>
-          </div>
           {friendsQuery.isLoading ? (
-            <LoadingBlock className="px-3 py-4 text-left" label="正在读取联系人..." />
+            <LoadingBlock
+              className="px-4 py-5 text-left"
+              label="正在读取联系人..."
+            />
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-            <div className="px-3 py-2">
+            <div className="px-4 py-3">
               <ErrorBlock message={friendsQuery.error.message} />
             </div>
           ) : null}
           {createMutation.isError && createMutation.error instanceof Error ? (
-            <div className="px-3 py-2">
+            <div className="px-4 py-3">
               <ErrorBlock message={createMutation.error.message} />
             </div>
           ) : null}
@@ -1287,7 +810,7 @@ export function DesktopCreateGroupDialog({
           {!friendsQuery.isLoading &&
           !friendsQuery.isError &&
           !friendItems.length ? (
-            <div className="px-3 py-8">
+            <div className="px-4 py-10">
               <EmptyState
                 title="还没有可拉进群的人"
                 description="先去通讯录里建立一些关系，再回来创建群聊。"
@@ -1299,7 +822,7 @@ export function DesktopCreateGroupDialog({
           !friendsQuery.isError &&
           friendItems.length > 0 &&
           !filteredFriends.length ? (
-            <div className="px-3 py-8">
+            <div className="px-4 py-10">
               <EmptyState
                 title="没有匹配的联系人"
                 description="换个名字、备注名或关系关键词试试。"
@@ -1307,11 +830,21 @@ export function DesktopCreateGroupDialog({
             </div>
           ) : null}
 
-          <div className="relative pr-8">
+          {!friendsQuery.isLoading &&
+          !friendsQuery.isError &&
+          filteredFriends.length ? (
+            <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-2 text-[11px] text-[color:var(--text-dim)]">
+              {searchTerm.trim()
+                ? `搜索结果 ${filteredFriends.length} 位联系人`
+                : `共 ${filteredFriends.length} 位联系人`}
+            </div>
+          ) : null}
+
+          <div>
             <div className="space-y-3">
               {pinnedSourceFriend ? (
-                <div className="mb-3">
-                  <div className="mb-1 rounded-[8px] bg-[rgba(7,193,96,0.07)] px-2 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
+                <div>
+                  <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
                     当前聊天
                   </div>
                   {renderFriendRow(pinnedSourceFriend)}
@@ -1319,56 +852,221 @@ export function DesktopCreateGroupDialog({
               ) : null}
 
               {friendSections.map((section) => (
-                <div
-                  key={section.key}
-                  ref={(node) => {
-                    friendSectionRefs.current[section.key] = node;
-                  }}
-                >
-                  <div className="sticky top-0 z-[1] mb-1 rounded-[8px] bg-[rgba(252,252,252,0.94)] px-2 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-dim)] backdrop-blur">
+                <div key={section.key}>
+                  <div className="sticky top-0 z-[1] border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-dim)]">
                     {section.title}
                   </div>
-                  <div className="space-y-1">
+                  <div>
                     {section.items.map((item) => renderFriendRow(item))}
                   </div>
                 </div>
               ))}
             </div>
-
-            {!searchTerm.trim() && friendIndexItems.length > 1 ? (
-              <ContactIndexList
-                items={friendIndexItems}
-                activeKey={activeFriendIndexKey}
-                className="absolute right-0 top-0"
-                onSelect={jumpToFriendSection}
-              />
-            ) : null}
-          </div>
-
-          {!searchTerm.trim() && friendIndexIndicatorLabel ? (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-[rgba(22,22,22,0.72)] text-[30px] font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] backdrop-blur">
-                {friendIndexIndicatorLabel}
-              </div>
-            </div>
-          ) : null}
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-          <div className="min-w-0">
-            <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
-              已选择 {selectedIds.length} 位成员
-              {selectedIds.length ? ` · ${defaultGroupName}` : ""}
-              {shareHistory && selectedMessageIds.length
-                ? ` · ${selectedMessageIds.length} 条聊天记录`
-                : ""}
+        {conversationId && shareHistory ? (
+          <div className="border-t border-[rgba(15,23,42,0.08)] bg-[#fafafa] px-4 py-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                分享聊天内容
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShareHistory(false);
+                  setSelectedMessageIds([]);
+                  setMessageSelectionNotice(null);
+                }}
+                className="text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+              >
+                收起
+              </button>
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-              快捷键：`↑/↓` 选联系人，`Enter` 勾选，`Backspace` 删除最后一个已选，`Alt+字母` 首字母跳转，`Alt+数字` 选择最近 N 条聊天记录，`Ctrl/Cmd+Enter` 创建。
-            </div>
+
+            {messageSelectionNotice ? (
+              <InlineNotice className="mb-3 text-xs" tone="muted">
+                {messageSelectionNotice}
+              </InlineNotice>
+            ) : null}
+            {shareableMessagesQuery.isLoading ? (
+              <LoadingBlock
+                className="px-0 py-3 text-left"
+                label="正在读取最近聊天记录..."
+              />
+            ) : null}
+            {shareableMessagesQuery.isError &&
+            shareableMessagesQuery.error instanceof Error ? (
+              <ErrorBlock message={shareableMessagesQuery.error.message} />
+            ) : null}
+            {!shareableMessagesQuery.isLoading &&
+            !shareableMessagesQuery.isError &&
+            !shareableMessages.length ? (
+              <div className="rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
+                当前单聊里还没有可分享的消息。
+              </div>
+            ) : null}
+            {!shareableMessagesQuery.isLoading &&
+            !shareableMessagesQuery.isError &&
+            shareableMessages.length ? (
+              <>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="text-[12px] text-[color:var(--text-muted)]">
+                    已选择 {selectedMessageIds.length} /{" "}
+                    {Math.min(
+                      MAX_SHARED_MESSAGE_COUNT,
+                      shareableMessages.length,
+                    )}{" "}
+                    条
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                    {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => selectRecentMessages(count)}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 transition",
+                          recentPresetSelectionState.get(count)
+                            ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                            : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                        )}
+                      >
+                        最近{count}条
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        applyMessageSelection(
+                          shareableMessages.map((message) => message.id),
+                        )
+                      }
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 transition",
+                        allShareableMessagesSelected
+                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                          : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                      )}
+                    >
+                      全选
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMessageIds([])}
+                      className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2.5 py-1 text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.03)]"
+                    >
+                      清空
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  tabIndex={0}
+                  onKeyDown={handleSharedMessagesKeyDown}
+                  className="max-h-56 overflow-auto rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[rgba(7,193,96,0.14)]"
+                  aria-label="可分享聊天记录列表"
+                >
+                  {shareableMessageSections.map((section) => (
+                    <div key={section.key}>
+                      <div className="sticky top-0 z-10 border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-3 py-2 text-[11px] font-medium text-[color:var(--text-dim)]">
+                        {section.label}
+                      </div>
+                      <div>
+                        {section.items.map((message) => {
+                          const checked = selectedMessageIds.includes(
+                            message.id,
+                          );
+                          const focused =
+                            shareableMessagePositionMap.get(message.id) ===
+                            focusedMessageIndex;
+
+                          return (
+                            <button
+                              key={message.id}
+                              type="button"
+                              ref={(node) => {
+                                messageItemRefs.current[message.id] = node;
+                              }}
+                              onClick={() => toggleMessageSelection(message.id)}
+                              aria-pressed={checked}
+                              aria-current={focused ? "true" : undefined}
+                              className={cn(
+                                "flex w-full items-start gap-3 border-b border-[rgba(15,23,42,0.05)] px-3 py-2.5 text-left transition",
+                                checked
+                                  ? "bg-[rgba(7,193,96,0.08)]"
+                                  : "hover:bg-[rgba(0,0,0,0.028)]",
+                                focused ? "bg-[rgba(7,193,96,0.05)]" : "",
+                              )}
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
+                                  checked
+                                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
+                                    : "border-[rgba(15,23,42,0.14)] bg-white text-transparent",
+                                )}
+                              >
+                                <Check size={12} strokeWidth={3} />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 text-[11px] text-[color:var(--text-dim)]">
+                                  <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+                                    {message.senderName}
+                                  </span>
+                                  <span>
+                                    {formatShareableMessageTime(
+                                      message.createdAt,
+                                    )}
+                                  </span>
+                                  <span>{formatMessageTypeLabel(message)}</span>
+                                </div>
+                                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                                  {getMessagePreviewText(message)}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
           </div>
-          <div className="flex items-center gap-3">
+        ) : null}
+
+        <div className="flex items-center justify-between gap-4 border-t border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3 text-[12px] text-[color:var(--text-muted)]">
+            <span>已选择 {selectedIds.length} 位联系人</span>
+            {conversationId ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextChecked = !shareHistory;
+                  setShareHistory(nextChecked);
+                  setMessageSelectionNotice(null);
+                  if (!nextChecked) {
+                    setSelectedMessageIds([]);
+                  }
+                }}
+                className={cn(
+                  "rounded-full px-3 py-1 transition",
+                  shareHistory
+                    ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                    : "bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                )}
+              >
+                {shareHistory && selectedMessageIds.length
+                  ? `已分享 ${selectedMessageIds.length} 条聊天内容`
+                  : "分享聊天内容"}
+              </button>
+            ) : selectedIds.length ? (
+              <span className="truncate">{defaultGroupName}</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="secondary"
@@ -1385,7 +1083,7 @@ export function DesktopCreateGroupDialog({
               disabled={!selectedIds.length || createMutation.isPending}
               className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
             >
-              {createMutation.isPending ? "正在创建..." : "创建群聊"}
+              {createMutation.isPending ? "正在创建..." : "完成"}
             </Button>
           </div>
         </div>
@@ -1607,50 +1305,6 @@ function formatShareableMessageTime(createdAt: string) {
 function parseTimestamp(value: string) {
   const timestamp = Date.parse(value);
   return Number.isNaN(timestamp) ? null : timestamp;
-}
-
-function isShareableMessageContinuation(
-  message: Message,
-  previousMessage?: Message,
-) {
-  if (!previousMessage) {
-    return false;
-  }
-
-  if (
-    previousMessage.senderId !== message.senderId ||
-    previousMessage.senderType !== message.senderType ||
-    previousMessage.senderName !== message.senderName
-  ) {
-    return false;
-  }
-
-  const previousTimestamp = parseTimestamp(previousMessage.createdAt);
-  const currentTimestamp = parseTimestamp(message.createdAt);
-  if (previousTimestamp === null || currentTimestamp === null) {
-    return false;
-  }
-
-  return currentTimestamp - previousTimestamp <= 5 * 60 * 1000;
-}
-
-function getShareableMessageGroupPosition(
-  continuedFromPrevious: boolean,
-  continuedToNext: boolean,
-) {
-  if (!continuedFromPrevious && !continuedToNext) {
-    return "single";
-  }
-
-  if (!continuedFromPrevious && continuedToNext) {
-    return "start";
-  }
-
-  if (continuedFromPrevious && continuedToNext) {
-    return "middle";
-  }
-
-  return "end";
 }
 
 function isSameCalendarDay(left: Date, right: Date) {

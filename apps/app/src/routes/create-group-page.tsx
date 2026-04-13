@@ -7,14 +7,7 @@ import {
   getFriends,
   type FriendListItem,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  ErrorBlock,
-  LoadingBlock,
-  TextField,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopCreateGroupDialog } from "../features/desktop/chat/desktop-create-group-dialog";
@@ -429,8 +422,12 @@ function FriendSelectionRow({
           : checked
             ? "bg-[rgba(7,193,96,0.06)] px-4 py-3.5"
             : "bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5",
-        !isDesktop && withDivider ? "border-t border-[color:var(--border-faint)]" : "",
-        !isDesktop && !disabled ? "hover:bg-[color:var(--surface-card-hover)]" : "",
+        !isDesktop && withDivider
+          ? "border-t border-[color:var(--border-faint)]"
+          : "",
+        !isDesktop && !disabled
+          ? "hover:bg-[color:var(--surface-card-hover)]"
+          : "",
       )}
     >
       <AvatarChip name={name} src={src} size={isDesktop ? "md" : "wechat"} />
