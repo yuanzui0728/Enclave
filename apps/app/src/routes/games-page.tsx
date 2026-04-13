@@ -61,9 +61,12 @@ import {
 } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import {
+  isMobileWebShareSurface,
+  isNativeMobileShareSurface,
+} from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -100,9 +103,12 @@ export function GamesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
-  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
+  const mobileWebCopyFallback = isMobileWebShareSurface({
+    isDesktopLayout,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerId = useWorldOwnerStore((state) => state.id);
