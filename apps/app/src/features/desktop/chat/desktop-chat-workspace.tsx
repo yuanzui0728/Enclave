@@ -86,7 +86,6 @@ import {
   splitChatTextSegments,
   summarizeChatMentions,
 } from "../../../lib/chat-text";
-import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import {
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
@@ -671,25 +670,17 @@ export function DesktopChatWorkspace({
     setNotice(null);
 
     if (key === "create-group") {
-      void navigate({
-        to: "/group/new",
-        hash: buildCreateGroupRouteHash({
-          source:
-            activeConversation &&
-            !isPersistedGroupConversation(activeConversation)
-              ? "desktop-chat"
-              : undefined,
-          conversationId:
-            activeConversation &&
-            !isPersistedGroupConversation(activeConversation)
-              ? activeConversation.id
-              : undefined,
-          seedMemberIds:
-            activeConversation &&
-            !isPersistedGroupConversation(activeConversation)
-              ? activeConversation.participants.slice(0, 1)
-              : [],
-        }),
+      setCreateGroupDialogState({
+        conversationId:
+          activeConversation &&
+          !isPersistedGroupConversation(activeConversation)
+            ? activeConversation.id
+            : undefined,
+        seedMemberIds:
+          activeConversation &&
+          !isPersistedGroupConversation(activeConversation)
+            ? activeConversation.participants.slice(0, 1)
+            : [],
       });
       return;
     }
