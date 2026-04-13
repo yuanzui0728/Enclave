@@ -400,7 +400,7 @@ export function DiscoverFeedPage() {
         title="广场动态"
         subtitle="世界居民公开可见"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -410,9 +410,9 @@ export function DiscoverFeedPage() {
             }
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -420,16 +420,16 @@ export function DiscoverFeedPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={focusComposer}
             aria-label="发一条广场动态"
           >
-            <PenSquare size={18} />
+            <PenSquare size={17} />
           </Button>
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         <MobileSocialComposerCard
           sectionId={FEED_COMPOSER_SECTION_ID}
           textareaId={FEED_COMPOSER_TEXTAREA_ID}
@@ -453,15 +453,17 @@ export function DiscoverFeedPage() {
           onSubmit={() => createMutation.mutate()}
         />
 
-        <section className="space-y-3">
+        <section className="space-y-2.5">
           <div className="px-1">
-            <div className="text-[13px] text-[#8c8c8c]">最近动态</div>
-            <div className="mt-1 text-[12px] leading-5 text-[#8c8c8c]">
+            <div className="text-[12px] text-[color:var(--text-muted)]">最近动态</div>
+            <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
               这里不只看朋友，也能看到世界里的居民正在说什么。
             </div>
           </div>
           {notice ? (
-            <InlineNotice tone={noticeTone}>{notice}</InlineNotice>
+            <InlineNotice className="text-[12px] leading-5" tone={noticeTone}>
+              {notice}
+            </InlineNotice>
           ) : null}
           {feedQuery.isLoading ? (
             <LoadingBlock label="正在读取广场动态..." />
@@ -486,21 +488,21 @@ export function DiscoverFeedPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
+                    className="h-8 w-8 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
                     onClick={() => void handleSharePost(post)}
                     aria-label={nativeMobileShareSupported ? "分享这条动态" : "复制这条动态摘要"}
                   >
                     {nativeMobileShareSupported ? (
-                      <Share2 size={16} />
+                      <Share2 size={15} />
                     ) : (
-                      <Copy size={16} />
+                      <Copy size={15} />
                     )}
                   </Button>
                 }
                 body={
                   <>
                     {post.authorType === "user" ? (
-                      <div className="mb-3 inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#07c160]">
+                      <div className="mb-2 inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
                         居民公开可见
                       </div>
                     ) : null}
@@ -548,11 +550,11 @@ export function DiscoverFeedPage() {
                 }
                 secondary={
                   post.commentsPreview.length > 0 ? (
-                    <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
+                    <div className="space-y-1.5 rounded-[14px] bg-[color:var(--surface-soft)] p-2.5">
                       {post.commentsPreview.map((comment) => (
                         <div
                           key={comment.id}
-                          className="text-xs leading-6 text-[color:var(--text-secondary)]"
+                          className="text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]"
                         >
                           <span className="text-[color:var(--text-primary)]">
                             {comment.authorName}
@@ -574,7 +576,7 @@ export function DiscoverFeedPage() {
                         }))
                       }
                       placeholder="写评论..."
-                      className="min-w-0 flex-1 rounded-full py-2 text-xs"
+                      className="min-w-0 flex-1 rounded-full py-1.5 text-[12px]"
                     />
                     <Button
                       disabled={
@@ -584,6 +586,7 @@ export function DiscoverFeedPage() {
                       onClick={() => commentMutation.mutate(post.id)}
                       variant="primary"
                       size="sm"
+                      className="h-8 px-3 text-[12px]"
                     >
                       {pendingCommentPostId === post.id ? "发送中..." : "发送"}
                     </Button>

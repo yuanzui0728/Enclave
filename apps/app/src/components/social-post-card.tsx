@@ -29,34 +29,36 @@ export function SocialPostCard({
   return (
     <article
       id={cardId}
-      className="overflow-hidden rounded-[28px] border border-black/5 bg-white p-5 shadow-none"
+      className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4 shadow-none"
     >
       <div className="flex items-start gap-3">
         <AvatarChip name={authorName} src={authorAvatar} />
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
             {authorName}
           </div>
           {meta ? (
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
               {meta}
             </div>
           ) : null}
         </div>
         {headerActions ? <div className="shrink-0">{headerActions}</div> : null}
       </div>
-      <div className="mt-5 rounded-[22px] border border-black/5 bg-[#fafafa] px-4 py-4 text-sm leading-7 text-[color:var(--text-primary)]">
+      <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[12px] leading-[1.35rem] text-[color:var(--text-primary)]">
         {body}
       </div>
       {summary ? (
-        <div className="mt-4 text-xs leading-6 text-[color:var(--text-muted)]">
+        <div className="mt-2.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
           {summary}
         </div>
       ) : null}
-      {actions ? <div className="mt-4 flex flex-wrap gap-2">{actions}</div> : null}
-      {secondary ? <div className="mt-4">{secondary}</div> : null}
+      {actions ? (
+        <div className="mt-2.5 flex flex-wrap gap-2">{actions}</div>
+      ) : null}
+      {secondary ? <div className="mt-2.5">{secondary}</div> : null}
       {composer ? (
-        <div className="mt-4 flex items-center gap-2 rounded-[18px] border border-black/5 bg-[#f5f5f5] p-2.5">
+        <div className="mt-2.5 flex items-center gap-2 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-2">
           {composer}
         </div>
       ) : null}
