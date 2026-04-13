@@ -21,7 +21,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import {
   formatDetailedMessageTimestamp,
@@ -565,34 +565,36 @@ export function DesktopChatHistoryPanel({
 
       {showResultsView ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="sticky top-0 z-[2] border-b border-[rgba(0,0,0,0.06)] bg-white/95 backdrop-blur">
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
-              {hasStructuredFilters ? (
-                <button
-                  type="button"
-                  onClick={clearStructuredFilters}
-                  className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
-                >
-                  <ChevronLeft size={14} />
-                  返回筛选
-                </button>
-              ) : (
-                <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-                  搜索结果
+          <div className="sticky top-0 z-[2] border-b border-[rgba(0,0,0,0.06)] bg-[#f7f7f7]/95 backdrop-blur">
+            <div className="bg-white">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                {hasStructuredFilters ? (
+                  <button
+                    type="button"
+                    onClick={clearStructuredFilters}
+                    className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                  >
+                    <ChevronLeft size={14} />
+                    返回筛选
+                  </button>
+                ) : (
+                  <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+                    搜索结果
+                  </div>
+                )}
+
+                <div className="rounded-full bg-[#f4f4f4] px-2 py-1 text-[11px] text-[color:var(--text-muted)]">
+                  {resultsQuery.isLoading ? "正在搜索..." : `共 ${totalResults} 条`}
                 </div>
-              )}
-
-              <div className="text-[12px] text-[color:var(--text-muted)]">
-                {resultsQuery.isLoading ? "正在搜索..." : `共 ${totalResults} 条`}
               </div>
-            </div>
 
-            <div className="border-t border-[rgba(0,0,0,0.05)] px-4 pb-3 pt-2">
-              <div className="text-[13px] text-[color:var(--text-primary)]">
-                {resultSummary.title}
-              </div>
-              <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
-                {resultSummary.description}
+              <div className="border-t border-[rgba(0,0,0,0.05)] px-4 pb-3 pt-2.5">
+                <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                  {resultSummary.title}
+                </div>
+                <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+                  {resultSummary.description}
+                </div>
               </div>
             </div>
           </div>
@@ -626,9 +628,11 @@ export function DesktopChatHistoryPanel({
             <div className="bg-white">
               {resultSections.map((section) => (
                 <section key={section.key}>
-                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-2 text-[11px] text-[color:var(--text-dim)]">
+                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-1.5 text-[11px] text-[color:var(--text-dim)]">
                     <span className="tracking-[0.06em]">{section.label}</span>
-                    <span>{section.items.length} 条</span>
+                    <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+                      {section.items.length} 条
+                    </span>
                   </div>
                   <div className="divide-y divide-[rgba(0,0,0,0.06)]">
                     {section.items.map((item) => {
@@ -700,18 +704,16 @@ export function DesktopChatHistoryPanel({
 
           {resultsQuery.hasNextPage ? (
             <div className="border-t border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
-              <Button
+              <button
                 type="button"
-                variant="secondary"
-                size="sm"
                 disabled={resultsQuery.isFetchingNextPage}
                 onClick={() => void resultsQuery.fetchNextPage()}
-                className="h-9 w-full rounded-[9px] border-[rgba(0,0,0,0.08)] bg-white text-[13px] shadow-none hover:bg-[#fafafa]"
+                className="mx-auto flex h-9 items-center justify-center rounded-full px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#f7f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:text-[color:var(--text-dim)]"
               >
                 {resultsQuery.isFetchingNextPage
                   ? "正在加载..."
                   : "查看更多聊天记录"}
-              </Button>
+              </button>
             </div>
           ) : null}
         </div>
