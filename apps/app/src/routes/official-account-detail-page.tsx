@@ -28,9 +28,9 @@ import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-a
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function OfficialAccountDetailPage() {
@@ -49,7 +49,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );

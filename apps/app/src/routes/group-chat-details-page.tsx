@@ -23,9 +23,9 @@ import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupChatDetailsPage() {
@@ -34,7 +34,7 @@ export function GroupChatDetailsPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<string | null>(null);
   const [memberGridExpanded, setMemberGridExpanded] = useState(false);
   const [managementSheetOpen, setManagementSheetOpen] = useState(false);

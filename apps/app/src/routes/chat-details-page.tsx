@@ -36,11 +36,11 @@ import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
 import {
-  isNativeMobileBridgeAvailable,
   openAppSettings,
   requestNotificationPermission,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -53,7 +53,7 @@ export function ChatDetailsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
@@ -290,11 +290,11 @@ export function ChatDetailsPage() {
       } else if (permission === "denied") {
         setNotice({
           tone: "warning",
-          message: isNativeMobileBridgeAvailable()
+          message: nativeMobileShareSupported
             ? "已开启 3 小时强提醒，但系统通知未开启。可前往系统设置继续打开通知。"
             : "已开启 3 小时强提醒，但系统通知未开启。",
-          actionLabel: isNativeMobileBridgeAvailable() ? "去设置" : undefined,
-          onAction: isNativeMobileBridgeAvailable()
+          actionLabel: nativeMobileShareSupported ? "去设置" : undefined,
+          onAction: nativeMobileShareSupported
             ? () => {
                 void openAppSettings();
               }

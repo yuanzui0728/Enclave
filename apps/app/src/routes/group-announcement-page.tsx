@@ -9,9 +9,9 @@ import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupAnnouncementPage() {
@@ -20,7 +20,7 @@ export function GroupAnnouncementPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info";
     message: string;

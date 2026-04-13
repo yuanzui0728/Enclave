@@ -2,9 +2,9 @@ import { useState, type ReactNode } from "react";
 import { ArrowLeft, Copy, Share2 } from "lucide-react";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { TabPageTopBar } from "./tab-page-top-bar";
 
 type MobileDiscoverToolShellProps = {
@@ -38,7 +38,7 @@ export function MobileDiscoverToolShell({
   shareTitle,
   shareSummary,
 }: MobileDiscoverToolShellProps) {
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [shareNotice, setShareNotice] = useState<{
     tone: "success" | "info";
     message: string;

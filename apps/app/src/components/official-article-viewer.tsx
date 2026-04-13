@@ -5,9 +5,9 @@ import { Button, InlineNotice } from "@yinjie/ui";
 import { formatTimestamp } from "../lib/format";
 import { openExternalUrl } from "../runtime/external-url";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 
 export function OfficialArticleViewer({
   article,
@@ -32,7 +32,7 @@ export function OfficialArticleViewer({
     message: string;
     tone: "success" | "info";
   } | null>(null);
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
 
   const articlePath = `/official-accounts/articles/${article.id}`;
   const articleUrl =

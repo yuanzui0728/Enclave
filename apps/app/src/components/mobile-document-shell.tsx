@@ -4,9 +4,9 @@ import { ArrowLeft, Copy, Share2 } from "lucide-react";
 import { AppPage, Button, InlineNotice } from "@yinjie/ui";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { TabPageTopBar } from "./tab-page-top-bar";
 
 type MobileDocumentShellProps = {
@@ -26,7 +26,7 @@ export function MobileDocumentShell({
   sections,
 }: MobileDocumentShellProps) {
   const navigate = useNavigate();
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
   const [notice, setNotice] = useState<{
     tone: "success" | "info";
     message: string;
