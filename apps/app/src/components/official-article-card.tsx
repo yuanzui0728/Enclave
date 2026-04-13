@@ -27,7 +27,7 @@ export function OfficialArticleCard({
         compact
           ? "rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
-            ? "border-b border-[color:var(--border-faint)] bg-white px-4 py-3 hover:bg-[color:var(--surface-console)]"
+            ? "border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
             : "border-b border-[color:var(--border-faint)] bg-white px-5 py-4 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
@@ -50,14 +50,14 @@ export function OfficialArticleCard({
           <div
             className={cn(
               "flex items-center",
-              dense ? "gap-1.5" : "gap-2",
+              dense ? "gap-1" : "gap-2",
             )}
           >
             {article.isPinned ? (
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] font-medium text-[color:var(--brand-primary)]",
-                  dense ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-[11px]",
+                  dense ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-[11px]",
                 )}
               >
                 <Pin size={dense ? 10 : 11} />
@@ -76,7 +76,7 @@ export function OfficialArticleCard({
           <div
             className={cn(
               "font-medium text-[color:var(--text-primary)]",
-              dense ? "mt-1.5 text-[15px] leading-5" : "mt-2 text-[16px] leading-6",
+              dense ? "mt-1 text-[14px] leading-5" : "mt-2 text-[16px] leading-6",
             )}
           >
             {article.title}
@@ -85,7 +85,7 @@ export function OfficialArticleCard({
             className={cn(
               "text-[color:var(--text-secondary)]",
               dense
-                ? "mt-1.5 line-clamp-2 text-[12px] leading-5"
+                ? "mt-1 line-clamp-2 text-[11px] leading-[1.125rem]"
                 : "mt-2 line-clamp-3 text-sm leading-6",
             )}
           >
@@ -104,7 +104,9 @@ export function OfficialArticleCard({
               onClick={onToggleFavorite}
               className={cn(
                 "inline-flex items-center gap-1 border font-medium transition",
-                dense ? "h-7 rounded-[10px] px-2.5 text-[10px]" : "h-8 rounded-lg px-3 text-[11px]",
+                dense
+                  ? "h-[1.625rem] rounded-[10px] px-2 text-[10px]"
+                  : "h-8 rounded-lg px-3 text-[11px]",
                 favorite
                   ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
                   : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
