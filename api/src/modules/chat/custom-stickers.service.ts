@@ -29,6 +29,8 @@ import {
 import { ChatCustomStickerEntity } from './custom-sticker.entity';
 
 const MAX_CUSTOM_STICKERS = 300;
+const MAX_CUSTOM_STICKER_EDGE = 320;
+const MAX_CUSTOM_GIF_BYTES = 2 * 1024 * 1024;
 const CUSTOM_STICKER_ASSET_ROUTE = '/api/chat/stickers/assets/';
 const CHAT_ATTACHMENT_ROUTE = '/api/chat/attachments/';
 
@@ -236,6 +238,15 @@ export class CustomStickersService {
     },
   ): Promise<CustomStickerRecord> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const normalizedMimeType = normalizeStickerMimeType(input.mimeType);
+    this.assertCustomStickerAssetProfile({
+      mimeType: normalizedMimeType,
+      sizeBytes: input.sizeBytes,
+      width: input.width,
+      height: input.height,
+      source: input.source,
+    });
+
     const assetHash = createHash('sha256').update(buffer).digest('hex');
     const existing = await this.customStickerRepo.findOne({
       where: {
@@ -247,6 +258,8 @@ export class CustomStickersService {
       },
     });
     if (existing) {
+      existing.lastUsedAt = new Date();
+      await this.customStickerRepo.save(existing);
       return this.serializeCustomSticker(existing);
     }
 
@@ -261,7 +274,6 @@ export class CustomStickersService {
       );
     }
 
-    const normalizedMimeType = normalizeStickerMimeType(input.mimeType);
     const displayName = normalizeDisplayStickerName(
       input.originalName,
       input.label,
@@ -566,6 +578,33 @@ export class CustomStickersService {
       throw new BadRequestException('只能上传图片或动图作为表情。');
     }
   }
+
+  private assertCustomStickerAssetProfile(input: {
+    mimeType: string;
+    sizeBytes: number;
+    width?: number;
+    height?: number;
+    source: 'upload' | 'message_image' | 'message_sticker';
+  }) {
+    const width = normalizeOptionalDimension(input.width);
+    const height = normalizeOptionalDimension(input.height);
+    const largestEdge = Math.max(width ?? 0, height ?? 0);
+
+    if (largestEdge > MAX_CUSTOM_STICKER_EDGE) {
+      throw new BadRequestException(
+        `表情最大边长不能超过 ${MAX_CUSTOM_STICKER_EDGE}px，请先压缩后再试。`,
+      );
+    }
+
+    if (
+      input.mimeType === 'image/gif' &&
+      input.sizeBytes > MAX_CUSTOM_GIF_BYTES
+    ) {
+      throw new BadRequestException(
+        `GIF 表情不能超过 ${formatStickerFileSize(MAX_CUSTOM_GIF_BYTES)}，请先压缩后再试。`,
+      );
+    }
+  }
 }
 
 function extractAssetPathname(url: string) {
@@ -722,4 +761,12 @@ function inferStickerMimeType(url: string) {
   }
 
   return 'image/png';
+}
+
+function formatStickerFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round((bytes / (1024 * 1024)) * 10) / 10}MB`;
+  }
+
+  return `${Math.round(bytes / 1024)}KB`;
 }
