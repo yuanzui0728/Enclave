@@ -35,10 +35,10 @@ export class ChatCustomStickerEntity {
   @Column({ default: 0 })
   sizeBytes: number;
 
-  @Column({ nullable: true })
+  @Column('integer', { nullable: true })
   width?: number | null;
 
-  @Column({ nullable: true })
+  @Column('integer', { nullable: true })
   height?: number | null;
 
   @Column()
@@ -47,13 +47,13 @@ export class ChatCustomStickerEntity {
   @Column({ default: 'upload' })
   source: string;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   sourceThreadType?: string | null;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   sourceThreadId?: string | null;
 
-  @Column({ nullable: true })
+  @Column('text', { nullable: true })
   sourceMessageId?: string | null;
 
   @Column({ type: 'datetime', nullable: true })
