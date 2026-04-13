@@ -40,6 +40,7 @@ import { GroupMessageEntity } from './group-message.entity';
 import { GroupReplyTaskEntity } from './group-reply-task.entity';
 import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
+import { CharacterEntity } from '../characters/character.entity';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { CustomStickersService } from './custom-stickers.service';
       GroupMessageEntity,
       GroupReplyTaskEntity,
       ChatCustomStickerEntity,
+      CharacterEntity,
     ]),
   ],
   providers: [
