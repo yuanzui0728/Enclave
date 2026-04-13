@@ -26,6 +26,7 @@ export function SearchPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const nativeDesktopSearchHistory = runtimeConfig.appPlatform === "desktop";
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseSearchRouteState(hash);
   const [searchText, setSearchText] = useState(routeState.keyword);
@@ -54,6 +55,10 @@ export function SearchPage() {
   }, [activeCategory, routeState.category, routeState.keyword, searchText]);
 
   useEffect(() => {
+    if (pathname !== "/tabs/search") {
+      return;
+    }
+
     const nextHash = buildSearchRouteHash({
       category: activeCategory,
       keyword: searchText,
@@ -70,7 +75,7 @@ export function SearchPage() {
       hash: nextHash,
       replace: true,
     });
-  }, [activeCategory, hash, navigate, routeState.source, searchText]);
+  }, [activeCategory, hash, navigate, pathname, routeState.source, searchText]);
 
   useEffect(() => {
     if (!isDesktopLayout || !nativeDesktopSearchHistory) {
