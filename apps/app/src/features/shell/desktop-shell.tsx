@@ -658,12 +658,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
           ) : null}
 
           {standaloneDesktopRoute ? null : (
-            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2.5 shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
-              <div className="relative mb-3 flex justify-center">
+            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2 shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
+              <div className="relative mb-2.5 flex justify-center">
                 <button
                   type="button"
                   className={cn(
-                    "group flex justify-center rounded-[16px] border-0 bg-transparent px-2 py-1.5 text-inherit appearance-none",
+                    "group flex justify-center rounded-[14px] border-0 bg-transparent px-1.5 py-1 text-inherit appearance-none",
                     isOwnerCardOpen || profileRouteActive
                       ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
@@ -678,7 +678,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 >
                   <div
                     className={cn(
-                      "rounded-[16px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      "rounded-[14px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       isOwnerCardOpen || profileRouteActive
                         ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
                         : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
@@ -709,7 +709,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               </div>
 
               <nav className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex flex-col gap-2 pb-3">
+                <div className="flex flex-col gap-1.5 pb-2">
                   {desktopPrimaryNavItems.map((item) => (
                     <DesktopNavLink
                       key={item.to}
@@ -720,8 +720,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
               </nav>
 
-              <div className="relative mt-3 border-t border-white/10 pt-3">
-                <div className="flex flex-col gap-2">
+              <div className="relative mt-2.5 border-t border-white/10 pt-2.5">
+                <div className="flex flex-col gap-1.5">
                   {desktopBottomNavItems.map((item) => (
                     <DesktopActionButton
                       key={item.action}
@@ -1162,7 +1162,7 @@ function DesktopNavLink({
       key={item.to}
       to={item.to as never}
       className={cn(
-        "group flex flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex flex-col items-center gap-1 rounded-[12px] px-1.5 py-2 text-[10px] leading-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
@@ -1170,13 +1170,13 @@ function DesktopNavLink({
     >
       <div
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
+          "flex h-8 w-8 items-center justify-center rounded-[10px] border transition-[background-color,border-color,color]",
           active
             ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </div>
       <span className="hidden xl:block">{item.label}</span>
       <span className="xl:hidden">{item.shortLabel}</span>
@@ -1200,7 +1200,7 @@ function DesktopActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full flex-col items-center gap-1.5 rounded-[14px] border-0 bg-transparent px-2 py-3 text-[11px] text-inherit appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex w-full flex-col items-center gap-1 rounded-[12px] border-0 bg-transparent px-1.5 py-2 text-[10px] leading-none text-inherit appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
@@ -1208,13 +1208,13 @@ function DesktopActionButton({
     >
       <div
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-[12px] border transition-[background-color,border-color,color]",
+          "flex h-8 w-8 items-center justify-center rounded-[10px] border transition-[background-color,border-color,color]",
           active
             ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] text-[#dbffe8]"
             : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
         )}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </div>
       <span className="hidden xl:block">{item.label}</span>
       <span className="xl:hidden">{item.shortLabel}</span>
