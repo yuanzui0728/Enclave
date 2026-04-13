@@ -75,6 +75,9 @@ export function StickerPanel({
     useState<CustomDeleteFeedback | null>(null);
   const [customDeleteFeedbackFlashActive, setCustomDeleteFeedbackFlashActive] =
     useState(false);
+  const [manageFocusFlashKey, setManageFocusFlashKey] = useState<string | null>(
+    null,
+  );
   const [collapsingStickerKeys, setCollapsingStickerKeys] = useState<string[]>(
     [],
   );
@@ -95,6 +98,7 @@ export function StickerPanel({
   const stickerItemRefs = useRef(new Map<string, HTMLDivElement>());
   const manageDeleteButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const deleteFeedbackFlashTimerRef = useRef<number | null>(null);
+  const manageFocusFlashTimerRef = useRef<number | null>(null);
   const deleteTransitionTimerRefs = useRef(new Map<string, number>());
   const collapsingStickerKeysRef = useRef(new Set<string>());
   const queryClient = useQueryClient();
@@ -174,6 +178,24 @@ export function StickerPanel({
     setCollapsingStickerKeys((current) =>
       current.filter((key) => key !== stickerKey),
     );
+  };
+
+  const triggerManageFocusFlash = (stickerKey: string | null) => {
+    if (!stickerKey) {
+      return;
+    }
+
+    if (manageFocusFlashTimerRef.current !== null) {
+      window.clearTimeout(manageFocusFlashTimerRef.current);
+    }
+
+    setManageFocusFlashKey(stickerKey);
+    manageFocusFlashTimerRef.current = window.setTimeout(() => {
+      setManageFocusFlashKey((current) =>
+        current === stickerKey ? null : current,
+      );
+      manageFocusFlashTimerRef.current = null;
+    }, 560);
   };
 
   const uploadMutation = useMutation({
@@ -550,6 +572,7 @@ export function StickerPanel({
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomDeleteFeedback(null);
       setCustomDeleteFeedbackFlashActive(false);
+      setManageFocusFlashKey(null);
       setFocusedManageDeleteKey(null);
       setPendingManageFocusKey(null);
       setShouldFocusCustomEmptyAction(false);
@@ -560,6 +583,9 @@ export function StickerPanel({
     return () => {
       if (deleteFeedbackFlashTimerRef.current !== null) {
         window.clearTimeout(deleteFeedbackFlashTimerRef.current);
+      }
+      if (manageFocusFlashTimerRef.current !== null) {
+        window.clearTimeout(manageFocusFlashTimerRef.current);
       }
       deleteTransitionTimerRefs.current.forEach((timer) =>
         window.clearTimeout(timer),
@@ -639,6 +665,7 @@ export function StickerPanel({
       target.focus();
     });
     setFocusedManageDeleteKey(pendingManageFocusKey);
+    triggerManageFocusFlash(pendingManageFocusKey);
     setPendingManageFocusKey(null);
   }, [
     activeItems,
@@ -650,6 +677,7 @@ export function StickerPanel({
 
   useEffect(() => {
     if (!customManageKeyboardActive) {
+      setManageFocusFlashKey(null);
       setFocusedManageDeleteKey(null);
       return;
     }
@@ -664,9 +692,11 @@ export function StickerPanel({
     }
 
     const firstCustomItem = activeItems.find((item) => item.canDelete);
-    setFocusedManageDeleteKey(
-      firstCustomItem ? getStickerIdentity(firstCustomItem.sticker) : null,
-    );
+    const firstStickerKey = firstCustomItem
+      ? getStickerIdentity(firstCustomItem.sticker)
+      : null;
+    setFocusedManageDeleteKey(firstStickerKey);
+    triggerManageFocusFlash(firstStickerKey);
   }, [activeItems, customManageKeyboardActive, focusedManageDeleteKey]);
 
   useEffect(() => {
@@ -755,6 +785,7 @@ export function StickerPanel({
     const nextKey = customItemKeys[nextIndex] ?? null;
     setFocusedManageDeleteKey(nextKey);
     focusManageDeleteButton(nextKey);
+    triggerManageFocusFlash(nextKey);
   };
 
   const handleSelectHighlightedSticker = () => {
@@ -890,6 +921,7 @@ export function StickerPanel({
               Boolean(canDelete) &&
               focusedManageDeleteKey === stickerKey
             }
+            deleteFocusFlashing={manageFocusFlashKey === stickerKey}
             deleteButtonRef={(node) => {
               if (node) {
                 manageDeleteButtonRefs.current.set(stickerKey, node);
@@ -1299,7 +1331,13 @@ export function StickerPanel({
                   Delete 删除
                 </span>
                 {focusedManageSticker ? (
-                  <span className="max-w-[140px] truncate rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
+                  <span
+                    className={`max-w-[140px] truncate rounded-full px-2 py-1 text-[11px] text-[color:var(--text-primary)] transition ${
+                      manageFocusFlashKey === focusedManageDeleteKey
+                        ? "bg-[rgba(160,90,10,0.14)] shadow-[0_4px_12px_rgba(160,90,10,0.12)]"
+                        : "bg-[rgba(15,23,42,0.06)]"
+                    }`}
+                  >
                     当前：
                     {focusedManageSticker.label ??
                       focusedManageSticker.stickerId}
@@ -1553,6 +1591,7 @@ function StickerButton({
   highlighted = false,
   deleting = false,
   deleteFocused = false,
+  deleteFocusFlashing = false,
   showDelete = false,
   deleteAlwaysVisible = false,
   selectionDisabled = false,
@@ -1570,6 +1609,7 @@ function StickerButton({
   highlighted?: boolean;
   deleting?: boolean;
   deleteFocused?: boolean;
+  deleteFocusFlashing?: boolean;
   showDelete?: boolean;
   deleteAlwaysVisible?: boolean;
   selectionDisabled?: boolean;
@@ -1603,6 +1643,10 @@ function StickerButton({
               deleteFocused
                 ? "border-[rgba(160,90,10,0.42)] bg-white shadow-[0_10px_24px_rgba(160,90,10,0.16)] ring-1 ring-[rgba(160,90,10,0.18)]"
                 : ""
+            } ${
+              deleteFocusFlashing
+                ? "scale-[1.02] shadow-[0_14px_30px_rgba(160,90,10,0.2)]"
+                : ""
             }`
       }
     >
@@ -1623,7 +1667,7 @@ function StickerButton({
               deleteFocused
                 ? "bg-[#9a5a0a] shadow-[0_4px_12px_rgba(160,90,10,0.28)]"
                 : "bg-[rgba(15,23,42,0.72)]"
-            } ${
+            } ${deleteFocusFlashing ? "scale-110" : ""} ${
               deleteAlwaysVisible
                 ? "opacity-100"
                 : "opacity-0 group-hover:opacity-100"
