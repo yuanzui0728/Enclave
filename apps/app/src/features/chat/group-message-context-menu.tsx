@@ -9,6 +9,7 @@ import {
   FileText,
   Forward,
   RotateCcw,
+  Smile,
   Star,
   Trash2,
   UserRound,
@@ -29,6 +30,8 @@ type GroupMessageContextMenuProps = {
   onCopySender?: () => void;
   onToggleFavorite?: () => void;
   favoriteLabel?: string;
+  onAddToStickers?: () => void;
+  addToStickersLabel?: string;
   onOpenAttachment?: () => void;
   openAttachmentLabel?: string;
   onSaveAttachment?: () => void;
@@ -57,6 +60,8 @@ export function GroupMessageContextMenu({
   onCopySender,
   onToggleFavorite,
   favoriteLabel = "收藏",
+  onAddToStickers,
+  addToStickersLabel = "添加到表情",
   onOpenAttachment,
   openAttachmentLabel = "打开附件",
   onSaveAttachment,
@@ -79,6 +84,7 @@ export function GroupMessageContextMenu({
     Number(Boolean(onSetReminder)) +
     Number(Boolean(onCopySender)) +
     Number(Boolean(onToggleFavorite)) +
+    Number(Boolean(onAddToStickers)) +
     Number(Boolean(onOpenAttachment)) +
     Number(Boolean(onSaveAttachment)) +
     Number(Boolean(onRecall)) +
@@ -171,6 +177,13 @@ export function GroupMessageContextMenu({
             onClick={onToggleFavorite}
           />
         ) : null}
+        {onAddToStickers ? (
+          <ContextMenuButton
+            label={addToStickersLabel}
+            icon={<Smile size={15} />}
+            onClick={onAddToStickers}
+          />
+        ) : null}
         {onOpenAttachment ? (
           <ContextMenuButton
             label={openAttachmentLabel}
@@ -187,6 +200,7 @@ export function GroupMessageContextMenu({
         ) : null}
         {onSetReminder ||
         onToggleFavorite ||
+        onAddToStickers ||
         onOpenAttachment ||
         onSaveAttachment ? (
           <MenuDivider />

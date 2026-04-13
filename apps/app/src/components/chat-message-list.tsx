@@ -32,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  createCustomStickerFromMessage,
   createMessageFavorite,
   deleteConversationMessage,
   deleteGroupMessage,
@@ -831,6 +832,41 @@ export function ChatMessageList({
       setActionNotice({
         message:
           error instanceof Error ? error.message : "删除失败，请稍后再试。",
+        tone: "danger",
+      });
+    },
+  });
+
+  const addToStickerMutation = useMutation({
+    mutationFn: async (message: ChatRenderableMessage) => {
+      if (!threadContext) {
+        throw new Error("当前线程暂不支持添加到表情。");
+      }
+
+      return createCustomStickerFromMessage(
+        {
+          threadType: threadContext.type === "group" ? "group" : "conversation",
+          threadId: threadContext.id,
+          messageId: message.id,
+        },
+        baseUrl,
+      );
+    },
+    onSuccess: async () => {
+      setActionNotice({
+        message: "已添加到自定义表情。",
+        tone: "success",
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-sticker-catalog", baseUrl],
+      });
+    },
+    onError: (error) => {
+      setActionNotice({
+        message:
+          error instanceof Error
+            ? error.message
+            : "添加到表情失败，请稍后再试。",
         tone: "danger",
       });
     },
@@ -2679,6 +2715,14 @@ export function ChatMessageList({
               ? "取消收藏"
               : "收藏消息"
           }
+          onAddToStickers={
+            canAddMessageToStickers(contextMenuState.message)
+              ? () => {
+                  addToStickerMutation.mutate(contextMenuState.message);
+                  setContextMenuState(null);
+                }
+              : undefined
+          }
           onOpenAttachment={
             getOpenableAttachment(contextMenuState.message)
               ? () => {
@@ -3843,6 +3887,13 @@ function buildDirectForwardPayload(
     characterId,
     text: text ?? buildClipboardText(message),
   };
+}
+
+function canAddMessageToStickers(message: ChatRenderableMessage) {
+  return (
+    (message.type === "image" && message.attachment?.kind === "image") ||
+    (message.type === "sticker" && message.attachment?.kind === "sticker")
+  );
 }
 
 function buildMergedForwardText(messages: ChatRenderableMessage[]) {

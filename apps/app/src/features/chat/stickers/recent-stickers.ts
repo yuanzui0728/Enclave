@@ -5,12 +5,13 @@ const RECENT_STICKERS_LIMIT = 20;
 let recentStickersNativeWriteQueue: Promise<void> = Promise.resolve();
 
 export type RecentStickerItem = {
-  packId: string;
+  sourceType?: "builtin" | "custom";
+  packId?: string;
   stickerId: string;
   usedAt: number;
 };
 
-function normalizeRecentStickerItems(value: unknown) {
+function normalizeRecentStickerItems(value: unknown): RecentStickerItem[] {
   if (!Array.isArray(value)) {
     return [] as RecentStickerItem[];
   }
@@ -18,10 +19,18 @@ function normalizeRecentStickerItems(value: unknown) {
   return value
     .filter(
       (item): item is RecentStickerItem =>
-        typeof item?.packId === "string" &&
         typeof item?.stickerId === "string" &&
-        typeof item?.usedAt === "number",
+        typeof item?.usedAt === "number" &&
+        ((item?.sourceType ?? "builtin") === "custom"
+          ? true
+          : typeof item?.packId === "string"),
     )
+    .map<RecentStickerItem>((item) => ({
+      sourceType: item.sourceType === "custom" ? "custom" : "builtin",
+      packId: item.packId,
+      stickerId: item.stickerId,
+      usedAt: item.usedAt,
+    }))
     .sort((left, right) => right.usedAt - left.usedAt)
     .slice(0, RECENT_STICKERS_LIMIT);
 }
@@ -102,14 +111,30 @@ export function loadRecentStickers(): RecentStickerItem[] {
   return readRecentStickersFromLocal();
 }
 
-export function pushRecentSticker(packId: string, stickerId: string) {
+export function pushRecentSticker(input: {
+  sourceType?: "builtin" | "custom";
+  packId?: string;
+  stickerId: string;
+}) {
   if (typeof window === "undefined") {
     return [];
   }
 
-  const next = [
-    { packId, stickerId, usedAt: Date.now() },
-    ...loadRecentStickers().filter((item) => !(item.packId === packId && item.stickerId === stickerId)),
+  const next: RecentStickerItem[] = [
+    {
+      sourceType: input.sourceType ?? "builtin",
+      packId: input.packId,
+      stickerId: input.stickerId,
+      usedAt: Date.now(),
+    },
+    ...loadRecentStickers().filter(
+      (item) =>
+        !(
+          (item.sourceType ?? "builtin") === (input.sourceType ?? "builtin") &&
+          (item.packId ?? "") === (input.packId ?? "") &&
+          item.stickerId === input.stickerId
+        ),
+    ),
   ].slice(0, RECENT_STICKERS_LIMIT);
 
   writeRecentStickers(next);
