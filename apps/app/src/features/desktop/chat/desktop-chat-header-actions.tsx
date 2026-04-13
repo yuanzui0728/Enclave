@@ -20,6 +20,8 @@ export function DesktopChatHeaderActions({
 }: DesktopChatHeaderActionsProps) {
   const [callMenuOpen, setCallMenuOpen] = useState(false);
   const callMenuRef = useRef<HTMLDivElement | null>(null);
+  const historyActive = activePanelMode === "history";
+  const detailsActive = activePanelMode === "details";
 
   useEffect(() => {
     if (!callMenuOpen) {
@@ -37,9 +39,10 @@ export function DesktopChatHeaderActions({
   }, [callMenuOpen]);
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1 rounded-[12px] bg-[rgba(247,247,247,0.92)] p-1">
       <DesktopChatHeaderButton
-        active={activePanelMode === "history"}
+        active={historyActive}
+        tone="brand"
         label="查找聊天记录"
         onClick={() => onToggleHistory?.()}
       >
@@ -49,6 +52,7 @@ export function DesktopChatHeaderActions({
       <div ref={callMenuRef} className="relative">
         <DesktopChatHeaderButton
           active={callMenuOpen}
+          tone="neutral"
           label="通话"
           onClick={() => setCallMenuOpen((current) => !current)}
         >
@@ -86,7 +90,8 @@ export function DesktopChatHeaderActions({
       </div>
 
       <DesktopChatHeaderButton
-        active={activePanelMode === "details"}
+        active={detailsActive}
+        tone="neutral"
         label="更多"
         onClick={() => onToggleDetails?.()}
       >
@@ -98,11 +103,13 @@ export function DesktopChatHeaderActions({
 
 function DesktopChatHeaderButton({
   active,
+  tone = "neutral",
   children,
   label,
   onClick,
 }: {
   active?: boolean;
+  tone?: "neutral" | "brand";
   children: ReactNode;
   label: string;
   onClick: () => void;
@@ -114,10 +121,16 @@ function DesktopChatHeaderButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-[8px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color]",
-        active
-          ? "bg-[rgba(0,0,0,0.055)] text-[color:var(--text-primary)]"
-          : "hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]",
+        "flex h-8 w-8 items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--text-secondary)] transition-[background-color,border-color,color,box-shadow] duration-150",
+        active && tone === "brand"
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_rgba(7,193,96,0.04)]"
+          : null,
+        active && tone === "neutral"
+          ? "border-[rgba(0,0,0,0.04)] bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+          : null,
+        !active
+          ? "hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
+          : null,
       )}
     >
       {children}

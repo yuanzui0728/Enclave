@@ -25,17 +25,17 @@ export function DesktopChatSidePanel({
   return (
     <aside
       className={cn(
-        "absolute bottom-0 right-0 top-[64px] z-20 hidden border-l border-[rgba(0,0,0,0.06)] xl:flex xl:flex-col",
+        "absolute bottom-0 right-0 top-[64px] z-20 hidden w-[352px] border-l border-[rgba(0,0,0,0.06)] transition-[background-color] duration-150 xl:flex xl:flex-col",
         historyMode
-          ? "w-[352px] bg-[#f7f7f7]"
-          : "w-[340px] bg-[#f5f5f5]",
+          ? "bg-[#f7f7f7]"
+          : "bg-[#f5f5f5]",
         className,
       )}
       data-mode={mode}
     >
       <div
         className={cn(
-          "border-b border-[rgba(0,0,0,0.06)]",
+          "border-b border-[rgba(0,0,0,0.06)] transition-[background-color,padding] duration-150",
           historyMode ? "bg-white px-4 pb-2 pt-3" : "bg-[#f5f5f5] px-4 py-3",
         )}
       >
@@ -83,7 +83,7 @@ export function DesktopChatSidePanel({
 
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-auto",
+          "min-h-0 flex-1 overflow-auto transition-[background-color] duration-150",
           historyMode ? "bg-[#f7f7f7]" : "bg-[#f5f5f5]",
         )}
       >
