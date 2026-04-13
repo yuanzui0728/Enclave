@@ -10,9 +10,8 @@ import {
 import {
   AppPage,
   Button,
-  ErrorBlock,
   InlineNotice,
-  LoadingBlock,
+  cn,
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -230,17 +229,30 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {accountQuery.isLoading ? (
           <div className="px-4 pt-2">
-            <LoadingBlock label="正在读取公众号..." />
+            <MobileOfficialStatusCard
+              badge="读取中"
+              title="正在读取公众号"
+              description="稍等一下，正在同步账号资料和最近文章。"
+              tone="loading"
+            />
           </div>
         ) : null}
         {accountQuery.isError && accountQuery.error instanceof Error ? (
           <div className="px-4 pt-2">
-            <ErrorBlock message={accountQuery.error.message} />
+            <MobileOfficialStatusCard
+              badge="读取失败"
+              title="公众号主页暂时不可用"
+              description={accountQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
         {actionNotice ? (
           <div className="px-4 pt-2">
-            <InlineNotice className="text-[12px] leading-5" tone={actionNotice.tone}>
+            <InlineNotice
+              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              tone={actionNotice.tone}
+            >
               {actionNotice.message}
             </InlineNotice>
           </div>
@@ -300,7 +312,12 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
             {followMutation.isError && followMutation.error instanceof Error ? (
               <div className="border-t border-[color:var(--border-faint)] px-4 py-2">
-                <ErrorBlock message={followMutation.error.message} />
+                <InlineNotice
+                  className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+                  tone="danger"
+                >
+                  {followMutation.error.message}
+                </InlineNotice>
               </div>
             ) : null}
           </section>
@@ -377,5 +394,52 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         ) : null}
       </div>
     </AppPage>
+  );
+}
+
+function MobileOfficialStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </section>
   );
 }
