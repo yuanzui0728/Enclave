@@ -39,6 +39,7 @@ import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-no
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { buildDesktopAddFriendRouteHash } from "../features/desktop/contacts/desktop-add-friend-route-state";
+import { buildDesktopMomentsRouteHash } from "../features/desktop/moments/desktop-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import {
@@ -978,7 +979,27 @@ export function CharacterDetailPage() {
               }
               compact={!isDesktopLayout}
             />
-            <ProfileRow label="朋友圈" value="后续接入" compact={!isDesktopLayout} />
+            <ProfileRow
+              label="朋友圈"
+              value={
+                isFriend && isDesktopLayout
+                  ? "查看这位好友最近的朋友圈"
+                  : "后续接入"
+              }
+              onClick={
+                isFriend && isDesktopLayout
+                  ? () => {
+                      void navigate({
+                        to: "/tabs/moments",
+                        hash: buildDesktopMomentsRouteHash({
+                          authorId: character.id,
+                        }),
+                      });
+                    }
+                  : undefined
+              }
+              compact={!isDesktopLayout}
+            />
           </ProfileSection>
 
           <ProfileSection
