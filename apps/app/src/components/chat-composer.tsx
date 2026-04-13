@@ -61,12 +61,12 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
   captureImageWithNativeShell,
   type MobileBridgeFileAsset,
-  isNativeMobileBridgeAvailable,
   pickFileWithNativeShell,
   pickImagesWithNativeShell,
   type MobileBridgeImageAsset,
   openAppSettings,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveLocalFile } from "../runtime/save-local-file";
 import { useChatPreferencesStore } from "../store/chat-preferences-store";
@@ -309,6 +309,9 @@ export function ChatComposer({
   const baseUrl = speechInput?.baseUrl ?? runtimeConfig.apiBaseUrl;
   const { keyboardInset, keyboardOpen } = useKeyboardInset();
   const isDesktop = variant === "desktop";
+  const nativeMobileShellSupported = isNativeMobileShareSurface({
+    isDesktopLayout: isDesktop,
+  });
   const [mobileSpeechSheetOpen, setMobileSpeechSheetOpen] = useState(false);
   const [stickerPanelOpen, setStickerPanelOpen] = useState(false);
   const [plusPanelOpen, setPlusPanelOpen] = useState(false);
@@ -1158,7 +1161,7 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
-    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+    if (nativeMobileShellSupported) {
       setPlusPanelOpen(false);
       void pickAlbumWithNativeShell();
       return;
@@ -1173,7 +1176,7 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
-    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+    if (nativeMobileShellSupported) {
       setPlusPanelOpen(false);
       void pickCameraWithNativeShell();
       return;
@@ -1187,7 +1190,7 @@ export function ChatComposer({
       if (result.error) {
         setMobilePlusNotice(
           resolveNativeCameraCaptureNotice(result.error, {
-            nativeBridgeAvailable: isNativeMobileBridgeAvailable(),
+            nativeBridgeAvailable: nativeMobileShellSupported,
             onOpenSettings: () => {
               void openAppSettings();
             },
@@ -1238,7 +1241,7 @@ export function ChatComposer({
 
     setAttachmentError(null);
     setMobilePlusNotice(null);
-    if (!isDesktop && isNativeMobileBridgeAvailable()) {
+    if (nativeMobileShellSupported) {
       setPlusPanelOpen(false);
       void pickFileWithNativeShellAsDraft();
       return;
@@ -3110,7 +3113,7 @@ export function ChatComposer({
             tone="danger"
           >
             <span>{composerError}</span>
-            {speech.permissionDenied && isNativeMobileBridgeAvailable() ? (
+            {speech.permissionDenied && nativeMobileShellSupported ? (
               <InlineNoticeActionButton
                 onClick={() => {
                   void openAppSettings();

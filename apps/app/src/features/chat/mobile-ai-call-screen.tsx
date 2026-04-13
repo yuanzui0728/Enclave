@@ -39,10 +39,8 @@ import { InlineNoticeActionButton } from "../../components/inline-notice-action-
 import { buildDirectCallInviteMessage } from "./group-call-message";
 import { emitChatMessage } from "../../lib/socket";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
-import {
-  isNativeMobileBridgeAvailable,
-  openAppSettings,
-} from "../../runtime/mobile-bridge";
+import { openAppSettings } from "../../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useSelfCameraPreview } from "./use-self-camera-preview";
 import { DigitalHumanPlayer } from "./digital-human-player";
@@ -65,6 +63,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const isDesktopLayout = useDesktopLayout();
+  const nativeMobileShellSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [recordButtonHolding, setRecordButtonHolding] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(mode === "video");
@@ -1216,7 +1217,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             >
               <span>{cameraPreview.error}</span>
               {cameraPreview.permissionDenied &&
-              isNativeMobileBridgeAvailable() ? (
+              nativeMobileShellSupported ? (
                 <InlineNoticeActionButton
                   className="border-current/28 bg-white/12 active:bg-white/16"
                   onClick={() => {
@@ -1245,7 +1246,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             <ErrorBlock message={activeCall.turnMutation.error.message} />
           ) : null}
           {speech.error ? (
-            speech.permissionDenied && isNativeMobileBridgeAvailable() ? (
+            speech.permissionDenied && nativeMobileShellSupported ? (
               <MobileCallNotice
                 tone="warning"
                 className="flex items-center justify-between gap-3"
