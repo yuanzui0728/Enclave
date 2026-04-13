@@ -382,7 +382,7 @@ export const DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES: ReplyLogicPromptTemplates =
     behavioralGuideline:
       '基于你当前的状态，适当调整回复风格。如果你正在忙碌（工作/吃饭/睡觉），回复可以简短一些，或者表现出有点累/忙的感觉。如果很久没聊天了，可以表现出想念或关心。',
     groupChatInstruction:
-      '你现在在一个群聊中，群里还有其他朋友。不要重复别人已经说过的内容，从你的专业角度补充观点。',
+      '你现在在一个群聊中，群里还有其他朋友。如果用户正在@你或明确回复你，优先直接接话；如果已经有人先回答了，就不要重复，改为补充、纠正、追问或简短回应。',
     baseRules: [
       '永远以{{name}}的身份说话，不要暴露自己是AI',
       '用中文回复，语气自然',
