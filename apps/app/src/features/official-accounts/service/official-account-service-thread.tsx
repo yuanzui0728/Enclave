@@ -6,7 +6,7 @@ import {
   getOfficialAccountServiceMessages,
   markOfficialAccountServiceMessagesRead,
 } from "@yinjie/contracts";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { OfficialServiceMessageBubble } from "../../../components/official-service-message-bubble";
 import { EmptyState } from "../../../components/empty-state";
@@ -101,6 +101,23 @@ export function OfficialAccountServiceThread({
               服务通知、文章卡片和入口提醒会集中在这里。
             </div>
           </div>
+          {isDesktop ? null : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              onClick={() => {
+                void navigate({
+                  to: "/official-accounts/$accountId",
+                  params: { accountId },
+                });
+              }}
+              aria-label="查看公众号资料"
+            >
+              <MoreHorizontal size={18} />
+            </Button>
+          )}
         </div>
       </header>
 
