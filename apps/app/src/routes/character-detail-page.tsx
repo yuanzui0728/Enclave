@@ -41,9 +41,9 @@ import { MobileDetailsActionSheet } from "../features/chat-details/mobile-detail
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -62,8 +62,9 @@ export function CharacterDetailPage() {
   const isDesktopLayout = useDesktopLayout();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
   const [notice, setNotice] = useState<{
     tone: "success" | "info" | "warning";
     message: string;
