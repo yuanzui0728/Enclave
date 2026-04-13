@@ -51,7 +51,10 @@ import type {
 } from "./feed";
 import type {
   CreateMessageFavoriteRequest,
+  FavoriteNoteDocument,
+  FavoriteNoteSummary,
   FavoriteRecord,
+  UpsertFavoriteNoteRequest,
 } from "./favorites";
 import type {
   CreateMessageReminderRequest,
@@ -1387,6 +1390,61 @@ export function createMessageFavorite(
     {
       method: "POST",
       body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function getFavoriteNotes(baseUrl?: string) {
+  return requestLegacyApi<FavoriteNoteSummary[]>(
+    "/favorites/notes",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getFavoriteNote(id: string, baseUrl?: string) {
+  return requestLegacyApi<FavoriteNoteDocument>(
+    `/favorites/notes/${encodeURIComponent(id)}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function createFavoriteNote(
+  payload: UpsertFavoriteNoteRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FavoriteNoteDocument>(
+    "/favorites/notes",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function updateFavoriteNote(
+  id: string,
+  payload: UpsertFavoriteNoteRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FavoriteNoteDocument>(
+    `/favorites/notes/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function removeFavoriteNote(id: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/favorites/notes/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );

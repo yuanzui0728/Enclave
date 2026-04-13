@@ -22,6 +22,7 @@ import { ChatService } from './chat.service';
 import {
   FavoritesService,
   type CreateMessageFavoriteInput,
+  type UpsertFavoriteNoteInput,
 } from './favorites.service';
 import { GroupService } from './group.service';
 import { DigitalHumanCallsService } from './digital-human-calls.service';
@@ -251,7 +252,9 @@ export class DigitalHumanCallsController {
     @Res() response: Response,
   ) {
     response.type('html');
-    return response.send(this.digitalHumanCallsService.renderPlayerPage(sessionId));
+    return response.send(
+      this.digitalHumanCallsService.renderPlayerPage(sessionId),
+    );
   }
 
   @Get('sessions/:sessionId/events')
@@ -264,7 +267,9 @@ export class DigitalHumanCallsController {
     response.setHeader('Connection', 'keep-alive');
     response.flushHeaders?.();
 
-    const writeEvent = (payload: ReturnType<DigitalHumanCallsService['getSession']>) => {
+    const writeEvent = (
+      payload: ReturnType<DigitalHumanCallsService['getSession']>,
+    ) => {
       response.write(`data: ${JSON.stringify(payload)}\n\n`);
     };
 
@@ -340,11 +345,12 @@ export class DigitalHumanCallsController {
 
   private async resolveProviderCallbackToken() {
     return (
-      (await this.systemConfigService.getConfig(
-        'digital_human_provider_callback_token',
-      )) ??
-      process.env.DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN
-    )?.trim() || null;
+      (
+        (await this.systemConfigService.getConfig(
+          'digital_human_provider_callback_token',
+        )) ?? process.env.DIGITAL_HUMAN_PROVIDER_CALLBACK_TOKEN
+      )?.trim() || null
+    );
   }
 
   @Delete('sessions/:sessionId')
@@ -384,6 +390,34 @@ export class FavoritesController {
   @Post('messages')
   createMessageFavorite(@Body() body: CreateMessageFavoriteInput) {
     return this.favoritesService.createMessageFavorite(body);
+  }
+
+  @Get('notes')
+  getFavoriteNotes() {
+    return this.favoritesService.listFavoriteNotes();
+  }
+
+  @Get('notes/:id')
+  getFavoriteNote(@Param('id') id: string) {
+    return this.favoritesService.getFavoriteNote(id);
+  }
+
+  @Post('notes')
+  createFavoriteNote(@Body() body: UpsertFavoriteNoteInput) {
+    return this.favoritesService.createFavoriteNote(body);
+  }
+
+  @Patch('notes/:id')
+  updateFavoriteNote(
+    @Param('id') id: string,
+    @Body() body: UpsertFavoriteNoteInput,
+  ) {
+    return this.favoritesService.updateFavoriteNote(id, body);
+  }
+
+  @Delete('notes/:id')
+  removeFavoriteNote(@Param('id') id: string) {
+    return this.favoritesService.removeFavoriteNote(id);
   }
 
   @Delete(':sourceId')
@@ -594,15 +628,19 @@ export class GroupController {
         },
   ) {
     const message = await this.groupService.sendOwnerMessage(id, body);
-    void this.groupService.triggerAiReplies(id, message).catch((error: unknown) => {
-      const messageText =
-        error instanceof Error ? error.message : 'Unknown group AI reply error';
-      const trace = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to trigger AI replies for group ${id}: ${messageText}`,
-        trace,
-      );
-    });
+    void this.groupService
+      .triggerAiReplies(id, message)
+      .catch((error: unknown) => {
+        const messageText =
+          error instanceof Error
+            ? error.message
+            : 'Unknown group AI reply error';
+        const trace = error instanceof Error ? error.stack : undefined;
+        this.logger.error(
+          `Failed to trigger AI replies for group ${id}: ${messageText}`,
+          trace,
+        );
+      });
     return message;
   }
 }

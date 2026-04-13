@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
@@ -20,6 +21,7 @@ export interface FavoriteRecord {
   sourceId: string;
   category:
     | 'messages'
+    | 'notes'
     | 'contacts'
     | 'officialAccounts'
     | 'moments'
@@ -39,6 +41,39 @@ export interface CreateMessageFavoriteInput {
   threadId: string;
   threadType: 'direct' | 'group';
   messageId: string;
+}
+
+export type FavoriteNoteAsset = {
+  id: string;
+  kind: 'image' | 'file';
+  fileName: string;
+  url: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  width?: number;
+  height?: number;
+};
+
+export interface FavoriteNoteSummary {
+  id: string;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  assets: FavoriteNoteAsset[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FavoriteNoteDocument extends FavoriteNoteSummary {
+  contentHtml: string;
+  contentText: string;
+}
+
+export interface UpsertFavoriteNoteInput {
+  contentHtml: string;
+  contentText?: string;
+  tags?: string[];
+  assets?: FavoriteNoteAsset[];
 }
 
 type FavoriteMessageSnapshot = {
@@ -62,7 +97,11 @@ type FavoriteMessageSnapshot = {
 };
 
 const FAVORITES_CONFIG_KEY = 'favorites_records';
+const FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY = 'favorite_note_documents';
+const FAVORITE_NOTE_SOURCE_ID_PREFIX = 'favorite-note-';
 const MAX_FAVORITES = 500;
+const MAX_FAVORITE_NOTES = 200;
+const MAX_FAVORITE_NOTE_TAGS = 8;
 const chatReplyPrefixPattern = /^\[\[chat_reply:([^\]]+)\]\]\n?/;
 
 @Injectable()
@@ -83,7 +122,17 @@ export class FavoritesService {
   ) {}
 
   async listFavorites(): Promise<FavoriteRecord[]> {
-    return this.readFavorites();
+    const [favorites, notes] = await Promise.all([
+      this.readFavorites(),
+      this.readFavoriteNoteDocuments(),
+    ]);
+
+    return [
+      ...favorites,
+      ...notes.map((note) => this.buildFavoriteNoteRecord(note)),
+    ]
+      .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))
+      .slice(0, MAX_FAVORITES + MAX_FAVORITE_NOTES);
   }
 
   async createMessageFavorite(
@@ -113,6 +162,11 @@ export class FavoritesService {
       throw new BadRequestException('收藏标识不能为空。');
     }
 
+    const noteId = parseFavoriteNoteId(normalizedSourceId);
+    if (noteId) {
+      return this.removeFavoriteNote(noteId);
+    }
+
     const current = await this.readFavorites();
     const nextFavorites = current.filter(
       (item) => item.sourceId !== normalizedSourceId,
@@ -120,6 +174,76 @@ export class FavoritesService {
 
     if (nextFavorites.length !== current.length) {
       await this.writeFavorites(nextFavorites);
+    }
+
+    return { success: true as const };
+  }
+
+  async listFavoriteNotes(): Promise<FavoriteNoteSummary[]> {
+    return (await this.readFavoriteNoteDocuments()).map((note) =>
+      this.buildFavoriteNoteSummary(note),
+    );
+  }
+
+  async getFavoriteNote(id: string): Promise<FavoriteNoteDocument> {
+    return this.getFavoriteNoteOrThrow(id);
+  }
+
+  async createFavoriteNote(
+    input: UpsertFavoriteNoteInput,
+  ): Promise<FavoriteNoteDocument> {
+    const timestamp = new Date().toISOString();
+    const note = buildFavoriteNoteDocument({
+      id: randomUUID(),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      input,
+    });
+    const nextNotes = [note, ...(await this.readFavoriteNoteDocuments())].slice(
+      0,
+      MAX_FAVORITE_NOTES,
+    );
+
+    await this.writeFavoriteNoteDocuments(nextNotes);
+    return note;
+  }
+
+  async updateFavoriteNote(
+    id: string,
+    input: UpsertFavoriteNoteInput,
+  ): Promise<FavoriteNoteDocument> {
+    const normalizedId = id.trim();
+    if (!normalizedId) {
+      throw new BadRequestException('笔记标识不能为空。');
+    }
+
+    const existing = await this.getFavoriteNoteOrThrow(normalizedId);
+    const nextNote = buildFavoriteNoteDocument({
+      id: existing.id,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+      input,
+    });
+    const nextNotes = (await this.readFavoriteNoteDocuments())
+      .map((note) => (note.id === normalizedId ? nextNote : note))
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+      .slice(0, MAX_FAVORITE_NOTES);
+
+    await this.writeFavoriteNoteDocuments(nextNotes);
+    return nextNote;
+  }
+
+  async removeFavoriteNote(id: string): Promise<{ success: true }> {
+    const normalizedId = id.trim();
+    if (!normalizedId) {
+      throw new BadRequestException('笔记标识不能为空。');
+    }
+
+    const current = await this.readFavoriteNoteDocuments();
+    const nextNotes = current.filter((note) => note.id !== normalizedId);
+
+    if (nextNotes.length !== current.length) {
+      await this.writeFavoriteNoteDocuments(nextNotes);
     }
 
     return { success: true as const };
@@ -191,9 +315,7 @@ export class FavoritesService {
     });
 
     if (!message) {
-      throw new NotFoundException(
-        `Group message ${input.messageId} not found`,
-      );
+      throw new NotFoundException(`Group message ${input.messageId} not found`);
     }
 
     return this.buildFavoriteRecord({
@@ -295,6 +417,35 @@ export class FavoritesService {
     return '消息';
   }
 
+  private buildFavoriteNoteRecord(note: FavoriteNoteDocument): FavoriteRecord {
+    return {
+      id: `favorite-${note.id}`,
+      sourceId: buildFavoriteNoteSourceId(note.id),
+      category: 'notes',
+      title: note.title,
+      description: note.excerpt,
+      meta: formatFavoriteTimestamp(new Date(note.updatedAt)),
+      to: `/notes#${note.id}`,
+      badge: '笔记',
+      avatarName: note.title,
+      collectedAt: note.updatedAt,
+    };
+  }
+
+  private buildFavoriteNoteSummary(
+    note: FavoriteNoteDocument,
+  ): FavoriteNoteSummary {
+    return {
+      id: note.id,
+      title: note.title,
+      excerpt: note.excerpt,
+      tags: [...note.tags],
+      assets: note.assets.map((asset) => ({ ...asset })),
+      createdAt: note.createdAt,
+      updatedAt: note.updatedAt,
+    };
+  }
+
   private parseAttachment(
     attachmentKind?: string | null,
     attachmentPayload?: string | null,
@@ -315,6 +466,23 @@ export class FavoritesService {
     }
   }
 
+  private async getFavoriteNoteOrThrow(id: string) {
+    const normalizedId = id.trim();
+    if (!normalizedId) {
+      throw new BadRequestException('笔记标识不能为空。');
+    }
+
+    const note = (await this.readFavoriteNoteDocuments()).find(
+      (item) => item.id === normalizedId,
+    );
+
+    if (!note) {
+      throw new NotFoundException(`Favorite note ${normalizedId} not found`);
+    }
+
+    return note;
+  }
+
   private async readFavorites(): Promise<FavoriteRecord[]> {
     const raw = await this.systemConfigService.getConfig(FAVORITES_CONFIG_KEY);
     if (!raw) {
@@ -329,7 +497,9 @@ export class FavoritesService {
 
       return parsed
         .filter(isFavoriteRecord)
-        .sort((left, right) => right.collectedAt.localeCompare(left.collectedAt))
+        .sort((left, right) =>
+          right.collectedAt.localeCompare(left.collectedAt),
+        )
         .slice(0, MAX_FAVORITES);
     } catch {
       return [];
@@ -340,6 +510,37 @@ export class FavoritesService {
     await this.systemConfigService.setConfig(
       FAVORITES_CONFIG_KEY,
       JSON.stringify(favorites),
+    );
+  }
+
+  private async readFavoriteNoteDocuments(): Promise<FavoriteNoteDocument[]> {
+    const raw = await this.systemConfigService.getConfig(
+      FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
+    );
+    if (!raw) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as FavoriteNoteDocument[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .filter(isFavoriteNoteDocument)
+        .map((item) => normalizeFavoriteNoteDocument(item))
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+        .slice(0, MAX_FAVORITE_NOTES);
+    } catch {
+      return [];
+    }
+  }
+
+  private async writeFavoriteNoteDocuments(notes: FavoriteNoteDocument[]) {
+    await this.systemConfigService.setConfig(
+      FAVORITE_NOTE_DOCUMENTS_CONFIG_KEY,
+      JSON.stringify(notes),
     );
   }
 }
@@ -374,6 +575,163 @@ function formatVoiceDurationLabel(durationMs?: number) {
     : `${seconds}"`;
 }
 
+function buildFavoriteNoteSourceId(noteId: string) {
+  return `${FAVORITE_NOTE_SOURCE_ID_PREFIX}${noteId}`;
+}
+
+function parseFavoriteNoteId(sourceId: string) {
+  if (!sourceId.startsWith(FAVORITE_NOTE_SOURCE_ID_PREFIX)) {
+    return null;
+  }
+
+  const noteId = sourceId.slice(FAVORITE_NOTE_SOURCE_ID_PREFIX.length).trim();
+  return noteId || null;
+}
+
+function buildFavoriteNoteDocument(input: {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  input: UpsertFavoriteNoteInput;
+}): FavoriteNoteDocument {
+  const contentHtml = sanitizeFavoriteNoteHtml(input.input.contentHtml);
+  const contentText = normalizeFavoriteNoteContentText(
+    input.input.contentText,
+    contentHtml,
+  );
+  const presentation = buildFavoriteNotePresentation(contentText);
+
+  return {
+    id: input.id,
+    title: presentation.title,
+    excerpt: presentation.excerpt,
+    contentHtml,
+    contentText,
+    tags: normalizeFavoriteNoteTags(input.input.tags),
+    assets: normalizeFavoriteNoteAssets(input.input.assets),
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+  };
+}
+
+function normalizeFavoriteNoteDocument(
+  input: FavoriteNoteDocument,
+): FavoriteNoteDocument {
+  return buildFavoriteNoteDocument({
+    id: input.id,
+    createdAt: input.createdAt,
+    updatedAt: input.updatedAt,
+    input: {
+      contentHtml: input.contentHtml,
+      contentText: input.contentText,
+      tags: input.tags,
+      assets: input.assets,
+    },
+  });
+}
+
+function sanitizeFavoriteNoteHtml(value: string) {
+  const normalized = value.trim();
+  if (!normalized) {
+    return '';
+  }
+
+  return normalized
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+}
+
+function normalizeFavoriteNoteContentText(
+  value: string | undefined,
+  contentHtml: string,
+) {
+  const normalized = (value ?? stripHtmlTags(contentHtml))
+    .replace(/\r\n/g, '\n')
+    .trim();
+
+  return normalized;
+}
+
+function stripHtmlTags(value: string) {
+  return value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function buildFavoriteNotePresentation(contentText: string) {
+  const trimmedLines = contentText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const compactText = contentText.replace(/\s+/g, ' ').trim();
+
+  return {
+    title: trimmedLines[0]?.slice(0, 32) || '无标题笔记',
+    excerpt: compactText
+      ? compactText.slice(
+          0,
+          compactText.length > 120 ? 120 : compactText.length,
+        )
+      : '空白笔记',
+  };
+}
+
+function normalizeFavoriteNoteTags(value: string[] | undefined) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  return value
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => {
+      if (seen.has(tag)) {
+        return false;
+      }
+
+      seen.add(tag);
+      return true;
+    })
+    .slice(0, MAX_FAVORITE_NOTE_TAGS);
+}
+
+function normalizeFavoriteNoteAssets(value: FavoriteNoteAsset[] | undefined) {
+  if (!Array.isArray(value)) {
+    return [] as FavoriteNoteAsset[];
+  }
+
+  return value
+    .filter(isFavoriteNoteAsset)
+    .map((asset) => ({
+      id: asset.id,
+      kind: asset.kind,
+      fileName: asset.fileName.trim(),
+      url: asset.url.trim(),
+      mimeType: asset.mimeType?.trim() || undefined,
+      sizeBytes:
+        typeof asset.sizeBytes === 'number' && Number.isFinite(asset.sizeBytes)
+          ? asset.sizeBytes
+          : undefined,
+      width:
+        typeof asset.width === 'number' && Number.isFinite(asset.width)
+          ? asset.width
+          : undefined,
+      height:
+        typeof asset.height === 'number' && Number.isFinite(asset.height)
+          ? asset.height
+          : undefined,
+    }))
+    .filter((asset) => asset.fileName && asset.url);
+}
+
 function isFavoriteRecord(value: unknown): value is FavoriteRecord {
   if (!value || typeof value !== 'object') {
     return false;
@@ -390,5 +748,38 @@ function isFavoriteRecord(value: unknown): value is FavoriteRecord {
     typeof item.to === 'string' &&
     typeof item.badge === 'string' &&
     typeof item.collectedAt === 'string'
+  );
+}
+
+function isFavoriteNoteDocument(value: unknown): value is FavoriteNoteDocument {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const item = value as Partial<FavoriteNoteDocument>;
+  return (
+    typeof item.id === 'string' &&
+    typeof item.title === 'string' &&
+    typeof item.excerpt === 'string' &&
+    typeof item.contentHtml === 'string' &&
+    typeof item.contentText === 'string' &&
+    Array.isArray(item.tags) &&
+    Array.isArray(item.assets) &&
+    typeof item.createdAt === 'string' &&
+    typeof item.updatedAt === 'string'
+  );
+}
+
+function isFavoriteNoteAsset(value: unknown): value is FavoriteNoteAsset {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const item = value as Partial<FavoriteNoteAsset>;
+  return (
+    typeof item.id === 'string' &&
+    (item.kind === 'image' || item.kind === 'file') &&
+    typeof item.fileName === 'string' &&
+    typeof item.url === 'string'
   );
 }
