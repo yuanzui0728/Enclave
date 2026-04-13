@@ -6,10 +6,7 @@ import {
   ChevronRight,
   Clock3,
   CornerDownLeft,
-  LoaderCircle,
-  Mic,
   Search,
-  Square,
   UserPlus,
   UsersRound,
 } from "lucide-react";
@@ -25,6 +22,7 @@ import {
 } from "../contacts/contact-utils";
 import { buildWorldCharactersRouteHash } from "../contacts/world-characters-route-state";
 import { useSpeechInput } from "../chat/use-speech-input";
+import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { buildSearchRouteHash, type SearchRouteSource } from "./search-route-state";
 import {
@@ -36,6 +34,7 @@ import type { SearchHistoryItem } from "./search-types";
 
 type UseDesktopSearchLauncherOptions = {
   keyword: string;
+  onKeywordChange: (keyword: string) => void;
   source: SearchRouteSource;
 };
 
@@ -43,9 +42,11 @@ type DesktopSearchDropdownPanelProps = {
   className?: string;
   history: SearchHistoryItem[];
   keyword: string;
-  onKeywordChange: (keyword: string) => void;
   onOpenSearch: (keyword?: string) => void;
   onClose?: () => void;
+  speechDisplayText: string;
+  speechError: string | null;
+  speechStatus: SpeechInputStatus;
 };
 
 type LauncherActionEntry = {
@@ -58,6 +59,7 @@ type LauncherActionEntry = {
 
 export function useDesktopSearchLauncher({
   keyword,
+  onKeywordChange,
   source,
 }: UseDesktopSearchLauncherOptions) {
   const navigate = useNavigate();
@@ -66,6 +68,26 @@ export function useDesktopSearchLauncher({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [history, setHistory] = useState(() => loadSearchHistory());
+  const speech = useSpeechInput({
+    baseUrl: runtimeConfig.apiBaseUrl,
+    conversationId: "",
+    enabled: true,
+    mode: "dictation",
+  });
+
+  useEffect(() => {
+    if (speech.status !== "ready" || !speech.canCommit) {
+      return;
+    }
+
+    onKeywordChange(speech.commitToInput(keyword));
+  }, [
+    keyword,
+    onKeywordChange,
+    speech.canCommit,
+    speech.commitToInput,
+    speech.status,
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -151,13 +173,40 @@ export function useDesktopSearchLauncher({
     });
   }
 
+  const speechBusy =
+    speech.status === "requesting-permission" || speech.status === "processing";
+  const speechListening = speech.status === "listening";
+  const speechButtonDisabled = speechBusy && !speechListening;
+
+  function handleSpeechButtonClick() {
+    setIsOpen(true);
+
+    if (speechListening) {
+      speech.stop();
+      return;
+    }
+
+    if (speech.status !== "idle") {
+      speech.cancel();
+    }
+
+    void speech.start();
+  }
+
   return {
     close: () => setIsOpen(false),
     containerRef,
+    handleSpeechButtonClick,
     history,
     isOpen,
     openSearch,
     setIsOpen,
+    speechButtonDisabled,
+    speechDisplayText: speech.displayText,
+    speechError: speech.error,
+    speechListening,
+    speechStatus: speech.status,
+    speechSupported: speech.supported,
   };
 }
 
@@ -165,9 +214,11 @@ export function DesktopSearchDropdownPanel({
   className,
   history,
   keyword,
-  onKeywordChange,
   onOpenSearch,
   onClose,
+  speechDisplayText,
+  speechError,
+  speechStatus,
 }: DesktopSearchDropdownPanelProps) {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
@@ -175,12 +226,6 @@ export function DesktopSearchDropdownPanel({
   const trimmedKeyword = keyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
   const shouldLoadSuggestions = Boolean(normalizedKeyword);
-  const speech = useSpeechInput({
-    baseUrl,
-    conversationId: "",
-    enabled: true,
-    mode: "dictation",
-  });
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -194,25 +239,6 @@ export function DesktopSearchDropdownPanel({
     enabled: shouldLoadSuggestions,
     staleTime: 30_000,
   });
-
-  useEffect(() => {
-    if (speech.status !== "ready" || !speech.canCommit) {
-      return;
-    }
-
-    onKeywordChange(speech.commitToInput(keyword));
-  }, [
-    keyword,
-    onKeywordChange,
-    speech.canCommit,
-    speech.commitToInput,
-    speech.status,
-  ]);
-
-  const speechBusy =
-    speech.status === "requesting-permission" || speech.status === "processing";
-  const speechListening = speech.status === "listening";
-  const speechButtonDisabled = speechBusy && !speechListening;
 
   const friendMatches = useMemo(() => {
     if (!normalizedKeyword) {
@@ -319,102 +345,47 @@ export function DesktopSearchDropdownPanel({
         className,
       )}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_132px] gap-2">
-        <button
-          type="button"
-          onClick={() => onOpenSearch(keyword)}
-          className="flex min-w-0 items-center gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.13)]"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
-            <Search size={16} />
+      <button
+        type="button"
+        onClick={() => onOpenSearch(keyword)}
+        className="flex w-full min-w-0 items-center gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.13)]"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
+          <Search size={16} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            搜一搜
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              搜一搜
-            </div>
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-              {trimmedKeyword ? `搜索“${trimmedKeyword}”` : "打开全局搜索工作区"}
-            </div>
+          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+            {trimmedKeyword ? `搜索“${trimmedKeyword}”` : "打开全局搜索工作区"}
           </div>
-          <CornerDownLeft
-            size={14}
-            className="shrink-0 text-[color:var(--text-dim)]"
-          />
-        </button>
+        </div>
+        <CornerDownLeft
+          size={14}
+          className="shrink-0 text-[color:var(--text-dim)]"
+        />
+      </button>
 
-        <button
-          type="button"
-          disabled={speechButtonDisabled || !speech.supported}
-          onClick={() => {
-            if (speechListening) {
-              speech.stop();
-              return;
-            }
-
-            if (speech.status !== "idle") {
-              speech.cancel();
-            }
-            void speech.start();
-          }}
-          className={cn(
-            "flex items-center gap-2 rounded-[12px] border px-3 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-            speechListening
-              ? "border-[rgba(225,29,72,0.24)] bg-[rgba(225,29,72,0.07)] text-[#be123c]"
-              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-primary)] hover:bg-white",
-            speechButtonDisabled || !speech.supported
-              ? "cursor-not-allowed opacity-60"
-              : "",
-          )}
-          aria-label={speechListening ? "结束语音输入" : "开始语音输入"}
-          title={!speech.supported ? "当前浏览器不支持语音输入" : undefined}
-        >
-          <div
-            className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
-              speechListening
-                ? "bg-white text-[#be123c]"
-                : "bg-white text-[color:var(--brand-primary)]",
-            )}
-          >
-            {speech.status === "requesting-permission" ||
-            speech.status === "processing" ? (
-              <LoaderCircle size={16} className="animate-spin" />
-            ) : speechListening ? (
-              <Square size={14} fill="currentColor" />
-            ) : (
-              <Mic size={16} />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">
-              {speechListening ? "结束输入" : "语音输入"}
-            </div>
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-              {speechListening ? "点击结束并写入搜索框" : "说出搜索内容"}
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {speech.status !== "idle" || speech.error ? (
+      {speechStatus !== "idle" || speechError ? (
         <div
           className={cn(
             "mt-2 rounded-[12px] px-3 py-2.5 text-xs leading-6",
-            speech.error
+            speechError
               ? "bg-[rgba(225,29,72,0.08)] text-[#be123c]"
               : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
           )}
         >
-          {speech.error
-            ? speech.error
-            : speech.status === "requesting-permission"
+          {speechError
+            ? speechError
+            : speechStatus === "requesting-permission"
               ? "正在请求麦克风权限..."
-              : speech.status === "listening"
-                ? "正在听你说，完成后再点一次“结束输入”。"
-                : speech.status === "processing"
+              : speechStatus === "listening"
+                ? "正在听你说，完成后再点一次语音图标。"
+                : speechStatus === "processing"
                   ? "正在整理语音内容..."
-                  : speech.displayText
-                    ? `识别结果：${speech.displayText}`
+                  : speechDisplayText
+                    ? `识别结果：${speechDisplayText}`
                     : "语音输入已完成。"}
         </div>
       ) : null}

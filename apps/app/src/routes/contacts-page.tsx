@@ -11,9 +11,12 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   BookText,
   BookUser,
+  LoaderCircle,
+  Mic,
   Plus,
   QrCode,
   Search,
+  Square,
   Star,
   Tag,
   UserPlus,
@@ -146,6 +149,7 @@ export function ContactsPage() {
   const startChatResetRef = useRef<() => void>(() => {});
   const desktopSearchLauncher = useDesktopSearchLauncher({
     keyword: searchText,
+    onKeywordChange: setSearchText,
     source: "contacts",
   });
   const effectiveSearchText = isDesktopLayout ? searchText : "";
@@ -806,14 +810,50 @@ export function ContactsPage() {
                       placeholder="搜索"
                       className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
                     />
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        desktopSearchLauncher.handleSpeechButtonClick();
+                      }}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[color:var(--text-dim)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                      aria-label={
+                        desktopSearchLauncher.speechListening
+                          ? "结束语音输入"
+                          : "开始语音输入"
+                      }
+                      title={
+                        desktopSearchLauncher.speechSupported
+                          ? desktopSearchLauncher.speechListening
+                            ? "结束语音输入"
+                            : "语音输入"
+                          : "当前浏览器不支持语音输入"
+                      }
+                      disabled={
+                        desktopSearchLauncher.speechButtonDisabled ||
+                        !desktopSearchLauncher.speechSupported
+                      }
+                    >
+                      {desktopSearchLauncher.speechStatus ===
+                        "requesting-permission" ||
+                      desktopSearchLauncher.speechStatus === "processing" ? (
+                        <LoaderCircle size={15} className="animate-spin" />
+                      ) : desktopSearchLauncher.speechListening ? (
+                        <Square size={13} fill="currentColor" />
+                      ) : (
+                        <Mic size={15} />
+                      )}
+                    </button>
                   </label>
                   {desktopSearchLauncher.isOpen ? (
                     <DesktopSearchDropdownPanel
                       history={desktopSearchLauncher.history}
                       keyword={searchText}
                       onClose={desktopSearchLauncher.close}
-                      onKeywordChange={setSearchText}
                       onOpenSearch={desktopSearchLauncher.openSearch}
+                      speechDisplayText={desktopSearchLauncher.speechDisplayText}
+                      speechError={desktopSearchLauncher.speechError}
+                      speechStatus={desktopSearchLauncher.speechStatus}
                     />
                   ) : null}
                 </div>

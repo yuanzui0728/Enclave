@@ -12,8 +12,11 @@ import {
   BellOff,
   BellRing,
   FileText,
+  LoaderCircle,
+  Mic,
   Plus,
   Search,
+  Square,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -193,6 +196,7 @@ export function DesktopChatWorkspace({
   } | null>(null);
   const desktopSearchLauncher = useDesktopSearchLauncher({
     keyword: searchTerm,
+    onKeywordChange: setSearchTerm,
     source: "chat",
   });
 
@@ -810,20 +814,44 @@ export function DesktopChatWorkspace({
                 />
                 <button
                   type="button"
-                  onClick={() => desktopSearchLauncher.openSearch()}
+                  onClick={desktopSearchLauncher.handleSpeechButtonClick}
                   className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-[color:var(--text-dim)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
-                  aria-label="在搜一搜中搜索"
-                  title="回车或点击进入搜一搜"
+                  aria-label={
+                    desktopSearchLauncher.speechListening
+                      ? "结束语音输入"
+                      : "开始语音输入"
+                  }
+                  title={
+                    desktopSearchLauncher.speechSupported
+                      ? desktopSearchLauncher.speechListening
+                        ? "结束语音输入"
+                        : "语音输入"
+                      : "当前浏览器不支持语音输入"
+                  }
+                  disabled={
+                    desktopSearchLauncher.speechButtonDisabled ||
+                    !desktopSearchLauncher.speechSupported
+                  }
                 >
-                  <Search size={15} />
+                  {desktopSearchLauncher.speechStatus ===
+                    "requesting-permission" ||
+                  desktopSearchLauncher.speechStatus === "processing" ? (
+                    <LoaderCircle size={15} className="animate-spin" />
+                  ) : desktopSearchLauncher.speechListening ? (
+                    <Square size={13} fill="currentColor" />
+                  ) : (
+                    <Mic size={15} />
+                  )}
                 </button>
                 {desktopSearchLauncher.isOpen ? (
                   <DesktopSearchDropdownPanel
                     history={desktopSearchLauncher.history}
                     keyword={searchTerm}
                     onClose={desktopSearchLauncher.close}
-                    onKeywordChange={setSearchTerm}
                     onOpenSearch={desktopSearchLauncher.openSearch}
+                    speechDisplayText={desktopSearchLauncher.speechDisplayText}
+                    speechError={desktopSearchLauncher.speechError}
+                    speechStatus={desktopSearchLauncher.speechStatus}
                   />
                 ) : null}
               </div>
