@@ -76,12 +76,19 @@ export function StickerPanel({
     useState<CustomStickerSortMode>("recent");
   const [customDeleteFeedback, setCustomDeleteFeedback] =
     useState<CustomDeleteFeedback | null>(null);
+  const [pendingManageFocusKey, setPendingManageFocusKey] = useState<
+    string | null
+  >(null);
+  const [shouldFocusCustomEmptyAction, setShouldFocusCustomEmptyAction] =
+    useState(false);
   const [highlightedStickerKey, setHighlightedStickerKey] = useState<
     string | null
   >(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const customEmptyActionButtonRef = useRef<HTMLButtonElement | null>(null);
   const stickerItemRefs = useRef(new Map<string, HTMLDivElement>());
+  const manageDeleteButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const queryClient = useQueryClient();
   const stickerCatalogQuery = useQuery({
     queryKey: [PANEL_QUERY_KEY, baseUrl],
@@ -158,6 +165,7 @@ export function StickerPanel({
     },
     onSuccess: async (uploadedCount) => {
       if (uploadedCount > 0) {
+        setCustomDeleteFeedback(null);
         await queryClient.invalidateQueries({
           queryKey: [PANEL_QUERY_KEY, baseUrl],
         });
@@ -175,11 +183,18 @@ export function StickerPanel({
     mutationFn: async (input: {
       stickerId: string;
       label?: string;
+      nextFocusKey?: string | null;
+      exitManageModeAfterDelete?: boolean;
     }) => {
       await deleteCustomSticker(input.stickerId, baseUrl);
       return input;
     },
-    onSuccess: async ({ stickerId, label }) => {
+    onSuccess: async ({
+      stickerId,
+      label,
+      nextFocusKey,
+      exitManageModeAfterDelete,
+    }) => {
       setCustomDeleteFeedback((current) => ({
         deletedCount: (current?.deletedCount ?? 0) + 1,
         remainingCount: Math.max(
@@ -192,6 +207,11 @@ export function StickerPanel({
         ),
         lastDeletedLabel: label?.trim() || null,
       }));
+      setPendingManageFocusKey(nextFocusKey ?? null);
+      if (exitManageModeAfterDelete) {
+        setCustomManageMode(false);
+        setShouldFocusCustomEmptyAction(true);
+      }
       onRecentItemsChange?.(
         removeRecentSticker({
           sourceType: "custom",
@@ -407,6 +427,7 @@ export function StickerPanel({
     customManageMode;
   const openCustomManageMode = () => {
     setCustomSortMode("added");
+    setCustomDeleteFeedback(null);
     setCustomManageMode(true);
   };
   const clearSearch = () => {
@@ -424,10 +445,12 @@ export function StickerPanel({
   }, [activeSectionId, trimmedKeyword.length]);
 
   useEffect(() => {
-    if (activeSectionId !== "custom" || !customManageMode) {
+    if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomDeleteFeedback(null);
+      setPendingManageFocusKey(null);
+      setShouldFocusCustomEmptyAction(false);
     }
-  }, [activeSectionId, customManageMode]);
+  }, [activeSectionId, trimmedKeyword.length]);
 
   useEffect(() => {
     if (!trimmedKeyword) {
@@ -479,6 +502,50 @@ export function StickerPanel({
       inline: "nearest",
     });
   }, [highlightedStickerKey, isMobile, searchPending, searching]);
+
+  useEffect(() => {
+    if (!pendingManageFocusKey || isMobile || !customManageMode || searching) {
+      return;
+    }
+
+    const target = manageDeleteButtonRefs.current.get(pendingManageFocusKey);
+    if (!target) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      target.focus();
+    });
+    setPendingManageFocusKey(null);
+  }, [activeItems, customManageMode, isMobile, pendingManageFocusKey, searching]);
+
+  useEffect(() => {
+    if (
+      !shouldFocusCustomEmptyAction ||
+      isMobile ||
+      activeSectionId !== "custom" ||
+      searching ||
+      activeItems.length > 0
+    ) {
+      return;
+    }
+
+    const target = customEmptyActionButtonRef.current;
+    if (!target) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      target.focus();
+    });
+    setShouldFocusCustomEmptyAction(false);
+  }, [
+    activeItems.length,
+    activeSectionId,
+    isMobile,
+    searching,
+    shouldFocusCustomEmptyAction,
+  ]);
 
   const moveSearchHighlight = (delta: number) => {
     if (!activeStickerKeys.length) {
@@ -624,12 +691,36 @@ export function StickerPanel({
             deleteMutation.isPending &&
             deleteMutation.variables?.stickerId === sticker.stickerId
           }
+          deleteButtonRef={(node) => {
+            const stickerKey = getStickerIdentity(sticker);
+            if (node) {
+              manageDeleteButtonRefs.current.set(stickerKey, node);
+              return;
+            }
+
+            manageDeleteButtonRefs.current.delete(stickerKey);
+          }}
           onDelete={
             canDelete
               ? () => {
+                  const stickerKey = getStickerIdentity(sticker);
+                  const nextFocusKey =
+                    !isMobile &&
+                    activeSectionId === "custom" &&
+                    customManageMode &&
+                    !searching
+                      ? resolveAdjacentStickerKey(activeItems, stickerKey)
+                      : null;
                   void deleteMutation.mutateAsync({
                     stickerId: sticker.stickerId,
                     label: sticker.label,
+                    nextFocusKey,
+                    exitManageModeAfterDelete:
+                      !isMobile &&
+                      activeSectionId === "custom" &&
+                      customManageMode &&
+                      !searching &&
+                      activeItems.length === 1,
                   });
                 }
               : undefined
@@ -1023,19 +1114,24 @@ export function StickerPanel({
                   {searching
                     ? `没有找到“${trimmedKeyword}”相关表情`
                     : activeSectionId === "custom"
-                      ? "还没有自定义表情，先上传几张图片或 GIF。"
+                      ? customDeleteFeedback?.deletedCount
+                        ? "自定义表情已经清空，可以继续添加新的图片或 GIF。"
+                        : "还没有自定义表情，先上传几张图片或 GIF。"
                       : activeSectionId === "recent"
                         ? "最近还没有使用过表情。"
                         : "当前没有可用表情。"}
                 </div>
                 {!searching && activeSectionId === "custom" ? (
                   <button
+                    ref={customEmptyActionButtonRef}
                     type="button"
                     onClick={() => uploadInputRef.current?.click()}
                     disabled={uploadMutation.isPending || customStickerLibraryFull}
                     className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition disabled:opacity-45"
                   >
-                    添加第一张表情
+                    {customDeleteFeedback?.deletedCount
+                      ? "继续添加表情"
+                      : "添加第一张表情"}
                   </button>
                 ) : null}
                 {!searching && activeSectionId === "recent" ? (
@@ -1137,6 +1233,7 @@ export function StickerPanel({
 
 function StickerButton({
   itemRef,
+  deleteButtonRef,
   compact = false,
   sticker,
   highlighted = false,
@@ -1149,6 +1246,7 @@ function StickerButton({
   onSelect,
 }: {
   itemRef?: (node: HTMLDivElement | null) => void;
+  deleteButtonRef?: (node: HTMLButtonElement | null) => void;
   compact?: boolean;
   sticker: StickerAttachment;
   highlighted?: boolean;
@@ -1177,6 +1275,7 @@ function StickerButton({
       {showDelete && onDelete ? (
         <span className="absolute right-1 top-1 z-10">
           <button
+            ref={deleteButtonRef}
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -1532,4 +1631,24 @@ function computeSearchScore(query: string, tokens: Array<string | undefined>) {
 
     return score;
   }, 0);
+}
+
+function resolveAdjacentStickerKey(
+  items: StickerPanelItem[],
+  currentKey: string,
+) {
+  const currentIndex = items.findIndex(
+    (item) => getStickerIdentity(item.sticker) === currentKey,
+  );
+  if (currentIndex < 0) {
+    return null;
+  }
+
+  const nextItem = items[currentIndex + 1];
+  if (nextItem) {
+    return getStickerIdentity(nextItem.sticker);
+  }
+
+  const previousItem = items[currentIndex - 1];
+  return previousItem ? getStickerIdentity(previousItem.sticker) : null;
 }
