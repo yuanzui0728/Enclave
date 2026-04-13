@@ -12,7 +12,10 @@ import {
 } from "lucide-react";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import { formatConversationTimestamp } from "../../lib/format";
-import { isNativeMobileBridgeAvailable } from "../../runtime/mobile-bridge";
+import {
+  isMobileWebShareSurface,
+  isNativeMobileShareSurface,
+} from "../../runtime/mobile-share-surface";
 import {
   getMiniProgramToneStyle,
   type ResolvedMiniProgramWorkspaceTask,
@@ -57,9 +60,12 @@ export function MiniProgramOpenPanel({
 }: MiniProgramOpenPanelProps) {
   const tone = getMiniProgramToneStyle(miniProgram.tone);
   const isDesktopLayout = useDesktopLayout();
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
-  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
+  const mobileWebCopyFallback = isMobileWebShareSurface({
+    isDesktopLayout,
+  });
   const resolvedCopyActionHint =
     copyActionHint ??
     (nativeMobileShareSupported

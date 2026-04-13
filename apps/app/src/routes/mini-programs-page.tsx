@@ -22,9 +22,12 @@ import {
 } from "../features/mini-programs/group-relay-message";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import {
+  isMobileWebShareSurface,
+  isNativeMobileShareSurface,
+} from "../runtime/mobile-share-surface";
 
 function resolveDefaultMiniProgramId() {
   return featuredMiniProgramIds[0] ?? miniProgramEntries[0]?.id ?? "";
@@ -61,9 +64,12 @@ export function MiniProgramsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isDesktopLayout = useDesktopLayout();
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
-  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
+  const mobileWebCopyFallback = isMobileWebShareSurface({
+    isDesktopLayout,
+  });
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const locationSearch = useRouterState({

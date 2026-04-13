@@ -2,7 +2,10 @@ import type { ReactNode } from "react";
 import { Button, cn } from "@yinjie/ui";
 import { Clock3, Copy, Flag, Play, Share2, Smartphone, Sparkles, X } from "lucide-react";
 import { formatConversationTimestamp } from "../../lib/format";
-import { isNativeMobileBridgeAvailable } from "../../runtime/mobile-bridge";
+import {
+  isMobileWebShareSurface,
+  isNativeMobileShareSurface,
+} from "../../runtime/mobile-share-surface";
 import { useDesktopLayout } from "../shell/use-desktop-layout";
 import {
   getGameCenterToneStyle,
@@ -36,9 +39,12 @@ export function GameCenterSessionPanel({
 }: GameCenterSessionPanelProps) {
   const tone = getGameCenterToneStyle(game.tone);
   const isDesktopLayout = useDesktopLayout();
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
-  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
+  const mobileWebCopyFallback = isMobileWebShareSurface({
+    isDesktopLayout,
+  });
   const metricAccentClass = compact
     ? "text-[#15803d]"
     : "text-[color:var(--brand-secondary)]";

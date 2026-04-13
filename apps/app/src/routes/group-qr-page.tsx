@@ -49,9 +49,12 @@ import {
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveGeneratedFile } from "../runtime/save-generated-file";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import {
+  isMobileWebShareSurface,
+  isNativeMobileShareSurface,
+} from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 
@@ -63,9 +66,12 @@ export function GroupQrPage() {
   const nativeDesktopGroupInvite = runtimeConfig.appPlatform === "desktop";
   const baseUrl = runtimeConfig.apiBaseUrl;
   const isDesktopLayout = useDesktopLayout();
-  const nativeMobileShareSupported =
-    !isDesktopLayout && isNativeMobileBridgeAvailable();
-  const mobileWebCopyFallback = !isDesktopLayout && !nativeMobileShareSupported;
+  const nativeMobileShareSupported = isNativeMobileShareSurface({
+    isDesktopLayout,
+  });
+  const mobileWebCopyFallback = isMobileWebShareSurface({
+    isDesktopLayout,
+  });
   const search = useRouterState({ select: (state) => state.location.search });
   const [notice, setNotice] = useState<{
     message: string;
