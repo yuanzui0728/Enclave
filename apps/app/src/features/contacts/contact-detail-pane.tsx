@@ -29,6 +29,7 @@ type ContactDetailPaneProps = {
     name: string;
   }>;
   onOpenGroup?: (groupId: string) => void;
+  onOpenMoments?: () => void;
   onOpenProfile: () => void;
   onStartChat?: () => void;
   chatPending?: boolean;
@@ -58,6 +59,7 @@ export function ContactDetailPane({
   friendship,
   commonGroups = [],
   onOpenGroup,
+  onOpenMoments,
   onOpenProfile,
   onStartChat,
   chatPending = false,
@@ -300,7 +302,13 @@ export function ContactDetailPane({
           value={isFriend ? "查看角色档案与更多介绍" : "查看完整角色资料"}
           onClick={onOpenProfile}
         />
-        <DesktopContactProfileRow label="朋友圈" value="后续接入" muted />
+        {isFriend && onOpenMoments ? (
+          <DesktopContactProfileActionRow
+            label="朋友圈"
+            value="查看这位好友最近的朋友圈"
+            onClick={onOpenMoments}
+          />
+        ) : null}
         <DesktopContactProfileRow
           label="共同群聊"
           value={commonGroups.length ? `${commonGroups.length} 个共同群聊` : "暂时没有共同群聊"}

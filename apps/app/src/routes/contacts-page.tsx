@@ -68,6 +68,7 @@ import {
   DesktopSearchDropdownPanel,
   useDesktopSearchLauncher,
 } from "../features/search/desktop-search-launcher";
+import { buildDesktopMomentsRouteHash } from "../features/desktop/moments/desktop-moments-route-state";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -682,6 +683,20 @@ export function ContactsPage() {
     void navigate({ to: "/character/$characterId", params: { characterId } });
   }
 
+  function handleOpenSelectedFriendMoments() {
+    if (!selectedFriendItem) {
+      return;
+    }
+
+    setNotice(null);
+    void navigate({
+      to: "/tabs/moments",
+      hash: buildDesktopMomentsRouteHash({
+        authorId: selectedFriendItem.character.id,
+      }),
+    });
+  }
+
   function handleToggleBlock() {
     if (!selectedFriendItem) {
       return;
@@ -1152,6 +1167,9 @@ export function ContactsPage() {
                 onOpenGroup={(groupId) => {
                   void navigate({ to: "/group/$groupId", params: { groupId } });
                 }}
+                onOpenMoments={
+                  selectedFriendItem ? handleOpenSelectedFriendMoments : undefined
+                }
                 onStartChat={
                   selectedFriendItem
                     ? () => handleStartChat(selectedFriendItem.character.id)
