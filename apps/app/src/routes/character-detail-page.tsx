@@ -16,10 +16,13 @@ import {
   deleteFriend,
   getBlockedCharacters,
   getCharacter,
+  getConversations,
   getFriendRequests,
   getFriends,
   getOrCreateConversation,
   sendFriendRequest,
+  setConversationMuted,
+  setConversationPinned,
   setFriendStarred,
   unblockCharacter,
   updateFriendProfile,
@@ -38,9 +41,11 @@ import { EmptyState } from "../components/empty-state";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import { buildDesktopAddFriendRouteHash } from "../features/desktop/contacts/desktop-add-friend-route-state";
 import { buildDesktopMomentsRouteHash } from "../features/desktop/moments/desktop-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
 import {
   shareWithNativeShell,
@@ -98,6 +103,11 @@ export function CharacterDetailPage() {
     queryKey: ["app-chat-details-blocked", baseUrl],
     queryFn: () => getBlockedCharacters(baseUrl),
   });
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
+    enabled: isDesktopLayout,
+  });
 
   useEffect(() => {
     if (
@@ -117,6 +127,29 @@ export function CharacterDetailPage() {
         (item) => item.character.id === characterId,
       )?.friendship ?? null,
     [characterId, friendsQuery.data],
+  );
+  const selectedConversation = useMemo(
+    () =>
+      (conversationsQuery.data ?? []).find(
+        (item) =>
+          !isPersistedGroupConversation(item) &&
+          item.participants.includes(characterId),
+      ) ?? null,
+    [characterId, conversationsQuery.data],
+  );
+  const commonGroups = useMemo(
+    () =>
+      (conversationsQuery.data ?? [])
+        .filter(
+          (item) =>
+            isPersistedGroupConversation(item) &&
+            item.participants.includes(characterId),
+        )
+        .map((item) => ({
+          id: item.id,
+          name: item.title,
+        })),
+    [characterId, conversationsQuery.data],
   );
   const isFriend = Boolean(friendship);
   const isBlocked = (blockedQuery.data ?? []).some(
@@ -253,6 +286,44 @@ export function CharacterDetailPage() {
       });
       await queryClient.invalidateQueries({
         queryKey: ["app-friends", baseUrl],
+      });
+    },
+  });
+  const pinMutation = useMutation({
+    mutationFn: async (pinned: boolean) => {
+      const conversationId =
+        selectedConversation && !isPersistedGroupConversation(selectedConversation)
+          ? selectedConversation.id
+          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+
+      return setConversationPinned(conversationId, { pinned }, baseUrl);
+    },
+    onSuccess: async (_, pinned) => {
+      setNotice({
+        tone: "success",
+        message: pinned ? "聊天已置顶。" : "聊天已取消置顶。",
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
+      });
+    },
+  });
+  const muteMutation = useMutation({
+    mutationFn: async (muted: boolean) => {
+      const conversationId =
+        selectedConversation && !isPersistedGroupConversation(selectedConversation)
+          ? selectedConversation.id
+          : (await getOrCreateConversation({ characterId }, baseUrl)).id;
+
+      return setConversationMuted(conversationId, { muted }, baseUrl);
+    },
+    onSuccess: async (_, muted) => {
+      setNotice({
+        tone: "success",
+        message: muted ? "已开启消息免打扰。" : "已关闭消息免打扰。",
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-conversations", baseUrl],
       });
     },
   });
@@ -461,6 +532,18 @@ export function CharacterDetailPage() {
 
     sendFriendRequestMutation.mutate();
   };
+  const handleOpenMoments = () => {
+    if (!character) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/moments",
+      hash: buildDesktopMomentsRouteHash({
+        authorId: character.id,
+      }),
+    });
+  };
   const dangerSheetConfig =
     dangerSheetAction === "block"
       ? {
@@ -485,6 +568,173 @@ export function CharacterDetailPage() {
             onConfirm: () => deleteFriendMutation.mutate(),
           }
         : null;
+
+  if (isDesktopLayout && character && friendship) {
+    return (
+      <AppPage className="min-h-full bg-[#ededed] px-0 py-0">
+        <header className="sticky top-0 z-20 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.95)] px-3 py-2 backdrop-blur-xl">
+          <div className="mx-auto flex w-full max-w-[640px] items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-primary)] transition active:bg-black/5"
+              aria-label="返回"
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+                朋友信息
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="space-y-3 py-3">
+          {notice ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+            </div>
+          ) : null}
+          {entryNotice ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <DigitalHumanEntryNotice
+                tone={entryNotice.tone}
+                message={entryNotice.message}
+                onDismiss={() => {
+                  resetEntryGuard();
+                }}
+                onContinue={() => {
+                  resetEntryGuard();
+                  openCallMutation.mutate("video");
+                }}
+                onSwitchToVoice={() => {
+                  resetEntryGuard();
+                  openCallMutation.mutate("voice");
+                }}
+                continueLabel={
+                  openCallMutation.isPending
+                    ? "正在接通视频..."
+                    : entryNotice.continueLabel
+                }
+                voiceLabel={
+                  openCallMutation.isPending
+                    ? "正在接通语音..."
+                    : entryNotice.voiceLabel
+                }
+                compact={false}
+              />
+            </div>
+          ) : null}
+          {characterQuery.isLoading ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <LoadingBlock label="正在读取朋友资料..." />
+            </div>
+          ) : null}
+          {characterQuery.isError && characterQuery.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={characterQuery.error.message} />
+            </div>
+          ) : null}
+          {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={friendsQuery.error.message} />
+            </div>
+          ) : null}
+          {conversationsQuery.isError &&
+          conversationsQuery.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={conversationsQuery.error.message} />
+            </div>
+          ) : null}
+          {startChatMutation.isError &&
+          startChatMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={startChatMutation.error.message} />
+            </div>
+          ) : null}
+          {openCallMutation.isError &&
+          openCallMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={openCallMutation.error.message} />
+            </div>
+          ) : null}
+          {setStarredMutation.isError &&
+          setStarredMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={setStarredMutation.error.message} />
+            </div>
+          ) : null}
+          {pinMutation.isError && pinMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={pinMutation.error.message} />
+            </div>
+          ) : null}
+          {muteMutation.isError && muteMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={muteMutation.error.message} />
+            </div>
+          ) : null}
+          {blockMutation.isError && blockMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={blockMutation.error.message} />
+            </div>
+          ) : null}
+          {deleteFriendMutation.isError &&
+          deleteFriendMutation.error instanceof Error ? (
+            <div className="mx-auto w-full max-w-[640px] px-3">
+              <ErrorBlock message={deleteFriendMutation.error.message} />
+            </div>
+          ) : null}
+
+          <ContactDetailPane
+            character={character}
+            friendship={friendship}
+            commonGroups={commonGroups}
+            onOpenGroup={(groupId) => {
+              void navigate({ to: "/group/$groupId", params: { groupId } });
+            }}
+            onOpenMoments={handleOpenMoments}
+            onOpenProfile={() => {}}
+            showProfileEntry={false}
+            onStartChat={() => {
+              setNotice(null);
+              startChatMutation.mutate();
+            }}
+            chatPending={startChatMutation.isPending}
+            isPinned={selectedConversation?.isPinned ?? false}
+            pinPending={pinMutation.isPending}
+            onTogglePinned={() => {
+              setNotice(null);
+              pinMutation.mutate(!(selectedConversation?.isPinned ?? false));
+            }}
+            isMuted={selectedConversation?.isMuted ?? false}
+            mutePending={muteMutation.isPending}
+            onToggleMuted={() => {
+              setNotice(null);
+              muteMutation.mutate(!(selectedConversation?.isMuted ?? false));
+            }}
+            isStarred={friendship.isStarred}
+            starPending={setStarredMutation.isPending}
+            onToggleStarred={() => {
+              setNotice(null);
+              setStarredMutation.mutate(!friendship.isStarred);
+            }}
+            isBlocked={isBlocked}
+            blockPending={blockMutation.isPending}
+            onToggleBlock={() => {
+              setNotice(null);
+              blockMutation.mutate(isBlocked);
+            }}
+            deletePending={deleteFriendMutation.isPending}
+            onDeleteFriend={() => {
+              handleDeleteFriendAction();
+            }}
+          />
+        </div>
+      </AppPage>
+    );
+  }
 
   return (
     <AppPage

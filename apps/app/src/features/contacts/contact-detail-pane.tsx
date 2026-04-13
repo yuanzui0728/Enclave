@@ -31,6 +31,7 @@ type ContactDetailPaneProps = {
   onOpenGroup?: (groupId: string) => void;
   onOpenMoments?: () => void;
   onOpenProfile: () => void;
+  showProfileEntry?: boolean;
   onStartChat?: () => void;
   chatPending?: boolean;
   isPinned?: boolean;
@@ -63,6 +64,7 @@ export function ContactDetailPane({
   onOpenGroup,
   onOpenMoments,
   onOpenProfile,
+  showProfileEntry = true,
   onStartChat,
   chatPending = false,
   isPinned = false,
@@ -278,11 +280,13 @@ export function ContactDetailPane({
           disabled={!commonGroups.length || !onOpenGroup}
           valueMuted={!commonGroups.length}
         />
-        <DesktopContactProfileActionRow
-          label="更多资料"
-          value={isFriend ? "查看角色档案与扩展介绍" : "查看角色资料"}
-          onClick={onOpenProfile}
-        />
+        {showProfileEntry ? (
+          <DesktopContactProfileActionRow
+            label="更多资料"
+            value={isFriend ? "查看角色档案与扩展介绍" : "查看角色资料"}
+            onClick={onOpenProfile}
+          />
+        ) : null}
       </DesktopContactProfileSection>
 
       <DesktopContactProfileSection title="更多信息">
