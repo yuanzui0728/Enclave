@@ -358,20 +358,20 @@ export function ChannelsPage() {
           </Button>
         }
       >
-        <div className="mt-2 flex items-center gap-1">
-          <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[9px] font-medium text-[#07c160]">
+        <div className="mt-1.5 flex items-center gap-0.75">
+          <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-1.5 py-0.5 text-[8px] font-medium text-[#07c160]">
             推荐
           </div>
-          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-2 py-0.5 text-[9px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]">
             朋友
           </div>
-          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-2 py-0.5 text-[9px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]">
             直播
           </div>
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+      <div className="space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         <InlineNotice
           className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           tone="muted"
@@ -476,7 +476,7 @@ function MobileChannelsStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -484,7 +484,7 @@ function MobileChannelsStatusCard({
     >
       <div
         className={cn(
-          "mx-auto inline-flex rounded-full px-2.5 py-1 text-[9px] font-medium tracking-[0.04em]",
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
             ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
             : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
@@ -493,19 +493,19 @@ function MobileChannelsStatusCard({
         {badge}
       </div>
       {loading ? (
-        <div className="mt-3 flex items-center justify-center gap-1.5">
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-black/15 animate-pulse" />
           <span className="h-2 w-2 rounded-full bg-black/25 animate-pulse [animation-delay:120ms]" />
           <span className="h-2 w-2 rounded-full bg-[#8ecf9d] animate-pulse [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
-      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }
