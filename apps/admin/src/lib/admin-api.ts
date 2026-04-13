@@ -7,6 +7,7 @@ import type {
   ReplyLogicConstantSummary,
   ReplyLogicCharacterSnapshot,
   ReplyLogicConversationSnapshot,
+  ReplyLogicGroupReplyTurnRetryResult,
   ReplyLogicGroupReplyTaskCleanupResult,
   ReplyLogicGroupReplyTaskRetryResult,
   ReplyLogicOverview,
@@ -180,6 +181,10 @@ export const adminApi = {
     adminFetch<ReplyLogicConversationSnapshot>(`/reply-logic/conversations/${id}`),
   retryReplyLogicGroupReplyTask: (taskId: string) =>
     adminFetch<ReplyLogicGroupReplyTaskRetryResult>(`/reply-logic/group-reply-tasks/${taskId}/retry`, {
+      method: "POST",
+    }),
+  retryReplyLogicGroupReplyTurn: (turnId: string) =>
+    adminFetch<ReplyLogicGroupReplyTurnRetryResult>(`/reply-logic/group-reply-turns/${turnId}/retry`, {
       method: "POST",
     }),
   cleanupReplyLogicGroupReplyTasks: (payload?: {
