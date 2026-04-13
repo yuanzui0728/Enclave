@@ -30,6 +30,7 @@ const categoryLabels: Array<{
 }> = [
   { id: "all", label: "全部收藏" },
   { id: "messages", label: "消息" },
+  { id: "notes", label: "笔记" },
   { id: "contacts", label: "联系人" },
   { id: "officialAccounts", label: "公众号" },
   { id: "moments", label: "朋友圈" },
@@ -187,6 +188,7 @@ export function FavoritesPage() {
     () => ({
       all: favorites.length,
       messages: favorites.filter((item) => item.category === "messages").length,
+      notes: favorites.filter((item) => item.category === "notes").length,
       contacts: favorites.filter((item) => item.category === "contacts").length,
       officialAccounts: favorites.filter(
         (item) => item.category === "officialAccounts",
@@ -253,8 +255,8 @@ export function FavoritesPage() {
                   value={`${counts.moments + counts.feed + counts.channels} 项`}
                 />
                 <FavoriteMetric
-                  label="消息与联系人"
-                  value={`${counts.messages + counts.contacts} 项`}
+                  label="消息、笔记与联系人"
+                  value={`${counts.messages + counts.notes + counts.contacts} 项`}
                 />
                 <FavoriteMetric
                   label="公众号"
