@@ -8,7 +8,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          "border-transparent bg-[var(--brand-gradient)] px-4 py-2.5 text-[color:var(--text-on-brand)] shadow-[var(--shadow-card)] hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[var(--shadow-lift)]",
+          "border-transparent bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] px-4 py-2.5 text-[color:var(--text-on-brand)] shadow-[var(--shadow-card)] hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[var(--shadow-lift)]",
         secondary:
           "border-[color:var(--border-subtle)] bg-[rgba(255,255,255,0.92)] px-4 py-2.5 text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:bg-[color:var(--surface-card-hover)] hover:shadow-[var(--shadow-card)]",
         ghost:

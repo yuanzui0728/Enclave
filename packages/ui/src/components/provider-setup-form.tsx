@@ -261,7 +261,7 @@ export function ProviderSetupForm({
           <button
             type="submit"
             disabled={disabled || savePending}
-            className="rounded-full bg-[var(--brand-gradient)] px-4 py-2 text-sm font-medium text-[color:var(--text-on-brand)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] px-4 py-2 text-sm font-medium text-[color:var(--text-on-brand)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saveLabel}
           </button>

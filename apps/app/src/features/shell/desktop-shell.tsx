@@ -578,7 +578,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               }}
             >
               <div className="flex min-w-0 items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.88)] px-3 py-1.5 shadow-[var(--shadow-soft)]">
-                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[var(--brand-gradient)] text-[13px] font-semibold text-[color:var(--text-on-brand)]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] text-[13px] font-semibold text-[color:var(--text-on-brand)]">
                   隐
                 </div>
                 <div className="min-w-0 leading-none">

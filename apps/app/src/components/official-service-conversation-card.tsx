@@ -54,7 +54,7 @@ export function OfficialServiceConversationCard({
               {formatConversationTimestamp(conversation.lastDeliveredAt)}
             </div>
             {conversation.unreadCount > 0 ? (
-              <div className="min-w-5 rounded-full bg-[var(--brand-gradient)] px-1.5 py-0.5 text-center text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(7,193,96,0.14)]">
+              <div className="min-w-5 rounded-full bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] px-1.5 py-0.5 text-center text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(7,193,96,0.14)]">
                 {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
               </div>
             ) : null}
