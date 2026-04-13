@@ -12,6 +12,8 @@ import {
   type ReplyLogicCharacterSnapshot,
   type ReplyLogicConstantSummary,
   type ReplyLogicConversationSnapshot,
+  type ReplyLogicGroupReplyArchiveActorSummary,
+  type ReplyLogicGroupReplyArchiveTrendPoint,
   type ReplyLogicGroupReplyIssueSummary,
   type ReplyLogicGroupReplyRuntimeSummary,
   type ReplyLogicGroupReplySelectionDisposition,
@@ -1659,6 +1661,7 @@ function GroupReplyRuntimeCard({
   const [statusFilter, setStatusFilter] = useState<"all" | ReplyLogicGroupReplyTaskStatus>("all");
   const [actorFilter, setActorFilter] = useState("all");
   const [cleanupDays, setCleanupDays] = useState("14");
+  const [archiveTrendWindow, setArchiveTrendWindow] = useState("14");
   const visibleMessageMap = new Map(visibleMessages.map((item) => [item.id, item]));
   const actorOptions = useMemo(() => {
     const actorMap = new Map<string, string>();
@@ -1744,6 +1747,14 @@ function GroupReplyRuntimeCard({
       })
       .filter((turn): turn is ReplyLogicGroupReplyTurnSummary => Boolean(turn));
   }, [actorFilter, runtime.recentTurns, statusFilter]);
+  const visibleArchiveTrend = useMemo(() => {
+    if (!runtime.archiveSummary) {
+      return [];
+    }
+
+    const windowSize = Number(archiveTrendWindow) || 14;
+    return runtime.archiveSummary.trend.slice(-windowSize);
+  }, [archiveTrendWindow, runtime.archiveSummary]);
 
   return (
     <Card className="bg-[color:var(--surface-console)]">
@@ -1886,8 +1897,8 @@ function GroupReplyRuntimeCard({
                 value={`${(runtime.archiveSummary.failureRate * 100).toFixed(1)}%`}
               />
               <MetricCard
-                label="最近归档"
-                value={formatDateTime(runtime.archiveSummary.lastArchivedAt)}
+                label="历史取消率"
+                value={`${(runtime.archiveSummary.cancelRate * 100).toFixed(1)}%`}
               />
             </div>
 
@@ -1906,10 +1917,88 @@ function GroupReplyRuntimeCard({
                   </StatusPill>
                 </>
               }
-              meta={`归档截止：${formatDateTime(runtime.archiveSummary.lastCutoff)}`}
+              meta={`最近归档：${formatDateTime(runtime.archiveSummary.lastArchivedAt)} · 归档截止：${formatDateTime(runtime.archiveSummary.lastCutoff)}`}
               description="这些统计来自已经被清理出任务表的历史终态任务，用来保留长期运行趋势。"
               className="bg-white/90"
             />
+
+            <AdminSubpanel title="按天趋势">
+              <div className="mb-4 max-w-[220px]">
+                <SelectFieldBlock
+                  label="时间范围"
+                  value={archiveTrendWindow}
+                  onChange={setArchiveTrendWindow}
+                  options={[
+                    { value: "7", label: "最近 7 天" },
+                    { value: "14", label: "最近 14 天" },
+                    { value: "30", label: "最近 30 天" },
+                  ]}
+                />
+              </div>
+              {!visibleArchiveTrend.length ? (
+                <AdminEmptyState
+                  title="当前时间范围没有归档趋势"
+                  description="要么还没形成足够归档数据，要么所选窗口内暂无历史清理记录。"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {visibleArchiveTrend.map((point) => (
+                    <AdminRecordCard
+                      key={point.date}
+                      title={formatArchiveTrendDate(point.date)}
+                      badges={
+                        <>
+                          <StatusPill tone="muted">{point.taskCount} 任务</StatusPill>
+                          <StatusPill tone="muted">{point.turnCount} 轮</StatusPill>
+                          <StatusPill tone="warning">
+                            失败率 {(point.failureRate * 100).toFixed(1)}%
+                          </StatusPill>
+                          <StatusPill tone="muted">
+                            取消率 {(point.cancelRate * 100).toFixed(1)}%
+                          </StatusPill>
+                        </>
+                      }
+                      description={describeArchiveTrendPoint(point)}
+                      className="bg-white/90"
+                    />
+                  ))}
+                </div>
+              )}
+            </AdminSubpanel>
+
+            <AdminSubpanel title="角色异常率">
+              {!runtime.archiveSummary.actorSummary.length ? (
+                <AdminEmptyState
+                  title="还没有角色归档画像"
+                  description="当前归档数据还不足以形成角色级长期统计。"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {runtime.archiveSummary.actorSummary.map((actor) => (
+                    <AdminRecordCard
+                      key={actor.actorCharacterId}
+                      title={actor.actorName}
+                      badges={
+                        <>
+                          <StatusPill tone="muted">{actor.taskCount} 任务</StatusPill>
+                          <StatusPill tone="warning">
+                            异常率 {(actor.issueRate * 100).toFixed(1)}%
+                          </StatusPill>
+                          <StatusPill tone="warning">
+                            失败率 {(actor.failureRate * 100).toFixed(1)}%
+                          </StatusPill>
+                          <StatusPill tone="muted">
+                            取消率 {(actor.cancelRate * 100).toFixed(1)}%
+                          </StatusPill>
+                        </>
+                      }
+                      description={describeArchiveActorSummary(actor)}
+                      className="bg-white/90"
+                    />
+                  ))}
+                </div>
+              )}
+            </AdminSubpanel>
 
             {!runtime.archiveSummary.issueSummary.length ? (
               <AdminEmptyState
@@ -4598,6 +4687,30 @@ function describeArchivedGroupReplyIssue(issue: ReplyLogicGroupReplyIssueSummary
   }
 
   return `这是已经归档的历史失败热点，累计出现 ${issue.count} 次，适合用来判断某类 provider 或上下文错误是否反复出现。`;
+}
+
+function formatArchiveTrendDate(date: string) {
+  if (!date) {
+    return "未记录日期";
+  }
+
+  try {
+    return new Intl.DateTimeFormat("zh-CN", {
+      month: "2-digit",
+      day: "2-digit",
+      weekday: "short",
+    }).format(new Date(`${date}T00:00:00`));
+  } catch {
+    return date;
+  }
+}
+
+function describeArchiveTrendPoint(point: ReplyLogicGroupReplyArchiveTrendPoint) {
+  return `当天共归档 ${point.taskCount} 条终态任务，涉及 ${point.turnCount} 轮；其中已发送 ${point.sentCount} 条、已取消 ${point.cancelledCount} 条、失败 ${point.failedCount} 条。`;
+}
+
+function describeArchiveActorSummary(actor: ReplyLogicGroupReplyArchiveActorSummary) {
+  return `长期归档里，这个角色累计参与 ${actor.taskCount} 条任务；成功发送 ${actor.sentCount} 条，取消 ${actor.cancelledCount} 条，失败 ${actor.failedCount} 条。`;
 }
 
 function formatGroupReplyCandidateMeta(recentSpeakerIndex: number) {
