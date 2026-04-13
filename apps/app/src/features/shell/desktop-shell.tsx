@@ -122,7 +122,6 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const ownerSignature = useWorldOwnerStore((state) => state.signature);
-  const ownerCreatedAt = useWorldOwnerStore((state) => state.createdAt);
   const appTitle = runtimeConfig.publicAppName.trim() || "Yinjie";
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
@@ -698,7 +697,6 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     ownerName={ownerName}
                     ownerAvatar={ownerAvatar}
                     ownerSignature={ownerSignature}
-                    ownerCreatedAt={ownerCreatedAt}
                     appTitle={appTitle}
                     notice={ownerCardNotice}
                     isOpeningSelfConversation={isOpeningSelfConversation}
@@ -1009,7 +1007,6 @@ function DesktopOwnerQuickCard({
   ownerName,
   ownerAvatar,
   ownerSignature,
-  ownerCreatedAt,
   appTitle,
   notice,
   isOpeningSelfConversation,
@@ -1019,7 +1016,6 @@ function DesktopOwnerQuickCard({
   ownerName: string | null;
   ownerAvatar: string;
   ownerSignature: string;
-  ownerCreatedAt: string | null;
   appTitle: string;
   notice: string | null;
   isOpeningSelfConversation: boolean;
@@ -1051,15 +1047,6 @@ function DesktopOwnerQuickCard({
               {ownerSignature.trim() || "在现实之外，进入另一片世界。"}
             </div>
           </div>
-        </div>
-
-        <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
-          <span className="truncate">
-            {ownerCreatedAt
-              ? `进入世界于 ${formatTimestamp(ownerCreatedAt)}`
-              : "始终在线，随时回到自己的世界"}
-          </span>
         </div>
       </div>
 
