@@ -58,7 +58,6 @@ type MobileDiscoverEntry = {
     | "miniPrograms";
   label: string;
   badge: string;
-  summary: string;
   icon: typeof Users;
   iconClassName: string;
   to:
@@ -76,7 +75,6 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     key: "moments",
     label: "朋友圈",
     badge: "朋友",
-    summary: "只给朋友看的生活片段和熟人近况。",
     icon: Users,
     iconClassName: "bg-[linear-gradient(135deg,#38b16d,#1f9d55)] text-white",
     to: "/discover/moments",
@@ -85,7 +83,6 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     key: "encounter",
     label: "摇一摇",
     badge: "随机",
-    summary: "让世界主动给你一场新的相遇。",
     icon: Sparkles,
     iconClassName:
       "bg-[linear-gradient(135deg,#22c55e,#07c160)] text-[color:var(--text-on-brand)]",
@@ -95,7 +92,6 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     key: "scene",
     label: "场景相遇",
     badge: "地点",
-    summary: "先选地点，再让角色按场景靠近你。",
     icon: Sparkles,
     iconClassName: "bg-[linear-gradient(135deg,#16a34a,#0f766e)] text-white",
     to: "/discover/scene",
@@ -104,7 +100,6 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     key: "feed",
     label: "广场动态",
     badge: "公开",
-    summary: "看看居民们正在说什么，也发一条给世界看。",
     icon: Newspaper,
     iconClassName: "bg-[linear-gradient(135deg,#4f7cff,#2f5fe6)] text-white",
     to: "/discover/feed",
@@ -116,7 +111,6 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     key: "channels",
     label: "视频号",
     badge: "内容",
-    summary: "浏览 AI 生成短视频和持续更新的内容流。",
     icon: PlaySquare,
     iconClassName: "bg-[linear-gradient(135deg,#ff8a3d,#ff5f45)] text-white",
     to: "/discover/channels",
@@ -125,7 +119,6 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     key: "games",
     label: "游戏",
     badge: "娱乐",
-    summary: "进入游戏中心，继续最近玩过和推荐内容。",
     icon: Gamepad2,
     iconClassName: "bg-[linear-gradient(135deg,#1f6d42,#49a36e)] text-white",
     to: "/discover/games",
@@ -134,7 +127,6 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     key: "miniPrograms",
     label: "小程序",
     badge: "工具",
-    summary: "最近使用、我的小程序和推荐入口都在这里。",
     icon: Blocks,
     iconClassName:
       "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
@@ -629,8 +621,13 @@ export function DiscoverPage() {
       <TabPageTopBar title="发现" titleAlign="center" />
 
       <div className="pb-8">
-        <div className="px-4 py-1.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
-          朋友圈、相遇、内容入口都从这里继续打开。
+        <div className="px-3 pt-2">
+          <InlineNotice
+            tone="muted"
+            className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+          >
+            朋友圈、相遇、视频号和小程序都从这里继续打开。
+          </InlineNotice>
         </div>
 
         <DiscoverMobileSection
@@ -654,8 +651,8 @@ function DiscoverMobileSection({
   items: MobileDiscoverEntry[];
 }) {
   return (
-    <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-      <div className="px-4 py-1 text-[10px] font-medium tracking-[0.03em] text-[color:var(--text-muted)]">
+    <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+      <div className="px-4 py-0.75 text-[9px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
         {title}
       </div>
       {items.map((item, index) => (
@@ -682,23 +679,23 @@ function DiscoverMobileEntryRow({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
+        "flex items-center gap-2.5 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
       )}
     >
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px]",
+          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px]",
           item.iconClassName,
         )}
       >
-        <Icon size={16} />
+        <Icon size={15} />
       </div>
       <div className="min-w-0 flex flex-1 items-center justify-between gap-3">
-        <div className="truncate text-[15px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
           {item.label}
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[9px] font-medium tracking-[0.03em] text-[#15803d]">
+        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[8px] font-medium tracking-[0.03em] text-[#15803d]">
           {item.badge}
         </div>
       </div>
