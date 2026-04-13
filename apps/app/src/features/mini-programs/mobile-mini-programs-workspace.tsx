@@ -118,7 +118,7 @@ export function MobileMiniProgramsWorkspace({
           </Button>
         }
       >
-        <div className="mt-2.5 space-y-2.5">
+        <div className="mt-2 space-y-2">
           <label className="relative block">
             <Search
               aria-hidden="true"
@@ -129,13 +129,13 @@ export function MobileMiniProgramsWorkspace({
               value={searchText}
               onChange={(event) => onSearchTextChange(event.target.value)}
               placeholder="搜索小程序、服务或场景"
-              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[13px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.22)] focus:bg-white"
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[13px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.22)] focus:bg-white"
             />
             {searchText ? (
               <button
                 type="button"
                 onClick={() => onSearchTextChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[color:var(--text-muted)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[color:var(--text-muted)]"
               >
                 清空
               </button>
@@ -149,7 +149,7 @@ export function MobileMiniProgramsWorkspace({
                 type="button"
                 onClick={() => onCategoryChange(tab.id)}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
+                  "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
                   activeCategory === tab.id
                     ? "bg-[#07c160] text-white"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
@@ -162,7 +162,7 @@ export function MobileMiniProgramsWorkspace({
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+      <div className="space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         {successNotice ? (
           <InlineNotice
             className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
@@ -267,7 +267,7 @@ export function MobileMiniProgramsWorkspace({
           onTogglePinned={onTogglePinnedMiniProgram}
         />
 
-        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -301,7 +301,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
         </AppSection>
 
-        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -388,7 +388,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
         </AppSection>
 
-        <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -472,17 +472,17 @@ function MobileMiniProgramsStatusCard({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
-      <div className="mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#07c160]">
+    <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[8px] font-medium tracking-[0.04em] text-[#07c160]">
         {badge}
       </div>
-      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
-      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
     </section>
   );
 }
