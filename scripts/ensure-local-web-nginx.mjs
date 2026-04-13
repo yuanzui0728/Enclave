@@ -57,7 +57,7 @@ events {
 }
 
 http {
-  client_max_body_size 16m;
+  client_max_body_size 32m;
   client_body_temp_path ${bodyDir} 1 2;
 
   include /etc/nginx/mime.types;

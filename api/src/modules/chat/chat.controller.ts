@@ -169,6 +169,8 @@ type UploadedAttachmentFile = {
   size: number;
 };
 
+const CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES = 32 * 1024 * 1024;
+
 @Controller('chat')
 export class ChatAttachmentController {
   constructor(private readonly chatService: ChatService) {}
@@ -177,7 +179,7 @@ export class ChatAttachmentController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
-        fileSize: 8 * 1024 * 1024,
+        fileSize: CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES,
       },
     }),
   )
