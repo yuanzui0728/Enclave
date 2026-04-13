@@ -4,7 +4,9 @@ export function parseTimestamp(value?: string | null) {
   }
 
   const numericValue = Number(value);
-  const timestamp = Number.isNaN(numericValue) ? Date.parse(value) : numericValue;
+  const timestamp = Number.isNaN(numericValue)
+    ? Date.parse(value)
+    : numericValue;
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
@@ -95,6 +97,35 @@ export function formatMessageTimestamp(value?: string | null) {
   }).format(date);
 }
 
+export function formatDesktopMessageTimestamp(value?: string | null) {
+  const date = parseDateValue(value);
+  if (!date) {
+    return "刚刚";
+  }
+
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  if (isSameDay(date, now)) {
+    return formatTime(date);
+  }
+
+  if (isSameDay(date, yesterday)) {
+    return `昨天 ${formatTime(date)}`;
+  }
+
+  if (isInSameWeek(date, now)) {
+    return `${formatWeekday(date)} ${formatTime(date)}`;
+  }
+
+  if (date.getFullYear() === now.getFullYear()) {
+    return `${date.getMonth() + 1}月${date.getDate()}日 ${formatTime(date)}`;
+  }
+
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${formatTime(date)}`;
+}
+
 export function formatDetailedMessageTimestamp(value?: string | null) {
   const date = parseDateValue(value);
   if (!date) {
@@ -131,10 +162,39 @@ function formatTime(date: Date) {
   }).format(date);
 }
 
+function formatWeekday(date: Date) {
+  const weekdayLabels = [
+    "星期日",
+    "星期一",
+    "星期二",
+    "星期三",
+    "星期四",
+    "星期五",
+    "星期六",
+  ];
+
+  return weekdayLabels[date.getDay()] ?? "星期";
+}
+
+function isInSameWeek(left: Date, right: Date) {
+  const leftStart = startOfWeek(left);
+  const rightStart = startOfWeek(right);
+  return leftStart.getTime() === rightStart.getTime();
+}
+
 function isSameDay(left: Date, right: Date) {
   return (
     left.getFullYear() === right.getFullYear() &&
     left.getMonth() === right.getMonth() &&
     left.getDate() === right.getDate()
   );
+}
+
+function startOfWeek(date: Date) {
+  const start = new Date(date);
+  const day = start.getDay();
+  const offset = day === 0 ? 6 : day - 1;
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - offset);
+  return start;
 }
