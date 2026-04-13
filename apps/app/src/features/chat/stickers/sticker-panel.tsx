@@ -10,6 +10,7 @@ import {
   type StickerAttachment,
 } from "@yinjie/contracts";
 import { Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { prepareCustomStickerUpload } from "./prepare-custom-sticker-upload";
 import type { RecentStickerItem } from "./recent-stickers";
 
 type StickerPanelProps = {
@@ -75,14 +76,15 @@ export function StickerPanel({
       let uploadedCount = 0;
 
       for (const file of files) {
+        const prepared = await prepareCustomStickerUpload({
+          file,
+        });
         const formData = new FormData();
-        formData.set("file", file, file.name);
-        const dimensions = await readStickerFileDimensions(file);
-        if (dimensions.width) {
-          formData.set("width", String(dimensions.width));
-        }
-        if (dimensions.height) {
-          formData.set("height", String(dimensions.height));
+        formData.set("file", prepared.file, prepared.file.name);
+        formData.set("width", String(prepared.width));
+        formData.set("height", String(prepared.height));
+        if (prepared.label) {
+          formData.set("label", prepared.label);
         }
         await uploadCustomSticker(formData, baseUrl);
         uploadedCount += 1;
@@ -666,38 +668,4 @@ function computeSearchScore(query: string, tokens: Array<string | undefined>) {
 
     return score;
   }, 0);
-}
-
-async function readStickerFileDimensions(file: File) {
-  if (typeof window === "undefined") {
-    return {
-      width: undefined,
-      height: undefined,
-    };
-  }
-
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const dimensions = await new Promise<{ width?: number; height?: number }>(
-      (resolve) => {
-        const image = new Image();
-        image.onload = () => {
-          resolve({
-            width: image.naturalWidth || undefined,
-            height: image.naturalHeight || undefined,
-          });
-        };
-        image.onerror = () => {
-          resolve({
-            width: undefined,
-            height: undefined,
-          });
-        };
-        image.src = objectUrl;
-      },
-    );
-    return dimensions;
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
 }
