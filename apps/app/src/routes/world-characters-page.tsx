@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Search, UserPlus } from "lucide-react";
 import { getFriends, listCharacters } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
@@ -12,6 +12,10 @@ import {
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
 } from "../features/contacts/contact-utils";
+import {
+  buildWorldCharactersRouteHash,
+  parseWorldCharactersRouteState,
+} from "../features/contacts/world-characters-route-state";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -19,7 +23,9 @@ export function WorldCharactersPage() {
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [searchText, setSearchText] = useState("");
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const routeState = parseWorldCharactersRouteState(hash);
+  const [searchText, setSearchText] = useState(routeState.keyword);
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -58,6 +64,29 @@ export function WorldCharactersPage() {
     () => buildContactSections(filteredItems),
     [filteredItems],
   );
+
+  useEffect(() => {
+    if (searchText !== routeState.keyword) {
+      setSearchText(routeState.keyword);
+    }
+  }, [routeState.keyword, searchText]);
+
+  useEffect(() => {
+    const nextHash = buildWorldCharactersRouteHash({
+      keyword: searchText,
+    });
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    if (normalizedHash === (nextHash ?? "")) {
+      return;
+    }
+
+    void navigate({
+      to: "/contacts/world-characters",
+      hash: nextHash,
+      replace: true,
+    });
+  }, [hash, navigate, searchText]);
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
