@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Phone, Users, Video } from "lucide-react";
 import { type StickerAttachment } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { ChatComposer } from "../../components/chat-composer";
 import {
   ChatMessageList,
   type ChatRenderableMessage,
 } from "../../components/chat-message-list";
-import { EmptyState } from "../../components/empty-state";
 import {
   encodeChatReplyText,
   sanitizeDisplayedChatText,
@@ -544,14 +543,52 @@ export function ConversationThreadPanel({
             onScrollCapture={handleDismissRouteContextNotice}
           >
             {messagesQuery.isLoading ? (
-              <LoadingBlock label="正在读取会话..." />
+              isDesktop ? (
+                <LoadingBlock label="正在读取会话..." />
+              ) : (
+                <MobileThreadStatusCard
+                  badge="读取中"
+                  title="正在读取会话"
+                  description="稍等一下，正在同步这段聊天里的消息。"
+                  tone="loading"
+                />
+              )
             ) : null}
             {messagesQuery.isError && messagesQuery.error instanceof Error ? (
-              <ErrorBlock message={messagesQuery.error.message} />
+              isDesktop ? (
+                <ErrorBlock message={messagesQuery.error.message} />
+              ) : (
+                <MobileThreadStatusCard
+                  badge="会话"
+                  title="会话暂时不可用"
+                  description={messagesQuery.error.message}
+                  tone="danger"
+                />
+              )
             ) : null}
-            {socketError ? <ErrorBlock message={socketError} /> : null}
+            {socketError ? (
+              isDesktop ? (
+                <ErrorBlock message={socketError} />
+              ) : (
+                <InlineNotice
+                  tone="danger"
+                  className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                >
+                  {socketError}
+                </InlineNotice>
+              )
+            ) : null}
             {sendMutation.isError && sendMutation.error instanceof Error ? (
-              <ErrorBlock message={sendMutation.error.message} />
+              isDesktop ? (
+                <ErrorBlock message={sendMutation.error.message} />
+              ) : (
+                <InlineNotice
+                  tone="danger"
+                  className="rounded-[14px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                >
+                  {sendMutation.error.message}
+                </InlineNotice>
+              )
             ) : null}
 
             <ChatMessageList
@@ -580,7 +617,8 @@ export function ConversationThreadPanel({
                 !isDesktop &&
                 !messagesQuery.isLoading &&
                 !messagesQuery.isError ? (
-                  <EmptyState
+                  <MobileThreadStatusCard
+                    badge="聊天"
                     title="还没有消息"
                     description="先发一句开场白，把这段对话真正聊起来。"
                   />
@@ -666,6 +704,56 @@ export function ConversationThreadPanel({
         />
       ) : null}
     </div>
+  );
+}
+
+function MobileThreadStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
 
