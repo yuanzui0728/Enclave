@@ -172,6 +172,8 @@ fn main() {
             desktop_write_chat_image_viewer_sessions_store,
             desktop_read_chat_message_actions_store,
             desktop_write_chat_message_actions_store,
+            desktop_read_detailed_timestamp_mode_store,
+            desktop_write_detailed_timestamp_mode_store,
             desktop_read_favorites_store,
             desktop_write_favorites_store,
             desktop_read_game_center_store,
@@ -669,6 +671,63 @@ async fn desktop_write_chat_message_actions_store(
             success: true,
             message: format!(
                 "Saved desktop chat message actions store to {}",
+                target_file_path.display()
+            ),
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_read_detailed_timestamp_mode_store(
+    app: tauri::AppHandle,
+) -> Result<DesktopTextStoreReadResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-detailed-timestamp-mode.json");
+
+        match std::fs::read_to_string(&target_file_path) {
+            Ok(contents) => Ok(DesktopTextStoreReadResult {
+                exists: true,
+                contents: Some(contents),
+                message: format!(
+                    "Read desktop detailed timestamp mode store from {}",
+                    target_file_path.display()
+                ),
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                Ok(DesktopTextStoreReadResult {
+                    exists: false,
+                    contents: None,
+                    message: "Desktop detailed timestamp mode store has not been created yet."
+                        .to_string(),
+                })
+            }
+            Err(error) => Err(error.to_string()),
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_write_detailed_timestamp_mode_store(
+    app: tauri::AppHandle,
+    contents: String,
+) -> Result<DesktopOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-detailed-timestamp-mode.json");
+        ensure_parent_dir_exists(&target_file_path)?;
+        std::fs::write(&target_file_path, contents).map_err(|error| error.to_string())?;
+
+        Ok(DesktopOperationResult {
+            success: true,
+            message: format!(
+                "Saved desktop detailed timestamp mode store to {}",
                 target_file_path.display()
             ),
         })

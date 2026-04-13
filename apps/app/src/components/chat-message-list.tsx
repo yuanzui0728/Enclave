@@ -51,6 +51,10 @@ import {
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { InlineNoticeActionButton } from "./inline-notice-action-button";
+import {
+  readDetailedTimestampModeEnabled,
+  writeDetailedTimestampModeEnabled,
+} from "../features/chat/detailed-timestamp-mode";
 import { GroupMessageContextMenu } from "../features/chat/group-message-context-menu";
 import {
   hideLocalChatMessage,
@@ -303,7 +307,7 @@ export function ChatMessageList({
     setReminder,
   } = useMessageReminders();
   const [detailedTimestampMode, setDetailedTimestampMode] = useState(() =>
-    readDetailedTimestampMode(),
+    readDetailedTimestampModeEnabled(),
   );
 
   useEffect(() => {
@@ -407,7 +411,7 @@ export function ChatMessageList({
   }, []);
 
   useEffect(() => {
-    writeDetailedTimestampMode(detailedTimestampMode);
+    writeDetailedTimestampModeEnabled(detailedTimestampMode);
   }, [detailedTimestampMode]);
 
   useEffect(() => {
@@ -2813,29 +2817,6 @@ function shouldShowMessageTimestamp(
   }
 
   return currentTimestamp - previousTimestamp >= 5 * 60 * 1000;
-}
-
-const DETAILED_TIMESTAMP_MODE_STORAGE_KEY = "chat-detailed-timestamp-mode";
-
-function readDetailedTimestampMode() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return (
-    window.localStorage.getItem(DETAILED_TIMESTAMP_MODE_STORAGE_KEY) === "1"
-  );
-}
-
-function writeDetailedTimestampMode(enabled: boolean) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(
-    DETAILED_TIMESTAMP_MODE_STORAGE_KEY,
-    enabled ? "1" : "0",
-  );
 }
 
 function areStringListsEqual(
