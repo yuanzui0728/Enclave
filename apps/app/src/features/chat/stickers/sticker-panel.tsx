@@ -469,6 +469,18 @@ export function StickerPanel({
     );
     return index >= 0 ? index + 1 : null;
   }, [activeItems, highlightedSearchStickerKey]);
+  const searchSectionNavigation = useMemo(
+    () =>
+      searchSections
+        .map((section) => ({
+          id: section.id,
+          itemKeys: section.items.map((item) =>
+            getStickerIdentity(item.sticker),
+          ),
+        }))
+        .filter((section) => section.itemKeys.length > 0),
+    [searchSections],
+  );
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
       {
@@ -554,6 +566,11 @@ export function StickerPanel({
     !isMobile && searching && !searchPending
       ? (activeStickerKeys[0] ?? null)
       : null;
+  const highlightedSearchSectionIndex = highlightedSearchSection
+    ? searchSectionNavigation.findIndex(
+        (section) => section.id === highlightedSearchSection.id,
+      )
+    : -1;
   const recommendedSearchSection = useMemo(() => {
     if (!firstSearchResultKey) {
       return null;
@@ -599,6 +616,11 @@ export function StickerPanel({
   const highlightedSearchSectionState = highlightedSearchSection
     ? (searchSectionStateMap.get(highlightedSearchSection.id) ?? null)
     : null;
+  const showSearchSectionJumpHint =
+    !isMobile &&
+    searching &&
+    !searchPending &&
+    searchSectionNavigation.length > 1;
   const showCustomManageHint =
     !isMobile &&
     activeSectionId === "custom" &&
@@ -858,6 +880,35 @@ export function StickerPanel({
     );
   };
 
+  const jumpSearchHighlightBySection = (direction: -1 | 1) => {
+    if (!searchSectionNavigation.length) {
+      return;
+    }
+
+    setHighlightedStickerKey((current) => {
+      const currentSectionIndex = current
+        ? searchSectionNavigation.findIndex((section) =>
+            section.itemKeys.includes(current),
+          )
+        : -1;
+      if (currentSectionIndex < 0) {
+        return direction > 0
+          ? (searchSectionNavigation[0]?.itemKeys[0] ?? current ?? null)
+          : (searchSectionNavigation[searchSectionNavigation.length - 1]
+              ?.itemKeys[0] ??
+              current ??
+              null);
+      }
+
+      const nextIndex = currentSectionIndex + direction;
+      if (nextIndex < 0 || nextIndex >= searchSectionNavigation.length) {
+        return current;
+      }
+
+      return searchSectionNavigation[nextIndex]?.itemKeys[0] ?? current;
+    });
+  };
+
   const focusManageDeleteButton = (stickerKey: string | null) => {
     if (!stickerKey) {
       return;
@@ -961,6 +1012,18 @@ export function StickerPanel({
       if (event.key === "End") {
         event.preventDefault();
         jumpSearchHighlight("last");
+        return;
+      }
+
+      if (event.key === "PageDown") {
+        event.preventDefault();
+        jumpSearchHighlightBySection(1);
+        return;
+      }
+
+      if (event.key === "PageUp") {
+        event.preventDefault();
+        jumpSearchHighlightBySection(-1);
         return;
       }
 
@@ -1341,6 +1404,20 @@ export function StickerPanel({
                         End 末项
                       </span>
                     ) : null}
+                    {showSearchSectionJumpHint &&
+                    highlightedSearchSectionIndex > 0 ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        PgUp 上组
+                      </span>
+                    ) : null}
+                    {showSearchSectionJumpHint &&
+                    highlightedSearchSectionIndex >= 0 &&
+                    highlightedSearchSectionIndex <
+                      searchSectionNavigation.length - 1 ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        PgDn 下组
+                      </span>
+                    ) : null}
                     {highlightedSearchPosition ? (
                       <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                         {highlightedSearchPosition}/{activeItems.length}
@@ -1365,6 +1442,16 @@ export function StickerPanel({
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
                   End 末项
                 </span>
+                {showSearchSectionJumpHint ? (
+                  <>
+                    <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                      PgUp 上组
+                    </span>
+                    <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                      PgDn 下组
+                    </span>
+                  </>
+                ) : null}
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
                   Esc 清空
                 </span>
