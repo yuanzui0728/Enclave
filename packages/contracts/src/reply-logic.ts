@@ -276,6 +276,11 @@ export interface ReplyLogicConstantSummary {
   busyDelayMs: { min: number; max: number };
   groupReplyChance: { high: number; normal: number; low: number };
   groupReplyDelayMs: { min: number; max: number };
+  groupReplyPrimaryDelayMs: { min: number; max: number };
+  groupReplyFollowupDelayMs: { min: number; max: number };
+  groupReplyMaxSpeakers: number;
+  groupReplyMaxSpeakersMentionAll: number;
+  groupReplyRecentSpeakerWindow: number;
   memoryCompressionEveryMessages: number;
   momentGenerateChance: number;
   channelGenerateChance: number;

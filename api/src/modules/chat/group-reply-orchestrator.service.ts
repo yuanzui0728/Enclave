@@ -7,15 +7,6 @@ import {
   type GroupReplyOrchestratorInput,
 } from './group-reply.types';
 
-const GROUP_REPLY_PRIMARY_DELAY_RANGE_MS = {
-  min: 2_000,
-  max: 6_000,
-} as const;
-const GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS = {
-  min: 5_000,
-  max: 12_000,
-} as const;
-
 @Injectable()
 export class GroupReplyOrchestratorService {
   private readonly latestTriggerMessageByGroup = new Map<string, string>();
@@ -29,6 +20,7 @@ export class GroupReplyOrchestratorService {
       selectedActors,
       conversationHistory,
       currentUserContext,
+      runtimeRules,
       sendReply,
       onError,
     } = input;
@@ -46,7 +38,7 @@ export class GroupReplyOrchestratorService {
         return;
       }
 
-      await this.sleep(this.pickReplyDelay(index));
+      await this.sleep(this.pickReplyDelay(index, runtimeRules));
       if (this.isReplyTurnStale(groupId, triggerMessageId)) {
         return;
       }
@@ -106,11 +98,14 @@ export class GroupReplyOrchestratorService {
     return `${promptText}\n\n【群里刚刚已经有人回应】\n${replySummary}\n请避免重复上面的内容，直接补充新的信息或自然接话。`;
   }
 
-  private pickReplyDelay(index: number) {
+  private pickReplyDelay(
+    index: number,
+    runtimeRules: GroupReplyOrchestratorInput['runtimeRules'],
+  ) {
     const range =
       index === 0
-        ? GROUP_REPLY_PRIMARY_DELAY_RANGE_MS
-        : GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS;
+        ? runtimeRules.groupReplyPrimaryDelayMs
+        : runtimeRules.groupReplyFollowupDelayMs;
     return range.min + Math.random() * (range.max - range.min);
   }
 

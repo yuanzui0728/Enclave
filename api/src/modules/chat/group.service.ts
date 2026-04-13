@@ -685,6 +685,7 @@ export class GroupService {
       selectedActors,
       conversationHistory: history,
       currentUserContext,
+      runtimeRules,
       sendReply: async (actor, text) => {
         await this.sendMessage(
           groupId,
