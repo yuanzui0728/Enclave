@@ -49,7 +49,7 @@ export function ChatSettingRow({
         disabled ? "opacity-60" : undefined,
         isWechat &&
           cn(
-            "min-h-[50px] px-4",
+            "min-h-[46px] px-4",
             interactive &&
               !disabled &&
               "active:bg-[color:var(--surface-card-hover)]",
@@ -68,7 +68,7 @@ export function ChatSettingRow({
           <span
             className={cn(
               "max-w-[11rem] truncate text-[14px] text-[color:var(--text-muted)]",
-              isWechat && "max-w-[12rem] text-[12px] text-[#8c8c8c]",
+              isWechat && "max-w-[12rem] text-[11px] text-[#8c8c8c]",
             )}
           >
             {value}
@@ -78,7 +78,7 @@ export function ChatSettingRow({
           <span
             className={cn(
               "relative h-8 w-13 rounded-full border transition-colors",
-              isWechat && "h-6.5 w-11",
+              isWechat && "h-6 w-[42px]",
               checked
                 ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]"
                 : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
@@ -87,7 +87,7 @@ export function ChatSettingRow({
             <span
               className={cn(
                 "absolute top-1 h-6 w-6 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
-                isWechat && "top-[1px] h-5.5 w-5.5",
+                isWechat && "top-[1px] h-[22px] w-[22px]",
                 checked
                   ? isWechat
                     ? "left-[18px]"

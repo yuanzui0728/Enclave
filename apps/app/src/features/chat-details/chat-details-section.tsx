@@ -22,7 +22,7 @@ export function ChatDetailsSection({
         <div
           className={cn(
             "px-1 pb-2 text-[12px] tracking-[0.04em] text-[color:var(--text-dim)]",
-            isWechat && "px-4 pb-1.5 text-[12px] font-normal tracking-normal text-[#8c8c8c]",
+            isWechat && "px-4 pb-1 text-[11px] font-normal tracking-normal text-[#8c8c8c]",
           )}
         >
           {title}

@@ -31,7 +31,7 @@ export function ChatDetailsShell({
         title={title}
         subtitle={subtitle}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-3 py-2.5 backdrop-blur-xl sm:mx-0 sm:px-3"
+        className="mx-0 mt-0 mb-0 border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-3 pt-2 pb-1.5 backdrop-blur-xl sm:mx-0 sm:px-3"
         leftActions={
           <Button
             onClick={onBack}
@@ -46,7 +46,7 @@ export function ChatDetailsShell({
         rightActions={rightActions}
       />
 
-      <div className="space-y-2.5 px-0 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] pt-2">
+      <div className="space-y-2 px-0 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-1.5">
         {children}
       </div>
     </AppPage>
