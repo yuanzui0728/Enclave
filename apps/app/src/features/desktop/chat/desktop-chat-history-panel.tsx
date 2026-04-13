@@ -381,13 +381,13 @@ export function DesktopChatHistoryPanel({
             placeholder="搜索"
             className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
-          {keyword ? (
-            <button
-              type="button"
-              onClick={clearKeywordFilter}
-              className="shrink-0 text-[color:var(--text-dim)] transition hover:text-[color:var(--text-primary)]"
-              aria-label="清空搜索词"
-            >
+	          {keyword ? (
+	            <button
+	              type="button"
+	              onClick={() => clearKeywordFilter()}
+	              className="shrink-0 text-[color:var(--text-dim)] transition hover:text-[color:var(--text-primary)]"
+	              aria-label="清空搜索词"
+	            >
               <X size={14} />
             </button>
           ) : null}
