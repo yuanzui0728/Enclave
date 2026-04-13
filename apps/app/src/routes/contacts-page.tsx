@@ -4,11 +4,14 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   BookText,
   BookUser,
+  Plus,
+  QrCode,
   Search,
   Star,
   Tag,
   UserPlus,
   Users,
+  WalletCards,
 } from "lucide-react";
 import {
   blockCharacter,
@@ -74,6 +77,44 @@ type DesktopSelection =
     }
   | null;
 
+type MobileQuickActionItem = {
+  key: string;
+  label: string;
+  icon: typeof Users;
+  to?: "/group/new" | "/friend-requests";
+  disabled?: boolean;
+  disabledLabel?: string;
+};
+
+const mobileQuickActionItems: MobileQuickActionItem[] = [
+  {
+    key: "create-group",
+    label: "发起群聊",
+    icon: Users,
+    to: "/group/new",
+  },
+  {
+    key: "add-friend",
+    label: "添加朋友",
+    icon: UserPlus,
+    to: "/friend-requests",
+  },
+  {
+    key: "scan",
+    label: "扫一扫",
+    icon: QrCode,
+    disabled: true,
+    disabledLabel: "暂未开放",
+  },
+  {
+    key: "pay",
+    label: "收付款",
+    icon: WalletCards,
+    disabled: true,
+    disabledLabel: "暂未开放",
+  },
+];
+
 export function ContactsPage() {
   const pageRef = useRef<HTMLDivElement | null>(null);
   const isDesktopLayout = useDesktopLayout();
@@ -84,6 +125,7 @@ export function ContactsPage() {
   const [searchText, setSearchText] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [showWorldCharacters, setShowWorldCharacters] = useState(false);
+  const [isQuickMenuOpen, setIsQuickMenuOpen] = useState(false);
   const [desktopSelection, setDesktopSelection] =
     useState<DesktopSelection>(null);
   const [activeMobileIndexKey, setActiveMobileIndexKey] = useState<
@@ -546,6 +588,12 @@ export function ContactsPage() {
   ]);
 
   function handleShortcutNavigate(to: ShortcutRoute) {
+    setNotice(null);
+    void navigate({ to });
+  }
+
+  function handleMobileQuickActionNavigate(to: "/group/new" | "/friend-requests") {
+    setIsQuickMenuOpen(false);
     setNotice(null);
     void navigate({ to });
   }
@@ -1038,10 +1086,89 @@ export function ContactsPage() {
   return (
     <div ref={pageRef}>
       <AppPage className="relative min-h-full space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+        {isQuickMenuOpen ? (
+          <button
+            type="button"
+            aria-label="关闭快捷菜单"
+            onClick={() => setIsQuickMenuOpen(false)}
+            className="fixed inset-0 z-30 bg-black/5"
+          />
+        ) : null}
+
         <TabPageTopBar
           title="通讯录"
           titleAlign="center"
-          className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+          rightActions={
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsQuickMenuOpen((current) => !current)}
+                className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
+                aria-label="打开快捷菜单"
+              >
+                <Plus size={16} strokeWidth={2.4} />
+              </Button>
+
+              {isQuickMenuOpen ? (
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] z-40 w-[10.5rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1.5 shadow-[0_14px_40px_rgba(15,23,42,0.22)]">
+                  {mobileQuickActionItems.map((item) => {
+                    const Icon = item.icon;
+
+                    if (item.to && !item.disabled) {
+                      const to = item.to;
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => handleMobileQuickActionNavigate(to)}
+                          className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10"
+                        >
+                          <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] bg-white/10 text-white">
+                            <Icon size={15} />
+                          </div>
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={item.key}
+                        type="button"
+                        disabled={item.disabled}
+                        className={cn(
+                          "flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                          item.disabled
+                            ? "cursor-not-allowed opacity-55"
+                            : "hover:bg-white/10",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] text-white",
+                            item.disabled ? "bg-white/6" : "bg-white/10",
+                          )}
+                        >
+                          <Icon size={15} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div>{item.label}</div>
+                          {item.disabledLabel ? (
+                            <div className="mt-0.5 text-[11px] text-white/65">
+                              {item.disabledLabel}
+                            </div>
+                          ) : null}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          }
         >
           <div className="pt-2">
             <button
