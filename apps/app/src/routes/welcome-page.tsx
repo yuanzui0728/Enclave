@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -464,19 +464,39 @@ export function WelcomePage() {
           </div>
 
           {cloudStatusQuery.isLoading ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的官方世界..." />
+            isDesktopLayout ? (
+              <LoadingBlock className="px-0 py-0 text-left" label="正在检查你的官方世界..." />
+            ) : (
+              <MobileWelcomeStatusCard
+                badge="官方世界"
+                title="正在检查你的官方世界"
+                description="稍等一下，正在确认这个手机号对应的世界状态。"
+              />
+            )
           ) : null}
 
           {cloudStatusQuery.data ? (
-            <InlineNotice tone={cloudStatusQuery.data.status === "active" ? "success" : "info"}>
-              {cloudStatusQuery.data.status === "active"
-                ? `世界已准备好：${currentCloudWorld?.name ?? "未命名世界"}`
-                : describeCloudStatus(cloudStatusQuery.data)}
-            </InlineNotice>
+            isDesktopLayout ? (
+              <InlineNotice tone={cloudStatusQuery.data.status === "active" ? "success" : "info"}>
+                {cloudStatusQuery.data.status === "active"
+                  ? `世界已准备好：${currentCloudWorld?.name ?? "未命名世界"}`
+                  : describeCloudStatus(cloudStatusQuery.data)}
+              </InlineNotice>
+            ) : (
+              <MobileWelcomeNotice tone={cloudStatusQuery.data.status === "active" ? "success" : "info"}>
+                {cloudStatusQuery.data.status === "active"
+                  ? `世界已准备好：${currentCloudWorld?.name ?? "未命名世界"}`
+                  : describeCloudStatus(cloudStatusQuery.data)}
+              </MobileWelcomeNotice>
+            )
           ) : null}
 
           {currentCloudWorld?.apiBaseUrl ? (
-            <InlineNotice tone="muted">世界地址：{currentCloudWorld.apiBaseUrl}</InlineNotice>
+            isDesktopLayout ? (
+              <InlineNotice tone="muted">世界地址：{currentCloudWorld.apiBaseUrl}</InlineNotice>
+            ) : (
+              <MobileWelcomeNotice tone="muted">世界地址：{currentCloudWorld.apiBaseUrl}</MobileWelcomeNotice>
+            )
           ) : null}
 
           {cloudCanRequestWorld ? (
@@ -569,9 +589,15 @@ export function WelcomePage() {
           />
 
           {ownerError ? (
-            <InlineNotice className="mt-3" tone="danger">
-              {ownerError}
-            </InlineNotice>
+            isDesktopLayout ? (
+              <InlineNotice className="mt-3" tone="danger">
+                {ownerError}
+              </InlineNotice>
+            ) : (
+              <div className="mt-3">
+                <MobileWelcomeNotice tone="danger">{ownerError}</MobileWelcomeNotice>
+              </div>
+            )
           ) : null}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -633,22 +659,46 @@ export function WelcomePage() {
           </button>
         </div>
 
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+        {notice ? (
+          isDesktopLayout ? <InlineNotice tone="success">{notice}</InlineNotice> : <MobileWelcomeNotice tone="success">{notice}</MobileWelcomeNotice>
+        ) : null}
         {ownerSyncing && runtimeConfig.apiBaseUrl ? (
-          <LoadingBlock className="px-0 py-0 text-left" label="正在同步你的世界状态..." />
+          isDesktopLayout ? (
+            <LoadingBlock className="px-0 py-0 text-left" label="正在同步你的世界状态..." />
+          ) : (
+            <MobileWelcomeStatusCard
+              badge="同步中"
+              title="正在同步你的世界状态"
+              description="稍等一下，正在确认这个入口对应的世界主人状态。"
+            />
+          )
         ) : null}
 
         {renderModeFields()}
 
-        {entryError ? <ErrorBlock message={entryError} /> : null}
+        {entryError ? (
+          isDesktopLayout ? <ErrorBlock message={entryError} /> : <MobileWelcomeNotice tone="danger">{entryError}</MobileWelcomeNotice>
+        ) : null}
         {sendCodeMutation.isError && sendCodeMutation.error instanceof Error ? (
-          <ErrorBlock message={sendCodeMutation.error.message} />
+          isDesktopLayout ? (
+            <ErrorBlock message={sendCodeMutation.error.message} />
+          ) : (
+            <MobileWelcomeNotice tone="danger">{sendCodeMutation.error.message}</MobileWelcomeNotice>
+          )
         ) : null}
         {cloudStatusQuery.isError && cloudStatusQuery.error instanceof Error ? (
-          <ErrorBlock message={cloudStatusQuery.error.message} />
+          isDesktopLayout ? (
+            <ErrorBlock message={cloudStatusQuery.error.message} />
+          ) : (
+            <MobileWelcomeNotice tone="danger">{cloudStatusQuery.error.message}</MobileWelcomeNotice>
+          )
         ) : null}
         {createWorldRequestMutation.isError && createWorldRequestMutation.error instanceof Error ? (
-          <ErrorBlock message={createWorldRequestMutation.error.message} />
+          isDesktopLayout ? (
+            <ErrorBlock message={createWorldRequestMutation.error.message} />
+          ) : (
+            <MobileWelcomeNotice tone="danger">{createWorldRequestMutation.error.message}</MobileWelcomeNotice>
+          )
         ) : null}
       </div>
     );
@@ -694,4 +744,54 @@ export function WelcomePage() {
       </AppSection>
     </AppPage>
   );
+}
+
+function MobileWelcomeStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger";
+}) {
+  const toneClassName =
+    tone === "danger"
+      ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
+      : "border-black/5 bg-[#f7faf8] text-[color:var(--text-secondary)]";
+  const badgeClassName =
+    tone === "danger"
+      ? "border-[#f1d0cb] bg-[#fff1ef] text-[#b42318]"
+      : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[#15803d]";
+
+  return (
+    <div className={`rounded-[24px] border px-4 py-4 shadow-none ${toneClassName}`}>
+      <div className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium tracking-[0.24em] ${badgeClassName}`}>
+        {badge}
+      </div>
+      <div className="mt-3 text-base font-medium text-[color:var(--text-primary)]">{title}</div>
+      <p className="mt-1 text-sm leading-6">{description}</p>
+    </div>
+  );
+}
+
+function MobileWelcomeNotice({
+  children,
+  tone = "info",
+}: {
+  children: ReactNode;
+  tone?: "danger" | "info" | "muted" | "success";
+}) {
+  const toneClassName =
+    tone === "danger"
+      ? "border-[#f2c6c3] bg-[#fff7f5] text-[#b42318]"
+      : tone === "success"
+        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[#15803d]"
+        : tone === "muted"
+          ? "border-black/5 bg-[#f7f7f5] text-[color:var(--text-secondary)]"
+          : "border-[rgba(22,163,74,0.12)] bg-[#f6fbf7] text-[color:var(--text-secondary)]";
+
+  return <div className={`rounded-[20px] border px-4 py-3 text-sm leading-6 ${toneClassName}`}>{children}</div>;
 }
