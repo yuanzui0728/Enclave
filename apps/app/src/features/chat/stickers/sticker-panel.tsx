@@ -472,7 +472,6 @@ export function StickerPanel({
     );
     return index >= 0 ? index + 1 : null;
   }, [activeItems, highlightedSearchStickerKey]);
-
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
       {
@@ -558,6 +557,31 @@ export function StickerPanel({
     !isMobile && searching && !searchPending
       ? (activeStickerKeys[0] ?? null)
       : null;
+  const searchSectionStateMap = useMemo(() => {
+    const stateMap = new Map<
+      string,
+      {
+        containsHighlighted: boolean;
+        containsRecommended: boolean;
+      }
+    >();
+
+    searchSections.forEach((section) => {
+      const itemKeys = section.items.map((item) =>
+        getStickerIdentity(item.sticker),
+      );
+      stateMap.set(section.id, {
+        containsHighlighted: highlightedSearchStickerKey
+          ? itemKeys.includes(highlightedSearchStickerKey)
+          : false,
+        containsRecommended: firstSearchResultKey
+          ? itemKeys.includes(firstSearchResultKey)
+          : false,
+      });
+    });
+
+    return stateMap;
+  }, [firstSearchResultKey, highlightedSearchStickerKey, searchSections]);
   const showCustomManageHint =
     !isMobile &&
     activeSectionId === "custom" &&
@@ -1526,31 +1550,70 @@ export function StickerPanel({
           ) : activeItems.length ? (
             searching ? (
               <div className={isMobile ? "space-y-3" : "space-y-4"}>
-                {searchSections.map((section) => (
-                  <section
-                    key={section.id}
-                    className={isMobile ? "space-y-1.5" : "space-y-2"}
-                  >
-                    <div className="flex items-center justify-between px-0.5">
-                      <div className="inline-flex items-center gap-2 text-[color:var(--text-secondary)]">
-                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 text-[10px] font-semibold text-[#9a5a0a]">
-                          {section.badgeText}
-                        </span>
-                        <span
-                          className={
-                            isMobile ? "text-[11px]" : "text-xs font-medium"
-                          }
-                        >
-                          {section.label}
-                        </span>
+                {searchSections.map((section) => {
+                  const sectionState = searchSectionStateMap.get(
+                    section.id,
+                  ) ?? {
+                    containsHighlighted: false,
+                    containsRecommended: false,
+                  };
+                  return (
+                    <section
+                      key={section.id}
+                      className={
+                        isMobile
+                          ? "space-y-1.5"
+                          : `space-y-2 rounded-[18px] px-2 py-2 transition ${
+                              sectionState.containsHighlighted
+                                ? "bg-[rgba(255,248,220,0.52)] ring-1 ring-[rgba(160,90,10,0.12)]"
+                                : sectionState.containsRecommended
+                                  ? "bg-white/52"
+                                  : ""
+                            }`
+                      }
+                    >
+                      <div className="flex items-center justify-between px-0.5">
+                        <div className="inline-flex items-center gap-2 text-[color:var(--text-secondary)]">
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 text-[10px] font-semibold text-[#9a5a0a]">
+                            {section.badgeText}
+                          </span>
+                          <span
+                            className={
+                              isMobile ? "text-[11px]" : "text-xs font-medium"
+                            }
+                          >
+                            {section.label}
+                          </span>
+                          {!isMobile && sectionState.containsHighlighted ? (
+                            <span className="rounded-full bg-[rgba(160,90,10,0.14)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a]">
+                              当前高亮
+                            </span>
+                          ) : null}
+                          {!isMobile &&
+                          !sectionState.containsHighlighted &&
+                          sectionState.containsRecommended ? (
+                            <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                              默认回车
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!isMobile &&
+                          sectionState.containsHighlighted &&
+                          sectionState.containsRecommended ? (
+                            <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[#9a5a0a]">
+                              首项所在分组
+                            </span>
+                          ) : null}
+                          <span className="text-[10px] text-[color:var(--text-muted)]">
+                            {section.items.length}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-[color:var(--text-muted)]">
-                        {section.items.length}
-                      </span>
-                    </div>
-                    {renderStickerGrid(section.items)}
-                  </section>
-                ))}
+                      {renderStickerGrid(section.items)}
+                    </section>
+                  );
+                })}
               </div>
             ) : (
               renderStickerGrid(activeItems)
