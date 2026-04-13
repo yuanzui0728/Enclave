@@ -3,9 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookUser } from "lucide-react";
 import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@yinjie/contracts";
-import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
-import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { DesktopFriendRequestsWorkspace } from "../features/desktop/contacts/desktop-friend-requests-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -123,12 +122,22 @@ export function FriendRequestsPage() {
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {requestsQuery.isLoading ? (
           <div className="px-4 pt-2.5">
-            <LoadingBlock label="正在读取好友请求..." />
+            <MobileFriendRequestsStatusCard
+              badge="读取中"
+              title="正在读取好友请求"
+              description="稍等一下，正在同步新的好友申请。"
+              tone="loading"
+            />
           </div>
         ) : null}
         {requestsQuery.isError && requestsQuery.error instanceof Error ? (
           <div className="px-4 pt-2.5">
-            <ErrorBlock message={requestsQuery.error.message} />
+            <MobileFriendRequestsStatusCard
+              badge="读取失败"
+              title="新的朋友暂时不可用"
+              description={requestsQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
         {successNotice ? (
@@ -209,19 +218,33 @@ export function FriendRequestsPage() {
         ) : null}
 
         {acceptMutation.isError && acceptMutation.error instanceof Error ? (
-          <div className="px-4 pt-2.5">
-            <ErrorBlock message={acceptMutation.error.message} />
+          <div className="px-3 pt-2">
+            <InlineNotice
+              tone="danger"
+              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            >
+              {acceptMutation.error.message}
+            </InlineNotice>
           </div>
         ) : null}
         {declineMutation.isError && declineMutation.error instanceof Error ? (
-          <div className="px-4 pt-2.5">
-            <ErrorBlock message={declineMutation.error.message} />
+          <div className="px-3 pt-2">
+            <InlineNotice
+              tone="danger"
+              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            >
+              {declineMutation.error.message}
+            </InlineNotice>
           </div>
         ) : null}
 
         {!requestsQuery.isLoading && !requestsQuery.isError && !requestsQuery.data?.length ? (
           <div className="px-4 pt-4">
-            <EmptyState title="暂时没有新的好友请求" description="去发现页摇一摇，或等待场景触发新的相遇。" />
+            <MobileFriendRequestsStatusCard
+              badge="新的朋友"
+              title="暂时没有新的好友请求"
+              description="去发现页摇一摇，或等待场景触发新的相遇。"
+            />
           </div>
         ) : null}
       </div>
@@ -261,4 +284,51 @@ function formatFriendRequestDate(createdAt: string) {
     day: "2-digit",
   });
   return formatter.format(date).replace(/\//g, "-");
+}
+
+function MobileFriendRequestsStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </section>
+  );
 }
