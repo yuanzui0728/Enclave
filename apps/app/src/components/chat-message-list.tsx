@@ -107,6 +107,7 @@ import { openRemoteFile } from "../runtime/open-remote-file";
 import { saveRemoteFile } from "../runtime/save-remote-file";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../store/world-owner-store";
 import { buildChatUnreadMarkerDomId } from "../features/chat/chat-unread-marker";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { ResultCardBadge } from "../features/chat/result-card-badge";
@@ -255,6 +256,8 @@ export function ChatMessageList({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl ?? "";
+  const ownerName = useWorldOwnerStore((state) => state.username);
+  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const nativeDesktopDetailedTimestampMode =
     runtimeConfig.appPlatform === "desktop";
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
@@ -301,12 +304,20 @@ export function ChatMessageList({
   const [forwardMessages, setForwardMessages] = useState<
     ChatRenderableMessage[] | null
   >(null);
-  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<{
-    anchorElement: HTMLButtonElement;
-    characterId: string;
-    senderName: string;
-    senderAvatar?: string | null;
-  } | null>(null);
+  const [desktopAvatarPopover, setDesktopAvatarPopover] = useState<
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "owner";
+      }
+    | {
+        anchorElement: HTMLButtonElement;
+        kind: "character";
+        characterId: string;
+        senderName: string;
+        senderAvatar?: string | null;
+      }
+    | null
+  >(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressStartRef = useRef<{ x: number; y: number } | null>(null);
   const contextMenuEnabled = isDesktop && !selectionMode;
@@ -420,11 +431,12 @@ export function ChatMessageList({
     );
     setDesktopAvatarPopover((current) =>
       current &&
-      messages.some(
-        (message) =>
-          message.senderType === "character" &&
-          message.senderId === current.characterId,
-      )
+      (current.kind === "owner" ||
+        messages.some(
+          (message) =>
+            message.senderType === "character" &&
+            message.senderId === current.characterId,
+        ))
         ? current
         : null,
     );
@@ -983,6 +995,7 @@ export function ChatMessageList({
 
     setDesktopAvatarPopover((current) => {
       if (
+        current?.kind === "character" &&
         current?.anchorElement === event.currentTarget &&
         current.characterId === characterId
       ) {
@@ -991,9 +1004,29 @@ export function ChatMessageList({
 
       return {
         anchorElement: event.currentTarget,
+        kind: "character",
         characterId,
         senderName: message.senderName?.trim() || "对方",
         senderAvatar: message.senderAvatar,
+      };
+    });
+  };
+
+  const handleDesktopOwnerAvatarClick = (
+    event: MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    setDesktopAvatarPopover((current) => {
+      if (
+        current?.kind === "owner" &&
+        current.anchorElement === event.currentTarget
+      ) {
+        return null;
+      }
+
+      return {
+        anchorElement: event.currentTarget,
+        kind: "owner",
       };
     });
   };
@@ -2509,7 +2542,26 @@ export function ChatMessageList({
                   ) : null}
                 </div>
                 {isUser ? (
-                  <AvatarChip name="我" size={isDesktop ? "wechat" : "sm"} />
+                  isDesktop && !selectionMode ? (
+                    <button
+                      type="button"
+                      onClick={handleDesktopOwnerAvatarClick}
+                      className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
+                      aria-label={`查看${ownerName?.trim() || "我的"}资料`}
+                    >
+                      <AvatarChip
+                        name={ownerName ?? "我"}
+                        src={ownerAvatar}
+                        size={isDesktop ? "wechat" : "sm"}
+                      />
+                    </button>
+                  ) : (
+                    <AvatarChip
+                      name={ownerName ?? "我"}
+                      src={ownerAvatar}
+                      size={isDesktop ? "wechat" : "sm"}
+                    />
+                  )
                 ) : null}
                 {isUser && selectionMode ? (
                   <SelectionToggle
@@ -2980,14 +3032,23 @@ export function ChatMessageList({
         }}
       />
       {isDesktop && desktopAvatarPopover ? (
-        <DesktopMessageAvatarPopover
-          anchorElement={desktopAvatarPopover.anchorElement}
-          characterId={desktopAvatarPopover.characterId}
-          fallbackName={desktopAvatarPopover.senderName}
-          fallbackAvatar={desktopAvatarPopover.senderAvatar}
-          threadContext={threadContext}
-          onClose={() => setDesktopAvatarPopover(null)}
-        />
+        desktopAvatarPopover.kind === "owner" ? (
+          <DesktopMessageAvatarPopover
+            anchorElement={desktopAvatarPopover.anchorElement}
+            kind="owner"
+            onClose={() => setDesktopAvatarPopover(null)}
+          />
+        ) : (
+          <DesktopMessageAvatarPopover
+            anchorElement={desktopAvatarPopover.anchorElement}
+            kind="character"
+            characterId={desktopAvatarPopover.characterId}
+            fallbackName={desktopAvatarPopover.senderName}
+            fallbackAvatar={desktopAvatarPopover.senderAvatar}
+            threadContext={threadContext}
+            onClose={() => setDesktopAvatarPopover(null)}
+          />
+        )
       ) : null}
     </div>
   );
