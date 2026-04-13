@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { CharactersService } from '../characters/characters.service';
 import {
   type GroupReplyCandidate,
+  type GroupReplyPlannerCandidateDiagnostic,
+  type GroupReplyPlannerDecision,
   type GroupReplyPlannerInput,
+  type GroupReplySelectionDisposition,
 } from './group-reply.types';
 
 @Injectable()
@@ -11,7 +14,7 @@ export class GroupReplyPlannerService {
 
   async selectReplyActorsForTurn(
     input: GroupReplyPlannerInput,
-  ): Promise<GroupReplyCandidate[]> {
+  ): Promise<GroupReplyPlannerDecision> {
     const {
       members,
       history,
@@ -94,6 +97,7 @@ export class GroupReplyPlannerService {
           randomPassed: Math.random() <= adjustedChance,
           isExplicitTarget,
           isReplyTarget,
+          recentSpeakerIndex,
         } satisfies GroupReplyCandidate;
       }),
     );
@@ -102,7 +106,15 @@ export class GroupReplyPlannerService {
       .sort((left, right) => right.score - left.score);
 
     if (!candidates.length) {
-      return [];
+      return {
+        selectedActors: [],
+        candidateDiagnostics: [],
+        maxSpeakers: 0,
+        explicitInterest: false,
+        hasMentionAll: currentUserContext.hasMentionAll,
+        mentionTargets: [...normalizedMentionTargets],
+        replyTargetCharacterId,
+      };
     }
 
     const explicitInterest =
@@ -114,6 +126,10 @@ export class GroupReplyPlannerService {
         : 1;
     const selected: GroupReplyCandidate[] = [];
     const selectedIds = new Set<string>();
+    const selectionDispositionByCharacterId = new Map<
+      string,
+      GroupReplySelectionDisposition
+    >();
 
     for (const candidate of candidates) {
       if (selected.length >= maxSpeakers) {
@@ -125,11 +141,19 @@ export class GroupReplyPlannerService {
 
       selected.push(candidate);
       selectedIds.add(candidate.character.id);
+      selectionDispositionByCharacterId.set(
+        candidate.character.id,
+        'selected_targeted',
+      );
     }
 
     if (!selected.length) {
       selected.push(candidates[0]);
       selectedIds.add(candidates[0].character.id);
+      selectionDispositionByCharacterId.set(
+        candidates[0].character.id,
+        'selected_fallback',
+      );
     }
 
     for (const candidate of candidates) {
@@ -145,9 +169,84 @@ export class GroupReplyPlannerService {
 
       selected.push(candidate);
       selectedIds.add(candidate.character.id);
+      selectionDispositionByCharacterId.set(
+        candidate.character.id,
+        'selected_followup',
+      );
     }
 
-    return selected;
+    const candidateDiagnostics = candidates.map((candidate) => ({
+      characterId: candidate.character.id,
+      characterName: candidate.character.name,
+      score: candidate.score,
+      randomPassed: candidate.randomPassed,
+      isExplicitTarget: candidate.isExplicitTarget,
+      isReplyTarget: candidate.isReplyTarget,
+      recentSpeakerIndex: candidate.recentSpeakerIndex,
+      selectionDisposition: this.resolveSelectionDisposition({
+        candidate,
+        selectedIds,
+        selectionDispositionByCharacterId,
+        explicitInterest,
+        hasMentionAll: currentUserContext.hasMentionAll,
+        maxSpeakers,
+      }),
+    })) satisfies GroupReplyPlannerCandidateDiagnostic[];
+
+    return {
+      selectedActors: selected,
+      candidateDiagnostics,
+      maxSpeakers,
+      explicitInterest,
+      hasMentionAll: currentUserContext.hasMentionAll,
+      mentionTargets: [...normalizedMentionTargets],
+      replyTargetCharacterId,
+    };
+  }
+
+  private resolveSelectionDisposition(input: {
+    candidate: GroupReplyCandidate;
+    selectedIds: Set<string>;
+    selectionDispositionByCharacterId: Map<string, GroupReplySelectionDisposition>;
+    explicitInterest: boolean;
+    hasMentionAll: boolean;
+    maxSpeakers: number;
+  }): GroupReplySelectionDisposition {
+    const {
+      candidate,
+      selectedIds,
+      selectionDispositionByCharacterId,
+      explicitInterest,
+      hasMentionAll,
+      maxSpeakers,
+    } = input;
+    const selectedDisposition = selectionDispositionByCharacterId.get(
+      candidate.character.id,
+    );
+    if (selectedDisposition) {
+      return selectedDisposition;
+    }
+
+    const capacityFilled = selectedIds.size >= maxSpeakers;
+    if (
+      capacityFilled &&
+      (candidate.isReplyTarget ||
+        candidate.isExplicitTarget ||
+        ((explicitInterest || hasMentionAll) && candidate.randomPassed))
+    ) {
+      return 'skipped_max_speakers';
+    }
+
+    if (!candidate.isReplyTarget && !candidate.isExplicitTarget) {
+      if (!candidate.randomPassed) {
+        return 'skipped_random_gate';
+      }
+      if (!explicitInterest && !hasMentionAll) {
+        return 'skipped_without_explicit_interest';
+      }
+    }
+
+    return 'skipped_not_targeted';
   }
 
   private normalizeMentionTarget(mention: string) {

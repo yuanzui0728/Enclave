@@ -667,13 +667,13 @@ export class GroupService {
       groupId,
       userMessage,
     );
-    const selectedActors = await this.groupReplyPlanner.selectReplyActorsForTurn({
+    const plannerDecision = await this.groupReplyPlanner.selectReplyActorsForTurn({
       members,
       history: recentMessages,
       currentUserContext,
       runtimeRules,
     });
-    if (!selectedActors.length) {
+    if (!plannerDecision.selectedActors.length) {
       return;
     }
 
@@ -681,9 +681,9 @@ export class GroupService {
       groupId,
       triggerMessageId: userMessage.id,
       triggerMessageCreatedAt: userMessage.createdAt,
+      plannerDecision,
       conversationHistory: history,
       currentUserContext,
-      selectedActors,
     });
   }
 

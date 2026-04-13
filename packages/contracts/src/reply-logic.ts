@@ -16,6 +16,20 @@ export type ReplyLogicStateGateMode =
   | "busy_hint_delay"
   | "not_applied";
 export type ReplyLogicConversationSource = "conversation" | "group";
+export type ReplyLogicGroupReplyTaskStatus =
+  | "pending"
+  | "processing"
+  | "sent"
+  | "cancelled"
+  | "failed";
+export type ReplyLogicGroupReplySelectionDisposition =
+  | "selected_targeted"
+  | "selected_fallback"
+  | "selected_followup"
+  | "skipped_not_targeted"
+  | "skipped_random_gate"
+  | "skipped_without_explicit_interest"
+  | "skipped_max_speakers";
 
 export interface ReplyLogicPromptSection {
   key:
@@ -474,11 +488,67 @@ export interface ReplyLogicConversationSnapshot {
   visibleMessages: ReplyLogicHistoryItem[];
   actors: ReplyLogicActorSnapshot[];
   narrativeArcs: ReplyLogicNarrativeArcSummary[];
+  groupReplyRuntime?: ReplyLogicGroupReplyRuntimeSummary | null;
   branchSummary: {
     kind: "direct" | "formal_group";
     title: string;
     notes: string[];
   };
+}
+
+export interface ReplyLogicGroupReplyCandidateSummary {
+  characterId: string;
+  characterName: string;
+  score: number;
+  randomPassed: boolean;
+  isExplicitTarget: boolean;
+  isReplyTarget: boolean;
+  recentSpeakerIndex: number;
+  selectionDisposition: ReplyLogicGroupReplySelectionDisposition;
+}
+
+export interface ReplyLogicGroupReplyTaskSummary {
+  id: string;
+  actorCharacterId: string;
+  actorName: string;
+  score: number;
+  randomPassed: boolean;
+  isExplicitTarget: boolean;
+  isReplyTarget: boolean;
+  recentSpeakerIndex: number;
+  selectionDisposition: ReplyLogicGroupReplySelectionDisposition;
+  sequenceIndex: number;
+  status: ReplyLogicGroupReplyTaskStatus;
+  executeAfter: string;
+  lastAttemptAt?: string | null;
+  sentAt?: string | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
+  errorMessage?: string | null;
+}
+
+export interface ReplyLogicGroupReplyTurnSummary {
+  turnId: string;
+  triggerMessageId: string;
+  triggerMessageCreatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  maxSpeakers: number;
+  explicitInterest: boolean;
+  hasMentionAll: boolean;
+  mentionTargets: string[];
+  replyTargetCharacterId?: string | null;
+  statusCounts: Record<ReplyLogicGroupReplyTaskStatus, number>;
+  candidates: ReplyLogicGroupReplyCandidateSummary[];
+  tasks: ReplyLogicGroupReplyTaskSummary[];
+}
+
+export interface ReplyLogicGroupReplyRuntimeSummary {
+  pendingTaskCount: number;
+  processingTaskCount: number;
+  failedTaskCount: number;
+  recentTurns: ReplyLogicGroupReplyTurnSummary[];
+  notes: string[];
 }
 
 export interface ReplyLogicPreviewRequest {

@@ -14,7 +14,7 @@ import {
   type GroupReplyTaskStatus,
 } from './group-reply-task.entity';
 import {
-  type GroupReplyCandidate,
+  type GroupReplyPlannerDecision,
   type GroupUserMessageContext,
 } from './group-reply.types';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
@@ -45,7 +45,7 @@ export class GroupReplyTaskService {
     groupId: string;
     triggerMessageId: string;
     triggerMessageCreatedAt: Date;
-    selectedActors: GroupReplyCandidate[];
+    plannerDecision: GroupReplyPlannerDecision;
     conversationHistory: ChatMessage[];
     currentUserContext: GroupUserMessageContext;
   }) {
@@ -53,7 +53,7 @@ export class GroupReplyTaskService {
       groupId,
       triggerMessageId,
       triggerMessageCreatedAt,
-      selectedActors,
+      plannerDecision,
       conversationHistory,
       currentUserContext,
     } = input;
@@ -61,6 +61,7 @@ export class GroupReplyTaskService {
       groupId,
       'superseded_by_new_user_message',
     );
+    const selectedActors = plannerDecision.selectedActors;
     if (!selectedActors.length) {
       return;
     }
@@ -72,6 +73,16 @@ export class GroupReplyTaskService {
     const userMessagePartsPayload = currentUserContext.parts.length
       ? JSON.stringify(currentUserContext.parts)
       : null;
+    const plannerContextPayload = JSON.stringify({
+      maxSpeakers: plannerDecision.maxSpeakers,
+      explicitInterest: plannerDecision.explicitInterest,
+      hasMentionAll: plannerDecision.hasMentionAll,
+      mentionTargets: plannerDecision.mentionTargets,
+      replyTargetCharacterId: plannerDecision.replyTargetCharacterId ?? null,
+    });
+    const plannerCandidatesPayload = JSON.stringify(
+      plannerDecision.candidateDiagnostics,
+    );
 
     const tasks = selectedActors.map((actor, index) => {
       const delayMs = this.groupReplyOrchestrator.pickReplyDelay(
@@ -79,6 +90,9 @@ export class GroupReplyTaskService {
         runtimeRules,
       );
       executeAt = new Date(executeAt.getTime() + Math.round(delayMs));
+      const candidateDiagnostic = plannerDecision.candidateDiagnostics.find(
+        (candidate) => candidate.characterId === actor.character.id,
+      );
       return this.taskRepo.create({
         turnId,
         groupId,
@@ -86,12 +100,21 @@ export class GroupReplyTaskService {
         triggerMessageCreatedAt,
         actorCharacterId: actor.character.id,
         actorName: actor.character.name,
+        score: actor.score,
+        randomPassed: actor.randomPassed,
+        isExplicitTarget: actor.isExplicitTarget,
+        isReplyTarget: actor.isReplyTarget,
+        recentSpeakerIndex: actor.recentSpeakerIndex,
+        selectionDisposition:
+          candidateDiagnostic?.selectionDisposition ?? 'selected_fallback',
         sequenceIndex: index,
         status: 'pending',
         executeAfter: new Date(executeAt),
         conversationHistoryPayload,
         userPromptText: currentUserContext.promptText,
         userMessagePartsPayload,
+        plannerContextPayload,
+        plannerCandidatesPayload,
       });
     });
 
@@ -217,6 +240,7 @@ export class GroupReplyTaskService {
           randomPassed: true,
           isExplicitTarget: false,
           isReplyTarget: false,
+          recentSpeakerIndex: -1,
         },
         conversationHistory,
         baseUserPrompt: task.userPromptText,

@@ -9,6 +9,7 @@ import { MessageEntity } from '../chat/message.entity';
 import { GroupEntity } from '../chat/group.entity';
 import { GroupMemberEntity } from '../chat/group-member.entity';
 import { GroupMessageEntity } from '../chat/group-message.entity';
+import { GroupReplyTaskEntity } from '../chat/group-reply-task.entity';
 import { NarrativeArcEntity } from '../narrative/narrative-arc.entity';
 import { SystemConfigService } from '../config/config.service';
 import { PromptBuilderService } from '../ai/prompt-builder.service';
@@ -20,11 +21,18 @@ import { MomentPostEntity } from '../moments/moment-post.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { SchedulerTelemetryService } from '../scheduler/scheduler-telemetry.service';
 import type { SchedulerJobId } from '../scheduler/scheduler-telemetry.types';
+import type { GroupReplyPlannerCandidateDiagnostic } from '../chat/group-reply.types';
 import type {
   ReplyLogicActorSnapshot,
   ReplyLogicCharacterSnapshot,
   ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
+  ReplyLogicGroupReplyCandidateSummary,
+  ReplyLogicGroupReplyRuntimeSummary,
+  ReplyLogicGroupReplySelectionDisposition,
+  ReplyLogicGroupReplyTaskSummary,
+  ReplyLogicGroupReplyTaskStatus,
+  ReplyLogicGroupReplyTurnSummary,
   ReplyLogicHistoryItem,
   ReplyLogicNarrativeArcSummary,
   ReplyLogicOverview,
@@ -46,6 +54,14 @@ function renderTemplate(
   );
 }
 
+type StoredGroupReplyPlannerContext = {
+  maxSpeakers: number;
+  explicitInterest: boolean;
+  hasMentionAll: boolean;
+  mentionTargets: string[];
+  replyTargetCharacterId?: string | null;
+};
+
 @Injectable()
 export class ReplyLogicAdminService {
   constructor(
@@ -63,6 +79,8 @@ export class ReplyLogicAdminService {
     private readonly groupMemberRepo: Repository<GroupMemberEntity>,
     @InjectRepository(GroupMessageEntity)
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
+    @InjectRepository(GroupReplyTaskEntity)
+    private readonly groupReplyTaskRepo: Repository<GroupReplyTaskEntity>,
     @InjectRepository(NarrativeArcEntity)
     private readonly narrativeArcRepo: Repository<NarrativeArcEntity>,
     @InjectRepository(MomentPostEntity)
@@ -231,6 +249,7 @@ export class ReplyLogicAdminService {
           : visibleHistory,
         actors,
         narrativeArcs: arcs.map((item) => this.toNarrativeSummary(item)),
+        groupReplyRuntime: null,
         branchSummary: {
           kind: 'direct',
           title: runtimeRules.inspectorTemplates.directBranchTitle,
@@ -281,7 +300,10 @@ export class ReplyLogicAdminService {
         }),
       ),
     );
-    const arcs = await this.loadNarrativeArcs(owner.id, characterIds);
+    const [arcs, groupReplyRuntime] = await Promise.all([
+      this.loadNarrativeArcs(owner.id, characterIds),
+      this.loadGroupReplyRuntime(group.id),
+    ]);
 
     return {
       provider,
@@ -296,6 +318,7 @@ export class ReplyLogicAdminService {
       ),
       actors,
       narrativeArcs: arcs.map((item) => this.toNarrativeSummary(item)),
+      groupReplyRuntime,
       branchSummary: {
         kind: 'formal_group',
         title: runtimeRules.inspectorTemplates.formalGroupTitle,
@@ -981,6 +1004,190 @@ export class ReplyLogicAdminService {
         : { groupId: group.id },
       order: { createdAt: 'ASC' },
     });
+  }
+
+  private async loadGroupReplyRuntime(
+    groupId: string,
+  ): Promise<ReplyLogicGroupReplyRuntimeSummary> {
+    const [pendingTaskCount, processingTaskCount, failedTaskCount, taskEntities] =
+      await Promise.all([
+        this.groupReplyTaskRepo.count({
+          where: { groupId, status: 'pending' },
+        }),
+        this.groupReplyTaskRepo.count({
+          where: { groupId, status: 'processing' },
+        }),
+        this.groupReplyTaskRepo.count({
+          where: { groupId, status: 'failed' },
+        }),
+        this.groupReplyTaskRepo.find({
+          where: { groupId },
+          order: {
+            triggerMessageCreatedAt: 'DESC',
+            createdAt: 'DESC',
+          },
+          take: 96,
+        }),
+      ]);
+
+    const tasksByTurn = new Map<string, GroupReplyTaskEntity[]>();
+    for (const task of taskEntities) {
+      const bucket = tasksByTurn.get(task.turnId) ?? [];
+      bucket.push(task);
+      tasksByTurn.set(task.turnId, bucket);
+    }
+
+    const recentTurns = [...tasksByTurn.values()]
+      .slice(0, 8)
+      .map((tasks) => this.toGroupReplyTurnSummary(tasks));
+
+    return {
+      pendingTaskCount,
+      processingTaskCount,
+      failedTaskCount,
+      recentTurns,
+      notes: [
+        '同群新用户消息进入后，尚未发出的旧轮任务会被取消。',
+        '后续角色任务会在执行时读取触发消息后的已发角色回复，尽量避免重复。',
+      ],
+    };
+  }
+
+  private toGroupReplyTurnSummary(
+    tasks: GroupReplyTaskEntity[],
+  ): ReplyLogicGroupReplyTurnSummary {
+    const orderedTasks = [...tasks].sort(
+      (left, right) => left.sequenceIndex - right.sequenceIndex,
+    );
+    const primaryTask = orderedTasks[0];
+    const plannerContext = this.parsePlannerContextPayload(
+      primaryTask.plannerContextPayload,
+    );
+    const storedCandidates = this.parsePlannerCandidatesPayload(
+      primaryTask.plannerCandidatesPayload,
+    );
+    const fallbackCandidates = orderedTasks.map((task) =>
+      this.toGroupReplyCandidateSummaryFromTask(task),
+    );
+    const candidates =
+      storedCandidates.length > 0 ? storedCandidates : fallbackCandidates;
+    const statusCounts: Record<ReplyLogicGroupReplyTaskStatus, number> = {
+      pending: 0,
+      processing: 0,
+      sent: 0,
+      cancelled: 0,
+      failed: 0,
+    };
+
+    for (const task of orderedTasks) {
+      statusCounts[task.status as ReplyLogicGroupReplyTaskStatus] += 1;
+    }
+    const updatedAt = orderedTasks.reduce(
+      (latest, task) =>
+        latest.getTime() > task.updatedAt.getTime() ? latest : task.updatedAt,
+      primaryTask.updatedAt,
+    );
+
+    return {
+      turnId: primaryTask.turnId,
+      triggerMessageId: primaryTask.triggerMessageId,
+      triggerMessageCreatedAt: primaryTask.triggerMessageCreatedAt.toISOString(),
+      createdAt: primaryTask.createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString(),
+      maxSpeakers: plannerContext?.maxSpeakers ?? orderedTasks.length,
+      explicitInterest: plannerContext?.explicitInterest ?? false,
+      hasMentionAll: plannerContext?.hasMentionAll ?? false,
+      mentionTargets: plannerContext?.mentionTargets ?? [],
+      replyTargetCharacterId: plannerContext?.replyTargetCharacterId ?? null,
+      statusCounts,
+      candidates,
+      tasks: orderedTasks.map((task) => this.toGroupReplyTaskSummary(task)),
+    };
+  }
+
+  private toGroupReplyTaskSummary(
+    task: GroupReplyTaskEntity,
+  ): ReplyLogicGroupReplyTaskSummary {
+    return {
+      id: task.id,
+      actorCharacterId: task.actorCharacterId,
+      actorName: task.actorName,
+      score: task.score,
+      randomPassed: task.randomPassed,
+      isExplicitTarget: task.isExplicitTarget,
+      isReplyTarget: task.isReplyTarget,
+      recentSpeakerIndex: task.recentSpeakerIndex,
+      selectionDisposition:
+        task.selectionDisposition as ReplyLogicGroupReplySelectionDisposition,
+      sequenceIndex: task.sequenceIndex,
+      status: task.status as ReplyLogicGroupReplyTaskStatus,
+      executeAfter: task.executeAfter.toISOString(),
+      lastAttemptAt: task.lastAttemptAt?.toISOString() ?? null,
+      sentAt: task.sentAt?.toISOString() ?? null,
+      cancelledAt: task.cancelledAt?.toISOString() ?? null,
+      cancelReason: task.cancelReason ?? null,
+      errorMessage: task.errorMessage ?? null,
+    };
+  }
+
+  private toGroupReplyCandidateSummaryFromTask(
+    task: GroupReplyTaskEntity,
+  ): ReplyLogicGroupReplyCandidateSummary {
+    return {
+      characterId: task.actorCharacterId,
+      characterName: task.actorName,
+      score: task.score,
+      randomPassed: task.randomPassed,
+      isExplicitTarget: task.isExplicitTarget,
+      isReplyTarget: task.isReplyTarget,
+      recentSpeakerIndex: task.recentSpeakerIndex,
+      selectionDisposition:
+        task.selectionDisposition as ReplyLogicGroupReplySelectionDisposition,
+    };
+  }
+
+  private parsePlannerContextPayload(
+    payload?: string | null,
+  ): StoredGroupReplyPlannerContext | null {
+    if (!payload) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(payload) as StoredGroupReplyPlannerContext;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private parsePlannerCandidatesPayload(
+    payload?: string | null,
+  ): ReplyLogicGroupReplyCandidateSummary[] {
+    if (!payload) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(payload) as GroupReplyPlannerCandidateDiagnostic[];
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed.map((candidate) => ({
+        characterId: candidate.characterId,
+        characterName: candidate.characterName,
+        score: candidate.score,
+        randomPassed: candidate.randomPassed,
+        isExplicitTarget: candidate.isExplicitTarget,
+        isReplyTarget: candidate.isReplyTarget,
+        recentSpeakerIndex: candidate.recentSpeakerIndex,
+        selectionDisposition:
+          candidate.selectionDisposition as ReplyLogicGroupReplySelectionDisposition,
+      }));
+    } catch {
+      return [];
+    }
   }
 
   private async loadNarrativeArcs(ownerId: string, characterIds: string[]) {

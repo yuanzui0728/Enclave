@@ -39,6 +39,24 @@ export class GroupReplyTaskEntity {
   @Column()
   actorName: string;
 
+  @Column('float', { default: 0 })
+  score: number;
+
+  @Column({ default: false })
+  randomPassed: boolean;
+
+  @Column({ default: false })
+  isExplicitTarget: boolean;
+
+  @Column({ default: false })
+  isReplyTarget: boolean;
+
+  @Column({ default: -1 })
+  recentSpeakerIndex: number;
+
+  @Column({ default: 'selected_fallback' })
+  selectionDisposition: string;
+
   @Column()
   sequenceIndex: number;
 
@@ -56,6 +74,12 @@ export class GroupReplyTaskEntity {
 
   @Column('text', { nullable: true })
   userMessagePartsPayload?: string | null;
+
+  @Column('text', { nullable: true })
+  plannerContextPayload?: string | null;
+
+  @Column('text', { nullable: true })
+  plannerCandidatesPayload?: string | null;
 
   @Column('text', { nullable: true })
   cancelReason?: string | null;

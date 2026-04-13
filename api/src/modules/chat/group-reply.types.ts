@@ -16,6 +16,37 @@ export type GroupReplyCandidate = {
   randomPassed: boolean;
   isExplicitTarget: boolean;
   isReplyTarget: boolean;
+  recentSpeakerIndex: number;
+};
+
+export type GroupReplySelectionDisposition =
+  | 'selected_targeted'
+  | 'selected_fallback'
+  | 'selected_followup'
+  | 'skipped_not_targeted'
+  | 'skipped_random_gate'
+  | 'skipped_without_explicit_interest'
+  | 'skipped_max_speakers';
+
+export type GroupReplyPlannerCandidateDiagnostic = {
+  characterId: string;
+  characterName: string;
+  score: number;
+  randomPassed: boolean;
+  isExplicitTarget: boolean;
+  isReplyTarget: boolean;
+  recentSpeakerIndex: number;
+  selectionDisposition: GroupReplySelectionDisposition;
+};
+
+export type GroupReplyPlannerDecision = {
+  selectedActors: GroupReplyCandidate[];
+  candidateDiagnostics: GroupReplyPlannerCandidateDiagnostic[];
+  maxSpeakers: number;
+  explicitInterest: boolean;
+  hasMentionAll: boolean;
+  mentionTargets: string[];
+  replyTargetCharacterId?: string;
 };
 
 export type GroupUserMessageContext = {
