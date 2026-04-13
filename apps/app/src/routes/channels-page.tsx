@@ -371,12 +371,18 @@ export function ChannelsPage() {
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
-        <InlineNotice className="text-[11px] leading-[1.35rem]" tone="muted">
+      <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+        <InlineNotice
+          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          tone="muted"
+        >
           当前先聚焦推荐流体验，系统会持续补充 AI 生成的视频内容与互动演示。
         </InlineNotice>
         {notice ? (
-          <InlineNotice className="text-[11px] leading-[1.35rem]" tone={noticeTone}>
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone={noticeTone}
+          >
             {notice}
           </InlineNotice>
         ) : null}
