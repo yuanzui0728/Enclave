@@ -230,6 +230,11 @@ export type ReplyLogicRuntimeRules = {
   busyDelayMs: { min: number; max: number };
   groupReplyChance: { high: number; normal: number; low: number };
   groupReplyDelayMs: { min: number; max: number };
+  groupReplyPrimaryDelayMs: { min: number; max: number };
+  groupReplyFollowupDelayMs: { min: number; max: number };
+  groupReplyMaxSpeakers: number;
+  groupReplyMaxSpeakersMentionAll: number;
+  groupReplyRecentSpeakerWindow: number;
   memoryCompressionEveryMessages: number;
   momentGenerateChance: number;
   channelGenerateChance: number;
@@ -313,6 +318,20 @@ export const GROUP_REPLY_DELAY_RANGE_MS = {
   min: 5_000,
   max: 30_000,
 } as const;
+
+export const GROUP_REPLY_PRIMARY_DELAY_RANGE_MS = {
+  min: 2_000,
+  max: 6_000,
+} as const;
+
+export const GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS = {
+  min: 5_000,
+  max: 12_000,
+} as const;
+
+export const GROUP_REPLY_MAX_SPEAKERS = 2;
+export const GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL = 3;
+export const GROUP_REPLY_RECENT_SPEAKER_WINDOW = 4;
 
 export const MEMORY_COMPRESSION_INTERVAL = 10;
 export const MOMENT_GENERATE_CHANCE = 0.15;
@@ -685,6 +704,11 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
     busyDelayMs: { ...BUSY_DELAY_RANGE_MS },
     groupReplyChance: { ...GROUP_REPLY_CHANCE_BY_FREQUENCY },
     groupReplyDelayMs: { ...GROUP_REPLY_DELAY_RANGE_MS },
+    groupReplyPrimaryDelayMs: { ...GROUP_REPLY_PRIMARY_DELAY_RANGE_MS },
+    groupReplyFollowupDelayMs: { ...GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS },
+    groupReplyMaxSpeakers: GROUP_REPLY_MAX_SPEAKERS,
+    groupReplyMaxSpeakersMentionAll: GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL,
+    groupReplyRecentSpeakerWindow: GROUP_REPLY_RECENT_SPEAKER_WINDOW,
     memoryCompressionEveryMessages: MEMORY_COMPRESSION_INTERVAL,
     momentGenerateChance: MOMENT_GENERATE_CHANCE,
     channelGenerateChance: CHANNEL_GENERATE_CHANCE,
@@ -1657,6 +1681,37 @@ export function normalizeReplyLogicRuntimeRules(
     groupReplyDelayMs: normalizeDelayRange(
       input?.groupReplyDelayMs,
       defaults.groupReplyDelayMs,
+    ),
+    groupReplyPrimaryDelayMs: normalizeDelayRange(
+      input?.groupReplyPrimaryDelayMs,
+      defaults.groupReplyPrimaryDelayMs,
+    ),
+    groupReplyFollowupDelayMs: normalizeDelayRange(
+      input?.groupReplyFollowupDelayMs,
+      defaults.groupReplyFollowupDelayMs,
+    ),
+    groupReplyMaxSpeakers: clamp(
+      Math.round(
+        input?.groupReplyMaxSpeakers ?? defaults.groupReplyMaxSpeakers,
+      ),
+      1,
+      6,
+    ),
+    groupReplyMaxSpeakersMentionAll: clamp(
+      Math.round(
+        input?.groupReplyMaxSpeakersMentionAll ??
+          defaults.groupReplyMaxSpeakersMentionAll,
+      ),
+      1,
+      8,
+    ),
+    groupReplyRecentSpeakerWindow: clamp(
+      Math.round(
+        input?.groupReplyRecentSpeakerWindow ??
+          defaults.groupReplyRecentSpeakerWindow,
+      ),
+      0,
+      20,
     ),
     memoryCompressionEveryMessages: clamp(
       Math.round(

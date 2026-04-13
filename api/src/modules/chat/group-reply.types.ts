@@ -31,7 +31,13 @@ export type GroupReplyPlannerInput = {
   members: GroupMemberEntity[];
   history: GroupMessageEntity[];
   currentUserContext: GroupUserMessageContext;
-  runtimeRules: Pick<ReplyLogicRuntimeRules, 'groupReplyChance'>;
+  runtimeRules: Pick<
+    ReplyLogicRuntimeRules,
+    | 'groupReplyChance'
+    | 'groupReplyMaxSpeakers'
+    | 'groupReplyMaxSpeakersMentionAll'
+    | 'groupReplyRecentSpeakerWindow'
+  >;
 };
 
 export type GroupReplyOrchestratorInput = {
@@ -40,6 +46,10 @@ export type GroupReplyOrchestratorInput = {
   selectedActors: GroupReplyCandidate[];
   conversationHistory: ChatMessage[];
   currentUserContext: GroupUserMessageContext;
+  runtimeRules: Pick<
+    ReplyLogicRuntimeRules,
+    'groupReplyPrimaryDelayMs' | 'groupReplyFollowupDelayMs'
+  >;
   sendReply: (candidate: GroupReplyCandidate, text: string) => Promise<void>;
   onError?: (candidate: GroupReplyCandidate, error: unknown) => void;
 };
