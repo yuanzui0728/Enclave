@@ -228,11 +228,59 @@ async function request<T>(
       }
     }
 
-    const message = body?.message ?? rawBody;
+    const message = resolveRequestErrorMessage(
+      response.status,
+      body?.message,
+      rawBody,
+    );
     throw new Error(message || `Request failed: ${response.status}`);
   }
 
   return (rawBody ? (JSON.parse(rawBody) as T) : undefined) as T;
+}
+
+function resolveRequestErrorMessage(
+  status: number,
+  bodyMessage: string | undefined,
+  rawBody: string,
+) {
+  const normalizedBodyMessage = bodyMessage?.trim();
+  if (normalizedBodyMessage) {
+    if (normalizedBodyMessage === "File too large") {
+      return "上传内容过大，请缩小文件后重试。";
+    }
+
+    return normalizedBodyMessage;
+  }
+
+  if (status === 413) {
+    return "上传内容过大，请缩小文件后重试。";
+  }
+
+  const normalizedRawBody = rawBody.trim();
+  if (looksLikeHtmlErrorDocument(normalizedRawBody)) {
+    if (status >= 500) {
+      return "服务器暂时不可用，请稍后再试。";
+    }
+
+    return `Request failed: ${status}`;
+  }
+
+  return normalizedRawBody;
+}
+
+function looksLikeHtmlErrorDocument(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.toLowerCase();
+  return (
+    normalized.startsWith("<!doctype html") ||
+    normalized.startsWith("<html") ||
+    normalized.includes("<head>") ||
+    normalized.includes("<body>")
+  );
 }
 
 function requestLegacyApi<T>(
