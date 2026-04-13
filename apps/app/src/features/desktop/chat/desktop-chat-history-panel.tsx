@@ -586,47 +586,72 @@ export function DesktopChatHistoryPanel({
             <div className="bg-white">
               {resultSections.map((section) => (
                 <section key={section.key}>
-                  <div className="border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-2 text-[11px] tracking-[0.06em] text-[color:var(--text-dim)]">
-                    {section.label}
+                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-2 text-[11px] text-[color:var(--text-dim)]">
+                    <span className="tracking-[0.06em]">{section.label}</span>
+                    <span>{section.items.length} 条</span>
                   </div>
                   <div className="divide-y divide-[rgba(0,0,0,0.06)]">
-                    {section.items.map((item) => (
-                      <button
-                        key={item.messageId}
-                        type="button"
-                        onClick={() => onOpenMessage(item.messageId)}
-                        className="block w-full px-4 py-3 text-left transition hover:bg-[#f8f8f8]"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="truncate text-[13px] text-[color:var(--text-primary)]">
-                            {item.senderName || "消息"}
-                          </div>
-                          <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
-                            {formatDetailedMessageTimestamp(item.createdAt)}
-                          </div>
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                          <span>
-                            {resolveMessageTypeLabel(item.messageType)}
-                          </span>
-                          {item.attachment?.kind === "file" ||
-                          item.attachment?.kind === "image" ? (
-                            <span className="truncate">
-                              {item.attachment.fileName}
+                    {section.items.map((item) => {
+                      const metaLabel = buildSearchResultMeta(item);
+                      const previewText = buildSearchPreview(
+                        item,
+                        debouncedKeyword,
+                      );
+
+                      return (
+                        <button
+                          key={item.messageId}
+                          type="button"
+                          onClick={() => onOpenMessage(item.messageId)}
+                          className="group block w-full px-4 py-3.5 text-left transition hover:bg-[#f6fbf7] active:bg-[#eff7f0]"
+                        >
+                          <div className="flex gap-3">
+                            <span
+                              className={cn(
+                                "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium",
+                                resolveSearchResultAvatarTone(item),
+                              )}
+                            >
+                              {resolveSenderAvatarLabel(item.senderName)}
                             </span>
-                          ) : null}
-                        </div>
-                        <div className="mt-1 text-[13px] leading-5 text-[color:var(--text-secondary)]">
-                          {renderHighlightedText(
-                            buildSearchPreview(
-                              item.previewText,
-                              debouncedKeyword,
-                            ),
-                            debouncedKeyword,
-                          )}
-                        </div>
-                      </button>
-                    ))}
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                                    {item.senderName || "消息"}
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                      resolveSearchResultBadgeTone(item),
+                                    )}
+                                  >
+                                    {resolveSearchResultBadgeLabel(item)}
+                                  </span>
+                                </div>
+                                <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
+                                  {formatDetailedMessageTimestamp(item.createdAt)}
+                                </div>
+                              </div>
+
+                              {metaLabel ? (
+                                <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+                                  {metaLabel}
+                                </div>
+                              ) : null}
+
+                              <div className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
+                                {renderHighlightedText(
+                                  previewText,
+                                  debouncedKeyword,
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </section>
               ))}
@@ -1103,7 +1128,109 @@ function resolveMessageTypeLabel(type: ChatMessageSearchItem["messageType"]) {
   return "文本";
 }
 
-function buildSearchPreview(text: string, keyword: string) {
+function resolveSearchResultBadgeLabel(item: ChatMessageSearchItem) {
+  if (item.categories.includes("links")) {
+    return "链接";
+  }
+
+  return resolveMessageTypeLabel(item.messageType);
+}
+
+function resolveSearchResultBadgeTone(item: ChatMessageSearchItem) {
+  if (item.categories.includes("links")) {
+    return "bg-[rgba(59,130,246,0.1)] text-[#2563eb]";
+  }
+
+  if (item.messageType === "image") {
+    return "bg-[rgba(14,165,233,0.1)] text-[#0284c7]";
+  }
+
+  if (item.messageType === "file") {
+    return "bg-[rgba(249,115,22,0.1)] text-[#ea580c]";
+  }
+
+  if (item.messageType === "voice") {
+    return "bg-[rgba(168,85,247,0.1)] text-[#7c3aed]";
+  }
+
+  if (item.messageType === "location_card") {
+    return "bg-[rgba(239,68,68,0.1)] text-[#dc2626]";
+  }
+
+  return "bg-[rgba(7,193,96,0.1)] text-[color:var(--brand-primary)]";
+}
+
+function resolveSearchResultAvatarTone(item: ChatMessageSearchItem) {
+  if (item.messageType === "file") {
+    return "bg-[rgba(249,115,22,0.12)] text-[#c2410c]";
+  }
+
+  if (item.categories.includes("links")) {
+    return "bg-[rgba(59,130,246,0.12)] text-[#2563eb]";
+  }
+
+  if (item.messageType === "voice") {
+    return "bg-[rgba(168,85,247,0.12)] text-[#7c3aed]";
+  }
+
+  return "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]";
+}
+
+function resolveSenderAvatarLabel(senderName: string) {
+  const trimmed = senderName.trim();
+  if (!trimmed) {
+    return "消";
+  }
+
+  return Array.from(trimmed)[0] ?? "消";
+}
+
+function buildSearchResultMeta(item: ChatMessageSearchItem) {
+  const attachment = item.attachment;
+  if (!attachment) {
+    if (item.categories.includes("links")) {
+      return "网页链接";
+    }
+
+    return null;
+  }
+
+  if (attachment.kind === "image") {
+    const sizeLabel = formatFileSize(attachment.size);
+    return [attachment.fileName, sizeLabel].filter(Boolean).join(" · ");
+  }
+
+  if (attachment.kind === "file") {
+    return [attachment.fileName, formatFileSize(attachment.size)]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  if (attachment.kind === "voice") {
+    return `语音 ${formatVoiceDurationLabel(attachment.durationMs)}`;
+  }
+
+  if (attachment.kind === "contact_card") {
+    return [attachment.name, attachment.relationship].filter(Boolean).join(" · ");
+  }
+
+  if (attachment.kind === "location_card") {
+    return [attachment.title, attachment.subtitle].filter(Boolean).join(" · ");
+  }
+
+  if (attachment.kind === "note_card") {
+    return attachment.title;
+  }
+
+  if (attachment.kind === "sticker") {
+    return attachment.label || "表情消息";
+  }
+
+  return null;
+}
+
+function buildSearchPreview(item: ChatMessageSearchItem, keyword: string) {
+  const text = resolveSearchPreviewText(item);
   if (!keyword) {
     return text;
   }
@@ -1120,6 +1247,48 @@ function buildSearchPreview(text: string, keyword: string) {
   const prefix = previewStart > 0 ? "..." : "";
   const suffix = previewEnd < text.length ? "..." : "";
   return `${prefix}${text.slice(previewStart, previewEnd)}${suffix}`;
+}
+
+function resolveSearchPreviewText(item: ChatMessageSearchItem) {
+  const trimmedPreview = item.previewText.trim();
+  if (trimmedPreview) {
+    return trimmedPreview;
+  }
+
+  const attachment = item.attachment;
+  if (!attachment) {
+    return item.categories.includes("links") ? "分享了一条链接。" : "消息内容";
+  }
+
+  if (attachment.kind === "image") {
+    return `发送了图片 ${attachment.fileName}。`;
+  }
+
+  if (attachment.kind === "file") {
+    return `发送了文件 ${attachment.fileName}。`;
+  }
+
+  if (attachment.kind === "voice") {
+    return `发送了一条${formatVoiceDurationLabel(attachment.durationMs)}的语音。`;
+  }
+
+  if (attachment.kind === "contact_card") {
+    return `分享了名片 ${attachment.name}。`;
+  }
+
+  if (attachment.kind === "location_card") {
+    return `分享了位置 ${attachment.title}。`;
+  }
+
+  if (attachment.kind === "note_card") {
+    return attachment.excerpt.trim() || `分享了笔记 ${attachment.title}。`;
+  }
+
+  if (attachment.kind === "sticker") {
+    return attachment.label ? `[表情] ${attachment.label}` : "发送了一个表情。";
+  }
+
+  return "消息内容";
 }
 
 function renderHighlightedText(text: string, keyword: string) {
@@ -1143,4 +1312,31 @@ function renderHighlightedText(text: string, keyword: string) {
       {text.slice(end)}
     </>
   );
+}
+
+function formatVoiceDurationLabel(durationMs?: number) {
+  if (!durationMs || !Number.isFinite(durationMs) || durationMs <= 0) {
+    return "语音";
+  }
+
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  return `${totalSeconds} 秒`;
+}
+
+function formatFileSize(size: number) {
+  if (!Number.isFinite(size) || size <= 0) {
+    return "";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  const precision = value >= 100 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
 }
