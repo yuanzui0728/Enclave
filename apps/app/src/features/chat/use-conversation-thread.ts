@@ -5,6 +5,7 @@ import {
   getConversations,
   markConversationRead,
   uploadChatAttachment,
+  type ConversationListItem,
   type Message,
   type SendMessagePayload,
   type StickerAttachment,
@@ -75,6 +76,48 @@ export function useConversationThread(conversationId: string) {
   const activeConversation = conversationsQuery.data?.find(
     (item) => item.id === conversationId,
   );
+  const syncConversationListCache = useCallback(
+    (updater: (current: ConversationListItem[]) => ConversationListItem[]) => {
+      queryClient.setQueryData<ConversationListItem[]>(
+        ["app-conversations", baseUrl],
+        (current) => (current ? updater(current) : current),
+      );
+    },
+    [baseUrl, queryClient],
+  );
+  const syncActiveConversationMessage = useCallback(
+    (message: Message) => {
+      syncConversationListCache((current) =>
+        current.map((item) =>
+          item.id === conversationId
+            ? {
+                ...item,
+                lastMessage: message,
+                lastActivityAt: message.createdAt,
+                updatedAt: message.createdAt,
+              }
+            : item,
+        ),
+      );
+    },
+    [conversationId, syncConversationListCache],
+  );
+  const syncActiveConversationReadState = useCallback(
+    (readAt: string) => {
+      syncConversationListCache((current) =>
+        current.map((item) =>
+          item.id === conversationId
+            ? {
+                ...item,
+                unreadCount: 0,
+                lastReadAt: readAt,
+              }
+            : item,
+        ),
+      );
+    },
+    [conversationId, syncConversationListCache],
+  );
 
   useEffect(() => {
     setMessages(messagesQuery.data ?? []);
@@ -120,14 +163,23 @@ export function useConversationThread(conversationId: string) {
       return;
     }
 
+    const markActiveConversationRead = async () => {
+      const readAt = new Date().toISOString();
+      syncActiveConversationReadState(readAt);
+
+      try {
+        await markConversationRead(conversationId, baseUrl);
+      } finally {
+        await queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        });
+      }
+    };
+
     setSocketError(null);
     setTypingCharacterId(null);
     joinConversationRoom({ conversationId });
-    void markConversationRead(conversationId, baseUrl).then(() => {
-      void queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
-    });
+    void markActiveConversationRead();
 
     const offMessage = onChatMessage((payload) => {
       if (
@@ -155,6 +207,13 @@ export function useConversationThread(conversationId: string) {
 
         return [...withoutPendingEcho, payload];
       });
+      syncActiveConversationMessage(payload);
+
+      if (payload.senderType === "character") {
+        void markActiveConversationRead();
+        return;
+      }
+
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -198,7 +257,15 @@ export function useConversationThread(conversationId: string) {
       offConversationUpdated();
       offError();
     };
-  }, [baseUrl, conversationId, ownerId, queryClient, unreadSnapshotReady]);
+  }, [
+    baseUrl,
+    conversationId,
+    ownerId,
+    queryClient,
+    syncActiveConversationMessage,
+    syncActiveConversationReadState,
+    unreadSnapshotReady,
+  ]);
 
   useEffect(() => {
     const loadedCount = messagesQuery.data?.length ?? 0;
