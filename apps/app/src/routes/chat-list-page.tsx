@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type TouchEvent,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
@@ -32,14 +39,11 @@ import {
 import {
   AppPage,
   Button,
-  ErrorBlock,
   InlineNotice,
-  LoadingBlock,
   cn,
 } from "@yinjie/ui";
 
 import { AvatarChip } from "../components/avatar-chip";
-import { EmptyState } from "../components/empty-state";
 import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../components/subscription-inbox-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -218,6 +222,10 @@ function MobileChatListPage() {
     visibleConversations.length > 0 ||
     serviceConversations.length > 0 ||
     showSubscriptionInboxItem;
+  const hasConversationLoadError =
+    conversationsQuery.isError && conversationsQuery.error instanceof Error;
+  const hasMessageEntriesError =
+    messageEntriesQuery.isError && messageEntriesQuery.error instanceof Error;
 
   const pinMutation = useMutation({
     mutationFn: async ({
@@ -587,21 +595,61 @@ function MobileChatListPage() {
             </InlineNotice>
           </div>
         ) : null}
+        {hasMessageEntriesError ? (
+          <div className="px-3 pt-2">
+            <InlineNotice
+              tone="danger"
+              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="min-w-0 flex-1">
+                  订阅号与服务号入口暂时没有刷新成功。
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void messageEntriesQuery.refetch();
+                  }}
+                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                >
+                  重试
+                </button>
+              </div>
+            </InlineNotice>
+          </div>
+        ) : null}
         {conversationsQuery.isLoading ? (
-          <div className="px-3 pt-2.5">
-            <LoadingBlock label="正在读取会话..." />
+          <div className="px-3 pt-2">
+            <MobileChatListStatusCard
+              badge="读取中"
+              title="正在刷新消息列表"
+              description="稍等一下，正在同步最近会话和消息入口。"
+              tone="loading"
+            />
           </div>
         ) : null}
-        {conversationsQuery.isError &&
-        conversationsQuery.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
-            <ErrorBlock message={conversationsQuery.error.message} />
-          </div>
-        ) : null}
-        {messageEntriesQuery.isError &&
-        messageEntriesQuery.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
-            <ErrorBlock message={messageEntriesQuery.error.message} />
+        {hasConversationLoadError ? (
+          <div className="px-3 pt-2">
+            <MobileChatListStatusCard
+              badge="读取失败"
+              title="消息页暂时不可用"
+              description={conversationsQuery.error.message}
+              tone="danger"
+              action={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void conversationsQuery.refetch();
+                    void messageEntriesQuery.refetch();
+                  }}
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                >
+                  重新加载
+                </Button>
+              }
+            />
           </div>
         ) : null}
         {reminderEntries.length ? (
@@ -788,7 +836,7 @@ function MobileChatListPage() {
           </section>
         ) : null}
 
-        {!conversationsQuery.isLoading && !conversationsQuery.isError ? (
+        {!conversationsQuery.isLoading && !hasConversationLoadError ? (
           hasConversations ? (
             <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {showSubscriptionInboxItem && subscriptionInboxSummary ? (
@@ -880,8 +928,9 @@ function MobileChatListPage() {
               ))}
             </section>
           ) : (
-            <div className="px-4 pt-10">
-              <EmptyState
+            <div className="px-3 pt-2">
+              <MobileChatListStatusCard
+                badge="消息"
                 title="还没有新消息"
                 description="等角色、群聊或服务号开始发消息后，这里会显示最近会话。"
                 action={
@@ -891,7 +940,7 @@ function MobileChatListPage() {
                     onClick={() => {
                       void navigate({ to: "/tabs/contacts" });
                     }}
-                    className="rounded-full px-4"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                   >
                     去通讯录看看
                   </Button>
@@ -902,6 +951,58 @@ function MobileChatListPage() {
         ) : null}
       </div>
     </AppPage>
+  );
+}
+
+function MobileChatListStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+  action,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+  action?: ReactNode;
+}) {
+  const loading = tone === "loading";
+
+  return (
+    <section
+      className={cn(
+        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2.5 py-1 text-[9px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {loading ? (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
 
