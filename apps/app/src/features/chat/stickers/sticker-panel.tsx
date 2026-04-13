@@ -33,6 +33,12 @@ type StickerPanelItem = {
   sticker: StickerAttachment;
   canDelete?: boolean;
 };
+type StickerSearchSection = {
+  id: string;
+  label: string;
+  badgeText: string;
+  items: StickerPanelItem[];
+};
 type ResolvedRecentStickerItem = {
   sticker: StickerAttachment;
   usedAt: number;
@@ -177,14 +183,27 @@ export function StickerPanel({
   });
 
   const searching = searchKeyword.length > 0;
+  const searchSections = useMemo<StickerSearchSection[]>(() => {
+    if (!searching) {
+      return [];
+    }
+
+    return searchStickerItems({
+      keyword: searchKeyword,
+      recentStickerEntries,
+      builtinPacks: catalog.builtinPacks,
+      customStickers: catalog.customStickers,
+    });
+  }, [
+    catalog.builtinPacks,
+    catalog.customStickers,
+    recentStickerEntries,
+    searchKeyword,
+    searching,
+  ]);
   const activeItems = useMemo<StickerPanelItem[]>(() => {
     if (searching) {
-      return searchStickerItems({
-        keyword: searchKeyword,
-        recentStickerEntries,
-        builtinPacks: catalog.builtinPacks,
-        customStickers: catalog.customStickers,
-      });
+      return searchSections.flatMap((section) => section.items);
     }
 
     if (activeSectionId === "recent") {
@@ -228,6 +247,7 @@ export function StickerPanel({
     recentStickerEntries,
     recentStickers,
     searchKeyword,
+    searchSections,
     searching,
   ]);
 
@@ -365,6 +385,33 @@ export function StickerPanel({
     onClose,
     trimmedKeyword.length,
   ]);
+
+  const renderStickerGrid = (items: StickerPanelItem[]) => (
+    <div className={isMobile ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-4 gap-2"}>
+      {items.map(({ sticker, canDelete }) => (
+        <StickerButton
+          key={`${sticker.sourceType ?? "builtin"}:${sticker.packId ?? "custom"}:${sticker.stickerId}`}
+          compact={isMobile}
+          sticker={sticker}
+          showDelete={Boolean(canDelete) && (!isMobile ? customManageMode : true)}
+          deleteAlwaysVisible={!isMobile && customManageMode}
+          selectionDisabled={!isMobile && customManageMode && Boolean(canDelete)}
+          deleting={
+            deleteMutation.isPending &&
+            deleteMutation.variables === sticker.stickerId
+          }
+          onDelete={
+            canDelete
+              ? () => {
+                  void deleteMutation.mutateAsync(sticker.stickerId);
+                }
+              : undefined
+          }
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div
@@ -555,30 +602,30 @@ export function StickerPanel({
               正在载入表情...
             </div>
           ) : activeItems.length ? (
-            <div className={isMobile ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-4 gap-2"}>
-              {activeItems.map(({ sticker, canDelete }) => (
-                <StickerButton
-                  key={`${sticker.sourceType ?? "builtin"}:${sticker.packId ?? "custom"}:${sticker.stickerId}`}
-                  compact={isMobile}
-                  sticker={sticker}
-                  showDelete={Boolean(canDelete) && (!isMobile ? customManageMode : true)}
-                  deleteAlwaysVisible={!isMobile && customManageMode}
-                  selectionDisabled={!isMobile && customManageMode && Boolean(canDelete)}
-                  deleting={
-                    deleteMutation.isPending &&
-                    deleteMutation.variables === sticker.stickerId
-                  }
-                  onDelete={
-                    canDelete
-                      ? () => {
-                          void deleteMutation.mutateAsync(sticker.stickerId);
-                        }
-                      : undefined
-                  }
-                  onSelect={onSelect}
-                />
-              ))}
-            </div>
+            searching ? (
+              <div className={isMobile ? "space-y-3" : "space-y-4"}>
+                {searchSections.map((section) => (
+                  <section key={section.id} className={isMobile ? "space-y-1.5" : "space-y-2"}>
+                    <div className="flex items-center justify-between px-0.5">
+                      <div className="inline-flex items-center gap-2 text-[color:var(--text-secondary)]">
+                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 text-[10px] font-semibold text-[#9a5a0a]">
+                          {section.badgeText}
+                        </span>
+                        <span className={isMobile ? "text-[11px]" : "text-xs font-medium"}>
+                          {section.label}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[color:var(--text-muted)]">
+                        {section.items.length}
+                      </span>
+                    </div>
+                    {renderStickerGrid(section.items)}
+                  </section>
+                ))}
+              </div>
+            ) : (
+              renderStickerGrid(activeItems)
+            )
           ) : (
             <div className="flex min-h-[160px] items-center justify-center rounded-[18px] border border-dashed border-[color:var(--border-subtle)] bg-white/70 px-5 text-center text-sm text-[color:var(--text-secondary)]">
               <div className="flex max-w-[240px] flex-col items-center gap-3">
@@ -895,12 +942,19 @@ function searchStickerItems(input: {
 }) {
   const query = input.keyword.trim().toLowerCase();
   if (!query) {
-    return [] as Array<{ sticker: StickerAttachment; canDelete?: boolean }>;
+    return [] as StickerSearchSection[];
   }
 
   const items = new Map<
     string,
-    { sticker: StickerAttachment; canDelete?: boolean; score: number }
+    {
+      sticker: StickerAttachment;
+      canDelete?: boolean;
+      score: number;
+      sectionId: string;
+      sectionLabel: string;
+      sectionBadgeText: string;
+    }
   >();
 
   input.recentStickerEntries.forEach((entry, index) => {
@@ -916,6 +970,9 @@ function searchStickerItems(input: {
       sticker: entry.sticker,
       canDelete: entry.sticker.sourceType === "custom",
       score,
+      sectionId: "recent",
+      sectionLabel: "最近使用",
+      sectionBadgeText: "近",
     });
   });
 
@@ -936,6 +993,9 @@ function searchStickerItems(input: {
       sticker,
       canDelete: true,
       score,
+      sectionId: "custom",
+      sectionLabel: "自定义",
+      sectionBadgeText: "自",
     });
   });
 
@@ -957,16 +1017,39 @@ function searchStickerItems(input: {
       upsertSearchItem(items, {
         sticker,
         score,
+        sectionId: pack.id,
+        sectionLabel: pack.title,
+        sectionBadgeText: pack.title.slice(0, 1),
       });
     });
   });
 
-  return [...items.values()]
-    .sort((left, right) => right.score - left.score)
-    .map(({ sticker, canDelete }) => ({
-      sticker,
-      canDelete,
-    }));
+  const sortedItems = [...items.values()].sort(
+    (left, right) => right.score - left.score,
+  );
+  const sections = new Map<string, StickerSearchSection>();
+  const sectionOrder: string[] = [];
+
+  sortedItems.forEach((item) => {
+    if (!sections.has(item.sectionId)) {
+      sections.set(item.sectionId, {
+        id: item.sectionId,
+        label: item.sectionLabel,
+        badgeText: item.sectionBadgeText,
+        items: [],
+      });
+      sectionOrder.push(item.sectionId);
+    }
+
+    sections.get(item.sectionId)?.items.push({
+      sticker: item.sticker,
+      canDelete: item.canDelete,
+    });
+  });
+
+  return sectionOrder
+    .map((sectionId) => sections.get(sectionId))
+    .filter((section): section is StickerSearchSection => Boolean(section));
 }
 
 function getStickerIdentity(sticker: StickerAttachment) {
@@ -976,9 +1059,23 @@ function getStickerIdentity(sticker: StickerAttachment) {
 function upsertSearchItem(
   items: Map<
     string,
-    { sticker: StickerAttachment; canDelete?: boolean; score: number }
+    {
+      sticker: StickerAttachment;
+      canDelete?: boolean;
+      score: number;
+      sectionId: string;
+      sectionLabel: string;
+      sectionBadgeText: string;
+    }
   >,
-  next: { sticker: StickerAttachment; canDelete?: boolean; score: number },
+  next: {
+    sticker: StickerAttachment;
+    canDelete?: boolean;
+    score: number;
+    sectionId: string;
+    sectionLabel: string;
+    sectionBadgeText: string;
+  },
 ) {
   const key = getStickerIdentity(next.sticker);
   const current = items.get(key);
@@ -991,6 +1088,13 @@ function upsertSearchItem(
     sticker: next.score >= current.score ? next.sticker : current.sticker,
     canDelete: current.canDelete || next.canDelete,
     score: Math.max(current.score, next.score),
+    sectionId: next.score >= current.score ? next.sectionId : current.sectionId,
+    sectionLabel:
+      next.score >= current.score ? next.sectionLabel : current.sectionLabel,
+    sectionBadgeText:
+      next.score >= current.score
+        ? next.sectionBadgeText
+        : current.sectionBadgeText,
   });
 }
 
