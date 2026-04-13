@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpenText } from "lucide-react";
 import {
   getOfficialAccountSubscriptionInbox,
   markOfficialAccountSubscriptionInboxRead,
@@ -91,6 +91,20 @@ function MobileSubscriptionInboxPage() {
             className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
           >
             <ArrowLeft size={18} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            onClick={() => {
+              void navigate({ to: "/contacts/official-accounts" });
+            }}
+            aria-label="打开公众号列表"
+          >
+            <BookOpenText size={18} />
           </Button>
         }
       />
