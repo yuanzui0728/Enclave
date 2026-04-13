@@ -720,14 +720,14 @@ export function GamesPage() {
         </div>
       </section>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+      <div className="flex gap-1.25 overflow-x-auto pb-0.5">
         {gameCenterCategoryTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveCategory(tab.id)}
             className={cn(
-              "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
+              "shrink-0 rounded-full px-2.5 py-1.5 text-[10px] font-medium transition",
               activeCategory === tab.id
                 ? "bg-[#07c160] text-white"
                 : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
