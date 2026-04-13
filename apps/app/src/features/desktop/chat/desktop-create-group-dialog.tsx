@@ -36,6 +36,7 @@ type DesktopCreateGroupDialogProps = {
   conversationId?: string;
   seedMemberIds?: string[];
   onClose: () => void;
+  onCreated?: (groupId: string) => void;
 };
 
 export function DesktopCreateGroupDialog({
@@ -43,6 +44,7 @@ export function DesktopCreateGroupDialog({
   conversationId,
   seedMemberIds = [],
   onClose,
+  onCreated,
 }: DesktopCreateGroupDialogProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -212,6 +214,10 @@ export function DesktopCreateGroupDialog({
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
+      if (onCreated) {
+        onCreated(group.id);
+        return;
+      }
       onClose();
       void navigate({ to: "/group/$groupId", params: { groupId: group.id } });
     },

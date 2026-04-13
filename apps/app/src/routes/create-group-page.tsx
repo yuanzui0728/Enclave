@@ -17,6 +17,7 @@ import {
 } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
+import { DesktopCreateGroupDialog } from "../features/desktop/chat/desktop-create-group-dialog";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import {
   buildContactSections,
@@ -200,227 +201,20 @@ export function CreateGroupPage() {
 
   if (isDesktopLayout) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
-        <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              onClick={handleBack}
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-console)]"
-            >
-              <ArrowLeft size={18} />
-            </Button>
-            <div>
-              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                发起群聊
-              </div>
-              <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
-                发起群聊
-              </div>
-              <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                选择联系人并创建一个新的桌面群聊工作区。
-              </div>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            onClick={() => createMutation.mutate()}
-            disabled={!selectedIds.length || createMutation.isPending}
-            variant="primary"
-            size="lg"
-            className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
-          >
-            {createMutation.isPending ? "正在创建..." : "创建群聊"}
-          </Button>
-        </header>
-
-        <div className="min-h-0 flex-1 p-6">
-          <div className="mx-auto flex h-full min-h-0 max-w-[1200px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
-            <section className="flex w-[400px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
-              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                  选择成员
-                </div>
-                <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                  至少选择一位已经建立关系的人。
-                </div>
-
-                <label className="relative mt-4 block">
-                  <Search
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--text-dim)]"
-                  />
-                  <input
-                    type="search"
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="搜索联系人"
-                    className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.18)]"
-                  />
-                </label>
-
-                <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
-                  已选择 {selectedIds.length} 位成员
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
-                {friendsQuery.isLoading ? (
-                  <LoadingBlock
-                    className="px-2 py-4 text-left"
-                    label="正在读取联系人..."
-                  />
-                ) : null}
-                {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-                  <div className="px-2 py-2">
-                    <ErrorBlock message={friendsQuery.error.message} />
-                  </div>
-                ) : null}
-
-                {!friendsQuery.isLoading &&
-                !friendsQuery.isError &&
-                !friendItems.length ? (
-                  <div className="px-2 py-8">
-                    <EmptyState
-                      title="还没有可拉进群的人"
-                      description="先去通讯录里建立一些关系，再回来创建群聊。"
-                    />
-                  </div>
-                ) : null}
-
-                {!friendsQuery.isLoading &&
-                !friendsQuery.isError &&
-                friendItems.length > 0 &&
-                !filteredFriends.length ? (
-                  <div className="px-5 py-10 text-center text-sm text-[color:var(--text-muted)]">
-                    没有匹配的联系人。
-                  </div>
-                ) : null}
-
-                <div className="space-y-1">
-                  {filteredFriends.map((item) => (
-                    <FriendSelectionRow
-                      key={item.character.id}
-                      checked={selectedIds.includes(item.character.id)}
-                      disabled={createMutation.isPending}
-                      name={getFriendDisplayName(item)}
-                      relationship={item.character.relationship}
-                      src={item.character.avatar}
-                      variant="desktop"
-                      onClick={() => toggleSelection(item.character.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            <section className="flex min-w-0 flex-1 flex-col bg-[rgba(245,248,247,0.92)]">
-              <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-                  群资料
-                </div>
-                <div className="mt-4 max-w-[420px]">
-                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                    群名称
-                  </div>
-                  <TextField
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder={defaultGroupName}
-                    className="mt-3 rounded-[10px] border-[color:var(--border-faint)] bg-white"
-                  />
-                  <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
-                    不填写时会使用“{defaultGroupName}”。
-                  </div>
-                </div>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
-                {selectedFriends.length ? (
-                  <>
-                    <div className="mb-4 text-[15px] font-medium text-[color:var(--text-primary)]">
-                      已选成员
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedFriends.map((item) => (
-                        <div
-                          key={item.character.id}
-                          className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]"
-                        >
-                          <AvatarChip
-                            name={getFriendDisplayName(item)}
-                            src={item.character.avatar}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                              {getFriendDisplayName(item)}
-                            </div>
-                            <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
-                              {item.character.relationship}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleSelection(item.character.id)}
-                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                            aria-label={`移除 ${getFriendDisplayName(item)}`}
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center px-8">
-                    <div className="max-w-[320px] text-center">
-                      <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
-                        右侧显示已选成员
-                      </div>
-                      <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
-                        从左侧勾选联系人后，就能在这里确认群成员并完成创建。
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-                <div className="text-[12px] text-[color:var(--text-muted)]">
-                  已选择 {selectedIds.length} 位成员，创建后会直接进入新群聊。
-                </div>
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleBack}
-                    className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                  >
-                    取消
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => createMutation.mutate()}
-                    disabled={!selectedIds.length || createMutation.isPending}
-                    variant="primary"
-                    className="rounded-[10px] bg-[#07c160] px-6 text-white hover:bg-[#06ad56]"
-                  >
-                    {createMutation.isPending ? "正在创建群聊..." : "确认创建"}
-                  </Button>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        {createMutation.isError && createMutation.error instanceof Error ? (
-          <div className="px-6 pb-6">
-            <ErrorBlock message={createMutation.error.message} />
-          </div>
-        ) : null}
+      <div className="relative flex h-full min-h-0 bg-[color:var(--bg-app)]">
+        <DesktopCreateGroupDialog
+          open
+          conversationId={routeState.conversationId}
+          seedMemberIds={routeState.seedMemberIds}
+          onClose={handleBack}
+          onCreated={(groupId) => {
+            void navigate({
+              to: "/group/$groupId",
+              params: { groupId },
+              replace: true,
+            });
+          }}
+        />
       </div>
     );
   }
