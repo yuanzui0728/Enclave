@@ -4,6 +4,7 @@ import type {
   ImageAttachment,
   LocationCardAttachment,
   NoteCardAttachment,
+  StickerAttachment,
   VoiceAttachment,
 } from "./attachments";
 import type { GroupMessage, Message } from "./chat";
@@ -40,9 +41,11 @@ export type SendMessagePayload =
       type: "sticker";
       text?: string;
       sticker: {
-        packId: string;
+        sourceType?: "builtin" | "custom";
+        packId?: string;
         stickerId: string;
       };
+      attachment?: StickerAttachment;
     }
   | {
       conversationId: string;

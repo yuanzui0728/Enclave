@@ -146,6 +146,11 @@ import type {
   RunEvalDatasetRequest,
   UpdateEvalReportDecisionRequest,
 } from "./evals";
+import type {
+  CreateCustomStickerFromMessageRequest,
+  CustomStickerRecord,
+  StickerCatalogResponse,
+} from "./stickers";
 import { LEGACY_API_PREFIX } from "./api";
 
 export const DEFAULT_CORE_API_BASE_URL = "http://localhost:3000";
@@ -1205,6 +1210,49 @@ export function uploadChatAttachment(payload: FormData, baseUrl?: string) {
     {
       method: "POST",
       body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function getStickerCatalog(baseUrl?: string) {
+  return requestLegacyApi<StickerCatalogResponse>(
+    "/chat/stickers/catalog",
+    undefined,
+    baseUrl,
+  );
+}
+
+export function uploadCustomSticker(payload: FormData, baseUrl?: string) {
+  return requestLegacyApi<CustomStickerRecord>(
+    "/chat/stickers/custom",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  );
+}
+
+export function createCustomStickerFromMessage(
+  payload: CreateCustomStickerFromMessageRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<CustomStickerRecord>(
+    "/chat/stickers/custom/from-message",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
+export function deleteCustomSticker(id: string, baseUrl?: string) {
+  return requestLegacyApi<SuccessResponse>(
+    `/chat/stickers/custom/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
     },
     baseUrl,
   );

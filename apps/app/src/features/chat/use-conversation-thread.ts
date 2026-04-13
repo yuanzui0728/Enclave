@@ -384,9 +384,11 @@ export function useConversationThread(conversationId: string) {
       type: "sticker",
       text: overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
       sticker: {
+        sourceType: sticker.sourceType,
         packId: sticker.packId,
         stickerId: sticker.stickerId,
       },
+      attachment: sticker,
     });
   };
 
@@ -625,7 +627,11 @@ function attachmentsEqual(
   }
 
   if (left.kind === "sticker" && right.kind === "sticker") {
-    return left.packId === right.packId && left.stickerId === right.stickerId;
+    return (
+      (left.sourceType ?? "builtin") === (right.sourceType ?? "builtin") &&
+      (left.packId ?? "") === (right.packId ?? "") &&
+      left.stickerId === right.stickerId
+    );
   }
 
   if (left.kind === "image" && right.kind === "image") {
@@ -667,6 +673,7 @@ function buildOptimisticMessage(
       /^\[表情包\]\s*/,
       "",
     );
+    const optimisticAttachment = payload.attachment;
 
     return {
       id: `local_${createdAt}`,
@@ -676,15 +683,25 @@ function buildOptimisticMessage(
       senderName,
       type: "sticker",
       text: payload.text ?? "[表情包]",
-      attachment: {
-        kind: "sticker",
-        packId: payload.sticker.packId,
-        stickerId: payload.sticker.stickerId,
-        url: `/stickers/${payload.sticker.packId}/${payload.sticker.stickerId}.svg`,
-        width: 160,
-        height: 160,
-        label: stickerLabel || payload.sticker.stickerId,
-      },
+      attachment: optimisticAttachment
+        ? {
+            ...optimisticAttachment,
+            label:
+              stickerLabel || optimisticAttachment.label || payload.sticker.stickerId,
+          }
+        : {
+            kind: "sticker",
+            sourceType: payload.sticker.sourceType ?? "builtin",
+            packId: payload.sticker.packId,
+            stickerId: payload.sticker.stickerId,
+            url:
+              payload.sticker.packId
+                ? `/stickers/${payload.sticker.packId}/${payload.sticker.stickerId}.svg`
+                : "",
+            width: 160,
+            height: 160,
+            label: stickerLabel || payload.sticker.stickerId,
+          },
       createdAt,
     };
   }

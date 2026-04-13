@@ -373,7 +373,7 @@ export function ChatComposer({
   const [mobilePlusNotice, setMobilePlusNotice] =
     useState<MobilePlusNoticeState | null>(null);
   const [activeStickerPackId, setActiveStickerPackId] =
-    useState("yinjie-mochi");
+    useState("featured");
   const [recentStickers, setRecentStickers] = useState(() =>
     loadRecentStickers(),
   );
@@ -1185,8 +1185,16 @@ export function ChatComposer({
 
     setAttachmentError(null);
     await onSendSticker(sticker);
-    setRecentStickers(pushRecentSticker(sticker.packId, sticker.stickerId));
-    setStickerPanelOpen(false);
+    setRecentStickers(
+      pushRecentSticker({
+        sourceType: sticker.sourceType,
+        packId: sticker.packId,
+        stickerId: sticker.stickerId,
+      }),
+    );
+    if (!isDesktop) {
+      setStickerPanelOpen(false);
+    }
   };
 
   const pickAlbum = () => {
@@ -3112,11 +3120,13 @@ export function ChatComposer({
 
           {stickerPanelOpen && onSendSticker ? (
             <StickerPanel
+              baseUrl={baseUrl}
               variant={variant}
               activePackId={activeStickerPackId}
               recentItems={recentStickers}
               onClose={() => setStickerPanelOpen(false)}
               onPackChange={setActiveStickerPackId}
+              onError={setAttachmentError}
               onSelect={(sticker) => void handleSendSticker(sticker)}
             />
           ) : null}
