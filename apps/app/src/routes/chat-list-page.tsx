@@ -451,13 +451,13 @@ function MobileChatListPage() {
           type="button"
           aria-label="关闭快捷菜单"
           onClick={() => setIsQuickMenuOpen(false)}
-          className="fixed inset-0 z-30 bg-black/5"
+          className="fixed inset-0 z-30 bg-black/[0.03]"
         />
       ) : null}
 
       <TabPageTopBar
         title="消息"
-        className="z-40 space-y-2 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
+        className="z-40 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
@@ -467,14 +467,14 @@ function MobileChatListPage() {
               variant="ghost"
               size="icon"
               onClick={() => setIsQuickMenuOpen((current) => !current)}
-              className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
+              className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
               aria-label="打开快捷菜单"
             >
-              <Plus size={16} strokeWidth={2.4} />
+              <Plus size={15} strokeWidth={2.4} />
             </Button>
 
             {isQuickMenuOpen ? (
-              <div className="absolute right-0 top-[calc(100%+0.35rem)] z-40 w-[10.5rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1.5 shadow-[0_14px_40px_rgba(15,23,42,0.22)]">
+              <div className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]">
                 {quickActionItems.map((item) => {
                   const Icon = item.icon;
 
@@ -485,10 +485,10 @@ function MobileChatListPage() {
                         key={item.key}
                         type="button"
                         onClick={() => handleNavigate(to)}
-                        className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10"
+                        className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                       >
-                        <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] bg-white/10 text-white">
-                          <Icon size={15} />
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
+                          <Icon size={14} />
                         </div>
                         <span>{item.label}</span>
                       </button>
@@ -501,24 +501,24 @@ function MobileChatListPage() {
                       type="button"
                       disabled={item.disabled}
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                        "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                         item.disabled
                           ? "cursor-not-allowed opacity-55"
-                          : "hover:bg-white/10",
+                          : "hover:bg-white/10 active:bg-white/12",
                       )}
                     >
                       <div
                         className={cn(
-                          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] text-white",
+                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-white",
                           item.disabled ? "bg-white/6" : "bg-white/10",
                         )}
                       >
-                        <Icon size={15} />
+                        <Icon size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div>{item.label}</div>
                         {item.disabledLabel ? (
-                          <div className="mt-0.5 text-[11px] text-white/65">
+                          <div className="mt-0.5 text-[10px] text-white/62">
                             {item.disabledLabel}
                           </div>
                         ) : null}
@@ -548,9 +548,9 @@ function MobileChatListPage() {
         >
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
+            className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[color:var(--text-dim)]"
           />
-          <div className="h-8 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-10 pr-4 text-[13px] leading-8 text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
+          <div className="h-7.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[12px] leading-[30px] text-[color:var(--text-dim)] transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]">
             搜索
           </div>
         </button>
@@ -558,19 +558,19 @@ function MobileChatListPage() {
 
       <div className="pb-6">
         {pendingHideConversation ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-3 pt-2">
             <InlineNotice
               tone="info"
-              className="rounded-[12px] border-[rgba(96,165,250,0.18)] px-3 py-2 text-[11px] leading-[17px] shadow-none"
+              className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
-              <div className="flex items-center justify-between gap-2.5">
+              <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate">
                   {pendingHideConversation.title} 已从列表移除，5 秒内可撤销。
                 </span>
                 <button
                   type="button"
                   onClick={handleUndoHideConversation}
-                  className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-medium text-[#07c160]"
+                  className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#07c160]"
                 >
                   撤销
                 </button>
@@ -578,10 +578,10 @@ function MobileChatListPage() {
             </InlineNotice>
           </div>
         ) : notice ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-3 pt-2">
             <InlineNotice
               tone="info"
-              className="rounded-[12px] border-[rgba(96,165,250,0.18)] px-3 py-2 text-[11px] leading-[17px] shadow-none"
+              className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               {notice}
             </InlineNotice>
