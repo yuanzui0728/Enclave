@@ -324,23 +324,16 @@ export function DesktopChatHistoryPanel({
           ) : null}
         </label>
 
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-[10px] border border-[rgba(0,0,0,0.05)] bg-[#f8f8f8] px-3 py-2.5">
-          <div className="min-w-0">
-            <div className="text-[10px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              当前聊天范围
-            </div>
-            <div className="mt-1 flex min-w-0 items-center gap-2">
-              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]">
-                {isGroupConversation ? "群聊" : "单聊"}
-              </span>
-              <span className="truncate text-[12px] text-[color:var(--text-primary)]">
-                {conversation.title}
-              </span>
-            </div>
-          </div>
+        <div className="mt-2.5 flex min-w-0 flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+          <span className="shrink-0 rounded-full bg-[#f3f3f3] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]">
+            {isGroupConversation ? "群聊" : "单聊"}
+          </span>
+          <span className="truncate text-[12px] text-[color:var(--text-primary)]">
+            {conversation.title}
+          </span>
           {openedFromDetails ? (
             <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
-              来自聊天信息
+              聊天信息入口
             </span>
           ) : null}
         </div>
@@ -498,17 +491,6 @@ export function DesktopChatHistoryPanel({
 
       {showSearchMainView ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
-            <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
-              搜索指定内容
-            </div>
-            <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
-              {isGroupConversation
-                ? "输入关键词，或按日期、群成员和消息类型快速查找。"
-                : "输入关键词，或按日期和消息类型快速查找。"}
-            </div>
-          </div>
-
           <div className="divide-y divide-[rgba(0,0,0,0.06)] bg-white">
             <DesktopSearchEntryRow
               icon={<CalendarDays size={16} />}
@@ -898,7 +880,7 @@ function buildResultSummary(input: {
   if (!input.keyword && input.selectedSenderLabel) {
     return {
       title: `群成员 · ${input.selectedSenderLabel}`,
-      description: `${baseDescription} · 仅查看 ${input.selectedSenderLabel} 在当前群聊中的发言。`,
+      description: baseDescription,
     };
   }
 
@@ -906,23 +888,13 @@ function buildResultSummary(input: {
     const label = input.customDate || resolveQuickDateFilterLabel(input.quickDateFilter);
     return {
       title: `日期 · ${label}`,
-      description: `${baseDescription} · 仅查看 ${label} 的聊天记录。`,
+      description: baseDescription,
     };
   }
 
-  const filterLabels = buildActiveFilterLabels({
-    keyword: input.keyword,
-    activeCategory: input.activeCategory,
-    selectedSenderLabel: input.selectedSenderLabel,
-    quickDateFilter: input.quickDateFilter,
-    customDate: input.customDate,
-  });
-
   return {
     title: input.keyword ? `搜索“${input.keyword}”` : "当前筛选结果",
-    description: filterLabels.length
-      ? `${baseDescription} · ${filterLabels.join(" / ")}`
-      : baseDescription,
+    description: baseDescription,
   };
 }
 
