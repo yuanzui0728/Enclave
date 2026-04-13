@@ -646,10 +646,14 @@ export function MomentsPage() {
           })}
 
           {likeMutation.isError && likeMutation.error instanceof Error ? (
-            <ErrorBlock message={likeMutation.error.message} />
+            <InlineNotice className="text-[11px] leading-[1.35rem]" tone="info">
+              {likeMutation.error.message}
+            </InlineNotice>
           ) : null}
           {commentMutation.isError && commentMutation.error instanceof Error ? (
-            <ErrorBlock message={commentMutation.error.message} />
+            <InlineNotice className="text-[11px] leading-[1.35rem]" tone="info">
+              {commentMutation.error.message}
+            </InlineNotice>
           ) : null}
 
           {!momentsQuery.isLoading &&
