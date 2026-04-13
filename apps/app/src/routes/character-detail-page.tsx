@@ -50,8 +50,6 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 type FriendProfileFormState = {
   remarkName: string;
-  region: string;
-  source: string;
   tags: string;
 };
 
@@ -80,8 +78,6 @@ export function CharacterDetailPage() {
     });
   const [profileForm, setProfileForm] = useState<FriendProfileFormState>({
     remarkName: "",
-    region: "",
-    source: "",
     tags: "",
   });
 
@@ -154,15 +150,11 @@ export function CharacterDetailPage() {
     resetEntryGuard();
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
-      region: friendship?.region ?? "",
-      source: friendship?.source ?? "",
       tags: friendship?.tags?.join("，") ?? "",
     });
   }, [
     characterId,
     friendship?.remarkName,
-    friendship?.region,
-    friendship?.source,
     friendship?.tags,
     resetEntryGuard,
   ]);
@@ -335,8 +327,6 @@ export function CharacterDetailPage() {
   const handleSaveProfile = async () => {
     await updateProfileMutation.mutateAsync({
       remarkName: profileForm.remarkName.trim() || null,
-      region: profileForm.region.trim() || null,
-      source: profileForm.source.trim() || null,
       tags: profileForm.tags
         .split(/[，,]/)
         .map((item) => item.trim())
@@ -910,30 +900,6 @@ export function CharacterDetailPage() {
                     compact={!isDesktopLayout}
                   />
                   <DetailInputField
-                    label="地区"
-                    value={profileForm.region}
-                    placeholder="例如：上海 / 东京 / 线上"
-                    onChange={(value) =>
-                      setProfileForm((current) => ({
-                        ...current,
-                        region: value,
-                      }))
-                    }
-                    compact={!isDesktopLayout}
-                  />
-                  <DetailInputField
-                    label="来源"
-                    value={profileForm.source}
-                    placeholder="例如：摇一摇 / 场景相遇 / 朋友圈"
-                    onChange={(value) =>
-                      setProfileForm((current) => ({
-                        ...current,
-                        source: value,
-                      }))
-                    }
-                    compact={!isDesktopLayout}
-                  />
-                  <DetailInputField
                     label="标签"
                     value={profileForm.tags}
                     placeholder="用逗号分隔，例如：同事，策展"
@@ -953,8 +919,6 @@ export function CharacterDetailPage() {
                       setIsEditingProfile(false);
                       setProfileForm({
                         remarkName: friendship?.remarkName ?? "",
-                        region: friendship?.region ?? "",
-                        source: friendship?.source ?? "",
                         tags: friendship?.tags?.join("，") ?? "",
                       });
                     }}

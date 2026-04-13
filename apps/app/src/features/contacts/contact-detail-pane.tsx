@@ -50,8 +50,6 @@ type ContactDetailPaneProps = {
 
 type FriendProfileFormState = {
   remarkName: string;
-  region: string;
-  source: string;
   tags: string;
 };
 
@@ -85,8 +83,6 @@ export function ContactDetailPane({
   const [profileNotice, setProfileNotice] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState<FriendProfileFormState>({
     remarkName: "",
-    region: "",
-    source: "",
     tags: "",
   });
 
@@ -95,16 +91,12 @@ export function ContactDetailPane({
     setProfileNotice(null);
     setProfileForm({
       remarkName: friendship?.remarkName ?? "",
-      region: friendship?.region ?? "",
-      source: friendship?.source ?? "",
       tags: friendship?.tags?.join("，") ?? "",
     });
   }, [
     character?.id,
     friendship?.id,
-    friendship?.region,
     friendship?.remarkName,
-    friendship?.source,
     friendship?.tags,
   ]);
 
@@ -166,8 +158,6 @@ export function ContactDetailPane({
   async function handleProfileSave() {
     await updateProfileMutation.mutateAsync({
       remarkName: profileForm.remarkName,
-      region: profileForm.region,
-      source: profileForm.source,
       tags: profileForm.tags
         .split(/[，,]/)
         .map((tag) => tag.trim())
@@ -223,8 +213,6 @@ export function ContactDetailPane({
                     setIsEditingProfile(false);
                     setProfileForm({
                       remarkName: friendship?.remarkName ?? "",
-                      region: friendship?.region ?? "",
-                      source: friendship?.source ?? "",
                       tags: friendship?.tags?.join("，") ?? "",
                     });
                   }}
@@ -279,22 +267,6 @@ export function ContactDetailPane({
             />
             <DesktopContactProfileRow label="昵称" value={character.name} />
             <DesktopContactProfileEditableField
-              label="地区"
-              value={profileForm.region}
-              placeholder="例如：上海 / 东京 / 线上"
-              onChange={(value) =>
-                setProfileForm((current) => ({ ...current, region: value }))
-              }
-            />
-            <DesktopContactProfileEditableField
-              label="来源"
-              value={profileForm.source}
-              placeholder="例如：摇一摇 / 场景相遇 / 朋友圈"
-              onChange={(value) =>
-                setProfileForm((current) => ({ ...current, source: value }))
-              }
-            />
-            <DesktopContactProfileEditableField
               label="标签"
               value={profileForm.tags}
               placeholder="用逗号分隔，例如：同事，插画，策展"
@@ -303,6 +275,8 @@ export function ContactDetailPane({
               }
             />
             <DesktopContactProfileRow label="隐界号" value={identifier} />
+            <DesktopContactProfileRow label="地区" value={friendship?.region?.trim() || "未设置"} />
+            <DesktopContactProfileRow label="来源" value={friendship?.source?.trim() || "未设置"} />
             <DesktopContactProfileRow label="个性签名" value={signature} />
             <DesktopContactProfileRow
               label="最近互动"
