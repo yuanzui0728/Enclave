@@ -9,7 +9,7 @@ import {
   type CustomStickerRecord,
   type StickerAttachment,
 } from "@yinjie/contracts";
-import { Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { prepareCustomStickerUpload } from "./prepare-custom-sticker-upload";
 import type { RecentStickerItem } from "./recent-stickers";
 
@@ -57,6 +57,7 @@ export function StickerPanel({
   const [customManageMode, setCustomManageMode] = useState(false);
   const [customSortMode, setCustomSortMode] =
     useState<CustomStickerSortMode>("recent");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
   const stickerCatalogQuery = useQuery({
@@ -262,6 +263,13 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
     catalog.customStickerCount > 1;
+  const clearSearch = () => {
+    setKeyword("");
+    setSearchKeyword("");
+    window.setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 0);
+  };
 
   useEffect(() => {
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
@@ -281,6 +289,40 @@ export function StickerPanel({
 
     return () => window.clearTimeout(timer);
   }, [trimmedKeyword]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (trimmedKeyword.length > 0) {
+        event.preventDefault();
+        clearSearch();
+        return;
+      }
+
+      if (activeSectionId === "custom" && customManageMode) {
+        event.preventDefault();
+        setCustomManageMode(false);
+        return;
+      }
+
+      if (!isMobile) {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    activeSectionId,
+    customManageMode,
+    isMobile,
+    onClose,
+    trimmedKeyword.length,
+  ]);
 
   return (
     <div
@@ -372,11 +414,22 @@ export function StickerPanel({
           >
             <Search size={14} className="text-[color:var(--text-secondary)]" />
             <input
+              ref={searchInputRef}
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="搜索表情"
               className="w-full border-none bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)]"
             />
+            {trimmedKeyword.length > 0 ? (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)]"
+                aria-label="清空表情搜索"
+              >
+                <X size={12} />
+              </button>
+            ) : null}
           </label>
         </div>
 
