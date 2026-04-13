@@ -357,70 +357,82 @@ export function DesktopChatHistoryPanel({
           title="按日期查找"
           onBack={() => setSelectorView(null)}
         >
-          <DesktopSearchOptionRow
-            label="全部时间"
-            active={quickDateFilter === "all" && !customDate}
-            onClick={() => {
-              setQuickDateFilter("all");
-              setCustomDate("");
-              setSelectorView(null);
-            }}
-          />
-          <DesktopSearchOptionRow
-            label="今天"
-            active={quickDateFilter === "today" && !customDate}
-            onClick={() => {
-              setQuickDateFilter("today");
-              setCustomDate("");
-              setSelectorView(null);
-            }}
-          />
-          <DesktopSearchOptionRow
-            label="最近 7 天"
-            active={quickDateFilter === "7d" && !customDate}
-            onClick={() => {
-              setQuickDateFilter("7d");
-              setCustomDate("");
-              setSelectorView(null);
-            }}
-          />
-          <DesktopSearchOptionRow
-            label="最近 30 天"
-            active={quickDateFilter === "30d" && !customDate}
-            onClick={() => {
-              setQuickDateFilter("30d");
-              setCustomDate("");
-              setSelectorView(null);
-            }}
-          />
-          <div className="border-t border-[rgba(0,0,0,0.06)] px-4 py-4">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
-              指定日期
+          <div className="px-3 pb-4 pt-3">
+            <div className="px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              快速选择
             </div>
-            <input
-              type="date"
-              value={customDate}
-              onChange={(event) => {
-                setQuickDateFilter("custom");
-                setCustomDate(event.target.value);
-                if (event.target.value) {
-                  setSelectorView(null);
-                }
-              }}
-              className="mt-2 h-10 w-full rounded-[10px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.38)]"
-            />
-            {customDate ? (
-              <button
-                type="button"
+            <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
+              <DesktopSearchOptionRow
+                label="全部时间"
+                active={quickDateFilter === "all" && !customDate}
                 onClick={() => {
                   setQuickDateFilter("all");
                   setCustomDate("");
+                  setSelectorView(null);
                 }}
-                className="mt-2 text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
-              >
-                清除指定日期
-              </button>
-            ) : null}
+              />
+              <DesktopSearchOptionRow
+                label="今天"
+                active={quickDateFilter === "today" && !customDate}
+                onClick={() => {
+                  setQuickDateFilter("today");
+                  setCustomDate("");
+                  setSelectorView(null);
+                }}
+              />
+              <DesktopSearchOptionRow
+                label="最近 7 天"
+                active={quickDateFilter === "7d" && !customDate}
+                onClick={() => {
+                  setQuickDateFilter("7d");
+                  setCustomDate("");
+                  setSelectorView(null);
+                }}
+              />
+              <DesktopSearchOptionRow
+                label="最近 30 天"
+                active={quickDateFilter === "30d" && !customDate}
+                onClick={() => {
+                  setQuickDateFilter("30d");
+                  setCustomDate("");
+                  setSelectorView(null);
+                }}
+              />
+            </div>
+
+            <div className="mt-4 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              指定日期
+            </div>
+            <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
+              <input
+                type="date"
+                value={customDate}
+                onChange={(event) => {
+                  setQuickDateFilter("custom");
+                  setCustomDate(event.target.value);
+                  if (event.target.value) {
+                    setSelectorView(null);
+                  }
+                }}
+                className="h-10 w-full rounded-[10px] border border-[rgba(0,0,0,0.08)] bg-white px-3 text-[13px] text-[color:var(--text-primary)] outline-none transition focus:border-[rgba(7,193,96,0.38)]"
+              />
+              {customDate ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuickDateFilter("all");
+                    setCustomDate("");
+                  }}
+                  className="mt-2 text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+                >
+                  清除指定日期
+                </button>
+              ) : (
+                <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+                  选择某一天的聊天记录
+                </div>
+              )}
+            </div>
           </div>
         </DesktopSearchPickerView>
       ) : null}
@@ -430,7 +442,7 @@ export function DesktopChatHistoryPanel({
           title="按群成员查找"
           onBack={() => setSelectorView(null)}
         >
-          <div className="border-b border-[rgba(0,0,0,0.06)] px-4 py-3">
+          <div className="px-3 pb-4 pt-3">
             <label className="flex items-center gap-2 rounded-[10px] bg-[#f0f0f0] px-3 py-2.5">
               <Search
                 size={14}
@@ -444,48 +456,51 @@ export function DesktopChatHistoryPanel({
                 className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
-          </div>
-
-          {membersQuery.isLoading ? (
-            <div className="px-4 py-4">
-              <LoadingBlock label="正在读取群成员..." />
+            <div className="mt-3 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              群成员
             </div>
-          ) : null}
-          {membersQuery.isError && membersQuery.error instanceof Error ? (
-            <div className="px-4 py-4">
-              <ErrorBlock message={membersQuery.error.message} />
-            </div>
-          ) : null}
 
-          {!membersQuery.isLoading && !membersQuery.isError ? (
-            <div className="divide-y divide-[rgba(0,0,0,0.06)]">
-              <DesktopSearchOptionRow
-                label="全部成员"
-                active={!senderId}
-                onClick={() => {
-                  setSenderId("");
-                  setSelectorView(null);
-                }}
-              />
-              {visibleSenderOptions.map((option) => (
+            {membersQuery.isLoading ? (
+              <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
+                <LoadingBlock label="正在读取群成员..." />
+              </div>
+            ) : null}
+            {membersQuery.isError && membersQuery.error instanceof Error ? (
+              <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
+                <ErrorBlock message={membersQuery.error.message} />
+              </div>
+            ) : null}
+
+            {!membersQuery.isLoading && !membersQuery.isError ? (
+              <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
                 <DesktopSearchOptionRow
-                  key={option.id}
-                  label={option.label}
-                  description={option.role}
-                  active={senderId === option.id}
+                  label="全部成员"
+                  active={!senderId}
                   onClick={() => {
-                    setSenderId(option.id);
+                    setSenderId("");
                     setSelectorView(null);
                   }}
                 />
-              ))}
-              {!visibleSenderOptions.length ? (
-                <div className="px-4 py-10 text-center text-[13px] text-[color:var(--text-muted)]">
-                  没有找到匹配的群成员。
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+                {visibleSenderOptions.map((option) => (
+                  <DesktopSearchOptionRow
+                    key={option.id}
+                    label={option.label}
+                    description={option.role}
+                    active={senderId === option.id}
+                    onClick={() => {
+                      setSenderId(option.id);
+                      setSelectorView(null);
+                    }}
+                  />
+                ))}
+                {!visibleSenderOptions.length ? (
+                  <div className="px-4 py-10 text-center text-[13px] text-[color:var(--text-muted)]">
+                    没有找到匹配的群成员。
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </DesktopSearchPickerView>
       ) : null}
 
@@ -699,7 +714,7 @@ function DesktopSearchPickerView({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-white">
+    <div className="min-h-0 flex-1 overflow-auto bg-[#f7f7f7]">
       <div className="sticky top-0 z-[1] grid grid-cols-[auto,1fr,auto] items-center gap-2 border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
         <button
           type="button"
@@ -768,8 +783,10 @@ function DesktopSearchOptionRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition",
-        active ? "bg-[#f6fbf7]" : "hover:bg-[#f8f8f8]",
+        "flex min-h-[56px] w-full items-center justify-between gap-3 border-l-2 px-4 py-3.5 text-left transition",
+        active
+          ? "border-l-[color:var(--brand-primary)] bg-[#f6fbf7] pl-[14px]"
+          : "border-l-transparent hover:bg-[#fafafa]",
       )}
     >
       <div className="min-w-0">
