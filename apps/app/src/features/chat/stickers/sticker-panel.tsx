@@ -316,6 +316,20 @@ export function StickerPanel({
           ? `还能再添加 ${customSlotsRemaining} 个自定义表情。`
           : null
       : null;
+  const customStorageRatio =
+    catalog.maxCustomStickerCount > 0
+      ? Math.min(
+          1,
+          Math.max(0, catalog.customStickerCount / catalog.maxCustomStickerCount),
+        )
+      : 0;
+  const showCustomStorageMeter =
+    activeSectionId === "custom" && trimmedKeyword.length === 0;
+  const customStorageTone = customStickerLibraryFull
+    ? "danger"
+    : customSlotsRemaining <= 20
+      ? "warning"
+      : "normal";
   const showCustomSortBar =
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
@@ -685,6 +699,75 @@ export function StickerPanel({
             isMobile ? "min-h-0 flex-1 overflow-y-auto px-3 pb-2.5" : "min-h-[280px] max-h-[360px] overflow-y-auto px-1 pb-3"
           }
         >
+          {showCustomStorageMeter ? (
+            <div
+              className={
+                isMobile
+                  ? "mb-2 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5"
+                  : `mb-3 rounded-[18px] border px-3 py-3 ${
+                      customStorageTone === "danger"
+                        ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
+                        : customStorageTone === "warning"
+                          ? "border-[rgba(245,158,11,0.24)] bg-[rgba(255,251,235,0.96)]"
+                          : "border-[color:var(--border-subtle)] bg-white/84"
+                    }`
+              }
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                    自定义表情库
+                  </div>
+                  <div className="pt-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                    已保存 {catalog.customStickerCount} / {catalog.maxCustomStickerCount}
+                  </div>
+                </div>
+                <div
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    customStorageTone === "danger"
+                      ? "bg-[rgba(239,68,68,0.12)] text-[#b91c1c]"
+                      : customStorageTone === "warning"
+                        ? "bg-[rgba(245,158,11,0.14)] text-[#9a5a0a]"
+                        : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-primary)]"
+                  }`}
+                >
+                  {customStickerLibraryFull
+                    ? "已满"
+                    : `剩余 ${customSlotsRemaining}`}
+                </div>
+              </div>
+              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[rgba(15,23,42,0.08)]">
+                <div
+                  className={`h-full rounded-full transition-[width] ${
+                    customStorageTone === "danger"
+                      ? "bg-[linear-gradient(90deg,#ef4444,#f97316)]"
+                      : customStorageTone === "warning"
+                        ? "bg-[linear-gradient(90deg,#f59e0b,#f97316)]"
+                        : "bg-[linear-gradient(90deg,#f59e0b,#d97706)]"
+                  }`}
+                  style={{
+                    width: `${
+                      catalog.customStickerCount > 0
+                        ? Math.max(6, Math.round(customStorageRatio * 100))
+                        : 0
+                    }%`,
+                  }}
+                />
+              </div>
+              {!isMobile ? (
+                <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
+                  <span>
+                    {customStickerLibraryFull
+                      ? "表情库已占满，删除后才能继续导入。"
+                      : customSlotsRemaining <= 20
+                        ? "空间不多了，建议先清理不常用表情。"
+                        : "支持继续添加图片和 GIF，建议保留常用项。"}
+                  </span>
+                  <span>{Math.round(customStorageRatio * 100)}%</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {showCustomManageHint ? (
             <div className="mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/82 px-3 py-2.5 text-xs text-[color:var(--text-secondary)]">
               <span>管理中：点击表情右上角删除，按 Esc 可直接完成。</span>
