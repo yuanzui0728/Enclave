@@ -72,30 +72,42 @@ export function GameCenterSessionPanel({
     <section
       className={cn(
         compact
-          ? "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]"
+          ? "rounded-[18px] border p-4 shadow-none"
           : "rounded-[24px] border p-5 shadow-[var(--shadow-card)]",
         tone.mutedPanelClassName,
       )}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className={cn("flex items-start justify-between", compact ? "gap-3" : "gap-4")}>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className={cn("flex items-center gap-2", compact && "gap-1.5")}>
             <div
               className={cn(
-                "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                compact
+                  ? "rounded-full border px-2 py-0.5 text-[9px] font-medium"
+                  : "rounded-full border px-2.5 py-1 text-[10px] font-medium",
                 tone.badgeClassName,
               )}
             >
               {isActive ? "即玩中" : "详情页"}
             </div>
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+            <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[10px]" : "text-[11px]")}>
               {isActive ? "已建立会话承接" : "点击开始后进入会话承接"}
             </div>
           </div>
-          <div className="mt-3 text-lg font-semibold text-[color:var(--text-primary)]">
+          <div
+            className={cn(
+              "font-semibold text-[color:var(--text-primary)]",
+              compact ? "mt-2 text-[15px]" : "mt-3 text-lg",
+            )}
+          >
             {isActive ? `继续 ${game.name}` : game.name}
           </div>
-          <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+          <div
+            className={cn(
+              "text-[color:var(--text-secondary)]",
+              compact ? "mt-1 text-[12px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
+            )}
+          >
             {game.sessionObjective}
           </div>
         </div>
@@ -107,7 +119,7 @@ export function GameCenterSessionPanel({
             className={cn(
               "shrink-0 border",
               compact
-                ? "rounded-2xl border-white/80 bg-white/72"
+                ? "h-8 w-8 rounded-full border-white/80 bg-white/72"
                 : "rounded-[14px] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
             )}
           >
@@ -116,7 +128,7 @@ export function GameCenterSessionPanel({
         ) : null}
       </div>
 
-      <div className={cn("mt-4 grid gap-3", compact ? "grid-cols-1" : "sm:grid-cols-3")}>
+      <div className={cn("mt-4 grid", compact ? "grid-cols-1 gap-2.5" : "gap-3 sm:grid-cols-3")}>
         <SessionMetric
           compact={compact}
           icon={<Clock3 size={15} className={metricAccentClass} />}
@@ -142,15 +154,15 @@ export function GameCenterSessionPanel({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className={cn("mt-4 flex flex-wrap", compact ? "gap-1.5" : "gap-2")}>
         {game.tags.map((tag) => (
           <span
             key={tag}
             className={cn(
-              "rounded-full px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]",
+              "rounded-full text-[color:var(--text-muted)]",
               compact
-                ? "bg-white/82"
-                : "border border-white/72 bg-white/88",
+                ? "bg-white/82 px-2 py-0.5 text-[10px]"
+                : "border border-white/72 bg-white/88 px-2.5 py-1 text-[11px]",
             )}
           >
             {tag}
@@ -160,15 +172,17 @@ export function GameCenterSessionPanel({
 
       <div
         className={cn(
-          "mt-5 flex flex-wrap gap-3",
-          compact ? "" : "border-t border-white/74 pt-4",
+          "mt-5 flex flex-wrap",
+          compact ? "gap-2" : "gap-3 border-t border-white/74 pt-4",
         )}
       >
         <Button
           variant="primary"
           onClick={() => onLaunch(game.id)}
           className={
-            compact ? "bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]" : undefined
+            compact
+              ? "h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white shadow-none hover:bg-[#06ad56]"
+              : undefined
           }
         >
           <Play size={16} />
@@ -180,7 +194,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "border-black/5 bg-white shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
+                ? "h-8 rounded-full border-black/5 bg-white px-3.5 text-[11px] shadow-none hover:border-[rgba(7,193,96,0.16)] hover:bg-white"
                 : undefined
             }
           >
@@ -190,8 +204,8 @@ export function GameCenterSessionPanel({
         ) : null}
         <div
           className={cn(
-            "text-xs leading-6 text-[color:var(--text-muted)]",
-            compact ? "flex items-center" : "w-full",
+            "text-[color:var(--text-muted)]",
+            compact ? "flex items-center text-[11px] leading-[1.35rem]" : "w-full text-xs leading-6",
           )}
         >
           {isActive
@@ -219,21 +233,36 @@ function SessionMetric({
   return (
     <div
       className={cn(
-        "rounded-[22px] border px-4 py-4",
+        "border",
         compact
-          ? "border-white/80 bg-white/82"
+          ? "rounded-[16px] border-white/80 bg-white/82 px-3 py-3"
           : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
       )}
     >
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
+      <div
+        className={cn(
+          "flex items-center gap-2 uppercase text-[color:var(--text-muted)]",
+          compact ? "text-[10px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
+        )}
+      >
         {icon}
         {label}
       </div>
-      <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+      <div
+        className={cn(
+          "font-medium text-[color:var(--text-primary)]",
+          compact ? "mt-1.5 text-[13px] leading-5" : "mt-2 text-sm",
+        )}
+      >
         {value}
       </div>
       {detail ? (
-        <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-dim)]">
+        <div
+          className={cn(
+            "text-[color:var(--text-dim)]",
+            compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5",
+          )}
+        >
           {detail}
         </div>
       ) : null}
