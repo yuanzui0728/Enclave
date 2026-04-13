@@ -65,7 +65,10 @@ import {
   type ChatReminderStatus,
   type ChatReminderEntry,
 } from "../../chat/chat-reminder-entries";
-import { buildSearchRouteHash } from "../../search/search-route-state";
+import {
+  DesktopSearchDropdownPanel,
+  useDesktopSearchLauncher,
+} from "../../search/desktop-search-launcher";
 import { useLocalChatMessageActionState } from "../../chat/local-chat-message-actions";
 import { useChatReminderActions } from "../../chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../../chat/use-chat-reminder-entries";
@@ -188,6 +191,10 @@ export function DesktopChatWorkspace({
     conversationId?: string;
     seedMemberIds: string[];
   } | null>(null);
+  const desktopSearchLauncher = useDesktopSearchLauncher({
+    keyword: searchTerm,
+    source: "chat",
+  });
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -699,23 +706,13 @@ export function DesktopChatWorkspace({
     setDetailsAnnouncementRequest(null);
   }
 
-  function openDesktopSearch(keyword = searchTerm) {
-    void navigate({
-      to: "/tabs/search",
-      hash: buildSearchRouteHash({
-        category: "all",
-        keyword,
-      }),
-    });
-  }
-
   function handleSearchFieldKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") {
       return;
     }
 
     event.preventDefault();
-    openDesktopSearch();
+    desktopSearchLauncher.openSearch();
   }
 
   function handleDesktopCallAction(kind: DesktopChatCallKind) {
@@ -798,23 +795,35 @@ export function DesktopChatWorkspace({
         <section className="flex w-[324px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
-              <div className="relative min-w-0 flex-1">
+              <div
+                ref={desktopSearchLauncher.containerRef}
+                className="relative min-w-0 flex-1"
+              >
                 <TextField
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
+                  onClick={() => desktopSearchLauncher.setIsOpen(true)}
+                  onFocus={() => desktopSearchLauncher.setIsOpen(true)}
                   onKeyDown={handleSearchFieldKeyDown}
                   placeholder="搜索"
                   className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
                 />
                 <button
                   type="button"
-                  onClick={() => openDesktopSearch()}
+                  onClick={() => desktopSearchLauncher.openSearch()}
                   className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[8px] text-[color:var(--text-dim)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
                   aria-label="在搜一搜中搜索"
                   title="回车或点击进入搜一搜"
                 >
                   <Search size={15} />
                 </button>
+                {desktopSearchLauncher.isOpen ? (
+                  <DesktopSearchDropdownPanel
+                    history={desktopSearchLauncher.history}
+                    keyword={searchTerm}
+                    onOpenSearch={desktopSearchLauncher.openSearch}
+                  />
+                ) : null}
               </div>
               <div className="relative shrink-0">
                 <button
