@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Check } from "lucide-react";
@@ -321,23 +321,79 @@ export function ProfileSettingsPage() {
           }
         >
           {ownerQuery.isLoading ? (
-            <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
+            desktopMode ? (
+              <LoadingBlock className="px-0 py-0 text-left" label="读取配置..." />
+            ) : (
+              <MobileSettingsStatusCard
+                badge="读取中"
+                title="正在加载 AI 配置"
+                description="稍等一下，正在同步当前世界主人的专属配置。"
+                tone="loading"
+              />
+            )
           ) : null}
           {ownerQuery.isError && ownerQuery.error instanceof Error ? (
-            <ErrorBlock message={ownerQuery.error.message} />
+            desktopMode ? (
+              <ErrorBlock message={ownerQuery.error.message} />
+            ) : (
+              <MobileSettingsStatusCard
+                badge="读取失败"
+                title="AI 设置暂时不可用"
+                description={ownerQuery.error.message}
+                tone="danger"
+                action={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
+                    onClick={() => void ownerQuery.refetch()}
+                  >
+                    重新加载
+                  </Button>
+                }
+              />
+            )
           ) : null}
           {ownerQuery.data ? (
-            <InlineNotice
-              className={desktopMode ? undefined : "text-[12px] leading-5"}
-              tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}
-            >
-              {ownerQuery.data.hasCustomApiKey
-                ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
-                : "当前使用实例级 Provider。"}
-            </InlineNotice>
+            desktopMode ? (
+              <InlineNotice tone={ownerQuery.data.hasCustomApiKey ? "success" : "muted"}>
+                {ownerQuery.data.hasCustomApiKey
+                  ? `当前使用专属 API Key${ownerQuery.data.customApiBase ? `，Base URL：${ownerQuery.data.customApiBase}` : ""}。`
+                  : "当前使用实例级 Provider。"}
+              </InlineNotice>
+            ) : (
+              <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[#f7f7f7] px-3.5 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                    当前状态
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[9px] font-medium tracking-[0.03em]",
+                      ownerQuery.data.hasCustomApiKey
+                        ? "bg-[rgba(7,193,96,0.1)] text-[#07c160]"
+                        : "bg-white text-[color:var(--text-muted)]",
+                    )}
+                  >
+                    {ownerQuery.data.hasCustomApiKey ? "专属 Key" : "实例级"}
+                  </div>
+                </div>
+                <div className="mt-2 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                  {ownerQuery.data.hasCustomApiKey
+                    ? "当前世界主人已启用专属 API Key。"
+                    : "当前仍使用实例级 Provider 配置。"}
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-[color:var(--text-muted)]">
+                  <span>Base URL</span>
+                  <span className="truncate text-right text-[color:var(--text-secondary)]">
+                    {ownerQuery.data.customApiBase || "默认地址"}
+                  </span>
+                </div>
+              </div>
+            )
           ) : null}
 
-          <div className="space-y-3">
+          <div className="space-y-2.5 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3.5 py-3">
             <MobileFieldGroup label="专属 API Key">
               <TextField
                 type="password"
@@ -361,7 +417,7 @@ export function ProfileSettingsPage() {
             </MobileFieldGroup>
           </div>
 
-          <div className="space-y-2 pt-1">
+          <div className="space-y-1.5 pt-0.5">
             <Button
               onClick={() => saveApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !apiKeyDraft.trim()}
@@ -395,7 +451,7 @@ export function ProfileSettingsPage() {
           ) : null}
           {saveApiKeyMutation.isSuccess ? (
             <InlineNotice
-              className={desktopMode ? undefined : "text-[12px] leading-5"}
+              className={desktopMode ? undefined : "text-[11px] leading-[1.35rem]"}
               tone="success"
             >
               专属 API Key 已保存。
@@ -403,7 +459,7 @@ export function ProfileSettingsPage() {
           ) : null}
           {clearApiKeyMutation.isSuccess ? (
             <InlineNotice
-              className={desktopMode ? undefined : "text-[12px] leading-5"}
+              className={desktopMode ? undefined : "text-[11px] leading-[1.35rem]"}
               tone="success"
             >
               专属 API Key 已清除。
@@ -678,6 +734,57 @@ function MobileSettingsSection({
         </div>
       ) : null}
       {children}
+    </section>
+  );
+}
+
+function MobileSettingsStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+  action,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+  action?: ReactNode;
+}) {
+  const loading = tone === "loading";
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[#f7f7f7]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2.5 py-1 text-[9px] font-medium tracking-[0.03em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {loading ? (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-black/15 animate-pulse" />
+          <span className="h-2 w-2 rounded-full bg-black/25 animate-pulse [animation-delay:120ms]" />
+          <span className="h-2 w-2 rounded-full bg-[#8ecf9d] animate-pulse [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-3 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </section>
   );
 }
