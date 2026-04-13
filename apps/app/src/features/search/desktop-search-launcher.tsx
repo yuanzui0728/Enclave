@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Clock3, CornerDownLeft, Search } from "lucide-react";
+import {
+  Clock3,
+  CornerDownLeft,
+  Mic,
+  Search,
+  Square,
+  LoaderCircle,
+} from "lucide-react";
 import { cn } from "@yinjie/ui";
+import { useSpeechInput } from "../chat/use-speech-input";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { buildSearchRouteHash, type SearchRouteSource } from "./search-route-state";
 import {
@@ -20,6 +28,7 @@ type DesktopSearchDropdownPanelProps = {
   className?: string;
   history: SearchHistoryItem[];
   keyword: string;
+  onKeywordChange: (keyword: string) => void;
   onOpenSearch: (keyword?: string) => void;
 };
 
@@ -131,9 +140,30 @@ export function DesktopSearchDropdownPanel({
   className,
   history,
   keyword,
+  onKeywordChange,
   onOpenSearch,
 }: DesktopSearchDropdownPanelProps) {
+  const runtimeConfig = useAppRuntimeConfig();
   const trimmedKeyword = keyword.trim();
+  const speech = useSpeechInput({
+    baseUrl: runtimeConfig.apiBaseUrl,
+    conversationId: "",
+    enabled: true,
+    mode: "dictation",
+  });
+
+  useEffect(() => {
+    if (speech.status !== "ready" || !speech.canCommit) {
+      return;
+    }
+
+    onKeywordChange(speech.commitToInput(keyword));
+  }, [keyword, onKeywordChange, speech.canCommit, speech.commitToInput, speech.status]);
+
+  const speechBusy =
+    speech.status === "requesting-permission" || speech.status === "processing";
+  const speechListening = speech.status === "listening";
+  const speechButtonDisabled = speechBusy && !speechListening;
 
   return (
     <div
@@ -142,27 +172,107 @@ export function DesktopSearchDropdownPanel({
         className,
       )}
     >
-      <button
-        type="button"
-        onClick={() => onOpenSearch(keyword)}
-        className="flex w-full items-center gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.13)]"
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
-          <Search size={16} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            搜一搜
+      <div className="grid grid-cols-[minmax(0,1fr)_132px] gap-2">
+        <button
+          type="button"
+          onClick={() => onOpenSearch(keyword)}
+          className="flex min-w-0 items-center gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[rgba(7,193,96,0.13)]"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
+            <Search size={16} />
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-            {trimmedKeyword ? `搜索“${trimmedKeyword}”` : "打开全局搜索工作区"}
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              搜一搜
+            </div>
+            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+              {trimmedKeyword ? `搜索“${trimmedKeyword}”` : "打开全局搜索工作区"}
+            </div>
           </div>
+          <CornerDownLeft
+            size={14}
+            className="shrink-0 text-[color:var(--text-dim)]"
+          />
+        </button>
+
+        <button
+          type="button"
+          disabled={speechButtonDisabled || !speech.supported}
+          onClick={() => {
+            if (speechListening) {
+              speech.stop();
+              return;
+            }
+
+            if (speech.status !== "idle") {
+              speech.cancel();
+            }
+            void speech.start();
+          }}
+          className={cn(
+            "flex items-center gap-2 rounded-[12px] border px-3 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+            speechListening
+              ? "border-[rgba(225,29,72,0.24)] bg-[rgba(225,29,72,0.07)] text-[#be123c]"
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-primary)] hover:bg-white",
+            speechButtonDisabled || !speech.supported
+              ? "cursor-not-allowed opacity-60"
+              : "",
+          )}
+          aria-label={speechListening ? "结束语音输入" : "开始语音输入"}
+          title={!speech.supported ? "当前浏览器不支持语音输入" : undefined}
+        >
+          <div
+            className={cn(
+              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
+              speechListening
+                ? "bg-white text-[#be123c]"
+                : "bg-white text-[color:var(--brand-primary)]",
+            )}
+          >
+            {speech.status === "requesting-permission" ||
+            speech.status === "processing" ? (
+              <LoaderCircle size={16} className="animate-spin" />
+            ) : speechListening ? (
+              <Square size={14} fill="currentColor" />
+            ) : (
+              <Mic size={16} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">
+              {speechListening ? "结束输入" : "语音输入"}
+            </div>
+            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+              {speechListening
+                ? "点击结束并写入搜索框"
+                : "说出搜索内容"}
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {speech.status !== "idle" || speech.error ? (
+        <div
+          className={cn(
+            "mt-2 rounded-[12px] px-3 py-2.5 text-xs leading-6",
+            speech.error
+              ? "bg-[rgba(225,29,72,0.08)] text-[#be123c]"
+              : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+          )}
+        >
+          {speech.error
+            ? speech.error
+            : speech.status === "requesting-permission"
+              ? "正在请求麦克风权限..."
+              : speech.status === "listening"
+                ? "正在听你说，完成后再点一次“结束输入”。"
+                : speech.status === "processing"
+                  ? "正在整理语音内容..."
+                  : speech.displayText
+                    ? `识别结果：${speech.displayText}`
+                    : "语音输入已完成。"}
         </div>
-        <CornerDownLeft
-          size={14}
-          className="shrink-0 text-[color:var(--text-dim)]"
-        />
-      </button>
+      ) : null}
 
       <div className="mt-3 flex items-center justify-between px-1">
         <span className="text-[11px] font-medium text-[color:var(--text-primary)]">
