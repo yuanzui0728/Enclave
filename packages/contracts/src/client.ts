@@ -7,14 +7,17 @@ import type {
 } from "./chat-backgrounds";
 import type {
   AddGroupMemberRequest,
+  ChatMessageSearchResponse,
   Conversation,
   ConversationListItem,
   CreateGroupRequest,
   GetOrCreateConversationRequest,
+  GetChatMessagesQuery,
   Group,
   GroupMember,
   GroupMessage,
   Message,
+  SearchChatMessagesQuery,
   SetGroupPinnedRequest,
   SetConversationPinnedRequest,
   SetConversationStrongReminderRequest,
@@ -908,17 +911,62 @@ export function getOrCreateConversation(
 export function getConversationMessages(
   id: string,
   baseUrl?: string,
-  query: {
-    limit?: number;
-  } = {},
+  query: GetChatMessagesQuery = {},
 ) {
   const params = new URLSearchParams();
   if (typeof query.limit === "number") {
     params.set("limit", String(query.limit));
   }
+  if (query.aroundMessageId?.trim()) {
+    params.set("aroundMessageId", query.aroundMessageId.trim());
+  }
+  if (typeof query.before === "number") {
+    params.set("before", String(query.before));
+  }
+  if (typeof query.after === "number") {
+    params.set("after", String(query.after));
+  }
 
   return requestLegacyApi<Message[]>(
     `/conversations/${id}/messages${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function searchConversationMessages(
+  id: string,
+  query: SearchChatMessagesQuery = {},
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (query.keyword?.trim()) {
+    params.set("keyword", query.keyword.trim());
+  }
+  if (query.category) {
+    params.set("category", query.category);
+  }
+  if (query.messageType) {
+    params.set("messageType", query.messageType);
+  }
+  if (query.senderId?.trim()) {
+    params.set("senderId", query.senderId.trim());
+  }
+  if (query.dateFrom?.trim()) {
+    params.set("dateFrom", query.dateFrom.trim());
+  }
+  if (query.dateTo?.trim()) {
+    params.set("dateTo", query.dateTo.trim());
+  }
+  if (query.cursor?.trim()) {
+    params.set("cursor", query.cursor.trim());
+  }
+  if (typeof query.limit === "number") {
+    params.set("limit", String(query.limit));
+  }
+
+  return requestLegacyApi<ChatMessageSearchResponse>(
+    `/conversations/${id}/message-search${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
   );
@@ -1238,17 +1286,62 @@ export function removeGroupMember(
 export function getGroupMessages(
   id: string,
   baseUrl?: string,
-  query: {
-    limit?: number;
-  } = {},
+  query: GetChatMessagesQuery = {},
 ) {
   const params = new URLSearchParams();
   if (typeof query.limit === "number") {
     params.set("limit", String(query.limit));
   }
+  if (query.aroundMessageId?.trim()) {
+    params.set("aroundMessageId", query.aroundMessageId.trim());
+  }
+  if (typeof query.before === "number") {
+    params.set("before", String(query.before));
+  }
+  if (typeof query.after === "number") {
+    params.set("after", String(query.after));
+  }
 
   return requestLegacyApi<GroupMessage[]>(
     `/groups/${id}/messages${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function searchGroupMessages(
+  id: string,
+  query: SearchChatMessagesQuery = {},
+  baseUrl?: string,
+) {
+  const params = new URLSearchParams();
+  if (query.keyword?.trim()) {
+    params.set("keyword", query.keyword.trim());
+  }
+  if (query.category) {
+    params.set("category", query.category);
+  }
+  if (query.messageType) {
+    params.set("messageType", query.messageType);
+  }
+  if (query.senderId?.trim()) {
+    params.set("senderId", query.senderId.trim());
+  }
+  if (query.dateFrom?.trim()) {
+    params.set("dateFrom", query.dateFrom.trim());
+  }
+  if (query.dateTo?.trim()) {
+    params.set("dateTo", query.dateTo.trim());
+  }
+  if (query.cursor?.trim()) {
+    params.set("cursor", query.cursor.trim());
+  }
+  if (typeof query.limit === "number") {
+    params.set("limit", String(query.limit));
+  }
+
+  return requestLegacyApi<ChatMessageSearchResponse>(
+    `/groups/${id}/message-search${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
   );

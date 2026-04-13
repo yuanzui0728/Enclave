@@ -5,12 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, MoreThan, Repository } from 'typeorm';
+import { FindOptionsWhere, In, MoreThan, Repository } from 'typeorm';
 import { ConversationEntity } from './conversation.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import { MessageEntity } from './message.entity';
+import {
+  searchMessages as searchVisibleMessages,
+  sliceMessagesAround,
+  type MessageSearchQuery,
+  type MessageSearchResponse,
+} from './message-search.utils';
 import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import {
   ContactCardAttachment,
@@ -57,6 +63,13 @@ export interface UpdateGroupPreferencesDto {
   notifyOnAtAll?: boolean;
   notifyOnAnnouncement?: boolean;
 }
+
+type GroupMessageListQuery = {
+  limit?: number;
+  aroundMessageId?: string;
+  before?: number;
+  after?: number;
+};
 
 type SendGroupMessageInput =
   | {
@@ -240,20 +253,59 @@ export class GroupService {
     );
   }
 
-  async getMessages(groupId: string, limit = 100): Promise<GroupMessage[]> {
+  async getMessages(
+    groupId: string,
+    query: number | GroupMessageListQuery = 100,
+  ): Promise<GroupMessage[]> {
     const group = await this.requireAccessibleGroup(groupId);
-    const messages = await this.messageRepo.find({
-      where: group.lastClearedAt
-        ? {
-            groupId,
-            createdAt: MoreThan(group.lastClearedAt),
-          }
-        : { groupId },
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
+    const options: GroupMessageListQuery =
+      typeof query === 'number' ? { limit: query } : query;
+    const aroundMessageId = options.aroundMessageId?.trim();
 
-    return messages.reverse().map((item) => this.toGroupMessage(item));
+    if (aroundMessageId) {
+      const entities = await this.listVisibleGroupMessageEntities(group);
+      const window = sliceMessagesAround(
+        entities,
+        aroundMessageId,
+        options.before,
+        options.after,
+      );
+      if (!window) {
+        throw new NotFoundException(`Message ${aroundMessageId} not found`);
+      }
+
+      return window.map((item) => this.toGroupMessage(item));
+    }
+
+    const limit = options.limit;
+    if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+      const messages = await this.messageRepo.find({
+        where: this.buildGroupMessageWhere(
+          groupId,
+          group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
+        ),
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+
+      return messages.reverse().map((item) => this.toGroupMessage(item));
+    }
+
+    return (await this.listVisibleGroupMessageEntities(group)).map((item) =>
+      this.toGroupMessage(item),
+    );
+  }
+
+  async searchGroupMessages(
+    groupId: string,
+    query: MessageSearchQuery,
+  ): Promise<MessageSearchResponse> {
+    const group = await this.requireAccessibleGroup(groupId);
+    const messages = (await this.listVisibleGroupMessageEntities(group)).map(
+      (item) => this.toGroupMessage(item),
+    );
+
+    return searchVisibleMessages(messages, query);
   }
 
   async updateGroup(groupId: string, dto: UpdateGroupDto): Promise<Group> {
@@ -916,6 +968,30 @@ export class GroupService {
     }
   }
 
+  private buildGroupMessageWhere(
+    groupId: string,
+    since?: Date,
+    extra: Partial<
+      Pick<GroupMessageEntity, 'senderType' | 'senderId' | 'type'>
+    > = {},
+  ): FindOptionsWhere<GroupMessageEntity> {
+    return {
+      groupId,
+      ...(since ? { createdAt: MoreThan(since) } : {}),
+      ...extra,
+    };
+  }
+
+  private listVisibleGroupMessageEntities(group: GroupEntity) {
+    return this.messageRepo.find({
+      where: this.buildGroupMessageWhere(
+        group.id,
+        group.lastClearedAt ? new Date(group.lastClearedAt) : undefined,
+      ),
+      order: { createdAt: 'ASC' },
+    });
+  }
+
   private async findAccessibleGroup(
     groupId: string,
   ): Promise<GroupEntity | null> {
@@ -1035,8 +1111,8 @@ export class GroupService {
     }
 
     const sourceParticipantName =
-      (await this.characters.findById(conversation.participants[0] ?? ''))?.name ??
-      conversation.title;
+      (await this.characters.findById(conversation.participants[0] ?? ''))
+        ?.name ?? conversation.title;
 
     await this.messageRepo.save(
       this.messageRepo.create({

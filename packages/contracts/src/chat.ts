@@ -22,6 +22,43 @@ export type MessageType =
   | "contact_card"
   | "location_card";
 export type GroupMemberType = "user" | "character";
+export type ChatMessageSearchCategory = "all" | "media" | "files" | "links";
+
+export interface GetChatMessagesQuery {
+  limit?: number;
+  aroundMessageId?: string;
+  before?: number;
+  after?: number;
+}
+
+export interface SearchChatMessagesQuery {
+  keyword?: string;
+  category?: ChatMessageSearchCategory;
+  messageType?: MessageType | "all";
+  senderId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface ChatMessageSearchItem {
+  messageId: string;
+  createdAt: string;
+  senderId: string;
+  senderName: string;
+  messageType: MessageType;
+  previewText: string;
+  categories: ChatMessageSearchCategory[];
+  attachment?: MessageAttachment;
+}
+
+export interface ChatMessageSearchResponse {
+  items: ChatMessageSearchItem[];
+  total: number;
+  nextCursor?: string;
+  hasMore: boolean;
+}
 
 export interface Message {
   id: string;

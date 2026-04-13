@@ -58,12 +58,41 @@ export class ChatController {
   }
 
   @Get(':id/messages')
-  getMessages(@Param('id') id: string, @Query('limit') limit?: string) {
-    const parsedLimit = Number(limit);
-    return this.chatService.getMessages(
-      id,
-      Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : undefined,
-    );
+  getMessages(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+    @Query('aroundMessageId') aroundMessageId?: string,
+    @Query('before') before?: string,
+    @Query('after') after?: string,
+  ) {
+    return this.chatService.getMessages(id, {
+      limit: parsePositiveNumber(limit),
+      aroundMessageId: aroundMessageId?.trim() || undefined,
+      before: parseNonNegativeNumber(before),
+      after: parseNonNegativeNumber(after),
+    });
+  }
+
+  @Get(':id/message-search')
+  searchMessages(
+    @Param('id') id: string,
+    @Query('keyword') keyword?: string,
+    @Query('category') category?: string,
+    @Query('messageType') messageType?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.chatService.searchConversationMessages(id, {
+      keyword,
+      category,
+      messageType,
+      dateFrom,
+      dateTo,
+      cursor,
+      limit: parsePositiveNumber(limit),
+    });
   }
 
   @Post(':conversationId/messages/:messageId/recall')
@@ -518,8 +547,43 @@ export class GroupController {
   }
 
   @Get(':id/messages')
-  getMessages(@Param('id') id: string, @Query('limit') limit?: string) {
-    return this.groupService.getMessages(id, Number(limit) || 100);
+  getMessages(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+    @Query('aroundMessageId') aroundMessageId?: string,
+    @Query('before') before?: string,
+    @Query('after') after?: string,
+  ) {
+    return this.groupService.getMessages(id, {
+      limit: parsePositiveNumber(limit),
+      aroundMessageId: aroundMessageId?.trim() || undefined,
+      before: parseNonNegativeNumber(before),
+      after: parseNonNegativeNumber(after),
+    });
+  }
+
+  @Get(':id/message-search')
+  searchMessages(
+    @Param('id') id: string,
+    @Query('keyword') keyword?: string,
+    @Query('category') category?: string,
+    @Query('messageType') messageType?: string,
+    @Query('senderId') senderId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.groupService.searchGroupMessages(id, {
+      keyword,
+      category,
+      messageType,
+      senderId,
+      dateFrom,
+      dateTo,
+      cursor,
+      limit: parsePositiveNumber(limit),
+    });
   }
 
   @Post(':groupId/messages/:messageId/recall')
@@ -643,4 +707,14 @@ export class GroupController {
       });
     return message;
   }
+}
+
+function parsePositiveNumber(value?: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function parseNonNegativeNumber(value?: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }

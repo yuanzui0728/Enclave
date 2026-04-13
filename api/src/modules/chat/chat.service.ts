@@ -22,6 +22,12 @@ import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
 import { MessageEntity } from './message.entity';
 import {
+  searchMessages as searchVisibleMessages,
+  sliceMessagesAround,
+  type MessageSearchQuery,
+  type MessageSearchResponse,
+} from './message-search.utils';
+import {
   ContactCardAttachment,
   Conversation,
   FileAttachment,
@@ -77,6 +83,13 @@ type UploadedAttachmentFile = {
   mimetype: string;
   originalname?: string;
   size: number;
+};
+
+type ConversationMessageListQuery = {
+  limit?: number;
+  aroundMessageId?: string;
+  before?: number;
+  after?: number;
 };
 
 @Injectable()
@@ -422,29 +435,60 @@ export class ChatService {
 
   async getMessages(
     conversationId: string,
-    limit?: number,
+    query: number | ConversationMessageListQuery = {},
   ): Promise<Message[]> {
     const conversation = await this.requireOwnedConversation(conversationId);
+    const options: ConversationMessageListQuery =
+      typeof query === 'number' ? { limit: query } : query;
+    const aroundMessageId = options.aroundMessageId?.trim();
 
-    const where = this.buildMessageWhere(
-      conversationId,
-      this.getVisibleMessageCutoff(conversation),
-    );
-    const entities =
-      typeof limit === 'number' && Number.isFinite(limit) && limit > 0
-        ? (
-            await this.msgRepo.find({
-              where,
-              order: { createdAt: 'DESC' },
-              take: limit,
-            })
-          ).reverse()
-        : await this.msgRepo.find({
-            where,
-            order: { createdAt: 'ASC' },
-          });
+    if (aroundMessageId) {
+      const entities =
+        await this.listVisibleConversationMessageEntities(conversation);
+      const window = sliceMessagesAround(
+        entities,
+        aroundMessageId,
+        options.before,
+        options.after,
+      );
+      if (!window) {
+        throw new NotFoundException(`Message ${aroundMessageId} not found`);
+      }
 
-    return entities.map((entity) => this._entityToMessage(entity));
+      return window.map((entity) => this._entityToMessage(entity));
+    }
+
+    const limit = options.limit;
+    if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
+      const where = this.buildMessageWhere(
+        conversationId,
+        this.getVisibleMessageCutoff(conversation),
+      );
+      const entities = (
+        await this.msgRepo.find({
+          where,
+          order: { createdAt: 'DESC' },
+          take: limit,
+        })
+      ).reverse();
+      return entities.map((entity) => this._entityToMessage(entity));
+    }
+
+    return (
+      await this.listVisibleConversationMessageEntities(conversation)
+    ).map((entity) => this._entityToMessage(entity));
+  }
+
+  async searchConversationMessages(
+    conversationId: string,
+    query: MessageSearchQuery,
+  ): Promise<MessageSearchResponse> {
+    const conversation = await this.requireOwnedConversation(conversationId);
+    const messages = (
+      await this.listVisibleConversationMessageEntities(conversation)
+    ).map((entity) => this._entityToMessage(entity));
+
+    return searchVisibleMessages(messages, query);
   }
 
   async getCharacterActivity(charId: string): Promise<string | undefined> {
@@ -794,6 +838,18 @@ export class ChatService {
       ...extra,
       ...(cutoff ? { createdAt: MoreThan(cutoff) } : {}),
     };
+  }
+
+  private listVisibleConversationMessageEntities(
+    conversation: ConversationEntity,
+  ) {
+    return this.msgRepo.find({
+      where: this.buildMessageWhere(
+        conversation.id,
+        this.getVisibleMessageCutoff(conversation),
+      ),
+      order: { createdAt: 'ASC' },
+    });
   }
 
   private getVisibleMessageCutoff(
