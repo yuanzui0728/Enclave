@@ -656,16 +656,16 @@ function MobileChannelsCard({
           <button
             type="button"
             onClick={() => setMuted((current) => !current)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur transition active:scale-[0.97] active:bg-[rgba(15,23,42,0.78)]"
           >
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
           <button
             type="button"
             onClick={() => setManuallyPaused((current) => !current)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur transition active:scale-[0.97] active:bg-[rgba(15,23,42,0.78)]"
           >
-            {manuallyPaused ? <Play size={16} /> : <Pause size={16} />}
+            {manuallyPaused ? <Play size={15} /> : <Pause size={15} />}
           </button>
         </div>
 
@@ -675,7 +675,7 @@ function MobileChannelsCard({
               label={likePending ? "处理中" : String(post.likeCount)}
               onClick={onLike}
             >
-              <ThumbsUp size={18} />
+              <ThumbsUp size={17} />
             </ActionRailButton>
             <ActionRailButton
               label={String(post.commentCount)}
@@ -686,7 +686,7 @@ function MobileChannelsCard({
                 })
               }
             >
-              <MessageCircleMore size={18} />
+              <MessageCircleMore size={17} />
             </ActionRailButton>
             <ActionRailButton
               active={favorite}
@@ -694,13 +694,13 @@ function MobileChannelsCard({
               onClick={onToggleFavorite}
             >
               {favorite ? (
-                <Bookmark size={18} className="fill-current" />
+                <Bookmark size={17} className="fill-current" />
               ) : (
-                <Bookmark size={18} />
+                <Bookmark size={17} />
               )}
             </ActionRailButton>
             <ActionRailButton label="分享" onClick={onShare}>
-              <Share2 size={18} />
+              <Share2 size={17} />
             </ActionRailButton>
           </div>
         </div>
@@ -767,7 +767,7 @@ function MobileChannelsCard({
             size="sm"
             disabled={!commentDraft.trim() || commentPending}
             onClick={onCommentSubmit}
-            className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
+            className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white transition hover:bg-[#06ad56] active:scale-[0.98]"
           >
             {commentPending ? "发送中..." : "发送"}
           </Button>
@@ -792,17 +792,17 @@ function ActionRailButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center gap-1 text-white"
+      className="flex flex-col items-center gap-1 text-white transition-transform active:scale-[0.97]"
     >
       <span
         className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur",
+          "flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur transition-colors",
           active && "bg-[#07c160] shadow-[0_10px_24px_rgba(7,193,96,0.14)]",
         )}
       >
         {children}
       </span>
-      <span className="text-[10px]">{label}</span>
+      <span className="text-[9px]">{label}</span>
     </button>
   );
 }
