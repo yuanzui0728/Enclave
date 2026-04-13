@@ -9,7 +9,7 @@ import {
   removeGroupMember,
 } from "@yinjie/contracts";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
-import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
@@ -571,27 +571,56 @@ function GroupMemberPickerPage({
         membersQuery.isLoading ||
         (mode === "add" && friendsQuery.isLoading) ? (
           <div className="px-4 pt-4">
-            <LoadingBlock label={loadingLabel} />
+            <MobileGroupMemberPickerStatusCard
+              badge="读取中"
+              title={loadingLabel.replace("...", "")}
+              description={
+                mode === "add"
+                  ? "稍等一下，正在同步可加入当前群聊的联系人。"
+                  : "稍等一下，正在同步当前可移除的群成员。"
+              }
+              tone="loading"
+            />
           </div>
         ) : null}
         {groupQuery.isError && groupQuery.error instanceof Error ? (
           <div className="px-4 pt-4">
-            <ErrorBlock message={groupQuery.error.message} />
+            <MobileGroupMemberPickerStatusCard
+              badge="读取失败"
+              title="群聊信息暂时不可用"
+              description={groupQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
         {membersQuery.isError && membersQuery.error instanceof Error ? (
           <div className="px-4 pt-4">
-            <ErrorBlock message={membersQuery.error.message} />
+            <MobileGroupMemberPickerStatusCard
+              badge="读取失败"
+              title="群成员信息暂时不可用"
+              description={membersQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
           <div className="px-4 pt-4">
-            <ErrorBlock message={friendsQuery.error.message} />
+            <MobileGroupMemberPickerStatusCard
+              badge="读取失败"
+              title="联系人列表暂时不可用"
+              description={friendsQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
         {submitMutation.isError && submitMutation.error instanceof Error ? (
           <div className="px-4 pt-4">
-            <ErrorBlock message={submitMutation.error.message} />
+            <InlineNotice
+              tone="danger"
+              className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            >
+              {submitMutation.error.message}
+            </InlineNotice>
           </div>
         ) : null}
 
@@ -601,7 +630,8 @@ function GroupMemberPickerPage({
         !filteredCandidateItems.length &&
         !submitMutation.isPending ? (
           <div className="px-4 pt-6">
-            <EmptyState
+            <MobileGroupMemberPickerStatusCard
+              badge={mode === "add" ? "联系人" : "群成员"}
               title={emptyStateTitle}
               description={emptyStateDescription}
             />
@@ -709,4 +739,51 @@ function toggleSelectionItem(current: string[], targetId: string) {
   return current.includes(targetId)
     ? current.filter((item) => item !== targetId)
     : [...current, targetId];
+}
+
+function MobileGroupMemberPickerStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </section>
+  );
 }
