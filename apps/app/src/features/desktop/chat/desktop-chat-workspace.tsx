@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
@@ -196,6 +197,7 @@ export function DesktopChatWorkspace({
     conversationId?: string;
     seedMemberIds: string[];
   } | null>(null);
+  const quickMenuRef = useRef<HTMLDivElement | null>(null);
   const desktopSearchLauncher = useDesktopSearchLauncher({
     keyword: searchTerm,
     onKeywordChange: setSearchTerm,
@@ -457,6 +459,40 @@ export function DesktopChatWorkspace({
       window.removeEventListener("scroll", closeMenu, true);
     };
   }, [conversationContextMenu]);
+
+  useEffect(() => {
+    if (!isQuickMenuOpen) {
+      return;
+    }
+
+    const closeMenu = () => setIsQuickMenuOpen(false);
+    const handlePointerDown = (event: PointerEvent) => {
+      if (quickMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      closeMenu();
+    };
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      closeMenu();
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isQuickMenuOpen]);
 
   useEffect(() => {
     const hasActiveThread = Boolean(activeConversation);
@@ -859,15 +895,6 @@ export function DesktopChatWorkspace({
 
   return (
     <div className="relative flex h-full min-h-0">
-      {isQuickMenuOpen ? (
-        <button
-          type="button"
-          aria-label="关闭快捷菜单"
-          onClick={() => setIsQuickMenuOpen(false)}
-          className="absolute inset-0 z-10 cursor-default"
-        />
-      ) : null}
-
       {standaloneWindow ? null : (
         <section className="flex w-[324px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
@@ -928,7 +955,7 @@ export function DesktopChatWorkspace({
                   />
                 ) : null}
               </div>
-              <div className="relative shrink-0">
+              <div ref={quickMenuRef} className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
