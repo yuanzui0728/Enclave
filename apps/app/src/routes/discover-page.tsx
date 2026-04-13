@@ -624,7 +624,7 @@ export function DiscoverPage() {
         <div className="px-3 pt-2">
           <InlineNotice
             tone="muted"
-            className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
           >
             朋友圈、相遇、视频号和小程序都从这里继续打开。
           </InlineNotice>
@@ -651,8 +651,8 @@ function DiscoverMobileSection({
   items: MobileDiscoverEntry[];
 }) {
   return (
-    <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-      <div className="px-4 py-0.75 text-[9px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
+    <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+      <div className="px-4 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
         {title}
       </div>
       {items.map((item, index) => (
@@ -679,20 +679,20 @@ function DiscoverMobileEntryRow({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-2.5 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
+        "flex items-center gap-2 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
       )}
     >
       <div
         className={cn(
-          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px]",
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px]",
           item.iconClassName,
         )}
       >
-        <Icon size={15} />
+        <Icon size={14} />
       </div>
       <div className="min-w-0 flex flex-1 items-center justify-between gap-3">
-        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[13px] text-[color:var(--text-primary)]">
           {item.label}
         </div>
         <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[8px] font-medium tracking-[0.03em] text-[#15803d]">
