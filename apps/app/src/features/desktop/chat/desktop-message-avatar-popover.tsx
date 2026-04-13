@@ -25,6 +25,7 @@ import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildDesktopAddFriendRouteHash } from "../contacts/desktop-add-friend-route-state";
+import { buildDesktopMomentsRouteHash } from "../moments/desktop-moments-route-state";
 
 type DesktopMessageAvatarPopoverProps =
   | {
@@ -403,7 +404,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         ))}
       </div>
 
-      <div className="flex items-center justify-end gap-2 px-4 pb-4 pt-1">
+      <div className="flex flex-wrap items-center justify-end gap-2 px-4 pb-4 pt-1">
         <Button
           variant="secondary"
           size="sm"
@@ -423,6 +424,25 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         >
           {isOwner ? "打开设置" : "查看资料"}
         </Button>
+        {isOwner || !isFriend ? null : (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full"
+            disabled={!characterId}
+            onClick={() => {
+              onClose();
+              void navigate({
+                to: "/tabs/moments",
+                hash: buildDesktopMomentsRouteHash({
+                  authorId: characterId,
+                }),
+              });
+            }}
+          >
+            朋友圈
+          </Button>
+        )}
         {isOwner ? null : (
           <Button
             variant="primary"
