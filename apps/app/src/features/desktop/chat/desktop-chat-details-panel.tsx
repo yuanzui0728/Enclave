@@ -22,7 +22,6 @@ import {
   getGroup,
   getGroupMembers,
   hideConversation,
-  hideGroup,
   leaveGroup,
   removeGroupMember,
   setConversationMuted,
@@ -34,10 +33,9 @@ import {
   type ConversationListItem,
   type GroupMember,
 } from "@yinjie/contracts";
-import { ChevronRight, Search, X } from "lucide-react";
+import { ChevronRight, Minus, Plus, Search, X } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
-import { GroupAvatarChip } from "../../../components/group-avatar-chip";
 import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
 import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
@@ -88,9 +86,11 @@ type GroupDetailsEditorConfig = {
 
 type DirectDetailsConfirmAction = "hide" | "clear" | "report" | "block";
 
-type GroupDetailsConfirmAction = "hide" | "clear" | "leave";
+type GroupDetailsConfirmAction = "clear" | "leave";
 
 type DesktopGroupMemberBrowserFilter = "all" | "owner" | "admin" | "character";
+
+const DESKTOP_GROUP_MEMBER_PREVIEW_COUNT = 10;
 
 export function DesktopChatDetailsPanel({
   conversation,
@@ -182,7 +182,8 @@ function DirectChatDetailsPanel({
     )?.friendship ?? null;
   const isFriend = Boolean(friendship);
   const hasPendingFriendRequest = (friendRequestsQuery.data ?? []).some(
-    (item) => item.characterId === targetCharacterId && item.status === "pending",
+    (item) =>
+      item.characterId === targetCharacterId && item.status === "pending",
   );
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === targetCharacterId,
@@ -546,7 +547,10 @@ function DirectChatDetailsPanel({
         <DesktopPanelSection title="更多信息">
           {isFriend ? (
             <>
-              <DesktopPanelInfoRow label="备注" value={remarkName || "未设置"} />
+              <DesktopPanelInfoRow
+                label="备注"
+                value={remarkName || "未设置"}
+              />
               <DesktopPanelInfoRow
                 label="昵称"
                 value={targetCharacter?.name ?? conversation.title}
@@ -593,11 +597,7 @@ function DirectChatDetailsPanel({
               }}
             />
           ))}
-          <DesktopPanelInfoRow
-            label="个性签名"
-            value={signature}
-            multiline
-          />
+          <DesktopPanelInfoRow label="个性签名" value={signature} multiline />
         </DesktopPanelSection>
       )}
 
@@ -917,21 +917,6 @@ function GroupChatDetailsPanel({
     },
   });
 
-  const hideMutation = useMutation({
-    mutationFn: () => hideGroup(conversation.id, baseUrl),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["app-group", baseUrl, conversation.id],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        }),
-      ]);
-      void navigate({ to: "/tabs/chat" });
-    },
-  });
-
   const leaveMutation = useMutation({
     mutationFn: () => leaveGroup(conversation.id, baseUrl),
     onSuccess: async () => {
@@ -977,22 +962,25 @@ function GroupChatDetailsPanel({
     [membersQuery.data],
   );
   const groupMembers = membersQuery.data ?? [];
+  const ownerDisplayName = ownerMember?.memberName?.trim() || "我";
 
   const memberItems: DesktopMemberGridItem[] = [
-    ...groupMembers.slice(0, 8).map((member) => ({
-      key: member.id,
-      label: member.memberName ?? member.memberId,
-      src: member.memberAvatar,
-      onClick:
-        member.memberType === "character"
-          ? () => {
-              void navigate({
-                to: "/character/$characterId",
-                params: { characterId: member.memberId },
-              });
-            }
-          : undefined,
-    })),
+    ...groupMembers
+      .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
+      .map((member) => ({
+        key: member.id,
+        label: member.memberName ?? member.memberId,
+        src: member.memberAvatar,
+        onClick:
+          member.memberType === "character"
+            ? () => {
+                void navigate({
+                  to: "/character/$characterId",
+                  params: { characterId: member.memberId },
+                });
+              }
+            : undefined,
+      })),
     {
       key: "add",
       label: "添加",
@@ -1021,14 +1009,13 @@ function GroupChatDetailsPanel({
     updateNicknameMutation.isPending ||
     addMembersMutation.isPending ||
     removeMembersMutation.isPending ||
-    hideMutation.isPending ||
     clearMutation.isPending ||
     leaveMutation.isPending;
   const activeEditor: GroupDetailsEditorConfig | null =
     editorMode === "name"
       ? {
           title: "修改群聊名称",
-          description: "桌面端直接编辑群聊名称，替代浏览器原生提示框。",
+          description: "新的名称会同步显示在聊天页和群成员列表里。",
           placeholder: "请输入群聊名称",
           initialValue: group?.name ?? conversation.title,
           multiline: false,
@@ -1039,9 +1026,9 @@ function GroupChatDetailsPanel({
         }
       : editorMode === "announcement"
         ? {
-            title: "修改群公告",
-            description: "支持换行；留空后保存会清空当前群公告。",
-            placeholder: "输入群公告内容",
+            title: "编辑群公告",
+            description: "支持换行。留空保存会清空当前群公告。",
+            placeholder: "输入群公告",
             initialValue: group?.announcement ?? "",
             multiline: true,
             emptyAllowed: true,
@@ -1054,7 +1041,7 @@ function GroupChatDetailsPanel({
         : editorMode === "nickname"
           ? {
               title: "修改我在本群的昵称",
-              description: "这个昵称会显示在群成员资料里。",
+              description: `${ownerDisplayName}在这个群里的展示昵称会同步更新。`,
               placeholder: "请输入群昵称",
               initialValue: ownerMember?.memberName ?? "",
               multiline: false,
@@ -1065,124 +1052,104 @@ function GroupChatDetailsPanel({
             }
           : null;
   const activeConfirm =
-    confirmAction === "hide"
+    confirmAction === "clear"
       ? {
-          title: "删除聊天",
-          description: "删除后，这个群聊会从消息列表移除；有新消息时会再次出现。",
-          confirmLabel: "删除聊天",
-          pendingLabel: "正在删除...",
+          title: "清空聊天记录",
+          description: "仅清空当前群聊里的历史消息，群成员和群资料会继续保留。",
+          confirmLabel: "清空聊天记录",
+          pendingLabel: "正在清空...",
+          danger: true,
           onConfirm: () => {
             setConfirmAction(null);
-            hideMutation.mutate();
+            clearMutation.mutate();
           },
         }
-      : confirmAction === "clear"
+      : confirmAction === "leave"
         ? {
-            title: "清空聊天记录",
+            title: "退出群聊",
             description:
-              "确认清空这个群聊的聊天记录吗？此操作只影响当前群会话视图。",
-            confirmLabel: "清空记录",
-            pendingLabel: "正在清空...",
+              "退出后你将不再收到这个群的消息，当前会话也会从桌面端列表中移除。",
+            confirmLabel: "退出群聊",
+            pendingLabel: "正在退出...",
             danger: true,
             onConfirm: () => {
               setConfirmAction(null);
-              clearMutation.mutate();
+              leaveMutation.mutate();
             },
           }
-        : confirmAction === "leave"
-          ? {
-              title: "删除并退出",
-              description:
-                "删除并退出后，该群聊会从当前世界中移除。确认继续吗？",
-              confirmLabel: "删除并退出",
-              pendingLabel: "正在退出...",
-              danger: true,
-              onConfirm: () => {
-                setConfirmAction(null);
-                leaveMutation.mutate();
-              },
-            }
-          : null;
+        : null;
 
   return (
-    <div className="space-y-2.5 bg-[#f5f5f5] px-3 py-3">
-      {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+    <div className="space-y-2.5 bg-[#ededed] px-0 py-3">
+      {notice ? (
+        <div className="px-3">
+          <InlineNotice tone="success">{notice}</InlineNotice>
+        </div>
+      ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <ErrorBlock message={groupQuery.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={groupQuery.error.message} />
+        </div>
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
-        <ErrorBlock message={membersQuery.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={membersQuery.error.message} />
+        </div>
       ) : null}
       {addMembersMutation.isError &&
       addMembersMutation.error instanceof Error ? (
-        <ErrorBlock message={addMembersMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={addMembersMutation.error.message} />
+        </div>
       ) : null}
       {removeMembersMutation.isError &&
       removeMembersMutation.error instanceof Error ? (
-        <ErrorBlock message={removeMembersMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={removeMembersMutation.error.message} />
+        </div>
       ) : null}
 
-      <DesktopPanelSection>
-        <div className="flex items-center gap-3 px-4 py-4">
-          <GroupAvatarChip
-            name={groupQuery.data?.name ?? conversation.title}
-            members={conversation.participants}
-            size="wechat"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-              {groupQuery.data?.name ?? conversation.title}
-            </div>
-            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-              {(membersQuery.data ?? []).length} 人群聊
-            </div>
-          </div>
-        </div>
-      </DesktopPanelSection>
-
-      <DesktopPanelSection>
+      <DesktopWechatGroupSection
+        title={
+          group
+            ? `${groupMembers.length} 人群聊 · 群主 ${ownerDisplayName}`
+            : undefined
+        }
+      >
         {membersQuery.isLoading ? (
-          <div className="px-4 py-4">
+          <div className="px-4 py-5">
             <LoadingBlock label="正在读取群成员..." />
           </div>
         ) : (
           <>
-            <DesktopMemberGrid items={memberItems} />
-            <DesktopPanelRow
-              label="查看全部群成员"
+            <DesktopWechatMemberGrid items={memberItems} />
+            <DesktopWechatGroupRow
+              label="全部群成员"
               value={`${groupMembers.length} 人`}
               onClick={() => {
                 setMemberBrowserAutoFocusSearch(false);
                 setMemberBrowserOpen(true);
               }}
             />
-            <DesktopPanelRow
-              label="搜索群成员"
-              value="按昵称或角色查找"
-              icon={<Search size={15} />}
-              onClick={() => {
-                setMemberBrowserAutoFocusSearch(true);
-                setMemberBrowserOpen(true);
-              }}
-            />
           </>
         )}
-      </DesktopPanelSection>
+      </DesktopWechatGroupSection>
 
-      <DesktopPanelSection>
-        <DesktopPanelRow
+      <DesktopWechatGroupSection title="群聊资料">
+        <DesktopWechatGroupRow
           label="群聊名称"
           value={groupQuery.data?.name ?? conversation.title}
           disabled={busy}
           onClick={() => setEditorMode("name")}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="群公告"
-          value={groupQuery.data?.announcement?.trim() || "查看或编辑"}
+          value={groupQuery.data?.announcement?.trim() || "暂无公告"}
+          multilineValue
           disabled={busy}
           onClick={() => setEditorMode("announcement")}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="群二维码"
           value="查看邀请卡"
           onClick={() => {
@@ -1192,13 +1159,12 @@ function GroupChatDetailsPanel({
             });
           }}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="查找聊天记录"
           value="搜索当前群消息"
-          icon={<Search size={15} />}
           onClick={onOpenHistory}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="聊天文件"
           value="查看本群附件"
           onClick={() => {
@@ -1208,10 +1174,18 @@ function GroupChatDetailsPanel({
             });
           }}
         />
-      </DesktopPanelSection>
+        <DesktopWechatGroupRow
+          label="搜索群成员"
+          value="按昵称查找"
+          onClick={() => {
+            setMemberBrowserAutoFocusSearch(true);
+            setMemberBrowserOpen(true);
+          }}
+        />
+      </DesktopWechatGroupSection>
 
-      <DesktopPanelSection>
-        <DesktopPanelRow
+      <DesktopWechatGroupSection title="聊天设置">
+        <DesktopWechatGroupRow
           label="消息免打扰"
           checked={isMuted}
           disabled={busy || !group}
@@ -1221,7 +1195,7 @@ function GroupChatDetailsPanel({
         />
         {isMuted ? (
           <>
-            <DesktopPanelRow
+            <DesktopWechatGroupRow
               label="@我仍通知"
               checked={group?.notifyOnAtMe ?? true}
               disabled={busy || !group}
@@ -1229,7 +1203,7 @@ function GroupChatDetailsPanel({
                 preferencesMutation.mutate({ notifyOnAtMe: checked })
               }
             />
-            <DesktopPanelRow
+            <DesktopWechatGroupRow
               label="@所有人仍通知"
               checked={group?.notifyOnAtAll ?? true}
               disabled={busy || !group}
@@ -1237,7 +1211,7 @@ function GroupChatDetailsPanel({
                 preferencesMutation.mutate({ notifyOnAtAll: checked })
               }
             />
-            <DesktopPanelRow
+            <DesktopWechatGroupRow
               label="群公告仍通知"
               checked={group?.notifyOnAnnouncement ?? true}
               disabled={busy || !group}
@@ -1249,13 +1223,13 @@ function GroupChatDetailsPanel({
             />
           </>
         ) : null}
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="置顶聊天"
           checked={group?.isPinned ?? conversation.isPinned}
           disabled={busy || !group}
           onToggle={(checked) => pinMutation.mutate(checked)}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="保存到通讯录"
           checked={group?.savedToContacts ?? false}
           disabled={busy || !group}
@@ -1263,13 +1237,13 @@ function GroupChatDetailsPanel({
             preferencesMutation.mutate({ savedToContacts: checked })
           }
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="我在本群的昵称"
           value={ownerMember?.memberName ?? "未设置"}
           disabled={busy}
           onClick={() => setEditorMode("nickname")}
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="显示群成员昵称"
           checked={group?.showMemberNicknames ?? true}
           disabled={busy || !group}
@@ -1277,7 +1251,7 @@ function GroupChatDetailsPanel({
             preferencesMutation.mutate({ showMemberNicknames: checked })
           }
         />
-        <DesktopPanelRow
+        <DesktopWechatGroupRow
           label="聊天背景"
           value={backgroundLabel}
           onClick={() => {
@@ -1287,65 +1261,62 @@ function GroupChatDetailsPanel({
             });
           }}
         />
-      </DesktopPanelSection>
+      </DesktopWechatGroupSection>
 
-      <DesktopPanelSection title="更多信息">
-        <DesktopPanelInfoRow
-          label="群主"
-          value={ownerMember?.memberName?.trim() || "我"}
-        />
-        <DesktopPanelInfoRow
+      <DesktopWechatGroupSection title="更多信息">
+        <DesktopWechatInfoRow label="群主" value={ownerDisplayName} />
+        <DesktopWechatInfoRow
           label="最近活跃"
           value={formatTimestamp(conversation.lastActivityAt) || "刚刚"}
         />
-      </DesktopPanelSection>
+      </DesktopWechatGroupSection>
 
-      <DesktopPanelSection>
-        <DesktopPanelRow
-          label="删除聊天"
-          value="从消息列表移除"
-          disabled={busy}
-          onClick={() => setConfirmAction("hide")}
-        />
-        <DesktopPanelRow
+      <div className="space-y-2 px-3 pt-1">
+        <DesktopWechatDangerButton
           label="清空聊天记录"
-          value="删除当前会话内容"
-          danger
           disabled={busy}
           onClick={() => setConfirmAction("clear")}
         />
-        <DesktopPanelRow
-          label="删除并退出"
-          value="退出并移除该群"
+        <DesktopWechatDangerButton
+          label="退出群聊"
           danger
           disabled={busy}
           onClick={() => setConfirmAction("leave")}
         />
-      </DesktopPanelSection>
+      </div>
 
       {updateGroupMutation.isError &&
       updateGroupMutation.error instanceof Error ? (
-        <ErrorBlock message={updateGroupMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={updateGroupMutation.error.message} />
+        </div>
       ) : null}
       {pinMutation.isError && pinMutation.error instanceof Error ? (
-        <ErrorBlock message={pinMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={pinMutation.error.message} />
+        </div>
       ) : null}
       {preferencesMutation.isError &&
       preferencesMutation.error instanceof Error ? (
-        <ErrorBlock message={preferencesMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={preferencesMutation.error.message} />
+        </div>
       ) : null}
       {updateNicknameMutation.isError &&
       updateNicknameMutation.error instanceof Error ? (
-        <ErrorBlock message={updateNicknameMutation.error.message} />
-      ) : null}
-      {hideMutation.isError && hideMutation.error instanceof Error ? (
-        <ErrorBlock message={hideMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={updateNicknameMutation.error.message} />
+        </div>
       ) : null}
       {clearMutation.isError && clearMutation.error instanceof Error ? (
-        <ErrorBlock message={clearMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={clearMutation.error.message} />
+        </div>
       ) : null}
       {leaveMutation.isError && leaveMutation.error instanceof Error ? (
-        <ErrorBlock message={leaveMutation.error.message} />
+        <div className="px-3">
+          <ErrorBlock message={leaveMutation.error.message} />
+        </div>
       ) : null}
 
       <DesktopGroupMemberPicker
@@ -1555,9 +1526,164 @@ function DesktopPanelInfoRow({
   );
 }
 
-function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
+function DesktopWechatGroupSection({
+  title,
+  children,
+}: {
+  title?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="grid grid-cols-4 gap-x-3 gap-y-4 px-4 py-4">
+    <section className="space-y-1.5">
+      {title ? (
+        <div className="px-4 text-[11px] text-[#8c8c8c]">{title}</div>
+      ) : null}
+      <div className="border-y border-[rgba(0,0,0,0.07)] bg-white">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function DesktopWechatGroupRow({
+  label,
+  value,
+  disabled = false,
+  danger = false,
+  checked,
+  multilineValue = false,
+  onClick,
+  onToggle,
+}: {
+  label: string;
+  value?: string;
+  disabled?: boolean;
+  danger?: boolean;
+  checked?: boolean;
+  multilineValue?: boolean;
+  onClick?: () => void;
+  onToggle?: (checked: boolean) => void;
+}) {
+  const isSwitch = typeof checked === "boolean" && Boolean(onToggle);
+  const interactive = isSwitch || Boolean(onClick);
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => {
+        if (disabled) {
+          return;
+        }
+
+        if (isSwitch) {
+          onToggle?.(!checked);
+          return;
+        }
+
+        onClick?.();
+      }}
+      className={cn(
+        "flex min-h-[46px] w-full items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] px-4 py-3 text-left last:border-b-0",
+        danger ? "text-[#e14c45]" : "text-[#111111]",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : interactive
+            ? "hover:bg-[rgba(0,0,0,0.025)]"
+            : undefined,
+      )}
+      role={isSwitch ? "switch" : undefined}
+      aria-checked={isSwitch ? checked : undefined}
+    >
+      <span className="min-w-0 text-[14px]">{label}</span>
+      <span className="flex shrink-0 items-center gap-2.5">
+        {value ? (
+          <span
+            className={cn(
+              "max-w-[10.5rem] text-right text-[12px] text-[#8c8c8c]",
+              multilineValue
+                ? "whitespace-pre-wrap break-words leading-4"
+                : "truncate",
+            )}
+          >
+            {value}
+          </span>
+        ) : null}
+        {isSwitch ? (
+          <span
+            className={cn(
+              "relative h-6 w-[42px] rounded-full transition-colors",
+              checked ? "bg-[color:var(--brand-primary)]" : "bg-[#d9d9d9]",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-[1px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] transition-transform",
+                checked ? "translate-x-5" : "translate-x-[1px]",
+              )}
+            />
+          </span>
+        ) : interactive ? (
+          <ChevronRight size={16} className="text-[#c7c7cc]" />
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
+function DesktopWechatInfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-h-[46px] items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] px-4 py-3 text-left last:border-b-0">
+      <span className="text-[14px] text-[#111111]">{label}</span>
+      <span className="max-w-[10.5rem] truncate text-right text-[12px] text-[#8c8c8c]">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function DesktopWechatDangerButton({
+  label,
+  danger = false,
+  disabled = false,
+  onClick,
+}: {
+  label: string;
+  danger?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "flex h-11 w-full items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white text-[14px] transition",
+        danger ? "text-[#e14c45]" : "text-[#111111]",
+        disabled
+          ? "cursor-not-allowed opacity-50"
+          : "hover:bg-[rgba(0,0,0,0.02)]",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function DesktopWechatMemberGrid({
+  items,
+}: {
+  items: DesktopMemberGridItem[];
+}) {
+  return (
+    <div className="grid grid-cols-5 gap-x-3 gap-y-4 px-4 py-4">
       {items.map((item) => {
         const isAction = item.kind === "add" || item.kind === "remove";
         return (
@@ -1570,18 +1696,20 @@ function DesktopMemberGrid({ items }: { items: DesktopMemberGridItem[] }) {
             {isAction ? (
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-[12px] border text-2xl transition-colors",
-                  item.kind === "remove"
-                    ? "border-[rgba(220,38,38,0.12)] bg-[rgba(254,242,242,0.88)] text-red-500"
-                    : "border-[rgba(0,0,0,0.06)] bg-[#f5f5f5] text-[color:var(--text-secondary)]",
+                  "flex h-12 w-12 items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.08)] bg-[#f7f7f7] text-[#7a7a7a] transition-colors",
+                  "hover:bg-[#f1f1f1]",
                 )}
               >
-                {item.kind === "remove" ? "−" : "+"}
+                {item.kind === "remove" ? (
+                  <Minus size={18} strokeWidth={2} />
+                ) : (
+                  <Plus size={18} strokeWidth={2} />
+                )}
               </div>
             ) : (
               <AvatarChip name={item.label} src={item.src} size="wechat" />
             )}
-            <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+            <span className="w-full truncate text-[11px] text-[#707070]">
               {item.label}
             </span>
           </button>
@@ -1981,7 +2109,7 @@ function DesktopGroupMemberBrowserDialog({
                               ? "bg-[rgba(245,158,11,0.14)] text-[#b45309]"
                               : member.role === "admin"
                                 ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
-                              : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
+                                : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
                           )}
                         >
                           {roleLabel}

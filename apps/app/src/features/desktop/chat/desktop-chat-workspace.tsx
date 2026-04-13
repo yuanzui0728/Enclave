@@ -1333,6 +1333,12 @@ export function DesktopChatWorkspace({
           subtitle={
             rightPanelMode === "history" ? activeConversation.title : "聊天信息"
           }
+          detailsVariant={
+            rightPanelMode === "details" &&
+            isPersistedGroupConversation(activeConversation)
+              ? "wechat"
+              : "default"
+          }
           onBack={
             rightPanelMode === "history" && historyPanelCanReturnToDetails
               ? () => {

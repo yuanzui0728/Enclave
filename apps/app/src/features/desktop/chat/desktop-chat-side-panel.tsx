@@ -7,6 +7,7 @@ type DesktopChatSidePanelProps = {
   mode: Exclude<DesktopChatSidePanelMode, null>;
   title: string;
   subtitle?: string;
+  detailsVariant?: "default" | "wechat";
   onBack?: () => void;
   onClose: () => void;
   children: ReactNode;
@@ -18,6 +19,7 @@ export function DesktopChatSidePanel({
   mode,
   title,
   subtitle,
+  detailsVariant = "default",
   onBack,
   onClose,
   children,
@@ -25,13 +27,18 @@ export function DesktopChatSidePanel({
   panelRef,
 }: DesktopChatSidePanelProps) {
   const historyMode = mode === "history";
+  const wechatDetails = !historyMode && detailsVariant === "wechat";
 
   return (
     <aside
       ref={panelRef}
       className={cn(
         "absolute bottom-0 right-0 top-[64px] z-20 hidden w-[352px] border-l border-[rgba(0,0,0,0.06)] transition-[background-color] duration-150 xl:flex xl:flex-col",
-        historyMode ? "bg-[#f7f7f7]" : "bg-[#f5f5f5]",
+        historyMode
+          ? "bg-[#f7f7f7]"
+          : wechatDetails
+            ? "bg-[#ededed]"
+            : "bg-[#f5f5f5]",
         className,
       )}
       data-mode={mode}
@@ -39,7 +46,11 @@ export function DesktopChatSidePanel({
       <div
         className={cn(
           "border-b border-[rgba(0,0,0,0.06)] transition-[background-color,padding] duration-150",
-          historyMode ? "bg-white px-4 pb-2 pt-3" : "bg-[#f5f5f5] px-4 py-3",
+          historyMode
+            ? "bg-white px-4 pb-2 pt-3"
+            : wechatDetails
+              ? "bg-white px-4 py-3"
+              : "bg-[#f5f5f5] px-4 py-3",
         )}
       >
         {historyMode ? (
@@ -73,6 +84,21 @@ export function DesktopChatSidePanel({
               {subtitle ?? "聊天记录"}
             </div>
           </>
+        ) : wechatDetails ? (
+          <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
+            <div aria-hidden="true" className="h-7 w-7" />
+            <div className="truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]">
+              {title}
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
+              aria-label="关闭侧栏"
+            >
+              <X size={15} />
+            </button>
+          </div>
         ) : (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -98,7 +124,11 @@ export function DesktopChatSidePanel({
       <div
         className={cn(
           "min-h-0 flex-1 overflow-auto transition-[background-color] duration-150",
-          historyMode ? "bg-[#f7f7f7]" : "bg-[#f5f5f5]",
+          historyMode
+            ? "bg-[#f7f7f7]"
+            : wechatDetails
+              ? "bg-[#ededed]"
+              : "bg-[#f5f5f5]",
         )}
       >
         {children}
