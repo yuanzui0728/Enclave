@@ -65,14 +65,14 @@ export function OfficialAccountServiceThread({
   return (
     <div
       className={`flex h-full min-h-0 flex-col ${
-        isDesktop ? "bg-white" : "bg-[#f5f5f5]"
+        isDesktop ? "bg-white" : "bg-[color:var(--bg-canvas)]"
       }`}
     >
       <header
         className={`border-b border-[color:var(--border-faint)] ${
           isDesktop
             ? "bg-white/88 px-5 py-4 backdrop-blur-xl"
-            : "bg-[rgba(247,247,247,0.94)] px-4 py-3 backdrop-blur-xl"
+            : "bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 backdrop-blur-xl"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ export function OfficialAccountServiceThread({
               }}
               variant="ghost"
               size="icon"
-              className="text-[color:var(--text-secondary)]"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
             >
               <ArrowLeft size={18} />
             </Button>
@@ -97,14 +97,14 @@ export function OfficialAccountServiceThread({
             <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
-            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
               服务通知、文章卡片和入口提醒会集中在这里。
             </div>
           </div>
         </div>
       </header>
 
-      <div className={`flex-1 overflow-auto ${isDesktop ? "px-5 py-5" : "px-4 py-5"}`}>
+      <div className={`flex-1 overflow-auto ${isDesktop ? "px-5 py-5" : "px-3 py-4"}`}>
         {accountQuery.isLoading || messagesQuery.isLoading ? (
           <LoadingBlock label="正在读取服务号消息..." />
         ) : null}
@@ -119,11 +119,12 @@ export function OfficialAccountServiceThread({
         ) : null}
 
         {messagesQuery.data?.length ? (
-          <div className="space-y-4">
+          <div className={isDesktop ? "space-y-4" : "space-y-3"}>
             {messagesQuery.data.map((message) => (
               <OfficialServiceMessageBubble
                 key={message.id}
                 message={message}
+                variant={variant}
                 onOpenArticle={(articleId) => {
                   void navigate({
                     to: "/official-accounts/articles/$articleId",
