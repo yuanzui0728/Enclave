@@ -72,7 +72,7 @@ export function OfficialAccountServiceThread({
         className={`border-b border-[color:var(--border-faint)] ${
           isDesktop
             ? "bg-white/88 px-5 py-4 backdrop-blur-xl"
-            : "bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 backdrop-blur-xl"
+            : "bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 backdrop-blur-xl"
         }`}
       >
         <div className="flex items-center gap-3">
@@ -88,17 +88,17 @@ export function OfficialAccountServiceThread({
               }}
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={17} />
             </Button>
           )}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
-            <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
-              服务通知、文章卡片和入口提醒会集中在这里。
+            <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+              服务通知和文章入口会集中在这里。
             </div>
           </div>
           {isDesktop ? null : (
@@ -106,7 +106,7 @@ export function OfficialAccountServiceThread({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
               onClick={() => {
                 void navigate({
                   to: "/official-accounts/$accountId",
@@ -115,13 +115,17 @@ export function OfficialAccountServiceThread({
               }}
               aria-label="查看公众号资料"
             >
-              <MoreHorizontal size={18} />
+              <MoreHorizontal size={17} />
             </Button>
           )}
         </div>
       </header>
 
-      <div className={`flex-1 overflow-auto ${isDesktop ? "px-5 py-5" : "px-3 py-4"}`}>
+      <div
+        className={`flex-1 overflow-auto ${
+          isDesktop ? "px-5 py-5" : "px-4 py-3"
+        }`}
+      >
         {accountQuery.isLoading || messagesQuery.isLoading ? (
           <LoadingBlock label="正在读取服务号消息..." />
         ) : null}
@@ -136,7 +140,7 @@ export function OfficialAccountServiceThread({
         ) : null}
 
         {messagesQuery.data?.length ? (
-          <div className={isDesktop ? "space-y-4" : "space-y-3"}>
+          <div className={isDesktop ? "space-y-4" : "space-y-2.5"}>
             {messagesQuery.data.map((message) => (
               <OfficialServiceMessageBubble
                 key={message.id}
