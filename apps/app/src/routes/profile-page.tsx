@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BookText,
   ChevronRight,
@@ -12,13 +12,29 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ProfilePage() {
+  const navigate = useNavigate();
   const username = useWorldOwnerStore((state) => state.username);
   const avatar = useWorldOwnerStore((state) => state.avatar);
   const signature = useWorldOwnerStore((state) => state.signature);
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
-      <TabPageTopBar title="我" titleAlign="center" />
+      <TabPageTopBar
+        title="我"
+        titleAlign="center"
+        rightActions={
+          <button
+            type="button"
+            onClick={() => {
+              void navigate({ to: "/profile/settings" });
+            }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-card-hover)]"
+            aria-label="打开设置"
+          >
+            <Settings size={18} />
+          </button>
+        }
+      />
 
       <div className="pb-8">
         <Link
