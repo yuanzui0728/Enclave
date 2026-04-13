@@ -9,7 +9,7 @@ import { ArrowLeft, Copy, Search, Share2 } from "lucide-react";
 import { EmptyState } from "../../components/empty-state";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
 import { formatConversationTimestamp } from "../../lib/format";
-import { isNativeMobileBridgeAvailable } from "../../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
 import {
   featuredMiniProgramIds,
   getMiniProgramEntry,
@@ -92,7 +92,7 @@ export function MobileMiniProgramsWorkspace({
   );
   const recentMiniPrograms = resolveMiniProgramEntries(recentMiniProgramIds);
   const pinnedMiniPrograms = resolveMiniProgramEntries(pinnedMiniProgramIds);
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
 
   if (!selectedMiniProgram) {
     return null;
