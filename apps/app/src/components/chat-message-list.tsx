@@ -153,7 +153,8 @@ type OpenableAttachment =
 
 type SaveableAttachment =
   | Extract<MessageAttachment, { kind: "image" }>
-  | Extract<MessageAttachment, { kind: "file" }>;
+  | Extract<MessageAttachment, { kind: "file" }>
+  | Extract<MessageAttachment, { kind: "contact_card" }>;
 
 type ChatMessageListProps = {
   messages: ChatRenderableMessage[];
@@ -869,6 +870,61 @@ export function ChatMessageList({
     }
   };
 
+  const shareContactSummary = async (
+    attachment: Extract<MessageAttachment, { kind: "contact_card" }>,
+  ) => {
+    const profilePath = `/character/${attachment.characterId}`;
+    const profileUrl =
+      typeof window === "undefined"
+        ? profilePath
+        : `${window.location.origin}${profilePath}`;
+    const summary = buildContactAttachmentSummary(attachment, profileUrl);
+
+    if (!isNativeMobileBridgeAvailable()) {
+      await copyToClipboard(summary, "名片摘要已复制。");
+      return;
+    }
+
+    const shared = await shareWithNativeShell({
+      title: `${attachment.name} 的隐界名片`,
+      text: summary,
+      url: profileUrl,
+    });
+
+    if (shared) {
+      setActionNotice({
+        message: "已打开系统分享面板。",
+        tone: "success",
+      });
+      return;
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setActionNotice({
+        message: "当前设备暂时无法打开系统分享，请稍后重试。",
+        tone: "danger",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setActionNotice({
+        message: "系统分享暂时不可用，已复制名片摘要。",
+        tone: "success",
+      });
+    } catch {
+      setActionNotice({
+        message: "系统分享失败，请稍后重试。",
+        tone: "danger",
+      });
+    }
+  };
+
   const handleMessageContextMenu = (
     event: MouseEvent<HTMLDivElement>,
     message: ChatRenderableMessage,
@@ -1277,6 +1333,11 @@ export function ChatMessageList({
   const saveAttachment = (message: ChatRenderableMessage) => {
     const attachment = getSaveableAttachment(message);
     if (!attachment) {
+      return;
+    }
+
+    if (attachment.kind === "contact_card") {
+      void shareContactSummary(attachment);
       return;
     }
 
@@ -2471,9 +2532,10 @@ export function ChatMessageList({
                 }
               : undefined
           }
-          saveAttachmentLabel={
-            contextMenuState.message.type === "image" ? "另存图片" : "另存文件"
-          }
+          saveAttachmentLabel={resolveSaveAttachmentLabel(
+            contextMenuState.message,
+            "desktop",
+          )}
           onCopySender={() => {
             void copyToClipboard(
               buildClipboardSender(contextMenuState.message),
@@ -2635,7 +2697,9 @@ export function ChatMessageList({
             : undefined
         }
         saveAttachmentLabel={
-          mobileActionMessage?.type === "image" ? "保存图片" : "保存文件"
+          mobileActionMessage
+            ? resolveSaveAttachmentLabel(mobileActionMessage, "mobile")
+            : "保存附件"
         }
         onRecall={
           mobileActionMessage &&
@@ -3174,6 +3238,25 @@ function resolveOpenAttachmentLabel(message: ChatRenderableMessage) {
   return "打开附件";
 }
 
+function resolveSaveAttachmentLabel(
+  message: ChatRenderableMessage,
+  variant: "mobile" | "desktop",
+) {
+  if (message.type === "contact_card") {
+    return isNativeMobileBridgeAvailable() ? "系统分享" : "复制名片";
+  }
+
+  if (message.type === "image") {
+    return variant === "mobile" ? "保存图片" : "另存图片";
+  }
+
+  if (message.type === "file") {
+    return variant === "mobile" ? "保存文件" : "另存文件";
+  }
+
+  return variant === "mobile" ? "保存附件" : "另存为";
+}
+
 function getForwardMessageText(message: ChatRenderableMessage) {
   const replyContent = extractChatReplyMetadata(message.text);
   const displayedText =
@@ -3263,6 +3346,13 @@ function getSaveableAttachment(
     message.type === "file" &&
     message.attachment?.kind === "file" &&
     message.attachment.url
+  ) {
+    return message.attachment;
+  }
+
+  if (
+    message.type === "contact_card" &&
+    message.attachment?.kind === "contact_card"
   ) {
     return message.attachment;
   }
@@ -4962,6 +5052,18 @@ function buildLocationAttachmentSummary(
   return attachment.subtitle?.trim()
     ? `${attachment.title}\n${attachment.subtitle.trim()}`
     : attachment.title;
+}
+
+function buildContactAttachmentSummary(
+  attachment: Extract<MessageAttachment, { kind: "contact_card" }>,
+  profileUrl: string,
+) {
+  return [
+    `${attachment.name} 的隐界名片`,
+    attachment.relationship?.trim() || "世界联系人",
+    `隐界号：yinjie_${attachment.characterId.slice(0, 8)}`,
+    profileUrl,
+  ].join("\n");
 }
 
 function formatVoiceDurationLabel(durationMs?: number) {
