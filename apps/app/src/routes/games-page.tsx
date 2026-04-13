@@ -616,7 +616,7 @@ export function GamesPage() {
         title="游戏"
         subtitle="最近在玩与组局推荐"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -626,31 +626,32 @@ export function GamesPage() {
             }
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            size="sm"
+            className="h-8 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[12px] font-medium text-[color:var(--text-primary)] hover:bg-white"
             onClick={() => void handleCopyGameToMobile(selectedGame.id)}
             aria-label={
               nativeMobileShareSupported ? "分享当前游戏" : "复制游戏入口"
             }
           >
-            {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+            {nativeMobileShareSupported ? <Share2 size={15} /> : <Copy size={15} />}
+            {nativeMobileShareSupported ? "系统分享" : "复制入口"}
           </Button>
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
       <section
         className={cn(
-          "relative overflow-hidden rounded-[24px] p-5 shadow-[var(--shadow-soft)]",
+          "relative overflow-hidden rounded-[18px] p-4 shadow-none",
           selectedTone.heroCardClassName,
         )}
       >
@@ -661,48 +662,48 @@ export function GamesPage() {
         <div className="relative">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-white/82">
+              <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-white/82">
                 {selectedGame.badge}
               </div>
-              <div className="mt-4 text-[28px] font-semibold leading-tight text-white">
+              <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
                 {selectedGame.name}
               </div>
-              <div className="mt-2 text-sm leading-7 text-white/82">
+              <div className="mt-1.5 text-[13px] leading-[1.35rem] text-white/82">
                 {selectedGame.slogan}
               </div>
             </div>
-            <div className="rounded-[22px] border border-white/18 bg-white/12 px-4 py-3 text-right backdrop-blur-sm">
-              <div className="text-[11px] uppercase tracking-[0.16em] text-white/68">
+            <div className="rounded-[16px] border border-white/18 bg-white/12 px-3 py-2.5 text-right backdrop-blur-sm">
+              <div className="text-[10px] uppercase tracking-[0.12em] text-white/68">
                 热度
               </div>
-              <div className="mt-2 text-sm font-medium text-white">
+              <div className="mt-1.5 text-[13px] font-medium leading-5 text-white">
                 {selectedGame.playersLabel}
               </div>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
             <MobileMetric label="好友在玩" value={selectedGame.friendsLabel} />
             <MobileMetric label="更新状态" value={selectedGame.updateNote} />
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-1.5">
             {selectedGame.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs text-white/82"
+                className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[10px] text-white/82"
               >
                 {tag}
               </span>
             ))}
           </div>
 
-          <div className="mt-5 flex gap-3">
+          <div className="mt-4 flex gap-2.5">
             <Button
               variant="secondary"
               size="lg"
               onClick={() => handleLaunchGame(selectedGame.id)}
-              className="flex-1 border-white/18 bg-white text-[color:var(--text-primary)] hover:bg-white/92"
+              className="h-9 flex-1 border-white/18 bg-white px-3.5 text-[12px] text-[color:var(--text-primary)] hover:bg-white/92"
             >
               <Play size={16} />
               开始游戏
@@ -711,25 +712,25 @@ export function GamesPage() {
               variant="secondary"
               size="lg"
               onClick={() => handleTogglePinnedGame(selectedGame.id)}
-              className="border-white/18 bg-white/10 text-white hover:bg-white/18"
+              className="h-9 border-white/18 bg-white/10 px-3 text-[12px] text-white hover:bg-white/18"
             >
-              <Pin size={16} />
+              <Pin size={15} />
             </Button>
           </div>
         </div>
       </section>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto pb-0.5">
         {gameCenterCategoryTabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveCategory(tab.id)}
             className={cn(
-              "shrink-0 rounded-full border px-4 py-2 text-sm transition",
+              "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
               activeCategory === tab.id
-                ? "border-[rgba(47,122,63,0.18)] bg-[rgba(244,252,247,0.94)] text-[#2f7a3f]"
-                : "border-black/5 bg-white text-[color:var(--text-secondary)] shadow-none",
+                ? "bg-[#07c160] text-white"
+                : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
             )}
           >
             {tab.label}
@@ -737,7 +738,11 @@ export function GamesPage() {
         ))}
       </div>
 
-      {successNotice ? <InlineNotice tone={noticeTone}>{successNotice}</InlineNotice> : null}
+      {successNotice ? (
+        <InlineNotice className="text-[12px] leading-5" tone={noticeTone}>
+          {successNotice}
+        </InlineNotice>
+      ) : null}
 
       <GameCenterSessionPanel
         game={selectedGame}
@@ -993,11 +998,13 @@ export function GamesPage() {
 
 function MobileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-white/18 bg-white/10 px-4 py-4">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-white/68">
+    <div className="rounded-[16px] border border-white/18 bg-white/10 px-3 py-2.5">
+      <div className="text-[10px] uppercase tracking-[0.12em] text-white/68">
         {label}
       </div>
-      <div className="mt-2 text-sm font-medium text-white">{value}</div>
+      <div className="mt-1.5 text-[13px] font-medium leading-5 text-white">
+        {value}
+      </div>
     </div>
   );
 }
