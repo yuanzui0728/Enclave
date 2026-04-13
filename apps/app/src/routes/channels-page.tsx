@@ -4,9 +4,11 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Bookmark,
+  Copy,
   MessageCircleMore,
   Pause,
   Play,
+  Share2,
   ThumbsUp,
   Volume2,
   VolumeX,
@@ -41,12 +43,19 @@ import {
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function ChannelsPage() {
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
@@ -55,11 +64,14 @@ export function ChannelsPage() {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
-  const [successNotice, setSuccessNotice] = useState("");
+  const [notice, setNotice] = useState("");
+  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const routeSelectedPostId = parseDesktopChannelsRouteHash(hash);
 
   const channelsQuery = useQuery({
@@ -75,7 +87,8 @@ export function ChannelsPage() {
   const likeMutation = useMutation({
     mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
     onSuccess: async () => {
-      setSuccessNotice("视频号互动已更新。");
+      setNoticeTone("success");
+      setNotice("视频号互动已更新。");
       await queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] });
     },
   });
@@ -97,14 +110,16 @@ export function ChannelsPage() {
     },
     onSuccess: async (_, postId) => {
       setCommentDrafts((current) => ({ ...current, [postId]: "" }));
-      setSuccessNotice("视频号评论已发送。");
+      setNoticeTone("success");
+      setNotice("视频号评论已发送。");
       await queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] });
     },
   });
   const generateMutation = useMutation({
     mutationFn: () => generateChannelPost(baseUrl),
     onSuccess: async () => {
-      setSuccessNotice("已生成一条新的 AI 视频号内容。");
+      setNoticeTone("success");
+      setNotice("已生成一条新的 AI 视频号内容。");
       await queryClient.invalidateQueries({ queryKey: ["app-channels", baseUrl] });
     },
   });
@@ -147,7 +162,7 @@ export function ChannelsPage() {
 
   useEffect(() => {
     setCommentDrafts({});
-    setSuccessNotice("");
+    setNotice("");
   }, [baseUrl]);
 
   useEffect(() => {
@@ -198,13 +213,68 @@ export function ChannelsPage() {
   }, [nativeDesktopFavorites]);
 
   useEffect(() => {
-    if (!successNotice) {
+    if (!notice) {
       return;
     }
 
-    const timer = window.setTimeout(() => setSuccessNotice(""), 2400);
+    const timer = window.setTimeout(() => setNotice(""), 2400);
     return () => window.clearTimeout(timer);
-  }, [successNotice]);
+  }, [notice]);
+
+  async function handleSharePost(post: (typeof visiblePosts)[number]) {
+    const shareHash = buildDesktopChannelsRouteHash(post.id);
+    const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
+    const shareUrl =
+      typeof window === "undefined"
+        ? sharePath
+        : `${window.location.origin}${sharePath}`;
+    const summaryText = `${post.authorName}：${post.text}\n${shareUrl}`;
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${post.authorName} 的视频号动态`,
+        text: `${post.authorName}：${post.text}`,
+        url: shareUrl,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setNotice("已打开系统分享面板。");
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制内容摘要。",
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setNoticeTone("success");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制内容摘要。"
+          : "内容摘要已复制。",
+      );
+    } catch {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制内容摘要失败，请稍后重试。",
+      );
+    }
+  }
 
   function toggleFavorite(post: (typeof visiblePosts)[number]) {
     const sourceId = `channels-${post.id}`;
@@ -237,7 +307,7 @@ export function ChannelsPage() {
         likePendingPostId={pendingLikePostId}
         posts={visiblePosts}
         routeSelectedPostId={routeSelectedPostId}
-        successNotice={successNotice}
+        successNotice={notice}
         isPostFavorite={(postId) =>
           favoriteSourceIds.includes(`channels-${postId}`)
         }
@@ -307,8 +377,8 @@ export function ChannelsPage() {
         <InlineNotice tone="muted">
           当前先聚焦推荐流体验，系统会持续补充 AI 生成的视频内容与互动演示。
         </InlineNotice>
-        {successNotice ? (
-          <InlineNotice tone="success">{successNotice}</InlineNotice>
+        {notice ? (
+          <InlineNotice tone={noticeTone}>{notice}</InlineNotice>
         ) : null}
         {errorMessage ? <ErrorBlock message={errorMessage} /> : null}
         {channelsQuery.isLoading ? (
@@ -328,6 +398,7 @@ export function ChannelsPage() {
             favoriteSourceIds={favoriteSourceIds}
             likePendingPostId={pendingLikePostId}
             posts={visiblePosts}
+            routeSelectedPostId={routeSelectedPostId}
             onCommentChange={(postId, value) =>
               setCommentDrafts((current) => ({
                 ...current,
@@ -336,6 +407,7 @@ export function ChannelsPage() {
             }
             onCommentSubmit={(postId) => commentMutation.mutate(postId)}
             onLike={(postId) => likeMutation.mutate(postId)}
+            onShare={(post) => void handleSharePost(post)}
             onToggleFavorite={toggleFavorite}
           />
         ) : null}
@@ -370,9 +442,11 @@ type MobileChannelsViewportProps = {
   favoriteSourceIds: string[];
   likePendingPostId: string | null;
   posts: FeedPostListItem[];
+  routeSelectedPostId: string | null;
   onCommentChange: (postId: string, value: string) => void;
   onCommentSubmit: (postId: string) => void;
   onLike: (postId: string) => void;
+  onShare: (post: FeedPostListItem) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
 };
 
@@ -382,9 +456,11 @@ function MobileChannelsViewport({
   favoriteSourceIds,
   likePendingPostId,
   posts,
+  routeSelectedPostId,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onShare,
   onToggleFavorite,
 }: MobileChannelsViewportProps) {
   const [activePostId, setActivePostId] = useState<string | null>(null);
@@ -426,6 +502,22 @@ function MobileChannelsViewport({
     return () => observer.disconnect();
   }, [posts]);
 
+  useEffect(() => {
+    if (!routeSelectedPostId) {
+      return;
+    }
+
+    const targetNode = cardRefs.current.get(routeSelectedPostId);
+    if (!targetNode) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActivePostId(routeSelectedPostId);
+    });
+  }, [routeSelectedPostId, posts]);
+
   return (
     <div className="h-[calc(100dvh-10.75rem)] snap-y snap-mandatory space-y-3 overflow-y-auto overscroll-contain pb-4">
       {posts.map((post) => (
@@ -448,6 +540,7 @@ function MobileChannelsViewport({
           onCommentChange={(value) => onCommentChange(post.id, value)}
           onCommentSubmit={() => onCommentSubmit(post.id)}
           onLike={() => onLike(post.id)}
+          onShare={() => onShare(post)}
           onToggleFavorite={() => onToggleFavorite(post)}
         />
       ))}
@@ -466,6 +559,7 @@ type MobileChannelsCardProps = {
   onCommentChange: (value: string) => void;
   onCommentSubmit: () => void;
   onLike: () => void;
+  onShare: () => void;
   onToggleFavorite: () => void;
 };
 
@@ -480,6 +574,7 @@ function MobileChannelsCard({
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onShare,
   onToggleFavorite,
 }: MobileChannelsCardProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -600,6 +695,9 @@ function MobileChannelsCard({
               ) : (
                 <Bookmark size={18} />
               )}
+            </ActionRailButton>
+            <ActionRailButton label="分享" onClick={onShare}>
+              <Share2 size={18} />
             </ActionRailButton>
           </div>
         </div>
