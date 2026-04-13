@@ -844,7 +844,10 @@ export function ChatMessageList({
 
   const addToStickerMutation = useMutation({
     mutationFn: async (message: ChatRenderableMessage) => {
-      const source = resolveCustomStickerUploadSource(message);
+      const source = resolveCustomStickerUploadSource(
+        message,
+        resolveAttachmentUrl,
+      );
       if (!source) {
         throw new Error("当前消息暂不支持添加到表情。");
       }
@@ -3926,14 +3929,17 @@ function buildDirectForwardPayload(
   };
 }
 
-function resolveCustomStickerUploadSource(message: ChatRenderableMessage) {
+function resolveCustomStickerUploadSource(
+  message: ChatRenderableMessage,
+  resolveUrl: (url: string) => string,
+) {
   if (
     message.type === "image" &&
     message.attachment?.kind === "image" &&
     message.attachment.url
   ) {
     return {
-      url: resolveAttachmentUrl(message.attachment.url),
+      url: resolveUrl(message.attachment.url),
       fileName: message.attachment.fileName,
       mimeType: message.attachment.mimeType,
       label: stripFileExtension(message.attachment.fileName) || "图片表情",
@@ -3946,7 +3952,7 @@ function resolveCustomStickerUploadSource(message: ChatRenderableMessage) {
     message.attachment.url
   ) {
     return {
-      url: resolveAttachmentUrl(message.attachment.url),
+      url: resolveUrl(message.attachment.url),
       fileName:
         message.attachment.label ||
         `${message.attachment.stickerId}.${guessMessageAttachmentExtension(message.attachment.mimeType)}`,
