@@ -93,31 +93,45 @@ export function MiniProgramOpenPanel({
   return (
     <section
       className={cn(
-        "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]",
+        compact
+          ? "rounded-[18px] border p-4 shadow-none"
+          : "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]",
         tone.mutedPanelClassName,
       )}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 gap-4">
+      <div className={cn("flex items-start justify-between", compact ? "gap-3" : "gap-4")}>
+        <div className={cn("flex min-w-0", compact ? "gap-3" : "gap-4")}>
           <MiniProgramGlyph miniProgram={miniProgram} size={compact ? "md" : "lg"} />
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={cn("flex flex-wrap items-center gap-2", compact && "gap-1.5")}>
               <div
                 className={cn(
-                  "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                  compact
+                    ? "rounded-full border px-2 py-0.5 text-[9px] font-medium"
+                    : "rounded-full border px-2.5 py-1 text-[10px] font-medium",
                   tone.badgeClassName,
                 )}
               >
                 {isActive ? "已打开" : "待打开"}
               </div>
-              <div className="text-[11px] text-[color:var(--text-muted)]">
+              <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[10px]" : "text-[11px]")}>
                 {isActive ? "最近一次打开的小程序面板" : "点击后写入最近使用和打开态"}
               </div>
             </div>
-            <div className="mt-3 text-lg font-semibold text-[color:var(--text-primary)]">
+            <div
+              className={cn(
+                "font-semibold text-[color:var(--text-primary)]",
+                compact ? "mt-2 text-[15px]" : "mt-3 text-lg",
+              )}
+            >
               {isActive ? `继续使用 ${miniProgram.name}` : miniProgram.name}
             </div>
-            <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+            <div
+              className={cn(
+                "text-[color:var(--text-secondary)]",
+                compact ? "mt-1 text-[12px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
+              )}
+            >
               {miniProgram.openHint}
             </div>
           </div>
@@ -127,7 +141,10 @@ export function MiniProgramOpenPanel({
             variant="ghost"
             size="icon"
             onClick={onDismiss}
-            className="shrink-0 rounded-2xl border border-white/80 bg-white/72"
+            className={cn(
+              "shrink-0 border border-white/80 bg-white/72",
+              compact ? "h-8 w-8 rounded-full" : "rounded-2xl",
+            )}
           >
             <X size={16} />
           </Button>
@@ -144,11 +161,13 @@ export function MiniProgramOpenPanel({
           icon={<Sparkles size={15} className={tone.softTextClassName} />}
           label="当前状态"
           value={miniProgram.serviceLabel}
+          compact={compact}
         />
         <PanelMetric
           icon={<Pin size={15} className={tone.softTextClassName} />}
           label="我的小程序"
           value={isPinned ? "已加入常用入口" : "尚未加入我的小程序"}
+          compact={compact}
         />
         <PanelMetric
           icon={<Clock3 size={15} className={tone.softTextClassName} />}
@@ -159,14 +178,18 @@ export function MiniProgramOpenPanel({
               ? `上次打开 ${formatConversationTimestamp(lastOpenedAt)}`
               : "还没有使用过"
           }
+          compact={compact}
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className={cn("mt-4 flex flex-wrap", compact ? "gap-1.5" : "gap-2")}>
         {miniProgram.tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-white/84 px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]"
+            className={cn(
+              "rounded-full bg-white/84 text-[color:var(--text-muted)]",
+              compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]",
+            )}
           >
             {tag}
           </span>
@@ -174,33 +197,66 @@ export function MiniProgramOpenPanel({
       </div>
 
       {tasks.length ? (
-        <div className="mt-5 rounded-[24px] border border-white/80 bg-white/78 p-4">
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        <div
+          className={cn(
+            "mt-5 border border-white/80 bg-white/78",
+            compact ? "rounded-[18px] p-3.5" : "rounded-[24px] p-4",
+          )}
+        >
+          <div
+            className={cn(
+              "font-medium text-[color:var(--text-primary)]",
+              compact ? "text-[14px]" : "text-sm",
+            )}
+          >
             当前工作台
           </div>
-          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+          <div
+            className={cn(
+              "mt-1 text-[color:var(--text-muted)]",
+              compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-5",
+            )}
+          >
             打开后先承接一组本地待办，让这个面板不只是一次“已打开”的记录。
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className={cn("mt-4", compact ? "space-y-2.5" : "space-y-3")}>
             {tasks.map((task) => (
               <div
                 key={task.id}
-                className="rounded-[20px] border border-[rgba(15,23,42,0.06)] bg-white/86 px-4 py-4"
+                className={cn(
+                  "border border-[rgba(15,23,42,0.06)] bg-white/86",
+                  compact ? "rounded-[16px] px-3.5 py-3" : "rounded-[20px] px-4 py-4",
+                )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      <div
+                        className={cn(
+                          "font-medium text-[color:var(--text-primary)]",
+                          compact ? "text-[13px]" : "text-sm",
+                        )}
+                      >
                         {task.title}
                       </div>
                       {task.completed ? (
-                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2.5 py-1 text-[10px] text-[#2f7a3f]">
+                        <span
+                          className={cn(
+                            "rounded-full bg-[rgba(47,122,63,0.1)] text-[#2f7a3f]",
+                            compact ? "px-2 py-0.5 text-[9px]" : "px-2.5 py-1 text-[10px]",
+                          )}
+                        >
                           已完成
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    <div
+                      className={cn(
+                        "mt-1.5 text-[color:var(--text-secondary)]",
+                        compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-6",
+                      )}
+                    >
                       {task.detail}
                     </div>
                   </div>
@@ -208,7 +264,10 @@ export function MiniProgramOpenPanel({
                     variant="secondary"
                     size="sm"
                     onClick={() => onToggleTask(miniProgram.id, task.id)}
-                    className="shrink-0 border-white/80 bg-white"
+                    className={cn(
+                      "shrink-0 border-white/80 bg-white",
+                      compact && "h-8 rounded-full px-3 text-[11px]",
+                    )}
                   >
                     <CheckCircle2 size={14} />
                     {task.completed ? "撤销" : task.actionLabel}
@@ -220,15 +279,22 @@ export function MiniProgramOpenPanel({
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button variant="primary" onClick={() => onOpen(miniProgram.id)}>
+      <div className={cn("mt-5 flex flex-wrap", compact ? "gap-2" : "gap-3")}>
+        <Button
+          variant="primary"
+          onClick={() => onOpen(miniProgram.id)}
+          className={compact ? "h-8 rounded-full px-3.5 text-[11px]" : undefined}
+        >
           {isActive ? "继续使用" : "打开小程序"}
         </Button>
         {onCopyToMobile ? (
           <Button
             variant="secondary"
             onClick={() => onCopyToMobile(miniProgram.id)}
-            className="border-white/80 bg-white/88"
+            className={cn(
+              "border-white/80 bg-white/88",
+              compact && "h-8 rounded-full px-3.5 text-[11px]",
+            )}
           >
             {resolvedCopyActionIcon}
             {resolvedCopyActionLabel}
@@ -237,11 +303,19 @@ export function MiniProgramOpenPanel({
         <Button
           variant="secondary"
           onClick={() => onTogglePinned(miniProgram.id)}
-          className="border-white/80 bg-white/88"
+          className={cn(
+            "border-white/80 bg-white/88",
+            compact && "h-8 rounded-full px-3.5 text-[11px]",
+          )}
         >
           {isPinned ? "移出我的小程序" : "加入我的小程序"}
         </Button>
-        <div className="flex items-center text-xs leading-6 text-[color:var(--text-muted)]">
+        <div
+          className={cn(
+            "flex items-center text-[color:var(--text-muted)]",
+            compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-6",
+          )}
+        >
           {isActive
             ? onCopyToMobile
               ? resolvedCopyActionHint
@@ -258,23 +332,45 @@ function PanelMetric({
   label,
   value,
   detail,
+  compact = false,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   detail?: string;
+  compact?: boolean;
 }) {
   return (
-    <div className="rounded-[22px] border border-white/80 bg-white/84 px-4 py-4">
-      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
+    <div
+      className={cn(
+        "border border-white/80 bg-white/84",
+        compact ? "rounded-[16px] px-3 py-3" : "rounded-[22px] px-4 py-4",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2 uppercase text-[color:var(--text-muted)]",
+          compact ? "text-[10px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
+        )}
+      >
         {icon}
         {label}
       </div>
-      <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+      <div
+        className={cn(
+          "font-medium text-[color:var(--text-primary)]",
+          compact ? "mt-1.5 text-[13px] leading-5" : "mt-2 text-sm",
+        )}
+      >
         {value}
       </div>
       {detail ? (
-        <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-dim)]">
+        <div
+          className={cn(
+            "text-[color:var(--text-dim)]",
+            compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5",
+          )}
+        >
           {detail}
         </div>
       ) : null}
