@@ -78,7 +78,7 @@ function MobileSubscriptionInboxPage() {
       <TabPageTopBar
         title="订阅号消息"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -88,9 +88,9 @@ function MobileSubscriptionInboxPage() {
             }
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -98,30 +98,30 @@ function MobileSubscriptionInboxPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({ to: "/contacts/official-accounts" });
             }}
             aria-label="打开公众号列表"
           >
-            <BookOpenText size={18} />
+            <BookOpenText size={17} />
           </Button>
         }
       />
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {inboxQuery.isLoading ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <LoadingBlock label="正在读取订阅号消息..." />
           </div>
         ) : null}
         {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <ErrorBlock message={inboxQuery.error.message} />
           </div>
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <ErrorBlock message={markReadMutation.error.message} />
           </div>
         ) : null}
@@ -130,9 +130,9 @@ function MobileSubscriptionInboxPage() {
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+              className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
             >
-              <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
+              <div className="border-b border-[color:var(--border-faint)] px-4 py-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -143,10 +143,10 @@ function MobileSubscriptionInboxPage() {
                   }}
                   className="text-left"
                 >
-                  <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                     {group.account.name}
                   </div>
-                  <div className="mt-0.5 text-[11px] leading-5 text-[color:var(--text-muted)]">
+                  <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
                     {group.unreadCount > 0
                       ? `${group.unreadCount} 条新推送`
                       : "最近推送"}
@@ -170,7 +170,7 @@ function MobileSubscriptionInboxPage() {
             </section>
           ))
         ) : !inboxQuery.isLoading ? (
-          <div className="px-3 pt-5">
+          <div className="px-4 pt-4">
             <EmptyState
               title="还没有订阅号消息"
               description="先关注一个订阅号，后续推送会汇总到这里。"
