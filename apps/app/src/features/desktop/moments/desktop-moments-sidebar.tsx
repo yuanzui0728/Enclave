@@ -225,6 +225,55 @@ export function DesktopMomentsSidebar({
     );
   }
 
+  if (mode === "author") {
+    return (
+      <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
+            <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+              作者时间线
+            </div>
+            <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+              当前联系人还没有朋友圈
+            </div>
+            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              先保留联系人上下文，等 TA 有新动态时会直接显示在这里。
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 items-center px-5 py-5">
+            <div className="w-full rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+              <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
+                暂无可展示内容
+              </div>
+              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                当前联系人暂时没有可展示的朋友圈内容，或者相关内容已被隐藏。
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={onClearAuthor}
+                >
+                  查看全部
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={onOpenCompose}
+                >
+                  <PenSquare size={15} />
+                  发朋友圈
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
       <div className="flex h-full min-h-0 flex-col">

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Moment } from "@yinjie/contracts";
 import { parseTimestamp } from "../../../lib/format";
+import { type DesktopMomentsRouteState } from "./desktop-moments-route-state";
 import { DesktopMomentComposePanel } from "./desktop-moment-compose-panel";
 import { DesktopMomentsFeed } from "./desktop-moments-feed";
 import {
@@ -26,6 +27,7 @@ type DesktopMomentsWorkspaceProps = {
   ownerAvatar?: string | null;
   ownerId?: string | null;
   ownerUsername?: string | null;
+  routeSelectedAuthorId?: string | null;
   routeSelectedMomentId?: string | null;
   showCompose: boolean;
   successNotice?: string;
@@ -38,6 +40,7 @@ type DesktopMomentsWorkspaceProps = {
   onLike: (momentId: string) => void;
   onToggleFavorite: (momentId: string) => void;
   onRefresh: () => void;
+  onRouteStateChange?: (state: DesktopMomentsRouteState) => void;
   onTextChange: (value: string) => void;
 };
 
@@ -55,6 +58,7 @@ export function DesktopMomentsWorkspace({
   ownerAvatar,
   ownerId,
   ownerUsername,
+  routeSelectedAuthorId = null,
   routeSelectedMomentId = null,
   showCompose,
   successNotice,
@@ -67,13 +71,18 @@ export function DesktopMomentsWorkspace({
   onLike,
   onToggleFavorite,
   onRefresh,
+  onRouteStateChange,
   onTextChange,
 }: DesktopMomentsWorkspaceProps) {
   const [activeFilter, setActiveFilter] =
     useState<DesktopMomentsFeedFilter>("all");
   const [searchText, setSearchText] = useState("");
-  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(null);
-  const [selectedMomentId, setSelectedMomentId] = useState<string | null>(null);
+  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(
+    routeSelectedAuthorId,
+  );
+  const [selectedMomentId, setSelectedMomentId] = useState<string | null>(
+    routeSelectedMomentId,
+  );
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -81,6 +90,17 @@ export function DesktopMomentsWorkspace({
       current === routeSelectedMomentId ? current : routeSelectedMomentId,
     );
   }, [routeSelectedMomentId]);
+
+  useEffect(() => {
+    if (routeSelectedAuthorId) {
+      setActiveFilter("all");
+      scrollViewportRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    setActiveAuthorId((current) =>
+      current === routeSelectedAuthorId ? current : routeSelectedAuthorId,
+    );
+  }, [routeSelectedAuthorId]);
 
   const authorSummaries = useMemo(() => {
     const map = new Map<string, Omit<DesktopMomentAuthorSummary, "authorId">>();
@@ -162,8 +182,8 @@ export function DesktopMomentsWorkspace({
   }, [activeAuthorId, moments]);
 
   const filteredCountLabel = useMemo(() => {
-    if (activeAuthorSummary) {
-      return `${activeAuthorSummary.authorName} · ${filteredMoments.length} 条`;
+    if (activeAuthorId) {
+      return `${activeAuthorSummary?.authorName ?? "当前联系人"} · ${filteredMoments.length} 条`;
     }
 
     if (searchText.trim()) {
@@ -171,7 +191,7 @@ export function DesktopMomentsWorkspace({
     }
 
     return `当前展示 ${filteredMoments.length} 条`;
-  }, [activeAuthorSummary, filteredMoments.length, searchText]);
+  }, [activeAuthorId, activeAuthorSummary, filteredMoments.length, searchText]);
 
   useEffect(() => {
     if (
@@ -182,16 +202,6 @@ export function DesktopMomentsWorkspace({
     }
   }, [filteredMoments, selectedMomentId]);
 
-  useEffect(() => {
-    if (!activeAuthorId) {
-      return;
-    }
-
-    if (!authorSummaries.some((author) => author.authorId === activeAuthorId)) {
-      setActiveAuthorId(null);
-    }
-  }, [activeAuthorId, authorSummaries]);
-
   const selectedMoment = useMemo(
     () =>
       filteredMoments.find((moment) => moment.id === selectedMomentId) ?? null,
@@ -199,9 +209,16 @@ export function DesktopMomentsWorkspace({
   );
   const sidebarMode = selectedMoment
     ? "detail"
-    : activeAuthorSummary
+    : activeAuthorId
       ? "author"
       : "summary";
+
+  useEffect(() => {
+    onRouteStateChange?.({
+      authorId: activeAuthorId ?? undefined,
+      momentId: selectedMomentId ?? undefined,
+    });
+  }, [activeAuthorId, onRouteStateChange, selectedMomentId]);
 
   function focusAuthor(authorId: string) {
     setActiveFilter("all");
@@ -220,7 +237,10 @@ export function DesktopMomentsWorkspace({
             filteredCountLabel={filteredCountLabel}
             likeErrorMessage={likeErrorMessage}
             searchText={searchText}
-            selectedAuthorName={activeAuthorSummary?.authorName ?? null}
+            selectedAuthorName={
+              activeAuthorSummary?.authorName ??
+              (activeAuthorId ? "当前联系人" : null)
+            }
             successNotice={successNotice}
             onBackToTop={() => {
               scrollViewportRef.current?.scrollTo({
@@ -241,17 +261,21 @@ export function DesktopMomentsWorkspace({
           >
             <div className="mx-auto w-full max-w-[760px]">
               <DesktopMomentsFeed
+                activeAuthorId={activeAuthorId}
+                activeAuthorName={activeAuthorSummary?.authorName ?? null}
                 commentDrafts={commentDrafts}
                 commentPendingMomentId={commentPendingMomentId}
                 isLoading={isLoading}
                 likePendingMomentId={likePendingMomentId}
                 moments={filteredMoments}
                 ownerId={ownerId}
+                searchText={searchText}
                 selectedMomentId={selectedMomentId}
                 totalMomentsCount={moments.length}
                 isMomentFavorite={isMomentFavorite}
                 onCommentChange={onCommentChange}
                 onCommentSubmit={onCommentSubmit}
+                onClearAuthor={() => setActiveAuthorId(null)}
                 onLike={onLike}
                 onToggleFavorite={onToggleFavorite}
                 onOpenCompose={() => setShowCompose(true)}

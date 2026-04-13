@@ -23,6 +23,10 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
+import {
+  buildDesktopMomentsRouteHash,
+  parseDesktopMomentsRouteState,
+} from "../features/desktop/moments/desktop-moments-route-state";
 import { DesktopMomentsWorkspace } from "../features/desktop/moments/desktop-moments-workspace";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -65,7 +69,9 @@ export function MomentsPage() {
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
-  const routeSelectedMomentId = parseMomentsRouteHash(hash);
+  const routeState = parseDesktopMomentsRouteState(hash);
+  const routeSelectedAuthorId = routeState.authorId ?? null;
+  const routeSelectedMomentId = routeState.momentId ?? null;
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
@@ -247,7 +253,9 @@ export function MomentsPage() {
   }, [isDesktopLayout, routeSelectedMomentId, visibleMoments.length]);
 
   async function handleShareMoment(moment: (typeof visibleMoments)[number]) {
-    const shareHash = buildMomentsRouteHash(moment.id);
+    const shareHash = buildDesktopMomentsRouteHash({
+      momentId: moment.id,
+    });
     const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
     const shareUrl =
       typeof window === "undefined"
@@ -343,6 +351,7 @@ export function MomentsPage() {
         ownerAvatar={ownerAvatar}
         ownerId={ownerId}
         ownerUsername={ownerUsername}
+        routeSelectedAuthorId={routeSelectedAuthorId}
         routeSelectedMomentId={routeSelectedMomentId}
         showCompose={showCompose}
         successNotice={notice}
@@ -368,6 +377,9 @@ export function MomentsPage() {
 
           const sourceId = `moment-${moment.id}`;
           const collected = favoriteSourceIds.includes(sourceId);
+          const routeHash = buildDesktopMomentsRouteHash({
+            momentId: moment.id,
+          });
           const nextFavorites = collected
             ? removeDesktopFavorite(sourceId)
             : upsertDesktopFavorite({
@@ -377,7 +389,7 @@ export function MomentsPage() {
                 title: moment.authorName,
                 description: moment.text,
                 meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
-                to: `/tabs/moments${buildMomentsRouteHash(moment.id) ? `#${buildMomentsRouteHash(moment.id)}` : ""}`,
+                to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
                 badge: "朋友圈",
                 avatarName: moment.authorName,
                 avatarSrc: moment.authorAvatar,
@@ -392,6 +404,20 @@ export function MomentsPage() {
           if (ownerId) {
             void blockedQuery.refetch();
           }
+        }}
+        onRouteStateChange={(state) => {
+          const nextHash = buildDesktopMomentsRouteHash(state);
+          const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+          if (normalizedHash === (nextHash ?? "")) {
+            return;
+          }
+
+          void navigate({
+            to: isDiscoverSubPage ? "/discover/moments" : "/tabs/moments",
+            hash: nextHash,
+            replace: true,
+          });
         }}
         onTextChange={setText}
       />
@@ -522,6 +548,9 @@ export function MomentsPage() {
           {visibleMoments.map((moment) => {
             const sourceId = `moment-${moment.id}`;
             const collected = favoriteSourceIds.includes(sourceId);
+            const routeHash = buildDesktopMomentsRouteHash({
+              momentId: moment.id,
+            });
 
             return (
               <SocialPostCard
@@ -580,7 +609,7 @@ export function MomentsPage() {
                               title: moment.authorName,
                               description: moment.text,
                               meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
-                              to: "/tabs/moments",
+                              to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
                               badge: "朋友圈",
                               avatarName: moment.authorName,
                               avatarSrc: moment.authorAvatar,
@@ -681,16 +710,6 @@ export function MomentsPage() {
   );
 }
 
-function parseMomentsRouteHash(hash: string) {
-  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
-  if (!normalizedHash) {
-    return null;
-  }
-
-  const params = new URLSearchParams(normalizedHash);
-  return params.get("moment")?.trim() || null;
-}
-
 function MobileMomentsStatusCard({
   badge,
   title,
@@ -755,14 +774,4 @@ function MobileMomentsInlineNotice({
       {children}
     </InlineNotice>
   );
-}
-
-function buildMomentsRouteHash(momentId?: string | null) {
-  if (!momentId) {
-    return undefined;
-  }
-
-  const params = new URLSearchParams();
-  params.set("moment", momentId);
-  return params.toString();
 }

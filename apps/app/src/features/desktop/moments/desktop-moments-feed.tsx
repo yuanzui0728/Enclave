@@ -4,17 +4,21 @@ import { EmptyState } from "../../../components/empty-state";
 import { DesktopMomentRow } from "./desktop-moment-row";
 
 type DesktopMomentsFeedProps = {
+  activeAuthorId: string | null;
+  activeAuthorName?: string | null;
   commentDrafts: Record<string, string>;
   commentPendingMomentId: string | null;
   isLoading: boolean;
   likePendingMomentId: string | null;
   moments: Moment[];
   ownerId?: string | null;
+  searchText: string;
   selectedMomentId: string | null;
   totalMomentsCount: number;
   isMomentFavorite: (momentId: string) => boolean;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
+  onClearAuthor: () => void;
   onLike: (momentId: string) => void;
   onToggleFavorite: (momentId: string) => void;
   onOpenCompose: () => void;
@@ -23,23 +27,30 @@ type DesktopMomentsFeedProps = {
 };
 
 export function DesktopMomentsFeed({
+  activeAuthorId,
+  activeAuthorName,
   commentDrafts,
   commentPendingMomentId,
   isLoading,
   likePendingMomentId,
   moments,
   ownerId,
+  searchText,
   selectedMomentId,
   totalMomentsCount,
   isMomentFavorite,
   onCommentChange,
   onCommentSubmit,
+  onClearAuthor,
   onLike,
   onToggleFavorite,
   onOpenCompose,
   onOpenDetail,
   onSelectAuthor,
 }: DesktopMomentsFeedProps) {
+  const hasAuthorFocus = Boolean(activeAuthorId);
+  const hasSearchText = Boolean(searchText.trim());
+
   return (
     <>
       {isLoading ? (
@@ -75,16 +86,39 @@ export function DesktopMomentsFeed({
       {!isLoading && !moments.length ? (
         <div className="mx-auto max-w-[560px] py-10">
           <EmptyState
-            title={totalMomentsCount ? "当前筛选下没有动态" : "朋友圈还很安静"}
+            title={
+              hasAuthorFocus && !hasSearchText
+                ? activeAuthorName
+                  ? `${activeAuthorName} 还没有发表朋友圈`
+                  : "当前无法查看这个联系人的朋友圈"
+                : totalMomentsCount
+                  ? "当前筛选下没有动态"
+                  : "朋友圈还很安静"
+            }
             description={
-              totalMomentsCount
-                ? "换个筛选条件试试，或者直接发一条新的朋友圈。"
-                : "你先发一条，或者等世界里的其他人先开口。"
+              hasAuthorFocus && !hasSearchText
+                ? activeAuthorName
+                  ? "后续有新动态时，会直接出现在这里。"
+                  : "这个联系人暂时没有可展示的朋友圈内容，稍后可以再回来看看。"
+                : totalMomentsCount
+                  ? "换个筛选条件试试，或者直接发一条新的朋友圈。"
+                  : "你先发一条，或者等世界里的其他人先开口。"
             }
             action={
-              <Button variant="primary" onClick={onOpenCompose}>
-                发朋友圈
-              </Button>
+              hasAuthorFocus && !hasSearchText ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Button variant="secondary" onClick={onClearAuthor}>
+                    查看全部朋友圈
+                  </Button>
+                  <Button variant="primary" onClick={onOpenCompose}>
+                    发朋友圈
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="primary" onClick={onOpenCompose}>
+                  发朋友圈
+                </Button>
+              )
             }
           />
         </div>
