@@ -506,43 +506,59 @@ export function DesktopChatHistoryPanel({
 
       {showSearchMainView ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="divide-y divide-[rgba(0,0,0,0.06)] bg-white">
-            <DesktopSearchEntryRow
-              icon={<CalendarDays size={16} />}
-              label="日期"
-              value={
-                customDate ||
-                resolveQuickDateFilterLabel(quickDateFilter) ||
-                "全部时间"
-              }
-              onClick={() => setSelectorView("date")}
-            />
-            {isGroupConversation ? (
+          <div className="px-3 pb-4 pt-3">
+            <div className="px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              按条件查找
+            </div>
+            <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
               <DesktopSearchEntryRow
-                icon={<Users size={16} />}
-                label="群成员"
-                value={selectedSender?.label ?? "全部成员"}
-                onClick={() => setSelectorView("sender")}
+                icon={<CalendarDays size={16} />}
+                iconTone="calendar"
+                label="日期"
+                value={
+                  customDate ||
+                  resolveQuickDateFilterLabel(quickDateFilter) ||
+                  "全部时间"
+                }
+                onClick={() => setSelectorView("date")}
               />
-            ) : null}
-            <DesktopSearchEntryRow
-              icon={<FileImage size={16} />}
-              label="图片与视频"
-              value="查看媒体消息"
-              onClick={() => setActiveCategory("media")}
-            />
-            <DesktopSearchEntryRow
-              icon={<FileText size={16} />}
-              label="文件"
-              value="查看文件消息"
-              onClick={() => setActiveCategory("files")}
-            />
-            <DesktopSearchEntryRow
-              icon={<Link2 size={16} />}
-              label="链接"
-              value="查看链接消息"
-              onClick={() => setActiveCategory("links")}
-            />
+              {isGroupConversation ? (
+                <DesktopSearchEntryRow
+                  icon={<Users size={16} />}
+                  iconTone="members"
+                  label="群成员"
+                  value={selectedSender?.label ?? "全部成员"}
+                  onClick={() => setSelectorView("sender")}
+                />
+              ) : null}
+            </div>
+
+            <div className="mt-4 px-1 text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              按内容查找
+            </div>
+            <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white">
+              <DesktopSearchEntryRow
+                icon={<FileImage size={16} />}
+                iconTone="media"
+                label="图片与视频"
+                value="查看媒体消息"
+                onClick={() => setActiveCategory("media")}
+              />
+              <DesktopSearchEntryRow
+                icon={<FileText size={16} />}
+                iconTone="files"
+                label="文件"
+                value="查看文件消息"
+                onClick={() => setActiveCategory("files")}
+              />
+              <DesktopSearchEntryRow
+                icon={<Link2 size={16} />}
+                iconTone="links"
+                label="链接"
+                value="查看链接消息"
+                onClick={() => setActiveCategory("links")}
+              />
+            </div>
           </div>
         </div>
       ) : null}
@@ -736,11 +752,13 @@ function DesktopSearchPickerView({
 
 function DesktopSearchEntryRow({
   icon,
+  iconTone = "default",
   label,
   value,
   onClick,
 }: {
   icon: ReactNode;
+  iconTone?: "default" | "calendar" | "members" | "media" | "files" | "links";
   label: string;
   value: string;
   onClick: () => void;
@@ -749,13 +767,18 @@ function DesktopSearchEntryRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-[#f8f8f8]"
+      className="flex min-h-[58px] w-full items-center gap-3 border-b border-[rgba(0,0,0,0.06)] px-4 py-3.5 text-left transition last:border-b-0 hover:bg-[#fafafa]"
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-[#f3f3f3] text-[color:var(--text-secondary)]">
+      <span
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-[10px]",
+          resolveSearchEntryIconTone(iconTone),
+        )}
+      >
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] text-[color:var(--text-primary)]">
+        <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
           {label}
         </div>
         <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
@@ -765,6 +788,32 @@ function DesktopSearchEntryRow({
       <ChevronRight size={15} className="text-[color:var(--text-dim)]" />
     </button>
   );
+}
+
+function resolveSearchEntryIconTone(
+  tone: "default" | "calendar" | "members" | "media" | "files" | "links",
+) {
+  if (tone === "calendar") {
+    return "bg-[rgba(7,193,96,0.1)] text-[color:var(--brand-primary)]";
+  }
+
+  if (tone === "members") {
+    return "bg-[rgba(59,130,246,0.1)] text-[#2563eb]";
+  }
+
+  if (tone === "media") {
+    return "bg-[rgba(14,165,233,0.1)] text-[#0284c7]";
+  }
+
+  if (tone === "files") {
+    return "bg-[rgba(249,115,22,0.1)] text-[#ea580c]";
+  }
+
+  if (tone === "links") {
+    return "bg-[rgba(168,85,247,0.1)] text-[#7c3aed]";
+  }
+
+  return "bg-[#f3f3f3] text-[color:var(--text-secondary)]";
 }
 
 function DesktopSearchOptionRow({
