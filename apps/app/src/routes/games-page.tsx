@@ -648,7 +648,7 @@ export function GamesPage() {
         }
       />
 
-      <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+      <div className="space-y-2 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
       <section
         className={cn(
           "relative overflow-hidden rounded-[18px] p-4 shadow-none",
@@ -739,7 +739,10 @@ export function GamesPage() {
       </div>
 
       {successNotice ? (
-        <InlineNotice className="text-[12px] leading-5" tone={noticeTone}>
+        <InlineNotice
+          className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          tone={noticeTone}
+        >
           {successNotice}
         </InlineNotice>
       ) : null}
@@ -760,7 +763,7 @@ export function GamesPage() {
       />
 
       <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
           <Clock3 size={15} className="text-[#15803d]" />
           最近玩过
         </div>
@@ -777,7 +780,7 @@ export function GamesPage() {
                   tone.mutedPanelClassName,
                 )}
               >
-                <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
+                <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
                   {game.name}
                 </div>
                 <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
@@ -795,11 +798,11 @@ export function GamesPage() {
       </AppSection>
 
       <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
           <UsersRound size={15} className="text-[#15803d]" />
           好友在玩
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {gameCenterFriendActivities.map((activity) => {
             const game = getGameCenterGame(activity.gameId);
             if (!game) {
@@ -873,11 +876,11 @@ export function GamesPage() {
       </div>
 
       <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
           <Play size={15} className="text-[#15803d]" />
           为你推荐
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {mobileBrowseGames.map((game) => {
             const tone = getGameCenterToneStyle(game.tone);
             const pinned = pinnedGameIds.includes(game.id);
@@ -910,7 +913,7 @@ export function GamesPage() {
                         </div>
                       ) : null}
                     </div>
-                    <div className="mt-2.5 text-[14px] font-semibold text-[color:var(--text-primary)]">
+                    <div className="mt-2.5 text-[13px] font-semibold text-[color:var(--text-primary)]">
                       {game.name}
                     </div>
                     <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
@@ -943,11 +946,11 @@ export function GamesPage() {
       </AppSection>
 
       <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
           <Gift size={15} className="text-[#15803d]" />
           福利活动
         </div>
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {gameCenterEvents.map((event) => {
             const tone = getGameCenterToneStyle(event.tone);
             const engaged = Boolean(eventActionStatusById[event.id]);
@@ -1023,11 +1026,11 @@ function MobileRankingSection({
 }) {
   return (
     <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-      <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
         {icon}
         {title}
       </div>
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {entries.map((entry) => {
           const game = getGameCenterGame(entry.gameId);
           if (!game) {
