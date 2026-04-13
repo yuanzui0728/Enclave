@@ -688,9 +688,18 @@ export function StickerPanel({
     setSearchKeyword("");
     onPackChange("featured");
   };
+  const openUploadPicker = () => {
+    uploadInputRef.current?.click();
+  };
   const switchCustomSortToAdded = () => {
     setCustomSortMode("added");
     setCustomManageMode(false);
+  };
+  const exitManageModeAndOpenUpload = () => {
+    setCustomManageMode(false);
+    window.setTimeout(() => {
+      openUploadPicker();
+    }, 0);
   };
 
   useEffect(() => {
@@ -1297,7 +1306,7 @@ export function StickerPanel({
                   return;
                 }
 
-                uploadInputRef.current?.click();
+                openUploadPicker();
               }}
               disabled={
                 uploadMutation.isPending ||
@@ -1597,7 +1606,7 @@ export function StickerPanel({
                       <>
                         <button
                           type="button"
-                          onClick={() => uploadInputRef.current?.click()}
+                          onClick={openUploadPicker}
                           className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                         >
                           添加第一张
@@ -1658,7 +1667,9 @@ export function StickerPanel({
               <span>
                 {customDeleteFeedback
                   ? `已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`
-                  : "管理中：点击表情右上角删除，按 Esc 可直接完成。"}
+                  : customStickerLibraryFull
+                    ? "表情已满：先删 1 张，完成后就能继续添加。"
+                    : "管理中：点击表情右上角删除，按 Esc 可直接完成。"}
               </span>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
@@ -1667,6 +1678,15 @@ export function StickerPanel({
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
                   Delete 删除
                 </span>
+                {customDeleteFeedback?.slotsRemaining ? (
+                  <button
+                    type="button"
+                    onClick={exitManageModeAndOpenUpload}
+                    className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
+                  >
+                    现在去添加
+                  </button>
+                ) : null}
                 {focusedManageSticker ? (
                   <span
                     className={`max-w-[140px] truncate rounded-full px-2 py-1 text-[11px] text-[color:var(--text-primary)] transition ${
@@ -1875,7 +1895,7 @@ export function StickerPanel({
                       <button
                         ref={customEmptyActionButtonRef}
                         type="button"
-                        onClick={() => uploadInputRef.current?.click()}
+                        onClick={openUploadPicker}
                         disabled={
                           uploadMutation.isPending || customStickerLibraryFull
                         }
