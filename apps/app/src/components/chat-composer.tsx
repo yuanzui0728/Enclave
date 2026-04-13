@@ -1,14 +1,15 @@
 import { Capacitor } from "@capacitor/core";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   Download,
   FileText,
-  History,
   ImageIcon,
   Keyboard,
   Mic,
-  Monitor,
+  MonitorUp,
   Plus,
   Scissors,
   SendHorizontal,
@@ -296,7 +297,6 @@ export function ChatComposer({
   onStartVoiceCall,
   onStartVideoCall,
   onCancelReply,
-  onOpenDesktopHistory,
   onChange,
   onSubmit,
 }: ChatComposerProps) {
@@ -366,7 +366,7 @@ export function ChatComposer({
   const desktopStickerRef = useRef<HTMLDivElement | null>(null);
   const desktopPlusRef = useRef<HTMLDivElement | null>(null);
   const desktopDropDepthRef = useRef(0);
-  const desktopInputRef = useRef<HTMLInputElement | null>(null);
+  const desktopInputRef = useRef<HTMLTextAreaElement | null>(null);
   const desktopScreenshotImageRef = useRef<HTMLImageElement | null>(null);
   const mobileTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const albumInputRef = useRef<HTMLInputElement | null>(null);
@@ -384,6 +384,7 @@ export function ChatComposer({
     DesktopFavoriteRecord[]
   >([]);
   const [desktopDropActive, setDesktopDropActive] = useState(false);
+  const [desktopEditorExpanded, setDesktopEditorExpanded] = useState(false);
   const [inputCursor, setInputCursor] = useState(0);
   const [mentionActiveIndex, setMentionActiveIndex] = useState(0);
   const [pendingSelection, setPendingSelection] = useState<number | null>(null);
@@ -394,6 +395,7 @@ export function ChatComposer({
   const [mobileInputMode, setMobileInputMode] = useState<"text" | "speech">(
     "text",
   );
+  const desktopInputComposingRef = useRef(false);
   const showSpeechEntry = Boolean(
     speechInput?.enabled && speechInput?.conversationId,
   );
@@ -722,7 +724,7 @@ export function ChatComposer({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("pagehide", handlePageHide);
     };
-  }, [isDesktop]);
+  }, [collapseMobileTransientState, isDesktop]);
 
   useEffect(() => {
     if (
@@ -773,6 +775,25 @@ export function ChatComposer({
     input.style.height = "0px";
     input.style.height = `${Math.min(Math.max(input.scrollHeight, 38), 108)}px`;
   }, [isDesktop, mobileSpeechMode, value]);
+
+  useEffect(() => {
+    if (!isDesktop) {
+      return;
+    }
+
+    const input = desktopInputRef.current;
+    if (!(input instanceof HTMLTextAreaElement)) {
+      return;
+    }
+
+    const minHeight = desktopEditorExpanded ? 176 : 40;
+    const maxHeight = desktopEditorExpanded ? 288 : 88;
+    input.style.height = "0px";
+    input.style.height = `${Math.min(
+      Math.max(input.scrollHeight, minHeight),
+      maxHeight,
+    )}px`;
+  }, [desktopEditorExpanded, isDesktop, value]);
 
   useEffect(() => {
     if (!isDesktop || !stickerPanelOpen) {
@@ -1498,7 +1519,7 @@ export function ChatComposer({
   };
 
   const handleDesktopPaste = async (
-    event: ClipboardEvent<HTMLInputElement>,
+    event: ClipboardEvent<HTMLTextAreaElement>,
   ) => {
     if (!isDesktop || !onSendAttachment || attachmentBusy) {
       return;
@@ -2361,7 +2382,7 @@ export function ChatComposer({
   };
 
   const handleDesktopInputKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
+    event: KeyboardEvent<HTMLTextAreaElement>,
   ) => {
     const commandKey = event.metaKey || event.ctrlKey;
 
@@ -2392,10 +2413,18 @@ export function ChatComposer({
       }
     }
 
+    if (desktopInputComposingRef.current || event.nativeEvent.isComposing) {
+      return;
+    }
+
     const shouldSend =
       event.key === "Enter" &&
       value.trim() &&
-      (sendMessageShortcut === "enter" ? !commandKey : commandKey);
+      (desktopEditorExpanded
+        ? commandKey && !event.shiftKey && !event.altKey
+        : sendMessageShortcut === "enter"
+          ? !commandKey && !event.shiftKey && !event.altKey
+          : commandKey && !event.shiftKey && !event.altKey);
 
     if (shouldSend) {
       event.preventDefault();
@@ -2537,6 +2566,24 @@ export function ChatComposer({
     } finally {
       setAttachmentBusy(false);
     }
+  };
+
+  const toggleDesktopEditorExpanded = () => {
+    setDesktopEditorExpanded((current) => !current);
+    setStickerPanelOpen(false);
+    closeDesktopPlusMenu();
+    focusInput();
+  };
+
+  const handleDesktopSpeechToggle = () => {
+    if (speech.status === "listening") {
+      speech.stop();
+      return;
+    }
+
+    setStickerPanelOpen(false);
+    closeDesktopPlusMenu();
+    void speech.start();
   };
 
   return (
@@ -2691,6 +2738,53 @@ export function ChatComposer({
             onClose={onCancelReply}
           />
         ) : null}
+        {isDesktop && (speech.status !== "idle" || speechDisplayText) ? (
+          <InlineNotice
+            className="mb-3 flex flex-wrap items-center gap-2 rounded-[12px] border-black/6 bg-white text-xs"
+            tone={speech.error ? "danger" : "info"}
+          >
+            <span>
+              {speech.status === "listening"
+                ? "正在聆听..."
+                : speech.status === "processing"
+                  ? "正在转写语音..."
+                  : speech.status === "ready"
+                    ? `识别完成：${speechDisplayText}`
+                    : speech.status === "requesting-permission"
+                      ? "正在请求麦克风权限..."
+                      : (composerError ?? "语音输入已停止")}
+            </span>
+            {speech.status === "ready" && speech.canCommit ? (
+              <button
+                type="button"
+                onClick={commitSpeechInput}
+                className="inline-flex items-center gap-1 text-[#15803d]"
+              >
+                <WandSparkles size={12} />
+                插入输入框
+              </button>
+            ) : null}
+            {speech.status === "listening" ? (
+              <button
+                type="button"
+                onClick={speech.stop}
+                className="text-[#15803d]"
+              >
+                停止
+              </button>
+            ) : null}
+            {speech.status !== "idle" ? (
+              <button
+                type="button"
+                onClick={speech.cancel}
+                className="inline-flex items-center gap-1 text-[color:var(--text-secondary)]"
+              >
+                <X size={12} />
+                取消
+              </button>
+            ) : null}
+          </InlineNotice>
+        ) : null}
         {isDesktop && mentionPickerOpen ? (
           <DesktopMentionPicker
             candidates={filteredMentionCandidates}
@@ -2714,113 +2808,39 @@ export function ChatComposer({
         ) : null}
         <div
           ref={isDesktop ? desktopStickerRef : undefined}
-          className={`relative ${isDesktop ? "space-y-2.5 rounded-[10px] border border-black/6 bg-white px-2.5 py-2" : "space-y-1"}`}
+          className={`relative ${isDesktop ? "rounded-[14px] border border-black/6 bg-white shadow-[0_8px_20px_rgba(15,23,42,0.04)]" : "space-y-1"}`}
         >
           {isDesktop ? (
             <>
-              <div className="flex flex-wrap items-center gap-1 border-b border-black/6 pb-2">
-                <DesktopToolbarButton
-                  label="表情"
-                  icon={<Smile size={16} />}
-                  active={stickerPanelOpen}
-                  onClick={toggleStickerPanel}
-                />
-                {onSendAttachment ? (
-                  <>
-                    <DesktopToolbarButton
-                      label="图片"
-                      icon={<ImageIcon size={16} />}
-                      onClick={pickAlbum}
-                    />
-                    <DesktopToolbarButton
-                      label="文件"
-                      icon={<FileText size={16} />}
-                      onClick={pickFile}
-                    />
-                    <DesktopToolbarButton
-                      label="截图"
-                      icon={<Monitor size={16} />}
-                      title="截图（Ctrl/⌘ + Shift + S）"
-                      onClick={() => {
-                        void captureDesktopScreenshot();
-                      }}
-                    />
-                    <div ref={desktopPlusRef} className="relative">
-                      <DesktopToolbarButton
-                        label="收藏"
-                        icon={<Star size={16} />}
-                        active={
-                          desktopPlusMenuOpen &&
-                          desktopPlusMenuView === "favorites"
-                        }
-                        onClick={toggleDesktopFavoritePicker}
-                      />
-                      {desktopPlusMenuOpen &&
-                      desktopPlusMenuView === "favorites" ? (
-                        <div className="absolute left-0 top-[calc(100%+0.4rem)] z-30 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
-                          <DesktopFavoritePicker
-                            favorites={desktopFavoriteRecords}
-                            busy={composerPending}
-                            onBack={closeDesktopPlusMenu}
-                            onSelect={(item) => {
-                              closeDesktopPlusMenu();
-                              void handleSendPresetText(
-                                buildFavoriteShareText(item),
-                              );
-                            }}
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
-                {onOpenDesktopHistory ? (
-                  <DesktopToolbarButton
-                    label="聊天记录"
-                    icon={<History size={16} />}
-                    onClick={onOpenDesktopHistory}
-                  />
-                ) : null}
-                {showSpeechEntry ? (
-                  <DesktopToolbarButton
-                    label={
-                      speech.status === "listening" ? "停止语音" : "语音输入"
-                    }
-                    icon={
-                      speech.status === "listening" ? (
-                        <Square size={14} fill="currentColor" />
-                      ) : (
-                        <Mic size={16} />
-                      )
-                    }
-                    active={speech.status === "listening"}
-                    disabled={
-                      speechButtonDisabled && speech.status !== "listening"
-                    }
-                    title={speechDisabledReason ?? undefined}
-                    onClick={() => {
-                      if (speech.status === "listening") {
-                        speech.stop();
-                        return;
-                      }
-
-                      setStickerPanelOpen(false);
-                      closeDesktopPlusMenu();
-                      void speech.start();
-                    }}
-                  />
-                ) : null}
-              </div>
-
-              <div className="flex min-w-0 items-center gap-2 rounded-[8px] bg-[#f7f7f7] px-3 py-2">
-                <input
+              <div className="relative px-4 pb-3 pt-3">
+                <button
+                  type="button"
+                  onClick={toggleDesktopEditorExpanded}
+                  className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[#f4f4f4] hover:text-[color:var(--text-primary)]"
+                  aria-label={desktopEditorExpanded ? "收起输入框" : "展开输入框"}
+                  title={desktopEditorExpanded ? "收起输入框" : "展开输入框"}
+                >
+                  {desktopEditorExpanded ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronUp size={16} />
+                  )}
+                </button>
+                <textarea
                   ref={desktopInputRef}
+                  rows={desktopEditorExpanded ? 8 : 1}
                   value={value}
                   onChange={(event) => {
                     onChange(event.target.value);
                     setInputCursor(
                       event.target.selectionStart ?? event.target.value.length,
                     );
+                  }}
+                  onCompositionStart={() => {
+                    desktopInputComposingRef.current = true;
+                  }}
+                  onCompositionEnd={() => {
+                    desktopInputComposingRef.current = false;
                   }}
                   onPaste={(event) => {
                     void handleDesktopPaste(event);
@@ -2835,20 +2855,113 @@ export function ChatComposer({
                   onSelect={syncInputCursor}
                   onKeyDown={handleDesktopInputKeyDown}
                   placeholder={placeholder}
-                  className="min-w-0 flex-1 bg-transparent py-1 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                  className={cn(
+                    "min-h-[40px] w-full resize-none bg-transparent pr-9 text-[14px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]",
+                    desktopEditorExpanded ? "max-h-[288px]" : "max-h-[88px]",
+                  )}
                 />
-                {value.trim() ? (
+              </div>
+
+              <div className="flex items-center justify-between border-t border-black/6 px-3 py-2.5">
+                <div className="flex items-center gap-0.5">
+                  <DesktopToolbarButton
+                    label="表情"
+                    icon={<Smile size={16} />}
+                    active={stickerPanelOpen}
+                    onClick={toggleStickerPanel}
+                  />
+                  {onSendAttachment ? (
+                    <>
+                      <div ref={desktopPlusRef} className="relative">
+                        <DesktopToolbarButton
+                          label="收藏"
+                          icon={<Star size={16} />}
+                          active={
+                            desktopPlusMenuOpen &&
+                            desktopPlusMenuView === "favorites"
+                          }
+                          onClick={toggleDesktopFavoritePicker}
+                        />
+                        {desktopPlusMenuOpen &&
+                        desktopPlusMenuView === "favorites" ? (
+                          <div className="absolute bottom-[calc(100%+0.55rem)] left-0 z-30 w-80 overflow-hidden rounded-[12px] border border-black/8 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.14)]">
+                            <DesktopFavoritePicker
+                              favorites={desktopFavoriteRecords}
+                              busy={composerPending}
+                              onBack={closeDesktopPlusMenu}
+                              onSelect={(item) => {
+                                closeDesktopPlusMenu();
+                                void handleSendPresetText(
+                                  buildFavoriteShareText(item),
+                                );
+                              }}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                      <DesktopToolbarButton
+                        label="图片"
+                        icon={<ImageIcon size={16} />}
+                        onClick={pickAlbum}
+                      />
+                      <DesktopToolbarButton
+                        label="文件"
+                        icon={<FileText size={16} />}
+                        onClick={pickFile}
+                      />
+                      <DesktopToolbarButton
+                        label="截图"
+                        icon={<MonitorUp size={16} />}
+                        title="截图（Ctrl/⌘ + Shift + S）"
+                        onClick={() => {
+                          void captureDesktopScreenshot();
+                        }}
+                      />
+                    </>
+                  ) : null}
+                  {showSpeechEntry ? (
+                    <DesktopToolbarButton
+                      label={
+                        speech.status === "listening" ? "停止语音输入" : "语音输入"
+                      }
+                      icon={
+                        speech.status === "listening" ? (
+                          <Square size={14} fill="currentColor" />
+                        ) : (
+                          <Mic size={16} />
+                        )
+                      }
+                      active={speech.status === "listening"}
+                      disabled={
+                        speechButtonDisabled && speech.status !== "listening"
+                      }
+                      title={speechDisabledReason ?? undefined}
+                      onClick={handleDesktopSpeechToggle}
+                    />
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="text-[11px] text-[color:var(--text-dim)]">
+                    {desktopEditorExpanded
+                      ? "Ctrl/Cmd + Enter 发送"
+                      : sendMessageShortcut === "enter"
+                        ? "Enter 发送"
+                        : "Ctrl/Cmd + Enter 发送"}
+                  </div>
                   <Button
                     onClick={onSubmit}
-                    disabled={composerPending}
+                    disabled={composerPending || !value.trim()}
                     variant="primary"
-                    className="h-[34px] rounded-[8px] bg-[#07c160] px-4 text-[13px] font-medium text-white shadow-none hover:bg-[#06ad56]"
+                    className={cn(
+                      "h-[32px] min-w-[72px] rounded-[8px] px-4 text-[13px] font-medium shadow-none",
+                      value.trim()
+                        ? "bg-[#07c160] text-white hover:bg-[#06ad56]"
+                        : "bg-[#e8e8e8] text-[#9a9a9a] hover:bg-[#e8e8e8]",
+                    )}
                   >
                     发送
                   </Button>
-                ) : (
-                  <div className="h-[34px] w-[64px]" />
-                )}
+                </div>
               </div>
             </>
           ) : (
@@ -3060,53 +3173,6 @@ export function ChatComposer({
             </button>
           </InlineNotice>
         ) : null}
-        {isDesktop && (speech.status !== "idle" || speechDisplayText) ? (
-          <InlineNotice
-            className="mt-2 flex flex-wrap items-center gap-2 border-black/6 bg-white text-xs"
-            tone={speech.error ? "danger" : "info"}
-          >
-            <span>
-              {speech.status === "listening"
-                ? "正在聆听..."
-                : speech.status === "processing"
-                  ? "正在转写语音..."
-                  : speech.status === "ready"
-                    ? `识别完成：${speechDisplayText}`
-                    : speech.status === "requesting-permission"
-                      ? "正在请求麦克风权限..."
-                      : (composerError ?? "语音输入已停止")}
-            </span>
-            {speech.status === "ready" && speech.canCommit ? (
-              <button
-                type="button"
-                onClick={commitSpeechInput}
-                className="inline-flex items-center gap-1 text-[#15803d]"
-              >
-                <WandSparkles size={12} />
-                插入输入框
-              </button>
-            ) : null}
-            {speech.status === "listening" ? (
-              <button
-                type="button"
-                onClick={speech.stop}
-                className="text-[#15803d]"
-              >
-                停止
-              </button>
-            ) : null}
-            {speech.status !== "idle" ? (
-              <button
-                type="button"
-                onClick={speech.cancel}
-                className="inline-flex items-center gap-1 text-[color:var(--text-secondary)]"
-              >
-                <X size={12} />
-                取消
-              </button>
-            ) : null}
-          </InlineNotice>
-        ) : null}
         {composerError && !isDesktop ? (
           <InlineNotice
             className="mt-1 flex items-center justify-between gap-2.5 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
@@ -3292,16 +3358,16 @@ function DesktopToolbarButton({
       type="button"
       disabled={disabled}
       title={title ?? label}
+      aria-label={label}
       onClick={onClick}
       className={cn(
-        "inline-flex h-[30px] items-center gap-1 rounded-[7px] px-2 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-8 w-8 items-center justify-center rounded-[8px] transition disabled:cursor-not-allowed disabled:opacity-45",
         active
           ? "bg-[#ededed] text-[color:var(--text-primary)]"
           : "text-[color:var(--text-secondary)] hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
       )}
     >
       <span>{icon}</span>
-      <span>{label}</span>
     </button>
   );
 }
