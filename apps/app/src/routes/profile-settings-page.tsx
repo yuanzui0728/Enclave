@@ -165,15 +165,15 @@ export function ProfileSettingsPage() {
   const content = (
     <>
       {desktopMode ? null : (
-        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
-          <div className="flex gap-1 rounded-[12px] bg-[#f5f5f5] p-[3px]">
+        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2">
+          <div className="flex gap-1 rounded-[11px] bg-[#f5f5f5] p-[3px]">
             {settingsTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-[10px] py-1.5 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
+                  "flex-1 rounded-[9px] py-1.5 text-[11px] font-medium transition-all duration-[var(--motion-fast)]",
                   activeTab === tab.id
                     ? "bg-white text-[color:var(--text-primary)] shadow-sm"
                     : "text-[color:var(--text-muted)] hover:bg-white/70",
@@ -415,7 +415,7 @@ export function ProfileSettingsPage() {
       {activeTab === "legal" ? (
         <>
           {desktopMode ? null : (
-            <section className="mt-1.5 divide-y divide-[color:var(--border-faint)] border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            <section className="mt-1 divide-y divide-[color:var(--border-faint)] border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <MobileLinkRow
                 label="隐私政策"
                 onClick={() =>
@@ -615,7 +615,7 @@ export function ProfileSettingsPage() {
       <TabPageTopBar
         title="设置"
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+      className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => navigate({ to: backTo })}
@@ -627,7 +627,7 @@ export function ProfileSettingsPage() {
           </Button>
         }
       />
-      <div className="space-y-1.5 pb-8">{content}</div>
+      <div className="space-y-1 pb-8">{content}</div>
     </AppPage>
   );
 }
@@ -657,10 +657,10 @@ function MobileSettingsSection({
   return (
     <section
       className={cn(
-        "space-y-2.5",
+        "space-y-2",
         desktop
           ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]"
-          : "mt-1.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5",
+          : "mt-1 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2",
       )}
     >
       {title || description ? (
@@ -671,7 +671,7 @@ function MobileSettingsSection({
             </div>
           ) : null}
           {description ? (
-            <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
               {description}
             </div>
           ) : null}
@@ -691,7 +691,7 @@ function MobileFieldGroup({
 }) {
   return (
     <label className="block">
-      <div className="mb-1.5 text-[12px] font-medium text-[color:var(--text-secondary)]">
+      <div className="mb-1 text-[11px] font-medium text-[color:var(--text-secondary)]">
         {label}
       </div>
       {children}
@@ -712,19 +712,19 @@ function MobileLinkRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] text-[color:var(--text-primary)]">
+        <div className="text-[15px] text-[color:var(--text-primary)]">
           {label}
         </div>
         {subtitle ? (
-          <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
             {subtitle}
           </div>
         ) : null}
       </div>
-      <div className="text-[13px] text-[color:var(--text-dim)]">›</div>
+      <div className="text-[12px] text-[color:var(--text-dim)]">›</div>
     </button>
   );
 }
