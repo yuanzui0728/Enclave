@@ -97,6 +97,7 @@ import {
   formatMessageTimestamp,
   parseTimestamp,
 } from "../lib/format";
+import { resolveConfiguredCoreApiBaseUrl } from "../lib/runtime-config";
 import { emitChatMessage, joinConversationRoom } from "../lib/socket";
 import {
   openAppSettings,
@@ -5644,7 +5645,10 @@ function resolveRuntimeAttachmentUrl(url: string, runtimeBaseUrl?: string) {
     return normalizedUrl;
   }
 
-  const runtimeUrl = tryParseUrl(normalizeOptionalUrl(runtimeBaseUrl));
+  const runtimeUrl = tryParseUrl(
+    normalizeOptionalUrl(runtimeBaseUrl) ??
+      normalizeOptionalUrl(resolveConfiguredCoreApiBaseUrl()),
+  );
   const browserOriginUrl =
     typeof window !== "undefined" ? tryParseUrl(window.location.origin) : null;
   const resolvedUrl =
@@ -5655,13 +5659,14 @@ function resolveRuntimeAttachmentUrl(url: string, runtimeBaseUrl?: string) {
     return normalizedUrl;
   }
 
-  if (!runtimeUrl) {
-    return resolvedUrl.toString();
-  }
-
-  const rebaseTarget = shouldRebaseLoopbackAttachment(resolvedUrl, runtimeUrl)
-    ? runtimeUrl
-    : null;
+  const rebaseTarget =
+    runtimeUrl && shouldRebaseLoopbackAttachment(resolvedUrl, runtimeUrl)
+      ? runtimeUrl
+      : !runtimeUrl &&
+          browserOriginUrl &&
+          shouldRebaseLoopbackAttachment(resolvedUrl, browserOriginUrl)
+        ? browserOriginUrl
+        : null;
 
   if (!rebaseTarget) {
     return resolvedUrl.toString();

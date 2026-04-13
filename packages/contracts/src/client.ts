@@ -8,6 +8,7 @@ import type {
 import type {
   AddGroupMemberRequest,
   ChatMessageSearchResponse,
+  ChatMessageSearchItem,
   Conversation,
   ConversationListItem,
   CreateGroupRequest,
@@ -28,6 +29,7 @@ import type {
   UpdateGroupOwnerProfileRequest,
   UpdateGroupRequest,
 } from "./chat";
+import type { MessageAttachment } from "./attachments";
 import type { Character, CharacterDraft } from "./characters";
 import type {
   CloudWorldLookupResponse,
@@ -302,6 +304,140 @@ function requestCloudApi<T>(
   baseUrl?: string,
 ) {
   return request<T>(path, init, resolveCloudApiBaseUrl(baseUrl));
+}
+
+function normalizeAttachmentAssetUrl(url: string, baseUrl?: string) {
+  const normalizedUrl = url.trim();
+  if (
+    !normalizedUrl ||
+    normalizedUrl.startsWith("blob:") ||
+    normalizedUrl.startsWith("data:")
+  ) {
+    return normalizedUrl;
+  }
+
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  const browserOriginUrl =
+    typeof window !== "undefined" &&
+    (window.location.protocol === "http:" ||
+      window.location.protocol === "https:")
+      ? window.location.origin
+      : undefined;
+  const targetUrl = tryParseUrl(resolvedBaseUrl ?? browserOriginUrl);
+  const resolvedUrl =
+    tryParseUrl(normalizedUrl, targetUrl?.toString()) ??
+    tryParseUrl(normalizedUrl, browserOriginUrl);
+
+  if (!resolvedUrl) {
+    return normalizedUrl;
+  }
+
+  if (targetUrl && shouldRebaseLoopbackAttachmentUrl(resolvedUrl, targetUrl)) {
+    return new URL(
+      `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`,
+      targetUrl,
+    ).toString();
+  }
+
+  return resolvedUrl.toString();
+}
+
+function normalizeMessageAttachment(
+  attachment: MessageAttachment | undefined,
+  baseUrl?: string,
+): MessageAttachment | undefined {
+  if (!attachment) {
+    return undefined;
+  }
+
+  if (attachment.kind === "note_card") {
+    return {
+      ...attachment,
+      assets: attachment.assets.map((asset) => ({
+        ...asset,
+        url: normalizeAttachmentAssetUrl(asset.url, baseUrl),
+      })),
+    };
+  }
+
+  if ("url" in attachment && typeof attachment.url === "string") {
+    return {
+      ...attachment,
+      url: normalizeAttachmentAssetUrl(attachment.url, baseUrl),
+    };
+  }
+
+  return attachment;
+}
+
+function normalizeMessage(message: Message, baseUrl?: string): Message {
+  return {
+    ...message,
+    attachment: normalizeMessageAttachment(message.attachment, baseUrl),
+  };
+}
+
+function normalizeGroupMessage(
+  message: GroupMessage,
+  baseUrl?: string,
+): GroupMessage {
+  return {
+    ...message,
+    attachment: normalizeMessageAttachment(message.attachment, baseUrl),
+  };
+}
+
+function normalizeConversationListItem(
+  item: ConversationListItem,
+  baseUrl?: string,
+): ConversationListItem {
+  return {
+    ...item,
+    messages: item.messages.map((message) =>
+      normalizeMessage(message, baseUrl),
+    ),
+    lastMessage: item.lastMessage
+      ? normalizeMessage(item.lastMessage, baseUrl)
+      : item.lastMessage,
+  };
+}
+
+function normalizeChatMessageSearchItem(
+  item: ChatMessageSearchItem,
+  baseUrl?: string,
+): ChatMessageSearchItem {
+  return {
+    ...item,
+    attachment: normalizeMessageAttachment(item.attachment, baseUrl),
+  };
+}
+
+function tryParseUrl(value?: string | null, base?: string) {
+  const normalizedValue = value?.trim();
+  if (!normalizedValue) {
+    return null;
+  }
+
+  try {
+    return new URL(normalizedValue, base);
+  } catch {
+    return null;
+  }
+}
+
+function shouldRebaseLoopbackAttachmentUrl(assetUrl: URL, targetUrl: URL) {
+  return (
+    isLoopbackHostname(assetUrl.hostname) &&
+    assetUrl.origin !== targetUrl.origin
+  );
+}
+
+function isLoopbackHostname(hostname: string) {
+  return ["localhost", "127.0.0.1", "0.0.0.0", "10.0.2.2"].includes(
+    hostname.trim().toLowerCase(),
+  );
 }
 
 export function getSystemStatus(baseUrl?: string) {
@@ -940,10 +1076,15 @@ export function getFriendRequests(baseUrl?: string) {
 }
 
 export function getConversations(baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   return requestLegacyApi<ConversationListItem[]>(
     "/conversations",
     undefined,
     baseUrl,
+  ).then((items) =>
+    items.map((item) => normalizeConversationListItem(item, resolvedBaseUrl)),
   );
 }
 
@@ -966,6 +1107,9 @@ export function getConversationMessages(
   baseUrl?: string,
   query: GetChatMessagesQuery = {},
 ) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   const params = new URLSearchParams();
   if (typeof query.limit === "number") {
     params.set("limit", String(query.limit));
@@ -984,6 +1128,8 @@ export function getConversationMessages(
     `/conversations/${id}/messages${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
+  ).then((messages) =>
+    messages.map((message) => normalizeMessage(message, resolvedBaseUrl)),
   );
 }
 
@@ -992,6 +1138,9 @@ export function searchConversationMessages(
   query: SearchChatMessagesQuery = {},
   baseUrl?: string,
 ) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   const params = new URLSearchParams();
   if (query.keyword?.trim()) {
     params.set("keyword", query.keyword.trim());
@@ -1022,7 +1171,12 @@ export function searchConversationMessages(
     `/conversations/${id}/message-search${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
-  );
+  ).then((response) => ({
+    ...response,
+    items: response.items.map((item) =>
+      normalizeChatMessageSearchItem(item, resolvedBaseUrl),
+    ),
+  }));
 }
 
 export function recallConversationMessage(
@@ -1205,6 +1359,9 @@ export function clearGroupBackground(id: string, baseUrl?: string) {
 }
 
 export function uploadChatAttachment(payload: FormData, baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   return requestLegacyApi<UploadChatAttachmentResponse>(
     "/chat/attachments",
     {
@@ -1212,7 +1369,12 @@ export function uploadChatAttachment(payload: FormData, baseUrl?: string) {
       body: payload,
     },
     baseUrl,
-  );
+  ).then((response) => ({
+    attachment: normalizeMessageAttachment(
+      response.attachment,
+      resolvedBaseUrl,
+    ) as UploadChatAttachmentResponse["attachment"],
+  }));
 }
 
 export function getStickerCatalog(baseUrl?: string) {
@@ -1384,6 +1546,9 @@ export function getGroupMessages(
   baseUrl?: string,
   query: GetChatMessagesQuery = {},
 ) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   const params = new URLSearchParams();
   if (typeof query.limit === "number") {
     params.set("limit", String(query.limit));
@@ -1402,6 +1567,8 @@ export function getGroupMessages(
     `/groups/${id}/messages${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
+  ).then((messages) =>
+    messages.map((message) => normalizeGroupMessage(message, resolvedBaseUrl)),
   );
 }
 
@@ -1410,6 +1577,9 @@ export function searchGroupMessages(
   query: SearchChatMessagesQuery = {},
   baseUrl?: string,
 ) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   const params = new URLSearchParams();
   if (query.keyword?.trim()) {
     params.set("keyword", query.keyword.trim());
@@ -1440,7 +1610,12 @@ export function searchGroupMessages(
     `/groups/${id}/message-search${params.size ? `?${params.toString()}` : ""}`,
     undefined,
     baseUrl,
-  );
+  ).then((response) => ({
+    ...response,
+    items: response.items.map((item) =>
+      normalizeChatMessageSearchItem(item, resolvedBaseUrl),
+    ),
+  }));
 }
 
 export function recallGroupMessage(
