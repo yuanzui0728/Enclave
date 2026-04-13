@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { In, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { type AiMessagePart, type ChatMessage } from '../ai/ai.types';
 import { CharacterEntity } from '../characters/character.entity';
+import { SystemConfigService } from '../config/config.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { ChatGateway } from './chat.gateway';
 import { GroupEntity } from './group.entity';
@@ -17,6 +18,14 @@ import {
   type GroupReplyPlannerDecision,
   type GroupUserMessageContext,
 } from './group-reply.types';
+import {
+  buildGroupReplyIssueSummaryFromTasks,
+  createEmptyGroupReplyTaskArchiveBucket,
+  createEmptyGroupReplyTaskArchiveStore,
+  GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+  mergeGroupReplyIssueSummaries,
+  type GroupReplyTaskArchiveStore,
+} from './group-reply-task-observability';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 
 const GROUP_REPLY_TASK_BATCH_SIZE = 12;
@@ -42,6 +51,7 @@ export class GroupReplyTaskService {
     private readonly groupMessageRepo: Repository<GroupMessageEntity>,
     @InjectRepository(CharacterEntity)
     private readonly characterRepo: Repository<CharacterEntity>,
+    private readonly systemConfig: SystemConfigService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
     private readonly groupReplyOrchestrator: GroupReplyOrchestratorService,
@@ -280,6 +290,7 @@ export class GroupReplyTaskService {
       };
     }
 
+    await this.archiveTasksBeforeCleanup(staleTasks, cutoff);
     await this.taskRepo.delete(staleTasks.map((task) => task.id));
     return {
       deletedCount: staleTasks.length,
@@ -542,6 +553,106 @@ export class GroupReplyTaskService {
     task.errorMessage = null;
     task.sentAt = sentAt;
     await this.taskRepo.save(task);
+  }
+
+  private async archiveTasksBeforeCleanup(
+    tasks: GroupReplyTaskEntity[],
+    cutoff: Date,
+  ) {
+    const store = await this.readArchiveStore();
+    this.mergeArchiveBucket(store.global, tasks, cutoff);
+
+    const tasksByGroup = new Map<string, GroupReplyTaskEntity[]>();
+    for (const task of tasks) {
+      const bucket = tasksByGroup.get(task.groupId) ?? [];
+      bucket.push(task);
+      tasksByGroup.set(task.groupId, bucket);
+    }
+
+    for (const [groupId, groupTasks] of tasksByGroup.entries()) {
+      const groupBucket =
+        store.groups[groupId] ?? createEmptyGroupReplyTaskArchiveBucket();
+      this.mergeArchiveBucket(groupBucket, groupTasks, cutoff);
+      store.groups[groupId] = groupBucket;
+    }
+
+    await this.systemConfig.setConfig(
+      GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+      JSON.stringify(store),
+    );
+  }
+
+  private mergeArchiveBucket(
+    bucket: GroupReplyTaskArchiveStore['global'],
+    tasks: GroupReplyTaskEntity[],
+    cutoff: Date,
+  ) {
+    bucket.archivedTaskCount += tasks.length;
+    bucket.archivedTurnCount += new Set(tasks.map((task) => task.turnId)).size;
+
+    for (const task of tasks) {
+      if (task.status === 'sent') {
+        bucket.statusCounts.sent += 1;
+      } else if (task.status === 'cancelled') {
+        bucket.statusCounts.cancelled += 1;
+      } else if (task.status === 'failed') {
+        bucket.statusCounts.failed += 1;
+      }
+    }
+
+    bucket.issueSummary = mergeGroupReplyIssueSummaries(
+      bucket.issueSummary,
+      buildGroupReplyIssueSummaryFromTasks(tasks, 12),
+      12,
+    );
+    bucket.lastArchivedAt = new Date().toISOString();
+    bucket.lastCutoff = cutoff.toISOString();
+  }
+
+  private async readArchiveStore(): Promise<GroupReplyTaskArchiveStore> {
+    const raw = await this.systemConfig.getConfig(
+      GROUP_REPLY_TASK_ARCHIVE_STATS_CONFIG_KEY,
+    );
+    if (!raw) {
+      return createEmptyGroupReplyTaskArchiveStore();
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as GroupReplyTaskArchiveStore;
+      if (parsed?.version === 1) {
+        const emptyBucket = createEmptyGroupReplyTaskArchiveBucket();
+        return {
+          version: 1,
+          global: {
+            ...emptyBucket,
+            ...parsed.global,
+            statusCounts: {
+              ...emptyBucket.statusCounts,
+              ...(parsed.global?.statusCounts ?? {}),
+            },
+            issueSummary: parsed.global?.issueSummary ?? [],
+          },
+          groups: Object.fromEntries(
+            Object.entries(parsed.groups ?? {}).map(([groupId, value]) => [
+              groupId,
+              {
+                ...emptyBucket,
+                ...value,
+                statusCounts: {
+                  ...emptyBucket.statusCounts,
+                  ...(value?.statusCounts ?? {}),
+                },
+                issueSummary: value?.issueSummary ?? [],
+              },
+            ]),
+          ),
+        };
+      }
+    } catch {
+      // ignore invalid archived stats payload and recreate it
+    }
+
+    return createEmptyGroupReplyTaskArchiveStore();
   }
 
   private async touchGroupActivity(group: GroupEntity, at: Date) {
