@@ -26,7 +26,7 @@ import {
 import { cn } from "@yinjie/ui";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import {
-  formatDetailedMessageTimestamp,
+  formatMessageTimestamp,
   parseTimestamp,
 } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
@@ -662,11 +662,9 @@ export function DesktopChatHistoryPanel({
             <div className="bg-white">
               {resultSections.map((section) => (
                 <section key={section.key}>
-                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-1.5 text-[11px] text-[color:var(--text-dim)]">
-                    <span className="tracking-[0.06em]">{section.label}</span>
-                    <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] text-[color:var(--text-muted)]">
-                      {section.items.length} 条
-                    </span>
+                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-1.5 text-[10px] text-[color:var(--text-dim)]">
+                    <span className="tracking-[0.04em]">{section.label}</span>
+                    <span>{section.items.length} 条</span>
                   </div>
                   <div className="divide-y divide-[rgba(0,0,0,0.06)]">
                     {section.items.map((item) => {
@@ -681,12 +679,12 @@ export function DesktopChatHistoryPanel({
                           key={item.messageId}
                           type="button"
                           onClick={() => onOpenMessage(item.messageId)}
-                          className="group block w-full border-l-2 border-l-transparent px-4 py-3.5 text-left transition-[background-color,border-color] duration-150 hover:border-l-[rgba(7,193,96,0.32)] hover:bg-[#fafcfb] active:bg-[#f3f7f4]"
+                          className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[rgba(7,193,96,0.28)] hover:bg-[#fafcfb] active:bg-[#f3f7f4]"
                         >
                           <div className="flex gap-3">
                             <span
                               className={cn(
-                                "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-medium",
+                                "mt-0.5 flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium",
                                 resolveSearchResultAvatarTone(item),
                               )}
                             >
@@ -701,25 +699,25 @@ export function DesktopChatHistoryPanel({
                                   </div>
                                   <span
                                     className={cn(
-                                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                                      "shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium",
                                       resolveSearchResultBadgeTone(item),
                                     )}
                                   >
                                     {resolveSearchResultBadgeLabel(item)}
                                   </span>
                                 </div>
-                                <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
-                                  {formatDetailedMessageTimestamp(item.createdAt)}
+                                <div className="shrink-0 text-[10px] tabular-nums text-[color:var(--text-dim)]">
+                                  {formatMessageTimestamp(item.createdAt)}
                                 </div>
                               </div>
 
                               {metaLabel ? (
-                                <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+                                <div className="mt-1 truncate text-[10px] leading-4 text-[color:var(--text-dim)]">
                                   {metaLabel}
                                 </div>
                               ) : null}
 
-                              <div className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
+                              <div className="mt-1 line-clamp-2 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                                 {renderHighlightedText(
                                   previewText,
                                   debouncedKeyword,
