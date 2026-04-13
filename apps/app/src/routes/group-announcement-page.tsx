@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { Copy, Share2 } from "lucide-react";
 import { getGroup, updateGroup } from "@yinjie/contracts";
-import { Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { ChatDetailsSection } from "../features/chat-details/chat-details-section";
 import { isMissingGroupError } from "../lib/group-route-fallback";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function GroupAnnouncementPage() {
@@ -15,6 +20,11 @@ export function GroupAnnouncementPage() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const [notice, setNotice] = useState<{
+    tone: "success" | "info";
+    message: string;
+  } | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -27,12 +37,82 @@ export function GroupAnnouncementPage() {
   }, [groupQuery.data?.announcement]);
 
   useEffect(() => {
+    setNotice(null);
+  }, [groupId]);
+
+  useEffect(() => {
     if (groupQuery.isLoading || !isMissingGroupError(groupQuery.error, groupId)) {
       return;
     }
 
     void navigate({ to: "/tabs/chat", replace: true });
   }, [groupId, groupQuery.error, groupQuery.isLoading, navigate]);
+
+  async function handleShareAnnouncement() {
+    const group = groupQuery.data;
+    const announcement = draft.trim() || group?.announcement?.trim() || "";
+    if (!group || !announcement) {
+      setNotice({
+        tone: "info",
+        message: "当前还没有可分享的群公告。",
+      });
+      return;
+    }
+
+    const groupPath = `/group/${groupId}/announcement`;
+    const groupUrl =
+      typeof window === "undefined"
+        ? groupPath
+        : `${window.location.origin}${groupPath}`;
+    const summary = [`${group.name} 群公告`, announcement, groupUrl].join("\n\n");
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${group.name} 群公告`,
+        text: summary,
+        url: groupUrl,
+      });
+
+      if (shared) {
+        setNotice({
+          tone: "success",
+          message: "已打开系统分享面板。",
+        });
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制群公告。",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setNotice({
+        tone: "success",
+        message: nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制群公告。"
+          : "群公告已复制。",
+      });
+    } catch {
+      setNotice({
+        tone: "info",
+        message: nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制群公告失败，请稍后重试。",
+      });
+    }
+  }
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -71,11 +151,30 @@ export function GroupAnnouncementPage() {
           params: { groupId },
         });
       }}
+      rightActions={
+        groupQuery.data ? (
+          <Button
+            type="button"
+            onClick={() => void handleShareAnnouncement()}
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
+            aria-label={nativeMobileShareSupported ? "分享群公告" : "复制群公告"}
+          >
+            {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
+          </Button>
+        ) : undefined
+      }
     >
       {groupQuery.isLoading ? <LoadingBlock label="正在读取群公告..." /> : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
         <div className="px-4">
           <ErrorBlock message={groupQuery.error.message} />
+        </div>
+      ) : null}
+      {notice ? (
+        <div className="px-4">
+          <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
         </div>
       ) : null}
       {saveMutation.isError && saveMutation.error instanceof Error ? (
