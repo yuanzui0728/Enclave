@@ -1,4 +1,3 @@
-import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import path from 'path';
@@ -39,6 +38,10 @@ import {
   VoiceAttachment,
 } from './chat.types';
 import { CustomStickersService } from './custom-stickers.service';
+import {
+  resolvePrimaryChatAttachmentStorageDir,
+  resolveReadableChatAttachmentPath,
+} from './chat-attachment-storage';
 
 type SendConversationMessageInput =
   | {
@@ -559,6 +562,10 @@ export class ChatService {
 
   getAttachmentStorageDir(): string {
     return this.resolveAttachmentStorageDir();
+  }
+
+  resolveAttachmentFilePath(fileName: string): string {
+    return resolveReadableChatAttachmentPath(fileName);
   }
 
   normalizeAttachmentFileName(fileName: string): string {
@@ -1428,14 +1435,7 @@ export class ChatService {
   }
 
   private resolveAttachmentStorageDir(): string {
-    const cwd = process.cwd();
-    const apiRoot =
-      existsSync(path.join(cwd, 'src')) &&
-      existsSync(path.join(cwd, 'package.json'))
-        ? cwd
-        : path.join(cwd, 'api');
-
-    return path.join(apiRoot, 'storage', 'chat-attachments');
+    return resolvePrimaryChatAttachmentStorageDir();
   }
 
   private resolvePublicApiBaseUrl(): string {

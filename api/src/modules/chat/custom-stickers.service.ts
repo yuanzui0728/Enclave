@@ -11,6 +11,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { resolveRepoPath } from '../../database/database-path';
 import { WorldOwnerService } from '../auth/world-owner.service';
+import {
+  resolveReadableChatAttachmentPath,
+} from './chat-attachment-storage';
 import { ConversationEntity } from './conversation.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
@@ -488,9 +491,7 @@ export class CustomStickersService {
       const fileName = normalizeStoredAssetFileName(
         pathname.slice(CHAT_ATTACHMENT_ROUTE.length),
       );
-      return readFile(
-        path.join(this.resolveAttachmentStorageDir(), fileName),
-      ).catch(() => {
+      return readFile(resolveReadableChatAttachmentPath(fileName)).catch(() => {
         throw new NotFoundException('图片资源不存在。');
       });
     }
@@ -551,10 +552,6 @@ export class CustomStickersService {
 
   private resolveCustomStickerStorageDir(): string {
     return path.join(this.resolveApiRoot(), 'storage', 'chat-stickers');
-  }
-
-  private resolveAttachmentStorageDir(): string {
-    return path.join(this.resolveApiRoot(), 'storage', 'chat-attachments');
   }
 
   private resolveApiRoot(): string {

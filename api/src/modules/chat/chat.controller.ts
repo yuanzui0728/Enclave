@@ -206,10 +206,9 @@ export class ChatAttachmentController {
     @Res() response: Response,
   ) {
     return response.sendFile(
-      this.chatService.normalizeAttachmentFileName(fileName),
-      {
-        root: this.chatService.getAttachmentStorageDir(),
-      },
+      this.chatService.resolveAttachmentFilePath(
+        this.chatService.normalizeAttachmentFileName(fileName),
+      ),
     );
   }
 }
