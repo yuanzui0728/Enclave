@@ -28,10 +28,10 @@ export function ProfilePage() {
             onClick={() => {
               void navigate({ to: "/profile/settings" });
             }}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-card-hover)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-primary)] transition-colors active:bg-black/[0.05]"
             aria-label="打开设置"
           >
-            <Settings size={18} />
+            <Settings size={17} />
           </button>
         }
       />
@@ -39,29 +39,29 @@ export function ProfilePage() {
       <div className="pb-8">
         <Link
           to="/profile/settings"
-          className="mt-2 flex items-center gap-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-4 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+          className="mt-1.5 flex items-center gap-3 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
         >
           <AvatarChip name={username ?? "世界主人"} src={avatar} size="xl" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <div className="truncate text-[19px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[18px] font-medium text-[color:var(--text-primary)]">
                 {username ?? "世界主人"}
               </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
+              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[9px] font-medium tracking-[0.03em] text-[#15803d]">
                 世界主人
               </div>
             </div>
-            <div className="mt-1 line-clamp-1 text-sm text-[color:var(--text-secondary)]">
+            <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-secondary)]">
               {signature?.trim() || "查看与编辑个人资料"}
             </div>
           </div>
           <ChevronRight
-            size={18}
+            size={16}
             className="shrink-0 text-[color:var(--text-dim)]"
           />
         </Link>
 
-        <ProfileEntryGroup className="mt-2">
+        <ProfileEntryGroup className="mt-1.5">
           <ProfileEntry
             icon={Settings}
             iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
@@ -70,7 +70,7 @@ export function ProfilePage() {
           />
         </ProfileEntryGroup>
 
-        <ProfileEntryGroup className="mt-2">
+        <ProfileEntryGroup className="mt-1.5">
           <ProfileEntry
             icon={ShieldCheck}
             iconClassName="bg-[rgba(64,169,255,0.12)] text-[#1677ff]"
@@ -128,21 +128,21 @@ function ProfileEntry({
   return (
     <Link
       to={to as never}
-      className="flex items-center gap-3 px-4 py-3.5 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex items-center gap-3 px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px]",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
           iconClassName,
         )}
       >
-        <Icon size={18} />
+        <Icon size={16} />
       </div>
-      <div className="min-w-0 flex-1 text-[16px] text-[color:var(--text-primary)]">
+      <div className="min-w-0 flex-1 text-[15px] text-[color:var(--text-primary)]">
         {label}
       </div>
       <ChevronRight
-        size={16}
+        size={14}
         className="shrink-0 text-[color:var(--text-dim)]"
       />
     </Link>
