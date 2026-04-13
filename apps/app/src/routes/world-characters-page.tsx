@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, Search, UserPlus } from "lucide-react";
 import { getFriends, listCharacters } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -79,6 +79,20 @@ export function WorldCharactersPage() {
             aria-label="返回通讯录"
           >
             <ArrowLeft size={18} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            onClick={() => {
+              void navigate({ to: "/friend-requests" });
+            }}
+            aria-label="查看新的朋友"
+          >
+            <UserPlus size={18} />
           </Button>
         }
       >
