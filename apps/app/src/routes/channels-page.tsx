@@ -706,40 +706,42 @@ function MobileChannelsCard({
         </div>
 
         <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5">
-          <div className="max-w-[calc(100%-4.5rem)]">
-            <div className="flex items-center gap-2.5">
+          <div className="max-w-[calc(100%-4.25rem)]">
+            <div className="flex items-center gap-2">
               <AvatarChip
                 name={post.authorName}
                 src={post.authorAvatar}
                 size="wechat"
               />
               <div className="min-w-0 flex-1 text-white">
-                <div className="truncate text-[13px] font-medium">
+                <div className="truncate text-[12px] font-medium">
                   {post.authorName}
                 </div>
-                <div className="mt-0.5 text-[10px] text-white/72">
+                <div className="mt-0.5 text-[9px] text-white/70">
                   {formatTimestamp(post.createdAt)} · 视频号动态
                 </div>
               </div>
             </div>
-            <div className="mt-2.5 text-[13px] leading-[1.4rem] text-white">
+            <div className="mt-2 text-[12px] leading-[1.35rem] text-white">
               {post.text}
             </div>
-            <div className="mt-2.5 rounded-[18px] bg-[rgba(255,255,255,0.12)] px-3 py-2 text-[11px] leading-[1.35rem] text-white/86 backdrop-blur">
+            <div className="mt-2 rounded-[16px] bg-[rgba(255,255,255,0.12)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
               {post.commentsPreview.length ? (
                 <>
-                  <div className="mb-1 text-[10px] uppercase tracking-[0.04em] text-white/62">
+                  <div className="mb-1 text-[9px] uppercase tracking-[0.03em] text-white/60">
                     最近评论
                   </div>
-                  {post.commentsPreview.slice(0, 2).map((comment) => (
-                    <div key={comment.id}>
-                      <span className="font-medium">{comment.authorName}</span>
-                      {`：${comment.text}`}
-                    </div>
-                  ))}
+                  <div className="space-y-1">
+                    {post.commentsPreview.slice(0, 2).map((comment) => (
+                      <div key={comment.id}>
+                        <span className="font-medium">{comment.authorName}</span>
+                        {`：${comment.text}`}
+                      </div>
+                    ))}
+                  </div>
                 </>
               ) : (
-                <span>还没有评论，先和这条视频号内容聊一句。</span>
+                <span>还没有评论，先聊一句。</span>
               )}
             </div>
           </div>
@@ -748,26 +750,26 @@ function MobileChannelsCard({
 
       <div
         ref={composerRef}
-        className="grid gap-2.5 border-t border-[color:var(--border-subtle)] bg-white px-3.5 py-3.5"
+        className="grid gap-2 border-t border-[color:var(--border-subtle)] bg-white px-3.5 py-3"
       >
-        <div className="flex items-center gap-2.5 text-[11px] text-[color:var(--text-muted)]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[color:var(--text-muted)]">
           <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
           <span>{post.likeCount} 赞</span>
           <span>{post.commentCount} 评论</span>
         </div>
-        <div className="flex items-center gap-2 rounded-[16px] bg-[#f5f5f5] p-2">
+        <div className="flex items-center gap-2 rounded-[14px] bg-[#f5f5f5] p-1.5">
           <TextField
             value={commentDraft}
             onChange={(event) => onCommentChange(event.target.value)}
-            placeholder="写下你对这条视频号内容的评论..."
-            className="min-w-0 flex-1 rounded-full border-[color:var(--border-subtle)] bg-white text-[13px]"
+            placeholder="写评论..."
+            className="min-w-0 flex-1 rounded-full border-[color:var(--border-subtle)] bg-white text-[12px]"
           />
           <Button
             variant="primary"
             size="sm"
             disabled={!commentDraft.trim() || commentPending}
             onClick={onCommentSubmit}
-            className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white transition hover:bg-[#06ad56] active:scale-[0.98]"
+            className="h-8 rounded-full bg-[#07c160] px-3 text-[11px] text-white transition hover:bg-[#06ad56] active:scale-[0.98]"
           >
             {commentPending ? "发送中..." : "发送"}
           </Button>
