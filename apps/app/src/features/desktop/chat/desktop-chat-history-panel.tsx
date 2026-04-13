@@ -222,6 +222,7 @@ export function DesktopChatHistoryPanel({
   const showSearchMainView = !hasSearchRequest && selectorView === null;
   const showResultsView = hasSearchRequest && selectorView === null;
   const showHeaderActionsRow = activeFilterLabels.length > 0;
+  const openedFromDetails = Boolean(onBackToDetails);
   const resultSummary = buildResultSummary({
     keyword: debouncedKeyword,
     activeCategory,
@@ -229,6 +230,7 @@ export function DesktopChatHistoryPanel({
     quickDateFilter,
     customDate,
     conversationTitle: conversation.title,
+    openedFromDetails,
   });
   const emptyStateCopy = buildEmptyStateCopy({
     keyword: debouncedKeyword,
@@ -321,6 +323,27 @@ export function DesktopChatHistoryPanel({
             </button>
           ) : null}
         </label>
+
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-[10px] border border-[rgba(0,0,0,0.05)] bg-[#f8f8f8] px-3 py-2.5">
+          <div className="min-w-0">
+            <div className="text-[10px] tracking-[0.08em] text-[color:var(--text-dim)]">
+              当前聊天范围
+            </div>
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.05)]">
+                {isGroupConversation ? "群聊" : "单聊"}
+              </span>
+              <span className="truncate text-[12px] text-[color:var(--text-primary)]">
+                {conversation.title}
+              </span>
+            </div>
+          </div>
+          {openedFromDetails ? (
+            <span className="shrink-0 rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
+              来自聊天信息
+            </span>
+          ) : null}
+        </div>
 
         {activeFilterLabels.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -850,25 +873,32 @@ function buildResultSummary(input: {
   quickDateFilter: QuickDateFilter;
   customDate: string;
   conversationTitle: string;
+  openedFromDetails: boolean;
 }) {
+  const scopeDescription = `当前聊天 · ${input.conversationTitle}`;
+  const sourceDescription = input.openedFromDetails ? "来自聊天信息" : "";
+  const baseDescription = [scopeDescription, sourceDescription]
+    .filter(Boolean)
+    .join(" · ");
+
   if (input.keyword && input.activeCategory === "all" && !input.selectedSenderLabel) {
     return {
       title: `关键词“${input.keyword}”`,
-      description: `正在 ${input.conversationTitle} 中查找匹配的聊天记录。`,
+      description: baseDescription,
     };
   }
 
   if (!input.keyword && input.activeCategory !== "all") {
     return {
       title: resolveCategoryLabel(input.activeCategory),
-      description: `正在 ${input.conversationTitle} 中浏览这类消息。`,
+      description: baseDescription,
     };
   }
 
   if (!input.keyword && input.selectedSenderLabel) {
     return {
       title: `群成员 · ${input.selectedSenderLabel}`,
-      description: `仅查看 ${input.selectedSenderLabel} 在当前群聊中的发言。`,
+      description: `${baseDescription} · 仅查看 ${input.selectedSenderLabel} 在当前群聊中的发言。`,
     };
   }
 
@@ -876,7 +906,7 @@ function buildResultSummary(input: {
     const label = input.customDate || resolveQuickDateFilterLabel(input.quickDateFilter);
     return {
       title: `日期 · ${label}`,
-      description: `仅查看 ${label} 的聊天记录。`,
+      description: `${baseDescription} · 仅查看 ${label} 的聊天记录。`,
     };
   }
 
@@ -891,8 +921,8 @@ function buildResultSummary(input: {
   return {
     title: input.keyword ? `搜索“${input.keyword}”` : "当前筛选结果",
     description: filterLabels.length
-      ? filterLabels.join(" / ")
-      : `当前会话：${input.conversationTitle}`,
+      ? `${baseDescription} · ${filterLabels.join(" / ")}`
+      : baseDescription,
   };
 }
 
