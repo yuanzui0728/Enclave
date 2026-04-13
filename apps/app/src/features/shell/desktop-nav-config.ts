@@ -74,6 +74,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
       "/contacts/starred",
       "/contacts/tags",
       "/contacts/official-accounts",
+      "/desktop/add-friend",
       "/official-accounts/",
       "/character/",
       "/friend-requests",
