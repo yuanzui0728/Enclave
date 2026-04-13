@@ -631,6 +631,36 @@ export function StickerPanel({
   const desktopCustomHeaderContext =
     !isMobile && activeSectionId === "custom" && trimmedKeyword.length === 0;
   const customUploadResumed = Boolean(customDeleteFeedback?.slotsRemaining);
+  const mobileCustomStorageSummary = isMobile
+    ? customDeleteFeedback
+      ? customDeleteFeedback.slotsRemaining > 0
+        ? `本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`
+        : `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
+      : catalog.customStickerCount === 0
+        ? "支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
+        : customStickerLibraryFull
+          ? "表情已满，先看最近添加，再直接点右上角删除。"
+          : customSlotsRemaining <= 20
+            ? "空间不多了，建议优先清理最近添加的临时表情。"
+            : "支持继续添加图片和 GIF，常用表情会更好找。"
+    : null;
+  const mobileShowsCustomResumeUploadAction =
+    isMobile && customUploadResumed && !customStickerLibraryFull;
+  const mobileShowsCustomAddFirstAction =
+    isMobile && catalog.customStickerCount === 0 && !customUploadResumed;
+  const mobileShowsCustomAddedShortcut =
+    isMobile &&
+    catalog.customStickerCount > 1 &&
+    customSortMode !== "added" &&
+    (customUploadResumed ||
+      customStickerLibraryFull ||
+      customSlotsRemaining <= 20);
+  const mobileShowsCustomDeleteHint =
+    isMobile &&
+    activeSectionId === "custom" &&
+    trimmedKeyword.length === 0 &&
+    catalog.customStickerCount > 0 &&
+    (customStickerLibraryFull || customSlotsRemaining <= 20);
   const headerUsesManageShortcut =
     desktopCustomHeaderContext &&
     customStickerLibraryFull &&
@@ -1598,7 +1628,81 @@ export function StickerPanel({
                   }}
                 />
               </div>
-              {!isMobile ? (
+              {isMobile ? (
+                <div className="mt-2.5 space-y-2">
+                  <div className="flex items-start justify-between gap-2 text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="min-w-0 flex-1 leading-4">
+                      {mobileCustomStorageSummary}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {customDeleteFeedback ? (
+                        <span
+                          className={`rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a] ${
+                            customDeleteFeedbackFlashActive
+                              ? "animate-pulse"
+                              : ""
+                          }`}
+                        >
+                          +{customDeleteFeedback.deletedCount} 空位
+                        </span>
+                      ) : null}
+                      <span>{Math.round(customStorageRatio * 100)}%</span>
+                    </div>
+                  </div>
+                  {mobileShowsCustomAddFirstAction ||
+                  mobileShowsCustomResumeUploadAction ||
+                  mobileShowsCustomAddedShortcut ||
+                  mobileShowsCustomDeleteHint ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {mobileShowsCustomResumeUploadAction ? (
+                        <button
+                          type="button"
+                          onClick={openUploadPicker}
+                          disabled={uploadMutation.isPending}
+                          className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
+                        >
+                          {catalog.customStickerCount === 0
+                            ? "继续添加表情"
+                            : "继续添加"}
+                        </button>
+                      ) : null}
+                      {mobileShowsCustomAddFirstAction ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={openUploadPicker}
+                            disabled={uploadMutation.isPending}
+                            className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
+                          >
+                            添加第一张
+                          </button>
+                          <button
+                            type="button"
+                            onClick={switchToFeatured}
+                            className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
+                          >
+                            去精选看看
+                          </button>
+                        </>
+                      ) : null}
+                      {mobileShowsCustomAddedShortcut ? (
+                        <button
+                          type="button"
+                          onClick={switchCustomSortToAdded}
+                          className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
+                        >
+                          看最近添加
+                        </button>
+                      ) : null}
+                      {mobileShowsCustomDeleteHint ? (
+                        <span className="rounded-full bg-[rgba(245,158,11,0.12)] px-2 py-1 text-[10px] text-[#9a5a0a]">
+                          直接点右上角删除
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
                 <>
                   <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
                     <span>
@@ -1692,7 +1796,7 @@ export function StickerPanel({
                     )}
                   </div>
                 </>
-              ) : null}
+              )}
             </div>
           ) : null}
           {showCustomManageHint ? (
