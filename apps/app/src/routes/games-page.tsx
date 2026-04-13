@@ -759,12 +759,12 @@ export function GamesPage() {
         onLaunch={handleLaunchGame}
       />
 
-      <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Clock3 size={16} className="text-[#15803d]" />
+      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+          <Clock3 size={15} className="text-[#15803d]" />
           最近玩过
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-1">
+        <div className="flex gap-2.5 overflow-x-auto pb-0.5">
           {recentGames.map((game) => {
             const tone = getGameCenterToneStyle(game.tone);
             return (
@@ -773,17 +773,17 @@ export function GamesPage() {
                 type="button"
                 onClick={() => setSelectedGameId(game.id)}
                 className={cn(
-                  "w-[220px] shrink-0 rounded-[24px] border p-4 text-left shadow-[var(--shadow-soft)]",
+                  "w-[210px] shrink-0 rounded-[18px] border px-3.5 py-3.5 text-left shadow-none",
                   tone.mutedPanelClassName,
                 )}
               >
-                <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                <div className="text-[14px] font-semibold text-[color:var(--text-primary)]">
                   {game.name}
                 </div>
-                <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                   {game.slogan}
                 </div>
-                <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+                <div className="mt-2 text-[10px] text-[color:var(--text-muted)]">
                   {lastOpenedAtById[game.id]
                     ? `上次打开 ${formatConversationTimestamp(lastOpenedAtById[game.id])}`
                     : "尚未打开"}
@@ -794,12 +794,12 @@ export function GamesPage() {
         </div>
       </AppSection>
 
-      <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
-        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <UsersRound size={16} className="text-[#15803d]" />
+      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+          <UsersRound size={15} className="text-[#15803d]" />
           好友在玩
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {gameCenterFriendActivities.map((activity) => {
             const game = getGameCenterGame(activity.gameId);
             if (!game) {
@@ -809,7 +809,7 @@ export function GamesPage() {
             return (
               <div
                 key={activity.id}
-                className="flex w-full items-start gap-3 rounded-[24px] border border-white/80 bg-white/88 px-4 py-4 text-left shadow-[var(--shadow-soft)]"
+                className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-white px-3.5 py-3.5 text-left shadow-none"
               >
                 <button
                   type="button"
@@ -819,22 +819,22 @@ export function GamesPage() {
                   <AvatarChip name={activity.friendName} src={activity.friendAvatar} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium text-[color:var(--text-primary)]">
+                      <span className="text-[13px] font-medium text-[color:var(--text-primary)]">
                         {activity.friendName}
                       </span>
-                      <span className="text-xs text-[color:var(--text-muted)]">
+                      <span className="text-[10px] text-[color:var(--text-muted)]">
                         正在玩 {game.name}
                       </span>
                       {friendInviteStatusByActivityId[activity.id] ? (
-                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-1 text-[10px] text-[#2f7a3f]">
+                        <span className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
                           已邀约
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                       {activity.status}
                     </div>
-                    <div className="mt-1 text-[11px] text-[color:var(--text-dim)]">
+                    <div className="mt-1 text-[10px] text-[color:var(--text-dim)]">
                       {friendInviteSentAtByActivityId[activity.id]
                         ? `上次邀约 ${formatConversationTimestamp(friendInviteSentAtByActivityId[activity.id])} · ${formatTimestamp(activity.updatedAt)}`
                         : formatTimestamp(activity.updatedAt)}
@@ -845,7 +845,7 @@ export function GamesPage() {
                   variant="secondary"
                   size="sm"
                   onClick={() => handleInviteFriend(activity.id)}
-                  className="shrink-0 rounded-full"
+                  className="h-8 shrink-0 rounded-full px-3 text-[11px]"
                 >
                   {friendInviteStatusByActivityId[activity.id]
                     ? "再邀一次"
@@ -857,7 +857,7 @@ export function GamesPage() {
         </div>
       </AppSection>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-2.5 sm:grid-cols-2">
         <MobileRankingSection
           title="热门榜"
           entries={gameCenterHotRankings}
@@ -872,12 +872,12 @@ export function GamesPage() {
         />
       </div>
 
-      <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Play size={16} className="text-[#15803d]" />
+      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+          <Play size={15} className="text-[#15803d]" />
           为你推荐
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {mobileBrowseGames.map((game) => {
             const tone = getGameCenterToneStyle(game.tone);
             const pinned = pinnedGameIds.includes(game.id);
@@ -885,7 +885,7 @@ export function GamesPage() {
               <article
                 key={game.id}
                 className={cn(
-                  "rounded-[26px] border p-4 shadow-[var(--shadow-soft)]",
+                  "rounded-[18px] border px-3.5 py-3.5 shadow-none",
                   tone.mutedPanelClassName,
                 )}
               >
@@ -898,29 +898,29 @@ export function GamesPage() {
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          "rounded-full border px-2 py-1 text-[10px] font-medium",
+                          "rounded-full border px-2 py-0.5 text-[9px] font-medium",
                           tone.badgeClassName,
                         )}
                       >
                         {game.deckLabel}
                       </div>
                       {pinned ? (
-                        <div className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-1 text-[10px] text-[#2f7a3f]">
+                        <div className="rounded-full bg-[rgba(47,122,63,0.1)] px-2 py-0.5 text-[9px] text-[#2f7a3f]">
                           常玩
                         </div>
                       ) : null}
                     </div>
-                    <div className="mt-3 text-[15px] font-semibold text-[color:var(--text-primary)]">
+                    <div className="mt-2.5 text-[14px] font-semibold text-[color:var(--text-primary)]">
                       {game.name}
                     </div>
-                    <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                       {game.description}
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
                       {game.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full bg-white/84 px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]"
+                          className="rounded-full bg-white/84 px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
                         >
                           {tag}
                         </span>
@@ -931,7 +931,7 @@ export function GamesPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => handleLaunchGame(game.id)}
-                    className="shrink-0"
+                    className="h-8 shrink-0 rounded-full px-3 text-[11px]"
                   >
                     秒开
                   </Button>
@@ -942,12 +942,12 @@ export function GamesPage() {
         </div>
       </AppSection>
 
-      <AppSection className="space-y-4 border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] shadow-none">
-        <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-          <Gift size={16} className="text-[#15803d]" />
+      <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
+          <Gift size={15} className="text-[#15803d]" />
           福利活动
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {gameCenterEvents.map((event) => {
             const tone = getGameCenterToneStyle(event.tone);
             const engaged = Boolean(eventActionStatusById[event.id]);
@@ -955,26 +955,26 @@ export function GamesPage() {
               <article
                 key={event.id}
                 className={cn(
-                  "rounded-[24px] border p-4 shadow-[var(--shadow-soft)]",
+                  "rounded-[18px] border px-3.5 py-3.5 shadow-none",
                   tone.mutedPanelClassName,
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-semibold text-[color:var(--text-primary)]">
+                      <div className="text-[13px] font-semibold text-[color:var(--text-primary)]">
                         {event.title}
                       </div>
                       {engaged ? (
-                        <div className="rounded-full bg-white/84 px-2 py-1 text-[10px] text-[color:var(--text-muted)]">
+                        <div className="rounded-full bg-white/84 px-2 py-0.5 text-[9px] text-[color:var(--text-muted)]">
                           {getGameCenterEventStatusLabel(event)}
                         </div>
                       ) : null}
                     </div>
-                    <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                    <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                       {event.description}
                     </div>
-                    <div className={cn("mt-2 text-[11px]", tone.softTextClassName)}>
+                    <div className={cn("mt-1.5 text-[10px]", tone.softTextClassName)}>
                       {event.meta}
                     </div>
                   </div>
@@ -982,6 +982,7 @@ export function GamesPage() {
                     variant="secondary"
                     size="sm"
                     onClick={() => handleCompleteEventAction(event.id)}
+                    className="h-8 rounded-full px-3 text-[11px]"
                   >
                     {getGameCenterEventActionLabel(event, engaged)}
                   </Button>
@@ -1021,12 +1022,12 @@ function MobileRankingSection({
   onSelectGame: (gameId: string) => void;
 }) {
   return (
-    <AppSection className="space-y-4 border-black/5 bg-white shadow-none">
-      <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+    <AppSection className="space-y-3 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+      <div className="flex items-center gap-2 text-[14px] font-medium text-[color:var(--text-primary)]">
         {icon}
         {title}
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {entries.map((entry) => {
           const game = getGameCenterGame(entry.gameId);
           if (!game) {
@@ -1040,29 +1041,29 @@ function MobileRankingSection({
               key={`${title}-${entry.gameId}`}
               type="button"
               onClick={() => onSelectGame(entry.gameId)}
-              className="flex w-full items-start gap-3 rounded-[22px] border border-white/80 bg-[rgba(248,250,252,0.9)] px-4 py-4 text-left shadow-[var(--shadow-soft)]"
+              className="flex w-full items-start gap-3 rounded-[18px] border border-[color:var(--border-subtle)] bg-[rgba(248,250,252,0.9)] px-3.5 py-3.5 text-left shadow-none"
             >
               <div
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border text-sm font-semibold",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border text-[13px] font-semibold",
                   tone.badgeClassName,
                 )}
               >
                 {entry.rank}
               </div>
               <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                      {game.name}
-                    </div>
-                    {entry.rank === 1 ? (
-                    <Trophy size={14} className="text-[#15803d]" />
-                    ) : null}
+                <div className="flex items-center gap-1.5">
+                  <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                    {game.name}
                   </div>
-                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {entry.rank === 1 ? (
+                    <Trophy size={13} className="text-[#15803d]" />
+                  ) : null}
+                </div>
+                <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
                   {game.playersLabel}
                 </div>
-                <div className="mt-2 text-xs leading-6 text-[color:var(--text-secondary)]">
+                <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                   {entry.note}
                 </div>
               </div>
