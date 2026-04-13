@@ -1250,6 +1250,45 @@ export function ChatMessageList({
     setViewerMessageId(target.id);
   };
 
+  const openImagePreview = (messageId: string) => {
+    const target = imageMessages.find((item) => item.id === messageId);
+    if (!target) {
+      return;
+    }
+
+    if (!isDesktop) {
+      setViewerMessageId(target.id);
+      return;
+    }
+
+    void openDesktopChatImageViewerWindow({
+      imageUrl: target.url,
+      title: target.fileName || target.label || "图片",
+      meta: target.meta,
+      returnTo: target.returnTo,
+      items: standaloneViewerItems,
+      activeId: target.id,
+    })
+      .then((opened) => {
+        if (opened) {
+          return;
+        }
+
+        setViewerMessageId(target.id);
+        setActionNotice({
+          message: "浏览器阻止了新窗口，已改为当前页预览。",
+          tone: "warning",
+        });
+      })
+      .catch(() => {
+        setViewerMessageId(target.id);
+        setActionNotice({
+          message: "图片预览打开失败，已改为当前页预览。",
+          tone: "warning",
+        });
+      });
+  };
+
   useEffect(() => {
     if (!isDesktop || !activeImage) {
       return;
@@ -1358,7 +1397,7 @@ export function ChatMessageList({
 
   const openAttachment = (message: ChatRenderableMessage) => {
     if (message.type === "image" && message.attachment?.kind === "image") {
-      setViewerMessageId(message.id);
+      openImagePreview(message.id);
       return;
     }
 
@@ -2312,7 +2351,11 @@ export function ChatMessageList({
                   />
                 ) : null}
                 {!isUser ? (
-                  canOpenDesktopAvatarPopover(message, isDesktop, selectionMode) ? (
+                  canOpenDesktopAvatarPopover(
+                    message,
+                    isDesktop,
+                    selectionMode,
+                  ) ? (
                     <button
                       type="button"
                       onClick={(event) =>
@@ -2397,7 +2440,7 @@ export function ChatMessageList({
                       onOpen={
                         selectionMode
                           ? undefined
-                          : () => setViewerMessageId(message.id)
+                          : () => openImagePreview(message.id)
                       }
                     />
                   ) : message.type === "file" &&
@@ -2714,6 +2757,7 @@ export function ChatMessageList({
           }
           openAttachmentLabel={resolveOpenAttachmentLabel(
             contextMenuState.message,
+            variant,
           )}
           onSaveAttachment={
             getSaveableAttachment(contextMenuState.message)
@@ -2876,7 +2920,7 @@ export function ChatMessageList({
         }
         openAttachmentLabel={
           mobileActionMessage
-            ? resolveOpenAttachmentLabel(mobileActionMessage)
+            ? resolveOpenAttachmentLabel(mobileActionMessage, variant)
             : "打开附件"
         }
         onSaveAttachment={
@@ -3454,9 +3498,12 @@ function resolveForwardTypeLabel(message: ChatRenderableMessage) {
   return "消息";
 }
 
-function resolveOpenAttachmentLabel(message: ChatRenderableMessage) {
+function resolveOpenAttachmentLabel(
+  message: ChatRenderableMessage,
+  variant: "mobile" | "desktop",
+) {
   if (message.type === "image") {
-    return "查看图片";
+    return variant === "desktop" ? "预览图片" : "查看图片";
   }
 
   if (message.type === "file") {
@@ -4045,8 +4092,8 @@ function ImageMessage({
     <button
       type="button"
       onClick={onOpen}
-      className="transition hover:opacity-95"
-      aria-label={`查看图片 ${label}`}
+      className={`transition hover:opacity-95 ${isDesktop ? "cursor-zoom-in" : ""}`}
+      aria-label={`${isDesktop ? "预览图片" : "查看图片"} ${label}`}
     >
       {image}
     </button>
