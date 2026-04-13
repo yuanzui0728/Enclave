@@ -190,6 +190,8 @@ fn main() {
             desktop_write_notes_store,
             desktop_read_recent_stickers_store,
             desktop_write_recent_stickers_store,
+            desktop_read_search_history_store,
+            desktop_write_search_history_store,
             desktop_window_toggle_maximize,
             probe_core_api_health,
             start_core_api,
@@ -1172,6 +1174,63 @@ async fn desktop_write_recent_stickers_store(
             success: true,
             message: format!(
                 "Saved desktop recent stickers store to {}",
+                target_file_path.display()
+            ),
+        })
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_read_search_history_store(
+    app: tauri::AppHandle,
+) -> Result<DesktopTextStoreReadResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-search-history.json");
+
+        match std::fs::read_to_string(&target_file_path) {
+            Ok(contents) => Ok(DesktopTextStoreReadResult {
+                exists: true,
+                contents: Some(contents),
+                message: format!(
+                    "Read desktop search history store from {}",
+                    target_file_path.display()
+                ),
+            }),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                Ok(DesktopTextStoreReadResult {
+                    exists: false,
+                    contents: None,
+                    message: "Desktop search history store has not been created yet."
+                        .to_string(),
+                })
+            }
+            Err(error) => Err(error.to_string()),
+        }
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn desktop_write_search_history_store(
+    app: tauri::AppHandle,
+    contents: String,
+) -> Result<DesktopOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let target_file_path = resolve_runtime_paths(&app)?
+            .runtime_data_dir
+            .join("desktop-search-history.json");
+        ensure_parent_dir_exists(&target_file_path)?;
+        std::fs::write(&target_file_path, contents).map_err(|error| error.to_string())?;
+
+        Ok(DesktopOperationResult {
+            success: true,
+            message: format!(
+                "Saved desktop search history store to {}",
                 target_file_path.display()
             ),
         })
