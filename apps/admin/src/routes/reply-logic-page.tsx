@@ -12,6 +12,7 @@ import {
   type ReplyLogicCharacterSnapshot,
   type ReplyLogicConstantSummary,
   type ReplyLogicConversationSnapshot,
+  type ReplyLogicGroupReplyIssueSummary,
   type ReplyLogicGroupReplyRuntimeSummary,
   type ReplyLogicGroupReplySelectionDisposition,
   type ReplyLogicGroupReplyTaskStatus,
@@ -1700,6 +1701,16 @@ function GroupReplyRuntimeCard({
     },
   });
 
+  const retryTurnMutation = useMutation({
+    mutationFn: async (turnId: string) => adminApi.retryReplyLogicGroupReplyTurn(turnId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+      ]);
+    },
+  });
+
   const filteredTurns = useMemo(() => {
     return runtime.recentTurns
       .map((turn) => {
@@ -1805,6 +1816,9 @@ function GroupReplyRuntimeCard({
       {retryMutation.isError && retryMutation.error instanceof Error ? (
         <ErrorBlock message={retryMutation.error.message} />
       ) : null}
+      {retryTurnMutation.isError && retryTurnMutation.error instanceof Error ? (
+        <ErrorBlock message={retryTurnMutation.error.message} />
+      ) : null}
       {cleanupMutation.isSuccess ? (
         <AdminActionFeedback
           tone="success"
@@ -1819,6 +1833,42 @@ function GroupReplyRuntimeCard({
           description={retryMutation.data.note}
         />
       ) : null}
+      {retryTurnMutation.isSuccess ? (
+        <AdminActionFeedback
+          tone="success"
+          title="整轮任务已重新入队"
+          description={retryTurnMutation.data.note}
+        />
+      ) : null}
+
+      <AdminSubpanel title="问题聚合" contentClassName="mt-4">
+        {!runtime.issueSummary.length ? (
+          <AdminEmptyState
+            title="最近没有失败或取消集中点"
+            description="当前任务执行比较稳定，最近轮次里没有显著的失败/取消原因聚合。"
+          />
+        ) : (
+          <div className="space-y-3">
+            {runtime.issueSummary.map((issue) => (
+              <AdminRecordCard
+                key={issue.key}
+                title={issue.label}
+                badges={
+                  <>
+                    <StatusPill tone={issue.status === "failed" ? "warning" : "muted"}>
+                      {issue.status === "failed" ? "失败" : "取消"}
+                    </StatusPill>
+                    <StatusPill tone="muted">{issue.source === "error_message" ? "错误" : "取消原因"}</StatusPill>
+                    <StatusPill tone="warning">{issue.count} 次</StatusPill>
+                  </>
+                }
+                description={describeGroupReplyIssue(issue)}
+                className="bg-white/90"
+              />
+            ))}
+          </div>
+        )}
+      </AdminSubpanel>
 
       {!filteredTurns.length ? (
         <AdminEmptyState
@@ -1889,6 +1939,20 @@ function GroupReplyRuntimeCard({
                     </div>
                   }
                   className="bg-white/90"
+                  actions={
+                    turn.tasks.some((task) => task.status === "failed" || task.status === "cancelled") ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => retryTurnMutation.mutate(turn.turnId)}
+                        disabled={retryTurnMutation.isPending}
+                      >
+                        {retryTurnMutation.isPending && retryTurnMutation.variables === turn.turnId
+                          ? "整轮重试中..."
+                          : "重试本轮未完成任务"}
+                      </Button>
+                    ) : null
+                  }
                 />
 
                 <div className="mt-4 grid gap-4 xl:grid-cols-2">
@@ -4445,6 +4509,14 @@ function describeGroupReplyDisposition(disposition: ReplyLogicGroupReplySelectio
     default:
       return disposition;
   }
+}
+
+function describeGroupReplyIssue(issue: ReplyLogicGroupReplyIssueSummary) {
+  if (issue.source === "cancel_reason") {
+    return `最近群聊任务里，这个取消原因共出现 ${issue.count} 次，通常说明旧轮次被更新的用户消息覆盖，或者执行前角色上下文已经失效。`;
+  }
+
+  return `最近群聊任务里，这类执行错误共出现 ${issue.count} 次。优先看失败任务明细里的原始错误，再决定是重新入队还是修运行环境。`;
 }
 
 function formatGroupReplyCandidateMeta(recentSpeakerIndex: number) {
