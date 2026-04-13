@@ -629,7 +629,7 @@ export function DiscoverPage() {
       <TabPageTopBar title="发现" titleAlign="center" />
 
       <div className="pb-8">
-        <div className="px-4 py-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 py-2 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
           从这里继续打开朋友动态、世界相遇和内容入口。
         </div>
 
@@ -654,8 +654,8 @@ function DiscoverMobileSection({
   items: MobileDiscoverEntry[];
 }) {
   return (
-    <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-      <div className="px-4 py-2 text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+    <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+      <div className="px-4 py-1.5 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
         {title}
       </div>
       {items.map((item, index) => (
@@ -682,33 +682,33 @@ function DiscoverMobileEntryRow({
     <Link
       to={item.to}
       className={cn(
-        "flex items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
+        "flex items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]",
         index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
       )}
     >
       <div
         className={cn(
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px]",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
           item.iconClassName,
         )}
       >
-        <Icon size={19} />
+        <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+          <div className="truncate text-[14px] text-[color:var(--text-primary)]">
             {item.label}
           </div>
-          <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
+          <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#15803d]">
             {item.badge}
           </div>
         </div>
-        <div className="mt-1 truncate text-[13px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 truncate text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
           {item.summary}
         </div>
       </div>
       <ChevronRight
-        size={16}
+        size={14}
         className="shrink-0 text-[color:var(--text-dim)]"
       />
     </Link>
