@@ -55,13 +55,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "消息",
     shortLabel: "消息",
     to: "/tabs/chat",
-    matches: [
-      "/tabs/chat",
-      "/chat/",
-      "/group/",
-      "/official-accounts/service/",
-      "/notes",
-    ],
+    matches: ["/tabs/chat", "/chat/", "/group/", "/official-accounts/service/"],
   },
   {
     kind: "route",
@@ -87,7 +81,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "收藏",
     shortLabel: "收藏",
     to: "/tabs/favorites",
-    matches: ["/tabs/favorites"],
+    matches: ["/tabs/favorites", "/notes", "/desktop/note-window"],
   },
   {
     kind: "route",
@@ -227,7 +221,6 @@ export function isDesktopNavItemActive(
   }
 
   return !(
-    item.excludedMatches?.some((prefix) => pathname.startsWith(prefix)) ??
-    false
+    item.excludedMatches?.some((prefix) => pathname.startsWith(prefix)) ?? false
   );
 }

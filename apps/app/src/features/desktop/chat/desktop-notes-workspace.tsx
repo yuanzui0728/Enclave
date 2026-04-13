@@ -1,595 +1,1094 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Clock3,
-  Download,
-  FileText,
+  createFavoriteNote,
+  getFavoriteNote,
+  removeFavoriteNote,
+  updateFavoriteNote,
+  uploadChatAttachment,
+  type FavoriteNoteAsset,
+  type FavoriteNoteDocument,
+} from "@yinjie/contracts";
+import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import {
+  ArrowLeft,
+  Bold,
+  FolderUp,
+  Italic,
+  List,
   ListTodo,
-  Plus,
-  Rows3,
+  Save,
+  Tag,
   Trash2,
+  Underline,
+  X,
 } from "lucide-react";
-import { Button, InlineNotice, cn } from "@yinjie/ui";
-import { InlineNoticeActionButton } from "../../../components/inline-notice-action-button";
-import { EmptyState } from "../../../components/empty-state";
-import { DesktopUtilityShell } from "../desktop-utility-shell";
-import {
-  createDesktopNote,
-  deleteDesktopNote,
-  hydrateDesktopNotesFromNative,
-  readDesktopNotes,
-  updateDesktopNote,
-  type DesktopNoteRecord,
-} from "./desktop-notes-storage";
-import { revealSavedFile } from "../../../runtime/reveal-saved-file";
+import { useNavigate } from "@tanstack/react-router";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
-import { saveGeneratedFile } from "../../../runtime/save-generated-file";
+import { closeCurrentDesktopWindow } from "../../../runtime/desktop-windowing";
+import {
+  clearDesktopNoteDraft,
+  createDesktopNoteDraft,
+  readDesktopNoteDraft,
+  readDesktopNoteDraftByNoteId,
+  saveDesktopNoteDraft,
+  type DesktopNoteDraftRecord,
+} from "./desktop-notes-storage";
+import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 
 type DesktopNotesWorkspaceProps = {
   selectedNoteId?: string;
-  onSelectNote?: (noteId?: string) => void;
+  draftId?: string;
+  standaloneWindow?: boolean;
+  returnTo?: string;
+  onSavedNote?: (noteId: string, draftId: string) => void;
 };
 
-type EditorAction = {
-  key: string;
-  label: string;
-  icon: typeof ListTodo;
-  snippet: () => string;
+type NoteNotice = {
+  tone: "success" | "danger";
+  message: string;
 };
 
-const editorActions: EditorAction[] = [
-  {
-    key: "todo",
-    label: "待办",
-    icon: ListTodo,
-    snippet: () => "\n- [ ] ",
-  },
-  {
-    key: "divider",
-    label: "分隔线",
-    icon: Rows3,
-    snippet: () => "\n----------------\n",
-  },
-  {
-    key: "timestamp",
-    label: "时间",
-    icon: Clock3,
-    snippet: () => `\n${formatNoteTimestamp(new Date().toISOString(), true)}\n`,
-  },
-];
+type NoteEditorState = {
+  contentHtml: string;
+  contentText: string;
+  tags: string[];
+  assets: FavoriteNoteAsset[];
+};
 
-function areDesktopNotesEqual(
-  left: DesktopNoteRecord[],
-  right: DesktopNoteRecord[],
-) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
+const EMPTY_NOTE_EDITOR_STATE: NoteEditorState = {
+  contentHtml: "",
+  contentText: "",
+  tags: [],
+  assets: [],
+};
 
 export function DesktopNotesWorkspace({
   selectedNoteId,
-  onSelectNote,
+  draftId,
+  standaloneWindow = false,
+  returnTo,
+  onSavedNote,
 }: DesktopNotesWorkspaceProps) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
-  const nativeDesktopNotes = runtimeConfig.appPlatform === "desktop";
-  const [notes, setNotes] = useState<DesktopNoteRecord[]>([]);
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
-  const [editorValue, setEditorValue] = useState("");
-  const [saveState, setSaveState] = useState<"saved" | "saving">("saved");
-  const [actionNotice, setActionNotice] = useState<{
-    message: string;
-    tone: "success" | "danger";
-    actionLabel?: string;
-    onAction?: () => void;
-  } | null>(null);
-  const editorRef = useRef<HTMLTextAreaElement | null>(null);
-  const notesStorageLabel = nativeDesktopNotes
-    ? "桌面端保存在当前设备"
-    : "桌面端临时保存在当前浏览器";
+  const baseUrl = runtimeConfig.apiBaseUrl;
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const initializedSessionKeyRef = useRef("");
+  const [noteId, setNoteId] = useState(selectedNoteId);
+  const [activeDraftId, setActiveDraftId] = useState(
+    () => draftId?.trim() || selectedNoteId?.trim() || "",
+  );
+  const [editorState, setEditorState] = useState<NoteEditorState>(
+    EMPTY_NOTE_EDITOR_STATE,
+  );
+  const [savedSnapshot, setSavedSnapshot] = useState(
+    buildNoteSnapshot(EMPTY_NOTE_EDITOR_STATE),
+  );
+  const [notice, setNotice] = useState<NoteNotice | null>(null);
+  const [tagInput, setTagInput] = useState("");
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
+  const [attachmentPending, setAttachmentPending] = useState(false);
 
-  const activeNote = useMemo(
-    () => notes.find((item) => item.id === activeNoteId) ?? null,
-    [activeNoteId, notes],
+  const noteQuery = useQuery({
+    queryKey: ["favorite-note", baseUrl, selectedNoteId],
+    queryFn: () => getFavoriteNote(selectedNoteId!, baseUrl),
+    enabled: Boolean(selectedNoteId),
+  });
+
+  const sessionKey = `${selectedNoteId ?? "new"}:${draftId ?? ""}`;
+
+  const currentSnapshot = useMemo(
+    () => buildNoteSnapshot(editorState),
+    [editorState],
+  );
+  const isDirty = currentSnapshot !== savedSnapshot;
+  const noteTitle = useMemo(
+    () => resolveNoteTitle(editorState.contentText),
+    [editorState.contentText],
   );
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = buildNoteMutationPayload(editorState);
+      return noteId
+        ? updateFavoriteNote(noteId, payload, baseUrl)
+        : createFavoriteNote(payload, baseUrl);
+    },
+    onSuccess: async (savedNote) => {
+      const nextDraftId = activeDraftId || draftId?.trim() || savedNote.id;
+      const nextState = buildEditorStateFromDocument(savedNote);
+      const nextSnapshot = buildNoteSnapshot(nextState);
+
+      setNoteId(savedNote.id);
+      setEditorState(nextState);
+      setSavedSnapshot(nextSnapshot);
+      setNotice({
+        tone: "success",
+        message: "笔记已保存到收藏。",
+      });
+
+      saveDesktopNoteDraft({
+        draftId: nextDraftId,
+        noteId: savedNote.id,
+        ...nextState,
+        updatedAt: new Date().toISOString(),
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-favorites", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["favorite-notes", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["favorite-note", baseUrl, savedNote.id],
+        }),
+      ]);
+
+      onSavedNote?.(savedNote.id, nextDraftId);
+    },
+    onError: (error) => {
+      setNotice({
+        tone: "danger",
+        message:
+          error instanceof Error ? error.message : "保存失败，请稍后再试。",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!noteId) {
+        return { success: true as const };
+      }
+
+      return removeFavoriteNote(noteId, baseUrl);
+    },
+    onSuccess: async () => {
+      if (activeDraftId) {
+        clearDesktopNoteDraft(activeDraftId);
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-favorites", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["favorite-notes", baseUrl],
+        }),
+      ]);
+
+      if (noteId) {
+        await queryClient.removeQueries({
+          queryKey: ["favorite-note", baseUrl, noteId],
+        });
+      }
+
+      if (standaloneWindow) {
+        void handleClose();
+        return;
+      }
+
+      void navigate({ to: "/tabs/favorites" });
+    },
+    onError: (error) => {
+      setNotice({
+        tone: "danger",
+        message:
+          error instanceof Error ? error.message : "删除失败，请稍后再试。",
+      });
+    },
+  });
+
   useEffect(() => {
-    let cancelled = false;
-
-    async function initializeNotesWorkspace() {
-      const existingNotes = nativeDesktopNotes
-        ? await hydrateDesktopNotesFromNative()
-        : readDesktopNotes();
-      if (cancelled) {
-        return;
-      }
-
-      if (!existingNotes.length) {
-        const createdNote = createDesktopNote();
-        if (cancelled) {
-          return;
-        }
-
-        setNotes([createdNote]);
-        setActiveNoteId(createdNote.id);
-        setEditorValue(createdNote.content);
-        onSelectNote?.(createdNote.id);
-        return;
-      }
-
-      const resolvedNoteId = resolveSelectedNoteId(existingNotes, selectedNoteId);
-      const resolvedNote =
-        existingNotes.find((item) => item.id === resolvedNoteId) ??
-        existingNotes[0];
-
-      setNotes(existingNotes);
-      setActiveNoteId(resolvedNote.id);
-      setEditorValue(resolvedNote.content);
-      if (resolvedNote.id !== selectedNoteId) {
-        onSelectNote?.(resolvedNote.id);
-      }
-    }
-
-    void initializeNotesWorkspace();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [nativeDesktopNotes, onSelectNote, selectedNoteId]);
+    setNoteId(selectedNoteId);
+  }, [selectedNoteId]);
 
   useEffect(() => {
-    if (!notes.length) {
+    if (activeDraftId) {
       return;
     }
 
-    const resolvedNoteId = resolveSelectedNoteId(notes, selectedNoteId);
-    if (!resolvedNoteId || resolvedNoteId === activeNoteId) {
-      return;
-    }
-
-    const nextNote = notes.find((item) => item.id === resolvedNoteId);
-    if (!nextNote) {
-      return;
-    }
-
-    setActiveNoteId(nextNote.id);
-    setEditorValue(nextNote.content);
-  }, [activeNoteId, notes, selectedNoteId]);
+    const draft = createDesktopNoteDraft({
+      draftId,
+      noteId: selectedNoteId,
+    });
+    setActiveDraftId(draft.draftId);
+  }, [activeDraftId, draftId, selectedNoteId]);
 
   useEffect(() => {
-    if (!activeNote || activeNote.content === editorValue) {
+    const nextDraftId =
+      activeDraftId || draftId?.trim() || selectedNoteId?.trim() || "";
+    if (!nextDraftId) {
       return;
     }
 
-    setSaveState("saving");
-    const timer = window.setTimeout(() => {
-      const nextNotes = updateDesktopNote(activeNote.id, editorValue);
-      setNotes(nextNotes);
-      setSaveState("saved");
-    }, 260);
-
-    return () => window.clearTimeout(timer);
-  }, [activeNote, editorValue]);
-
-  useEffect(() => {
-    if (!actionNotice) {
+    if (initializedSessionKeyRef.current === sessionKey) {
       return;
     }
 
-    const timer = window.setTimeout(
-      () => setActionNotice(null),
-      actionNotice.actionLabel ? 5000 : 2200,
-    );
-    return () => window.clearTimeout(timer);
-  }, [actionNotice]);
-
-  useEffect(() => {
-    if (!nativeDesktopNotes) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function refreshNotesFromNative() {
-      if (
-        saveState === "saving" ||
-        (activeNote && activeNote.content !== editorValue)
-      ) {
+    if (selectedNoteId) {
+      const localDraft =
+        readDesktopNoteDraftByNoteId(selectedNoteId) ??
+        readDesktopNoteDraft(nextDraftId);
+      if (localDraft) {
+        applyNoteSource({
+          draftId: localDraft.draftId,
+          noteId: selectedNoteId,
+          state: buildEditorStateFromDraft(localDraft),
+          savedSource: noteQuery.data ?? null,
+        });
+        initializedSessionKeyRef.current = sessionKey;
         return;
       }
 
-      const existingNotes = await hydrateDesktopNotesFromNative();
-      if (cancelled) {
+      if (noteQuery.isLoading && !noteQuery.data) {
         return;
       }
 
-      setNotes((current) =>
-        areDesktopNotesEqual(current, existingNotes) ? current : existingNotes,
-      );
-
-      if (!existingNotes.length) {
+      if (noteQuery.data) {
+        const ensuredDraft = createDesktopNoteDraft({
+          draftId: nextDraftId,
+          noteId: noteQuery.data.id,
+          ...buildEditorStateFromDocument(noteQuery.data),
+        });
+        applyNoteSource({
+          draftId: ensuredDraft.draftId,
+          noteId: noteQuery.data.id,
+          state: buildEditorStateFromDocument(noteQuery.data),
+          savedSource: noteQuery.data,
+        });
+        initializedSessionKeyRef.current = sessionKey;
         return;
-      }
-
-      const preferredNoteId = activeNoteId ?? selectedNoteId;
-      const nextActiveNoteId = resolveSelectedNoteId(
-        existingNotes,
-        preferredNoteId,
-      );
-      const nextActiveNote =
-        existingNotes.find((item) => item.id === nextActiveNoteId) ??
-        existingNotes[0];
-
-      if (!nextActiveNote) {
-        return;
-      }
-
-      setActiveNoteId((current) =>
-        current === nextActiveNote.id ? current : nextActiveNote.id,
-      );
-      setEditorValue((current) =>
-        current === nextActiveNote.content ? current : nextActiveNote.content,
-      );
-      if (nextActiveNote.id !== preferredNoteId) {
-        onSelectNote?.(nextActiveNote.id);
       }
     }
 
-    const handleFocus = () => {
-      void refreshNotesFromNative();
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
-      void refreshNotesFromNative();
-    };
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
+    const newDraft =
+      readDesktopNoteDraft(nextDraftId) ??
+      createDesktopNoteDraft({
+        draftId: nextDraftId,
+        noteId: selectedNoteId,
+      });
+    applyNoteSource({
+      draftId: newDraft.draftId,
+      noteId: selectedNoteId,
+      state: buildEditorStateFromDraft(newDraft),
+      savedSource: null,
+    });
+    initializedSessionKeyRef.current = sessionKey;
   }, [
-    activeNote,
-    activeNoteId,
-    editorValue,
-    nativeDesktopNotes,
-    onSelectNote,
-    saveState,
+    activeDraftId,
+    draftId,
+    noteQuery.data,
+    noteQuery.isLoading,
     selectedNoteId,
+    sessionKey,
   ]);
 
-  function handleCreateNote() {
-    const createdNote = createDesktopNote();
-    setNotes((current) => [createdNote, ...current]);
-    setActiveNoteId(createdNote.id);
-    setEditorValue(createdNote.content);
-    setSaveState("saved");
-    onSelectNote?.(createdNote.id);
-    requestAnimationFrame(() => {
-      editorRef.current?.focus();
+  useEffect(() => {
+    if (!selectedNoteId || !noteQuery.data) {
+      return;
+    }
+
+    setSavedSnapshot(
+      buildNoteSnapshot(buildEditorStateFromDocument(noteQuery.data)),
+    );
+  }, [noteQuery.data, selectedNoteId]);
+
+  useEffect(() => {
+    if (!activeDraftId) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      saveDesktopNoteDraft({
+        draftId: activeDraftId,
+        noteId: noteId || undefined,
+        ...editorState,
+        updatedAt: new Date().toISOString(),
+      });
+    }, 180);
+
+    return () => window.clearTimeout(timer);
+  }, [activeDraftId, editorState, noteId]);
+
+  useEffect(() => {
+    if (!notice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setNotice(null), 2600);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  useEffect(() => {
+    const title = `${noteTitle}${isDirty ? " · 未保存" : ""}`;
+    document.title = title;
+  }, [isDirty, noteTitle]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
+  function applyNoteSource(input: {
+    draftId: string;
+    noteId?: string;
+    state: NoteEditorState;
+    savedSource: FavoriteNoteDocument | null;
+  }) {
+    setActiveDraftId(input.draftId);
+    setNoteId(input.noteId);
+    setEditorState(input.state);
+    setSavedSnapshot(
+      buildNoteSnapshot(
+        input.savedSource
+          ? buildEditorStateFromDocument(input.savedSource)
+          : EMPTY_NOTE_EDITOR_STATE,
+      ),
+    );
+
+    if (editorRef.current) {
+      editorRef.current.innerHTML = input.state.contentHtml;
+    }
+  }
+
+  function syncEditorStateFromDom() {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    const nextHtml = normalizeEditorHtml(editor.innerHTML);
+    const nextAssets = filterAssetsByHtml(nextHtml, editorState.assets);
+    setEditorState({
+      contentHtml: nextHtml,
+      contentText: extractNoteTextFromHtml(nextHtml),
+      tags: editorState.tags,
+      assets: nextAssets,
     });
   }
 
-  function handleSelectNote(note: DesktopNoteRecord) {
-    setActiveNoteId(note.id);
-    setEditorValue(note.content);
-    setSaveState("saved");
-    onSelectNote?.(note.id);
+  function focusEditorAtEnd() {
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    editor.focus();
+    const selection = window.getSelection();
+    if (!selection) {
+      return;
+    }
+
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 
-  function handleDeleteNote() {
-    if (!activeNote) {
-      return;
-    }
-
-    const nextNotes = deleteDesktopNote(activeNote.id);
-    setNotes(nextNotes);
-
-    if (!nextNotes.length) {
-      setActiveNoteId(null);
-      setEditorValue("");
-      onSelectNote?.();
-      return;
-    }
-
-    const nextNote = nextNotes[0];
-    setActiveNoteId(nextNote.id);
-    setEditorValue(nextNote.content);
-    onSelectNote?.(nextNote.id);
+  function applyDocumentCommand(command: string, value?: string) {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value);
+    syncEditorStateFromDom();
   }
 
-  async function handleExportNote() {
-    if (!activeNote) {
+  function insertTodoAtCursor() {
+    editorRef.current?.focus();
+    document.execCommand(
+      "insertHTML",
+      false,
+      `<span data-note-checkbox="false">☐</span>&nbsp;`,
+    );
+    syncEditorStateFromDom();
+  }
+
+  async function handleAttachmentSelection(fileList: FileList | null) {
+    const files = fileList ? [...fileList] : [];
+    if (!files.length) {
       return;
     }
 
-    const result = await saveGeneratedFile({
-      contents: editorValue,
-      fileName: buildDesktopNoteExportFileName(activeNote.title, activeNote.updatedAt),
-      mimeType: "text/plain;charset=utf-8",
-      dialogTitle: "导出笔记",
-      kindLabel: "笔记",
-    });
+    setAttachmentPending(true);
 
-    if (result.status === "cancelled") {
+    try {
+      const createdAssets: FavoriteNoteAsset[] = [];
+
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const result = await uploadChatAttachment(formData, baseUrl);
+        const attachment = result.attachment;
+        const assetId =
+          typeof crypto !== "undefined" &&
+          typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `${attachment.kind}-${Date.now()}`;
+
+        if (attachment.kind === "image") {
+          createdAssets.push({
+            id: assetId,
+            kind: "image",
+            fileName: attachment.fileName,
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            sizeBytes: attachment.size,
+            width: attachment.width,
+            height: attachment.height,
+          });
+          focusEditorAtEnd();
+          document.execCommand(
+            "insertHTML",
+            false,
+            `<p><img data-note-image="true" data-note-asset-id="${assetId}" src="${escapeHtmlAttribute(
+              attachment.url,
+            )}" alt="${escapeHtmlAttribute(
+              attachment.fileName,
+            )}" /></p><p><br></p>`,
+          );
+          continue;
+        }
+
+        if (attachment.kind === "file") {
+          createdAssets.push({
+            id: assetId,
+            kind: "file",
+            fileName: attachment.fileName,
+            url: attachment.url,
+            mimeType: attachment.mimeType,
+            sizeBytes: attachment.size,
+          });
+          focusEditorAtEnd();
+          document.execCommand(
+            "insertHTML",
+            false,
+            `<p><a data-note-file="true" data-note-asset-id="${assetId}" href="${escapeHtmlAttribute(
+              attachment.url,
+            )}" target="_blank" rel="noreferrer">📎 ${escapeHtml(
+              attachment.fileName,
+            )}</a></p><p><br></p>`,
+          );
+        }
+      }
+
+      const nextAssets = mergeNoteAssets(editorState.assets, createdAssets);
+      const editor = editorRef.current;
+      const nextHtml = normalizeEditorHtml(
+        editor?.innerHTML ?? editorState.contentHtml,
+      );
+      setEditorState({
+        contentHtml: nextHtml,
+        contentText: extractNoteTextFromHtml(nextHtml),
+        tags: editorState.tags,
+        assets: filterAssetsByHtml(nextHtml, nextAssets),
+      });
+      setNotice({
+        tone: "success",
+        message: "附件已插入到笔记。",
+      });
+    } catch (error) {
+      setNotice({
+        tone: "danger",
+        message:
+          error instanceof Error ? error.message : "附件上传失败，请稍后再试。",
+      });
+    } finally {
+      setAttachmentPending(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  function handleEditorClick(event: React.MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
       return;
     }
 
-    const canRevealSavedFile =
-      result.status === "saved" && Boolean(result.savedPath?.trim());
-    const savedPath = canRevealSavedFile ? result.savedPath!.trim() : null;
+    const checkbox = target.closest("[data-note-checkbox]");
+    if (!(checkbox instanceof HTMLElement)) {
+      return;
+    }
 
-    setActionNotice({
-      message: result.message,
-      tone: result.status === "failed" ? "danger" : "success",
-      actionLabel: canRevealSavedFile ? "打开位置" : undefined,
-      onAction:
-        savedPath
-          ? () => {
-              void revealSavedFile(savedPath).then((revealed) => {
-                setActionNotice({
-                  message: revealed
-                    ? "已打开笔记所在位置。"
-                    : "打开所在位置失败，请稍后再试。",
-                  tone: revealed ? "success" : "danger",
-                });
-              });
+    const checked = checkbox.dataset.noteCheckbox === "true";
+    checkbox.dataset.noteCheckbox = checked ? "false" : "true";
+    checkbox.textContent = checked ? "☐" : "☑";
+    syncEditorStateFromDom();
+  }
+
+  function handleTagCommit() {
+    const normalizedTag = tagInput.trim().replace(/^#/, "");
+    if (!normalizedTag) {
+      setTagInput("");
+      return;
+    }
+
+    if (editorState.tags.includes(normalizedTag)) {
+      setTagInput("");
+      return;
+    }
+
+    setEditorState((current) => ({
+      ...current,
+      tags: [...current.tags, normalizedTag].slice(0, 8),
+    }));
+    setTagInput("");
+  }
+
+  function handleRemoveTag(tag: string) {
+    setEditorState((current) => ({
+      ...current,
+      tags: current.tags.filter((item) => item !== tag),
+    }));
+  }
+
+  async function handleSave() {
+    try {
+      const savedNote = await saveMutation.mutateAsync();
+      return savedNote;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleClose() {
+    if (standaloneWindow) {
+      const closed = await closeCurrentDesktopWindow();
+      if (closed) {
+        return;
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.close();
+        return;
+      }
+    }
+
+    void navigate({ to: returnTo || "/tabs/favorites" });
+  }
+
+  async function handleSaveAndClose() {
+    const savedNote = await handleSave();
+    if (!savedNote) {
+      return;
+    }
+
+    setCloseDialogOpen(false);
+    await handleClose();
+  }
+
+  async function handleDiscardAndClose() {
+    if (activeDraftId) {
+      clearDesktopNoteDraft(activeDraftId);
+    }
+
+    setCloseDialogOpen(false);
+    await handleClose();
+  }
+
+  function requestClose() {
+    if (isDirty) {
+      setCloseDialogOpen(true);
+      return;
+    }
+
+    void handleClose();
+  }
+
+  if (
+    selectedNoteId &&
+    noteQuery.isLoading &&
+    !initializedSessionKeyRef.current
+  ) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[color:var(--bg-canvas)]">
+        <LoadingBlock label="正在读取笔记..." />
+      </div>
+    );
+  }
+
+  if (
+    selectedNoteId &&
+    noteQuery.isError &&
+    !readDesktopNoteDraftByNoteId(selectedNoteId)
+  ) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[color:var(--bg-canvas)] p-6">
+        <div className="w-full max-w-xl rounded-[20px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
+          <ErrorBlock
+            message={
+              noteQuery.error instanceof Error
+                ? noteQuery.error.message
+                : "读取笔记失败，请稍后再试。"
             }
-          : undefined,
-    });
-  }
-
-  function handleInsertSnippet(snippet: string) {
-    const target = editorRef.current;
-
-    if (!target) {
-      setEditorValue((current) => `${current}${snippet}`);
-      return;
-    }
-
-    const selectionStart = target.selectionStart ?? editorValue.length;
-    const selectionEnd = target.selectionEnd ?? editorValue.length;
-    const nextValue =
-      editorValue.slice(0, selectionStart) +
-      snippet +
-      editorValue.slice(selectionEnd);
-
-    setEditorValue(nextValue);
-    requestAnimationFrame(() => {
-      const cursorPosition = selectionStart + snippet.length;
-      target.focus();
-      target.setSelectionRange(cursorPosition, cursorPosition);
-    });
+          />
+          <div className="mt-5 flex justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => void navigate({ to: "/tabs/favorites" })}
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
+            >
+              返回收藏
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <DesktopUtilityShell
-      title={activeNote?.title ?? "笔记"}
-      subtitle={
-        activeNote
-          ? `${saveState === "saving" ? "正在自动保存..." : "内容已自动保存"} · 最近编辑 ${formatNoteTimestamp(activeNote.updatedAt, true)}`
-          : notesStorageLabel
-      }
-      toolbar={
-        <div className="flex items-center gap-2">
-          {activeNote ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => void handleExportNote()}
-              className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
-            >
-              <Download size={15} />
-              导出笔记
-            </Button>
-          ) : null}
-          <div
-            className={cn(
-              "rounded-full border px-3 py-1 text-[11px] font-medium",
-              saveState === "saving"
-                ? "border-[rgba(250,173,20,0.18)] bg-[rgba(250,173,20,0.10)] text-[#a16207]"
-                : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-            )}
-          >
-            {saveState === "saving" ? "保存中" : "已保存"}
+    <div className="flex h-full min-h-0 flex-col bg-[linear-gradient(180deg,#f7f8f8_0%,#eef1f0_100%)]">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(event) => void handleAttachmentSelection(event.target.files)}
+      />
+
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.9)] px-5 py-4 backdrop-blur-xl">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {!standaloneWindow ? (
+              <button
+                type="button"
+                onClick={() => void navigate({ to: "/tabs/favorites" })}
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+                aria-label="返回收藏"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            ) : null}
+            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+              {noteTitle}
+            </div>
           </div>
-          {activeNote ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDeleteNote}
-              className="h-9 w-9 rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[rgba(239,68,68,0.08)] hover:text-[color:var(--state-danger-text)]"
-              aria-label="删除当前笔记"
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {saveMutation.isPending
+              ? "正在保存到收藏..."
+              : isDirty
+                ? "存在未保存修改"
+                : noteId
+                  ? "已保存到收藏"
+                  : "新建笔记"}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {noteId ? (
+            <button
+              type="button"
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={deleteMutation.isPending}
+              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--state-danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Trash2 size={16} />
-            </Button>
+              <Trash2 size={15} />
+              删除
+            </button>
+          ) : null}
+          <Button
+            variant="primary"
+            onClick={() => void handleSave()}
+            disabled={saveMutation.isPending}
+            className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+          >
+            <Save size={15} />
+            {saveMutation.isPending ? "保存中..." : "保存"}
+          </Button>
+          {standaloneWindow ? (
+            <button
+              type="button"
+              onClick={requestClose}
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              aria-label="关闭笔记窗口"
+            >
+              <X size={16} />
+            </button>
           ) : null}
         </div>
-      }
-      sidebarClassName="w-[290px]"
-      sidebar={
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                  笔记
-                </div>
-                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {notesStorageLabel}
-                </div>
-              </div>
+      </header>
+
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-5 py-3 backdrop-blur-xl">
+        <ToolbarButton
+          label="附件"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <FolderUp size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          label="粗体"
+          onClick={() => applyDocumentCommand("bold")}
+        >
+          <Bold size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          label="斜体"
+          onClick={() => applyDocumentCommand("italic")}
+        >
+          <Italic size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          label="下划线"
+          onClick={() => applyDocumentCommand("underline")}
+        >
+          <Underline size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          label="列表"
+          onClick={() => applyDocumentCommand("insertUnorderedList")}
+        >
+          <List size={15} />
+        </ToolbarButton>
+        <ToolbarButton label="待办" onClick={insertTodoAtCursor}>
+          <ListTodo size={15} />
+        </ToolbarButton>
+        <ToolbarButton
+          label="标签"
+          active={tagEditorOpen}
+          onClick={() => setTagEditorOpen((current) => !current)}
+        >
+          <Tag size={15} />
+        </ToolbarButton>
+        {attachmentPending ? (
+          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+            正在上传附件...
+          </span>
+        ) : null}
+      </div>
+
+      {tagEditorOpen || editorState.tags.length ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.72)] px-5 py-3">
+          {editorState.tags.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full bg-[rgba(7,193,96,0.08)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+            >
+              <span>#{tag}</span>
+              <button
+                type="button"
+                onClick={() => handleRemoveTag(tag)}
+                className="flex h-4 w-4 items-center justify-center rounded-full text-[color:var(--brand-primary)] transition hover:bg-[rgba(7,193,96,0.12)]"
+                aria-label={`移除标签 ${tag}`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+          {tagEditorOpen ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={tagInput}
+                onChange={(event) => setTagInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter") {
+                    return;
+                  }
+
+                  event.preventDefault();
+                  handleTagCommit();
+                }}
+                placeholder="输入标签后回车"
+                className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[13px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
+              />
               <Button
                 variant="secondary"
-                size="icon"
-                onClick={handleCreateNote}
-                className="h-9 w-9 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
-                aria-label="新建笔记"
+                onClick={handleTagCommit}
+                className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 shadow-none"
               >
-                <Plus size={16} />
+                添加
               </Button>
             </div>
-            <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
-              <div className="text-[11px] text-[color:var(--text-muted)]">
-                当前笔记
-              </div>
-              <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-                共 {notes.length} 条
-              </div>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-3 py-3">
-            {notes.length ? (
-              <div className="space-y-2">
-                {notes.map((note) => (
-                  <button
-                    key={note.id}
-                    type="button"
-                    onClick={() => handleSelectNote(note)}
-                    className={cn(
-                      "w-full rounded-[16px] border px-4 py-3 text-left transition shadow-[var(--shadow-section)]",
-                      note.id === activeNoteId
-                        ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
-                        : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]",
-                    )}
-                  >
-                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                      {note.title}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-muted)]">
-                      {note.excerpt}
-                    </div>
-                    <div className="mt-2 text-[11px] text-[color:var(--text-dim)]">
-                      {formatNoteTimestamp(note.updatedAt)}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-                <EmptyState
-                  title="还没有笔记"
-                  description="从右上角新建第一条桌面笔记。"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      }
-      contentClassName="bg-[rgba(255,255,255,0.62)]"
-    >
-      {activeNote ? (
-        <div className="space-y-5 p-6">
-          {actionNotice ? (
-            <InlineNotice
-              className="flex items-center justify-between gap-3 text-xs"
-              tone={actionNotice.tone}
-            >
-              <span>{actionNotice.message}</span>
-              {actionNotice.actionLabel && actionNotice.onAction ? (
-                <InlineNoticeActionButton
-                  label={actionNotice.actionLabel}
-                  onClick={actionNotice.onAction}
-                />
-              ) : null}
-            </InlineNotice>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            {editorActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.key}
-                  type="button"
-                  onClick={() => handleInsertSnippet(action.snippet())}
-                  className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-xs text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
-                >
-                  <Icon size={14} />
-                  <span>{action.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        </div>
+      ) : null}
 
-          <div className="mx-auto flex min-h-[calc(100vh-14rem)] w-full max-w-4xl flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
-            <div className="flex items-center gap-2 text-xs tracking-[0.12em] text-[color:var(--text-dim)]">
-              <FileText size={14} />
-              <span>桌面笔记</span>
-            </div>
-            <textarea
+      <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
+        {notice ? (
+          <div className="mx-auto mb-4 w-full max-w-[840px]">
+            <InlineNotice tone={notice.tone}>{notice.message}</InlineNotice>
+          </div>
+        ) : null}
+
+        <div className="mx-auto flex w-full max-w-[840px] flex-col rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-white px-10 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="mb-4 flex items-center gap-2 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+            <span className="rounded-full border border-[rgba(15,23,42,0.08)] px-2 py-1">
+              收藏笔记
+            </span>
+            <span>{noteId ? "已保存文稿" : "未保存草稿"}</span>
+          </div>
+          <div className="relative">
+            {!editorState.contentText.trim() ? (
+              <div className="pointer-events-none absolute left-0 top-0 text-[15px] leading-8 text-[color:var(--text-dim)]">
+                写点什么。支持富文本、待办、图片和文件。
+              </div>
+            ) : null}
+            <div
               ref={editorRef}
-              value={editorValue}
-              onChange={(event) => setEditorValue(event.target.value)}
-              placeholder="在这里记录灵感、待办或要发给朋友的内容"
-              className="mt-4 min-h-[560px] flex-1 resize-none border-none bg-transparent px-0 py-0 text-[15px] leading-8 shadow-none hover:bg-transparent focus:translate-y-0 focus:border-none focus:bg-transparent focus:shadow-none"
+              contentEditable
+              suppressContentEditableWarning
+              onInput={syncEditorStateFromDom}
+              onClick={handleEditorClick}
+              className={cn(
+                "min-h-[560px] outline-none",
+                "text-[15px] leading-8 text-[color:var(--text-primary)]",
+                "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(15,23,42,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                "[&_img[data-note-image='true']]:my-3 [&_img[data-note-image='true']]:max-h-[420px] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[18px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(15,23,42,0.08)]",
+                "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
+              )}
             />
           </div>
         </div>
-      ) : (
-        <div className="flex h-full items-center justify-center px-6 py-8">
-          <div className="w-full max-w-md rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-            <EmptyState
-              title="当前没有可编辑的笔记"
-              description="先新建一条笔记，再继续整理你的想法。"
-            />
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleCreateNote}
-              className="mt-6 h-10 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
-            >
-              新建笔记
-            </Button>
-          </div>
-        </div>
-      )}
-    </DesktopUtilityShell>
+      </div>
+
+      <DesktopChatConfirmDialog
+        open={deleteDialogOpen}
+        title="删除笔记"
+        description="删除后，这条收藏笔记会从收藏列表中移除。"
+        confirmLabel="删除"
+        pendingLabel="正在删除..."
+        danger
+        pending={deleteMutation.isPending}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={() => void deleteMutation.mutateAsync()}
+      />
+
+      <DesktopNoteUnsavedDialog
+        open={closeDialogOpen}
+        pending={saveMutation.isPending}
+        onClose={() => setCloseDialogOpen(false)}
+        onDiscard={() => void handleDiscardAndClose()}
+        onSave={() => void handleSaveAndClose()}
+      />
+    </div>
   );
 }
 
-function resolveSelectedNoteId(
-  notes: DesktopNoteRecord[],
-  preferredNoteId?: string,
+function ToolbarButton({
+  active = false,
+  children,
+  label,
+  onClick,
+}: {
+  active?: boolean;
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[13px] transition",
+        active
+          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+      )}
+      aria-label={label}
+      title={label}
+    >
+      {children}
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function DesktopNoteUnsavedDialog({
+  open,
+  pending,
+  onClose,
+  onDiscard,
+  onSave,
+}: {
+  open: boolean;
+  pending: boolean;
+  onClose: () => void;
+  onDiscard: () => void;
+  onSave: () => void;
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+      <button
+        type="button"
+        aria-label="关闭未保存提示"
+        onClick={onClose}
+        className="absolute inset-0"
+      />
+
+      <div className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
+        <div className="border-b border-[color:var(--border-faint)] px-6 py-5">
+          <div className="text-[18px] font-medium text-[color:var(--text-primary)]">
+            这条笔记还没有保存
+          </div>
+          <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]">
+            保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4">
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={pending}
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-5 shadow-none"
+          >
+            取消
+          </Button>
+          <Button
+            variant="danger"
+            onClick={onDiscard}
+            disabled={pending}
+            className="rounded-[10px] px-5"
+          >
+            不保存
+          </Button>
+          <Button
+            variant="primary"
+            onClick={onSave}
+            disabled={pending}
+            className="rounded-[10px] bg-[color:var(--brand-primary)] px-5 text-white hover:opacity-95"
+          >
+            {pending ? "保存中..." : "保存并关闭"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function buildEditorStateFromDocument(
+  note: FavoriteNoteDocument,
+): NoteEditorState {
+  return {
+    contentHtml: note.contentHtml,
+    contentText: note.contentText,
+    tags: [...note.tags],
+    assets: note.assets.map((asset) => ({ ...asset })),
+  };
+}
+
+function buildEditorStateFromDraft(
+  draft: DesktopNoteDraftRecord,
+): NoteEditorState {
+  return {
+    contentHtml: draft.contentHtml,
+    contentText: draft.contentText,
+    tags: [...draft.tags],
+    assets: draft.assets.map((asset) => ({ ...asset })),
+  };
+}
+
+function buildNoteSnapshot(state: NoteEditorState) {
+  return JSON.stringify({
+    contentHtml: normalizeEditorHtml(state.contentHtml),
+    contentText: state.contentText.trim(),
+    tags: [...state.tags].sort(),
+    assets: state.assets,
+  });
+}
+
+function buildNoteMutationPayload(state: NoteEditorState) {
+  const contentHtml = normalizeEditorHtml(state.contentHtml);
+  return {
+    contentHtml,
+    contentText: extractNoteTextFromHtml(contentHtml),
+    tags: state.tags,
+    assets: filterAssetsByHtml(contentHtml, state.assets),
+  };
+}
+
+function normalizeEditorHtml(value: string) {
+  const normalized = value
+    .replace(/\u200b/g, "")
+    .replace(/<div><br><\/div>/gi, "")
+    .replace(/<p><br><\/p>/gi, "")
+    .trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  const text = extractNoteTextFromHtml(normalized);
+  const hasAsset = /data-note-asset-id=/.test(normalized);
+  return text || hasAsset ? normalized : "";
+}
+
+function extractNoteTextFromHtml(value: string) {
+  if (!value.trim()) {
+    return "";
+  }
+
+  if (typeof document === "undefined") {
+    return value
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const container = document.createElement("div");
+  container.innerHTML = value;
+  return container.innerText.replace(/\r\n/g, "\n").trim();
+}
+
+function filterAssetsByHtml(html: string, assets: FavoriteNoteAsset[]) {
+  const assetIds = [...html.matchAll(/data-note-asset-id="([^"]+)"/g)].map(
+    (item) => item[1],
+  );
+  const assetIdSet = new Set(assetIds);
+  return assets.filter((asset) => assetIdSet.has(asset.id));
+}
+
+function mergeNoteAssets(
+  current: FavoriteNoteAsset[],
+  incoming: FavoriteNoteAsset[],
 ) {
-  if (preferredNoteId && notes.some((item) => item.id === preferredNoteId)) {
-    return preferredNoteId;
+  const currentById = new Map(current.map((asset) => [asset.id, asset]));
+  for (const asset of incoming) {
+    currentById.set(asset.id, asset);
   }
 
-  return notes[0]?.id;
+  return [...currentById.values()];
 }
 
-function formatNoteTimestamp(value: string, withTime = false) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return withTime ? "刚刚" : "最近";
-  }
+function resolveNoteTitle(contentText: string) {
+  const firstLine = contentText
+    .split("\n")
+    .map((line) => line.trim())
+    .find(Boolean);
 
-  return withTime
-    ? new Intl.DateTimeFormat("zh-CN", {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(date)
-    : new Intl.DateTimeFormat("zh-CN", {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(date);
+  return firstLine?.slice(0, 28) || "无标题笔记";
 }
 
-function buildDesktopNoteExportFileName(title: string, updatedAt: string) {
-  const normalizedTitle = title
-    .trim()
-    .replace(/[\\/:*?"<>|]/g, "-")
-    .replace(/\s+/g, "-");
-  const date = Number.isNaN(Date.parse(updatedAt))
-    ? new Date().toISOString().slice(0, 10)
-    : updatedAt.slice(0, 10);
-  return `${normalizedTitle || "desktop-note"}-${date}.txt`;
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeHtmlAttribute(value: string) {
+  return escapeHtml(value);
 }

@@ -1,8 +1,10 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { FileText } from "lucide-react";
 import { getFavorites, removeFavorite } from "@yinjie/contracts";
 import {
+  Button,
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
@@ -20,6 +22,7 @@ import {
   type DesktopFavoriteCategory,
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
+import { openDesktopNoteWindow } from "../features/desktop/chat/desktop-note-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -128,7 +131,7 @@ export function FavoritesPage() {
 
   const removeMutation = useMutation({
     mutationFn: async (item: DesktopFavoriteRecord) => {
-      if (item.category === "messages") {
+      if (item.category === "messages" || item.category === "notes") {
         await removeFavorite(item.sourceId, baseUrl);
       }
 
@@ -137,7 +140,7 @@ export function FavoritesPage() {
     },
     onSuccess: async ({ item, nextLocalFavorites }) => {
       const nextRemoteFavorites =
-        item.category === "messages"
+        item.category === "messages" || item.category === "notes"
           ? await queryClient.fetchQuery({
               queryKey: ["app-favorites", baseUrl],
               queryFn: () => getFavorites(baseUrl),
@@ -172,7 +175,9 @@ export function FavoritesPage() {
   useEffect(() => {
     if (
       selectedFavoriteSourceId &&
-      filteredFavorites.some((item) => item.sourceId === selectedFavoriteSourceId)
+      filteredFavorites.some(
+        (item) => item.sourceId === selectedFavoriteSourceId,
+      )
     ) {
       return;
     }
@@ -181,8 +186,9 @@ export function FavoritesPage() {
   }, [filteredFavorites, selectedFavoriteSourceId]);
 
   const selectedFavorite =
-    filteredFavorites.find((item) => item.sourceId === selectedFavoriteSourceId) ??
-    null;
+    filteredFavorites.find(
+      (item) => item.sourceId === selectedFavoriteSourceId,
+    ) ?? null;
 
   const counts = useMemo(
     () => ({
@@ -211,6 +217,21 @@ export function FavoritesPage() {
         normalizedSearchText
           ? `搜索“${searchText.trim()}”命中 ${filteredFavorites.length} 项`
           : `${counts.all} 项内容已收进桌面收藏`
+      }
+      toolbar={
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() =>
+            void openDesktopNoteWindow({
+              returnTo: "/tabs/favorites",
+            })
+          }
+          className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
+        >
+          <FileText size={15} />
+          新建笔记
+        </Button>
       }
       sidebar={
         <>
@@ -330,12 +351,34 @@ export function FavoritesPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    to={selectedFavorite.to as never}
-                    className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
-                  >
-                    打开内容
-                  </Link>
+                  {selectedFavorite.category === "notes" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const noteId = parseFavoriteNoteIdFromSourceId(
+                          selectedFavorite.sourceId,
+                        );
+                        if (!noteId) {
+                          return;
+                        }
+
+                        void openDesktopNoteWindow({
+                          noteId,
+                          returnTo: "/tabs/favorites",
+                        });
+                      }}
+                      className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                    >
+                      打开笔记
+                    </button>
+                  ) : (
+                    <Link
+                      to={selectedFavorite.to as never}
+                      className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                    >
+                      打开内容
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => removeMutation.mutate(selectedFavorite)}
@@ -386,13 +429,13 @@ export function FavoritesPage() {
         {!favoritesQuery.isLoading && !filteredFavorites.length ? (
           <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
             <EmptyState
-              title={
-                normalizedSearchText ? "没有匹配的收藏" : "还没有收藏内容"
-              }
+              title={normalizedSearchText ? "没有匹配的收藏" : "还没有收藏内容"}
               description={
                 normalizedSearchText
                   ? "换个关键词，或者切回其他分类继续查看。"
-                  : "先到聊天、内容流或公众号里把重要内容加入收藏。"
+                  : activeCategory === "notes"
+                    ? "点击右上角“新建笔记”，把第一条收藏笔记写下来。"
+                    : "先到聊天、内容流或公众号里把重要内容加入收藏。"
               }
             />
           </div>
@@ -454,7 +497,11 @@ function FavoriteMetric({ label, value }: { label: string; value: string }) {
 }
 
 function resolveFavoriteCategoryLabel(category: DesktopFavoriteCategory) {
-  return (
-    categoryLabels.find((item) => item.id === category)?.label ?? "未分类"
-  );
+  return categoryLabels.find((item) => item.id === category)?.label ?? "未分类";
+}
+
+function parseFavoriteNoteIdFromSourceId(sourceId: string) {
+  return sourceId.startsWith("favorite-note-")
+    ? sourceId.slice("favorite-note-".length) || null
+    : null;
 }

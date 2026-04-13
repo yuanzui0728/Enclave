@@ -1,13 +1,14 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { AppPage, Button } from "@yinjie/ui";
 import { DesktopNotesWorkspace } from "../features/desktop/chat/desktop-notes-workspace";
+import { parseDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function NotesPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
-  const selectedNoteId = parseNoteId(hash);
+  const routeState = parseNoteEditorHash(hash);
 
   if (!isDesktopLayout) {
     return (
@@ -17,7 +18,8 @@ export function NotesPage() {
             笔记当前仅提供桌面布局
           </div>
           <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-            微信式笔记编辑器目前只在 Web 端桌面布局和桌面壳内启用，移动端先回到消息页继续使用。
+            微信式笔记编辑器目前只在 Web
+            端桌面布局和桌面壳内启用，移动端先回到消息页继续使用。
           </div>
           <Button
             variant="primary"
@@ -34,11 +36,15 @@ export function NotesPage() {
 
   return (
     <DesktopNotesWorkspace
-      selectedNoteId={selectedNoteId}
-      onSelectNote={(noteId) => {
+      selectedNoteId={routeState.noteId}
+      draftId={routeState.draftId}
+      returnTo="/tabs/favorites"
+      onSavedNote={(noteId, draftId) => {
         void navigate({
           to: "/notes",
-          hash: noteId || undefined,
+          hash: noteId
+            ? `draftId=${encodeURIComponent(draftId)}&noteId=${encodeURIComponent(noteId)}`
+            : undefined,
           replace: true,
         });
       }}
@@ -46,7 +52,15 @@ export function NotesPage() {
   );
 }
 
-function parseNoteId(hash: string) {
+function parseNoteEditorHash(hash: string) {
+  const routeState = parseDesktopNoteWindowRouteHash(hash);
+  if (routeState) {
+    return routeState;
+  }
+
   const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
-  return normalized || undefined;
+  return {
+    noteId: normalized || undefined,
+    draftId: normalized || undefined,
+  };
 }

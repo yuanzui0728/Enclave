@@ -15,7 +15,6 @@ import {
   LoaderCircle,
   Mic,
   Plus,
-  Search,
   Square,
   UserPlus,
   Users,
@@ -87,6 +86,7 @@ import {
   splitChatTextSegments,
   summarizeChatMentions,
 } from "../../../lib/chat-text";
+import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import {
   getConversationPreviewParts,
   getConversationVisibleLastMessage,
@@ -115,7 +115,7 @@ import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
-import { createDesktopNote } from "./desktop-notes-storage";
+import { openDesktopNoteWindow } from "./desktop-note-window-route-state";
 import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
 
 type DesktopChatWorkspaceProps = {
@@ -315,7 +315,8 @@ export function DesktopChatWorkspace({
     () =>
       selectedServiceAccountId
         ? serviceConversations.some(
-            (conversation) => conversation.accountId === selectedServiceAccountId,
+            (conversation) =>
+              conversation.accountId === selectedServiceAccountId,
           )
         : false,
     [selectedServiceAccountId, serviceConversations],
@@ -323,7 +324,9 @@ export function DesktopChatWorkspace({
   const selectedConversationExists = useMemo(
     () =>
       selectedConversationId
-        ? conversations.some((conversation) => conversation.id === selectedConversationId)
+        ? conversations.some(
+            (conversation) => conversation.id === selectedConversationId,
+          )
         : false,
     [conversations, selectedConversationId],
   );
@@ -668,15 +671,25 @@ export function DesktopChatWorkspace({
     setNotice(null);
 
     if (key === "create-group") {
-      setCreateGroupDialogState({
-        conversationId:
-          activeConversation && !isPersistedGroupConversation(activeConversation)
-            ? activeConversation.id
-            : undefined,
-        seedMemberIds:
-          activeConversation && !isPersistedGroupConversation(activeConversation)
-            ? activeConversation.participants.slice(0, 1)
-            : [],
+      void navigate({
+        to: "/group/new",
+        hash: buildCreateGroupRouteHash({
+          source:
+            activeConversation &&
+            !isPersistedGroupConversation(activeConversation)
+              ? "desktop-chat"
+              : undefined,
+          conversationId:
+            activeConversation &&
+            !isPersistedGroupConversation(activeConversation)
+              ? activeConversation.id
+              : undefined,
+          seedMemberIds:
+            activeConversation &&
+            !isPersistedGroupConversation(activeConversation)
+              ? activeConversation.participants.slice(0, 1)
+              : [],
+        }),
       });
       return;
     }
@@ -686,8 +699,12 @@ export function DesktopChatWorkspace({
       return;
     }
 
-    const note = createDesktopNote();
-    void navigate({ to: "/notes", hash: note.id });
+    void openDesktopNoteWindow({
+      returnTo:
+        typeof window !== "undefined"
+          ? `${window.location.pathname}${window.location.hash}`
+          : "/tabs/chat",
+    });
   }
 
   function handleToggleSidePanel(
@@ -748,7 +765,9 @@ export function DesktopChatWorkspace({
     });
   }
 
-  async function handleOpenConversationWindow(conversation: ConversationListItem) {
+  async function handleOpenConversationWindow(
+    conversation: ConversationListItem,
+  ) {
     const opened = await openDesktopChatWindow({
       conversationId: conversation.id,
       conversationType: getConversationThreadType(conversation),
@@ -969,8 +988,8 @@ export function DesktopChatWorkspace({
                                           group.status,
                                           group.entries.map(
                                             (entry) => entry.messageId,
-                                            ),
-                                          );
+                                          ),
+                                        );
                                       }}
                                       className="px-2.5 text-[10px] text-[#717b75]"
                                     >
@@ -987,7 +1006,9 @@ export function DesktopChatWorkspace({
                                     }
                                     className="px-2.5 text-[10px] text-[color:var(--text-dim)]"
                                     aria-label={
-                                      collapsed ? "展开已通知提醒" : "收起已通知提醒"
+                                      collapsed
+                                        ? "展开已通知提醒"
+                                        : "收起已通知提醒"
                                     }
                                     aria-expanded={!collapsed}
                                     collapsed={collapsed}
@@ -1126,7 +1147,9 @@ export function DesktopChatWorkspace({
               desktopSidePanelMode={rightPanelMode}
               onToggleDesktopHistory={() => handleToggleSidePanel("history")}
               onToggleDesktopDetails={() => handleToggleSidePanel("details")}
-              onOpenDesktopAnnouncementDetails={handleOpenGroupAnnouncementDetails}
+              onOpenDesktopAnnouncementDetails={
+                handleOpenGroupAnnouncementDetails
+              }
               onOpenDesktopMemberSearch={handleOpenGroupMemberSearch}
               onDesktopCallAction={handleDesktopCallAction}
               highlightedMessageId={
@@ -1368,8 +1391,8 @@ function DesktopReminderCard({
                   : entry.isDue
                     ? "bg-[#fff1f0] text-[#d74b45]"
                     : "bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-                )}
-              >
+              )}
+            >
               {getChatReminderStatusLabel(entry)}
             </span>
             <span className="min-w-0 truncate text-[12px] font-medium text-[color:var(--text-primary)]">

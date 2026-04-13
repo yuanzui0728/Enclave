@@ -168,6 +168,11 @@ const DesktopChatWindowPage = lazy(async () => {
   return { default: mod.DesktopChatWindowPage };
 });
 
+const DesktopNoteWindowPage = lazy(async () => {
+  const mod = await import("./routes/desktop-note-window-page");
+  return { default: mod.DesktopNoteWindowPage };
+});
+
 const DesktopFeedbackPage = lazy(async () => {
   const mod = await import("./routes/desktop-feedback-page");
   return { default: mod.DesktopFeedbackPage };
@@ -732,6 +737,13 @@ const desktopChatWindowRoute = createRoute({
   component: DesktopChatWindowPage,
 });
 
+const desktopNoteWindowRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/desktop/note-window",
+  beforeLoad: requireWorldReady,
+  component: DesktopNoteWindowPage,
+});
+
 const desktopFeedbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/desktop/feedback",
@@ -840,6 +852,7 @@ const routeTree = rootRoute.addChildren([
   desktopChatHistoryRoute,
   desktopChatImageViewerRoute,
   desktopChatWindowRoute,
+  desktopNoteWindowRoute,
   desktopFeedbackRoute,
   desktopAddFriendRoute,
   desktopSettingsRoute,

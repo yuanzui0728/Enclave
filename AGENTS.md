@@ -60,6 +60,7 @@
 - `desktop/chat-history`：桌面端“聊天记录管理”页，承接会话记录查看与管理
 - `desktop/chat-image-viewer`：桌面端图片独立窗口路由，承接聊天图片的新窗口预览、打印与回跳原消息
 - `desktop/chat-window`：桌面端独立聊天窗口路由，承接会话右键“在独立窗口打开”
+- `desktop/note-window`：桌面端独立笔记窗口路由，承接“收藏 -> 新建笔记”和已保存笔记的独立编辑窗口
 - `desktop/feedback`：桌面端“意见反馈”页
 - `desktop/add-friend`：桌面端“添加朋友”独立工作区，承接微信电脑版式搜索、资料预览与发送好友申请
 - `desktop/settings`：桌面端“设置”页
@@ -85,7 +86,7 @@
 - `group/$groupId/search`：群聊聊天记录检索页，由群聊信息页进入
 - `group/$groupId/members/add`：群成员添加页，承载群成员微信式多选添加
 - `group/$groupId/members/remove`：群成员移除页，承载群成员微信式减号选择移除
-- `notes-page.tsx`：桌面端微信式笔记页，由消息页搜索框右侧 `+` 入口进入
+- `notes-page.tsx`：收藏笔记兼容编辑页，桌面端在主窗口内兜底承接收藏笔记编辑
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
@@ -152,6 +153,8 @@
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
 - `Character` 表现已扩展字段：`sourceType`、`sourceKey`、`deletionPolicy`，用于区分默认保底角色 / 名人预设角色 / 后台手工角色，以及是否允许后台删除
 - 会话管理路由：
+  - `GET /api/conversations/:id/messages`，现已支持 `limit` 与 `aroundMessageId / before / after`
+  - `GET /api/conversations/:id/message-search`
   - `POST /api/conversations/:id/pin`
   - `POST /api/conversations/:id/strong-reminder`
   - `POST /api/conversations/:id/unread`
@@ -164,6 +167,8 @@
   - `DELETE /api/conversations/:id/background`
   - `PATCH /api/groups/:id`
   - `GET /api/groups/saved`
+  - `GET /api/groups/:id/messages`，现已支持 `limit` 与 `aroundMessageId / before / after`
+  - `GET /api/groups/:id/message-search`
   - `GET /api/groups/:id/background`
   - `PATCH /api/groups/:id/background`
   - `DELETE /api/groups/:id/background`
