@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookUser } from "lucide-react";
 import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
@@ -75,6 +75,20 @@ export function FriendRequestsPage() {
             className="text-[color:var(--text-secondary)]"
           >
             <ArrowLeft size={18} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-[color:var(--text-secondary)]"
+            onClick={() => {
+              void navigate({ to: "/contacts/world-characters" });
+            }}
+            aria-label="浏览世界角色"
+          >
+            <BookUser size={18} />
           </Button>
         }
       />
