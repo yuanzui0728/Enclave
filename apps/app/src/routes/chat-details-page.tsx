@@ -566,30 +566,30 @@ export function ChatDetailsPage() {
       ) : null}
       {conversationsQuery.isError &&
       conversationsQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={conversationsQuery.error.message} />
         </div>
       ) : null}
       {characterQuery.isError && characterQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={characterQuery.error.message} />
         </div>
       ) : null}
       {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={friendsQuery.error.message} />
         </div>
       ) : null}
       {blockedQuery.isError && blockedQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={blockedQuery.error.message} />
         </div>
       ) : null}
       {notice ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <InlineNotice
             tone={notice.tone}
-            className="flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="flex items-center justify-between gap-2.5 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             <span>{notice.message}</span>
             {notice.actionLabel && notice.onAction ? (
@@ -602,7 +602,7 @@ export function ChatDetailsPage() {
         </div>
       ) : null}
       {entryNotice ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <DigitalHumanEntryNotice
             tone={entryNotice.tone}
             message={entryNotice.message}
@@ -631,20 +631,21 @@ export function ChatDetailsPage() {
       ) : null}
 
       {!conversationsQuery.isLoading && !conversation ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <EmptyState
             title="会话不存在"
             description="这段聊天暂时不可用，返回消息列表再试一次。"
             action={
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   void navigate({ to: "/tabs/chat" });
                 }}
-                className="rounded-full border border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] text-[color:var(--text-primary)]"
+                className="rounded-full"
               >
                 返回消息列表
-              </button>
+              </Button>
             }
           />
         </div>
@@ -758,38 +759,38 @@ export function ChatDetailsPage() {
           </ChatDetailsSection>
 
           {clearMutation.isError && clearMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={clearMutation.error.message} />
             </div>
           ) : null}
           {hideMutation.isError && hideMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={hideMutation.error.message} />
             </div>
           ) : null}
           {pinMutation.isError && pinMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={pinMutation.error.message} />
             </div>
           ) : null}
           {muteMutation.isError && muteMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={muteMutation.error.message} />
             </div>
           ) : null}
           {saveToContactsMutation.isError &&
           saveToContactsMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={saveToContactsMutation.error.message} />
             </div>
           ) : null}
           {reportMutation.isError && reportMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={reportMutation.error.message} />
             </div>
           ) : null}
           {blockMutation.isError && blockMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={blockMutation.error.message} />
             </div>
           ) : null}

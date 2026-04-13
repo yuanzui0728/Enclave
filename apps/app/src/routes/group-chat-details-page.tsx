@@ -362,20 +362,20 @@ export function GroupChatDetailsPage() {
         <LoadingBlock label="正在读取群聊信息..." />
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={groupQuery.error.message} />
         </div>
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <ErrorBlock message={membersQuery.error.message} />
         </div>
       ) : null}
       {notice ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <InlineNotice
             tone="info"
-            className="rounded-[12px] px-3 py-2 text-[11px] leading-[18px] shadow-none"
+            className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             {notice}
           </InlineNotice>
@@ -383,20 +383,21 @@ export function GroupChatDetailsPage() {
       ) : null}
 
       {!groupQuery.isLoading && !groupQuery.data ? (
-        <div className="px-3">
+        <div className="px-2.5">
           <EmptyState
             title="群聊不存在"
             description="这个群聊暂时不可用，返回消息列表再试一次。"
             action={
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={() => {
                   void navigate({ to: "/tabs/chat" });
                 }}
-                className="rounded-full border border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] text-[color:var(--text-primary)]"
+                className="rounded-full"
               >
                 返回消息列表
-              </button>
+              </Button>
             }
           />
         </div>
@@ -410,7 +411,7 @@ export function GroupChatDetailsPage() {
               <button
                 type="button"
                 onClick={() => setMemberGridExpanded((current) => !current)}
-                className="flex min-h-11 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[14px] text-[#576b95]"
+                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[#576b95]"
               >
                 {memberGridExpanded ? "收起群成员" : "查看更多群成员"}
               </button>
@@ -623,28 +624,28 @@ export function GroupChatDetailsPage() {
           </ChatDetailsSection>
 
           {pinMutation.isError && pinMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={pinMutation.error.message} />
             </div>
           ) : null}
           {preferencesMutation.isError &&
           preferencesMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={preferencesMutation.error.message} />
             </div>
           ) : null}
           {clearMutation.isError && clearMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={clearMutation.error.message} />
             </div>
           ) : null}
           {leaveMutation.isError && leaveMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={leaveMutation.error.message} />
             </div>
           ) : null}
           {hideMutation.isError && hideMutation.error instanceof Error ? (
-            <div className="px-3">
+            <div className="px-2.5">
               <ErrorBlock message={hideMutation.error.message} />
             </div>
           ) : null}
