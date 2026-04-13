@@ -173,6 +173,11 @@ const DesktopFeedbackPage = lazy(async () => {
   return { default: mod.DesktopFeedbackPage };
 });
 
+const DesktopAddFriendPage = lazy(async () => {
+  const mod = await import("./routes/desktop-add-friend-page");
+  return { default: mod.DesktopAddFriendPage };
+});
+
 const DesktopSettingsPage = lazy(async () => {
   const mod = await import("./routes/desktop-settings-page");
   return { default: mod.DesktopSettingsPage };
@@ -734,6 +739,13 @@ const desktopFeedbackRoute = createRoute({
   component: DesktopFeedbackPage,
 });
 
+const desktopAddFriendRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/desktop/add-friend",
+  beforeLoad: requireWorldReady,
+  component: DesktopAddFriendPage,
+});
+
 const desktopSettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/desktop/settings",
@@ -829,6 +841,7 @@ const routeTree = rootRoute.addChildren([
   desktopChatImageViewerRoute,
   desktopChatWindowRoute,
   desktopFeedbackRoute,
+  desktopAddFriendRoute,
   desktopSettingsRoute,
   liveCompanionRoute,
   legalPrivacyRoute,

@@ -61,6 +61,7 @@
 - `desktop/chat-image-viewer`：桌面端图片独立窗口路由，承接聊天图片的新窗口预览、打印与回跳原消息
 - `desktop/chat-window`：桌面端独立聊天窗口路由，承接会话右键“在独立窗口打开”
 - `desktop/feedback`：桌面端“意见反馈”页
+- `desktop/add-friend`：桌面端“添加朋友”独立工作区，承接微信电脑版式搜索、资料预览与发送好友申请
 - `desktop/settings`：桌面端“设置”页
 - `desktop/channels/live-companion`：桌面端“视频号直播伴侣”工具页
 - `chat-background-page.tsx`：聊天背景设置页，承载默认背景图与好友专属背景图配置
