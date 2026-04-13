@@ -1091,14 +1091,14 @@ export function ContactsPage() {
             type="button"
             aria-label="关闭快捷菜单"
             onClick={() => setIsQuickMenuOpen(false)}
-            className="fixed inset-0 z-30 bg-black/5"
+            className="fixed inset-0 z-30 bg-black/[0.03]"
           />
         ) : null}
 
         <TabPageTopBar
           title="通讯录"
           titleAlign="center"
-          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+          className="z-40 mx-0 mt-0 mb-0 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
             <div className="relative">
               <Button
@@ -1106,14 +1106,14 @@ export function ContactsPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsQuickMenuOpen((current) => !current)}
-                className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
+                className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
                 aria-label="打开快捷菜单"
               >
-                <Plus size={16} strokeWidth={2.4} />
+                <Plus size={15} strokeWidth={2.4} />
               </Button>
 
               {isQuickMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] z-40 w-[10.5rem] overflow-hidden rounded-[12px] bg-[rgba(44,44,44,0.96)] p-1.5 shadow-[0_14px_40px_rgba(15,23,42,0.22)]">
+                <div className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[11px] bg-[rgba(44,44,44,0.96)] p-1 shadow-[0_12px_32px_rgba(15,23,42,0.2)]">
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
 
@@ -1124,10 +1124,10 @@ export function ContactsPage() {
                           key={item.key}
                           type="button"
                           onClick={() => handleMobileQuickActionNavigate(to)}
-                          className="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10"
+                          className="flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                         >
-                          <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] bg-white/10 text-white">
-                            <Icon size={15} />
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
+                            <Icon size={14} />
                           </div>
                           <span>{item.label}</span>
                         </button>
@@ -1140,24 +1140,24 @@ export function ContactsPage() {
                         type="button"
                         disabled={item.disabled}
                         className={cn(
-                          "flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-[13px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                          "flex w-full items-center gap-2 rounded-[9px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                           item.disabled
                             ? "cursor-not-allowed opacity-55"
-                            : "hover:bg-white/10",
+                            : "hover:bg-white/10 active:bg-white/12",
                         )}
                       >
                         <div
                           className={cn(
-                            "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px] text-white",
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-white",
                             item.disabled ? "bg-white/6" : "bg-white/10",
                           )}
                         >
-                          <Icon size={15} />
+                          <Icon size={14} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div>{item.label}</div>
                           {item.disabledLabel ? (
-                            <div className="mt-0.5 text-[11px] text-white/65">
+                            <div className="mt-0.5 text-[10px] text-white/62">
                               {item.disabledLabel}
                             </div>
                           ) : null}
@@ -1170,7 +1170,7 @@ export function ContactsPage() {
             </div>
           }
         >
-          <div className="pt-2">
+          <div className="pt-1.5">
             <button
               type="button"
               onClick={() => {
@@ -1183,10 +1183,10 @@ export function ContactsPage() {
                   }),
                 });
               }}
-              className="flex w-full items-center gap-2 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2 text-[13px] text-[color:var(--text-dim)]"
+              className="flex h-7.5 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
               aria-label="打开搜一搜"
             >
-              <Search size={15} className="shrink-0" />
+              <Search size={14} className="shrink-0" />
               <span className="min-w-0 flex-1 text-left">搜索</span>
             </button>
           </div>
@@ -1194,8 +1194,13 @@ export function ContactsPage() {
 
         <div className="pb-8">
           {notice ? (
-            <div className="px-3 pt-2.5">
-              <InlineNotice tone="info">{notice}</InlineNotice>
+            <div className="px-3 pt-2">
+              <InlineNotice
+                tone="info"
+                className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {notice}
+              </InlineNotice>
             </div>
           ) : null}
           {friendsQuery.isError && friendsQuery.error instanceof Error ? (
