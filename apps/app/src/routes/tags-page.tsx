@@ -71,13 +71,13 @@ function MobileTagsPage() {
       <TabPageTopBar
         title="标签"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
                 void navigate({ to: "/tabs/contacts" });
@@ -85,7 +85,7 @@ function MobileTagsPage() {
             }
             aria-label="返回通讯录"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -93,25 +93,25 @@ function MobileTagsPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({ to: "/contacts/starred" });
             }}
             aria-label="查看星标朋友"
           >
-            <Star size={18} />
+            <Star size={17} />
           </Button>
         }
       >
-        <div className="pt-3">
-          <label className="flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
-            <Search size={15} className="shrink-0" />
+        <div className="pt-1.5">
+          <label className="flex h-7.5 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
+            <Search size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索标签或联系人"
-              className="min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -119,12 +119,12 @@ function MobileTagsPage() {
 
       <div className="pb-8">
         {friendsQuery.isLoading ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <LoadingBlock label="正在读取标签..." />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={friendsQuery.error.message} />
           </div>
         ) : null}
@@ -132,7 +132,7 @@ function MobileTagsPage() {
         {!friendsQuery.isLoading &&
         !friendsQuery.isError &&
         !tagGroups.length ? (
-          <div className="px-4 pt-6">
+          <div className="px-4 pt-4">
             <EmptyState
               title={hasSearchText ? "没有找到匹配的标签" : "还没有联系人标签"}
               description={
@@ -145,18 +145,18 @@ function MobileTagsPage() {
         ) : null}
 
         {tagGroups.length ? (
-          <div className="space-y-4 pt-3">
+          <div className="space-y-3 pt-2">
             {tagGroups.map((group) => (
               <section
                 key={group.tag}
                 className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
               >
-                <div className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-2 text-[15px] font-medium text-[color:var(--text-primary)]">
-                    <Tag size={15} className="text-[#15803d]" />
+                <div className="flex items-center justify-between px-4 py-2">
+                  <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
+                    <Tag size={14} className="text-[#15803d]" />
                     <span>{group.tag}</span>
                   </div>
-                  <div className="text-xs text-[color:var(--text-muted)]">
+                  <div className="text-[10px] text-[color:var(--text-muted)]">
                     {group.items.length} 位联系人
                   </div>
                 </div>
@@ -172,7 +172,7 @@ function MobileTagsPage() {
                       });
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                       index > 0
                         ? "border-t border-[color:var(--border-faint)]"
                         : undefined,
@@ -184,11 +184,11 @@ function MobileTagsPage() {
                       size="wechat"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+                      <div className="truncate text-[14px] text-[color:var(--text-primary)]">
                         {getFriendDisplayName(item)}
                       </div>
                       {getFriendDisplayName(item) !== item.character.name ? (
-                        <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
                           {item.character.name}
                         </div>
                       ) : null}
