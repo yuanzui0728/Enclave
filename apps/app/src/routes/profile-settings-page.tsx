@@ -165,7 +165,7 @@ export function ProfileSettingsPage() {
   const content = (
     <>
       {desktopMode ? null : (
-        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2">
+        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-1.5">
           <div className="flex gap-1 rounded-[11px] bg-[#f5f5f5] p-[3px]">
             {settingsTabs.map((tab) => (
               <button
@@ -173,7 +173,7 @@ export function ProfileSettingsPage() {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-[9px] py-1.5 text-[11px] font-medium transition-all duration-[var(--motion-fast)]",
+                  "flex-1 rounded-[9px] py-1.25 text-[11px] font-medium transition-all duration-[var(--motion-fast)]",
                   activeTab === tab.id
                     ? "bg-white text-[color:var(--text-primary)] shadow-sm"
                     : "text-[color:var(--text-muted)] hover:bg-white/70",
@@ -228,15 +228,22 @@ export function ProfileSettingsPage() {
           </div>
           {saveProfileMutation.isError &&
           saveProfileMutation.error instanceof Error ? (
-            <ErrorBlock message={saveProfileMutation.error.message} />
+            desktopMode ? (
+              <ErrorBlock message={saveProfileMutation.error.message} />
+            ) : (
+              <MobileSettingsInlineNotice tone="danger">
+                {saveProfileMutation.error.message}
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
           {saveProfileMutation.isSuccess ? (
-            <InlineNotice
-              className={desktopMode ? undefined : "text-[12px] leading-5"}
-              tone="success"
-            >
-              资料已更新。
-            </InlineNotice>
+            desktopMode ? (
+              <InlineNotice tone="success">资料已更新。</InlineNotice>
+            ) : (
+              <MobileSettingsInlineNotice tone="success">
+                资料已更新。
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
         </MobileSettingsSection>
       ) : null}
@@ -301,12 +308,15 @@ export function ProfileSettingsPage() {
             })}
           </div>
 
-          <InlineNotice
-            className={desktopMode ? undefined : "text-[11px] leading-[1.35rem]"}
-            tone="muted"
-          >
-            当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
-          </InlineNotice>
+          {desktopMode ? (
+            <InlineNotice tone="muted">
+              当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+            </InlineNotice>
+          ) : (
+            <MobileSettingsInlineNotice tone="muted">
+              当前仅影响桌面和 Web 的键盘聊天输入，移动端仍以发送按钮和语音入口为主。
+            </MobileSettingsInlineNotice>
+          )}
         </MobileSettingsSection>
       ) : null}
 
@@ -443,27 +453,41 @@ export function ProfileSettingsPage() {
 
           {saveApiKeyMutation.isError &&
           saveApiKeyMutation.error instanceof Error ? (
-            <ErrorBlock message={saveApiKeyMutation.error.message} />
+            desktopMode ? (
+              <ErrorBlock message={saveApiKeyMutation.error.message} />
+            ) : (
+              <MobileSettingsInlineNotice tone="danger">
+                {saveApiKeyMutation.error.message}
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
           {clearApiKeyMutation.isError &&
           clearApiKeyMutation.error instanceof Error ? (
-            <ErrorBlock message={clearApiKeyMutation.error.message} />
+            desktopMode ? (
+              <ErrorBlock message={clearApiKeyMutation.error.message} />
+            ) : (
+              <MobileSettingsInlineNotice tone="danger">
+                {clearApiKeyMutation.error.message}
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
           {saveApiKeyMutation.isSuccess ? (
-            <InlineNotice
-              className={desktopMode ? undefined : "text-[11px] leading-[1.35rem]"}
-              tone="success"
-            >
-              专属 API Key 已保存。
-            </InlineNotice>
+            desktopMode ? (
+              <InlineNotice tone="success">专属 API Key 已保存。</InlineNotice>
+            ) : (
+              <MobileSettingsInlineNotice tone="success">
+                专属 API Key 已保存。
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
           {clearApiKeyMutation.isSuccess ? (
-            <InlineNotice
-              className={desktopMode ? undefined : "text-[11px] leading-[1.35rem]"}
-              tone="success"
-            >
-              专属 API Key 已清除。
-            </InlineNotice>
+            desktopMode ? (
+              <InlineNotice tone="success">专属 API Key 已清除。</InlineNotice>
+            ) : (
+              <MobileSettingsInlineNotice tone="success">
+                专属 API Key 已清除。
+              </MobileSettingsInlineNotice>
+            )
           ) : null}
         </MobileSettingsSection>
       ) : null}
@@ -716,7 +740,7 @@ function MobileSettingsSection({
         "space-y-2",
         desktop
           ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]"
-          : "mt-1 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2",
+          : "mt-1 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-1.75",
       )}
     >
       {title || description ? (
@@ -735,6 +759,23 @@ function MobileSettingsSection({
       ) : null}
       {children}
     </section>
+  );
+}
+
+function MobileSettingsInlineNotice({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: "muted" | "success" | "danger";
+}) {
+  return (
+    <InlineNotice
+      tone={tone}
+      className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+    >
+      {children}
+    </InlineNotice>
   );
 }
 
@@ -819,10 +860,10 @@ function MobileLinkRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-center gap-2.5 px-4 py-2.25 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] text-[color:var(--text-primary)]">
+        <div className="text-[13px] text-[color:var(--text-primary)]">
           {label}
         </div>
         {subtitle ? (
