@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Search, Star, Tag } from "lucide-react";
@@ -120,12 +120,22 @@ function MobileTagsPage() {
       <div className="pb-8">
         {friendsQuery.isLoading ? (
           <div className="px-4 pt-2.5">
-            <LoadingBlock label="正在读取标签..." />
+            <MobileTagStatusCard
+              badge="读取中"
+              title="正在读取标签"
+              description="稍等一下，正在同步联系人标签和分组。"
+              tone="loading"
+            />
           </div>
         ) : null}
         {friendsQuery.isError && friendsQuery.error instanceof Error ? (
           <div className="px-4 pt-2.5">
-            <ErrorBlock message={friendsQuery.error.message} />
+            <MobileTagStatusCard
+              badge="读取失败"
+              title="标签页暂时不可用"
+              description={friendsQuery.error.message}
+              tone="danger"
+            />
           </div>
         ) : null}
 
@@ -133,7 +143,8 @@ function MobileTagsPage() {
         !friendsQuery.isError &&
         !tagGroups.length ? (
           <div className="px-4 pt-4">
-            <EmptyState
+            <MobileTagStatusCard
+              badge={hasSearchText ? "暂无结果" : "标签"}
               title={hasSearchText ? "没有找到匹配的标签" : "还没有联系人标签"}
               description={
                 hasSearchText
@@ -762,6 +773,56 @@ function buildContactTagGroups(
 
 function getFriendDisplayName(item: FriendListItem) {
   return item.friendship.remarkName?.trim() || item.character.name;
+}
+
+function MobileTagStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
+  );
 }
 
 function isDirectConversationForCharacter(
