@@ -68,8 +68,12 @@ export function StickerPanel({
   const [customManageMode, setCustomManageMode] = useState(false);
   const [customSortMode, setCustomSortMode] =
     useState<CustomStickerSortMode>("recent");
+  const [highlightedStickerKey, setHighlightedStickerKey] = useState<
+    string | null
+  >(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const stickerItemRefs = useRef(new Map<string, HTMLDivElement>());
   const queryClient = useQueryClient();
   const stickerCatalogQuery = useQuery({
     queryKey: [PANEL_QUERY_KEY, baseUrl],
@@ -250,6 +254,10 @@ export function StickerPanel({
     searchSections,
     searching,
   ]);
+  const activeStickerKeys = useMemo(
+    () => activeItems.map((item) => getStickerIdentity(item.sticker)),
+    [activeItems],
+  );
 
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
@@ -353,6 +361,113 @@ export function StickerPanel({
   }, [isMobile]);
 
   useEffect(() => {
+    if (isMobile || !searching || searchPending || activeStickerKeys.length === 0) {
+      setHighlightedStickerKey(null);
+      return;
+    }
+
+    setHighlightedStickerKey((current) =>
+      current && activeStickerKeys.includes(current)
+        ? current
+        : activeStickerKeys[0] ?? null,
+    );
+  }, [activeStickerKeys, isMobile, searchPending, searching]);
+
+  useEffect(() => {
+    if (!highlightedStickerKey || isMobile || !searching || searchPending) {
+      return;
+    }
+
+    const target = stickerItemRefs.current.get(highlightedStickerKey);
+    target?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [highlightedStickerKey, isMobile, searchPending, searching]);
+
+  const moveSearchHighlight = (delta: number) => {
+    if (!activeStickerKeys.length) {
+      return;
+    }
+
+    setHighlightedStickerKey((current) => {
+      const currentIndex = current ? activeStickerKeys.indexOf(current) : -1;
+      const baseIndex =
+        currentIndex >= 0
+          ? currentIndex
+          : delta >= 0
+            ? 0
+            : activeStickerKeys.length - 1;
+      const nextIndex = Math.max(
+        0,
+        Math.min(activeStickerKeys.length - 1, baseIndex + delta),
+      );
+      return activeStickerKeys[nextIndex] ?? null;
+    });
+  };
+
+  const handleSelectHighlightedSticker = () => {
+    if (!activeItems.length) {
+      return;
+    }
+
+    const highlightedItem = highlightedStickerKey
+      ? activeItems.find(
+          (item) => getStickerIdentity(item.sticker) === highlightedStickerKey,
+        )
+      : null;
+    const targetItem = highlightedItem ?? activeItems[0];
+    if (targetItem) {
+      onSelect(targetItem.sticker);
+    }
+  };
+
+  const handleSearchInputKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.nativeEvent.isComposing) {
+      return;
+    }
+
+    if (
+      !isMobile &&
+      searching &&
+      !searchPending &&
+      activeItems.length > 0 &&
+      trimmedKeyword.length > 0
+    ) {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        moveSearchHighlight(1);
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        moveSearchHighlight(-1);
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        moveSearchHighlight(4);
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        moveSearchHighlight(-4);
+        return;
+      }
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleSelectHighlightedSticker();
+      }
+    }
+  };
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
@@ -390,9 +505,23 @@ export function StickerPanel({
     <div className={isMobile ? "grid grid-cols-4 gap-1.5" : "grid grid-cols-4 gap-2"}>
       {items.map(({ sticker, canDelete }) => (
         <StickerButton
-          key={`${sticker.sourceType ?? "builtin"}:${sticker.packId ?? "custom"}:${sticker.stickerId}`}
+          key={getStickerIdentity(sticker)}
+          itemRef={(node) => {
+            const stickerKey = getStickerIdentity(sticker);
+            if (node) {
+              stickerItemRefs.current.set(stickerKey, node);
+              return;
+            }
+
+            stickerItemRefs.current.delete(stickerKey);
+          }}
           compact={isMobile}
           sticker={sticker}
+          highlighted={
+            !isMobile &&
+            searching &&
+            highlightedStickerKey === getStickerIdentity(sticker)
+          }
           showDelete={Boolean(canDelete) && (!isMobile ? customManageMode : true)}
           deleteAlwaysVisible={!isMobile && customManageMode}
           selectionDisabled={!isMobile && customManageMode && Boolean(canDelete)}
@@ -407,6 +536,11 @@ export function StickerPanel({
                 }
               : undefined
           }
+          onHover={() => {
+            if (!isMobile && searching) {
+              setHighlightedStickerKey(getStickerIdentity(sticker));
+            }
+          }}
           onSelect={onSelect}
         />
       ))}
@@ -506,17 +640,7 @@ export function StickerPanel({
               ref={searchInputRef}
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  trimmedKeyword.length > 0 &&
-                  !searchPending &&
-                  activeItems[0]
-                ) {
-                  event.preventDefault();
-                  onSelect(activeItems[0].sticker);
-                }
-              }}
+              onKeyDown={handleSearchInputKeyDown}
               placeholder="搜索表情"
               className="w-full border-none bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)]"
             />
@@ -746,30 +870,42 @@ export function StickerPanel({
 }
 
 function StickerButton({
+  itemRef,
   compact = false,
   sticker,
+  highlighted = false,
   deleting = false,
   showDelete = false,
   deleteAlwaysVisible = false,
   selectionDisabled = false,
   onDelete,
+  onHover,
   onSelect,
 }: {
+  itemRef?: (node: HTMLDivElement | null) => void;
   compact?: boolean;
   sticker: StickerAttachment;
+  highlighted?: boolean;
   deleting?: boolean;
   showDelete?: boolean;
   deleteAlwaysVisible?: boolean;
   selectionDisabled?: boolean;
   onDelete?: () => void;
+  onHover?: () => void;
   onSelect: (sticker: StickerAttachment) => void;
 }) {
   return (
     <div
+      ref={itemRef}
+      onMouseEnter={onHover}
       className={
         compact
           ? "group relative flex flex-col items-center justify-center rounded-[11px] border border-[color:var(--border-subtle)] bg-white p-2 transition active:bg-[color:var(--surface-card-hover)]"
-          : "group relative flex flex-col items-center gap-1 rounded-[18px] border border-white/80 bg-white/76 p-2 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_8px_18px_rgba(160,90,10,0.12)]"
+          : `group relative flex flex-col items-center gap-1 rounded-[18px] border bg-white/76 p-2 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_8px_18px_rgba(160,90,10,0.12)] ${
+              highlighted
+                ? "border-[rgba(160,90,10,0.38)] bg-white shadow-[0_10px_22px_rgba(160,90,10,0.18)]"
+                : "border-white/80"
+            }`
       }
     >
       {showDelete && onDelete ? (
@@ -798,6 +934,7 @@ function StickerButton({
             onSelect(sticker);
           }
         }}
+        onFocus={onHover}
         title={sticker.label ?? sticker.stickerId}
         className={`flex w-full flex-col items-center gap-1 ${
           selectionDisabled ? "cursor-default" : ""
@@ -815,7 +952,13 @@ function StickerButton({
           loading="lazy"
         />
         {!compact ? (
-          <span className="line-clamp-1 text-[11px] text-[color:var(--text-secondary)]">
+          <span
+            className={`line-clamp-1 text-[11px] ${
+              highlighted
+                ? "text-[#9a5a0a]"
+                : "text-[color:var(--text-secondary)]"
+            }`}
+          >
             {sticker.label ?? sticker.stickerId}
           </span>
         ) : null}
