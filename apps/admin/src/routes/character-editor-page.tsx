@@ -187,7 +187,6 @@ export function CharacterEditorPage() {
         <AdminPageHero
           eyebrow="角色编辑"
           title={isNew ? "新建角色资料" : draft.name || "编辑角色资料"}
-          description="先补齐基础身份和关系，再完善提示词、特征、记忆与边界。"
           actions={
             <>
               <Link to="/characters">
@@ -250,11 +249,11 @@ export function CharacterEditorPage() {
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <AdminSectionNav
             items={[
-              { label: "基础信息", detail: "名称、关系、触发场景", onClick: () => jumpToSection("character-editor-basics") },
+              { label: "基础信息", onClick: () => jumpToSection("character-editor-basics") },
               { label: "提示词与特征", detail: "basePrompt、systemPrompt、说话风格", onClick: () => jumpToSection("character-editor-prompt") },
               { label: "推理与记忆", detail: "记忆摘要、核心记忆、推理开关", onClick: () => jumpToSection("character-editor-memory") },
-              { label: "身份与边界", detail: "职业、背景、边界说明", onClick: () => jumpToSection("character-editor-identity") },
-              { label: "预览", detail: "查看当前角色摘要", onClick: () => jumpToSection("character-editor-preview") },
+              { label: "身份与边界", onClick: () => jumpToSection("character-editor-identity") },
+              { label: "预览", onClick: () => jumpToSection("character-editor-preview") },
             ]}
           />
 
@@ -262,7 +261,6 @@ export function CharacterEditorPage() {
             title="保存提示"
             rows={[
               { label: "必填字段", value: canSave ? "已满足" : "名称和关系描述未齐" },
-              { label: "建议流程", value: "先补基础信息，再写提示词和记忆" },
               { label: "当前入口", value: isNew ? "新建角色" : "编辑现有角色" },
             ]}
           />
@@ -569,7 +567,7 @@ export function CharacterEditorPage() {
                 <StatusPill key={domain}>{domain === "general" ? "通用" : domain}</StatusPill>
               ))}
             </div>
-            <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">{draft.bio || "补充角色简介，说明它应当如何出现在这个世界里。"}</p>
+            {draft.bio ? <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">{draft.bio}</p> : null}
           </Card>
         </div>
         </div>

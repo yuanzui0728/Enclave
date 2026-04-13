@@ -282,16 +282,15 @@ export function DashboardPage() {
               <MetricCard
                 label="角色在线"
                 value={`${previewCharacters.filter((item) => item.isOnline).length}/${charactersQuery.data?.length ?? 0}`}
-                detail="当前角色在线数 / 总角色数"
               />
             </div>
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <AdminJumpCard to={primaryActionHref} title={primaryActionLabel} detail="优先处理当前实例最关键的阻塞项。" emphasis="primary" />
-            <AdminJumpCard to="/characters" title="进入角色中心" detail="查角色状态、打开工厂或运行逻辑台。" />
-            <AdminJumpCard to="/reply-logic" title="查看回复逻辑" detail="排查真实回复链路和全局规则。" />
-            <AdminJumpCard to="/evals" title="查看评测分析" detail="进入 runs、compare 和 trace 工作区。" />
+            <AdminJumpCard to={primaryActionHref} title={primaryActionLabel} emphasis="primary" />
+            <AdminJumpCard to="/characters" title="进入角色中心" />
+            <AdminJumpCard to="/reply-logic" title="查看回复逻辑" />
+            <AdminJumpCard to="/evals" title="查看评测分析" />
           </div>
         </Card>
 
@@ -302,21 +301,12 @@ export function DashboardPage() {
               tone={!desktopRuntimeReady ? "warning" : "healthy"}
               title="运行时检查"
               statusLabel={!desktopRuntimeReady ? "关注" : "正常"}
-              description={
-                !desktopRuntimeReady
-                  ? "运行时还没完全恢复，优先进入设置页确认远程 API、运行数据目录和桌面托管状态。"
-                  : "运行时已就绪，可以直接进入角色或评测工作区。"
-              }
             />
             <AdminStatusCard
               tone={!providerConfigured ? "warning" : "healthy"}
               title="推理服务配置"
               statusLabel={!providerConfigured ? "关注" : "正常"}
-              description={
-                !providerConfigured
-                  ? "实例还没有可用模型，回复、评测和自动生成都会受影响。"
-                  : `当前默认模型为 ${providerConfigQuery.data?.model ?? "已配置"}。`
-              }
+              description={providerConfigured ? `当前默认模型为 ${providerConfigQuery.data?.model ?? "已配置"}。` : undefined}
             />
             <AdminStatusCard
               tone={digitalHumanSummary.ready ? "healthy" : "warning"}
@@ -328,19 +318,14 @@ export function DashboardPage() {
               tone={systemHealthy ? "healthy" : "warning"}
               title="实例健康"
               statusLabel={systemHealthy ? "正常" : "关注"}
-              description={
-                systemHealthy
-                  ? "核心接口已在线，下一步更适合进入评测或角色工作区做运营动作。"
-                  : "核心接口不健康，暂时不建议继续做角色与回复配置。"
-              }
             />
           </div>
 
           <div className="mt-5 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
             <AdminEyebrow>最近内容信号</AdminEyebrow>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="朋友圈" value={momentsQuery.data?.length ?? 0} detail="当前世界动态总数" />
-              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="广场动态" value={feedQuery.data?.total ?? 0} detail="公开内容总数" />
+              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="朋友圈" value={momentsQuery.data?.length ?? 0} />
+              <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="广场动态" value={feedQuery.data?.total ?? 0} />
               <MetricCard className="border-0 bg-transparent p-0 shadow-none" label="评测运行" value={evalOverviewQuery.data?.runCount ?? 0} detail={`Trace ${evalOverviewQuery.data?.traceCount ?? 0}`} />
             </div>
           </div>
@@ -462,7 +447,6 @@ export function DashboardPage() {
       <AdminCallout
         tone={desktopRuntimeReady && providerConfigured && systemHealthy ? "success" : "warning"}
         title={desktopRuntimeReady && providerConfigured && systemHealthy ? "实例已进入可运营状态" : "当前优先动作"}
-        description={nextActionMessage}
         actions={
           <Link to={primaryActionHref}>
             <Button variant="primary">{primaryActionLabel}</Button>
@@ -567,13 +551,11 @@ export function DashboardPage() {
             <MetricCard
               label="叙事弧线"
               value={statusQuery.data?.worldSurface.narrativeArcsCount ?? 0}
-              detail="已接纳的好友关系会同步保证兼容运行时的弧线记录"
             />
 
             <MetricCard
               label="行为日志"
               value={statusQuery.data?.worldSurface.behaviorLogsCount ?? 0}
-              detail="用于追踪智能生成的朋友圈、好友请求、广场互动和群聊回复"
             />
 
             <MetricCard
@@ -606,10 +588,6 @@ export function DashboardPage() {
             </AdminDetailPanel>
           </div>
 
-          <AdminDetailPanel className="mt-6" title="兼容迁移摘要" contentClassName="leading-7">
-            当前控制台已经与共享契约层对齐。已迁移的兼容面覆盖配置、角色、社交、聊天、朋友圈、广场和世界上下文。
-            调度器也已经接入实际 Rust 运行切片，运行时统计和手动触发都已纳入本页。叙事弧线与智能行为日志也已经同步纳入新运行时。
-          </AdminDetailPanel>
         </Card>
 
         <Card className="bg-[color:var(--surface-console)]">
@@ -630,7 +608,7 @@ export function DashboardPage() {
                 message={
                   charactersQuery.error instanceof Error
                     ? charactersQuery.error.message
-                    : "新核心接口进程启动后，角色增删改查兼容路由即可正常使用。"
+                    : undefined
                 }
               />
             )}
@@ -922,10 +900,7 @@ export function DashboardPage() {
         <Card className="bg-[color:var(--surface-console)]">
           <SectionHeading>运维操作</SectionHeading>
           <div className="mt-4 space-y-4">
-            <AdminActionGroup
-              title="日常维护"
-              description="先导出诊断和创建备份，这两项更适合巡检和日常留档。"
-            >
+            <AdminActionGroup title="日常维护">
               <div className="grid gap-3">
                 <Button variant="secondary" size="lg" className="justify-start rounded-2xl" disabled={operationsBusy} onClick={() => exportDiagnosticsMutation.mutate()}>
                   {exportDiagnosticsMutation.isPending ? "正在导出诊断包..." : "导出诊断包"}
@@ -951,7 +926,6 @@ export function DashboardPage() {
               <AdminActionFeedback
                 tone="busy"
                 title="运维任务执行中"
-                description="当前有运维任务执行中，其他维护操作暂时被锁定。"
               />
             ) : null}
             {exportDiagnosticsMutation.isError && exportDiagnosticsMutation.error instanceof Error ? (

@@ -179,7 +179,6 @@ export function CharacterFactoryPage() {
         <AdminPageHero
           eyebrow="角色工厂"
           title={snapshot.character.name}
-          description="在这里定义角色配方、查看发布版本、对比草稿差异，并把制造阶段的设定发布到运行时实体。"
           actions={
             <>
               <Link to="/characters">
@@ -256,13 +255,13 @@ export function CharacterFactoryPage() {
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <AdminSectionNav
             items={[
-              { label: "AI 辅助制造", detail: "从聊天样本生成草稿", onClick: () => jumpToSection("character-factory-ai") },
-              { label: "身份与关系", detail: "名字、关系、背景和动机", onClick: () => jumpToSection("character-factory-identity") },
-              { label: "能力与边界", detail: "擅长领域、知识边界、拒绝方式", onClick: () => jumpToSection("character-factory-expertise") },
-              { label: "语气与行为", detail: "口头禅、风格、提示词", onClick: () => jumpToSection("character-factory-tone") },
-              { label: "记忆与生活策略", detail: "频率、活跃时段、触发场景", onClick: () => jumpToSection("character-factory-memory") },
-              { label: "推理与发布映射", detail: "默认开关和发布目标", onClick: () => jumpToSection("character-factory-publish") },
-              { label: "版本与 Diff", detail: "发布差异、字段来源、版本记录", onClick: () => jumpToSection("character-factory-diff") },
+              { label: "AI 辅助制造", onClick: () => jumpToSection("character-factory-ai") },
+              { label: "身份与关系", onClick: () => jumpToSection("character-factory-identity") },
+              { label: "能力与边界", onClick: () => jumpToSection("character-factory-expertise") },
+              { label: "语气与行为", onClick: () => jumpToSection("character-factory-tone") },
+              { label: "记忆与生活策略", onClick: () => jumpToSection("character-factory-memory") },
+              { label: "推理与发布映射", onClick: () => jumpToSection("character-factory-publish") },
+              { label: "版本与 Diff", onClick: () => jumpToSection("character-factory-diff") },
             ]}
           />
 
@@ -271,7 +270,6 @@ export function CharacterFactoryPage() {
             rows={[
               { label: "草稿状态", value: isDirty ? "有未保存变更" : "已同步" },
               { label: "发布状态", value: snapshot.diffSummary.hasUnpublishedChanges ? "待发布" : "已发布同步" },
-              { label: "建议流程", value: "先改草稿，再看 Diff，最后发布" },
             ]}
           />
         </div>
@@ -280,9 +278,6 @@ export function CharacterFactoryPage() {
         <div className="space-y-6">
           <Card id="character-factory-ai" className="bg-[color:var(--surface-console)]">
             <SectionHeading>AI 辅助制造</SectionHeading>
-            <InlineNotice className="mt-4" tone="muted">
-              输入一段角色聊天样本后，后台会走人格提取链，把可结构化的语气、口头禅、兴趣、情绪基调和记忆摘要写回工厂草稿。
-            </InlineNotice>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <FieldBlock
                 label="样本人名"

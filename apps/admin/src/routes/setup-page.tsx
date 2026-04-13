@@ -133,18 +133,18 @@ export function SetupPage() {
     {
       label: "远程 API",
       ok: coreApiReady,
-      hint: coreApiReady ? "世界实例可访问" : "远程世界 API 暂不可访问",
+      hint: coreApiReady ? undefined : "远程世界 API 暂不可访问",
     },
     {
       label: "推理服务",
       ok: providerReady,
-      hint: providerReady ? "推理服务已配置" : "先保存推理服务，才能启用真实生成",
+      hint: providerReady ? undefined : "先保存推理服务，才能启用真实生成",
     },
     {
       label: "语音转写",
       ok: speechReady,
       hint: speechReady
-        ? systemStatusQuery.data?.inferenceGateway.speechMessage ?? "语音转写已就绪"
+        ? undefined
         : "补齐主推理或独立转写密钥，才能启用 AI 语音通话",
     },
     {
@@ -155,7 +155,7 @@ export function SetupPage() {
     {
       label: "后台就绪",
       ok: coreApiReady && providerReady,
-      hint: coreApiReady && providerReady ? "实例运维已就绪" : "请先完成 API 和推理服务配置",
+      hint: coreApiReady && providerReady ? undefined : "请先完成 API 和推理服务配置",
     },
   ];
 
@@ -248,7 +248,6 @@ export function SetupPage() {
         <AdminPageHero
           eyebrow="运维准备"
           title="先打通实例，再补齐模型。"
-          description={readinessSummary}
           actions={
             <>
               <Link to="/">
@@ -296,28 +295,22 @@ export function SetupPage() {
             <div className="mt-4 space-y-3">
               <AdminStatusCard
                 title="先确认远程 API 可达"
-                description="如果接口离线，先检查世界实例地址、反向代理和服务进程。"
                 tone={coreApiReady ? "healthy" : "warning"}
                 statusLabel={coreApiReady ? "完成" : "待处理"}
               />
               <AdminStatusCard
                 title="确认世界主人数量正确"
-                description="当前实例必须保持单世界主人语义，数量不为 1 时先处理数据状态。"
                 tone={worldOwnerReady ? "healthy" : "warning"}
                 statusLabel={worldOwnerReady ? "完成" : "待处理"}
               />
               <AdminStatusCard
                 title="保存并测试推理服务"
-                description="模型、接口地址和 API Key 都正确后，再进入回复逻辑和评测工作区。"
                 tone={providerReady ? "healthy" : "warning"}
                 statusLabel={providerReady ? "完成" : "待处理"}
               />
               <AdminStatusCard
                 title="确认语音转写链路"
-                description={
-                  systemStatusQuery.data?.inferenceGateway.speechMessage ??
-                  "语音通话依赖语音转写，独立配置时要单独验证 STT 网关。"
-                }
+                description={systemStatusQuery.data?.inferenceGateway.speechMessage}
                 tone={speechReady ? "healthy" : "warning"}
                 statusLabel={speechReady ? "完成" : "待处理"}
               />
@@ -336,10 +329,7 @@ export function SetupPage() {
               <SetupStatusCard
                 title="远程 API"
                 value={systemStatusQuery.data?.coreApi.version ?? "离线"}
-                detail={
-                  systemStatusQuery.data?.coreApi.message ??
-                  "管理后台连接的是远程世界实例，而不是本地托管核心接口。"
-                }
+                detail={systemStatusQuery.data?.coreApi.message ?? undefined}
                 ok={coreApiReady}
               />
               <SetupStatusCard
@@ -375,7 +365,6 @@ export function SetupPage() {
               <SetupStatusCard
                 title="世界主人"
                 value={String(systemStatusQuery.data?.worldSurface.ownerCount ?? 0)}
-                detail="健康的单世界实例在运行时应当且仅应暴露一个世界主人。"
                 ok={worldOwnerReady}
               />
             </div>
@@ -386,19 +375,16 @@ export function SetupPage() {
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <AdminJumpCard
                 title="进入角色中心"
-                detail="接口和模型就绪后，优先检查角色资料、工厂和运行逻辑。"
                 to="/characters"
                 disabled={!coreApiReady}
               />
               <AdminJumpCard
                 title="进入回复逻辑"
-                detail="确认真实回复链路、上下文快照和规则配置。"
                 to="/reply-logic"
                 disabled={!coreApiReady || !providerReady}
               />
               <AdminJumpCard
                 title="进入评测分析"
-                detail="用 runs、compare 和 trace 验证配置改动是否生效。"
                 to="/evals"
                 disabled={!coreApiReady || !providerReady}
               />
@@ -410,14 +396,12 @@ export function SetupPage() {
           <ProviderSetupForm
             className="rounded-[30px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-6 shadow-[var(--shadow-card)]"
             title="推理服务配置"
-            description="当世界主人没有配置个人 API 密钥时，这里保存实例级推理服务配置供当前世界兜底使用；语音转写可额外指定独立网关。"
             statusLabel={providerReady ? "已配置" : "待配置"}
             endpointLabel="接口地址"
             modeLabel="模式"
             modelLabel="模型"
             apiKeyLabel="API 密钥"
             transcriptionSectionTitle="独立语音转写"
-            transcriptionSectionDescription="可选。这里单独指定 STT 网关、模型和密钥；留空时回退主推理服务配置。适合聊天走 DeepSeek、语音转写走 OpenAI 兼容网关。"
             transcriptionEndpointLabel="转写接口地址"
             transcriptionModelLabel="转写模型"
             transcriptionApiKeyLabel="转写 API 密钥"
@@ -443,7 +427,7 @@ export function SetupPage() {
                   ? providerSetup.providerProbeMutation.data.message
                   : providerSetup.providerSaveMutation.data
                     ? `已保存推理服务 ${providerSetup.providerSaveMutation.data.model}（${formatProviderMode(providerSetup.providerSaveMutation.data.mode)}）`
-                    : "这里保存的是当前世界的实例级推理服务配置；语音转写也可以单独走另一条兼容网关。"
+                    : undefined
             }
             onSubmit={providerSetup.submitProviderSave}
             onProbe={providerSetup.submitProviderProbe}
@@ -461,10 +445,6 @@ export function SetupPage() {
                 </StatusPill>
               }
             />
-            <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">
-              这里保存 AI 数字人视频通话的 provider 模式、播放器模板和扩展参数。`external_iframe`
-              模式下，模板可直接消费 `{`sessionId`}`、`{`conversationId`}`、`{`characterId`}`、`{`characterName`}`、`{`callbackUrl`}`、`{`callbackToken`}`，以及参数 JSON 里的同名键。
-            </p>
             <InlineNotice
               className="mt-4"
               tone={digitalHumanSummary.ready ? "success" : "warning"}
@@ -581,9 +561,6 @@ export function SetupPage() {
               </div>
             </div>
 
-            <InlineNotice className="mt-4" tone="info">
-              建议把 provider 固定参数都放进扩展参数 JSON，再在播放器模板中直接使用对应占位符。
-            </InlineNotice>
             {digitalHumanTemplateWarnings.length ? (
               <InlineNotice className="mt-4" tone="warning">
                 {digitalHumanTemplateWarnings.join(" ")}

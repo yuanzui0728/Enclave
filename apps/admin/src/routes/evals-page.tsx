@@ -1106,7 +1106,6 @@ export function EvalsPage() {
         <AdminPageHero
           eyebrow="评测工作台"
           title="先选视图，再跑实验，再下钻链路。"
-          description="这里负责运行数据集、比较实验结果、查看实验报告，并沿着生成链路继续下钻到提示词与上下文。"
           actions={
             <>
               <Button variant={compactView ? "primary" : "secondary"} onClick={() => setCompactView((value) => !value)}>
@@ -1148,11 +1147,11 @@ export function EvalsPage() {
           <AdminSectionNav
             title="工作区导航"
             items={[
-              { label: "评测概览", detail: "看全局状态与视图配置", onClick: () => jumpToSection("eval-overview") },
-              { label: "已保存视图", detail: "保存和复用筛选组合", onClick: () => jumpToSection("eval-presets") },
-              { label: "运行入口", detail: "数据集、预设与最近运行", onClick: () => jumpToSection("eval-runs"), disabled: compactView },
-              { label: "实验报告", detail: "查看决策与关键差异", onClick: () => jumpToSection("eval-reports"), disabled: compactView },
-              { label: "运行对比", detail: "锁定基线和候选，缩小差异范围", onClick: () => jumpToSection("eval-compare") },
+              { label: "评测概览", onClick: () => jumpToSection("eval-overview") },
+              { label: "已保存视图", onClick: () => jumpToSection("eval-presets") },
+              { label: "运行入口", onClick: () => jumpToSection("eval-runs"), disabled: compactView },
+              { label: "实验报告", onClick: () => jumpToSection("eval-reports"), disabled: compactView },
+              { label: "运行对比", onClick: () => jumpToSection("eval-compare") },
               { label: "生成链路", detail: "查看 prompt、上下文和失败标签", onClick: () => jumpToSection("eval-traces") },
             ]}
           />
@@ -1191,10 +1190,7 @@ export function EvalsPage() {
                 />
               ))}
               {savedPresets.length === 0 ? (
-                <AdminEmptyState
-                  title="还没有保存的视图预设"
-                  description="先在评测概览里保存一组筛选状态，后面就能反复复用。"
-                />
+                <AdminEmptyState title="还没有保存的视图预设" />
               ) : null}
             </div>
           </Card>
@@ -1366,10 +1362,7 @@ export function EvalsPage() {
             />
           ))}
           {savedPresets.length === 0 ? (
-            <AdminEmptyState
-              title="当前还没有保存的视图"
-              description="先把当前筛选状态保存为预设，后面切换视图会更快。"
-            />
+            <AdminEmptyState title="当前还没有保存的视图" />
           ) : null}
         </div>
       </Card>
@@ -1495,10 +1488,7 @@ export function EvalsPage() {
               );
             })}
             {experimentPresets.length === 0 ? (
-              <AdminEmptyState
-                title="当前还没有实验预设"
-                description="先沉淀一组基线和候选组合，后续重复实验时会更高效。"
-              />
+              <AdminEmptyState title="当前还没有实验预设" />
             ) : null}
           </div>
         </Card>
@@ -1858,10 +1848,7 @@ export function EvalsPage() {
                   ) : null}
                 </AdminDetailPanel>
               ) : (
-                <AdminEmptyState
-                  title="先选择一份实验报告"
-                  description="选中左侧报告后，这里会展示它的汇总、建议、差异和决策信息。"
-                />
+                <AdminEmptyState title="先选择一份实验报告" />
               )}
             </div>
           </div>
@@ -1937,10 +1924,7 @@ export function EvalsPage() {
               </div>
             </div>
           ) : (
-            <AdminEmptyState
-              title="先选择一个数据集"
-              description="点选上方数据集卡片后，这里会展示用例输入、硬规则和裁判标准。"
-            />
+            <AdminEmptyState title="先选择一个数据集" />
           )}
         </div>
       </Card>
@@ -2081,10 +2065,7 @@ export function EvalsPage() {
               </div>
             </div>
           ) : (
-            <AdminEmptyState
-              title="先选择一次运行"
-              description="选中最近运行后，这里会展开用例级输出、规则违背和链路关联。"
-            />
+            <AdminEmptyState title="先选择一次运行" />
           )}
         </div>
       </Card>
@@ -2523,10 +2504,7 @@ export function EvalsPage() {
                 </div>
               </AdminDetailPanel>
             ) : (
-              <AdminEmptyState
-                title="先选择一条链路"
-                description="选中左侧链路后，这里会展示提示词消息、筛选命中和标准化输出。"
-              />
+              <AdminEmptyState title="先选择一条链路" />
             )}
           </div>
           <div>
@@ -2593,10 +2571,7 @@ export function EvalsPage() {
                 ) : null}
               </AdminDetailPanel>
             ) : (
-              <AdminEmptyState
-                title="先选择一条链路"
-                description="选中后，这里会展示请求配置、世界快照、评测汇总和关联用例。"
-              />
+              <AdminEmptyState title="先选择一条链路" />
             )}
           </div>
         </div>

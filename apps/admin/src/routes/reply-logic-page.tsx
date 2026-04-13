@@ -671,11 +671,6 @@ export function ReplyLogicPage() {
                     <AdminEmptyState
                       className="mt-4"
                       title="当前没有可编辑角色"
-                      description={
-                        scope === "conversation"
-                          ? "先在会话内选择一个角色，再修改它的运行配置。"
-                          : "先在左侧选择一个角色，再开始编辑运行配置。"
-                      }
                     />
                   )
                 ) : (
@@ -1413,10 +1408,7 @@ function CharacterInspectorPanel({
 }) {
   if (!selectedCharacter) {
     return (
-      <AdminEmptyState
-        title="当前没有可选角色"
-        description="先在左侧角色列表里选中一个角色，再查看真实回复快照。"
-      />
+      <AdminEmptyState title="当前没有可选角色" />
     );
   }
 
@@ -1559,10 +1551,7 @@ function ConversationInspectorPanel({
 }) {
   if (!selectedConversation) {
     return (
-      <AdminEmptyState
-        title="当前没有可选会话"
-        description="切换到按会话查看后，先在左侧会话列表里选中一个目标。"
-      />
+      <AdminEmptyState title="当前没有可选会话" />
     );
   }
 

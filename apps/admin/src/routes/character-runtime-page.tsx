@@ -130,7 +130,6 @@ export function CharacterRuntimePage() {
         <AdminPageHero
           eyebrow="角色运行逻辑台"
           title={snapshot.character.name}
-          description="聚焦查看并调整这个角色当前的回复链路、生活状态、记忆摘要与叙事进度。"
           actions={
             <>
               <Link to="/characters">
@@ -198,11 +197,11 @@ export function CharacterRuntimePage() {
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <AdminSectionNav
             items={[
-              { label: "生活状态配置", detail: "在线模式、活动、频率", onClick: () => jumpToSection("character-runtime-lifestyle") },
-              { label: "记忆与状态", detail: "摘要、核心记忆、遗忘曲线", onClick: () => jumpToSection("character-runtime-memory") },
-              { label: "运行观测", detail: "运行摘要、生活逻辑、调度", onClick: () => jumpToSection("character-runtime-observability") },
+              { label: "生活状态配置", onClick: () => jumpToSection("character-runtime-lifestyle") },
+              { label: "记忆与状态", onClick: () => jumpToSection("character-runtime-memory") },
+              { label: "运行观测", onClick: () => jumpToSection("character-runtime-observability") },
               { label: "提示词与窗口", detail: "分段、最终 prompt、上下文窗口", onClick: () => jumpToSection("character-runtime-prompt") },
-              { label: "叙事弧线", detail: "当前叙事推进状态", onClick: () => jumpToSection("character-runtime-arc") },
+              { label: "叙事弧线", onClick: () => jumpToSection("character-runtime-arc") },
             ]}
           />
 
@@ -211,7 +210,6 @@ export function CharacterRuntimePage() {
             rows={[
               { label: "保存状态", value: isDirty ? "有未保存变更" : "已同步" },
               { label: "调度影响", value: (draft.onlineMode ?? "auto") === "auto" || (draft.activityMode ?? "auto") === "auto" ? "仍受自动调度影响" : "当前为人工锁定" },
-              { label: "建议流程", value: "先看观测，再修改运行态，最后保存" },
             ]}
           />
         </div>

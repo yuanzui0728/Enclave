@@ -6,7 +6,6 @@ import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-s
 type SidebarLink = {
   label: string;
   to: "/" | "/characters" | "/setup" | "/evals" | "/reply-logic";
-  hint: string;
 };
 
 type ContextLink = {

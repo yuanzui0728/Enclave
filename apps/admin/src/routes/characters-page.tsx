@@ -210,7 +210,6 @@ export function CharactersPage() {
       {!charactersQuery.isLoading && !charactersQuery.isError && (charactersQuery.data?.length ?? 0) === 0 ? (
         <AdminCallout
           title="当前还没有角色"
-          description="先创建第一个角色，才能启用私聊、朋友圈和场景触发能力。"
           tone="warning"
           actions={
             <Link to="/characters/$characterId" params={{ characterId: "new" }}>
@@ -307,10 +306,7 @@ export function CharactersPage() {
             ))}
 
             {!filteredCharacters.length && !charactersQuery.isLoading ? (
-              <AdminEmptyState
-                title="当前筛选没有匹配角色"
-                description="调整关键词、在线状态或关系类型后，再继续筛选。"
-              />
+              <AdminEmptyState title="当前筛选没有匹配角色" />
             ) : null}
           </div>
         </Card>
@@ -328,9 +324,11 @@ export function CharactersPage() {
                         <div className="mt-1 text-sm text-[color:var(--text-secondary)]">{selectedCharacter.relationship}</div>
                       </div>
                     </div>
-                    <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
-                      {selectedCharacter.bio || "这个角色还没有填写简介，建议先补齐基本定位和使用场景。"}
-                    </p>
+                    {selectedCharacter.bio ? (
+                      <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
+                        {selectedCharacter.bio}
+                      </p>
+                    ) : null}
                   </div>
                   <StatusPill tone={relationshipTone(selectedCharacter.relationshipType)}>
                     {formatRelationshipType(selectedCharacter.relationshipType)}
@@ -379,7 +377,6 @@ export function CharactersPage() {
             <AdminEmptyState
               className="bg-[color:var(--surface-console)]"
               title="先从左侧选择一个角色"
-              description="选中后就能查看角色摘要，并直接进入编辑、工厂和运行逻辑台。"
             />
           )}
         </div>
@@ -389,19 +386,13 @@ export function CharactersPage() {
             <AdminEyebrow>快捷动作</AdminEyebrow>
             {selectedCharacter ? (
               <div className="mt-4 space-y-4">
-                <AdminActionGroup
-                  title="首选动作"
-                  description="优先维护角色资料，确保关系、提示词和基础设定处于可运营状态。"
-                >
+                <AdminActionGroup title="首选动作">
                   <Link to="/characters/$characterId" params={{ characterId: selectedCharacter.id }}>
                     <Button variant="primary" size="lg" className="w-full justify-center">编辑基础资料</Button>
                   </Link>
                 </AdminActionGroup>
 
-                <AdminActionGroup
-                  title="更多入口"
-                  description="需要排查制造链路或运行状态时，再进入下面两个工作区。"
-                >
+                <AdminActionGroup title="更多入口">
                   <div className="grid gap-3">
                     <Link to="/characters/$characterId/factory" params={{ characterId: selectedCharacter.id }}>
                       <Button variant="secondary" size="lg" className="w-full justify-center">打开角色工厂</Button>
@@ -416,7 +407,7 @@ export function CharactersPage() {
                   title="危险操作"
                   description={
                     isProtectedCharacter(selectedCharacter)
-                      ? "默认保底角色不可删除，只允许继续编辑和调整行为逻辑。"
+                      ? undefined
                       : "删除角色会移除这个世界角色以及它关联的好友、会话、动态和蓝图数据。"
                   }
                 >
@@ -545,7 +536,7 @@ export function CharactersPage() {
                             <div className="text-xs text-[color:var(--text-muted)]">
                               {preset.installed
                                 ? `已进入世界角色：${preset.installedCharacterName ?? preset.name}`
-                                : "安装后会立刻出现在后台角色中心与用户端世界角色列表。"}
+                                : ""}
                             </div>
                             <Button
                               variant={preset.installed ? "secondary" : "primary"}
@@ -564,21 +555,18 @@ export function CharactersPage() {
               ))}
 
               {!presetsQuery.isLoading && !(presetsQuery.data ?? []).length ? (
-                <AdminEmptyState
-                  title="当前没有可安装预设"
-                  description="后端预设目录为空时，这里不会显示可安装名人角色。"
-                />
+                <AdminEmptyState title="当前没有可安装预设" />
               ) : null}
             </div>
           </Card>
 
-          <Card className="bg-[color:var(--surface-console)]">
+          <Card className=”bg-[color:var(--surface-console)]”>
             <AdminEyebrow>运营建议</AdminEyebrow>
-            <div className="mt-4 space-y-3">
-              <AdminHintCard title="新角色创建" detail="先补齐关系、擅长领域和触发场景，再进入编辑页完善提示词和记忆。" />
-              <AdminHintCard title="预设注入" detail="先按分组批量安装名人预设，再用“来源筛选 -> 名人预设”集中运营这批角色。" />
-              <AdminHintCard title="角色制造" detail="需要大改人格、口头禅或长期设定时，优先进入工厂页维护配方。" />
-              <AdminHintCard title="运行排查" detail="角色回复异常或活动状态不对时，直接进入运行逻辑台看在线模式、活动和最近执行。" />
+            <div className=”mt-4 space-y-3”>
+              <AdminHintCard title=”新角色创建” />
+              <AdminHintCard title=”预设注入” />
+              <AdminHintCard title=”角色制造” />
+              <AdminHintCard title=”运行排查” />
             </div>
           </Card>
         </div>
