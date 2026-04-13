@@ -5,7 +5,17 @@ import {
   type PropsWithChildren,
 } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Clock3, Copy, LockKeyhole, Minus, ShieldCheck, X } from "lucide-react";
+import {
+  Camera,
+  Clock3,
+  Copy,
+  LockKeyhole,
+  MessageSquareText,
+  Minus,
+  ShieldCheck,
+  X,
+} from "lucide-react";
+import { getOrCreateConversation, listCharacters } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -108,13 +118,21 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const standaloneDesktopRoute = isStandaloneDesktopRoute(pathname);
   const profileRouteActive = isDesktopProfileRoute(pathname);
   const runtimeConfig = useAppRuntimeConfig();
+  const ownerId = useWorldOwnerStore((state) => state.id);
   const ownerName = useWorldOwnerStore((state) => state.username);
   const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
+  const ownerSignature = useWorldOwnerStore((state) => state.signature);
+  const ownerCreatedAt = useWorldOwnerStore((state) => state.createdAt);
   const appTitle = runtimeConfig.publicAppName.trim() || "Yinjie";
+  const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopShell = runtimeConfig.appPlatform === "desktop";
   const [desktopWindow, setDesktopWindow] =
     useState<DesktopWindowHandle | null>(null);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isOwnerCardOpen, setIsOwnerCardOpen] = useState(false);
+  const [isOpeningSelfConversation, setIsOpeningSelfConversation] =
+    useState(false);
+  const [ownerCardNotice, setOwnerCardNotice] = useState<string | null>(null);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(
     () => readDesktopLockSnapshot().isLocked,
@@ -125,9 +143,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
   const [lockedAt, setLockedAt] = useState<string | null>(
     () => readDesktopLockSnapshot().lockedAt,
   );
-  const [favoritesStoreReady, setFavoritesStoreReady] = useState(
-    !nativeDesktopShell,
-  );
+  const [favoritesStoreReady, setFavoritesStoreReady] =
+    useState(!nativeDesktopShell);
   const [lockPasscodeLength, setLockPasscodeLength] = useState<number | null>(
     () => readDesktopLockSnapshot().passcodeLength,
   );
@@ -281,26 +298,25 @@ export function DesktopShell({ children }: PropsWithChildren) {
         const { getCurrentWindow } = await import("@tauri-apps/api/window");
         const currentWindow = getCurrentWindow();
 
-        unlisten =
-          await currentWindow.listen<DesktopMainWindowNavigatePayload>(
-            DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
-            ({ payload }) => {
-              const nextTarget = payload.targetPath?.trim();
-              if (
-                nextTarget &&
-                typeof window !== "undefined" &&
-                `${window.location.pathname}${window.location.hash}` !==
-                  nextTarget
-              ) {
-                window.location.assign(nextTarget);
-                return;
-              }
+        unlisten = await currentWindow.listen<DesktopMainWindowNavigatePayload>(
+          DESKTOP_MAIN_WINDOW_NAVIGATE_EVENT,
+          ({ payload }) => {
+            const nextTarget = payload.targetPath?.trim();
+            if (
+              nextTarget &&
+              typeof window !== "undefined" &&
+              `${window.location.pathname}${window.location.hash}` !==
+                nextTarget
+            ) {
+              window.location.assign(nextTarget);
+              return;
+            }
 
-              if (typeof window !== "undefined") {
-                window.focus();
-              }
-            },
-          );
+            if (typeof window !== "undefined") {
+              window.focus();
+            }
+          },
+        );
 
         if (cancelled) {
           unlisten?.();
@@ -321,6 +337,11 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   useEffect(() => {
     setIsMoreMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    setIsOwnerCardOpen(false);
+    setOwnerCardNotice(null);
   }, [pathname]);
 
   useEffect(() => {
@@ -355,6 +376,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
       if (!withCommand) {
         if (event.key === "Escape") {
           setIsMoreMenuOpen(false);
+          setIsOwnerCardOpen(false);
+          setOwnerCardNotice(null);
         }
         return;
       }
@@ -422,6 +445,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setLockError(null);
     setLockNotice(null);
     setIsMoreMenuOpen(false);
+    setIsOwnerCardOpen(false);
+    setOwnerCardNotice(null);
   };
 
   const closeDesktopLock = () => {
@@ -470,6 +495,50 @@ export function DesktopShell({ children }: PropsWithChildren) {
     setSetupPasscodeConfirm("");
     setLockError(null);
     setLockNotice("桌面锁定口令已设置，请输入口令解锁。");
+  };
+
+  const openMomentsShortcut = () => {
+    setOwnerCardNotice(null);
+    setIsOwnerCardOpen(false);
+    void navigate({ to: "/tabs/moments" });
+  };
+
+  const openSelfConversationShortcut = async () => {
+    if (!ownerId || isOpeningSelfConversation) {
+      return;
+    }
+
+    setOwnerCardNotice(null);
+    setIsOpeningSelfConversation(true);
+
+    try {
+      const characters = await listCharacters(baseUrl);
+      const selfCharacter = characters.find(
+        (item) =>
+          item.relationshipType === "self" || item.sourceKey?.trim() === "self",
+      );
+
+      if (!selfCharacter) {
+        throw new Error("当前世界还没有“我自己”角色。");
+      }
+
+      const conversation = await getOrCreateConversation(
+        { characterId: selfCharacter.id },
+        baseUrl,
+      );
+
+      setIsOwnerCardOpen(false);
+      void navigate({
+        to: "/chat/$conversationId",
+        params: { conversationId: conversation.id },
+      });
+    } catch (error) {
+      setOwnerCardNotice(
+        error instanceof Error ? error.message : "打开会话失败，请稍后再试。",
+      );
+    } finally {
+      setIsOpeningSelfConversation(false);
+    }
   };
 
   if (nativeDesktopShell && (!lockStoreReady || !favoritesStoreReady)) {
@@ -569,47 +638,77 @@ export function DesktopShell({ children }: PropsWithChildren) {
           </header>
         ) : null}
 
-          <div
-            className={cn(
-              "relative z-10 flex min-h-0 flex-1",
-              standaloneDesktopRoute ? undefined : "gap-3 p-3",
-              nativeDesktopShell && !standaloneDesktopRoute ? "pt-2" : undefined,
-            )}
-          >
-          {isMoreMenuOpen && !standaloneDesktopRoute ? (
+        <div
+          className={cn(
+            "relative z-10 flex min-h-0 flex-1",
+            standaloneDesktopRoute ? undefined : "gap-3 p-3",
+            nativeDesktopShell && !standaloneDesktopRoute ? "pt-2" : undefined,
+          )}
+        >
+          {(isMoreMenuOpen || isOwnerCardOpen) && !standaloneDesktopRoute ? (
             <button
               type="button"
-              aria-label="关闭更多菜单"
-              onClick={() => setIsMoreMenuOpen(false)}
+              aria-label="关闭浮层"
+              onClick={() => {
+                setIsMoreMenuOpen(false);
+                setIsOwnerCardOpen(false);
+                setOwnerCardNotice(null);
+              }}
               className="absolute inset-0 z-20 cursor-default"
             />
           ) : null}
 
           {standaloneDesktopRoute ? null : (
             <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2.5 shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
-              <Link
-                to="/tabs/profile"
-                className={cn(
-                  "group mb-3 flex justify-center rounded-[16px] px-2 py-1.5",
-                  profileRouteActive ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]" : undefined,
-                )}
-                aria-label="打开我的资料"
-              >
-                <div
+              <div className="relative mb-3 flex justify-center">
+                <button
+                  type="button"
                   className={cn(
-                    "rounded-[16px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-                    profileRouteActive
-                      ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
-                      : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
+                    "group flex justify-center rounded-[16px] px-2 py-1.5",
+                    isOwnerCardOpen || profileRouteActive
+                      ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
+                      : undefined,
                   )}
+                  aria-label="打开世界主人快捷卡片"
+                  aria-expanded={isOwnerCardOpen}
+                  onClick={() => {
+                    setOwnerCardNotice(null);
+                    setIsMoreMenuOpen(false);
+                    setIsOwnerCardOpen((current) => !current);
+                  }}
                 >
-                  <AvatarChip
-                    name={ownerName ?? "世界主人"}
-                    src={ownerAvatar}
-                    size="wechat"
+                  <div
+                    className={cn(
+                      "rounded-[16px] border p-1.5 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                      isOwnerCardOpen || profileRouteActive
+                        ? "border-[rgba(7,193,96,0.28)] bg-[rgba(7,193,96,0.14)] shadow-[0_8px_20px_rgba(7,193,96,0.10)]"
+                        : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
+                    )}
+                  >
+                    <AvatarChip
+                      name={ownerName ?? "世界主人"}
+                      src={ownerAvatar}
+                      size="wechat"
+                    />
+                  </div>
+                </button>
+
+                {isOwnerCardOpen ? (
+                  <DesktopOwnerQuickCard
+                    ownerName={ownerName}
+                    ownerAvatar={ownerAvatar}
+                    ownerSignature={ownerSignature}
+                    ownerCreatedAt={ownerCreatedAt}
+                    appTitle={appTitle}
+                    notice={ownerCardNotice}
+                    isOpeningSelfConversation={isOpeningSelfConversation}
+                    onOpenMoments={openMomentsShortcut}
+                    onOpenSelfConversation={() => {
+                      void openSelfConversationShortcut();
+                    }}
                   />
-                </div>
-              </Link>
+                ) : null}
+              </div>
 
               <nav className="min-h-0 flex-1 overflow-y-auto pr-1">
                 <div className="flex flex-col gap-2 pb-3">
@@ -637,11 +736,15 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       item={item}
                       onClick={() => {
                         if (item.action === "open-mobile-panel") {
+                          setIsOwnerCardOpen(false);
+                          setOwnerCardNotice(null);
                           void navigate({ to: "/desktop/mobile" });
                           return;
                         }
 
+                        setOwnerCardNotice(null);
                         setIsMoreMenuOpen((current) => !current);
+                        setIsOwnerCardOpen(false);
                       }}
                     />
                   ))}
@@ -853,6 +956,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   function handleDesktopAction(action: DesktopNavActionItem["action"]) {
     setIsMoreMenuOpen(false);
+    setIsOwnerCardOpen(false);
+    setOwnerCardNotice(null);
 
     if (action === "open-live-companion") {
       void navigate({ to: "/desktop/channels/live-companion" });
@@ -897,6 +1002,132 @@ function isDesktopProfileRoute(pathname: string) {
     pathname.startsWith("/tabs/profile") ||
     pathname.startsWith("/profile/settings") ||
     pathname.startsWith("/legal/")
+  );
+}
+
+function DesktopOwnerQuickCard({
+  ownerName,
+  ownerAvatar,
+  ownerSignature,
+  ownerCreatedAt,
+  appTitle,
+  notice,
+  isOpeningSelfConversation,
+  onOpenMoments,
+  onOpenSelfConversation,
+}: {
+  ownerName: string | null;
+  ownerAvatar: string;
+  ownerSignature: string;
+  ownerCreatedAt: string | null;
+  appTitle: string;
+  notice: string | null;
+  isOpeningSelfConversation: boolean;
+  onOpenMoments: () => void;
+  onOpenSelfConversation: () => void;
+}) {
+  return (
+    <div className="absolute left-[calc(100%+0.75rem)] top-0 z-30 w-[286px] rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.98)] p-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
+      <div className="rounded-[18px] bg-[linear-gradient(180deg,rgba(7,193,96,0.12),rgba(255,255,255,0.92))] p-3.5">
+        <div className="flex items-start gap-3">
+          <AvatarChip
+            name={ownerName ?? "世界主人"}
+            src={ownerAvatar}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="truncate text-[17px] font-semibold text-[color:var(--text-primary)]">
+                {ownerName?.trim() || "世界主人"}
+              </div>
+              <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#15803d]">
+                世界主人
+              </div>
+            </div>
+            <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
+              {appTitle}
+            </div>
+            <div className="mt-2 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+              {ownerSignature.trim() || "在现实之外，进入另一片世界。"}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--brand-primary)]" />
+          <span className="truncate">
+            {ownerCreatedAt
+              ? `进入世界于 ${formatTimestamp(ownerCreatedAt)}`
+              : "始终在线，随时回到自己的世界"}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <DesktopOwnerShortcutButton
+          icon={Camera}
+          label="朋友圈"
+          description="看看我最近发了什么"
+          onClick={onOpenMoments}
+        />
+        <DesktopOwnerShortcutButton
+          icon={MessageSquareText}
+          label={isOpeningSelfConversation ? "打开中..." : "给自己发消息"}
+          description="回到“我自己”单聊"
+          onClick={onOpenSelfConversation}
+          disabled={isOpeningSelfConversation}
+        />
+      </div>
+
+      {notice ? (
+        <div className="mt-3 rounded-[14px] border border-[rgba(255,159,10,0.24)] bg-[rgba(255,244,223,0.92)] px-3 py-2 text-[12px] leading-5 text-[#9a6700]">
+          {notice}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DesktopOwnerShortcutButton({
+  icon: Icon,
+  label,
+  description,
+  onClick,
+  disabled = false,
+}: {
+  icon: typeof Camera;
+  label: string;
+  description: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex min-h-[92px] flex-col items-start rounded-[16px] border px-3 py-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        disabled
+          ? "cursor-wait border-[color:var(--border-faint)] bg-[rgba(148,163,184,0.08)] text-[color:var(--text-muted)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:-translate-y-[1px] hover:border-[rgba(7,193,96,0.2)] hover:bg-[rgba(7,193,96,0.08)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]",
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-[12px]",
+          disabled
+            ? "bg-[rgba(148,163,184,0.16)]"
+            : "bg-[rgba(7,193,96,0.12)] text-[#15803d]",
+        )}
+      >
+        <Icon size={18} />
+      </div>
+      <div className="mt-3 text-[14px] font-medium">{label}</div>
+      <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
+    </button>
   );
 }
 
