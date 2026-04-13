@@ -125,7 +125,7 @@ type PendingHideConversation = {
   title: string;
 };
 
-const SWIPE_ACTION_BUTTON_WIDTH = 72;
+const SWIPE_ACTION_BUTTON_WIDTH = 68;
 const HIDE_UNDO_WINDOW_MS = 5_000;
 
 export function ChatListPage() {
@@ -940,7 +940,7 @@ function ConversationListItemLink({
   const readActionLabel = conversation.unreadCount > 0 ? "标已读" : "标未读";
   const muteActionClassName = conversation.isMuted
     ? "bg-[#07c160]"
-    : "bg-[#8e8e93]";
+    : "bg-[#9aa0a6]";
   const [swipeOffset, setSwipeOffset] = useState(open ? -swipeActionWidth : 0);
   const hasUnreadMessages = conversation.unreadCount > 0;
   const isPinned = conversation.isPinned;
@@ -1141,15 +1141,15 @@ function ConversationListItemLink({
   );
 
   return (
-    <div className={cn("relative overflow-hidden bg-[#c7c7cc]", className)}>
+    <div className={cn("relative overflow-hidden bg-[#c4c7cc]", className)}>
       <div className="absolute inset-y-0 right-0 flex">
         <button
           type="button"
           onClick={onTogglePinned}
-          className="flex w-[72px] items-center justify-center bg-[#c7c7cc] text-white"
+          className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-white active:brightness-[0.96]"
         >
-          <div className="flex flex-col items-center gap-1 text-[10px]">
-            <Pin size={14} />
+          <div className="flex flex-col items-center gap-0.5 text-[9px]">
+            <Pin size={13} />
             <span>{conversation.isPinned ? "取消置顶" : "置顶"}</span>
           </div>
         </button>
@@ -1157,12 +1157,12 @@ function ConversationListItemLink({
           type="button"
           onClick={onToggleMuted}
           className={cn(
-            "flex w-[72px] items-center justify-center text-white",
+            "flex w-[68px] items-center justify-center text-white active:brightness-[0.96]",
             muteActionClassName,
           )}
         >
-          <div className="flex flex-col items-center gap-1 text-[10px]">
-            <BellOff size={14} />
+          <div className="flex flex-col items-center gap-0.5 text-[9px]">
+            <BellOff size={13} />
             <span>{conversation.isMuted ? "取消免打扰" : "免打扰"}</span>
           </div>
         </button>
@@ -1170,13 +1170,13 @@ function ConversationListItemLink({
           <button
             type="button"
             onClick={onToggleReadState}
-            className="flex w-[72px] items-center justify-center bg-[#5b8efc] text-white"
+            className="flex w-[68px] items-center justify-center bg-[#5b8efc] text-white active:brightness-[0.96]"
           >
-            <div className="flex flex-col items-center gap-1 text-[10px]">
+            <div className="flex flex-col items-center gap-0.5 text-[9px]">
               {conversation.unreadCount > 0 ? (
-                <CheckCheck size={14} />
+                <CheckCheck size={13} />
               ) : (
-                <Circle size={14} />
+                <Circle size={13} />
               )}
               <span>{readActionLabel}</span>
             </div>
@@ -1185,10 +1185,10 @@ function ConversationListItemLink({
         <button
           type="button"
           onClick={onHide}
-          className="flex w-[72px] items-center justify-center bg-[#fa5151] text-white"
+          className="flex w-[68px] items-center justify-center bg-[#fa5151] text-white active:brightness-[0.96]"
         >
-          <div className="flex flex-col items-center gap-1 text-[10px]">
-            <Trash2 size={14} />
+          <div className="flex flex-col items-center gap-0.5 text-[9px]">
+            <Trash2 size={13} />
             <span>删除</span>
           </div>
         </button>
