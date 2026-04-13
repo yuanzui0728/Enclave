@@ -1,5 +1,8 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
+
 const RECENT_STICKERS_STORAGE_KEY = "yinjie.chat.recent-stickers";
 const RECENT_STICKERS_LIMIT = 20;
+let recentStickersNativeWriteQueue: Promise<void> = Promise.resolve();
 
 export type RecentStickerItem = {
   packId: string;
@@ -7,25 +10,96 @@ export type RecentStickerItem = {
   usedAt: number;
 };
 
-export function loadRecentStickers(): RecentStickerItem[] {
-  if (typeof window === "undefined") {
-    return [];
+function normalizeRecentStickerItems(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [] as RecentStickerItem[];
+  }
+
+  return value
+    .filter(
+      (item): item is RecentStickerItem =>
+        typeof item?.packId === "string" &&
+        typeof item?.stickerId === "string" &&
+        typeof item?.usedAt === "number",
+    )
+    .sort((left, right) => right.usedAt - left.usedAt)
+    .slice(0, RECENT_STICKERS_LIMIT);
+}
+
+function parseRecentStickerItems(raw: string | null | undefined) {
+  if (!raw) {
+    return [] as RecentStickerItem[];
   }
 
   try {
-    const raw = window.localStorage.getItem(RECENT_STICKERS_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as RecentStickerItem[];
-    return parsed
-      .filter((item) => item?.packId && item?.stickerId)
-      .sort((left, right) => right.usedAt - left.usedAt)
-      .slice(0, RECENT_STICKERS_LIMIT);
+    return normalizeRecentStickerItems(JSON.parse(raw) as RecentStickerItem[]);
   } catch {
-    return [];
+    return [] as RecentStickerItem[];
   }
+}
+
+function readRecentStickersFromLocal() {
+  if (typeof window === "undefined") {
+    return [] as RecentStickerItem[];
+  }
+
+  return parseRecentStickerItems(
+    window.localStorage.getItem(RECENT_STICKERS_STORAGE_KEY),
+  );
+}
+
+function getLatestRecentStickerTimestamp(items: RecentStickerItem[]) {
+  return items.reduce(
+    (latest, item) => (item.usedAt > latest ? item.usedAt : latest),
+    0,
+  );
+}
+
+function queueNativeRecentStickersWrite(items: RecentStickerItem[]) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(items);
+  recentStickersNativeWriteQueue = recentStickersNativeWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("desktop_write_recent_stickers_store", {
+        contents,
+      });
+    })
+    .catch(() => undefined);
+}
+
+function writeRecentStickers(
+  items: RecentStickerItem[],
+  options?: {
+    syncNative?: boolean;
+  },
+) {
+  if (typeof window === "undefined") {
+    return items;
+  }
+
+  if (items.length) {
+    window.localStorage.setItem(
+      RECENT_STICKERS_STORAGE_KEY,
+      JSON.stringify(items),
+    );
+  } else {
+    window.localStorage.removeItem(RECENT_STICKERS_STORAGE_KEY);
+  }
+
+  if (options?.syncNative !== false) {
+    queueNativeRecentStickersWrite(items);
+  }
+
+  return items;
+}
+
+export function loadRecentStickers(): RecentStickerItem[] {
+  return readRecentStickersFromLocal();
 }
 
 export function pushRecentSticker(packId: string, stickerId: string) {
@@ -38,6 +112,46 @@ export function pushRecentSticker(packId: string, stickerId: string) {
     ...loadRecentStickers().filter((item) => !(item.packId === packId && item.stickerId === stickerId)),
   ].slice(0, RECENT_STICKERS_LIMIT);
 
-  window.localStorage.setItem(RECENT_STICKERS_STORAGE_KEY, JSON.stringify(next));
+  writeRecentStickers(next);
   return next;
+}
+
+export async function hydrateRecentStickersFromNative() {
+  const localItems = readRecentStickersFromLocal();
+  if (!isDesktopRuntimeAvailable()) {
+    return localItems;
+  }
+
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_recent_stickers_store");
+
+    if (!result.exists) {
+      if (localItems.length) {
+        queueNativeRecentStickersWrite(localItems);
+      }
+      return localItems;
+    }
+
+    const nativeItems = parseRecentStickerItems(result.contents ?? null);
+    if (
+      getLatestRecentStickerTimestamp(localItems) >
+      getLatestRecentStickerTimestamp(nativeItems)
+    ) {
+      if (localItems.length) {
+        queueNativeRecentStickersWrite(localItems);
+      }
+      return localItems;
+    }
+
+    writeRecentStickers(nativeItems, {
+      syncNative: false,
+    });
+    return nativeItems;
+  } catch {
+    return localItems;
+  }
 }
