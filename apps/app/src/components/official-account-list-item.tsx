@@ -25,7 +25,7 @@ export function OfficialAccountListItem({
         compact
           ? "gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
-            ? "gap-2.5 border-b border-[color:var(--border-faint)] bg-white px-4 py-3 hover:bg-[color:var(--surface-console)]"
+            ? "gap-2.5 border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
             : "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3.5 hover:bg-[color:var(--surface-console)]",
         active
           ? compact
@@ -41,14 +41,14 @@ export function OfficialAccountListItem({
           <div
             className={cn(
               "truncate font-medium text-[color:var(--text-primary)]",
-              dense ? "text-[14px]" : "text-[15px]",
+              dense ? "text-[13px]" : "text-[15px]",
             )}
           >
             {account.name}
           </div>
           {account.isVerified ? (
             <BadgeCheck
-              size={dense ? 13 : 14}
+              size={dense ? 12 : 14}
               className="shrink-0 text-[#2f7cf6]"
             />
           ) : null}
@@ -56,16 +56,16 @@ export function OfficialAccountListItem({
         <div
           className={cn(
             "flex items-center gap-1.5 text-[color:var(--text-muted)]",
-            dense ? "mt-0.5 text-[10px]" : "mt-1 text-[11px]",
+            dense ? "mt-0.5 text-[9px]" : "mt-1 text-[11px]",
           )}
         >
-          <Radio size={dense ? 11 : 12} className="shrink-0" />
+          <Radio size={dense ? 10 : 12} className="shrink-0" />
           <span>{account.accountType === "service" ? "服务号" : "订阅号"}</span>
           {account.isFollowing ? (
             <span
               className={cn(
                 "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-                dense ? "px-1.5 py-0.5 text-[9px]" : "px-1.5 py-0.5 text-[10px]",
+                dense ? "px-1.5 py-0.5 text-[8px]" : "px-1.5 py-0.5 text-[10px]",
               )}
             >
               已关注
@@ -80,7 +80,7 @@ export function OfficialAccountListItem({
       </div>
 
       <ChevronRight
-        size={15}
+        size={dense ? 14 : 15}
         className="shrink-0 text-[color:var(--text-muted)]"
       />
     </button>
