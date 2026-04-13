@@ -79,6 +79,9 @@ export function StickerPanel({
   const [pendingManageFocusKey, setPendingManageFocusKey] = useState<
     string | null
   >(null);
+  const [focusedManageDeleteKey, setFocusedManageDeleteKey] = useState<
+    string | null
+  >(null);
   const [shouldFocusCustomEmptyAction, setShouldFocusCustomEmptyAction] =
     useState(false);
   const [highlightedStickerKey, setHighlightedStickerKey] = useState<
@@ -425,6 +428,11 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
     customManageMode;
+  const customManageKeyboardActive =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    customManageMode &&
+    !searching;
   const openCustomManageMode = () => {
     setCustomSortMode("added");
     setCustomDeleteFeedback(null);
@@ -447,6 +455,7 @@ export function StickerPanel({
   useEffect(() => {
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomDeleteFeedback(null);
+      setFocusedManageDeleteKey(null);
       setPendingManageFocusKey(null);
       setShouldFocusCustomEmptyAction(false);
     }
@@ -516,8 +525,30 @@ export function StickerPanel({
     window.requestAnimationFrame(() => {
       target.focus();
     });
+    setFocusedManageDeleteKey(pendingManageFocusKey);
     setPendingManageFocusKey(null);
   }, [activeItems, customManageMode, isMobile, pendingManageFocusKey, searching]);
+
+  useEffect(() => {
+    if (!customManageKeyboardActive) {
+      setFocusedManageDeleteKey(null);
+      return;
+    }
+
+    if (
+      focusedManageDeleteKey &&
+      activeItems.some(
+        (item) => getStickerIdentity(item.sticker) === focusedManageDeleteKey,
+      )
+    ) {
+      return;
+    }
+
+    const firstCustomItem = activeItems.find((item) => item.canDelete);
+    setFocusedManageDeleteKey(
+      firstCustomItem ? getStickerIdentity(firstCustomItem.sticker) : null,
+    );
+  }, [activeItems, customManageKeyboardActive, focusedManageDeleteKey]);
 
   useEffect(() => {
     if (
@@ -566,6 +597,45 @@ export function StickerPanel({
       );
       return activeStickerKeys[nextIndex] ?? null;
     });
+  };
+
+  const focusManageDeleteButton = (stickerKey: string | null) => {
+    if (!stickerKey) {
+      return;
+    }
+
+    const target = manageDeleteButtonRefs.current.get(stickerKey);
+    if (!target) {
+      return;
+    }
+
+    target.focus();
+  };
+
+  const moveManageDeleteFocus = (delta: number) => {
+    const customItemKeys = activeItems
+      .filter((item) => item.canDelete)
+      .map((item) => getStickerIdentity(item.sticker));
+    if (!customItemKeys.length) {
+      return;
+    }
+
+    const currentIndex = focusedManageDeleteKey
+      ? customItemKeys.indexOf(focusedManageDeleteKey)
+      : -1;
+    const baseIndex =
+      currentIndex >= 0
+        ? currentIndex
+        : delta >= 0
+          ? 0
+          : customItemKeys.length - 1;
+    const nextIndex = Math.max(
+      0,
+      Math.min(customItemKeys.length - 1, baseIndex + delta),
+    );
+    const nextKey = customItemKeys[nextIndex] ?? null;
+    setFocusedManageDeleteKey(nextKey);
+    focusManageDeleteButton(nextKey);
   };
 
   const handleSelectHighlightedSticker = () => {
@@ -728,6 +798,59 @@ export function StickerPanel({
           onHover={() => {
             if (!isMobile && searching) {
               setHighlightedStickerKey(getStickerIdentity(sticker));
+            }
+          }}
+          onDeleteFocus={() => {
+            if (customManageKeyboardActive && canDelete) {
+              setFocusedManageDeleteKey(getStickerIdentity(sticker));
+            }
+          }}
+          onDeleteKeyDown={(event) => {
+            if (!customManageKeyboardActive || !canDelete) {
+              return;
+            }
+
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              moveManageDeleteFocus(1);
+              return;
+            }
+
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              moveManageDeleteFocus(-1);
+              return;
+            }
+
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              moveManageDeleteFocus(4);
+              return;
+            }
+
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              moveManageDeleteFocus(-4);
+              return;
+            }
+
+            if (event.key === "Delete" || event.key === "Backspace") {
+              event.preventDefault();
+              event.stopPropagation();
+              const deleteHandler = () => {
+                const stickerKey = getStickerIdentity(sticker);
+                const nextFocusKey = resolveAdjacentStickerKey(
+                  activeItems,
+                  stickerKey,
+                );
+                void deleteMutation.mutateAsync({
+                  stickerId: sticker.stickerId,
+                  label: sticker.label,
+                  nextFocusKey,
+                  exitManageModeAfterDelete: activeItems.length === 1,
+                });
+              };
+              deleteHandler();
             }
           }}
           onSelect={onSelect}
@@ -1008,6 +1131,12 @@ export function StickerPanel({
                   : "管理中：点击表情右上角删除，按 Esc 可直接完成。"}
               </span>
               <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  ↑↓←→ 切换
+                </span>
+                <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  Delete 删除
+                </span>
                 {customDeleteFeedback?.lastDeletedLabel ? (
                   <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a]">
                     最近删除：{customDeleteFeedback.lastDeletedLabel}
@@ -1243,6 +1372,8 @@ function StickerButton({
   selectionDisabled = false,
   onDelete,
   onHover,
+  onDeleteFocus,
+  onDeleteKeyDown,
   onSelect,
 }: {
   itemRef?: (node: HTMLDivElement | null) => void;
@@ -1256,6 +1387,8 @@ function StickerButton({
   selectionDisabled?: boolean;
   onDelete?: () => void;
   onHover?: () => void;
+  onDeleteFocus?: () => void;
+  onDeleteKeyDown?: (event: React.KeyboardEvent<HTMLButtonElement>) => void;
   onSelect: (sticker: StickerAttachment) => void;
 }) {
   return (
@@ -1277,6 +1410,8 @@ function StickerButton({
           <button
             ref={deleteButtonRef}
             type="button"
+            onFocus={onDeleteFocus}
+            onKeyDown={onDeleteKeyDown}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
