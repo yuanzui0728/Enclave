@@ -242,17 +242,54 @@ export function DesktopChatHistoryPanel({
     customDate,
   });
 
-  function clearStructuredFilters() {
-    setActiveCategory("all");
-    setQuickDateFilter("all");
-    setCustomDate("");
-    setSenderId("");
-    setMemberKeyword("");
-    setSelectorView(null);
+  function focusSearchInput(moveCaretToEnd = false) {
     window.requestAnimationFrame(() => {
       searchInputRef.current?.focus();
-      searchInputRef.current?.setSelectionRange(keyword.length, keyword.length);
+
+      if (moveCaretToEnd && searchInputRef.current) {
+        const length = searchInputRef.current.value.length;
+        searchInputRef.current.setSelectionRange(length, length);
+      }
     });
+  }
+
+  function clearKeywordFilter(refocus = true) {
+    setKeyword("");
+    setDebouncedKeyword("");
+    if (refocus) {
+      focusSearchInput();
+    }
+  }
+
+  function clearCategoryFilter(refocus = true) {
+    setActiveCategory("all");
+    if (refocus) {
+      focusSearchInput(true);
+    }
+  }
+
+  function clearSenderFilter(refocus = true) {
+    setSenderId("");
+    setMemberKeyword("");
+    if (refocus) {
+      focusSearchInput(true);
+    }
+  }
+
+  function clearDateFilter(refocus = true) {
+    setQuickDateFilter("all");
+    setCustomDate("");
+    if (refocus) {
+      focusSearchInput(true);
+    }
+  }
+
+  function clearStructuredFilters() {
+    clearCategoryFilter(false);
+    clearDateFilter(false);
+    clearSenderFilter(false);
+    setSelectorView(null);
+    focusSearchInput(true);
   }
 
   function clearAllFilters() {
@@ -264,10 +301,49 @@ export function DesktopChatHistoryPanel({
     setSenderId("");
     setSelectorView(null);
     setMemberKeyword("");
-    window.requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
+    focusSearchInput();
   }
+
+  const activeFilterChips = [
+    debouncedKeyword
+      ? {
+          key: "keyword",
+          label: `关键词 · ${debouncedKeyword}`,
+          onRemove: clearKeywordFilter,
+        }
+      : null,
+    activeCategory !== "all"
+      ? {
+          key: "category",
+          label: `分类 · ${resolveCategoryLabel(activeCategory)}`,
+          onRemove: clearCategoryFilter,
+        }
+      : null,
+    selectedSender?.label
+      ? {
+          key: "sender",
+          label: `成员 · ${selectedSender.label}`,
+          onRemove: clearSenderFilter,
+        }
+      : null,
+    customDate
+      ? {
+          key: "date-custom",
+          label: `日期 · ${customDate}`,
+          onRemove: clearDateFilter,
+        }
+      : quickDateFilter !== "all"
+        ? {
+            key: "date-quick",
+            label: `日期 · ${resolveQuickDateFilterLabel(quickDateFilter)}`,
+            onRemove: clearDateFilter,
+          }
+        : null,
+  ].filter(Boolean) as Array<{
+    key: string;
+    label: string;
+    onRemove: () => void;
+  }>;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#f7f7f7]">
@@ -308,10 +384,7 @@ export function DesktopChatHistoryPanel({
           {keyword ? (
             <button
               type="button"
-              onClick={() => {
-                setKeyword("");
-                setDebouncedKeyword("");
-              }}
+              onClick={clearKeywordFilter}
               className="shrink-0 text-[color:var(--text-dim)] transition hover:text-[color:var(--text-primary)]"
               aria-label="清空搜索词"
             >
@@ -334,15 +407,18 @@ export function DesktopChatHistoryPanel({
           ) : null}
         </div>
 
-        {activeFilterLabels.length ? (
+        {activeFilterChips.length ? (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {activeFilterLabels.map((label) => (
-              <span
-                key={label}
-                className="rounded-full border border-[rgba(0,0,0,0.05)] bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
+            {activeFilterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={chip.onRemove}
+                className="inline-flex items-center gap-1 rounded-full border border-[rgba(0,0,0,0.05)] bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)] transition hover:border-[rgba(0,0,0,0.08)] hover:text-[color:var(--text-primary)]"
               >
-                {label}
-              </span>
+                <span>{chip.label}</span>
+                <X size={10} />
+              </button>
             ))}
           </div>
         ) : null}
