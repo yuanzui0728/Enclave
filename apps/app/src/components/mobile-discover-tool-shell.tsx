@@ -142,9 +142,14 @@ export function MobileDiscoverToolShell({
         }
       />
 
-      <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
+      <div className="space-y-2.5 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         {shareNotice ? (
-          <InlineNotice tone={shareNotice.tone}>{shareNotice.message}</InlineNotice>
+          <InlineNotice
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            tone={shareNotice.tone}
+          >
+            {shareNotice.message}
+          </InlineNotice>
         ) : null}
         <section className="relative overflow-hidden rounded-[20px] border border-[rgba(7,193,96,0.12)] bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
           <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[rgba(7,193,96,0.08)] blur-3xl" />
