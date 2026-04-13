@@ -4,6 +4,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
   type KeyboardEvent,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -788,6 +789,64 @@ export function ContactsPage() {
     ...shortcutItems,
   ];
   const mobileShortcutItems = shortcutItems;
+  const mobileErrorItems = [
+    friendsQuery.isError && friendsQuery.error instanceof Error
+      ? {
+          key: "friends",
+          message: "联系人列表暂时没有刷新成功。",
+          onRetry: () => {
+            void friendsQuery.refetch();
+          },
+        }
+      : null,
+    charactersQuery.isError && charactersQuery.error instanceof Error
+      ? {
+          key: "characters",
+          message: "世界角色目录暂时没有刷新成功。",
+          onRetry: () => {
+            void charactersQuery.refetch();
+          },
+        }
+      : null,
+    friendRequestsQuery.isError && friendRequestsQuery.error instanceof Error
+      ? {
+          key: "friend-requests",
+          message: "好友申请入口暂时没有刷新成功。",
+          onRetry: () => {
+            void friendRequestsQuery.refetch();
+          },
+        }
+      : null,
+    savedGroupsQuery.isError && savedGroupsQuery.error instanceof Error
+      ? {
+          key: "saved-groups",
+          message: "群聊入口暂时没有刷新成功。",
+          onRetry: () => {
+            void savedGroupsQuery.refetch();
+          },
+        }
+      : null,
+    startChatMutation.isError && startChatMutation.error instanceof Error
+      ? {
+          key: "start-chat",
+          message: startChatMutation.error.message,
+        }
+      : null,
+    setStarredMutation.isError && setStarredMutation.error instanceof Error
+      ? {
+          key: "set-starred",
+          message: setStarredMutation.error.message,
+        }
+      : null,
+  ].filter(
+    (
+      item,
+    ): item is {
+      key: string;
+      message: string;
+      onRetry?: () => void;
+    } => item !== null,
+  );
 
   if (isDesktopLayout) {
     return (
@@ -1292,68 +1351,61 @@ export function ContactsPage() {
         </TabPageTopBar>
 
         <div className="pb-8">
-          {notice ? (
-            <div className="px-3 pt-2">
+          {notice || mobileErrorItems.length ? (
+            <div className="space-y-1.5 px-3 pt-2">
+              {notice ? (
               <InlineNotice
                 tone="info"
                 className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 {notice}
               </InlineNotice>
-            </div>
-          ) : null}
-          {friendsQuery.isError && friendsQuery.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={friendsQuery.error.message} />
-            </div>
-          ) : null}
-          {charactersQuery.isError && charactersQuery.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={charactersQuery.error.message} />
-            </div>
-          ) : null}
-          {friendRequestsQuery.isError &&
-          friendRequestsQuery.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={friendRequestsQuery.error.message} />
-            </div>
-          ) : null}
-          {savedGroupsQuery.isError &&
-          savedGroupsQuery.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={savedGroupsQuery.error.message} />
-            </div>
-          ) : null}
-          {startChatMutation.isError &&
-          startChatMutation.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={startChatMutation.error.message} />
-            </div>
-          ) : null}
-          {setStarredMutation.isError &&
-          setStarredMutation.error instanceof Error ? (
-            <div className="px-3 pt-2.5">
-              <ErrorBlock message={setStarredMutation.error.message} />
+              ) : null}
+              {mobileErrorItems.map((item) => (
+                <InlineNotice
+                  key={item.key}
+                  tone="danger"
+                  className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1">{item.message}</span>
+                    {item.onRetry ? (
+                      <button
+                        type="button"
+                        onClick={item.onRetry}
+                        className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-white px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                      >
+                        重试
+                      </button>
+                    ) : null}
+                  </div>
+                </InlineNotice>
+              ))}
             </div>
           ) : null}
 
           <ContactShortcutList
             items={mobileShortcutItems}
             mobileDense
-            className="mt-1 border-x-0 shadow-none"
+            className="mt-0.5 border-x-0 shadow-none"
           />
 
-          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {friendsQuery.isLoading ? (
-              <LoadingBlock
-                className="px-4 py-6 text-left"
-                label="正在读取联系人..."
+              <MobileContactsStatusCard
+                badge="读取中"
+                title="正在刷新通讯录"
+                description="稍等一下，正在同步联系人、群聊和服务入口。"
+                tone="loading"
               />
             ) : null}
 
-            {!friendsQuery.isLoading && !friendSections.length ? (
-              <div className="px-3 py-6">
-                <EmptyState
+            {!friendsQuery.isLoading &&
+            !friendsQuery.isError &&
+            !friendSections.length ? (
+              <div className="px-3 py-3">
+                <MobileContactsStatusCard
+                  badge={normalizedSearchText ? "搜索" : "通讯录"}
                   title={
                     normalizedSearchText
                       ? "没有找到匹配的联系人"
@@ -1369,6 +1421,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={() => setSearchText("")}
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                       >
                         清空搜索
                       </Button>
@@ -1376,6 +1429,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={handleOpenWorldCharacters}
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
                       >
                         查看世界角色
                       </Button>
@@ -1555,5 +1609,43 @@ function SectionHeader({
     >
       {title}
     </div>
+  );
+}
+
+function MobileContactsStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+  action,
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "loading";
+  action?: ReactNode;
+}) {
+  const loading = tone === "loading";
+
+  return (
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
+      <div className="mx-auto inline-flex rounded-full bg-[rgba(7,193,96,0.1)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[#07c160]">
+        {badge}
+      </div>
+      {loading ? (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
