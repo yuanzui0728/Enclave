@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Search, Star } from "lucide-react";
+import { ArrowLeft, Search, Star, Tag } from "lucide-react";
 import {
   getFriends,
   getOrCreateConversation,
@@ -84,6 +84,20 @@ function MobileStarredFriendsPage() {
             aria-label="返回通讯录"
           >
             <ArrowLeft size={18} />
+          </Button>
+        }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            onClick={() => {
+              void navigate({ to: "/contacts/tags" });
+            }}
+            aria-label="查看联系人标签"
+          >
+            <Tag size={18} />
           </Button>
         }
       >
