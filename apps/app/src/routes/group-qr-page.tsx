@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { Copy, Download, Link2, Share2 } from "lucide-react";
@@ -15,6 +15,7 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
+  cn,
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
@@ -781,17 +782,72 @@ export function GroupQrPage() {
   const content = (
     <>
       {groupQuery.isLoading || membersQuery.isLoading ? (
-        <LoadingBlock label="正在生成群邀请卡..." />
+        isDesktopLayout ? (
+          <LoadingBlock label="正在生成群邀请卡..." />
+        ) : (
+          <MobileGroupInviteStatusCard
+            badge="读取中"
+            title="正在生成群邀请卡"
+            description="稍等一下，正在同步群资料和成员信息。"
+            tone="loading"
+          />
+        )
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <ErrorBlock message={groupQuery.error.message} />
+        isDesktopLayout ? (
+          <ErrorBlock message={groupQuery.error.message} />
+        ) : (
+          <MobileGroupInviteStatusCard
+            badge="群聊"
+            title="群邀请页暂时不可用"
+            description={groupQuery.error.message}
+            tone="danger"
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  void groupQuery.refetch();
+                }}
+                className="rounded-full"
+              >
+                重新加载
+              </Button>
+            }
+          />
+        )
       ) : null}
       {membersQuery.isError && membersQuery.error instanceof Error ? (
-        <ErrorBlock message={membersQuery.error.message} />
+        isDesktopLayout ? (
+          <ErrorBlock message={membersQuery.error.message} />
+        ) : (
+          <MobileGroupInviteStatusCard
+            badge="成员"
+            title="群成员信息暂时不可用"
+            description={membersQuery.error.message}
+            tone="danger"
+            action={
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  void membersQuery.refetch();
+                }}
+                className="rounded-full"
+              >
+                重新加载
+              </Button>
+            }
+          />
+        )
       ) : null}
       {notice ? (
         <InlineNotice
-          className="flex items-center justify-between gap-3"
+          className={cn(
+            "flex items-center justify-between gap-3",
+            !isDesktopLayout &&
+              "rounded-[14px] px-3 py-2 text-[11px] leading-[1.45] shadow-none",
+          )}
           tone={notice.tone}
         >
           <span>{notice.message}</span>
@@ -1158,11 +1214,45 @@ export function GroupQrPage() {
             </div>
 
             {conversationsQuery.isLoading ? (
-              <LoadingBlock label="正在读取最近会话..." />
+              isDesktopLayout ? (
+                <LoadingBlock label="正在读取最近会话..." />
+              ) : (
+                <div className="px-4 pb-4">
+                  <MobileGroupInviteStatusCard
+                    badge="会话"
+                    title="正在读取最近会话"
+                    description="稍等一下，正在整理最近可投递的聊天入口。"
+                    tone="loading"
+                  />
+                </div>
+              )
             ) : null}
             {conversationsQuery.isError &&
             conversationsQuery.error instanceof Error ? (
-              <ErrorBlock message={conversationsQuery.error.message} />
+              isDesktopLayout ? (
+                <ErrorBlock message={conversationsQuery.error.message} />
+              ) : (
+                <div className="px-4 pb-4">
+                  <MobileGroupInviteStatusCard
+                    badge="会话"
+                    title="最近会话暂时不可用"
+                    description={conversationsQuery.error.message}
+                    tone="danger"
+                    action={
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          void conversationsQuery.refetch();
+                        }}
+                        className="rounded-full"
+                      >
+                        重新加载
+                      </Button>
+                    }
+                  />
+                </div>
+              )
             ) : null}
             {pendingCurrentBatchConversations.length ? (
               <div className="space-y-2">
@@ -1878,6 +1968,56 @@ export function GroupQrPage() {
   );
 }
 
+function MobileGroupInviteStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
+  );
+}
+
 function ActionCard({
   compact = false,
   description,
@@ -1887,7 +2027,7 @@ function ActionCard({
 }: {
   compact?: boolean;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   onClick: () => void;
   title: string;
 }) {
