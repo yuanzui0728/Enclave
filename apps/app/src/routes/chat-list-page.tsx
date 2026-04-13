@@ -588,30 +588,30 @@ function MobileChatListPage() {
           </div>
         ) : null}
         {conversationsQuery.isLoading ? (
-          <div className="px-3 pt-3">
+          <div className="px-3 pt-2.5">
             <LoadingBlock label="正在读取会话..." />
           </div>
         ) : null}
         {conversationsQuery.isError &&
         conversationsQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-3 pt-2.5">
             <ErrorBlock message={conversationsQuery.error.message} />
           </div>
         ) : null}
         {messageEntriesQuery.isError &&
         messageEntriesQuery.error instanceof Error ? (
-          <div className="px-3 pt-3">
+          <div className="px-3 pt-2.5">
             <ErrorBlock message={messageEntriesQuery.error.message} />
           </div>
         ) : null}
         {reminderEntries.length ? (
           <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-            <div className="flex items-center justify-between px-4 py-2">
-              <div className="flex items-center gap-2 text-[13px] font-medium text-[#111827]">
-                <BellRing size={15} className="text-[#07c160]" />
+            <div className="flex items-center justify-between px-4 py-1.5">
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-[#111827]">
+                <BellRing size={14} className="text-[#07c160]" />
                 <span>消息提醒</span>
               </div>
-              <div className="text-[10px] text-[#8f9992]">
+              <div className="text-[9px] text-[#8f9992]">
                 <ChatReminderSummaryText
                   summary={filteredReminderSummary}
                   className="opacity-80"
@@ -637,7 +637,7 @@ function MobileChatListPage() {
                   return (
                     <>
                       {collapsible ? (
-                        <div className="flex items-center justify-between bg-[color:var(--surface-panel)] px-4 py-1.5">
+                        <div className="flex items-center justify-between bg-[color:var(--surface-panel)] px-4 py-1.25">
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
@@ -687,7 +687,7 @@ function MobileChatListPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between bg-[color:var(--surface-panel)] px-4 py-1.5">
+                        <div className="flex items-center justify-between bg-[color:var(--surface-panel)] px-4 py-1.25">
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
@@ -720,7 +720,7 @@ function MobileChatListPage() {
                             <div
                               key={entry.messageId}
                               className={cn(
-                                "flex items-center gap-2 px-4 py-2",
+                                "flex items-center gap-2 px-4 py-1.5",
                                 index > 0
                                   ? "border-t border-[color:var(--border-faint)]"
                                   : "",
@@ -745,7 +745,7 @@ function MobileChatListPage() {
                                   >
                                     {getChatReminderStatusLabel(entry)}
                                   </span>
-                                  <span className="min-w-0 truncate text-[11px] font-medium text-[#111827]">
+                                  <span className="min-w-0 truncate text-[10px] font-medium text-[#111827]">
                                     {entry.title}
                                   </span>
                                 </div>
@@ -768,7 +768,7 @@ function MobileChatListPage() {
                                   void completeReminder(entry);
                                 }}
                                 className={cn(
-                                  "shrink-0 self-center rounded-full px-2 py-[3px] text-[8px] leading-none transition-colors",
+                                  "shrink-0 self-center rounded-full px-2 py-1 text-[8px] leading-none transition-colors",
                                   getChatReminderActionTone(entry) === "warning"
                                     ? "border border-[#f3ddba] bg-[#fff9ef] text-[#ba740f] hover:bg-[#fff2df]"
                                     : "border border-transparent bg-[#f5f7f5] text-[#6b736d] hover:bg-[#edf1ee]",
@@ -790,7 +790,7 @@ function MobileChatListPage() {
 
         {!conversationsQuery.isLoading && !conversationsQuery.isError ? (
           hasConversations ? (
-            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               {showSubscriptionInboxItem && subscriptionInboxSummary ? (
                 <SubscriptionInboxCard
                   summary={subscriptionInboxSummary}
