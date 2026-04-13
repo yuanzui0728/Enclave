@@ -41,11 +41,9 @@ import {
   summarizeChatMentions,
   type ChatReplyMetadata,
 } from './chat-text.utils';
-import {
-  type GroupUserMessageContext,
-} from './group-reply.types';
+import { type GroupUserMessageContext } from './group-reply.types';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
-import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
+import { GroupReplyTaskService } from './group-reply-task.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -146,7 +144,7 @@ export class GroupService {
     private readonly chatGateway: ChatGateway,
     private readonly customStickersService: CustomStickersService,
     private readonly groupReplyPlanner: GroupReplyPlannerService,
-    private readonly groupReplyOrchestrator: GroupReplyOrchestratorService,
+    private readonly groupReplyTaskService: GroupReplyTaskService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -679,31 +677,13 @@ export class GroupService {
       return;
     }
 
-    await this.groupReplyOrchestrator.executeTurn({
+    await this.groupReplyTaskService.scheduleTurn({
       groupId,
       triggerMessageId: userMessage.id,
-      selectedActors,
+      triggerMessageCreatedAt: userMessage.createdAt,
       conversationHistory: history,
       currentUserContext,
-      runtimeRules,
-      sendReply: async (actor, text) => {
-        await this.sendMessage(
-          groupId,
-          actor.character.id,
-          'character',
-          actor.character.name,
-          {
-            text,
-          },
-          actor.character.avatar,
-        );
-      },
-      onError: (actor, error) => {
-        this.logger.error(
-          `AI reply failed for ${actor.character.name} in group ${groupId}`,
-          error,
-        );
-      },
+      selectedActors,
     });
   }
 

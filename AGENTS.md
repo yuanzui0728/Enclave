@@ -90,7 +90,7 @@
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（28个，物理表保持兼容）
+## 数据库实体（29个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -102,7 +102,7 @@
 
 **安全**：ModerationReport
 
-**群聊**：Group · GroupMember · GroupMessage
+**群聊**：Group · GroupMember · GroupMessage · GroupReplyTask
 
 **视频号**：FeedPost · FeedComment · UserFeedInteraction
 
@@ -151,6 +151,7 @@
 - `Group` 表现已扩展字段：`announcement`、`isMuted`、`mutedAt`、`isPinned`、`pinnedAt`、`savedToContacts`、`savedToContactsAt`、`showMemberNicknames`、`notifyOnAtMe`、`notifyOnAtAll`、`notifyOnAnnouncement`、`lastClearedAt`、`lastReadAt`、`isHidden`、`hiddenAt`、`lastActivityAt`
 - `Group` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载群聊专属聊天背景配置
 - `GroupMessage` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载聊天附件消息元数据
+- `GroupReplyTask`：用于持久化群聊 AI 回复任务，状态包含 `pending`、`processing`、`sent`、`cancelled`、`failed`；同群新用户消息到来后会取消未发送的旧轮任务
 - `User` 表现已扩展字段：`defaultChatBackgroundPayload`，用于承载实例默认聊天背景配置
 - `Character` 表现已扩展字段：`onlineMode`、`activityMode`，用于区分在线状态 / 当前活动由调度器自动驱动还是后台人工锁定
 - `Character` 表现已扩展字段：`sourceType`、`sourceKey`、`deletionPolicy`，用于区分默认保底角色 / 名人预设角色 / 后台手工角色，以及是否允许后台删除

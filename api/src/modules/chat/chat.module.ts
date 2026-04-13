@@ -26,6 +26,7 @@ import { MessageRemindersService } from './message-reminders.service';
 import { VoiceCallsService } from './voice-calls.service';
 import { GroupReplyPlannerService } from './group-reply-planner.service';
 import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
+import { GroupReplyTaskService } from './group-reply-task.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
@@ -36,6 +37,7 @@ import { MessageEntity } from './message.entity';
 import { GroupEntity } from './group.entity';
 import { GroupMemberEntity } from './group-member.entity';
 import { GroupMessageEntity } from './group-message.entity';
+import { GroupReplyTaskEntity } from './group-reply-task.entity';
 import { ChatCustomStickerEntity } from './custom-sticker.entity';
 import { CustomStickersService } from './custom-stickers.service';
 
@@ -52,6 +54,7 @@ import { CustomStickersService } from './custom-stickers.service';
       GroupEntity,
       GroupMemberEntity,
       GroupMessageEntity,
+      GroupReplyTaskEntity,
       ChatCustomStickerEntity,
     ]),
   ],
@@ -62,6 +65,7 @@ import { CustomStickersService } from './custom-stickers.service';
     GroupService,
     GroupReplyPlannerService,
     GroupReplyOrchestratorService,
+    GroupReplyTaskService,
     FavoritesService,
     MessageRemindersService,
     DigitalHumanCallsService,

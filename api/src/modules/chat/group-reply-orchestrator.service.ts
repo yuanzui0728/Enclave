@@ -13,6 +13,39 @@ export class GroupReplyOrchestratorService {
 
   constructor(private readonly ai: AiOrchestratorService) {}
 
+  async generateTaskReply(input: {
+    actor: GroupReplyCandidate;
+    conversationHistory: ChatMessage[];
+    baseUserPrompt: string;
+    userMessageParts: GroupReplyOrchestratorInput['currentUserContext']['parts'];
+    followupReplies: Array<{ senderName: string; text: string }>;
+  }) {
+    const {
+      actor,
+      conversationHistory,
+      baseUserPrompt,
+      userMessageParts,
+      followupReplies,
+    } = input;
+    const rollingHistory = [...conversationHistory];
+
+    for (const reply of followupReplies) {
+      rollingHistory.push({
+        role: 'assistant',
+        content: sanitizeAiText(reply.text) || '（无回复）',
+        characterId: reply.senderName,
+      });
+    }
+
+    return this.ai.generateReply({
+      profile: actor.profile,
+      conversationHistory: rollingHistory,
+      userMessage: this.buildTurnUserPrompt(baseUserPrompt, followupReplies),
+      userMessageParts,
+      isGroupChat: true,
+    });
+  }
+
   async executeTurn(input: GroupReplyOrchestratorInput): Promise<void> {
     const {
       groupId,
@@ -98,7 +131,7 @@ export class GroupReplyOrchestratorService {
     return `${promptText}\n\n【群里刚刚已经有人回应】\n${replySummary}\n请避免重复上面的内容，直接补充新的信息或自然接话。`;
   }
 
-  private pickReplyDelay(
+  pickReplyDelay(
     index: number,
     runtimeRules: GroupReplyOrchestratorInput['runtimeRules'],
   ) {
