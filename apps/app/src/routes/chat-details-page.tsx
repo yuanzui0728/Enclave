@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Copy, Share2 } from "lucide-react";
@@ -17,9 +17,8 @@ import {
   setConversationMuted,
   setConversationPinned,
 } from "@yinjie/contracts";
-import { Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
+import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
-import { EmptyState } from "../components/empty-state";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
 import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-entry-guard";
@@ -598,33 +597,65 @@ export function ChatDetailsPage() {
       }
     >
       {conversationsQuery.isLoading ? (
-        <LoadingBlock label="正在读取聊天信息..." />
+        <div className="px-2.5">
+          <MobileChatDetailsStatusCard
+            badge="读取中"
+            title="正在读取聊天信息"
+            description="稍等一下，正在同步聊天资料和设置。"
+            tone="loading"
+          />
+        </div>
       ) : null}
       {conversationsQuery.isError &&
       conversationsQuery.error instanceof Error ? (
         <div className="px-2.5">
-          <ErrorBlock message={conversationsQuery.error.message} />
+          <MobileChatDetailsStatusCard
+            badge="读取失败"
+            title="聊天信息暂时不可用"
+            description={conversationsQuery.error.message}
+            tone="danger"
+          />
         </div>
       ) : null}
       {characterQuery.isError && characterQuery.error instanceof Error ? (
         <div className="px-2.5">
-          <ErrorBlock message={characterQuery.error.message} />
+          <MobileChatDetailsStatusCard
+            badge="读取失败"
+            title="联系人资料暂时不可用"
+            description={characterQuery.error.message}
+            tone="danger"
+          />
         </div>
       ) : null}
       {friendsQuery.isError && friendsQuery.error instanceof Error ? (
         <div className="px-2.5">
-          <ErrorBlock message={friendsQuery.error.message} />
+          <MobileChatDetailsStatusCard
+            badge="读取失败"
+            title="通讯录信息暂时不可用"
+            description={friendsQuery.error.message}
+            tone="danger"
+          />
         </div>
       ) : null}
       {friendRequestsQuery.isError &&
       friendRequestsQuery.error instanceof Error ? (
         <div className="px-2.5">
-          <ErrorBlock message={friendRequestsQuery.error.message} />
+          <MobileChatDetailsStatusCard
+            badge="读取失败"
+            title="好友申请信息暂时不可用"
+            description={friendRequestsQuery.error.message}
+            tone="danger"
+          />
         </div>
       ) : null}
       {blockedQuery.isError && blockedQuery.error instanceof Error ? (
         <div className="px-2.5">
-          <ErrorBlock message={blockedQuery.error.message} />
+          <MobileChatDetailsStatusCard
+            badge="读取失败"
+            title="黑名单状态暂时不可用"
+            description={blockedQuery.error.message}
+            tone="danger"
+          />
         </div>
       ) : null}
       {notice ? (
@@ -674,7 +705,8 @@ export function ChatDetailsPage() {
 
       {!conversationsQuery.isLoading && !conversation ? (
         <div className="px-2.5">
-          <EmptyState
+          <MobileChatDetailsStatusCard
+            badge="会话"
             title="会话不存在"
             description="这段聊天暂时不可用，返回消息列表再试一次。"
             action={
@@ -808,38 +840,73 @@ export function ChatDetailsPage() {
 
           {clearMutation.isError && clearMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={clearMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {clearMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {hideMutation.isError && hideMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={hideMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {hideMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {pinMutation.isError && pinMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={pinMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {pinMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {muteMutation.isError && muteMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={muteMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {muteMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {saveToContactsMutation.isError &&
           saveToContactsMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={saveToContactsMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {saveToContactsMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {reportMutation.isError && reportMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={reportMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {reportMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
           {blockMutation.isError && blockMutation.error instanceof Error ? (
             <div className="px-2.5">
-              <ErrorBlock message={blockMutation.error.message} />
+              <InlineNotice
+                tone="danger"
+                className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              >
+                {blockMutation.error.message}
+              </InlineNotice>
             </div>
           ) : null}
 
@@ -923,5 +990,55 @@ export function ChatDetailsPage() {
         </>
       ) : null}
     </ChatDetailsShell>
+  );
+}
+
+function MobileChatDetailsStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
