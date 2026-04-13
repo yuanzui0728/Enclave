@@ -821,6 +821,7 @@ export function DesktopChatWorkspace({
                   <DesktopSearchDropdownPanel
                     history={desktopSearchLauncher.history}
                     keyword={searchTerm}
+                    onClose={desktopSearchLauncher.close}
                     onKeywordChange={setSearchTerm}
                     onOpenSearch={desktopSearchLauncher.openSearch}
                   />

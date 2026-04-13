@@ -811,6 +811,7 @@ export function ContactsPage() {
                     <DesktopSearchDropdownPanel
                       history={desktopSearchLauncher.history}
                       keyword={searchText}
+                      onClose={desktopSearchLauncher.close}
                       onKeywordChange={setSearchText}
                       onOpenSearch={desktopSearchLauncher.openSearch}
                     />
