@@ -29,6 +29,10 @@ type StickerPanelItem = {
   sticker: StickerAttachment;
   canDelete?: boolean;
 };
+type ResolvedRecentStickerItem = {
+  sticker: StickerAttachment;
+  usedAt: number;
+};
 type StickerPanelTab = {
   id: string;
   label: string;
@@ -67,9 +71,13 @@ export function StickerPanel({
   );
   const customStickerLibraryFull = customSlotsRemaining <= 0;
   const activeSectionId = resolveActiveSectionId(activePackId, catalog);
-  const recentStickers = useMemo(
+  const recentStickerEntries = useMemo(
     () => resolveRecentStickers(recentItems, catalog.customStickers),
     [catalog.customStickers, recentItems],
+  );
+  const recentStickers = useMemo(
+    () => recentStickerEntries.map((item) => item.sticker),
+    [recentStickerEntries],
   );
   const featuredStickers = useMemo(
     () => buildFeaturedStickers(catalog.builtinPacks),
@@ -145,7 +153,7 @@ export function StickerPanel({
     if (searching) {
       return searchStickerItems({
         keyword,
-        recentStickers,
+        recentStickerEntries,
         builtinPacks: catalog.builtinPacks,
         customStickers: catalog.customStickers,
       });
@@ -189,6 +197,7 @@ export function StickerPanel({
     catalog.customStickers,
     featuredStickers,
     keyword,
+    recentStickerEntries,
     recentStickers,
     searching,
   ]);
@@ -584,17 +593,28 @@ function resolveRecentStickers(
   return items
     .map((item) => {
       if ((item.sourceType ?? "builtin") === "custom") {
-        return (
-          customStickers.find((sticker) => sticker.stickerId === item.stickerId) ??
-          null
-        );
+        const sticker =
+          customStickers.find((entry) => entry.stickerId === item.stickerId) ??
+          null;
+        return sticker
+          ? {
+              sticker,
+              usedAt: item.usedAt,
+            }
+          : null;
       }
 
-      return item.packId
+      const sticker = item.packId
         ? getStickerAttachment(item.packId, item.stickerId)
         : null;
+      return sticker
+        ? {
+            sticker,
+            usedAt: item.usedAt,
+          }
+        : null;
     })
-    .filter((item): item is StickerAttachment => Boolean(item));
+    .filter((item): item is ResolvedRecentStickerItem => Boolean(item));
 }
 
 function buildFeaturedStickers(
@@ -614,7 +634,7 @@ function buildFeaturedStickers(
 
 function searchStickerItems(input: {
   keyword: string;
-  recentStickers: StickerAttachment[];
+  recentStickerEntries: ResolvedRecentStickerItem[];
   builtinPacks: Array<{
     id: string;
     title: string;
@@ -636,49 +656,60 @@ function searchStickerItems(input: {
     { sticker: StickerAttachment; canDelete?: boolean; score: number }
   >();
 
-  input.recentStickers.forEach((sticker) => {
-    const haystack = [sticker.label, sticker.stickerId].join(" ").toLowerCase();
-    if (haystack.includes(query)) {
-      items.set(getStickerIdentity(sticker), {
-        sticker,
-        canDelete: sticker.sourceType === "custom",
-        score: 300,
-      });
-    }
-  });
-
-  input.customStickers.forEach((sticker) => {
-    const haystack = [sticker.label, sticker.fileName, ...sticker.keywords]
-      .join(" ")
-      .toLowerCase();
-    if (!haystack.includes(query)) {
+  input.recentStickerEntries.forEach((entry, index) => {
+    const score =
+      320 +
+      computeSearchScore(query, [entry.sticker.label, entry.sticker.stickerId]) +
+      computeRankBoost(index, 72);
+    if (score <= 320) {
       return;
     }
 
-    items.set(getStickerIdentity(sticker), {
+    upsertSearchItem(items, {
+      sticker: entry.sticker,
+      canDelete: entry.sticker.sourceType === "custom",
+      score,
+    });
+  });
+
+  input.customStickers.forEach((sticker, index) => {
+    const score =
+      220 +
+      computeSearchScore(query, [
+        sticker.label,
+        sticker.fileName,
+        ...sticker.keywords,
+      ]) +
+      computeRankBoost(index, 36);
+    if (score <= 220) {
+      return;
+    }
+
+    upsertSearchItem(items, {
       sticker,
       canDelete: true,
-      score: computeSearchScore(query, [sticker.label, sticker.fileName, ...sticker.keywords]),
+      score,
     });
   });
 
   input.builtinPacks.forEach((pack) => {
-    pack.stickers.forEach((item) => {
-      const haystack = [pack.title, item.label, ...item.keywords]
-        .join(" ")
-        .toLowerCase();
-      if (!haystack.includes(query)) {
-        return;
-      }
-
+    pack.stickers.forEach((item, index) => {
       const sticker = getStickerAttachment(pack.id, item.id);
       if (!sticker) {
         return;
       }
 
-      items.set(getStickerIdentity(sticker), {
+      const score =
+        140 +
+        computeSearchScore(query, [item.label, pack.title, ...item.keywords]) +
+        computeRankBoost(index, 12);
+      if (score <= 140) {
+        return;
+      }
+
+      upsertSearchItem(items, {
         sticker,
-        score: computeSearchScore(query, [item.label, pack.title, ...item.keywords]),
+        score,
       });
     });
   });
@@ -693,6 +724,31 @@ function searchStickerItems(input: {
 
 function getStickerIdentity(sticker: StickerAttachment) {
   return `${sticker.sourceType ?? "builtin"}:${sticker.packId ?? ""}:${sticker.stickerId}`;
+}
+
+function upsertSearchItem(
+  items: Map<
+    string,
+    { sticker: StickerAttachment; canDelete?: boolean; score: number }
+  >,
+  next: { sticker: StickerAttachment; canDelete?: boolean; score: number },
+) {
+  const key = getStickerIdentity(next.sticker);
+  const current = items.get(key);
+  if (!current) {
+    items.set(key, next);
+    return;
+  }
+
+  items.set(key, {
+    sticker: next.score >= current.score ? next.sticker : current.sticker,
+    canDelete: current.canDelete || next.canDelete,
+    score: Math.max(current.score, next.score),
+  });
+}
+
+function computeRankBoost(index: number, maxBoost: number) {
+  return Math.max(0, maxBoost - index * 6);
 }
 
 function computeSearchScore(query: string, tokens: Array<string | undefined>) {
