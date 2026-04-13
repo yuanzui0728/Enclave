@@ -1,6 +1,8 @@
+import { isDesktopRuntimeAvailable } from "@yinjie/ui";
 import { useEffect, useState } from "react";
 
 export type LocalChatMessageActionState = {
+  updatedAt: string | null;
   hiddenMessageIds: string[];
   recalledMessageIds: string[];
   reminders: LocalChatMessageReminderRecord[];
@@ -20,10 +22,12 @@ const STORAGE_KEY = "yinjie-chat-local-message-actions";
 const CHANGE_EVENT = "yinjie-chat-local-message-actions-change";
 
 const EMPTY_STATE: LocalChatMessageActionState = {
+  updatedAt: null,
   hiddenMessageIds: [],
   recalledMessageIds: [],
   reminders: [],
 };
+let localChatMessageActionsNativeWriteQueue: Promise<void> = Promise.resolve();
 
 export function readLocalChatMessageActionState(): LocalChatMessageActionState {
   if (typeof window === "undefined") {
@@ -49,7 +53,7 @@ export function hideLocalChatMessage(messageId: string) {
     return current;
   }
 
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: [...current.hiddenMessageIds, messageId],
     recalledMessageIds: current.recalledMessageIds.filter(
       (item) => item !== messageId,
@@ -66,7 +70,7 @@ export function recallLocalChatMessage(messageId: string) {
     return current;
   }
 
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: current.hiddenMessageIds.filter(
       (item) => item !== messageId,
     ),
@@ -81,7 +85,7 @@ export function upsertLocalChatMessageReminder(
   reminder: LocalChatMessageReminderRecord,
 ) {
   const current = readLocalChatMessageActionState();
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: current.hiddenMessageIds,
     recalledMessageIds: current.recalledMessageIds,
     reminders: [
@@ -100,7 +104,7 @@ export function markLocalChatMessageReminderNotified(
   notifiedAt = new Date().toISOString(),
 ) {
   const current = readLocalChatMessageActionState();
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: current.hiddenMessageIds,
     recalledMessageIds: current.recalledMessageIds,
     reminders: current.reminders.map((item) =>
@@ -120,7 +124,7 @@ export function replaceLocalChatMessageReminders(
   reminders: LocalChatMessageReminderRecord[],
 ) {
   const current = readLocalChatMessageActionState();
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: current.hiddenMessageIds,
     recalledMessageIds: current.recalledMessageIds,
     reminders,
@@ -131,7 +135,7 @@ export function replaceLocalChatMessageReminders(
 
 export function removeLocalChatMessageReminder(messageId: string) {
   const current = readLocalChatMessageActionState();
-  const nextState = normalizeState({
+  const nextState = buildWritableState({
     hiddenMessageIds: current.hiddenMessageIds,
     recalledMessageIds: current.recalledMessageIds,
     reminders: current.reminders.filter((item) => item.messageId !== messageId),
@@ -148,24 +152,40 @@ export function useLocalChatMessageActionState() {
       return;
     }
 
-    const syncState = () => {
-      setState(readLocalChatMessageActionState());
+    let cancelled = false;
+
+    const syncState = async () => {
+      const nextState = isDesktopRuntimeAvailable()
+        ? await hydrateLocalChatMessageActionStateFromNative()
+        : readLocalChatMessageActionState();
+      if (cancelled) {
+        return;
+      }
+
+      setState(nextState);
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        syncState();
+        void syncState();
       }
     };
 
-    window.addEventListener("focus", syncState);
-    window.addEventListener("storage", syncState);
-    window.addEventListener(CHANGE_EVENT, syncState);
+    void syncState();
+
+    const handleSync = () => {
+      void syncState();
+    };
+
+    window.addEventListener("focus", handleSync);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener(CHANGE_EVENT, handleSync);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener("focus", syncState);
-      window.removeEventListener("storage", syncState);
-      window.removeEventListener(CHANGE_EVENT, syncState);
+      cancelled = true;
+      window.removeEventListener("focus", handleSync);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener(CHANGE_EVENT, handleSync);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
@@ -192,12 +212,20 @@ export function filterSearchableChatMessages<T extends { id: string }>(
   );
 }
 
-function writeState(state: LocalChatMessageActionState) {
+function writeState(
+  state: LocalChatMessageActionState,
+  options?: {
+    syncNative?: boolean;
+  },
+) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (options?.syncNative !== false) {
+    queueNativeLocalChatMessageActionStateWrite(state);
+  }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
@@ -205,10 +233,97 @@ function normalizeState(
   input?: Partial<LocalChatMessageActionState>,
 ): LocalChatMessageActionState {
   return {
+    updatedAt: typeof input?.updatedAt === "string" ? input.updatedAt : null,
     hiddenMessageIds: normalizeIdList(input?.hiddenMessageIds),
     recalledMessageIds: normalizeIdList(input?.recalledMessageIds),
     reminders: normalizeReminderList(input?.reminders),
   };
+}
+
+function buildWritableState(
+  input?: Partial<LocalChatMessageActionState>,
+): LocalChatMessageActionState {
+  return normalizeState({
+    ...input,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+function hasLocalChatMessageActionStateData(state: LocalChatMessageActionState) {
+  return Boolean(
+    state.hiddenMessageIds.length ||
+      state.recalledMessageIds.length ||
+      state.reminders.length,
+  );
+}
+
+function getLocalChatMessageActionStateTimestamp(
+  state: LocalChatMessageActionState,
+) {
+  const updatedAt = state.updatedAt ? Date.parse(state.updatedAt) : Number.NaN;
+  return Number.isFinite(updatedAt) ? updatedAt : 0;
+}
+
+function queueNativeLocalChatMessageActionStateWrite(
+  state: LocalChatMessageActionState,
+) {
+  if (!isDesktopRuntimeAvailable()) {
+    return;
+  }
+
+  const contents = JSON.stringify(state);
+  localChatMessageActionsNativeWriteQueue =
+    localChatMessageActionsNativeWriteQueue
+      .catch(() => undefined)
+      .then(async () => {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("desktop_write_chat_message_actions_store", {
+          contents,
+        });
+      })
+      .catch(() => undefined);
+}
+
+export async function hydrateLocalChatMessageActionStateFromNative() {
+  const localState = readLocalChatMessageActionState();
+  if (!isDesktopRuntimeAvailable()) {
+    return localState;
+  }
+
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const result = await invoke<{
+      exists: boolean;
+      contents?: string | null;
+    }>("desktop_read_chat_message_actions_store");
+
+    if (!result.exists) {
+      if (hasLocalChatMessageActionStateData(localState)) {
+        queueNativeLocalChatMessageActionStateWrite(localState);
+      }
+      return localState;
+    }
+
+    const nativeState = normalizeState(
+      result.contents ? (JSON.parse(result.contents) as Partial<LocalChatMessageActionState>) : undefined,
+    );
+    if (
+      getLocalChatMessageActionStateTimestamp(localState) >
+      getLocalChatMessageActionStateTimestamp(nativeState)
+    ) {
+      if (hasLocalChatMessageActionStateData(localState)) {
+        queueNativeLocalChatMessageActionStateWrite(localState);
+      }
+      return localState;
+    }
+
+    writeState(nativeState, {
+      syncNative: false,
+    });
+    return nativeState;
+  } catch {
+    return localState;
+  }
 }
 
 function normalizeIdList(input: unknown) {
