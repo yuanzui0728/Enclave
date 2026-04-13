@@ -42,13 +42,13 @@ function MobileGroupContactsPage() {
       <TabPageTopBar
         title="群聊"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() =>
               navigateBackOrFallback(() => {
                 void navigate({ to: "/tabs/contacts" });
@@ -64,7 +64,7 @@ function MobileGroupContactsPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({
                 to: "/group/new",
@@ -73,19 +73,19 @@ function MobileGroupContactsPage() {
             }}
             aria-label="发起群聊"
           >
-            <MessageSquarePlus size={18} />
+            <MessageSquarePlus size={17} />
           </Button>
         }
       >
-        <div className="pt-2">
-          <label className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2 text-[13px] text-[color:var(--text-dim)]">
-            <Search size={15} className="shrink-0" />
+        <div className="pt-1.5">
+          <label className="flex h-7.5 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
+            <Search size={14} className="shrink-0" />
             <input
               type="search"
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="搜索群聊"
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
           </label>
         </div>
@@ -93,12 +93,12 @@ function MobileGroupContactsPage() {
 
       <div className="pb-8">
         {groupsQuery.isLoading ? (
-          <div className="px-4 pt-3">
+          <div className="px-4 pt-2.5">
             <LoadingBlock label="正在读取群聊..." />
           </div>
         ) : null}
         {groupsQuery.isError && groupsQuery.error instanceof Error ? (
-          <div className="px-4 pt-3">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={groupsQuery.error.message} />
           </div>
         ) : null}
@@ -106,7 +106,7 @@ function MobileGroupContactsPage() {
         {!groupsQuery.isLoading &&
         !groupsQuery.isError &&
         !filteredGroups.length ? (
-          <div className="px-4 pt-5">
+          <div className="px-4 pt-4">
             <EmptyState
               title={
                 hasSearchText
@@ -138,7 +138,7 @@ function MobileGroupContactsPage() {
         ) : null}
 
         {filteredGroups.length ? (
-          <section className="mt-1.5 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {filteredGroups.map((group, index) => (
               <button
                 key={group.id}
@@ -150,7 +150,7 @@ function MobileGroupContactsPage() {
                   });
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
+                  "flex w-full items-center gap-3 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]",
                   index > 0
                     ? "border-t border-[color:var(--border-faint)]"
                     : undefined,
@@ -159,10 +159,10 @@ function MobileGroupContactsPage() {
                 <GroupAvatarChip name={group.name} size="wechat" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-3">
-                    <div className="min-w-0 flex-1 truncate text-[15px] text-[color:var(--text-primary)]">
+                    <div className="min-w-0 flex-1 truncate text-[14px] text-[color:var(--text-primary)]">
                       {group.name}
                     </div>
-                    <div className="shrink-0 text-[10px] text-[color:var(--text-dim)]">
+                    <div className="shrink-0 text-[9px] text-[color:var(--text-dim)]">
                       {formatConversationTimestamp(
                         group.savedToContactsAt ?? group.lastActivityAt,
                       )}
