@@ -461,6 +461,17 @@ export function StickerPanel({
   const highlightedSearchStickerKey = highlightedSearchItem
     ? getStickerIdentity(highlightedSearchItem.sticker)
     : null;
+  const highlightedSearchPosition = useMemo(() => {
+    if (!highlightedSearchStickerKey) {
+      return null;
+    }
+
+    const index = activeItems.findIndex(
+      (item) =>
+        getStickerIdentity(item.sticker) === highlightedSearchStickerKey,
+    );
+    return index >= 0 ? index + 1 : null;
+  }, [activeItems, highlightedSearchStickerKey]);
 
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
@@ -1191,19 +1202,45 @@ export function StickerPanel({
                       : "border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)]"
                   }`}
                 >
-                  <div className="min-w-0">
-                    <div className="font-medium text-[#9a5a0a]">
-                      回车发送：
-                      {highlightedSearchItem.sticker.label ??
-                        highlightedSearchItem.sticker.stickerId}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[12px] border bg-white transition ${
+                        searchPreviewFlashKey === highlightedSearchStickerKey
+                          ? "border-[rgba(160,90,10,0.26)] shadow-[0_6px_14px_rgba(160,90,10,0.12)]"
+                          : "border-white/90"
+                      }`}
+                    >
+                      <img
+                        src={highlightedSearchItem.sticker.url}
+                        alt={
+                          highlightedSearchItem.sticker.label ??
+                          highlightedSearchItem.sticker.stickerId
+                        }
+                        className="h-8 w-8 object-contain"
+                        loading="lazy"
+                      />
                     </div>
-                    <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
-                      来源：{highlightedSearchSourceLabel ?? "搜索结果"}
+                    <div className="min-w-0">
+                      <div className="font-medium text-[#9a5a0a]">
+                        回车发送：
+                        {highlightedSearchItem.sticker.label ??
+                          highlightedSearchItem.sticker.stickerId}
+                      </div>
+                      <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
+                        来源：{highlightedSearchSourceLabel ?? "搜索结果"}
+                      </div>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                    Enter
-                  </span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {highlightedSearchPosition ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        {highlightedSearchPosition}/{activeItems.length}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                      Enter
+                    </span>
+                  </div>
                 </div>
               ) : null}
               <div className="text-[11px] text-[color:var(--text-muted)]">
