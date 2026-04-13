@@ -1,6 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { clearPendingNativeLaunchTarget, getPendingNativeLaunchTarget, isNativeMobileBridgeAvailable } from "../../runtime/mobile-bridge";
+import {
+  clearPendingNativeLaunchTarget,
+  getPendingNativeLaunchTarget,
+} from "../../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../../runtime/mobile-share-surface";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
 type ResolvedNavigationTarget =
@@ -68,9 +72,10 @@ export function MobileNotificationLaunchBridge() {
   });
   const onboardingCompleted = useWorldOwnerStore((state) => state.onboardingCompleted);
   const pollingRef = useRef(false);
+  const nativeMobileShellSupported = isNativeMobileShareSurface();
 
   useEffect(() => {
-    if (!onboardingCompleted || !isNativeMobileBridgeAvailable()) {
+    if (!onboardingCompleted || !nativeMobileShellSupported) {
       return;
     }
 
@@ -127,7 +132,14 @@ export function MobileNotificationLaunchBridge() {
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [hash, navigate, onboardingCompleted, pathname, search]);
+  }, [
+    hash,
+    navigate,
+    nativeMobileShellSupported,
+    onboardingCompleted,
+    pathname,
+    search,
+  ]);
 
   return null;
 }
