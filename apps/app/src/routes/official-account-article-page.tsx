@@ -192,7 +192,7 @@ function MobileOfficialAccountArticlePage({
       <TabPageTopBar
         title={article?.account.name ?? "公众号文章"}
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pt-2.5 pb-2 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => {
@@ -210,9 +210,9 @@ function MobileOfficialAccountArticlePage({
             }}
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -221,14 +221,14 @@ function MobileOfficialAccountArticlePage({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
               onClick={() => void handleShareArticle()}
               aria-label={nativeMobileShareSupported ? "分享文章" : "复制文章链接"}
             >
               {nativeMobileShareSupported ? (
-                <Share2 size={18} />
+                <Share2 size={17} />
               ) : (
-                <Copy size={18} />
+                <Copy size={17} />
               )}
             </Button>
           ) : null
@@ -237,23 +237,25 @@ function MobileOfficialAccountArticlePage({
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {articleQuery.isLoading ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <LoadingBlock label="正在读取文章..." />
           </div>
         ) : null}
         {articleQuery.isError && articleQuery.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <ErrorBlock message={articleQuery.error.message} />
           </div>
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-          <div className="px-3 pt-2.5">
+          <div className="px-4 pt-2">
             <ErrorBlock message={markReadMutation.error.message} />
           </div>
         ) : null}
         {shareNotice ? (
-          <div className="px-3 pt-2.5">
-            <InlineNotice tone={shareNotice.tone}>{shareNotice.message}</InlineNotice>
+          <div className="px-4 pt-2">
+            <InlineNotice className="text-[12px] leading-5" tone={shareNotice.tone}>
+              {shareNotice.message}
+            </InlineNotice>
           </div>
         ) : null}
 
