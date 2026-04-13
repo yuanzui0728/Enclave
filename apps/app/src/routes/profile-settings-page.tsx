@@ -165,15 +165,15 @@ export function ProfileSettingsPage() {
   const content = (
     <>
       {desktopMode ? null : (
-        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
-          <div className="flex gap-1 rounded-[12px] bg-[#f5f5f5] p-1">
+        <div className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
+          <div className="flex gap-1 rounded-[12px] bg-[#f5f5f5] p-[3px]">
             {settingsTabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-[10px] py-2 text-[13px] font-medium transition-all duration-[var(--motion-fast)]",
+                  "flex-1 rounded-[10px] py-1.5 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
                   activeTab === tab.id
                     ? "bg-white text-[color:var(--text-primary)] shadow-sm"
                     : "text-[color:var(--text-muted)] hover:bg-white/70",
@@ -198,14 +198,14 @@ export function ProfileSettingsPage() {
                 value={draftName}
                 onChange={(event) => setDraftName(event.target.value)}
                 placeholder="输入显示名称"
-                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
             <MobileFieldGroup label="签名">
               <TextAreaField
                 value={draftSignature}
                 onChange={(event) => setDraftSignature(event.target.value)}
-                className="min-h-24 resize-none rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 leading-6 shadow-none focus:translate-y-0"
+                className="min-h-[5.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
                 placeholder="介绍一下你自己，或者写一句当前状态"
               />
             </MobileFieldGroup>
@@ -217,7 +217,7 @@ export function ProfileSettingsPage() {
               disabled={!canSaveProfile || saveProfileMutation.isPending}
               variant="primary"
               className={cn(
-                "h-10 w-full rounded-[10px] text-white shadow-none",
+                "h-9 w-full rounded-[10px] text-[12px] text-white shadow-none",
                 desktopMode
                   ? "bg-[color:var(--brand-primary)] hover:opacity-95"
                   : "bg-[#07c160] hover:bg-[#06ad56]",
@@ -263,7 +263,7 @@ export function ProfileSettingsPage() {
                   type="button"
                   onClick={() => setSendMessageShortcut(option.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 px-4 py-3 text-left transition",
+                    "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
                     index > 0 && "border-t border-[color:var(--border-faint)]",
                     selected
                       ? desktopMode
@@ -273,10 +273,10 @@ export function ProfileSettingsPage() {
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                    <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                       {option.label}
                     </div>
-                    <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
+                    <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
                       {option.description}
                     </div>
                   </div>
@@ -339,7 +339,7 @@ export function ProfileSettingsPage() {
                     ? "已保存专属 API Key，输入新的值可替换"
                     : "输入你的专属 API Key"
                 }
-                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
             <MobileFieldGroup label="兼容 Base URL">
@@ -347,7 +347,7 @@ export function ProfileSettingsPage() {
                 value={apiBaseDraft}
                 onChange={(event) => setApiBaseDraft(event.target.value)}
                 placeholder="可选，例如 https://api.openai.com/v1"
-                className="rounded-[12px] border-[color:var(--border-faint)] px-4 py-3 shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
               />
             </MobileFieldGroup>
           </div>
@@ -358,7 +358,7 @@ export function ProfileSettingsPage() {
               disabled={aiSettingsBusy || !apiKeyDraft.trim()}
               variant="primary"
               className={cn(
-                "h-10 w-full rounded-[10px] text-white shadow-none",
+                "h-9 w-full rounded-[10px] text-[12px] text-white shadow-none",
                 desktopMode
                   ? "bg-[color:var(--brand-primary)] hover:opacity-95"
                   : "bg-[#07c160] hover:bg-[#06ad56]",
@@ -370,7 +370,7 @@ export function ProfileSettingsPage() {
               onClick={() => clearApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !ownerQuery.data?.hasCustomApiKey}
               variant="secondary"
-              className="h-10 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
+              className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:bg-[#f5f7f7]"
             >
               {clearApiKeyMutation.isPending ? "清除中..." : "清除专属 API Key"}
             </Button>
@@ -396,7 +396,7 @@ export function ProfileSettingsPage() {
       {activeTab === "legal" ? (
         <>
           {desktopMode ? null : (
-            <section className="mt-2 border-y border-[color:var(--border-faint)] divide-y divide-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+            <section className="mt-1.5 divide-y divide-[color:var(--border-faint)] border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
               <MobileLinkRow
                 label="隐私政策"
                 onClick={() =>
@@ -596,18 +596,19 @@ export function ProfileSettingsPage() {
       <TabPageTopBar
         title="设置"
         titleAlign="center"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => navigate({ to: backTo })}
             variant="ghost"
             size="icon"
-            className="h-10 w-10 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none hover:bg-black/4"
+            className="h-9 w-9 rounded-full bg-transparent text-[color:var(--text-primary)] shadow-none active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
       />
-      <div className="space-y-2 pb-8">{content}</div>
+      <div className="space-y-1.5 pb-8">{content}</div>
     </AppPage>
   );
 }
@@ -637,10 +638,10 @@ function MobileSettingsSection({
   return (
     <section
       className={cn(
-        "space-y-3",
+        "space-y-2.5",
         desktop
           ? "rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]"
-          : "mt-2 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3",
+          : "mt-1.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5",
       )}
     >
       {title || description ? (
@@ -671,7 +672,7 @@ function MobileFieldGroup({
 }) {
   return (
     <label className="block">
-      <div className="mb-2 text-[13px] font-medium text-[color:var(--text-secondary)]">
+      <div className="mb-1.5 text-[12px] font-medium text-[color:var(--text-secondary)]">
         {label}
       </div>
       {children}
@@ -692,19 +693,19 @@ function MobileLinkRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div className="min-w-0 flex-1">
-        <div className="text-[16px] text-[color:var(--text-primary)]">
+        <div className="text-[14px] text-[color:var(--text-primary)]">
           {label}
         </div>
         {subtitle ? (
-          <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
             {subtitle}
           </div>
         ) : null}
       </div>
-      <div className="text-[color:var(--text-dim)]">›</div>
+      <div className="text-[13px] text-[color:var(--text-dim)]">›</div>
     </button>
   );
 }
