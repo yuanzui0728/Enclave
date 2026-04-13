@@ -628,6 +628,25 @@ export function StickerPanel({
     customManageMode;
   const customManageKeyboardActive =
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
+  const desktopCustomHeaderContext =
+    !isMobile && activeSectionId === "custom" && trimmedKeyword.length === 0;
+  const headerUsesManageShortcut =
+    desktopCustomHeaderContext &&
+    customStickerLibraryFull &&
+    !customManageMode &&
+    !uploadMutation.isPending;
+  const headerUploadButtonLabel = isMobile
+    ? "添加"
+    : headerUsesManageShortcut
+      ? "去管理"
+      : desktopCustomHeaderContext && catalog.customStickerCount === 0
+        ? "添加第一张"
+        : "添加表情";
+  const headerUploadButtonTitle = headerUsesManageShortcut
+    ? "自定义表情已满，先去管理里删掉几张再继续添加。"
+    : customStickerLibraryFull
+      ? "自定义表情已满，请先删除几个再继续添加"
+      : undefined;
   const openCustomManageMode = () => {
     setCustomSortMode("added");
     setCustomDeleteFeedback(null);
@@ -1263,13 +1282,19 @@ export function StickerPanel({
             ) : null}
             <button
               type="button"
-              onClick={() => uploadInputRef.current?.click()}
-              disabled={uploadMutation.isPending || customStickerLibraryFull}
-              title={
-                customStickerLibraryFull
-                  ? "自定义表情已满，请先删除几个再继续添加"
-                  : undefined
+              onClick={() => {
+                if (headerUsesManageShortcut) {
+                  openCustomManageMode();
+                  return;
+                }
+
+                uploadInputRef.current?.click();
+              }}
+              disabled={
+                uploadMutation.isPending ||
+                (customStickerLibraryFull && !headerUsesManageShortcut)
               }
+              title={headerUploadButtonTitle}
               className={
                 isMobile
                   ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#3f4b5f] transition active:bg-[#f5f5f5] disabled:opacity-45"
@@ -1278,10 +1303,12 @@ export function StickerPanel({
             >
               {uploadMutation.isPending ? (
                 <Loader2 size={13} className="animate-spin" />
+              ) : headerUsesManageShortcut ? (
+                <Trash2 size={13} />
               ) : (
                 <Plus size={13} />
               )}
-              {isMobile ? "添加" : "添加表情"}
+              {headerUploadButtonLabel}
             </button>
             <button
               type="button"
