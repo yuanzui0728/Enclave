@@ -708,7 +708,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 ) : null}
               </div>
 
-              <nav className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <nav className="min-h-0 flex-1 overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="flex flex-col gap-2 pb-3">
                   {desktopPrimaryNavItems.map((item) => (
                     <DesktopNavLink
