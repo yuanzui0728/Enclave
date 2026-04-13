@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
-import { describeRequestError } from "../../lib/request-error";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -143,7 +142,7 @@ export function DesktopRuntimeGuard() {
     ? desktopDescription
     : needsRemoteConfiguration
       ? "当前设备还没有配置远程世界地址，请先回到 setup 连接你的实例。"
-      : describeRequestError(remoteStatusQuery.error, "连接暂时不可用，请稍后再试。");
+      : "服务器暂时不可用，请稍后再试。";
   const helperText = hasDesktopRuntimeControl
     ? diagnostics?.summary || "隐界会继续在后台恢复，你只需要稍候片刻。"
     : "如果长时间没有恢复，稍后重新打开应用即可。";
