@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ComponentProps,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -854,11 +855,20 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
         )}
       >
-        <LoadingBlock
-          label={
-            isVideoMode ? "正在连接数字人视频通话..." : "正在连接语音通话..."
-          }
-        />
+        {isDesktopLayout ? (
+          <LoadingBlock
+            label={
+              isVideoMode ? "正在连接数字人视频通话..." : "正在连接语音通话..."
+            }
+          />
+        ) : (
+          <MobileCallStatusCard
+            badge="连接中"
+            title={isVideoMode ? "正在连接数字人视频通话" : "正在连接语音通话"}
+            description="稍等一下，正在同步会话信息并准备当前通话链路。"
+            tone="loading"
+          />
+        )}
       </AppPage>
     );
   }
@@ -871,7 +881,26 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
         )}
       >
-        <ErrorBlock message={conversationsQuery.error.message} />
+        {isDesktopLayout ? (
+          <ErrorBlock message={conversationsQuery.error.message} />
+        ) : (
+          <MobileCallStatusCard
+            badge="会话"
+            title="通话暂时不可用"
+            description={conversationsQuery.error.message}
+            tone="danger"
+            action={
+              <MobileCallActionButton
+                onClick={() => {
+                  void conversationsQuery.refetch();
+                }}
+                className="min-w-[132px]"
+              >
+                重新加载
+              </MobileCallActionButton>
+            }
+          />
+        )}
       </AppPage>
     );
   }
@@ -884,24 +913,47 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
           isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
         )}
       >
-        <ErrorBlock
-          message={
-            isVideoMode
-              ? "当前只支持在单聊里发起 AI 数字人视频通话。"
-              : "当前只支持在单聊里发起 AI 语音通话。"
-          }
-        />
-        <Button
-          variant="secondary"
-          onClick={handleBack}
-          className={cn(
-            isDesktopLayout
-              ? "rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
-              : "rounded-full",
-          )}
-        >
-          返回聊天
-        </Button>
+        {isDesktopLayout ? (
+          <>
+            <ErrorBlock
+              message={
+                isVideoMode
+                  ? "当前只支持在单聊里发起 AI 数字人视频通话。"
+                  : "当前只支持在单聊里发起 AI 语音通话。"
+              }
+            />
+            <Button
+              variant="secondary"
+              onClick={handleBack}
+              className={cn(
+                isDesktopLayout
+                  ? "rounded-[10px] border-black/8 bg-white shadow-none hover:bg-[#efefef]"
+                  : "rounded-full",
+              )}
+            >
+              返回聊天
+            </Button>
+          </>
+        ) : (
+          <MobileCallStatusCard
+            badge="通话"
+            title={isVideoMode ? "当前不能发起视频通话" : "当前不能发起语音通话"}
+            description={
+              isVideoMode
+                ? "目前只支持在单聊里发起 AI 数字人视频通话。"
+                : "目前只支持在单聊里发起 AI 语音通话。"
+            }
+            tone="danger"
+            action={
+              <MobileCallActionButton
+                onClick={handleBack}
+                className="min-w-[132px]"
+              >
+                返回聊天
+              </MobileCallActionButton>
+            }
+          />
+        )}
       </AppPage>
     );
   }
@@ -1235,7 +1287,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {isVideoMode && digitalHumanCall.sessionError ? (
-            <ErrorBlock message={digitalHumanCall.sessionError} />
+            <MobileCallNotice tone="danger">
+              {digitalHumanCall.sessionError}
+            </MobileCallNotice>
           ) : null}
           {leavingScreen ? (
             <MobileCallNotice tone="info">
@@ -1243,7 +1297,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </MobileCallNotice>
           ) : null}
           {activeCall.turnMutation.error instanceof Error ? (
-            <ErrorBlock message={activeCall.turnMutation.error.message} />
+            <MobileCallNotice tone="danger">
+              {activeCall.turnMutation.error.message}
+            </MobileCallNotice>
           ) : null}
           {speech.error ? (
             speech.permissionDenied && nativeMobileShellSupported ? (
@@ -1260,7 +1316,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                 />
               </MobileCallNotice>
             ) : (
-              <ErrorBlock message={speech.error} />
+              <MobileCallNotice tone="danger">{speech.error}</MobileCallNotice>
             )
           ) : null}
           {videoRecoveryMessage ? (
@@ -1335,7 +1391,9 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
             </div>
           ) : null}
           {characterQuery.isError && characterQuery.error instanceof Error ? (
-            <ErrorBlock message={characterQuery.error.message} />
+            <MobileCallNotice tone="danger">
+              {characterQuery.error.message}
+            </MobileCallNotice>
           ) : null}
         </div>
 
@@ -1487,6 +1545,54 @@ function formatCallLatency(durationMs: number) {
   }
 
   return `${(durationMs / 1000).toFixed(1)}s`;
+}
+
+function MobileCallStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "mx-auto flex max-w-[26rem] flex-col items-center rounded-[28px] border px-5 py-6 text-center shadow-[0_24px_64px_rgba(2,6,23,0.28)]",
+        tone === "danger"
+          ? "border-[#f87171]/24 bg-[linear-gradient(180deg,rgba(127,29,29,0.34),rgba(69,10,10,0.3))] text-white"
+          : "border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-white",
+      )}
+    >
+      <div
+        className={cn(
+          "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
+          tone === "danger"
+            ? "bg-[#ef4444]/14 text-[#fecaca]"
+            : "bg-[#34d399]/12 text-[#bbf7d0]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-3 flex items-center justify-center gap-1.5">
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/24" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/36 [animation-delay:120ms]" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#86efac] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-3 text-[18px] font-medium leading-7">{title}</div>
+      <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </section>
+  );
 }
 
 function MobileCallNotice({
