@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, Share2 } from "lucide-react";
 import {
   getOfficialAccountArticle,
   markOfficialAccountArticleRead,
 } from "@yinjie/contracts";
-import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import {
+  AppPage,
+  Button,
+  ErrorBlock,
+  InlineNotice,
+  LoadingBlock,
+} from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
@@ -18,6 +24,10 @@ import {
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function OfficialAccountArticlePage() {
@@ -46,6 +56,11 @@ function MobileOfficialAccountArticlePage({
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
+  const [shareNotice, setShareNotice] = useState<{
+    message: string;
+    tone: "success" | "info";
+  } | null>(null);
+  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, articleId],
@@ -84,6 +99,11 @@ function MobileOfficialAccountArticlePage({
   const articleFavoriteSourceId = article
     ? `official-article-${article.id}`
     : null;
+  const articlePath = `/official-accounts/articles/${articleId}`;
+  const articleUrl =
+    typeof window === "undefined"
+      ? articlePath
+      : `${window.location.origin}${articlePath}`;
 
   useEffect(() => {
     if (!article?.id || lastMarkedArticleIdRef.current === article.id) {
@@ -105,6 +125,66 @@ function MobileOfficialAccountArticlePage({
       : upsertDesktopFavorite(buildOfficialArticleFavoriteRecord(article));
 
     setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
+  }
+
+  async function handleCopyArticleLink() {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制文章链接。",
+        tone: "info",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(articleUrl);
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制文章链接。"
+          : "文章链接已复制。",
+        tone: "success",
+      });
+    } catch {
+      setShareNotice({
+        message: nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制文章链接失败，请稍后重试。",
+        tone: "info",
+      });
+    }
+  }
+
+  async function handleShareArticle() {
+    if (!article) {
+      return;
+    }
+
+    if (!nativeMobileShareSupported) {
+      await handleCopyArticleLink();
+      return;
+    }
+
+    const shared = await shareWithNativeShell({
+      title: article.title,
+      text: `${article.account.name}\n${article.title}`,
+      url: articleUrl,
+    });
+
+    if (shared) {
+      setShareNotice({
+        message: "已打开系统分享面板。",
+        tone: "success",
+      });
+      return;
+    }
+
+    await handleCopyArticleLink();
   }
 
   return (
@@ -135,6 +215,24 @@ function MobileOfficialAccountArticlePage({
             <ArrowLeft size={18} />
           </Button>
         }
+        rightActions={
+          article ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-[color:var(--text-primary)]"
+              onClick={() => void handleShareArticle()}
+              aria-label={nativeMobileShareSupported ? "分享文章" : "复制文章链接"}
+            >
+              {nativeMobileShareSupported ? (
+                <Share2 size={18} />
+              ) : (
+                <Copy size={18} />
+              )}
+            </Button>
+          ) : null
+        }
       />
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
@@ -153,6 +251,11 @@ function MobileOfficialAccountArticlePage({
             <ErrorBlock message={markReadMutation.error.message} />
           </div>
         ) : null}
+        {shareNotice ? (
+          <div className="px-3 pt-2.5">
+            <InlineNotice tone={shareNotice.tone}>{shareNotice.message}</InlineNotice>
+          </div>
+        ) : null}
 
         {article ? (
           <OfficialArticleViewer
@@ -163,6 +266,7 @@ function MobileOfficialAccountArticlePage({
                 ? favoriteSourceIds.includes(articleFavoriteSourceId)
                 : false
             }
+            showShareAction={false}
             onOpenAccount={(accountId) => {
               void navigate({
                 to: "/official-accounts/$accountId",

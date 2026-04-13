@@ -14,6 +14,7 @@ export function OfficialArticleViewer({
   accountName,
   mobile = false,
   favorite = false,
+  showShareAction = true,
   onOpenAccount,
   onOpenArticle,
   onToggleFavorite,
@@ -22,6 +23,7 @@ export function OfficialArticleViewer({
   accountName?: string;
   mobile?: boolean;
   favorite?: boolean;
+  showShareAction?: boolean;
   onOpenAccount?: (accountId: string) => void;
   onOpenArticle?: (articleId: string) => void;
   onToggleFavorite?: (article: OfficialAccountArticleDetail) => void;
@@ -200,16 +202,22 @@ export function OfficialArticleViewer({
               {favorite ? "已收藏" : "收藏"}
             </Button>
           ) : null}
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => void handleShareArticle()}
-            className={mobile ? "rounded-[10px] px-3" : "rounded-xl"}
-          >
-            {nativeMobileShareSupported ? <Share2 size={14} /> : <Copy size={14} />}
-            {nativeMobileShareSupported ? "系统分享" : "复制链接"}
-          </Button>
+          {showShareAction ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleShareArticle()}
+              className={mobile ? "rounded-[10px] px-3" : "rounded-xl"}
+            >
+              {nativeMobileShareSupported ? (
+                <Share2 size={14} />
+              ) : (
+                <Copy size={14} />
+              )}
+              {nativeMobileShareSupported ? "系统分享" : "复制链接"}
+            </Button>
+          ) : null}
         </div>
       </div>
       <h1
