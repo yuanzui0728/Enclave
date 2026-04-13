@@ -94,7 +94,7 @@ export function MiniProgramOpenPanel({
     <section
       className={cn(
         compact
-          ? "rounded-[18px] border p-4 shadow-none"
+          ? "rounded-[16px] border p-3.5 shadow-none"
           : "rounded-[30px] border p-5 shadow-[var(--shadow-soft)]",
         tone.mutedPanelClassName,
       )}
@@ -114,14 +114,14 @@ export function MiniProgramOpenPanel({
               >
                 {isActive ? "已打开" : "待打开"}
               </div>
-              <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[10px]" : "text-[11px]")}>
+              <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[9px]" : "text-[11px]")}>
                 {isActive ? "最近一次打开的小程序面板" : "点击后写入最近使用和打开态"}
               </div>
             </div>
             <div
               className={cn(
                 "font-semibold text-[color:var(--text-primary)]",
-                compact ? "mt-2 text-[15px]" : "mt-3 text-lg",
+                compact ? "mt-1.5 text-[14px]" : "mt-3 text-lg",
               )}
             >
               {isActive ? `继续使用 ${miniProgram.name}` : miniProgram.name}
@@ -129,7 +129,7 @@ export function MiniProgramOpenPanel({
             <div
               className={cn(
                 "text-[color:var(--text-secondary)]",
-                compact ? "mt-1 text-[12px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
+                compact ? "mt-1 text-[11px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
               )}
             >
               {miniProgram.openHint}
@@ -199,14 +199,14 @@ export function MiniProgramOpenPanel({
       {tasks.length ? (
         <div
           className={cn(
-            "mt-5 border border-white/80 bg-white/78",
-            compact ? "rounded-[18px] p-3.5" : "rounded-[24px] p-4",
+            "mt-4.5 border border-white/80 bg-white/78",
+            compact ? "rounded-[16px] p-3" : "rounded-[24px] p-4",
           )}
         >
           <div
             className={cn(
               "font-medium text-[color:var(--text-primary)]",
-              compact ? "text-[14px]" : "text-sm",
+              compact ? "text-[13px]" : "text-sm",
             )}
           >
             当前工作台
@@ -214,19 +214,19 @@ export function MiniProgramOpenPanel({
           <div
             className={cn(
               "mt-1 text-[color:var(--text-muted)]",
-              compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-5",
+              compact ? "text-[10px] leading-[1.35rem]" : "text-xs leading-5",
             )}
           >
             打开后先承接一组本地待办，让这个面板不只是一次“已打开”的记录。
           </div>
 
-          <div className={cn("mt-4", compact ? "space-y-2.5" : "space-y-3")}>
+          <div className={cn("mt-3.5", compact ? "space-y-2" : "space-y-3")}>
             {tasks.map((task) => (
               <div
                 key={task.id}
                 className={cn(
                   "border border-[rgba(15,23,42,0.06)] bg-white/86",
-                  compact ? "rounded-[16px] px-3.5 py-3" : "rounded-[20px] px-4 py-4",
+                  compact ? "rounded-[15px] px-3 py-2.5" : "rounded-[20px] px-4 py-4",
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -235,7 +235,7 @@ export function MiniProgramOpenPanel({
                       <div
                         className={cn(
                           "font-medium text-[color:var(--text-primary)]",
-                          compact ? "text-[13px]" : "text-sm",
+                          compact ? "text-[12px]" : "text-sm",
                         )}
                       >
                         {task.title}
@@ -244,7 +244,7 @@ export function MiniProgramOpenPanel({
                         <span
                           className={cn(
                             "rounded-full bg-[rgba(47,122,63,0.1)] text-[#2f7a3f]",
-                            compact ? "px-2 py-0.5 text-[9px]" : "px-2.5 py-1 text-[10px]",
+                            compact ? "px-1.5 py-0.5 text-[8px]" : "px-2.5 py-1 text-[10px]",
                           )}
                         >
                           已完成
@@ -254,7 +254,7 @@ export function MiniProgramOpenPanel({
                     <div
                       className={cn(
                         "mt-1.5 text-[color:var(--text-secondary)]",
-                        compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-6",
+                        compact ? "text-[10px] leading-[1.35rem]" : "text-xs leading-6",
                       )}
                     >
                       {task.detail}
@@ -344,13 +344,13 @@ function PanelMetric({
     <div
       className={cn(
         "border border-white/80 bg-white/84",
-        compact ? "rounded-[16px] px-3 py-3" : "rounded-[22px] px-4 py-4",
+        compact ? "rounded-[15px] px-2.5 py-2.5" : "rounded-[22px] px-4 py-4",
       )}
     >
       <div
         className={cn(
           "flex items-center gap-2 uppercase text-[color:var(--text-muted)]",
-          compact ? "text-[10px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
+          compact ? "text-[9px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
         )}
       >
         {icon}
@@ -359,7 +359,7 @@ function PanelMetric({
       <div
         className={cn(
           "font-medium text-[color:var(--text-primary)]",
-          compact ? "mt-1.5 text-[13px] leading-5" : "mt-2 text-sm",
+          compact ? "mt-1 text-[12px] leading-5" : "mt-2 text-sm",
         )}
       >
         {value}
@@ -368,7 +368,7 @@ function PanelMetric({
         <div
           className={cn(
             "text-[color:var(--text-dim)]",
-            compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5",
+            compact ? "mt-0.5 text-[9px] leading-4" : "mt-1 text-[11px] leading-5",
           )}
         >
           {detail}
