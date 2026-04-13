@@ -1,4 +1,4 @@
-import { Button, ErrorBlock, TextAreaField, cn } from "@yinjie/ui";
+import { Button, TextAreaField, cn } from "@yinjie/ui";
 
 type MobileSocialComposerCardProps = {
   title: string;
@@ -86,8 +86,8 @@ export function MobileSocialComposerCard({
         </div>
 
         {errorMessage ? (
-          <div className="mt-2.5">
-            <ErrorBlock message={errorMessage} />
+          <div className="mt-2.5 rounded-[14px] border border-[#f2c6c3] bg-[#fff7f5] px-3.5 py-3 text-[11px] leading-[1.35rem] text-[#b42318]">
+            {errorMessage}
           </div>
         ) : null}
       </div>
