@@ -594,6 +594,7 @@ export function ReplyLogicPage() {
                 <ConversationInspectorPanel
                   selectedConversation={selectedConversation}
                   query={conversationSnapshotQuery}
+                  baseUrl={baseUrl}
                   narrativePresentation={narrativePresentation}
                 />
               )}
@@ -1555,10 +1556,12 @@ function ReplyPreviewPanel({
 function ConversationInspectorPanel({
   selectedConversation,
   query,
+  baseUrl,
   narrativePresentation,
 }: {
   selectedConversation: ReplyLogicOverview["conversations"][number] | null;
   query: ReturnType<typeof useQuery<ReplyLogicConversationSnapshot>>;
+  baseUrl: string;
   narrativePresentation: ReplyLogicConstantSummary["narrativePresentationTemplates"] | null;
 }) {
   if (!selectedConversation) {
@@ -1615,6 +1618,8 @@ function ConversationInspectorPanel({
 
       {query.data.groupReplyRuntime ? (
         <GroupReplyRuntimeCard
+          baseUrl={baseUrl}
+          conversationId={query.data.conversation.id}
           runtime={query.data.groupReplyRuntime}
           visibleMessages={query.data.visibleMessages}
         />
@@ -1639,38 +1644,191 @@ function ConversationInspectorPanel({
 }
 
 function GroupReplyRuntimeCard({
+  baseUrl,
+  conversationId,
   runtime,
   visibleMessages,
 }: {
+  baseUrl: string;
+  conversationId: string;
   runtime: ReplyLogicGroupReplyRuntimeSummary;
   visibleMessages: ReplyLogicHistoryItem[];
 }) {
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState<"all" | ReplyLogicGroupReplyTaskStatus>("all");
+  const [actorFilter, setActorFilter] = useState("all");
+  const [cleanupDays, setCleanupDays] = useState("14");
   const visibleMessageMap = new Map(visibleMessages.map((item) => [item.id, item]));
+  const actorOptions = useMemo(() => {
+    const actorMap = new Map<string, string>();
+    for (const turn of runtime.recentTurns) {
+      for (const task of turn.tasks) {
+        actorMap.set(task.actorCharacterId, task.actorName);
+      }
+      for (const candidate of turn.candidates) {
+        actorMap.set(candidate.characterId, candidate.characterName);
+      }
+    }
+
+    return [...actorMap.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
+  }, [runtime.recentTurns]);
+
+  const retryMutation = useMutation({
+    mutationFn: async (taskId: string) => adminApi.retryReplyLogicGroupReplyTask(taskId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+      ]);
+    },
+  });
+
+  const cleanupMutation = useMutation({
+    mutationFn: async () =>
+      adminApi.cleanupReplyLogicGroupReplyTasks({
+        groupId: conversationId,
+        olderThanDays: Number(cleanupDays) || 14,
+        statuses: ["sent", "cancelled", "failed"],
+      }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-conversation", baseUrl, conversationId] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-reply-logic-overview", baseUrl] }),
+      ]);
+    },
+  });
+
+  const filteredTurns = useMemo(() => {
+    return runtime.recentTurns
+      .map((turn) => {
+        const filteredTasks = turn.tasks.filter((task) => {
+          if (statusFilter !== "all" && task.status !== statusFilter) {
+            return false;
+          }
+          if (actorFilter !== "all" && task.actorCharacterId !== actorFilter) {
+            return false;
+          }
+          return true;
+        });
+        const filteredCandidates = turn.candidates.filter((candidate) => {
+          if (actorFilter !== "all" && candidate.characterId !== actorFilter) {
+            return false;
+          }
+          return true;
+        });
+        const matchesStatus = statusFilter === "all" ? true : filteredTasks.length > 0;
+        const matchesActor =
+          actorFilter === "all" ? true : filteredTasks.length > 0 || filteredCandidates.length > 0;
+        if (!matchesStatus || !matchesActor) {
+          return null;
+        }
+
+        return {
+          ...turn,
+          tasks: filteredTasks,
+          candidates: filteredCandidates,
+        };
+      })
+      .filter((turn): turn is ReplyLogicGroupReplyTurnSummary => Boolean(turn));
+  }, [actorFilter, runtime.recentTurns, statusFilter]);
 
   return (
     <Card className="bg-[color:var(--surface-console)]">
-      <SectionHeading>群聊回复任务</SectionHeading>
+      <AdminSectionHeader
+        title="群聊回复任务"
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <SelectFieldBlock
+              label="状态筛选"
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value as "all" | ReplyLogicGroupReplyTaskStatus)}
+              options={[
+                { value: "all", label: "全部状态" },
+                { value: "pending", label: "待执行" },
+                { value: "processing", label: "处理中" },
+                { value: "failed", label: "失败" },
+                { value: "cancelled", label: "已取消" },
+                { value: "sent", label: "已发送" },
+              ]}
+            />
+            <SelectFieldBlock
+              label="角色筛选"
+              value={actorFilter}
+              onChange={setActorFilter}
+              options={[
+                { value: "all", label: "全部角色" },
+                ...actorOptions.map((actor) => ({
+                  value: actor.id,
+                  label: actor.name,
+                })),
+              ]}
+            />
+            <SelectFieldBlock
+              label="清理保留期"
+              value={cleanupDays}
+              onChange={setCleanupDays}
+              options={[
+                { value: "3", label: "保留 3 天" },
+                { value: "7", label: "保留 7 天" },
+                { value: "14", label: "保留 14 天" },
+                { value: "30", label: "保留 30 天" },
+              ]}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => cleanupMutation.mutate()}
+              disabled={cleanupMutation.isPending}
+              className="self-end"
+            >
+              {cleanupMutation.isPending ? "清理中..." : "清理终态任务"}
+            </Button>
+          </div>
+        }
+      />
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="待执行" value={runtime.pendingTaskCount} />
         <MetricCard label="处理中" value={runtime.processingTaskCount} />
         <MetricCard label="失败" value={runtime.failedTaskCount} />
-        <MetricCard label="最近轮次" value={runtime.recentTurns.length} />
+        <MetricCard label="匹配轮次" value={filteredTurns.length} />
       </div>
 
       <AdminNoteList
         className="mt-4"
         items={runtime.notes.map((note) => formatReplyLogicText(note))}
       />
+      {cleanupMutation.isError && cleanupMutation.error instanceof Error ? (
+        <ErrorBlock message={cleanupMutation.error.message} />
+      ) : null}
+      {retryMutation.isError && retryMutation.error instanceof Error ? (
+        <ErrorBlock message={retryMutation.error.message} />
+      ) : null}
+      {cleanupMutation.isSuccess ? (
+        <AdminActionFeedback
+          tone="success"
+          title="终态任务已清理"
+          description={cleanupMutation.data.note}
+        />
+      ) : null}
+      {retryMutation.isSuccess ? (
+        <AdminActionFeedback
+          tone="success"
+          title="失败任务已重新入队"
+          description={retryMutation.data.note}
+        />
+      ) : null}
 
-      {!runtime.recentTurns.length ? (
+      {!filteredTurns.length ? (
         <AdminEmptyState
           className="mt-4"
-          title="暂时没有群聊回复任务"
-          description="先让群聊实际跑几轮，再回来查看 planner 决策和任务状态。"
+          title="当前筛选下没有匹配任务"
+          description="可以放宽状态或角色筛选，或者先让群聊实际跑几轮。"
         />
       ) : (
         <div className="mt-4 space-y-4">
-          {runtime.recentTurns.map((turn) => {
+          {filteredTurns.map((turn) => {
             const triggerMessage = visibleMessageMap.get(turn.triggerMessageId);
             return (
               <AdminSubpanel
@@ -1803,6 +1961,20 @@ function GroupReplyRuntimeCard({
                                 <div>取消原因：{formatGroupReplyCancelReason(task.cancelReason)}</div>
                               ) : null}
                             </div>
+                          }
+                          actions={
+                            task.status === "failed" ? (
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => retryMutation.mutate(task.id)}
+                                disabled={retryMutation.isPending}
+                              >
+                                {retryMutation.isPending && retryMutation.variables === task.id
+                                  ? "重试中..."
+                                  : "重新入队"}
+                              </Button>
+                            ) : null
                           }
                           className="bg-white/90"
                         />
