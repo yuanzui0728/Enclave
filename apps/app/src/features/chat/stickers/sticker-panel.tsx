@@ -50,6 +50,12 @@ type StickerPanelTab = {
   coverSticker?: StickerAttachment | null;
 };
 type CustomStickerSortMode = "recent" | "added";
+type CustomDeleteFeedback = {
+  deletedCount: number;
+  remainingCount: number;
+  slotsRemaining: number;
+  lastDeletedLabel: string | null;
+};
 
 export function StickerPanel({
   baseUrl,
@@ -68,6 +74,8 @@ export function StickerPanel({
   const [customManageMode, setCustomManageMode] = useState(false);
   const [customSortMode, setCustomSortMode] =
     useState<CustomStickerSortMode>("recent");
+  const [customDeleteFeedback, setCustomDeleteFeedback] =
+    useState<CustomDeleteFeedback | null>(null);
   const [highlightedStickerKey, setHighlightedStickerKey] = useState<
     string | null
   >(null);
@@ -164,11 +172,26 @@ export function StickerPanel({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (stickerId: string) => {
-      await deleteCustomSticker(stickerId, baseUrl);
-      return stickerId;
+    mutationFn: async (input: {
+      stickerId: string;
+      label?: string;
+    }) => {
+      await deleteCustomSticker(input.stickerId, baseUrl);
+      return input;
     },
-    onSuccess: async (stickerId) => {
+    onSuccess: async ({ stickerId, label }) => {
+      setCustomDeleteFeedback((current) => ({
+        deletedCount: (current?.deletedCount ?? 0) + 1,
+        remainingCount: Math.max(
+          0,
+          (current?.remainingCount ?? catalog.customStickerCount) - 1,
+        ),
+        slotsRemaining: Math.min(
+          catalog.maxCustomStickerCount,
+          (current?.slotsRemaining ?? customSlotsRemaining) + 1,
+        ),
+        lastDeletedLabel: label?.trim() || null,
+      }));
       onRecentItemsChange?.(
         removeRecentSticker({
           sourceType: "custom",
@@ -401,6 +424,12 @@ export function StickerPanel({
   }, [activeSectionId, trimmedKeyword.length]);
 
   useEffect(() => {
+    if (activeSectionId !== "custom" || !customManageMode) {
+      setCustomDeleteFeedback(null);
+    }
+  }, [activeSectionId, customManageMode]);
+
+  useEffect(() => {
     if (!trimmedKeyword) {
       setSearchKeyword("");
       return;
@@ -593,12 +622,15 @@ export function StickerPanel({
           selectionDisabled={!isMobile && customManageMode && Boolean(canDelete)}
           deleting={
             deleteMutation.isPending &&
-            deleteMutation.variables === sticker.stickerId
+            deleteMutation.variables?.stickerId === sticker.stickerId
           }
           onDelete={
             canDelete
               ? () => {
-                  void deleteMutation.mutateAsync(sticker.stickerId);
+                  void deleteMutation.mutateAsync({
+                    stickerId: sticker.stickerId,
+                    label: sticker.label,
+                  });
                 }
               : undefined
           }
@@ -879,10 +911,21 @@ export function StickerPanel({
           ) : null}
           {showCustomManageHint ? (
             <div className="mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/82 px-3 py-2.5 text-xs text-[color:var(--text-secondary)]">
-              <span>管理中：点击表情右上角删除，按 Esc 可直接完成。</span>
-              <span className="shrink-0 rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
-                已保存 {catalog.customStickerCount}
+              <span>
+                {customDeleteFeedback
+                  ? `已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`
+                  : "管理中：点击表情右上角删除，按 Esc 可直接完成。"}
               </span>
+              <div className="flex shrink-0 items-center gap-2">
+                {customDeleteFeedback?.lastDeletedLabel ? (
+                  <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a]">
+                    最近删除：{customDeleteFeedback.lastDeletedLabel}
+                  </span>
+                ) : null}
+                <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
+                  剩余 {customDeleteFeedback?.remainingCount ?? catalog.customStickerCount}
+                </span>
+              </div>
             </div>
           ) : null}
           {showCustomSortBar ? (
