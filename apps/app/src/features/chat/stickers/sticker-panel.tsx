@@ -75,6 +75,9 @@ export function StickerPanel({
     useState<CustomDeleteFeedback | null>(null);
   const [customDeleteFeedbackFlashActive, setCustomDeleteFeedbackFlashActive] =
     useState(false);
+  const [searchPreviewFlashKey, setSearchPreviewFlashKey] = useState<
+    string | null
+  >(null);
   const [manageFocusFlashKey, setManageFocusFlashKey] = useState<string | null>(
     null,
   );
@@ -98,6 +101,7 @@ export function StickerPanel({
   const stickerItemRefs = useRef(new Map<string, HTMLDivElement>());
   const manageDeleteButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const deleteFeedbackFlashTimerRef = useRef<number | null>(null);
+  const searchPreviewFlashTimerRef = useRef<number | null>(null);
   const manageFocusFlashTimerRef = useRef<number | null>(null);
   const deleteTransitionTimerRefs = useRef(new Map<string, number>());
   const collapsingStickerKeysRef = useRef(new Set<string>());
@@ -153,6 +157,24 @@ export function StickerPanel({
       setCustomDeleteFeedbackFlashActive(false);
       deleteFeedbackFlashTimerRef.current = null;
     }, 720);
+  };
+
+  const triggerSearchPreviewFlash = (stickerKey: string | null) => {
+    if (!stickerKey) {
+      return;
+    }
+
+    if (searchPreviewFlashTimerRef.current !== null) {
+      window.clearTimeout(searchPreviewFlashTimerRef.current);
+    }
+
+    setSearchPreviewFlashKey(stickerKey);
+    searchPreviewFlashTimerRef.current = window.setTimeout(() => {
+      setSearchPreviewFlashKey((current) =>
+        current === stickerKey ? null : current,
+      );
+      searchPreviewFlashTimerRef.current = null;
+    }, 520);
   };
 
   const clearDeleteTransitionTimer = (stickerKey: string) => {
@@ -436,6 +458,9 @@ export function StickerPanel({
 
     return null;
   }, [highlightedSearchItem, searchSections]);
+  const highlightedSearchStickerKey = highlightedSearchItem
+    ? getStickerIdentity(highlightedSearchItem.sticker)
+    : null;
 
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
@@ -584,6 +609,9 @@ export function StickerPanel({
       if (deleteFeedbackFlashTimerRef.current !== null) {
         window.clearTimeout(deleteFeedbackFlashTimerRef.current);
       }
+      if (searchPreviewFlashTimerRef.current !== null) {
+        window.clearTimeout(searchPreviewFlashTimerRef.current);
+      }
       if (manageFocusFlashTimerRef.current !== null) {
         window.clearTimeout(manageFocusFlashTimerRef.current);
       }
@@ -650,6 +678,20 @@ export function StickerPanel({
       inline: "nearest",
     });
   }, [highlightedStickerKey, isMobile, searchPending, searching]);
+
+  useEffect(() => {
+    if (
+      isMobile ||
+      !searching ||
+      searchPending ||
+      !highlightedSearchStickerKey
+    ) {
+      setSearchPreviewFlashKey(null);
+      return;
+    }
+
+    triggerSearchPreviewFlash(highlightedSearchStickerKey);
+  }, [highlightedSearchStickerKey, isMobile, searchPending, searching]);
 
   useEffect(() => {
     if (!pendingManageFocusKey || isMobile || !customManageMode || searching) {
@@ -922,6 +964,9 @@ export function StickerPanel({
               focusedManageDeleteKey === stickerKey
             }
             deleteFocusFlashing={manageFocusFlashKey === stickerKey}
+            previewFlashing={
+              !isMobile && searching && searchPreviewFlashKey === stickerKey
+            }
             deleteButtonRef={(node) => {
               if (node) {
                 manageDeleteButtonRefs.current.set(stickerKey, node);
@@ -1139,7 +1184,13 @@ export function StickerPanel({
           {showSearchKeyboardHint ? (
             <div className="px-1 pt-2">
               {highlightedSearchItem ? (
-                <div className="mb-2 flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px]">
+                <div
+                  className={`mb-2 flex items-center justify-between gap-3 rounded-[14px] border px-3 py-2 text-[11px] transition ${
+                    searchPreviewFlashKey === highlightedSearchStickerKey
+                      ? "border-[rgba(160,90,10,0.26)] bg-[rgba(255,248,220,0.98)] shadow-[0_8px_18px_rgba(160,90,10,0.12)]"
+                      : "border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)]"
+                  }`}
+                >
                   <div className="min-w-0">
                     <div className="font-medium text-[#9a5a0a]">
                       回车发送：
@@ -1592,6 +1643,7 @@ function StickerButton({
   deleting = false,
   deleteFocused = false,
   deleteFocusFlashing = false,
+  previewFlashing = false,
   showDelete = false,
   deleteAlwaysVisible = false,
   selectionDisabled = false,
@@ -1610,6 +1662,7 @@ function StickerButton({
   deleting?: boolean;
   deleteFocused?: boolean;
   deleteFocusFlashing?: boolean;
+  previewFlashing?: boolean;
   showDelete?: boolean;
   deleteAlwaysVisible?: boolean;
   selectionDisabled?: boolean;
@@ -1646,6 +1699,10 @@ function StickerButton({
             } ${
               deleteFocusFlashing
                 ? "scale-[1.02] shadow-[0_14px_30px_rgba(160,90,10,0.2)]"
+                : ""
+            } ${
+              previewFlashing
+                ? "scale-[1.03] shadow-[0_16px_34px_rgba(160,90,10,0.22)]"
                 : ""
             }`
       }
