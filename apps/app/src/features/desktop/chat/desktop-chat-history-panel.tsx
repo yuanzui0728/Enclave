@@ -273,27 +273,21 @@ export function DesktopChatHistoryPanel({
     <div className="flex h-full min-h-0 flex-col bg-[#f7f7f7]">
       <div className="border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
         {showHeaderActionsRow ? (
-          <div className="flex items-center justify-between gap-3">
-            <div aria-hidden="true" className="h-4 w-16" />
-
-            {activeFilterLabels.length ? (
-              <button
-                type="button"
-                onClick={clearAllFilters}
-                className="text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
-              >
-                清空
-              </button>
-            ) : (
-              <div aria-hidden="true" className="h-4 w-10" />
-            )}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="inline-flex h-6 items-center rounded-full bg-[#f6f6f6] px-2.5 text-[11px] text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+            >
+              清空
+            </button>
           </div>
         ) : null}
 
         <label
           className={cn(
             "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[#f4f4f4] px-3 py-2.5 transition-[border-color,background-color] focus-within:border-[rgba(7,193,96,0.2)] focus-within:bg-white",
-            showHeaderActionsRow ? "mt-3" : "",
+            showHeaderActionsRow ? "mt-2" : "",
           )}
         >
           <Search
