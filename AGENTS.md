@@ -191,6 +191,11 @@
   - `POST /api/chat/digital-human-calls/sessions/:sessionId/turns`
 - 收藏路由：
   - `GET /api/favorites`
+  - `GET /api/favorites/notes`
+  - `GET /api/favorites/notes/:id`
+  - `POST /api/favorites/notes`
+  - `PATCH /api/favorites/notes/:id`
+  - `DELETE /api/favorites/notes/:id`
   - `POST /api/favorites/messages`
   - `DELETE /api/favorites/:sourceId`
 - 消息提醒路由：
