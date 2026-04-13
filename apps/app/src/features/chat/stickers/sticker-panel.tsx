@@ -258,6 +258,44 @@ export function StickerPanel({
     () => activeItems.map((item) => getStickerIdentity(item.sticker)),
     [activeItems],
   );
+  const highlightedSearchItem = useMemo(() => {
+    if (!searching || searchPending || activeItems.length === 0) {
+      return null;
+    }
+
+    if (!highlightedStickerKey) {
+      return activeItems[0] ?? null;
+    }
+
+    return (
+      activeItems.find(
+        (item) => getStickerIdentity(item.sticker) === highlightedStickerKey,
+      ) ?? activeItems[0] ?? null
+    );
+  }, [
+    activeItems,
+    highlightedStickerKey,
+    searchPending,
+    searching,
+  ]);
+  const highlightedSearchSourceLabel = useMemo(() => {
+    if (!highlightedSearchItem) {
+      return null;
+    }
+
+    const stickerKey = getStickerIdentity(highlightedSearchItem.sticker);
+    for (const section of searchSections) {
+      if (
+        section.items.some(
+          (item) => getStickerIdentity(item.sticker) === stickerKey,
+        )
+      ) {
+        return section.label;
+      }
+    }
+
+    return null;
+  }, [highlightedSearchItem, searchSections]);
 
   const tabs = useMemo<StickerPanelTab[]>(
     () => [
@@ -680,16 +718,33 @@ export function StickerPanel({
             ) : null}
           </label>
           {showSearchKeyboardHint ? (
-            <div className="px-1 pt-2 text-[11px] text-[color:var(--text-muted)]">
-              <span className="rounded-full bg-white/88 px-2 py-1">
-                ↑↓←→ 选择
-              </span>
-              <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                Enter 发送
-              </span>
-              <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                Esc 清空
-              </span>
+            <div className="px-1 pt-2">
+              {highlightedSearchItem ? (
+                <div className="mb-2 flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px]">
+                  <div className="min-w-0">
+                    <div className="font-medium text-[#9a5a0a]">
+                      回车发送：{highlightedSearchItem.sticker.label ?? highlightedSearchItem.sticker.stickerId}
+                    </div>
+                    <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
+                      来源：{highlightedSearchSourceLabel ?? "搜索结果"}
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                    Enter
+                  </span>
+                </div>
+              ) : null}
+              <div className="text-[11px] text-[color:var(--text-muted)]">
+                <span className="rounded-full bg-white/88 px-2 py-1">
+                  ↑↓←→ 选择
+                </span>
+                <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                  Enter 发送
+                </span>
+                <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                  Esc 清空
+                </span>
+              </div>
             </div>
           ) : null}
         </div>
