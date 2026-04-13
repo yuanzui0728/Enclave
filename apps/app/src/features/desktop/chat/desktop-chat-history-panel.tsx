@@ -214,6 +214,7 @@ export function DesktopChatHistoryPanel({
 
   const showSearchMainView = !hasSearchRequest && selectorView === null;
   const showResultsView = hasSearchRequest && selectorView === null;
+  const showHeaderActionsRow = Boolean(onBackToDetails) || activeFilterLabels.length > 0;
   const resultSummary = buildResultSummary({
     keyword: debouncedKeyword,
     activeCategory,
@@ -260,34 +261,41 @@ export function DesktopChatHistoryPanel({
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#f7f7f7]">
       <div className="border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          {onBackToDetails ? (
-            <button
-              type="button"
-              onClick={onBackToDetails}
-              className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
-            >
-              <ChevronLeft size={14} />
-              返回聊天信息
-            </button>
-          ) : (
-            <div className="text-[12px] text-[color:var(--text-muted)]">
-              当前会话
-            </div>
+        {showHeaderActionsRow ? (
+          <div className="flex items-center justify-between gap-3">
+            {onBackToDetails ? (
+              <button
+                type="button"
+                onClick={onBackToDetails}
+                className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+              >
+                <ChevronLeft size={14} />
+                返回聊天信息
+              </button>
+            ) : (
+              <div aria-hidden="true" className="h-4 w-16" />
+            )}
+
+            {activeFilterLabels.length ? (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+              >
+                清空
+              </button>
+            ) : (
+              <div aria-hidden="true" className="h-4 w-10" />
+            )}
+          </div>
+        ) : null}
+
+        <label
+          className={cn(
+            "flex items-center gap-2 rounded-[10px] bg-[#f0f0f0] px-3 py-2.5",
+            showHeaderActionsRow ? "mt-3" : "",
           )}
-
-          {activeFilterLabels.length ? (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
-            >
-              清空
-            </button>
-          ) : null}
-        </div>
-
-        <label className="mt-3 flex items-center gap-2 rounded-[10px] bg-[#f0f0f0] px-3 py-2.5">
+        >
           <Search
             size={15}
             className="shrink-0 text-[color:var(--text-muted)]"

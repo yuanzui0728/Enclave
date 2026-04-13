@@ -20,36 +20,75 @@ export function DesktopChatSidePanel({
   children,
   className,
 }: DesktopChatSidePanelProps) {
+  const historyMode = mode === "history";
+
   return (
     <aside
       className={cn(
-        "absolute bottom-0 right-0 top-[64px] z-20 hidden w-[340px] border-l border-[rgba(0,0,0,0.06)] bg-[#f5f5f5] xl:flex xl:flex-col",
+        "absolute bottom-0 right-0 top-[64px] z-20 hidden border-l border-[rgba(0,0,0,0.06)] xl:flex xl:flex-col",
+        historyMode
+          ? "w-[352px] bg-[#f7f7f7]"
+          : "w-[340px] bg-[#f5f5f5]",
         className,
       )}
       data-mode={mode}
     >
-      <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#f5f5f5] px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
-              {title}
+      <div
+        className={cn(
+          "border-b border-[rgba(0,0,0,0.06)]",
+          historyMode ? "bg-white px-4 pb-2 pt-3" : "bg-[#f5f5f5] px-4 py-3",
+        )}
+      >
+        {historyMode ? (
+          <>
+            <div className="grid grid-cols-[28px,1fr,28px] items-center gap-2">
+              <div aria-hidden="true" className="h-7 w-7" />
+              <div className="truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]">
+                {title}
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
+                aria-label="关闭侧栏"
+              >
+                <X size={15} />
+              </button>
             </div>
-            <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-              {subtitle ?? (mode === "history" ? "聊天记录" : "聊天信息")}
+            <div className="mt-1 truncate px-8 text-center text-[12px] text-[color:var(--text-muted)]">
+              {subtitle ?? "聊天记录"}
             </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                {title}
+              </div>
+              <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+                {subtitle ?? "聊天信息"}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
+              aria-label="关闭侧栏"
+            >
+              <X size={15} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-transparent text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"
-            aria-label="关闭侧栏"
-          >
-            <X size={15} />
-          </button>
-        </div>
+        )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">{children}</div>
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-auto",
+          historyMode ? "bg-[#f7f7f7]" : "bg-[#f5f5f5]",
+        )}
+      >
+        {children}
+      </div>
     </aside>
   );
 }
