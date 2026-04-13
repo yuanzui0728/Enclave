@@ -17,6 +17,7 @@ import {
   getBlockedCharacters,
   getCharacter,
   getConversations,
+  getFriendRequests,
   getFriends,
   getGroup,
   getGroupMembers,
@@ -24,7 +25,6 @@ import {
   hideGroup,
   leaveGroup,
   removeGroupMember,
-  sendFriendRequest,
   setConversationMuted,
   setConversationPinned,
   setGroupPinned,
@@ -44,6 +44,7 @@ import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
 import { DesktopGroupMemberRemovalPicker } from "./desktop-group-member-removal-picker";
 import { getChatBackgroundLabel } from "../../chat/backgrounds/chat-background-helpers";
+import { buildDesktopAddFriendRouteHash } from "../contacts/desktop-add-friend-route-state";
 import {
   useConversationBackground,
   useGroupBackground,
@@ -52,7 +53,6 @@ import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import { buildCreateGroupRouteHash } from "../../../lib/create-group-route-state";
 import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
-import { useWorldOwnerStore } from "../../../store/world-owner-store";
 
 type DesktopChatDetailsPanelProps = {
   conversation: ConversationListItem;
@@ -128,7 +128,6 @@ function DirectChatDetailsPanel({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const ownerName = useWorldOwnerStore((state) => state.username) ?? "我";
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] =
     useState<DirectDetailsConfirmAction | null>(null);
@@ -159,6 +158,11 @@ function DirectChatDetailsPanel({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
   });
+  const friendRequestsQuery = useQuery({
+    queryKey: ["app-friend-requests", baseUrl],
+    queryFn: () => getFriendRequests(baseUrl),
+    enabled: Boolean(targetCharacterId),
+  });
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -177,6 +181,9 @@ function DirectChatDetailsPanel({
       (item) => item.character.id === targetCharacterId,
     )?.friendship ?? null;
   const isFriend = Boolean(friendship);
+  const hasPendingFriendRequest = (friendRequestsQuery.data ?? []).some(
+    (item) => item.characterId === targetCharacterId && item.status === "pending",
+  );
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === targetCharacterId,
   );
@@ -221,28 +228,6 @@ function DirectChatDetailsPanel({
       setNotice(muted ? "已开启消息免打扰。" : "已关闭消息免打扰。");
       await queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
-      });
-    },
-  });
-
-  const saveToContactsMutation = useMutation({
-    mutationFn: async () => {
-      if (!targetCharacterId) {
-        return;
-      }
-
-      return sendFriendRequest(
-        {
-          characterId: targetCharacterId,
-          greeting: `${ownerName} 想把你加到通讯录里。`,
-        },
-        baseUrl,
-      );
-    },
-    onSuccess: async () => {
-      setNotice("已发起添加到通讯录请求。");
-      await queryClient.invalidateQueries({
-        queryKey: ["app-friend-requests", baseUrl],
       });
     },
   });
@@ -323,11 +308,29 @@ function DirectChatDetailsPanel({
       void navigate({ to: "/tabs/chat" });
     },
   });
+  const handleAddToContacts = () => {
+    if (!targetCharacterId) {
+      return;
+    }
+
+    if (hasPendingFriendRequest) {
+      void navigate({ to: "/friend-requests" });
+      return;
+    }
+
+    void navigate({
+      to: "/desktop/add-friend",
+      hash: buildDesktopAddFriendRouteHash({
+        keyword: targetCharacter?.name ?? conversation.title ?? "",
+        characterId: targetCharacterId,
+        openCompose: true,
+      }),
+    });
+  };
 
   const busy =
     pinMutation.isPending ||
     muteMutation.isPending ||
-    saveToContactsMutation.isPending ||
     clearMutation.isPending ||
     hideMutation.isPending ||
     reportMutation.isPending ||
@@ -393,6 +396,10 @@ function DirectChatDetailsPanel({
       ) : null}
       {friendsQuery.isError && friendsQuery.error instanceof Error ? (
         <ErrorBlock message={friendsQuery.error.message} />
+      ) : null}
+      {friendRequestsQuery.isError &&
+      friendRequestsQuery.error instanceof Error ? (
+        <ErrorBlock message={friendRequestsQuery.error.message} />
       ) : null}
       {conversationsQuery.isError &&
       conversationsQuery.error instanceof Error ? (
@@ -485,9 +492,9 @@ function DirectChatDetailsPanel({
         {!isFriend ? (
           <DesktopPanelRow
             label="添加到通讯录"
-            value="发送好友申请"
+            value={hasPendingFriendRequest ? "待处理" : "添加"}
             disabled={busy || !targetCharacterId}
-            onClick={() => saveToContactsMutation.mutate()}
+            onClick={handleAddToContacts}
           />
         ) : null}
         <DesktopPanelRow
@@ -629,10 +636,6 @@ function DirectChatDetailsPanel({
       ) : null}
       {muteMutation.isError && muteMutation.error instanceof Error ? (
         <ErrorBlock message={muteMutation.error.message} />
-      ) : null}
-      {saveToContactsMutation.isError &&
-      saveToContactsMutation.error instanceof Error ? (
-        <ErrorBlock message={saveToContactsMutation.error.message} />
       ) : null}
       {hideMutation.isError && hideMutation.error instanceof Error ? (
         <ErrorBlock message={hideMutation.error.message} />
