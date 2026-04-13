@@ -173,6 +173,11 @@ export class AdminController {
     return this.replyLogicAdminService.retryGroupReplyTask(taskId);
   }
 
+  @Post('reply-logic/group-reply-turns/:turnId/retry')
+  retryReplyLogicGroupReplyTurn(@Param('turnId') turnId: string) {
+    return this.replyLogicAdminService.retryGroupReplyTurn(turnId);
+  }
+
   @Post('reply-logic/conversations/:id/preview')
   previewReplyLogicConversation(
     @Param('id') id: string,

@@ -29,12 +29,14 @@ import type {
   ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
   ReplyLogicGroupReplyCandidateSummary,
+  ReplyLogicGroupReplyIssueSummary,
   ReplyLogicGroupReplyRuntimeSummary,
   ReplyLogicGroupReplySelectionDisposition,
   ReplyLogicGroupReplyTaskCleanupResult,
   ReplyLogicGroupReplyTaskRetryResult,
   ReplyLogicGroupReplyTaskSummary,
   ReplyLogicGroupReplyTaskStatus,
+  ReplyLogicGroupReplyTurnRetryResult,
   ReplyLogicGroupReplyTurnSummary,
   ReplyLogicHistoryItem,
   ReplyLogicNarrativeArcSummary,
@@ -504,6 +506,19 @@ export class ReplyLogicAdminService {
       status: task.status as ReplyLogicGroupReplyTaskStatus,
       executeAfter: task.executeAfter.toISOString(),
       note: '任务已重新入队，会在下一轮扫描时尽快执行。',
+    };
+  }
+
+  async retryGroupReplyTurn(
+    turnId: string,
+  ): Promise<ReplyLogicGroupReplyTurnRetryResult> {
+    const result = await this.groupReplyTaskService.retryTurn(turnId);
+    return {
+      ...result,
+      note:
+        result.retriedTaskCount > 0
+          ? '本轮可重试任务已重新入队。'
+          : '当前轮次没有可重新入队的任务。',
     };
   }
 
@@ -1083,11 +1098,13 @@ export class ReplyLogicAdminService {
     const recentTurns = [...tasksByTurn.values()]
       .slice(0, 8)
       .map((tasks) => this.toGroupReplyTurnSummary(tasks));
+    const issueSummary = this.buildGroupReplyIssueSummary(taskEntities);
 
     return {
       pendingTaskCount,
       processingTaskCount,
       failedTaskCount,
+      issueSummary,
       recentTurns,
       notes: [
         '同群新用户消息进入后，尚未发出的旧轮任务会被取消。',
@@ -1231,6 +1248,66 @@ export class ReplyLogicAdminService {
     } catch {
       return [];
     }
+  }
+
+  private buildGroupReplyIssueSummary(
+    tasks: GroupReplyTaskEntity[],
+  ): ReplyLogicGroupReplyIssueSummary[] {
+    const issueCounts = new Map<string, ReplyLogicGroupReplyIssueSummary>();
+
+    for (const task of tasks) {
+      if (task.status === 'cancelled' && task.cancelReason) {
+        const key = `cancel:${task.cancelReason}`;
+        const existing = issueCounts.get(key);
+        issueCounts.set(key, {
+          key,
+          label: this.formatGroupReplyIssueLabel('cancel_reason', task.cancelReason),
+          source: 'cancel_reason',
+          status: 'cancelled',
+          count: (existing?.count ?? 0) + 1,
+        });
+      }
+
+      if (task.status === 'failed' && task.errorMessage) {
+        const normalizedError = this.normalizeGroupReplyErrorMessage(
+          task.errorMessage,
+        );
+        const key = `error:${normalizedError}`;
+        const existing = issueCounts.get(key);
+        issueCounts.set(key, {
+          key,
+          label: this.formatGroupReplyIssueLabel('error_message', normalizedError),
+          source: 'error_message',
+          status: 'failed',
+          count: (existing?.count ?? 0) + 1,
+        });
+      }
+    }
+
+    return [...issueCounts.values()]
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 8);
+  }
+
+  private normalizeGroupReplyErrorMessage(message: string) {
+    return message.trim().slice(0, 80) || 'unknown_error';
+  }
+
+  private formatGroupReplyIssueLabel(
+    source: ReplyLogicGroupReplyIssueSummary['source'],
+    value: string,
+  ) {
+    if (source === 'cancel_reason') {
+      if (value === 'superseded_by_new_user_message') {
+        return '新用户消息覆盖了旧轮任务';
+      }
+      if (value === 'actor_missing') {
+        return '角色缺失或画像不可用';
+      }
+      return value;
+    }
+
+    return value;
   }
 
   private async loadNarrativeArcs(ownerId: string, characterIds: string[]) {

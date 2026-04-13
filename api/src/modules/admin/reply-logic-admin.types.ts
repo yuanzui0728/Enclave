@@ -530,6 +530,7 @@ export interface ReplyLogicGroupReplyRuntimeSummary {
   pendingTaskCount: number;
   processingTaskCount: number;
   failedTaskCount: number;
+  issueSummary: ReplyLogicGroupReplyIssueSummary[];
   recentTurns: ReplyLogicGroupReplyTurnSummary[];
   notes: string[];
 }
@@ -542,12 +543,30 @@ export interface ReplyLogicGroupReplyTaskRetryResult {
   note: string;
 }
 
+export interface ReplyLogicGroupReplyTurnRetryResult {
+  turnId: string;
+  groupId: string;
+  retriedTaskCount: number;
+  skippedTaskCount: number;
+  retriedTaskIds: string[];
+  skippedTaskIds: string[];
+  note: string;
+}
+
 export interface ReplyLogicGroupReplyTaskCleanupResult {
   deletedCount: number;
   cutoff: string;
   statuses: ReplyLogicGroupReplyTaskStatus[];
   groupId?: string | null;
   note: string;
+}
+
+export interface ReplyLogicGroupReplyIssueSummary {
+  key: string;
+  label: string;
+  source: 'cancel_reason' | 'error_message';
+  status: 'cancelled' | 'failed';
+  count: number;
 }
 
 export interface ReplyLogicPreviewResult {

@@ -187,6 +187,57 @@ export class GroupReplyTaskService {
     return task;
   }
 
+  async retryTurn(turnId: string) {
+    const tasks = await this.taskRepo.find({
+      where: { turnId },
+      order: { sequenceIndex: 'ASC', createdAt: 'ASC' },
+    });
+    if (!tasks.length) {
+      throw new NotFoundException(`Group reply turn ${turnId} not found`);
+    }
+
+    const [primaryTask] = tasks;
+    if (await this.hasNewerUserMessage(primaryTask)) {
+      throw new BadRequestException(
+        'Turn is stale because a newer user message already arrived',
+      );
+    }
+
+    const retryableTasks = tasks.filter(
+      (task) => task.status === 'failed' || task.status === 'cancelled',
+    );
+    if (!retryableTasks.length) {
+      throw new BadRequestException('Turn has no retryable tasks');
+    }
+
+    const now = new Date();
+    const skippedTaskIds = tasks
+      .filter((task) => !retryableTasks.some((candidate) => candidate.id === task.id))
+      .map((task) => task.id);
+    const retriedTaskIds: string[] = [];
+
+    for (const [index, task] of retryableTasks.entries()) {
+      task.status = 'pending';
+      task.executeAfter = new Date(now.getTime() + index * 1000);
+      task.lastAttemptAt = null;
+      task.sentAt = null;
+      task.cancelledAt = null;
+      task.cancelReason = null;
+      task.errorMessage = null;
+      retriedTaskIds.push(task.id);
+    }
+
+    await this.taskRepo.save(retryableTasks);
+    return {
+      turnId,
+      groupId: primaryTask.groupId,
+      retriedTaskCount: retriedTaskIds.length,
+      skippedTaskCount: skippedTaskIds.length,
+      retriedTaskIds,
+      skippedTaskIds,
+    };
+  }
+
   async cleanupTasks(input?: {
     olderThanDays?: number;
     groupId?: string;
