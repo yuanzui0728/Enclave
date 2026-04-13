@@ -81,7 +81,7 @@ export function DesktopAddFriendSendDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
       <button
         type="button"
         aria-label="关闭发送好友申请弹层"
@@ -93,32 +93,27 @@ export function DesktopAddFriendSendDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[560px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]">
-        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.84)] px-6 py-5 backdrop-blur-xl">
-          <div className="min-w-0">
-            <div className="text-[20px] font-medium text-[color:var(--text-primary)]">
-              发送添加申请
-            </div>
-            <div className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]">
-              发送验证信息后，对方通过即可成为你的朋友。
-            </div>
+      <div className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--shadow-overlay)]">
+        <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-4">
+          <div className="text-center text-[17px] font-medium text-[color:var(--text-primary)]">
+            发送添加朋友申请
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="absolute right-4 top-3.5 flex h-8 w-8 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label="关闭"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="space-y-5 px-6 py-6">
-          <div className="flex items-center gap-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] px-4 py-4">
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-3 rounded-[8px] bg-[#f7f7f7] px-4 py-3">
             <AvatarChip name={character.name} src={character.avatar} size="wechat" />
             <div className="min-w-0">
-              <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
                 {character.name}
               </div>
               <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
@@ -127,7 +122,11 @@ export function DesktopAddFriendSendDialog({
             </div>
           </div>
 
-          <div>
+          <div className="mt-4 text-[13px] leading-6 text-[color:var(--text-muted)]">
+            你需要发送验证申请，等待对方通过。
+          </div>
+
+          <div className="mt-4">
             <div className="mb-2 text-[13px] font-medium text-[color:var(--text-primary)]">
               验证信息
             </div>
@@ -138,7 +137,7 @@ export function DesktopAddFriendSendDialog({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder="请输入验证信息"
               rows={4}
-              className="min-h-[132px] w-full resize-none rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] px-4 py-3.5 text-[14px] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,background-color] placeholder:text-[color:var(--text-dim)] hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white"
+              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.42)] focus:shadow-[0_0_0_3px_rgba(7,193,96,0.10)]"
             />
             <div className="mt-2 flex items-center justify-between text-[11px] text-[color:var(--text-dim)]">
               <span>支持按 `Ctrl/Cmd + Enter` 直接发送</span>
@@ -147,13 +146,13 @@ export function DesktopAddFriendSendDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.84)] px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-center justify-end gap-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-3.5">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[rgba(15,23,42,0.10)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             取消
           </Button>
@@ -162,7 +161,7 @@ export function DesktopAddFriendSendDialog({
             variant="primary"
             disabled={pending || !greeting.trim()}
             onClick={() => void onSubmit(greeting.trim())}
-            className="rounded-[12px] bg-[#07c160] px-6 text-white shadow-none hover:bg-[#06ad56]"
+            className="rounded-[8px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
           >
             {pending ? "发送中..." : "发送"}
           </Button>
