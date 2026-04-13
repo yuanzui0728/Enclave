@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, PenSquare } from "lucide-react";
+import { ArrowLeft, Copy, PenSquare, Share2 } from "lucide-react";
 import {
   addMomentComment,
   createUserMoment,
@@ -31,6 +31,10 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -53,12 +57,15 @@ export function MomentsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const [text, setText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
   const [showCompose, setShowCompose] = useState(false);
-  const [successNotice, setSuccessNotice] = useState("");
+  const [notice, setNotice] = useState("");
+  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const routeSelectedMomentId = parseMomentsRouteHash(hash);
 
@@ -83,7 +90,8 @@ export function MomentsPage() {
     onSuccess: async () => {
       setText("");
       setShowCompose(false);
-      setSuccessNotice("朋友圈已发布，仅好友可见。");
+      setNoticeTone("success");
+      setNotice("朋友圈已发布，仅好友可见。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
       });
@@ -93,7 +101,8 @@ export function MomentsPage() {
   const likeMutation = useMutation({
     mutationFn: (momentId: string) => toggleMomentLike(momentId, baseUrl),
     onSuccess: async () => {
-      setSuccessNotice("朋友圈互动已更新。");
+      setNoticeTone("success");
+      setNotice("朋友圈互动已更新。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
       });
@@ -117,7 +126,8 @@ export function MomentsPage() {
     },
     onSuccess: async (_, momentId) => {
       setCommentDrafts((current) => ({ ...current, [momentId]: "" }));
-      setSuccessNotice("朋友圈互动已更新。");
+      setNoticeTone("success");
+      setNotice("朋友圈互动已更新。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
       });
@@ -143,7 +153,7 @@ export function MomentsPage() {
     setText("");
     setCommentDrafts({});
     setShowCompose(false);
-    setSuccessNotice("");
+    setNotice("");
   }, [baseUrl]);
 
   useEffect(() => {
@@ -194,13 +204,13 @@ export function MomentsPage() {
   }, [nativeDesktopFavorites]);
 
   useEffect(() => {
-    if (!successNotice) {
+    if (!notice) {
       return;
     }
 
-    const timer = window.setTimeout(() => setSuccessNotice(""), 2400);
+    const timer = window.setTimeout(() => setNotice(""), 2400);
     return () => window.clearTimeout(timer);
-  }, [successNotice]);
+  }, [notice]);
 
   function focusComposer() {
     if (typeof document === "undefined") {
@@ -217,6 +227,84 @@ export function MomentsPage() {
         textarea.focus();
       }
     });
+  }
+
+  useEffect(() => {
+    if (
+      isDesktopLayout ||
+      !routeSelectedMomentId ||
+      typeof document === "undefined"
+    ) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(`moment-post-${routeSelectedMomentId}`)
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    });
+  }, [isDesktopLayout, routeSelectedMomentId, visibleMoments.length]);
+
+  async function handleShareMoment(moment: (typeof visibleMoments)[number]) {
+    const shareHash = buildMomentsRouteHash(moment.id);
+    const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
+    const shareUrl =
+      typeof window === "undefined"
+        ? sharePath
+        : `${window.location.origin}${sharePath}`;
+    const summaryText = `${moment.authorName}：${moment.text}${
+      moment.location ? `\n位置：${moment.location}` : ""
+    }\n${shareUrl}`;
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${moment.authorName} 的朋友圈`,
+        text: `${moment.authorName}：${moment.text}${
+          moment.location ? `\n位置：${moment.location}` : ""
+        }`,
+        url: shareUrl,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setNotice("已打开系统分享面板。");
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制动态摘要。",
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setNoticeTone("success");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制动态摘要。"
+          : "动态摘要已复制。",
+      );
+    } catch {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制动态摘要失败，请稍后重试。",
+      );
+    }
   }
 
   if (isDesktopLayout) {
@@ -259,7 +347,7 @@ export function MomentsPage() {
         ownerUsername={ownerUsername}
         routeSelectedMomentId={routeSelectedMomentId}
         showCompose={showCompose}
-        successNotice={successNotice}
+        successNotice={notice}
         text={text}
         isMomentFavorite={(momentId) =>
           favoriteSourceIds.includes(`moment-${momentId}`)
@@ -398,8 +486,8 @@ export function MomentsPage() {
               这里只展示你和好友之间的朋友圈内容，互动也留在熟人范围里。
             </div>
           </div>
-          {successNotice ? (
-            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          {notice ? (
+            <InlineNotice tone={noticeTone}>{notice}</InlineNotice>
           ) : null}
           {momentsQuery.isLoading ? (
             <LoadingBlock label="正在读取朋友圈..." />
@@ -414,10 +502,27 @@ export function MomentsPage() {
 
             return (
               <SocialPostCard
+                cardId={`moment-post-${moment.id}`}
                 key={moment.id}
                 authorName={moment.authorName}
                 authorAvatar={moment.authorAvatar}
                 meta={formatTimestamp(moment.postedAt)}
+                headerActions={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
+                    onClick={() => void handleShareMoment(moment)}
+                    aria-label={nativeMobileShareSupported ? "分享这条朋友圈" : "复制这条动态摘要"}
+                  >
+                    {nativeMobileShareSupported ? (
+                      <Share2 size={16} />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </Button>
+                }
                 body={
                   <>
                     {moment.authorType === "user" ? (

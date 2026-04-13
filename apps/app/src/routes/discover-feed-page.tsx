@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, PenSquare } from "lucide-react";
+import { ArrowLeft, Copy, PenSquare, Share2 } from "lucide-react";
 import {
   addFeedComment,
   createFeedPost,
@@ -31,6 +31,10 @@ import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
+import {
+  isNativeMobileBridgeAvailable,
+  shareWithNativeShell,
+} from "../runtime/mobile-bridge";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
 
@@ -40,6 +44,9 @@ const FEED_COMPOSER_TEXTAREA_ID = "discover-feed-composer-input";
 export function DiscoverFeedPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({
     select: (state) => state.location.hash,
   });
@@ -50,12 +57,15 @@ export function DiscoverFeedPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
+  const nativeMobileShareSupported =
+    !isDesktopLayout && isNativeMobileBridgeAvailable();
   const [text, setText] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
   const [showCompose, setShowCompose] = useState(false);
-  const [successNotice, setSuccessNotice] = useState("");
+  const [notice, setNotice] = useState("");
+  const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>([]);
   const routeSelectedPostId = parseDesktopFeedRouteHash(hash);
 
@@ -80,7 +90,8 @@ export function DiscoverFeedPage() {
     onSuccess: async () => {
       setText("");
       setShowCompose(false);
-      setSuccessNotice("广场动态已发布，世界居民公开可见。");
+      setNoticeTone("success");
+      setNotice("广场动态已发布，世界居民公开可见。");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
@@ -91,7 +102,8 @@ export function DiscoverFeedPage() {
   const likeMutation = useMutation({
     mutationFn: (postId: string) => likeFeedPost(postId, baseUrl),
     onSuccess: async () => {
-      setSuccessNotice("广场互动已更新。");
+      setNoticeTone("success");
+      setNotice("广场互动已更新。");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
@@ -116,7 +128,8 @@ export function DiscoverFeedPage() {
     },
     onSuccess: async (_, postId) => {
       setCommentDrafts((current) => ({ ...current, [postId]: "" }));
-      setSuccessNotice("广场互动已更新。");
+      setNoticeTone("success");
+      setNotice("广场互动已更新。");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["app-feed-post", baseUrl] }),
@@ -143,7 +156,7 @@ export function DiscoverFeedPage() {
     setText("");
     setCommentDrafts({});
     setShowCompose(false);
-    setSuccessNotice("");
+    setNotice("");
   }, [baseUrl]);
 
   useEffect(() => {
@@ -194,13 +207,13 @@ export function DiscoverFeedPage() {
   }, [nativeDesktopFavorites]);
 
   useEffect(() => {
-    if (!successNotice) {
+    if (!notice) {
       return;
     }
 
-    const timer = window.setTimeout(() => setSuccessNotice(""), 2400);
+    const timer = window.setTimeout(() => setNotice(""), 2400);
     return () => window.clearTimeout(timer);
-  }, [successNotice]);
+  }, [notice]);
 
   function focusComposer() {
     if (typeof document === "undefined") {
@@ -217,6 +230,74 @@ export function DiscoverFeedPage() {
         textarea.focus();
       }
     });
+  }
+
+  useEffect(() => {
+    if (isDesktopLayout || !routeSelectedPostId || typeof document === "undefined") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(`feed-post-${routeSelectedPostId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [isDesktopLayout, routeSelectedPostId, visiblePosts.length]);
+
+  async function handleSharePost(post: (typeof visiblePosts)[number]) {
+    const shareHash = buildDesktopFeedRouteHash(post.id);
+    const sharePath = `${pathname}${shareHash ? `#${shareHash}` : ""}`;
+    const shareUrl =
+      typeof window === "undefined"
+        ? sharePath
+        : `${window.location.origin}${sharePath}`;
+    const summaryText = `${post.authorName}：${post.text}\n${shareUrl}`;
+
+    if (nativeMobileShareSupported) {
+      const shared = await shareWithNativeShell({
+        title: `${post.authorName} 的广场动态`,
+        text: `${post.authorName}：${post.text}`,
+        url: shareUrl,
+      });
+
+      if (shared) {
+        setNoticeTone("success");
+        setNotice("已打开系统分享面板。");
+        return;
+      }
+    }
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.writeText !== "function"
+    ) {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "当前设备暂时无法打开系统分享，请稍后重试。"
+          : "当前环境暂不支持复制动态摘要。",
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setNoticeTone("success");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享暂时不可用，已复制动态摘要。"
+          : "动态摘要已复制。",
+      );
+    } catch {
+      setNoticeTone("info");
+      setNotice(
+        nativeMobileShareSupported
+          ? "系统分享失败，请稍后重试。"
+          : "复制动态摘要失败，请稍后重试。",
+      );
+    }
   }
 
   if (isDesktopLayout) {
@@ -259,7 +340,7 @@ export function DiscoverFeedPage() {
         posts={visiblePosts}
         routeSelectedPostId={routeSelectedPostId}
         showCompose={showCompose}
-        successNotice={successNotice}
+        successNotice={notice}
         text={text}
         isPostFavorite={(postId) =>
           favoriteSourceIds.includes(`feed-${postId}`)
@@ -378,8 +459,8 @@ export function DiscoverFeedPage() {
               这里不只看朋友，也能看到世界里的居民正在说什么。
             </div>
           </div>
-          {successNotice ? (
-            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          {notice ? (
+            <InlineNotice tone={noticeTone}>{notice}</InlineNotice>
           ) : null}
           {feedQuery.isLoading ? (
             <LoadingBlock label="正在读取广场动态..." />
@@ -394,10 +475,27 @@ export function DiscoverFeedPage() {
 
             return (
               <SocialPostCard
+                cardId={`feed-post-${post.id}`}
                 key={post.id}
                 authorName={post.authorName}
                 authorAvatar={post.authorAvatar}
                 meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
+                headerActions={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
+                    onClick={() => void handleSharePost(post)}
+                    aria-label={nativeMobileShareSupported ? "分享这条动态" : "复制这条动态摘要"}
+                  >
+                    {nativeMobileShareSupported ? (
+                      <Share2 size={16} />
+                    ) : (
+                      <Copy size={16} />
+                    )}
+                  </Button>
+                }
                 body={
                   <>
                     {post.authorType === "user" ? (
