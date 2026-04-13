@@ -53,6 +53,9 @@ export function ChatMessageSearchPage() {
       loadingLabel="正在读取聊天记录..."
       emptyResultTitle="没有找到相关聊天记录"
       emptyResultDescription="换个关键词试试，或者切到图片、文件、链接分类继续找。"
+      onRetry={() => {
+        void messagesQuery.refetch();
+      }}
       onBack={() => {
         void navigate({
           to: "/chat/$conversationId/details",

@@ -7,8 +7,7 @@ import {
   Search,
 } from "lucide-react";
 import type { GroupMessage, Message } from "@yinjie/contracts";
-import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
-import { EmptyState } from "../../components/empty-state";
+import { Button, cn } from "@yinjie/ui";
 import { ChatDetailsSection } from "../chat-details/chat-details-section";
 import { ChatDetailsShell } from "../chat-details/chat-details-shell";
 import {
@@ -95,6 +94,7 @@ type ChatMessageSearchPanelProps = {
   emptyResultDescription: string;
   onBack: () => void;
   onOpenMessage: (messageId: string) => void;
+  onRetry?: () => void;
 };
 
 const urlPattern = /https?:\/\/[^\s]+/giu;
@@ -147,6 +147,7 @@ export function ChatMessageSearchPanel({
   emptyResultDescription,
   onBack,
   onOpenMessage,
+  onRetry,
 }: ChatMessageSearchPanelProps) {
   const [keyword, setKeyword] = useState("");
   const [activeCategory, setActiveCategory] = useState<SearchCategoryId>("all");
@@ -477,10 +478,36 @@ export function ChatMessageSearchPanel({
         </div>
       </ChatDetailsSection>
 
-      {isLoading ? <LoadingBlock label={loadingLabel} /> : null}
+      {isLoading ? (
+        <div className="px-3">
+          <MobileSearchStatusCard
+            badge="读取中"
+            title={loadingLabel}
+            description="稍等一下，正在整理这段聊天里的消息索引。"
+            tone="loading"
+          />
+        </div>
+      ) : null}
       {error ? (
         <div className="px-3">
-          <ErrorBlock message={error.message} />
+          <MobileSearchStatusCard
+            badge="搜索"
+            title="聊天记录暂时不可用"
+            description={error.message}
+            tone="danger"
+            action={
+              onRetry ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={onRetry}
+                  className="rounded-full"
+                >
+                  重新加载
+                </Button>
+              ) : undefined
+            }
+          />
         </div>
       ) : null}
 
@@ -488,7 +515,8 @@ export function ChatMessageSearchPanel({
         <>
           {!indexedMessages.length ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge="聊天"
                 title="当前会话还没有聊天记录"
                 description="等有消息后，这里会按关键词、图片、文件和链接帮你集中查找。"
               />
@@ -560,18 +588,40 @@ export function ChatMessageSearchPanel({
           activeCategory !== "all" &&
           categoryCounts[activeCategory] === 0 ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge={activeCategoryMeta.shortLabel}
                 title={`还没有${activeCategoryMeta.shortLabel}`}
                 description={`当前会话里暂时没有可浏览的${activeCategoryMeta.shortLabel}消息。`}
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setActiveCategory("all")}
+                    className="rounded-full"
+                  >
+                    查看全部消息
+                  </Button>
+                }
               />
             </div>
           ) : null}
 
           {trimmedKeyword && !results.length ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge="搜索"
                 title={emptyResultTitle}
                 description={emptyResultDescription}
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setKeyword("")}
+                    className="rounded-full"
+                  >
+                    清空关键词
+                  </Button>
+                }
               />
             </div>
           ) : null}
@@ -582,9 +632,20 @@ export function ChatMessageSearchPanel({
           senderFilter !== "all" &&
           !results.length ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge="成员"
                 title={`没有来自 ${senderFilter} 的${activeCategoryMeta.shortLabel}`}
                 description="换个成员试试，或者切回全部成员继续浏览。"
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setSenderFilter("all")}
+                    className="rounded-full"
+                  >
+                    查看全部成员
+                  </Button>
+                }
               />
             </div>
           ) : null}
@@ -596,13 +657,24 @@ export function ChatMessageSearchPanel({
           messageTypeFilter !== "all" &&
           !results.length ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge="类型"
                 title={`没有匹配的${
                   SEARCH_MESSAGE_TYPE_FILTERS.find(
                     (item) => item.id === messageTypeFilter,
                   )?.label ?? "消息"
                 }`}
                 description="换个消息类型试试，或者切回全部类型继续浏览。"
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setMessageTypeFilter("all")}
+                    className="rounded-full"
+                  >
+                    查看全部类型
+                  </Button>
+                }
               />
             </div>
           ) : null}
@@ -611,9 +683,23 @@ export function ChatMessageSearchPanel({
           (dateFilter !== "all" || specificDate) &&
           !results.length ? (
             <div className="px-3">
-              <EmptyState
+              <MobileSearchStatusCard
+                badge="时间"
                 title="这个时间范围内没有匹配消息"
                 description="换个时间试试，或者清空时间筛选继续浏览。"
+                action={
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      setDateFilter("all");
+                      setSpecificDate("");
+                    }}
+                    className="rounded-full"
+                  >
+                    清空时间筛选
+                  </Button>
+                }
               />
             </div>
           ) : null}
@@ -1078,6 +1164,56 @@ function isSameDay(left: Date, right: Date) {
     left.getFullYear() === right.getFullYear() &&
     left.getMonth() === right.getMonth() &&
     left.getDate() === right.getDate()
+  );
+}
+
+function MobileSearchStatusCard({
+  badge,
+  title,
+  description,
+  action,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+      {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
+    </section>
   );
 }
 
