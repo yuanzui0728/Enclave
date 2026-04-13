@@ -40,9 +40,7 @@ import {
 } from "./group-call-message";
 import { buildMobileGroupCallRouteHash } from "./mobile-group-call-route-state";
 import { buildChatBackgroundStyle } from "./backgrounds/chat-background-helpers";
-import {
-  findFirstUnreadMessageId,
-} from "./chat-unread-marker";
+import { findFirstUnreadMessageId } from "./chat-unread-marker";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useGroupBackground } from "./backgrounds/use-conversation-background";
@@ -80,7 +78,6 @@ export function GroupChatThreadPanel({
   onToggleDesktopHistory,
   onToggleDesktopDetails,
   onOpenDesktopAnnouncementDetails,
-  onOpenDesktopMemberSearch,
   onDesktopCallAction,
   highlightedMessageId,
   routeContextNotice,
@@ -94,6 +91,7 @@ export function GroupChatThreadPanel({
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
     source: CallInviteSource | null;
@@ -116,12 +114,14 @@ export function GroupChatThreadPanel({
   const [unreadSnapshotReady, setUnreadSnapshotReady] = useState(false);
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  const [loadingAnchorWindow, setLoadingAnchorWindow] = useState(false);
   const isDesktop = variant === "desktop";
   const loadMoreRequestRef = useRef<{
     previousCount: number;
     scrollHeight: number;
     scrollTop: number;
   } | null>(null);
+  const highlightedWindowRequestRef = useRef<string | null>(null);
 
   const groupQuery = useQuery({
     queryKey: ["app-group", baseUrl, groupId],
@@ -154,6 +154,7 @@ export function GroupChatThreadPanel({
 
   useEffect(() => {
     setText("");
+    setMessages([]);
     setReplyDraft(null);
     setDesktopCallPanelState(null);
     setMobileShortcutRequest(null);
@@ -164,8 +165,14 @@ export function GroupChatThreadPanel({
     setUnreadSnapshotReady(false);
     setMessageLimit(INITIAL_MESSAGE_LIMIT);
     setHasOlderMessages(true);
+    setLoadingAnchorWindow(false);
     loadMoreRequestRef.current = null;
+    highlightedWindowRequestRef.current = null;
   }, [baseUrl, groupId]);
+
+  useEffect(() => {
+    setMessages(messagesQuery.data ?? []);
+  }, [messagesQuery.data]);
 
   useEffect(() => {
     if (isDesktop || !routeMobileShortcutAction) {
@@ -326,12 +333,12 @@ export function GroupChatThreadPanel({
 
   const orderedMessages = useMemo(
     () =>
-      [...(messagesQuery.data ?? [])].sort(
+      [...messages].sort(
         (left, right) =>
           (parseTimestamp(left.createdAt) ?? 0) -
           (parseTimestamp(right.createdAt) ?? 0),
       ),
-    [messagesQuery.data],
+    [messages],
   );
   const hasHighlightedMessage = orderedMessages.some(
     (message) => message.id === highlightedMessageId,
@@ -541,22 +548,72 @@ export function GroupChatThreadPanel({
     suppressNextPendingCount,
   ]);
 
+  const loadAnchorWindow = useCallback(
+    async (messageId: string) => {
+      const normalizedMessageId = messageId.trim();
+      if (!normalizedMessageId || loadingAnchorWindow) {
+        return false;
+      }
+
+      setLoadingAnchorWindow(true);
+      try {
+        const windowMessages = await getGroupMessages(groupId, baseUrl, {
+          aroundMessageId: normalizedMessageId,
+          before: 24,
+          after: 24,
+        });
+        if (!windowMessages.length) {
+          return false;
+        }
+
+        suppressNextPendingCount();
+        setMessages((current) =>
+          mergeGroupMessageWindow(current, windowMessages),
+        );
+        return windowMessages.some(
+          (message) => message.id === normalizedMessageId,
+        );
+      } catch {
+        return false;
+      } finally {
+        setLoadingAnchorWindow(false);
+      }
+    },
+    [baseUrl, groupId, loadingAnchorWindow, suppressNextPendingCount],
+  );
+
   useEffect(() => {
     if (
       !highlightedMessageId ||
       hasHighlightedMessage ||
       messagesQuery.isFetching ||
-      !hasOlderMessages
+      loadingAnchorWindow
     ) {
       return;
     }
 
-    void loadOlderMessages();
+    if (highlightedWindowRequestRef.current === highlightedMessageId) {
+      if (hasOlderMessages) {
+        void loadOlderMessages();
+      }
+      return;
+    }
+
+    highlightedWindowRequestRef.current = highlightedMessageId;
+    void loadAnchorWindow(highlightedMessageId).then((found) => {
+      if (found || !hasOlderMessages) {
+        return;
+      }
+
+      void loadOlderMessages();
+    });
   }, [
     hasHighlightedMessage,
     hasOlderMessages,
     highlightedMessageId,
+    loadAnchorWindow,
     loadOlderMessages,
+    loadingAnchorWindow,
     messagesQuery.isFetching,
   ]);
 
@@ -1126,6 +1183,23 @@ function upsertGroupMessage(
   const nextMessages = [...current];
   nextMessages[existingIndex] = incoming;
   return nextMessages;
+}
+
+function mergeGroupMessageWindow(
+  current: GroupMessage[],
+  incoming: GroupMessage[],
+) {
+  const merged = new Map<string, GroupMessage>();
+
+  for (const message of [...current, ...incoming]) {
+    merged.set(message.id, message);
+  }
+
+  return [...merged.values()].sort(
+    (left, right) =>
+      (parseTimestamp(left.createdAt) ?? 0) -
+      (parseTimestamp(right.createdAt) ?? 0),
+  );
 }
 
 const INITIAL_MESSAGE_LIMIT = 60;

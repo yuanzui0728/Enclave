@@ -172,6 +172,9 @@ export function DesktopChatWorkspace({
     useState(false);
   const [rightPanelMode, setRightPanelMode] =
     useState<DesktopChatSidePanelMode>(null);
+  const [historyPanelFocusKey, setHistoryPanelFocusKey] = useState(0);
+  const [historyPanelCanReturnToDetails, setHistoryPanelCanReturnToDetails] =
+    useState(false);
   const [detailsAnnouncementRequest, setDetailsAnnouncementRequest] = useState<
     number | null
   >(null);
@@ -701,19 +704,41 @@ export function DesktopChatWorkspace({
   function handleToggleSidePanel(
     mode: Exclude<DesktopChatSidePanelMode, null>,
   ) {
-    setRightPanelMode((current) => (current === mode ? null : mode));
+    if (mode === "history") {
+      setRightPanelMode((current) =>
+        current === "history" ? null : "history",
+      );
+      setHistoryPanelCanReturnToDetails(false);
+      setHistoryPanelFocusKey(Date.now());
+      setDetailsAnnouncementRequest(null);
+      setDetailsMemberSearchRequest(null);
+      return;
+    }
+
+    setRightPanelMode((current) => (current === "details" ? null : "details"));
+    setHistoryPanelCanReturnToDetails(false);
+    setDetailsAnnouncementRequest(null);
+    setDetailsMemberSearchRequest(null);
+  }
+
+  function handleOpenHistoryPanel(source: "header" | "details" = "header") {
+    setRightPanelMode("history");
+    setHistoryPanelCanReturnToDetails(source === "details");
+    setHistoryPanelFocusKey(Date.now());
     setDetailsAnnouncementRequest(null);
     setDetailsMemberSearchRequest(null);
   }
 
   function handleOpenGroupAnnouncementDetails() {
     setRightPanelMode("details");
+    setHistoryPanelCanReturnToDetails(false);
     setDetailsAnnouncementRequest(Date.now());
     setDetailsMemberSearchRequest(null);
   }
 
   function handleOpenGroupMemberSearch() {
     setRightPanelMode("details");
+    setHistoryPanelCanReturnToDetails(false);
     setDetailsMemberSearchRequest(Date.now());
     setDetailsAnnouncementRequest(null);
   }
@@ -743,6 +768,44 @@ export function DesktopChatWorkspace({
       }),
     });
   }
+
+  useEffect(() => {
+    if (
+      !activeConversation ||
+      selectedServiceAccountId ||
+      subscriptionInboxActive
+    ) {
+      return;
+    }
+
+    function handleKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.defaultPrevented) {
+        return;
+      }
+
+      if (event.altKey || event.shiftKey) {
+        return;
+      }
+
+      if (!event.ctrlKey && !event.metaKey) {
+        return;
+      }
+
+      if (event.key.toLowerCase() !== "f") {
+        return;
+      }
+
+      event.preventDefault();
+      setRightPanelMode("history");
+      setHistoryPanelCanReturnToDetails(false);
+      setHistoryPanelFocusKey(Date.now());
+      setDetailsAnnouncementRequest(null);
+      setDetailsMemberSearchRequest(null);
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeConversation, selectedServiceAccountId, subscriptionInboxActive]);
 
   function handleConversationContextMenu(
     event: MouseEvent<HTMLElement>,
@@ -1199,25 +1262,66 @@ export function DesktopChatWorkspace({
       {activeConversation && rightPanelMode ? (
         <DesktopChatSidePanel
           mode={rightPanelMode}
-          title={activeConversation.title}
-          subtitle={rightPanelMode === "history" ? "聊天记录" : "聊天信息"}
+          title={
+            rightPanelMode === "history"
+              ? "查找聊天记录"
+              : activeConversation.title
+          }
+          subtitle={
+            rightPanelMode === "history" ? activeConversation.title : "聊天信息"
+          }
           onClose={() => {
             setRightPanelMode(null);
+            setHistoryPanelCanReturnToDetails(false);
             setDetailsAnnouncementRequest(null);
             setDetailsMemberSearchRequest(null);
           }}
         >
           {rightPanelMode === "history" ? (
-            <DesktopChatHistoryPanel conversation={activeConversation} />
+            <DesktopChatHistoryPanel
+              conversation={activeConversation}
+              focusRequestKey={historyPanelFocusKey}
+              onClose={() => {
+                setRightPanelMode(null);
+                setHistoryPanelCanReturnToDetails(false);
+              }}
+              onBackToDetails={
+                historyPanelCanReturnToDetails
+                  ? () => {
+                      setRightPanelMode("details");
+                      setHistoryPanelCanReturnToDetails(false);
+                      setDetailsAnnouncementRequest(null);
+                      setDetailsMemberSearchRequest(null);
+                    }
+                  : undefined
+              }
+              onOpenMessage={(messageId) => {
+                setRightPanelMode(null);
+                setHistoryPanelCanReturnToDetails(false);
+
+                if (isPersistedGroupConversation(activeConversation)) {
+                  void navigate({
+                    to: "/group/$groupId",
+                    params: { groupId: activeConversation.id },
+                    hash: `chat-message-${messageId}`,
+                  });
+                  return;
+                }
+
+                void navigate({
+                  to: "/chat/$conversationId",
+                  params: { conversationId: activeConversation.id },
+                  hash: `chat-message-${messageId}`,
+                });
+              }}
+            />
           ) : (
             <DesktopChatDetailsPanel
               conversation={activeConversation}
               announcementRequest={detailsAnnouncementRequest}
               memberSearchRequest={detailsMemberSearchRequest}
               onOpenHistory={() => {
-                setRightPanelMode("history");
-                setDetailsAnnouncementRequest(null);
-                setDetailsMemberSearchRequest(null);
+                handleOpenHistoryPanel("details");
               }}
               onCreateGroup={(input) => {
                 setCreateGroupDialogState(input);

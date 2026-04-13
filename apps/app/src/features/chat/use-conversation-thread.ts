@@ -46,11 +46,9 @@ export function useConversationThread(conversationId: string) {
   const [unreadSnapshotReady, setUnreadSnapshotReady] = useState(false);
   const [messageLimit, setMessageLimit] = useState(INITIAL_MESSAGE_LIMIT);
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
+  const [loadingAnchorWindow, setLoadingAnchorWindow] = useState(false);
   const scrollAnchor = useScrollAnchor<HTMLDivElement>(messages.length);
-  const {
-    ref: scrollAnchorRef,
-    suppressNextPendingCount,
-  } = scrollAnchor;
+  const { ref: scrollAnchorRef, suppressNextPendingCount } = scrollAnchor;
   const loadMoreRequestRef = useRef<{
     previousCount: number;
     scrollHeight: number;
@@ -58,7 +56,12 @@ export function useConversationThread(conversationId: string) {
   } | null>(null);
 
   const messagesQuery = useQuery({
-    queryKey: ["app-conversation-messages", baseUrl, conversationId, messageLimit],
+    queryKey: [
+      "app-conversation-messages",
+      baseUrl,
+      conversationId,
+      messageLimit,
+    ],
     queryFn: () =>
       getConversationMessages(conversationId, baseUrl, { limit: messageLimit }),
     enabled: Boolean(conversationId),
@@ -80,6 +83,7 @@ export function useConversationThread(conversationId: string) {
   useEffect(() => {
     setMessageLimit(INITIAL_MESSAGE_LIMIT);
     setHasOlderMessages(true);
+    setLoadingAnchorWindow(false);
     loadMoreRequestRef.current = null;
     setInitialUnreadCount(0);
     setInitialUnreadCutoff(null);
@@ -126,7 +130,10 @@ export function useConversationThread(conversationId: string) {
     });
 
     const offMessage = onChatMessage((payload) => {
-      if (!("conversationId" in payload) || payload.conversationId !== conversationId) {
+      if (
+        !("conversationId" in payload) ||
+        payload.conversationId !== conversationId
+      ) {
         return;
       }
 
@@ -220,10 +227,16 @@ export function useConversationThread(conversationId: string) {
       }
 
       const nextScrollTop =
-        pendingLoad.scrollTop + (element.scrollHeight - pendingLoad.scrollHeight);
+        pendingLoad.scrollTop +
+        (element.scrollHeight - pendingLoad.scrollHeight);
       element.scrollTop = nextScrollTop;
     });
-  }, [messageLimit, messagesQuery.data, messagesQuery.isFetching, scrollAnchor.ref]);
+  }, [
+    messageLimit,
+    messagesQuery.data,
+    messagesQuery.isFetching,
+    scrollAnchor.ref,
+  ]);
 
   const sendMutation = useMutation({
     mutationFn: async (payload: SendMessagePayload) => {
@@ -444,6 +457,42 @@ export function useConversationThread(conversationId: string) {
     suppressNextPendingCount,
   ]);
 
+  const loadAnchorWindow = useCallback(
+    async (messageId: string) => {
+      const normalizedMessageId = messageId.trim();
+      if (!normalizedMessageId || loadingAnchorWindow) {
+        return false;
+      }
+
+      setLoadingAnchorWindow(true);
+      try {
+        const windowMessages = await getConversationMessages(
+          conversationId,
+          baseUrl,
+          {
+            aroundMessageId: normalizedMessageId,
+            before: 24,
+            after: 24,
+          },
+        );
+        if (!windowMessages.length) {
+          return false;
+        }
+
+        suppressNextPendingCount();
+        setMessages((current) => mergeMessageWindow(current, windowMessages));
+        return windowMessages.some(
+          (message) => message.id === normalizedMessageId,
+        );
+      } catch {
+        return false;
+      } finally {
+        setLoadingAnchorWindow(false);
+      }
+    },
+    [baseUrl, conversationId, loadingAnchorWindow, suppressNextPendingCount],
+  );
+
   return {
     baseUrl,
     conversationTitle,
@@ -453,7 +502,9 @@ export function useConversationThread(conversationId: string) {
     hasOlderMessages,
     loadingOlderMessages:
       messagesQuery.isFetching && loadMoreRequestRef.current !== null,
+    loadingAnchorWindow,
     loadOlderMessages,
+    loadAnchorWindow,
     messagesQuery,
     participants,
     renderedMessages,
@@ -636,4 +687,18 @@ function resolveTargetCharacterId(input: {
   }
 
   return "";
+}
+
+function mergeMessageWindow(current: Message[], incoming: Message[]) {
+  const merged = new Map<string, Message>();
+
+  for (const message of [...current, ...incoming]) {
+    merged.set(message.id, message);
+  }
+
+  return [...merged.values()].sort(
+    (left, right) =>
+      (parseTimestamp(left.createdAt) ?? 0) -
+      (parseTimestamp(right.createdAt) ?? 0),
+  );
 }

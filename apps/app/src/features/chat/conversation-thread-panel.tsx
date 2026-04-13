@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Phone, Users, Video } from "lucide-react";
 import { type StickerAttachment } from "@yinjie/contracts";
@@ -30,9 +30,7 @@ import {
 } from "./group-call-message";
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button";
-import {
-  findFirstUnreadMessageId,
-} from "./chat-unread-marker";
+import { findFirstUnreadMessageId } from "./chat-unread-marker";
 import { useConversationBackground } from "./backgrounds/use-conversation-background";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
@@ -92,7 +90,9 @@ export function ConversationThreadPanel({
     initialUnreadCount,
     initialUnreadCutoff,
     hasOlderMessages,
+    loadingAnchorWindow,
     loadingOlderMessages,
+    loadAnchorWindow,
     loadOlderMessages,
     messagesQuery,
     participants,
@@ -111,6 +111,7 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
+  const highlightedWindowRequestRef = useRef<string | null>(null);
   const { entryNotice, clearEntryNotice, guardVideoEntry, resetEntryGuard } =
     useDigitalHumanEntryGuard({
       baseUrl,
@@ -171,6 +172,7 @@ export function ConversationThreadPanel({
   useEffect(() => {
     setReplyDraft(null);
     setSelectionModeActive(false);
+    highlightedWindowRequestRef.current = null;
   }, [conversationId]);
 
   useEffect(() => {
@@ -178,17 +180,33 @@ export function ConversationThreadPanel({
       !highlightedMessageId ||
       hasHighlightedMessage ||
       loadingOlderMessages ||
-      !hasOlderMessages
+      loadingAnchorWindow
     ) {
       return;
     }
 
-    void loadOlderMessages();
+    if (highlightedWindowRequestRef.current === highlightedMessageId) {
+      if (hasOlderMessages) {
+        void loadOlderMessages();
+      }
+      return;
+    }
+
+    highlightedWindowRequestRef.current = highlightedMessageId;
+    void loadAnchorWindow(highlightedMessageId).then((found) => {
+      if (found || !hasOlderMessages) {
+        return;
+      }
+
+      void loadOlderMessages();
+    });
   }, [
     hasHighlightedMessage,
     hasOlderMessages,
     highlightedMessageId,
+    loadAnchorWindow,
     loadOlderMessages,
+    loadingAnchorWindow,
     loadingOlderMessages,
   ]);
 
