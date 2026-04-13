@@ -107,7 +107,6 @@ type ChatComposerProps = {
   onStartVoiceCall?: () => void;
   onStartVideoCall?: () => void;
   onCancelReply?: () => void;
-  onOpenDesktopHistory?: () => void;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };

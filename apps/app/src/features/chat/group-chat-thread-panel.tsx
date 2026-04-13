@@ -1106,7 +1106,6 @@ export function GroupChatThreadPanel({
           onSendAttachment={sendAttachmentMessage}
           onSendPresetText={handleSendPresetText}
           mentionCandidates={mentionCandidates}
-          onOpenDesktopHistory={onToggleDesktopHistory}
           mobileShortcutRequest={mobileShortcutRequest}
           onMobileShortcutHandled={() => {
             setMobileShortcutRequest(null);

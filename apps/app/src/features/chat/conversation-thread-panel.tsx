@@ -644,7 +644,6 @@ export function ConversationThreadPanel({
             }
             await handleSendPresetText(presetText);
           }}
-          onOpenDesktopHistory={onToggleDesktopHistory}
           mobileShortcutRequest={mobileShortcutRequest}
           onMobileShortcutHandled={() => {
             setMobileShortcutRequest(null);
