@@ -309,6 +309,19 @@ export function StickerPanel({
   }, [trimmedKeyword]);
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [isMobile]);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") {
         return;
@@ -435,6 +448,17 @@ export function StickerPanel({
               ref={searchInputRef}
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  trimmedKeyword.length > 0 &&
+                  !searchPending &&
+                  activeItems[0]
+                ) {
+                  event.preventDefault();
+                  onSelect(activeItems[0].sticker);
+                }
+              }}
               placeholder="搜索表情"
               className="w-full border-none bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)]"
             />
