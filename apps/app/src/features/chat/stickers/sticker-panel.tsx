@@ -61,6 +61,11 @@ export function StickerPanel({
     maxCustomStickerCount: 300,
     customStickerCount: 0,
   };
+  const customSlotsRemaining = Math.max(
+    0,
+    catalog.maxCustomStickerCount - catalog.customStickerCount,
+  );
+  const customStickerLibraryFull = customSlotsRemaining <= 0;
   const activeSectionId = resolveActiveSectionId(activePackId, catalog);
   const recentStickers = useMemo(
     () => resolveRecentStickers(recentItems, catalog.customStickers),
@@ -73,6 +78,14 @@ export function StickerPanel({
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
+      if (customStickerLibraryFull) {
+        throw new Error("自定义表情已满，请先删除几个再继续添加。");
+      }
+
+      if (files.length > customSlotsRemaining) {
+        throw new Error(`还能再添加 ${customSlotsRemaining} 个表情，请分批上传。`);
+      }
+
       let uploadedCount = 0;
 
       for (const file of files) {
@@ -202,11 +215,21 @@ export function StickerPanel({
     ? `搜索“${keyword.trim()}”`
     : activeSectionId === "custom" && customManageMode
       ? `管理自定义表情 · 已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`
+      : activeSectionId === "custom" && customStickerLibraryFull
+        ? "自定义表情已满，请先删除几个再继续添加"
       : activeSectionId === "custom"
-      ? `已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}，支持图片和 GIF`
-      : activeSectionId === "recent"
+        ? `已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}，支持图片和 GIF`
+        : activeSectionId === "recent"
         ? "最近发送和使用过的表情"
         : `${activeTab?.label ?? "表情"} · 桌面端连续发送`;
+  const customCapacityNotice =
+    activeSectionId === "custom" && !searching
+      ? customStickerLibraryFull
+        ? "自定义表情已满，请先删除几个再继续添加。"
+        : customSlotsRemaining <= 20
+          ? `还能再添加 ${customSlotsRemaining} 个自定义表情。`
+          : null
+      : null;
 
   useEffect(() => {
     if (activeSectionId !== "custom" || searching) {
@@ -263,7 +286,12 @@ export function StickerPanel({
             <button
               type="button"
               onClick={() => uploadInputRef.current?.click()}
-              disabled={uploadMutation.isPending}
+              disabled={uploadMutation.isPending || customStickerLibraryFull}
+              title={
+                customStickerLibraryFull
+                  ? "自定义表情已满，请先删除几个再继续添加"
+                  : undefined
+              }
               className={
                 isMobile
                   ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#3f4b5f] transition active:bg-[#f5f5f5] disabled:opacity-45"
@@ -310,6 +338,26 @@ export function StickerPanel({
             isMobile ? "min-h-0 flex-1 overflow-y-auto px-3 pb-2.5" : "min-h-[280px] max-h-[360px] overflow-y-auto px-1 pb-3"
           }
         >
+          {customCapacityNotice ? (
+            <div
+              className={
+                isMobile
+                  ? "mb-2 rounded-[14px] border border-[rgba(245,158,11,0.28)] bg-[rgba(255,251,235,0.92)] px-3 py-2 text-[11px] text-[#92400e]"
+                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(245,158,11,0.26)] bg-[rgba(255,251,235,0.92)] px-3 py-2.5 text-xs text-[#92400e]"
+              }
+            >
+              <span>{customCapacityNotice}</span>
+              {!isMobile && customStickerLibraryFull && !customManageMode ? (
+                <button
+                  type="button"
+                  onClick={() => setCustomManageMode(true)}
+                  className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#92400e] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
+                >
+                  去管理
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           {stickerCatalogQuery.isLoading && !stickerCatalogQuery.data ? (
             <div className="flex min-h-[160px] items-center justify-center text-sm text-[color:var(--text-secondary)]">
               <Loader2 size={16} className="mr-2 animate-spin" />
