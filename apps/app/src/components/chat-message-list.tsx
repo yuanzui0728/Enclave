@@ -93,6 +93,7 @@ import {
 } from "../lib/chat-text";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import {
+  formatDesktopMessageTimestamp,
   formatDetailedMessageTimestamp,
   formatMessageTimestamp,
   parseTimestamp,
@@ -2237,6 +2238,11 @@ export function ChatMessageList({
         const groupRelaySummary = parseGroupRelaySummaryMessage(displayText);
         const sharedHistorySummary =
           parseSharedHistorySummaryMessage(displayText);
+        const timestampLabel = detailedTimestampMode
+          ? formatDetailedMessageTimestamp(message.createdAt)
+          : isDesktop
+            ? formatDesktopMessageTimestamp(message.createdAt)
+            : formatMessageTimestamp(message.createdAt);
 
         if (isSystem || isRecalled) {
           return (
@@ -2249,6 +2255,16 @@ export function ChatMessageList({
                   id={unreadMarkerDomId}
                   label={resolvedUnreadMarkerLabel}
                   variant={variant}
+                />
+              ) : null}
+              {showTimestamp ? (
+                <MessageTimestampDivider
+                  isDesktop={isDesktop}
+                  label={timestampLabel}
+                  detailedTimestampMode={detailedTimestampMode}
+                  onToggle={() =>
+                    setDetailedTimestampMode((current) => !current)
+                  }
                 />
               ) : null}
               {sharedHistorySummary && !isRecalled ? (
@@ -2287,28 +2303,12 @@ export function ChatMessageList({
               />
             ) : null}
             {showTimestamp ? (
-              <div className="pb-2 pt-1 text-center">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDetailedTimestampMode((current) => !current)
-                  }
-                  className={
-                    isDesktop
-                      ? "inline-flex rounded-full bg-transparent px-2.5 py-0.5 text-[11px] text-[#9a9a9a] transition hover:bg-white/50"
-                      : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
-                  }
-                  aria-label={
-                    detailedTimestampMode
-                      ? "切换为简略时间显示"
-                      : "切换为完整日期显示"
-                  }
-                >
-                  {detailedTimestampMode
-                    ? formatDetailedMessageTimestamp(message.createdAt)
-                    : formatMessageTimestamp(message.createdAt)}
-                </button>
-              </div>
+              <MessageTimestampDivider
+                isDesktop={isDesktop}
+                label={timestampLabel}
+                detailedTimestampMode={detailedTimestampMode}
+                onToggle={() => setDetailedTimestampMode((current) => !current)}
+              />
             ) : null}
             <div
               id={`chat-message-${message.id}`}
@@ -3192,6 +3192,39 @@ function UnreadMarkerDivider({
   );
 }
 
+function MessageTimestampDivider({
+  isDesktop,
+  label,
+  detailedTimestampMode,
+  onToggle,
+}: {
+  isDesktop: boolean;
+  label: string;
+  detailedTimestampMode: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div
+      className={isDesktop ? "pb-2 pt-1 text-center" : "pb-2 pt-1 text-center"}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className={
+          isDesktop
+            ? "inline-flex items-center rounded-full border border-black/6 bg-[rgba(242,242,242,0.96)] px-3 py-1 text-[11px] text-[#8c8c8c] transition hover:bg-white"
+            : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
+        }
+        aria-label={
+          detailedTimestampMode ? "切换为简略时间显示" : "切换为完整日期显示"
+        }
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
+
 function shouldShowMessageTimestamp(
   createdAt?: string | null,
   previousCreatedAt?: string | null,
@@ -3210,7 +3243,21 @@ function shouldShowMessageTimestamp(
     return true;
   }
 
+  const currentDate = new Date(currentTimestamp);
+  const previousDate = new Date(previousTimestamp);
+  if (!isSameCalendarDay(currentDate, previousDate)) {
+    return true;
+  }
+
   return currentTimestamp - previousTimestamp >= 5 * 60 * 1000;
+}
+
+function isSameCalendarDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  );
 }
 
 function areStringListsEqual(
@@ -5660,11 +5707,11 @@ function resolveRuntimeAttachmentUrl(url: string, runtimeBaseUrl?: string) {
   }
 
   const rebaseTarget =
-    runtimeUrl && shouldRebaseLoopbackAttachment(resolvedUrl, runtimeUrl)
+    runtimeUrl && shouldRebasePrivateAttachment(resolvedUrl, runtimeUrl)
       ? runtimeUrl
       : !runtimeUrl &&
           browserOriginUrl &&
-          shouldRebaseLoopbackAttachment(resolvedUrl, browserOriginUrl)
+          shouldRebasePrivateAttachment(resolvedUrl, browserOriginUrl)
         ? browserOriginUrl
         : null;
 
@@ -5672,23 +5719,62 @@ function resolveRuntimeAttachmentUrl(url: string, runtimeBaseUrl?: string) {
     return resolvedUrl.toString();
   }
 
-  return new URL(
-    `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`,
-    rebaseTarget,
-  ).toString();
+  return rebaseAttachmentUrl(resolvedUrl, rebaseTarget);
 }
 
-function shouldRebaseLoopbackAttachment(assetUrl: URL, targetUrl: URL) {
+function shouldRebasePrivateAttachment(assetUrl: URL, targetUrl: URL) {
   return (
-    isLoopbackHostname(assetUrl.hostname) &&
-    assetUrl.origin !== targetUrl.origin
+    isPrivateHostname(assetUrl.hostname) && assetUrl.origin !== targetUrl.origin
   );
 }
 
-function isLoopbackHostname(hostname: string) {
-  return ["localhost", "127.0.0.1", "0.0.0.0", "10.0.2.2"].includes(
-    hostname.trim().toLowerCase(),
+function rebaseAttachmentUrl(assetUrl: URL, targetUrl: URL) {
+  const assetPath = `${assetUrl.pathname}${assetUrl.search}${assetUrl.hash}`;
+  const normalizedTargetPath = targetUrl.pathname.replace(/\/+$/, "");
+  if (
+    normalizedTargetPath &&
+    (assetUrl.pathname === normalizedTargetPath ||
+      assetUrl.pathname.startsWith(`${normalizedTargetPath}/`))
+  ) {
+    return `${targetUrl.origin}${assetPath}`;
+  }
+
+  return `${targetUrl.toString().replace(/\/+$/, "")}${assetPath}`;
+}
+
+function isPrivateHostname(hostname: string) {
+  const normalized = hostname.trim().toLowerCase();
+  if (
+    [
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "10.0.2.2",
+      "host.docker.internal",
+    ].includes(normalized)
+  ) {
+    return true;
+  }
+
+  const match = normalized.match(
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/,
   );
+  if (!match) {
+    return false;
+  }
+
+  const firstOctet = Number(match[1]);
+  const secondOctet = Number(match[2]);
+
+  if (firstOctet === 10 || firstOctet === 127) {
+    return true;
+  }
+
+  if (firstOctet === 192 && secondOctet === 168) {
+    return true;
+  }
+
+  return firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31;
 }
 
 function normalizeOptionalUrl(value?: string | null) {

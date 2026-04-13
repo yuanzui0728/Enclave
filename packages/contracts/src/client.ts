@@ -334,11 +334,8 @@ function normalizeAttachmentAssetUrl(url: string, baseUrl?: string) {
     return normalizedUrl;
   }
 
-  if (targetUrl && shouldRebaseLoopbackAttachmentUrl(resolvedUrl, targetUrl)) {
-    return new URL(
-      `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`,
-      targetUrl,
-    ).toString();
+  if (targetUrl && shouldRebasePrivateAttachmentUrl(resolvedUrl, targetUrl)) {
+    return rebaseAttachmentUrl(resolvedUrl, targetUrl);
   }
 
   return resolvedUrl.toString();
@@ -427,17 +424,59 @@ function tryParseUrl(value?: string | null, base?: string) {
   }
 }
 
-function shouldRebaseLoopbackAttachmentUrl(assetUrl: URL, targetUrl: URL) {
+function shouldRebasePrivateAttachmentUrl(assetUrl: URL, targetUrl: URL) {
   return (
-    isLoopbackHostname(assetUrl.hostname) &&
-    assetUrl.origin !== targetUrl.origin
+    isPrivateHostname(assetUrl.hostname) && assetUrl.origin !== targetUrl.origin
   );
 }
 
-function isLoopbackHostname(hostname: string) {
-  return ["localhost", "127.0.0.1", "0.0.0.0", "10.0.2.2"].includes(
-    hostname.trim().toLowerCase(),
+function rebaseAttachmentUrl(assetUrl: URL, targetUrl: URL) {
+  const assetPath = `${assetUrl.pathname}${assetUrl.search}${assetUrl.hash}`;
+  const normalizedTargetPath = targetUrl.pathname.replace(/\/+$/, "");
+  if (
+    normalizedTargetPath &&
+    (assetUrl.pathname === normalizedTargetPath ||
+      assetUrl.pathname.startsWith(`${normalizedTargetPath}/`))
+  ) {
+    return `${targetUrl.origin}${assetPath}`;
+  }
+
+  return `${targetUrl.toString().replace(/\/+$/, "")}${assetPath}`;
+}
+
+function isPrivateHostname(hostname: string) {
+  const normalized = hostname.trim().toLowerCase();
+  if (
+    [
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "10.0.2.2",
+      "host.docker.internal",
+    ].includes(normalized)
+  ) {
+    return true;
+  }
+
+  const match = normalized.match(
+    /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/,
   );
+  if (!match) {
+    return false;
+  }
+
+  const firstOctet = Number(match[1]);
+  const secondOctet = Number(match[2]);
+
+  if (firstOctet === 10 || firstOctet === 127) {
+    return true;
+  }
+
+  if (firstOctet === 192 && secondOctet === 168) {
+    return true;
+  }
+
+  return firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31;
 }
 
 export function getSystemStatus(baseUrl?: string) {
