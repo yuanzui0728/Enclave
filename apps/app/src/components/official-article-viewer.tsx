@@ -136,13 +136,13 @@ export function OfficialArticleViewer({
     <article
       className={
         mobile
-          ? "w-full bg-white px-4 py-4"
+          ? "w-full bg-white px-4 py-3"
           : "mx-auto w-full max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
       }
     >
       <div
         className={mobile
-          ? "flex flex-wrap items-start justify-between gap-2.5"
+          ? "flex flex-wrap items-start justify-between gap-2"
           : "flex flex-wrap items-start justify-between gap-3"}
       >
         <div>
@@ -151,7 +151,7 @@ export function OfficialArticleViewer({
             onClick={() => onOpenAccount?.(article.account.id)}
             className={
               mobile
-                ? "text-left text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+                ? "text-left text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
                 : "text-left text-xs font-medium tracking-[0.12em] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
             }
           >
@@ -160,14 +160,14 @@ export function OfficialArticleViewer({
           <div
             className={
               mobile
-                ? "mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]"
+                ? "mt-1 flex flex-wrap items-center gap-1 text-[10px] text-[color:var(--text-muted)]"
                 : "mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]"
             }
           >
             <span
               className={
                 mobile
-                  ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[color:var(--brand-primary)]"
+                  ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[color:var(--brand-primary)]"
                   : "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]"
               }
             >
@@ -177,7 +177,7 @@ export function OfficialArticleViewer({
               <span
                 className={
                   mobile
-                    ? "rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2 py-0.5 text-[#315b9a]"
+                    ? "rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-1.5 py-0.5 text-[#315b9a]"
                     : "rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2.5 py-1 text-[#315b9a]"
                 }
               >
@@ -196,7 +196,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => onToggleFavorite(article)}
-              className={mobile ? "rounded-[10px] px-3" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[10px] px-2.5 text-[12px]" : "rounded-xl"}
             >
               <Star size={14} className={favorite ? "fill-current" : ""} />
               {favorite ? "已收藏" : "收藏"}
@@ -208,7 +208,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => void handleShareArticle()}
-              className={mobile ? "rounded-[10px] px-3" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[10px] px-2.5 text-[12px]" : "rounded-xl"}
             >
               {nativeMobileShareSupported ? (
                 <Share2 size={14} />
@@ -223,7 +223,7 @@ export function OfficialArticleViewer({
       <h1
         className={
           mobile
-            ? "mt-3 text-[24px] font-semibold leading-[1.4] text-[color:var(--text-primary)]"
+            ? "mt-2.5 text-[22px] font-semibold leading-[1.35] text-[color:var(--text-primary)]"
             : "mt-3 text-[28px] font-semibold leading-[1.35] text-[color:var(--text-primary)]"
         }
       >
@@ -232,7 +232,7 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[color:var(--text-muted)]"
+            ? "mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-muted)]"
             : "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--text-muted)]"
         }
       >
@@ -244,7 +244,7 @@ export function OfficialArticleViewer({
         <InlineNotice
           className={
             mobile
-              ? "mt-3 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+              ? "mt-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[12px] leading-5"
               : "mt-4 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           }
           tone={shareNotice.tone}
@@ -256,7 +256,7 @@ export function OfficialArticleViewer({
         <div
           className={
             mobile
-              ? "mt-5 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+              ? "mt-4 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
               : "mt-6 overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           }
         >
@@ -265,7 +265,7 @@ export function OfficialArticleViewer({
             alt={article.title}
             className={
               mobile
-                ? "h-auto max-h-[320px] w-full object-cover"
+                ? "h-auto max-h-[280px] w-full object-cover"
                 : "h-auto max-h-[420px] w-full object-cover"
             }
           />
@@ -274,7 +274,7 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+            ? "mt-3.5 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]"
             : "mt-6 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-sm leading-7 text-[color:var(--text-secondary)]"
         }
       >
@@ -283,7 +283,7 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "official-article-content mt-6 space-y-3 text-[14px] leading-7 text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.2)] [&_blockquote]:bg-[rgba(7,193,96,0.07)] [&_blockquote]:px-3.5 [&_blockquote]:py-2.5 [&_h3]:mt-7 [&_h3]:text-[19px] [&_h3]:font-semibold [&_img]:rounded-[16px] [&_p]:my-0"
+            ? "official-article-content mt-4 space-y-2.5 text-[13px] leading-6 text-[color:var(--text-primary)] [&_blockquote]:rounded-[14px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.2)] [&_blockquote]:bg-[rgba(7,193,96,0.07)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-6 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[14px] [&_p]:my-0"
             : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(7,193,96,0.2)] [&_blockquote]:bg-[rgba(7,193,96,0.07)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
         }
         onClick={(event) => void handleContentLinkClick(event)}
@@ -294,14 +294,14 @@ export function OfficialArticleViewer({
         <section
           className={
             mobile
-              ? "mt-8 border-t border-[color:var(--border-faint)] pt-4"
+              ? "mt-6 border-t border-[color:var(--border-faint)] pt-3.5"
               : "mt-10 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5"
           }
         >
           <div
             className={
               mobile
-                ? "flex items-center gap-2 text-[15px] font-medium text-[color:var(--text-primary)]"
+                ? "flex items-center gap-1.5 text-[14px] font-medium text-[color:var(--text-primary)]"
                 : "flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]"
             }
           >
@@ -312,7 +312,7 @@ export function OfficialArticleViewer({
             <span>该号更多内容</span>
           </div>
 
-          <div className={mobile ? "mt-3 space-y-2.5" : "mt-4 space-y-3"}>
+          <div className={mobile ? "mt-2.5 space-y-2" : "mt-4 space-y-3"}>
             {article.relatedArticles.map((relatedArticle) => (
               <button
                 key={relatedArticle.id}
@@ -320,7 +320,7 @@ export function OfficialArticleViewer({
                 onClick={() => onOpenArticle?.(relatedArticle.id)}
                 className={
                   mobile
-                    ? "flex w-full items-start justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-3 text-left transition hover:bg-white"
+                    ? "flex w-full items-start justify-between gap-2.5 rounded-[13px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-left transition hover:bg-white"
                     : "flex w-full items-start justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                 }
               >
@@ -328,7 +328,7 @@ export function OfficialArticleViewer({
                   <div
                     className={
                       mobile
-                        ? "text-[14px] font-medium leading-5 text-[color:var(--text-primary)]"
+                        ? "text-[13px] font-medium leading-5 text-[color:var(--text-primary)]"
                         : "text-sm font-medium leading-6 text-[color:var(--text-primary)]"
                     }
                   >
@@ -337,7 +337,7 @@ export function OfficialArticleViewer({
                   <div
                     className={
                       mobile
-                        ? "mt-1 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]"
+                        ? "mt-1 line-clamp-2 text-[10px] leading-[1.125rem] text-[color:var(--text-secondary)]"
                         : "mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]"
                     }
                   >
@@ -346,7 +346,7 @@ export function OfficialArticleViewer({
                   <div
                     className={
                       mobile
-                        ? "mt-1.5 text-[10px] text-[color:var(--text-muted)]"
+                        ? "mt-1 text-[10px] text-[color:var(--text-muted)]"
                         : "mt-2 text-[11px] text-[color:var(--text-muted)]"
                     }
                   >
@@ -354,7 +354,7 @@ export function OfficialArticleViewer({
                   </div>
                 </div>
                 <ArrowRight
-                  size={mobile ? 15 : 16}
+                  size={mobile ? 14 : 16}
                   className="mt-1 shrink-0 text-[color:var(--text-dim)]"
                 />
               </button>
