@@ -182,6 +182,7 @@ export function DesktopAddFriendWorkspace() {
   );
 
   const submittedKeyword = routeState.keyword.trim();
+  const routeCharacterId = routeState.characterId?.trim() || null;
   const normalizedKeyword = submittedKeyword.toLowerCase();
   const searchResults = useMemo(
     () =>
@@ -191,6 +192,7 @@ export function DesktopAddFriendWorkspace() {
         friendshipMap,
         pendingRequestMap,
         blockedCharacterIds,
+        routeCharacterId,
       ),
     [
       blockedCharacterIds,
@@ -198,7 +200,16 @@ export function DesktopAddFriendWorkspace() {
       friendshipMap,
       normalizedKeyword,
       pendingRequestMap,
+      routeCharacterId,
     ],
+  );
+  const routeSelectedResult = useMemo(
+    () =>
+      routeCharacterId
+        ? searchResults.find((item) => item.character.id === routeCharacterId) ??
+          null
+        : null,
+    [routeCharacterId, searchResults],
   );
   const selectedResult = useMemo(
     () => {
@@ -236,6 +247,18 @@ export function DesktopAddFriendWorkspace() {
     null;
 
   useEffect(() => {
+    if (!routeSelectedResult) {
+      return;
+    }
+
+    setSelectedCharacterId((current) =>
+      current === routeSelectedResult.character.id
+        ? current
+        : routeSelectedResult.character.id,
+    );
+  }, [routeSelectedResult]);
+
+  useEffect(() => {
     if (!searchResults.length) {
       setSelectedCharacterId(null);
       return;
@@ -256,6 +279,33 @@ export function DesktopAddFriendWorkspace() {
 
     setSelectedCharacterId(firstResult.character.id);
   }, [searchResults, selectedCharacterId]);
+
+  useEffect(() => {
+    if (!routeState.openCompose || !routeSelectedResult) {
+      return;
+    }
+
+    setSelectedCharacterId(routeSelectedResult.character.id);
+
+    if (routeSelectedResult.status === "available") {
+      setSendDialogCharacterId(routeSelectedResult.character.id);
+    }
+
+    void navigate({
+      to: "/desktop/add-friend",
+      hash: buildDesktopAddFriendRouteHash({
+        keyword: routeState.keyword,
+        characterId: routeState.characterId,
+      }),
+      replace: true,
+    });
+  }, [
+    navigate,
+    routeSelectedResult,
+    routeState.characterId,
+    routeState.keyword,
+    routeState.openCompose,
+  ]);
 
   if (!isDesktopLayout) {
     return null;
@@ -656,8 +706,9 @@ function buildSearchResults(
   friendshipMap: Map<string, FriendListItem["friendship"]>,
   pendingRequestMap: Map<string, FriendRequest>,
   blockedCharacterIds: Set<string>,
+  routeCharacterId?: string | null,
 ) {
-  if (!normalizedKeyword) {
+  if (!normalizedKeyword && !routeCharacterId) {
     return [] as SearchResultItem[];
   }
 
@@ -669,8 +720,12 @@ function buildSearchResults(
     }
 
     const identifier = buildCharacterIdentifier(character.id);
-    const match = matchCharacter(character, identifier, normalizedKeyword);
-    if (!match) {
+    const directRouteTarget =
+      Boolean(routeCharacterId) && character.id === routeCharacterId;
+    const match = normalizedKeyword
+      ? matchCharacter(character, identifier, normalizedKeyword)
+      : null;
+    if (!match && !directRouteTarget) {
       continue;
     }
 
@@ -690,9 +745,11 @@ function buildSearchResults(
       character,
       friendship,
       identifier,
-      matchReason: match.reason,
+      matchReason: directRouteTarget
+        ? match?.reason ?? "来自当前资料页"
+        : (match?.reason ?? "资料关键词匹配"),
       pendingRequest,
-      score: match.score,
+      score: directRouteTarget ? Math.min(match?.score ?? 0, 0) : (match?.score ?? 0),
       status,
     });
   }
