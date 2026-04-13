@@ -9,12 +9,13 @@ if ! node scripts/wait-for-service-ready.mjs api http://127.0.0.1:3000/health 60
   exit 1
 fi
 
-node scripts/dev-services.mjs restart app
+node scripts/dev-services.mjs stop app
+(cd apps/app && npm exec vite build)
+node scripts/ensure-local-web-nginx.mjs
 node scripts/dev-services.mjs restart admin
 
-node scripts/wait-for-service-ready.mjs app http://127.0.0.1:5180/ 30000 1000
+node scripts/wait-for-service-ready.mjs web http://127.0.0.1:5180/healthz 30000 1000
 node scripts/wait-for-service-ready.mjs admin http://127.0.0.1:5181/ 30000 1000
 
 node scripts/dev-services.mjs status api
-node scripts/dev-services.mjs status app
 node scripts/dev-services.mjs status admin
