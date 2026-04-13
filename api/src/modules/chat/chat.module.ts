@@ -24,6 +24,8 @@ import { FavoritesService } from './favorites.service';
 import { GroupService } from './group.service';
 import { MessageRemindersService } from './message-reminders.service';
 import { VoiceCallsService } from './voice-calls.service';
+import { GroupReplyPlannerService } from './group-reply-planner.service';
+import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
 import { CharactersModule } from '../characters/characters.module';
@@ -58,6 +60,8 @@ import { CustomStickersService } from './custom-stickers.service';
     ChatService,
     ChatBackgroundsService,
     GroupService,
+    GroupReplyPlannerService,
+    GroupReplyOrchestratorService,
     FavoritesService,
     MessageRemindersService,
     DigitalHumanCallsService,

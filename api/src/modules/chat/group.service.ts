@@ -17,11 +17,7 @@ import {
   type MessageSearchQuery,
   type MessageSearchResponse,
 } from './message-search.utils';
-import {
-  AiMessagePart,
-  ChatMessage,
-  PersonalityProfile,
-} from '../ai/ai.types';
+import { AiMessagePart, ChatMessage } from '../ai/ai.types';
 import {
   ContactCardAttachment,
   FileAttachment,
@@ -34,7 +30,6 @@ import {
   StickerAttachment,
   VoiceAttachment,
 } from './chat.types';
-import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 import { CharactersService } from '../characters/characters.service';
@@ -46,6 +41,11 @@ import {
   summarizeChatMentions,
   type ChatReplyMetadata,
 } from './chat-text.utils';
+import {
+  type GroupUserMessageContext,
+} from './group-reply.types';
+import { GroupReplyPlannerService } from './group-reply-planner.service';
+import { GroupReplyOrchestratorService } from './group-reply-orchestrator.service';
 
 export interface CreateGroupDto {
   name: string;
@@ -123,41 +123,11 @@ type SendGroupMessageInput =
       attachment: StickerAttachment;
     };
 
-type GroupReplyCandidate = {
-  character: NonNullable<Awaited<ReturnType<CharactersService['findById']>>>;
-  profile: PersonalityProfile;
-  score: number;
-  randomPassed: boolean;
-  isExplicitTarget: boolean;
-  isReplyTarget: boolean;
-};
-
-type GroupUserMessageContext = {
-  promptText: string;
-  parts: AiMessagePart[];
-  mentions: string[];
-  hasMentionAll: boolean;
-  replyMetadata?: ChatReplyMetadata;
-  replyTargetMessage?: GroupMessageEntity | null;
-};
-
 const DEFAULT_GROUP_REPLY_HISTORY_LIMIT = 24;
-const DEFAULT_GROUP_REPLY_MAX_SPEAKERS = 2;
-const DEFAULT_GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL = 3;
-const GROUP_REPLY_PRIMARY_DELAY_RANGE_MS = {
-  min: 2_000,
-  max: 6_000,
-} as const;
-const GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS = {
-  min: 5_000,
-  max: 12_000,
-} as const;
-const GROUP_REPLY_RECENT_SPEAKER_WINDOW = 4;
 
 @Injectable()
 export class GroupService {
   private readonly logger = new Logger(GroupService.name);
-  private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
   constructor(
     @InjectRepository(ConversationEntity)
@@ -170,12 +140,13 @@ export class GroupService {
     private memberRepo: Repository<GroupMemberEntity>,
     @InjectRepository(GroupMessageEntity)
     private messageRepo: Repository<GroupMessageEntity>,
-    private readonly ai: AiOrchestratorService,
     private readonly characters: CharactersService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly replyLogicRules: ReplyLogicRulesService,
     private readonly chatGateway: ChatGateway,
     private readonly customStickersService: CustomStickersService,
+    private readonly groupReplyPlanner: GroupReplyPlannerService,
+    private readonly groupReplyOrchestrator: GroupReplyOrchestratorService,
   ) {}
 
   async createGroup(dto: CreateGroupDto): Promise<Group> {
@@ -674,7 +645,6 @@ export class GroupService {
     userMessage: GroupMessage,
   ): Promise<void> {
     await this.requireAccessibleGroup(groupId);
-    this.latestTriggerMessageByGroup.set(groupId, userMessage.id);
     const members = await this.memberRepo.find({
       where: { groupId, memberType: 'character' },
     });
@@ -699,7 +669,7 @@ export class GroupService {
       groupId,
       userMessage,
     );
-    const selectedActors = await this.selectReplyActorsForTurn({
+    const selectedActors = await this.groupReplyPlanner.selectReplyActorsForTurn({
       members,
       history: recentMessages,
       currentUserContext,
@@ -709,53 +679,31 @@ export class GroupService {
       return;
     }
 
-    const emittedReplies: Array<{ senderName: string; text: string }> = [];
-    for (const [index, actor] of selectedActors.entries()) {
-      if (this.isReplyTurnStale(groupId, userMessage.id)) {
-        return;
-      }
-
-      await this.sleep(this.pickReplyDelay(index));
-      if (this.isReplyTurnStale(groupId, userMessage.id)) {
-        return;
-      }
-
-      try {
-        const reply = await this.ai.generateReply({
-          profile: actor.profile,
-          conversationHistory: history,
-          userMessage: this.buildTurnUserPrompt(
-            currentUserContext.promptText,
-            emittedReplies,
-          ),
-          userMessageParts: currentUserContext.parts,
-          isGroupChat: true,
-        });
-        if (this.isReplyTurnStale(groupId, userMessage.id)) {
-          return;
-        }
-
+    await this.groupReplyOrchestrator.executeTurn({
+      groupId,
+      triggerMessageId: userMessage.id,
+      selectedActors,
+      conversationHistory: history,
+      currentUserContext,
+      sendReply: async (actor, text) => {
         await this.sendMessage(
           groupId,
           actor.character.id,
           'character',
           actor.character.name,
           {
-            text: reply.text,
+            text,
           },
           actor.character.avatar,
         );
-        emittedReplies.push({
-          senderName: actor.character.name,
-          text: reply.text,
-        });
-      } catch (err) {
+      },
+      onError: (actor, error) => {
         this.logger.error(
           `AI reply failed for ${actor.character.name} in group ${groupId}`,
-          err,
+          error,
         );
-      }
-    }
+      },
+    });
   }
 
   private async normalizeOutgoingMessageInput(
@@ -855,19 +803,6 @@ export class GroupService {
     };
   }
 
-  private buildCurrentUserAiMessage(message: GroupMessage): ChatMessage {
-    const promptText = this.buildMessagePromptText(
-      message.text,
-      message.attachment,
-    );
-
-    return {
-      role: 'user',
-      content: `[${message.senderName}]: ${promptText}`,
-      parts: this.buildAiParts(message.text, message.attachment),
-    };
-  }
-
   private async buildCurrentUserMessageContext(
     groupId: string,
     message: GroupMessage,
@@ -891,189 +826,6 @@ export class GroupService {
       replyMetadata: replyContent.reply,
       replyTargetMessage,
     };
-  }
-
-  private async selectReplyActorsForTurn(input: {
-    members: GroupMemberEntity[];
-    history: GroupMessageEntity[];
-    currentUserContext: GroupUserMessageContext;
-    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>;
-  }): Promise<GroupReplyCandidate[]> {
-    const {
-      members,
-      history,
-      currentUserContext,
-      runtimeRules,
-    } = input;
-    const recentSpeakerIds = history
-      .filter((message) => message.senderType === 'character')
-      .map((message) => message.senderId)
-      .slice(0, GROUP_REPLY_RECENT_SPEAKER_WINDOW);
-    const normalizedMentionTargets = new Set(
-      currentUserContext.mentions.map((mention) =>
-        this.normalizeMentionTarget(mention),
-      ),
-    );
-    const replyTargetCharacterId =
-      currentUserContext.replyTargetMessage?.senderType === 'character'
-        ? currentUserContext.replyTargetMessage.senderId
-        : undefined;
-
-    const candidates = (
-      await Promise.all(
-        members.map(async (member) => {
-          const character = await this.characters.findById(member.memberId);
-          if (!character) {
-            return null;
-          }
-
-          const profile = await this.characters.getProfile(member.memberId);
-          if (!profile) {
-            return null;
-          }
-
-          const aliases = Array.from(
-            new Set(
-              [member.memberName, character.name]
-                .map((value) => value?.trim())
-                .filter((value): value is string => Boolean(value)),
-            ),
-          );
-          const isExplicitTarget = aliases.some((alias) =>
-            normalizedMentionTargets.has(alias),
-          );
-          const isReplyTarget = replyTargetCharacterId === character.id;
-          const baseChance =
-            runtimeRules.groupReplyChance[
-              (character.activityFrequency as 'high' | 'normal' | 'low') ??
-                'normal'
-            ] ?? runtimeRules.groupReplyChance.normal;
-          let score = baseChance * 10;
-
-          if (currentUserContext.hasMentionAll) {
-            score += 1.5;
-          }
-          if (isExplicitTarget) {
-            score += 6;
-          }
-          if (isReplyTarget) {
-            score += 8;
-          }
-
-          const recentSpeakerIndex = recentSpeakerIds.indexOf(character.id);
-          if (recentSpeakerIndex >= 0) {
-            score -=
-              (GROUP_REPLY_RECENT_SPEAKER_WINDOW - recentSpeakerIndex) * 1.25;
-          }
-
-          const adjustedChance = Math.min(
-            0.98,
-            baseChance +
-              (isExplicitTarget ? 0.25 : 0) +
-              (isReplyTarget ? 0.35 : 0) +
-              (currentUserContext.hasMentionAll ? 0.08 : 0),
-          );
-
-          return {
-            character,
-            profile,
-            score,
-            randomPassed: Math.random() <= adjustedChance,
-            isExplicitTarget,
-            isReplyTarget,
-          } satisfies GroupReplyCandidate;
-        }),
-      )
-    )
-      .filter((candidate): candidate is GroupReplyCandidate => Boolean(candidate))
-      .sort((left, right) => right.score - left.score);
-
-    if (!candidates.length) {
-      return [];
-    }
-
-    const explicitInterest =
-      Boolean(replyTargetCharacterId) || normalizedMentionTargets.size > 0;
-    const maxSpeakers = currentUserContext.hasMentionAll
-      ? DEFAULT_GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL
-      : explicitInterest
-        ? DEFAULT_GROUP_REPLY_MAX_SPEAKERS
-        : 1;
-    const selected: GroupReplyCandidate[] = [];
-    const selectedIds = new Set<string>();
-
-    for (const candidate of candidates) {
-      if (selected.length >= maxSpeakers) {
-        break;
-      }
-      if (!candidate.isReplyTarget && !candidate.isExplicitTarget) {
-        continue;
-      }
-
-      selected.push(candidate);
-      selectedIds.add(candidate.character.id);
-    }
-
-    if (!selected.length) {
-      selected.push(candidates[0]);
-      selectedIds.add(candidates[0].character.id);
-    }
-
-    for (const candidate of candidates) {
-      if (selected.length >= maxSpeakers) {
-        break;
-      }
-      if (selectedIds.has(candidate.character.id) || !candidate.randomPassed) {
-        continue;
-      }
-      if (!currentUserContext.hasMentionAll && !explicitInterest) {
-        continue;
-      }
-
-      selected.push(candidate);
-      selectedIds.add(candidate.character.id);
-    }
-
-    return selected;
-  }
-
-  private buildTurnUserPrompt(
-    promptText: string,
-    emittedReplies: Array<{ senderName: string; text: string }>,
-  ) {
-    if (!emittedReplies.length) {
-      return promptText;
-    }
-
-    const replySummary = emittedReplies
-      .map(
-        (reply) => `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
-      )
-      .join('\n');
-
-    return `${promptText}\n\n【群里刚刚已经有人回应】\n${replySummary}\n请避免重复上面的内容，直接补充新的信息或自然接话。`;
-  }
-
-  private normalizeMentionTarget(mention: string) {
-    return mention.replace(/^@/, '').trim();
-  }
-
-  private pickReplyDelay(index: number) {
-    const range =
-      index === 0
-        ? GROUP_REPLY_PRIMARY_DELAY_RANGE_MS
-        : GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS;
-    return range.min + Math.random() * (range.max - range.min);
-  }
-
-  private isReplyTurnStale(groupId: string, triggerMessageId: string) {
-    return this.latestTriggerMessageByGroup.get(groupId) !== triggerMessageId;
-  }
-
-  private sleep(durationMs: number) {
-    return new Promise<void>((resolve) => {
-      setTimeout(resolve, Math.max(0, Math.round(durationMs)));
-    });
   }
 
   private buildAiParts(
