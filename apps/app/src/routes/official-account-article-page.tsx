@@ -25,9 +25,9 @@ import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-a
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
-  isNativeMobileBridgeAvailable,
   shareWithNativeShell,
 } from "../runtime/mobile-bridge";
+import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function OfficialAccountArticlePage() {
@@ -60,7 +60,7 @@ function MobileOfficialAccountArticlePage({
     message: string;
     tone: "success" | "info";
   } | null>(null);
-  const nativeMobileShareSupported = isNativeMobileBridgeAvailable();
+  const nativeMobileShareSupported = isNativeMobileShareSurface();
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, articleId],
