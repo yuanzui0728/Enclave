@@ -620,9 +620,9 @@ function MobileChannelsCard({
     <article
       ref={setCardRef}
       data-post-id={post.id}
-      className="snap-start overflow-hidden rounded-[28px] border border-black/5 bg-white shadow-none"
+      className="snap-start overflow-hidden rounded-[18px] border border-[color:var(--border-subtle)] bg-white shadow-none"
     >
-      <div className="relative min-h-[calc(100dvh-13rem)] bg-[#0f1115]">
+      <div className="relative min-h-[calc(100dvh-12rem)] bg-[#0f1115]">
         <video
           ref={videoRef}
           src={post.mediaUrl}
@@ -630,47 +630,47 @@ function MobileChannelsCard({
           muted
           playsInline
           preload="metadata"
-          className="block h-[66dvh] w-full bg-black object-cover"
+          className="block h-[64dvh] w-full bg-black object-cover"
           onClick={() => setManuallyPaused((current) => !current)}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(15,23,42,0))]" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
-        <div className="absolute left-4 top-4 flex items-center gap-2">
-          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-3 py-1 text-[11px] font-medium tracking-[0.08em] text-white">
+        <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
+          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-white">
             视频号推荐
           </div>
           {post.aiReacted ? (
-            <div className="rounded-full bg-[rgba(7,193,96,0.9)] px-3 py-1 text-[11px] font-medium text-white">
+            <div className="rounded-full bg-[rgba(7,193,96,0.9)] px-2.5 py-1 text-[10px] font-medium text-white">
               AI 已互动
             </div>
           ) : null}
           {active ? (
-            <div className="rounded-full bg-[rgba(7,193,96,0.82)] px-3 py-1 text-[11px] font-medium text-white">
+            <div className="rounded-full bg-[rgba(7,193,96,0.82)] px-2.5 py-1 text-[10px] font-medium text-white">
               当前播放
             </div>
           ) : null}
         </div>
 
-        <div className="absolute right-4 top-4 flex items-center gap-2">
+        <div className="absolute right-3.5 top-3.5 flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => setMuted((current) => !current)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
           >
-            {muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
           <button
             type="button"
             onClick={() => setManuallyPaused((current) => !current)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] text-white backdrop-blur"
           >
-            {manuallyPaused ? <Play size={17} /> : <Pause size={17} />}
+            {manuallyPaused ? <Play size={16} /> : <Pause size={16} />}
           </button>
         </div>
 
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-          <div className="flex flex-col items-center gap-3">
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3.5">
+          <div className="flex flex-col items-center gap-2.5">
             <ActionRailButton
               label={likePending ? "处理中" : String(post.likeCount)}
               onClick={onLike}
@@ -705,28 +705,30 @@ function MobileChannelsCard({
           </div>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 px-4 pb-4">
-          <div className="max-w-[calc(100%-5rem)]">
-            <div className="flex items-center gap-3">
+        <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5">
+          <div className="max-w-[calc(100%-4.5rem)]">
+            <div className="flex items-center gap-2.5">
               <AvatarChip
                 name={post.authorName}
                 src={post.authorAvatar}
                 size="wechat"
               />
               <div className="min-w-0 flex-1 text-white">
-                <div className="truncate text-sm font-medium">
+                <div className="truncate text-[13px] font-medium">
                   {post.authorName}
                 </div>
-                <div className="mt-1 text-xs text-white/72">
+                <div className="mt-0.5 text-[10px] text-white/72">
                   {formatTimestamp(post.createdAt)} · 视频号动态
                 </div>
               </div>
             </div>
-            <div className="mt-3 text-sm leading-7 text-white">{post.text}</div>
-            <div className="mt-3 rounded-[22px] bg-[rgba(255,255,255,0.12)] px-3 py-2 text-xs leading-6 text-white/86 backdrop-blur">
+            <div className="mt-2.5 text-[13px] leading-[1.4rem] text-white">
+              {post.text}
+            </div>
+            <div className="mt-2.5 rounded-[18px] bg-[rgba(255,255,255,0.12)] px-3 py-2 text-[11px] leading-[1.35rem] text-white/86 backdrop-blur">
               {post.commentsPreview.length ? (
                 <>
-                  <div className="mb-1 text-[11px] uppercase tracking-[0.08em] text-white/62">
+                  <div className="mb-1 text-[10px] uppercase tracking-[0.04em] text-white/62">
                     最近评论
                   </div>
                   {post.commentsPreview.slice(0, 2).map((comment) => (
@@ -746,26 +748,26 @@ function MobileChannelsCard({
 
       <div
         ref={composerRef}
-        className="grid gap-3 border-t border-black/5 bg-white px-4 py-4"
+        className="grid gap-2.5 border-t border-[color:var(--border-subtle)] bg-white px-3.5 py-3.5"
       >
-        <div className="flex items-center gap-3 text-[12px] text-[color:var(--text-muted)]">
+        <div className="flex items-center gap-2.5 text-[11px] text-[color:var(--text-muted)]">
           <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
           <span>{post.likeCount} 赞</span>
           <span>{post.commentCount} 评论</span>
         </div>
-        <div className="flex items-center gap-2 rounded-[18px] bg-[#f5f5f5] p-2.5">
+        <div className="flex items-center gap-2 rounded-[16px] bg-[#f5f5f5] p-2">
           <TextField
             value={commentDraft}
             onChange={(event) => onCommentChange(event.target.value)}
             placeholder="写下你对这条视频号内容的评论..."
-            className="min-w-0 flex-1 rounded-full border-black/5 bg-white"
+            className="min-w-0 flex-1 rounded-full border-[color:var(--border-subtle)] bg-white text-[13px]"
           />
           <Button
             variant="primary"
             size="sm"
             disabled={!commentDraft.trim() || commentPending}
             onClick={onCommentSubmit}
-            className="bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+            className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
           >
             {commentPending ? "发送中..." : "发送"}
           </Button>
@@ -794,13 +796,13 @@ function ActionRailButton({
     >
       <span
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur",
-          active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_rgba(7,193,96,0.14)]",
+          "flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur",
+          active && "bg-[#07c160] shadow-[0_10px_24px_rgba(7,193,96,0.14)]",
         )}
       >
         {children}
       </span>
-      <span className="text-[11px]">{label}</span>
+      <span className="text-[10px]">{label}</span>
     </button>
   );
 }
