@@ -440,27 +440,24 @@ export function StickerPanel({
       null
     );
   }, [activeItems, highlightedStickerKey, searchPending, searching]);
-  const highlightedSearchSourceLabel = useMemo(() => {
+  const highlightedSearchSection = useMemo(() => {
     if (!highlightedSearchItem) {
       return null;
     }
 
     const stickerKey = getStickerIdentity(highlightedSearchItem.sticker);
-    for (const section of searchSections) {
-      if (
+    return (
+      searchSections.find((section) =>
         section.items.some(
           (item) => getStickerIdentity(item.sticker) === stickerKey,
-        )
-      ) {
-        return section.label;
-      }
-    }
-
-    return null;
+        ),
+      ) ?? null
+    );
   }, [highlightedSearchItem, searchSections]);
   const highlightedSearchStickerKey = highlightedSearchItem
     ? getStickerIdentity(highlightedSearchItem.sticker)
     : null;
+  const highlightedSearchSourceLabel = highlightedSearchSection?.label ?? null;
   const highlightedSearchPosition = useMemo(() => {
     if (!highlightedSearchStickerKey) {
       return null;
@@ -557,6 +554,19 @@ export function StickerPanel({
     !isMobile && searching && !searchPending
       ? (activeStickerKeys[0] ?? null)
       : null;
+  const recommendedSearchSection = useMemo(() => {
+    if (!firstSearchResultKey) {
+      return null;
+    }
+
+    return (
+      searchSections.find((section) =>
+        section.items.some(
+          (item) => getStickerIdentity(item.sticker) === firstSearchResultKey,
+        ),
+      ) ?? null
+    );
+  }, [firstSearchResultKey, searchSections]);
   const searchSectionStateMap = useMemo(() => {
     const stateMap = new Map<
       string,
@@ -1257,6 +1267,20 @@ export function StickerPanel({
                       </div>
                       <div className="truncate pt-0.5 text-[color:var(--text-secondary)]">
                         来源：{highlightedSearchSourceLabel ?? "搜索结果"}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {highlightedSearchSection ? (
+                          <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                            当前来源 · {highlightedSearchSection.label}
+                          </span>
+                        ) : null}
+                        {recommendedSearchSection &&
+                        recommendedSearchSection.id !==
+                          highlightedSearchSection?.id ? (
+                          <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                            默认回车 · {recommendedSearchSection.label}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
