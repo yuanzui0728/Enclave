@@ -23,6 +23,7 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
+  cn,
 } from "@yinjie/ui";
 import { ChatDetailsShell } from "../features/chat-details/chat-details-shell";
 import { CHAT_BACKGROUND_PRESETS } from "../features/chat/backgrounds/background-catalog";
@@ -239,22 +240,79 @@ export function GroupChatBackgroundPage() {
   const content = (
     <>
       {groupQuery.isLoading || backgroundQuery.isLoading ? (
-        <LoadingBlock label="正在读取群聊背景..." />
+        isDesktopLayout ? (
+          <LoadingBlock label="正在读取群聊背景..." />
+        ) : (
+          <MobileGroupBackgroundStatusCard
+            badge="读取中"
+            title="正在读取群聊背景"
+            description="稍等一下，正在同步默认背景和当前群聊设置。"
+            tone="loading"
+          />
+        )
       ) : null}
       {groupQuery.isError && groupQuery.error instanceof Error ? (
-        <ErrorBlock message={groupQuery.error.message} />
+        isDesktopLayout ? (
+          <ErrorBlock message={groupQuery.error.message} />
+        ) : (
+          <MobileGroupBackgroundStatusCard
+            badge="读取失败"
+            title="群聊背景暂时不可用"
+            description={groupQuery.error.message}
+            tone="danger"
+          />
+        )
       ) : null}
       {backgroundQuery.isError && backgroundQuery.error instanceof Error ? (
-        <ErrorBlock message={backgroundQuery.error.message} />
+        isDesktopLayout ? (
+          <ErrorBlock message={backgroundQuery.error.message} />
+        ) : (
+          <MobileGroupBackgroundStatusCard
+            badge="读取失败"
+            title="群聊背景暂时不可用"
+            description={backgroundQuery.error.message}
+            tone="danger"
+          />
+        )
       ) : null}
-      {pageError ? <ErrorBlock message={pageError} /> : null}
-      {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+      {pageError ? (
+        isDesktopLayout ? (
+          <ErrorBlock message={pageError} />
+        ) : (
+          <InlineNotice
+            tone="danger"
+            className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          >
+            {pageError}
+          </InlineNotice>
+        )
+      ) : null}
+      {notice ? (
+        <InlineNotice
+          tone="success"
+          className={
+            isDesktopLayout
+              ? undefined
+              : "rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          }
+        >
+          {notice}
+        </InlineNotice>
+      ) : null}
 
       {!groupQuery.isLoading && !groupQuery.data ? (
-        <EmptyPanel
-          title="群聊不存在"
-          description="这个群聊暂时不可用，返回上一页后再试一次。"
-        />
+        isDesktopLayout ? (
+          <EmptyPanel
+            title="群聊不存在"
+            description="这个群聊暂时不可用，返回上一页后再试一次。"
+          />
+        ) : (
+          <MobileGroupBackgroundStatusCard
+            badge="群聊"
+            title="群聊不存在"
+            description="这个群聊暂时不可用，返回上一页后再试一次。"
+          />
+        )
       ) : null}
 
       {groupQuery.data ? (
@@ -613,5 +671,52 @@ function EmptyPanel({
         {description}
       </div>
     </div>
+  );
+}
+
+function MobileGroupBackgroundStatusCard({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
+          tone === "danger"
+            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+        )}
+      >
+        {badge}
+      </div>
+      {tone === "loading" ? (
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </section>
   );
 }
