@@ -17,7 +17,11 @@ import {
   type MessageSearchQuery,
   type MessageSearchResponse,
 } from './message-search.utils';
-import { AiMessagePart, ChatMessage } from '../ai/ai.types';
+import {
+  AiMessagePart,
+  ChatMessage,
+  PersonalityProfile,
+} from '../ai/ai.types';
 import {
   ContactCardAttachment,
   FileAttachment,
@@ -37,6 +41,11 @@ import { CharactersService } from '../characters/characters.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { ChatGateway } from './chat.gateway';
 import { CustomStickersService } from './custom-stickers.service';
+import {
+  extractChatReplyMetadata,
+  summarizeChatMentions,
+  type ChatReplyMetadata,
+} from './chat-text.utils';
 
 export interface CreateGroupDto {
   name: string;
@@ -114,9 +123,41 @@ type SendGroupMessageInput =
       attachment: StickerAttachment;
     };
 
+type GroupReplyCandidate = {
+  character: NonNullable<Awaited<ReturnType<CharactersService['findById']>>>;
+  profile: PersonalityProfile;
+  score: number;
+  randomPassed: boolean;
+  isExplicitTarget: boolean;
+  isReplyTarget: boolean;
+};
+
+type GroupUserMessageContext = {
+  promptText: string;
+  parts: AiMessagePart[];
+  mentions: string[];
+  hasMentionAll: boolean;
+  replyMetadata?: ChatReplyMetadata;
+  replyTargetMessage?: GroupMessageEntity | null;
+};
+
+const DEFAULT_GROUP_REPLY_HISTORY_LIMIT = 24;
+const DEFAULT_GROUP_REPLY_MAX_SPEAKERS = 2;
+const DEFAULT_GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL = 3;
+const GROUP_REPLY_PRIMARY_DELAY_RANGE_MS = {
+  min: 2_000,
+  max: 6_000,
+} as const;
+const GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS = {
+  min: 5_000,
+  max: 12_000,
+} as const;
+const GROUP_REPLY_RECENT_SPEAKER_WINDOW = 4;
+
 @Injectable()
 export class GroupService {
   private readonly logger = new Logger(GroupService.name);
+  private readonly latestTriggerMessageByGroup = new Map<string, string>();
 
   constructor(
     @InjectRepository(ConversationEntity)
@@ -633,67 +674,87 @@ export class GroupService {
     userMessage: GroupMessage,
   ): Promise<void> {
     await this.requireAccessibleGroup(groupId);
+    this.latestTriggerMessageByGroup.set(groupId, userMessage.id);
     const members = await this.memberRepo.find({
       where: { groupId, memberType: 'character' },
     });
+    if (!members.length) {
+      return;
+    }
+
+    const runtimeRules = await this.replyLogicRules.getRules();
     const recentMessages = await this.messageRepo.find({
       where: { groupId },
       order: { createdAt: 'DESC' },
-      take: 10,
+      take: Math.max(
+        runtimeRules.historyWindow.max,
+        DEFAULT_GROUP_REPLY_HISTORY_LIMIT,
+      ),
     });
     const history = recentMessages
       .filter((message) => message.id !== userMessage.id)
       .reverse()
       .map((message) => this.buildAiHistoryMessage(message));
-    const currentUserMessage = this.buildCurrentUserAiMessage(userMessage);
-    const runtimeRules = await this.replyLogicRules.getRules();
+    const currentUserContext = await this.buildCurrentUserMessageContext(
+      groupId,
+      userMessage,
+    );
+    const selectedActors = await this.selectReplyActorsForTurn({
+      members,
+      history: recentMessages,
+      currentUserContext,
+      runtimeRules,
+    });
+    if (!selectedActors.length) {
+      return;
+    }
 
-    for (const member of members) {
-      const char = await this.characters.findById(member.memberId);
-      if (!char) continue;
+    const emittedReplies: Array<{ senderName: string; text: string }> = [];
+    for (const [index, actor] of selectedActors.entries()) {
+      if (this.isReplyTurnStale(groupId, userMessage.id)) {
+        return;
+      }
 
-      const replyChance =
-        runtimeRules.groupReplyChance[
-          (char.activityFrequency as 'high' | 'normal' | 'low') ?? 'normal'
-        ] ?? runtimeRules.groupReplyChance.normal;
-      if (Math.random() > replyChance) continue;
+      await this.sleep(this.pickReplyDelay(index));
+      if (this.isReplyTurnStale(groupId, userMessage.id)) {
+        return;
+      }
 
-      const profile = await this.characters.getProfile(member.memberId);
-      if (!profile) continue;
+      try {
+        const reply = await this.ai.generateReply({
+          profile: actor.profile,
+          conversationHistory: history,
+          userMessage: this.buildTurnUserPrompt(
+            currentUserContext.promptText,
+            emittedReplies,
+          ),
+          userMessageParts: currentUserContext.parts,
+          isGroupChat: true,
+        });
+        if (this.isReplyTurnStale(groupId, userMessage.id)) {
+          return;
+        }
 
-      const delay =
-        runtimeRules.groupReplyDelayMs.min +
-        Math.random() *
-          (runtimeRules.groupReplyDelayMs.max -
-            runtimeRules.groupReplyDelayMs.min);
-      setTimeout(() => {
-        void (async () => {
-          try {
-            const reply = await this.ai.generateReply({
-              profile,
-              conversationHistory: history,
-              userMessage: currentUserMessage.content,
-              userMessageParts: currentUserMessage.parts,
-              isGroupChat: true,
-            });
-            await this.sendMessage(
-              groupId,
-              char.id,
-              'character',
-              char.name,
-              {
-                text: reply.text,
-              },
-              char.avatar,
-            );
-          } catch (err) {
-            this.logger.error(
-              `AI reply failed for ${char.name} in group ${groupId}`,
-              err,
-            );
-          }
-        })();
-      }, delay);
+        await this.sendMessage(
+          groupId,
+          actor.character.id,
+          'character',
+          actor.character.name,
+          {
+            text: reply.text,
+          },
+          actor.character.avatar,
+        );
+        emittedReplies.push({
+          senderName: actor.character.name,
+          text: reply.text,
+        });
+      } catch (err) {
+        this.logger.error(
+          `AI reply failed for ${actor.character.name} in group ${groupId}`,
+          err,
+        );
+      }
     }
   }
 
@@ -774,8 +835,8 @@ export class GroupService {
     return {
       type: 'text',
       text,
-      promptText: text,
-      aiParts: this.buildTextAiParts(text),
+      promptText: this.buildMessagePromptText(text),
+      aiParts: this.buildAiParts(text),
     };
   }
 
@@ -807,15 +868,222 @@ export class GroupService {
     };
   }
 
+  private async buildCurrentUserMessageContext(
+    groupId: string,
+    message: GroupMessage,
+  ): Promise<GroupUserMessageContext> {
+    const replyContent = extractChatReplyMetadata(message.text);
+    const mentionSummary = summarizeChatMentions(replyContent.body);
+    const replyTargetMessage = replyContent.reply
+      ? await this.messageRepo.findOne({
+          where: {
+            id: replyContent.reply.messageId,
+            groupId,
+          },
+        })
+      : null;
+
+    return {
+      promptText: this.buildMessagePromptText(message.text, message.attachment),
+      parts: this.buildAiParts(message.text, message.attachment),
+      mentions: mentionSummary.mentions,
+      hasMentionAll: mentionSummary.hasMentionAll,
+      replyMetadata: replyContent.reply,
+      replyTargetMessage,
+    };
+  }
+
+  private async selectReplyActorsForTurn(input: {
+    members: GroupMemberEntity[];
+    history: GroupMessageEntity[];
+    currentUserContext: GroupUserMessageContext;
+    runtimeRules: Awaited<ReturnType<ReplyLogicRulesService['getRules']>>;
+  }): Promise<GroupReplyCandidate[]> {
+    const {
+      members,
+      history,
+      currentUserContext,
+      runtimeRules,
+    } = input;
+    const recentSpeakerIds = history
+      .filter((message) => message.senderType === 'character')
+      .map((message) => message.senderId)
+      .slice(0, GROUP_REPLY_RECENT_SPEAKER_WINDOW);
+    const normalizedMentionTargets = new Set(
+      currentUserContext.mentions.map((mention) =>
+        this.normalizeMentionTarget(mention),
+      ),
+    );
+    const replyTargetCharacterId =
+      currentUserContext.replyTargetMessage?.senderType === 'character'
+        ? currentUserContext.replyTargetMessage.senderId
+        : undefined;
+
+    const candidates = (
+      await Promise.all(
+        members.map(async (member) => {
+          const character = await this.characters.findById(member.memberId);
+          if (!character) {
+            return null;
+          }
+
+          const profile = await this.characters.getProfile(member.memberId);
+          if (!profile) {
+            return null;
+          }
+
+          const aliases = Array.from(
+            new Set(
+              [member.memberName, character.name]
+                .map((value) => value?.trim())
+                .filter((value): value is string => Boolean(value)),
+            ),
+          );
+          const isExplicitTarget = aliases.some((alias) =>
+            normalizedMentionTargets.has(alias),
+          );
+          const isReplyTarget = replyTargetCharacterId === character.id;
+          const baseChance =
+            runtimeRules.groupReplyChance[
+              (character.activityFrequency as 'high' | 'normal' | 'low') ??
+                'normal'
+            ] ?? runtimeRules.groupReplyChance.normal;
+          let score = baseChance * 10;
+
+          if (currentUserContext.hasMentionAll) {
+            score += 1.5;
+          }
+          if (isExplicitTarget) {
+            score += 6;
+          }
+          if (isReplyTarget) {
+            score += 8;
+          }
+
+          const recentSpeakerIndex = recentSpeakerIds.indexOf(character.id);
+          if (recentSpeakerIndex >= 0) {
+            score -=
+              (GROUP_REPLY_RECENT_SPEAKER_WINDOW - recentSpeakerIndex) * 1.25;
+          }
+
+          const adjustedChance = Math.min(
+            0.98,
+            baseChance +
+              (isExplicitTarget ? 0.25 : 0) +
+              (isReplyTarget ? 0.35 : 0) +
+              (currentUserContext.hasMentionAll ? 0.08 : 0),
+          );
+
+          return {
+            character,
+            profile,
+            score,
+            randomPassed: Math.random() <= adjustedChance,
+            isExplicitTarget,
+            isReplyTarget,
+          } satisfies GroupReplyCandidate;
+        }),
+      )
+    )
+      .filter((candidate): candidate is GroupReplyCandidate => Boolean(candidate))
+      .sort((left, right) => right.score - left.score);
+
+    if (!candidates.length) {
+      return [];
+    }
+
+    const explicitInterest =
+      Boolean(replyTargetCharacterId) || normalizedMentionTargets.size > 0;
+    const maxSpeakers = currentUserContext.hasMentionAll
+      ? DEFAULT_GROUP_REPLY_MAX_SPEAKERS_MENTION_ALL
+      : explicitInterest
+        ? DEFAULT_GROUP_REPLY_MAX_SPEAKERS
+        : 1;
+    const selected: GroupReplyCandidate[] = [];
+    const selectedIds = new Set<string>();
+
+    for (const candidate of candidates) {
+      if (selected.length >= maxSpeakers) {
+        break;
+      }
+      if (!candidate.isReplyTarget && !candidate.isExplicitTarget) {
+        continue;
+      }
+
+      selected.push(candidate);
+      selectedIds.add(candidate.character.id);
+    }
+
+    if (!selected.length) {
+      selected.push(candidates[0]);
+      selectedIds.add(candidates[0].character.id);
+    }
+
+    for (const candidate of candidates) {
+      if (selected.length >= maxSpeakers) {
+        break;
+      }
+      if (selectedIds.has(candidate.character.id) || !candidate.randomPassed) {
+        continue;
+      }
+      if (!currentUserContext.hasMentionAll && !explicitInterest) {
+        continue;
+      }
+
+      selected.push(candidate);
+      selectedIds.add(candidate.character.id);
+    }
+
+    return selected;
+  }
+
+  private buildTurnUserPrompt(
+    promptText: string,
+    emittedReplies: Array<{ senderName: string; text: string }>,
+  ) {
+    if (!emittedReplies.length) {
+      return promptText;
+    }
+
+    const replySummary = emittedReplies
+      .map(
+        (reply) => `- ${reply.senderName}：${sanitizeAiText(reply.text) || '（无回复）'}`,
+      )
+      .join('\n');
+
+    return `${promptText}\n\n【群里刚刚已经有人回应】\n${replySummary}\n请避免重复上面的内容，直接补充新的信息或自然接话。`;
+  }
+
+  private normalizeMentionTarget(mention: string) {
+    return mention.replace(/^@/, '').trim();
+  }
+
+  private pickReplyDelay(index: number) {
+    const range =
+      index === 0
+        ? GROUP_REPLY_PRIMARY_DELAY_RANGE_MS
+        : GROUP_REPLY_FOLLOWUP_DELAY_RANGE_MS;
+    return range.min + Math.random() * (range.max - range.min);
+  }
+
+  private isReplyTurnStale(groupId: string, triggerMessageId: string) {
+    return this.latestTriggerMessageByGroup.get(groupId) !== triggerMessageId;
+  }
+
+  private sleep(durationMs: number) {
+    return new Promise<void>((resolve) => {
+      setTimeout(resolve, Math.max(0, Math.round(durationMs)));
+    });
+  }
+
   private buildAiParts(
     text: string,
     attachment?: MessageAttachment,
   ): AiMessagePart[] {
-    if (!attachment) {
-      return this.buildTextAiParts(text);
-    }
-
     const promptText = this.buildMessagePromptText(text, attachment);
+    if (!attachment) {
+      return this.buildTextAiParts(promptText);
+    }
 
     if (attachment.kind === 'image') {
       return [
@@ -889,13 +1157,26 @@ export class GroupService {
     text: string,
     attachment?: MessageAttachment,
   ): string {
+    const replyContent = extractChatReplyMetadata(text);
+    const mentionSummary = summarizeChatMentions(replyContent.body);
+    const bodyText = replyContent.body.trim();
+
+    const replyPrefix = replyContent.reply
+      ? this.buildReplyContextPrefix(replyContent.reply)
+      : '';
+    const mentionPrefix = mentionSummary.mentions.length
+      ? `提到了：${mentionSummary.mentions.join('、')}`
+      : '';
+
     if (!attachment) {
-      return text;
+      return [replyPrefix, mentionPrefix, bodyText].filter(Boolean).join('\n');
     }
 
     const fallbackText = this.getAttachmentFallbackText(attachment);
     const caption =
-      text.trim() && text.trim() !== fallbackText ? text.trim() : undefined;
+      bodyText && bodyText !== fallbackText ? bodyText : undefined;
+
+    let attachmentSummary = '';
 
     if (attachment.kind === 'image') {
       const dimensions =
@@ -903,33 +1184,27 @@ export class GroupService {
           ? `，尺寸 ${attachment.width}x${attachment.height}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
-      return `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
-    }
-
-    if (attachment.kind === 'file') {
+      attachmentSummary =
+        `发来一张图片，文件名：${attachment.fileName}${dimensions}${captionText}`.trim();
+    } else if (attachment.kind === 'file') {
       const sizeText = formatGroupAttachmentSize(attachment.size);
       const captionText = caption ? `，补充说明：${caption}` : '';
-      return `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();
-    }
-
-    if (attachment.kind === 'voice') {
+      attachmentSummary =
+        `发来一个文件《${attachment.fileName}》${attachment.mimeType ? `，类型：${attachment.mimeType}` : ''}${sizeText ? `，大小：${sizeText}` : ''}${captionText}`.trim();
+    } else if (attachment.kind === 'voice') {
       const durationText =
         attachment.durationMs && attachment.durationMs > 0
           ? `，时长：${formatGroupAttachmentDuration(attachment.durationMs)}`
           : '';
       const captionText = caption ? `，补充说明：${caption}` : '';
-      return `发来一条语音消息${durationText}${captionText}`.trim();
-    }
-
-    if (attachment.kind === 'contact_card') {
-      return `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();
-    }
-
-    if (attachment.kind === 'location_card') {
-      return `分享了一个位置：${attachment.title}${attachment.subtitle ? `，${attachment.subtitle}` : ''}`.trim();
-    }
-
-    if (attachment.kind === 'note_card') {
+      attachmentSummary = `发来一条语音消息${durationText}${captionText}`.trim();
+    } else if (attachment.kind === 'contact_card') {
+      attachmentSummary =
+        `分享了一张名片：${attachment.name}${attachment.relationship ? `，关系：${attachment.relationship}` : ''}${attachment.bio ? `，简介：${attachment.bio}` : ''}`.trim();
+    } else if (attachment.kind === 'location_card') {
+      attachmentSummary =
+        `分享了一个位置：${attachment.title}${attachment.subtitle ? `，${attachment.subtitle}` : ''}`.trim();
+    } else if (attachment.kind === 'note_card') {
       const detailParts = [
         `分享了一条笔记：${attachment.title}`,
         attachment.excerpt ? `摘要：${attachment.excerpt}` : '',
@@ -938,12 +1213,23 @@ export class GroupService {
           : '',
       ].filter(Boolean);
       const captionText = caption ? `，补充说明：${caption}` : '';
-      return `${detailParts.join('，')}${captionText}`.trim();
+      attachmentSummary = `${detailParts.join('，')}${captionText}`.trim();
+    } else {
+      attachmentSummary = caption
+        ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`
+        : `发送了一个表情包：${attachment.label ?? attachment.stickerId}`;
     }
 
-    return caption
-      ? `发送了一个表情包：${attachment.label ?? attachment.stickerId}，补充说明：${caption}`
-      : `发送了一个表情包：${attachment.label ?? attachment.stickerId}`;
+    return [replyPrefix, mentionPrefix, attachmentSummary]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  private buildReplyContextPrefix(reply: ChatReplyMetadata) {
+    const quotedText = reply.quotedText?.trim() || reply.previewText.trim();
+    return quotedText
+      ? `正在回复 ${reply.senderName}：${quotedText}`
+      : `正在回复 ${reply.senderName}`;
   }
 
   private getAttachmentFallbackText(attachment: MessageAttachment) {
