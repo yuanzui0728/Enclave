@@ -11,6 +11,7 @@ import {
 } from "@yinjie/contracts";
 import {
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
   FileImage,
@@ -496,7 +497,7 @@ export function DesktopChatHistoryPanel({
               <DesktopSearchEntryRow
                 icon={<Users size={16} />}
                 label="群成员"
-                value={selectedSender?.label ?? "按群成员查找"}
+                value={selectedSender?.label ?? "全部成员"}
                 onClick={() => setSelectorView("sender")}
               />
             ) : null}
@@ -755,8 +756,8 @@ function DesktopSearchOptionRow({
         ) : null}
       </div>
       {active ? (
-        <span className="text-[12px] text-[color:var(--brand-primary)]">
-          已选
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)]">
+          <Check size={12} strokeWidth={2.5} />
         </span>
       ) : null}
     </button>
