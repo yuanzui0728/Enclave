@@ -647,6 +647,7 @@ export function StickerPanel({
     : customStickerLibraryFull
       ? "自定义表情已满，请先删除几个再继续添加"
       : undefined;
+  const customUploadResumed = Boolean(customDeleteFeedback?.slotsRemaining);
   const openCustomManageMode = () => {
     setCustomSortMode("added");
     setCustomDeleteFeedback(null);
@@ -1577,7 +1578,9 @@ export function StickerPanel({
                   <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
                     <span>
                       {customDeleteFeedback
-                        ? `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
+                        ? customDeleteFeedback.slotsRemaining > 0
+                          ? `本轮已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可继续添加图片或 GIF。`
+                          : `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
                         : catalog.customStickerCount === 0
                           ? "支持上传图片 / GIF，也能把聊天里的图片、动图添加到表情。"
                           : customStickerLibraryFull
@@ -1620,13 +1623,24 @@ export function StickerPanel({
                         </button>
                       </>
                     ) : customManageMode ? (
-                      <button
-                        type="button"
-                        onClick={() => setCustomManageMode(false)}
-                        className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
-                      >
-                        完成清理
-                      </button>
+                      <>
+                        {customUploadResumed ? (
+                          <button
+                            type="button"
+                            onClick={exitManageModeAndOpenUpload}
+                            className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
+                          >
+                            现在去添加
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setCustomManageMode(false)}
+                          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                        >
+                          {customUploadResumed ? "继续清理" : "完成清理"}
+                        </button>
+                      </>
                     ) : (
                       <>
                         {customStickerLibraryFull ||
