@@ -382,6 +382,10 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
     customManageMode;
+  const openCustomManageMode = () => {
+    setCustomSortMode("added");
+    setCustomManageMode(true);
+  };
   const clearSearch = () => {
     setKeyword("");
     setSearchKeyword("");
@@ -647,7 +651,14 @@ export function StickerPanel({
             trimmedKeyword.length === 0 ? (
               <button
                 type="button"
-                onClick={() => setCustomManageMode((current) => !current)}
+                onClick={() => {
+                  if (customManageMode) {
+                    setCustomManageMode(false);
+                    return;
+                  }
+
+                  openCustomManageMode();
+                }}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   customManageMode
                     ? "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]"
@@ -810,16 +821,59 @@ export function StickerPanel({
                 />
               </div>
               {!isMobile ? (
-                <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
-                  <span>
-                    {customStickerLibraryFull
-                      ? "表情库已占满，删除后才能继续导入。"
-                      : customSlotsRemaining <= 20
-                        ? "空间不多了，建议先清理不常用表情。"
-                        : "支持继续添加图片和 GIF，建议保留常用项。"}
-                  </span>
-                  <span>{Math.round(customStorageRatio * 100)}%</span>
-                </div>
+                <>
+                  <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
+                    <span>
+                      {customStickerLibraryFull
+                        ? "表情库已占满，删除后才能继续导入。"
+                        : customSlotsRemaining <= 20
+                          ? "空间不多了，建议先清理不常用表情。"
+                          : "支持继续添加图片和 GIF，建议保留常用项。"}
+                    </span>
+                    <span>{Math.round(customStorageRatio * 100)}%</span>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    {catalog.customStickerCount === 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => uploadInputRef.current?.click()}
+                        className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
+                      >
+                        添加第一张
+                      </button>
+                    ) : customManageMode ? (
+                      <button
+                        type="button"
+                        onClick={() => setCustomManageMode(false)}
+                        className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                      >
+                        完成清理
+                      </button>
+                    ) : (
+                      <>
+                        {(customStickerLibraryFull || customSlotsRemaining <= 20) ? (
+                          <button
+                            type="button"
+                            onClick={openCustomManageMode}
+                            className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                          >
+                            去清理
+                          </button>
+                        ) : null}
+                        {catalog.customStickerCount > 1 &&
+                        customSortMode !== "added" ? (
+                          <button
+                            type="button"
+                            onClick={() => setCustomSortMode("added")}
+                            className="rounded-full bg-white/88 px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+                          >
+                            看最近添加
+                          </button>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                </>
               ) : null}
             </div>
           ) : null}
@@ -881,7 +935,7 @@ export function StickerPanel({
               {!isMobile && customStickerLibraryFull && !customManageMode ? (
                 <button
                   type="button"
-                  onClick={() => setCustomManageMode(true)}
+                  onClick={openCustomManageMode}
                   className="shrink-0 rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#92400e] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                 >
                   去管理
