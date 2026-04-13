@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,6 +38,7 @@ import { ChevronRight, Minus, Plus, Search, X } from "lucide-react";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
+import { DesktopMessageAvatarPopover } from "./desktop-message-avatar-popover";
 import { DesktopChatTextEditDialog } from "./desktop-chat-text-edit-dialog";
 import { buildDesktopChatFilesRouteHash } from "./desktop-chat-files-route-state";
 import { DesktopGroupMemberPicker } from "./desktop-group-member-picker";
@@ -68,8 +70,26 @@ type DesktopMemberGridItem = {
   label: string;
   src?: string | null;
   kind?: "member" | "add" | "remove";
-  onClick?: () => void;
+  onClick?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 };
+
+type DesktopAvatarPopoverState =
+  | {
+      anchorElement: HTMLButtonElement;
+      kind: "owner";
+    }
+  | {
+      anchorElement: HTMLButtonElement;
+      kind: "character";
+      characterId: string;
+      fallbackName: string;
+      fallbackAvatar?: string | null;
+      threadContext?: {
+        id: string;
+        type: "direct" | "group";
+        title?: string;
+      };
+    };
 
 type GroupDetailsEditorMode = "name" | "announcement" | "nickname";
 
@@ -131,12 +151,15 @@ function DirectChatDetailsPanel({
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] =
     useState<DirectDetailsConfirmAction | null>(null);
+  const [avatarPopover, setAvatarPopover] =
+    useState<DesktopAvatarPopoverState | null>(null);
   const backgroundQuery = useConversationBackground(conversation.id);
   const targetCharacterId = conversation.participants[0] ?? "";
 
   useEffect(() => {
     setNotice(null);
     setConfirmAction(null);
+    setAvatarPopover(null);
   }, [conversation.id]);
 
   useEffect(() => {
@@ -412,11 +435,36 @@ function DirectChatDetailsPanel({
 
       <DesktopPanelSection>
         <div className="flex items-start gap-3 px-4 py-4">
-          <AvatarChip
-            name={targetCharacter?.name ?? conversation.title}
-            src={targetCharacter?.avatar}
-            size="wechat"
-          />
+          <button
+            type="button"
+            disabled={!targetCharacterId}
+            onClick={(event) => {
+              if (!targetCharacterId) {
+                return;
+              }
+
+              setAvatarPopover({
+                anchorElement: event.currentTarget,
+                kind: "character",
+                characterId: targetCharacterId,
+                fallbackName: targetCharacter?.name ?? conversation.title,
+                fallbackAvatar: targetCharacter?.avatar,
+                threadContext: {
+                  id: conversation.id,
+                  type: "direct",
+                  title: conversation.title,
+                },
+              });
+            }}
+            className="shrink-0 rounded-[14px] transition hover:opacity-90 disabled:cursor-default disabled:opacity-100"
+            aria-label={`查看${displayName}资料卡`}
+          >
+            <AvatarChip
+              name={targetCharacter?.name ?? conversation.title}
+              src={targetCharacter?.avatar}
+              size="wechat"
+            />
+          </button>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
@@ -660,6 +708,25 @@ function DirectChatDetailsPanel({
         onClose={() => setConfirmAction(null)}
         onConfirm={() => activeConfirm?.onConfirm()}
       />
+      {avatarPopover ? (
+        avatarPopover.kind === "owner" ? (
+          <DesktopMessageAvatarPopover
+            anchorElement={avatarPopover.anchorElement}
+            kind="owner"
+            onClose={() => setAvatarPopover(null)}
+          />
+        ) : (
+          <DesktopMessageAvatarPopover
+            anchorElement={avatarPopover.anchorElement}
+            kind="character"
+            characterId={avatarPopover.characterId}
+            fallbackName={avatarPopover.fallbackName}
+            fallbackAvatar={avatarPopover.fallbackAvatar}
+            threadContext={avatarPopover.threadContext}
+            onClose={() => setAvatarPopover(null)}
+          />
+        )
+      ) : null}
     </div>
   );
 }
@@ -688,6 +755,8 @@ function GroupChatDetailsPanel({
   const [editorMode, setEditorMode] = useState<GroupDetailsEditorMode | null>(
     null,
   );
+  const [avatarPopover, setAvatarPopover] =
+    useState<DesktopAvatarPopoverState | null>(null);
 
   useEffect(() => {
     setNotice(null);
@@ -697,6 +766,7 @@ function GroupChatDetailsPanel({
     setMemberBrowserOpen(false);
     setMemberBrowserAutoFocusSearch(false);
     setEditorMode(null);
+    setAvatarPopover(null);
   }, [conversation.id]);
 
   useEffect(() => {
@@ -971,15 +1041,28 @@ function GroupChatDetailsPanel({
         key: member.id,
         label: member.memberName ?? member.memberId,
         src: member.memberAvatar,
-        onClick:
-          member.memberType === "character"
-            ? () => {
-                void navigate({
-                  to: "/character/$characterId",
-                  params: { characterId: member.memberId },
-                });
-              }
-            : undefined,
+        onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
+          if (member.memberType === "character") {
+            setAvatarPopover({
+              anchorElement: event.currentTarget,
+              kind: "character",
+              characterId: member.memberId,
+              fallbackName: member.memberName ?? member.memberId,
+              fallbackAvatar: member.memberAvatar,
+              threadContext: {
+                id: conversation.id,
+                type: "group",
+                title: group?.name ?? conversation.title,
+              },
+            });
+            return;
+          }
+
+          setAvatarPopover({
+            anchorElement: event.currentTarget,
+            kind: "owner",
+          });
+        },
       })),
     {
       key: "add",
@@ -1338,16 +1421,32 @@ function GroupChatDetailsPanel({
           setMemberPickerOpen(true);
         }}
         canRemoveMembers={removableMembers.length > 0}
-        onViewMember={(member) => {
-          if (member.memberType !== "character") {
+        onViewMember={(member, anchorElement) => {
+          setMemberBrowserOpen(false);
+          setMemberBrowserAutoFocusSearch(false);
+          if (!anchorElement) {
             return;
           }
 
-          setMemberBrowserOpen(false);
-          setMemberBrowserAutoFocusSearch(false);
-          void navigate({
-            to: "/character/$characterId",
-            params: { characterId: member.memberId },
+          if (member.memberType === "character") {
+            setAvatarPopover({
+              anchorElement,
+              kind: "character",
+              characterId: member.memberId,
+              fallbackName: member.memberName ?? member.memberId,
+              fallbackAvatar: member.memberAvatar,
+              threadContext: {
+                id: conversation.id,
+                type: "group",
+                title: group?.name ?? conversation.title,
+              },
+            });
+            return;
+          }
+
+          setAvatarPopover({
+            anchorElement,
+            kind: "owner",
           });
         }}
       />
@@ -1374,6 +1473,25 @@ function GroupChatDetailsPanel({
         onClose={() => setConfirmAction(null)}
         onConfirm={() => activeConfirm?.onConfirm()}
       />
+      {avatarPopover ? (
+        avatarPopover.kind === "owner" ? (
+          <DesktopMessageAvatarPopover
+            anchorElement={avatarPopover.anchorElement}
+            kind="owner"
+            onClose={() => setAvatarPopover(null)}
+          />
+        ) : (
+          <DesktopMessageAvatarPopover
+            anchorElement={avatarPopover.anchorElement}
+            kind="character"
+            characterId={avatarPopover.characterId}
+            fallbackName={avatarPopover.fallbackName}
+            fallbackAvatar={avatarPopover.fallbackAvatar}
+            threadContext={avatarPopover.threadContext}
+            onClose={() => setAvatarPopover(null)}
+          />
+        )
+      ) : null}
     </div>
   );
 }
@@ -1701,7 +1819,10 @@ function DesktopGroupMemberBrowserDialog({
   onAddMembers: () => void;
   onRemoveMembers: () => void;
   canRemoveMembers?: boolean;
-  onViewMember: (member: GroupMember) => void;
+  onViewMember: (
+    member: GroupMember,
+    anchorElement: HTMLButtonElement | null,
+  ) => void;
 }) {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const memberItemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -1807,15 +1928,18 @@ function DesktopGroupMemberBrowserDialog({
     }
 
     const firstNavigableMember =
-      filteredMembers.find((member) => member.memberType === "character") ??
-      null;
+      filteredMembers.find(
+        (member) =>
+          member.memberType === "character" || member.memberType === "user",
+      ) ?? null;
 
     setActiveMemberId((current) => {
       if (
         current &&
         filteredMembers.some(
           (member) =>
-            member.id === current && member.memberType === "character",
+            member.id === current &&
+            (member.memberType === "character" || member.memberType === "user"),
         )
       ) {
         return current;
@@ -1836,7 +1960,8 @@ function DesktopGroupMemberBrowserDialog({
 
   const getNextNavigableMember = (direction: 1 | -1) => {
     const navigableMembers = filteredMembers.filter(
-      (member) => member.memberType === "character",
+      (member) =>
+        member.memberType === "character" || member.memberType === "user",
     );
     if (!navigableMembers.length) {
       return null;
@@ -1873,11 +1998,15 @@ function DesktopGroupMemberBrowserDialog({
     if (event.key === "Enter" && activeMemberId) {
       const activeMember = filteredMembers.find(
         (member) =>
-          member.id === activeMemberId && member.memberType === "character",
+          member.id === activeMemberId &&
+          (member.memberType === "character" || member.memberType === "user"),
       );
       if (activeMember) {
         event.preventDefault();
-        onViewMember(activeMember);
+        onViewMember(
+          activeMember,
+          memberItemRefs.current[activeMember.id] ?? null,
+        );
       }
     }
   };
@@ -2013,7 +2142,9 @@ function DesktopGroupMemberBrowserDialog({
                     : member.role === "admin"
                       ? "管理员"
                       : "群成员";
-                const canViewProfile = member.memberType === "character";
+                const canViewProfile =
+                  member.memberType === "character" ||
+                  member.memberType === "user";
 
                 return (
                   <button
@@ -2022,9 +2153,9 @@ function DesktopGroupMemberBrowserDialog({
                       memberItemRefs.current[member.id] = node;
                     }}
                     type="button"
-                    onClick={() => {
+                    onClick={(event) => {
                       if (canViewProfile) {
-                        onViewMember(member);
+                        onViewMember(member, event.currentTarget);
                       }
                     }}
                     onMouseEnter={() => {
@@ -2089,7 +2220,7 @@ function DesktopGroupMemberBrowserDialog({
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
                         <span>
                           {member.memberType === "user"
-                            ? "本地维护资料"
+                            ? "Enter 或点击查看我的资料"
                             : "Enter 或点击查看资料"}
                         </span>
                         <span className="text-black/10">·</span>
