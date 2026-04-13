@@ -267,7 +267,7 @@ export function MobileMiniProgramsWorkspace({
           onTogglePinned={onTogglePinnedMiniProgram}
         />
 
-        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -282,7 +282,7 @@ export function MobileMiniProgramsWorkspace({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             {recentMiniPrograms.map((miniProgram) => (
               <MiniProgramTile
                 key={miniProgram.id}
@@ -301,7 +301,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
         </AppSection>
 
-        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -317,7 +317,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
 
           {pinnedMiniPrograms.length ? (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {pinnedMiniPrograms.map((miniProgram) => (
                 <MiniProgramListCard
                   key={miniProgram.id}
@@ -351,35 +351,35 @@ export function MobileMiniProgramsWorkspace({
           )}
         </AppSection>
 
-        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
             今日推荐
           </div>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {miniProgramCampaigns.slice(0, 2).map((campaign) => {
               const tone = getMiniProgramToneStyle(campaign.tone);
               return (
                 <div
                   key={campaign.id}
                   className={cn(
-                    "rounded-[18px] border px-4 py-3.5 shadow-none",
+                    "rounded-[16px] border px-3.5 py-3 shadow-none",
                     tone.mutedPanelClassName,
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
                       {campaign.title}
                     </div>
                     <div
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                        "rounded-full border px-2 py-0.5 text-[9px] font-medium",
                         tone.badgeClassName,
                       )}
                     >
                       {campaign.meta}
                     </div>
                   </div>
-                  <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                  <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
                     {campaign.description}
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
         </AppSection>
 
-        <AppSection className="space-y-2.5 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
+        <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
@@ -406,7 +406,7 @@ export function MobileMiniProgramsWorkspace({
           </div>
 
           {visibleMiniPrograms.length ? (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {visibleMiniPrograms.map((miniProgram) => (
                 <MiniProgramListCard
                   key={miniProgram.id}
@@ -503,16 +503,16 @@ function MiniProgramTile({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-[18px] border px-3 py-2.5 text-left transition",
+        "rounded-[16px] border px-2.5 py-2.5 text-left transition",
         active
           ? "border-[rgba(7,193,96,0.18)] bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         <MiniProgramGlyph miniProgram={miniProgram} size="sm" />
         <div className="min-w-0">
-          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
             {miniProgram.name}
           </div>
           <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-dim)]">
@@ -550,17 +550,17 @@ function MiniProgramListCard({
       type="button"
       onClick={() => onSelect(miniProgram.id)}
       className={cn(
-        "w-full rounded-[18px] border px-3.5 py-3.5 text-left shadow-none transition",
+        "w-full rounded-[16px] border px-3 py-3 text-left shadow-none transition",
         active
           ? "border-[rgba(7,193,96,0.18)] bg-[rgba(243,251,246,0.96)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <MiniProgramGlyph miniProgram={miniProgram} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
               {miniProgram.name}
             </div>
             <div
@@ -572,10 +572,10 @@ function MiniProgramListCard({
               {miniProgram.deckLabel}
             </div>
           </div>
-          <div className="mt-1.5 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+          <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
             {miniProgram.description}
           </div>
-          <div className="mt-1.5 text-[10px] leading-4 text-[color:var(--text-dim)]">
+          <div className="mt-1 text-[10px] leading-4 text-[color:var(--text-dim)]">
             {lastOpenedAt
               ? `上次打开 ${formatConversationTimestamp(lastOpenedAt)} · 已打开 ${launchCount} 次`
               : `还没有打开过 · 已加入 ${pinned ? "我的小程序" : "目录"}`}
@@ -583,7 +583,7 @@ function MiniProgramListCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-2.5 flex flex-wrap gap-1.5">
         <Button
           variant="primary"
           size="sm"
