@@ -477,7 +477,7 @@ export function MomentsPage() {
           onSubmit={() => createMutation.mutate()}
         />
 
-        <section className="space-y-2.5">
+        <section className="space-y-2">
           <div className="px-1">
             <div className="text-[11px] text-[color:var(--text-muted)]">最近动态</div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
@@ -485,9 +485,9 @@ export function MomentsPage() {
             </div>
           </div>
           {notice ? (
-            <InlineNotice className="text-[11px] leading-[1.35rem]" tone={noticeTone}>
+            <MobileMomentsInlineNotice tone={noticeTone}>
               {notice}
-            </InlineNotice>
+            </MobileMomentsInlineNotice>
           ) : null}
           {momentsQuery.isLoading ? (
             <MobileMomentsStatusCard
@@ -646,14 +646,14 @@ export function MomentsPage() {
           })}
 
           {likeMutation.isError && likeMutation.error instanceof Error ? (
-            <InlineNotice className="text-[11px] leading-[1.35rem]" tone="info">
+            <MobileMomentsInlineNotice tone="info">
               {likeMutation.error.message}
-            </InlineNotice>
+            </MobileMomentsInlineNotice>
           ) : null}
           {commentMutation.isError && commentMutation.error instanceof Error ? (
-            <InlineNotice className="text-[11px] leading-[1.35rem]" tone="info">
+            <MobileMomentsInlineNotice tone="info">
               {commentMutation.error.message}
-            </InlineNotice>
+            </MobileMomentsInlineNotice>
           ) : null}
 
           {!momentsQuery.isLoading &&
@@ -737,6 +737,23 @@ function MobileMomentsStatusCard({
       </p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </section>
+  );
+}
+
+function MobileMomentsInlineNotice({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: "success" | "info";
+}) {
+  return (
+    <InlineNotice
+      tone={tone}
+      className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+    >
+      {children}
+    </InlineNotice>
   );
 }
 
