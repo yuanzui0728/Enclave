@@ -658,12 +658,12 @@ export function DesktopShell({ children }: PropsWithChildren) {
           ) : null}
 
           {standaloneDesktopRoute ? null : (
-            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2 shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
+            <aside className="hidden w-[92px] shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] p-2 text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col">
               <div className="relative mb-2.5 flex justify-center">
                 <button
                   type="button"
                   className={cn(
-                    "group flex justify-center rounded-[14px] border-0 bg-transparent px-1.5 py-1 text-inherit appearance-none",
+                    "group flex justify-center rounded-[14px] border-0 bg-transparent px-1.5 py-1 appearance-none",
                     isOwnerCardOpen || profileRouteActive
                       ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
@@ -1094,7 +1094,7 @@ function DesktopOwnerShortcutButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex min-h-[92px] flex-col items-start rounded-[16px] border bg-transparent px-3 py-3 text-left text-inherit appearance-none transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "flex min-h-[92px] flex-col items-start rounded-[16px] border bg-transparent px-3 py-3 text-left appearance-none transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         disabled
           ? "cursor-wait border-[color:var(--border-faint)] bg-[rgba(148,163,184,0.08)] text-[color:var(--text-muted)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:-translate-y-[1px] hover:border-[rgba(7,193,96,0.2)] hover:bg-[rgba(7,193,96,0.08)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]",
@@ -1200,7 +1200,7 @@ function DesktopActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full flex-col items-center gap-1 rounded-[12px] border-0 bg-transparent px-1.5 py-2 text-[10px] leading-none text-inherit appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex w-full flex-col items-center gap-1 rounded-[12px] border-0 bg-transparent px-1.5 py-2 text-[10px] leading-none appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
