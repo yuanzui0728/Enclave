@@ -1,8 +1,10 @@
 export interface StickerAttachment {
   kind: 'sticker';
-  packId: string;
+  sourceType?: 'builtin' | 'custom';
+  packId?: string;
   stickerId: string;
   url: string;
+  mimeType?: string;
   width: number;
   height: number;
   label?: string;

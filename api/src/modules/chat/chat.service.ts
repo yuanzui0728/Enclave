@@ -38,7 +38,7 @@ import {
   NoteCardAttachment,
   VoiceAttachment,
 } from './chat.types';
-import { findStickerAttachment } from './sticker-catalog';
+import { CustomStickersService } from './custom-stickers.service';
 
 type SendConversationMessageInput =
   | {
@@ -49,7 +49,8 @@ type SendConversationMessageInput =
       type: 'sticker';
       text?: string;
       sticker: {
-        packId: string;
+        sourceType?: 'builtin' | 'custom';
+        packId?: string;
         stickerId: string;
       };
     }
@@ -110,6 +111,7 @@ export class ChatService {
     private readonly narrativeService: NarrativeService,
     private readonly worldOwnerService: WorldOwnerService,
     private readonly replyLogicRules: ReplyLogicRulesService,
+    private readonly customStickersService: CustomStickersService,
     @InjectRepository(ConversationEntity)
     private convRepo: Repository<ConversationEntity>,
     @InjectRepository(MessageEntity)
@@ -637,7 +639,7 @@ export class ChatService {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const aiKeyOverride =
       (await this.worldOwnerService.getOwnerAiConfig()) ?? undefined;
-    const normalizedInput = this.normalizeOutgoingMessageInput(input);
+    const normalizedInput = await this.normalizeOutgoingMessageInput(input);
 
     const userMsgEntity = this.msgRepo.create({
       id: `msg_${Date.now()}`,
@@ -1154,7 +1156,9 @@ export class ChatService {
     );
   }
 
-  private normalizeOutgoingMessageInput(input: SendConversationMessageInput): {
+  private async normalizeOutgoingMessageInput(
+    input: SendConversationMessageInput,
+  ): Promise<{
     type:
       | 'text'
       | 'sticker'
@@ -1168,12 +1172,14 @@ export class ChatService {
     promptText: string;
     aiParts: AiMessagePart[];
     attachment?: MessageAttachment;
-  } {
+  }> {
     if (input.type === 'sticker') {
-      const attachment = findStickerAttachment(
-        input.sticker.packId,
-        input.sticker.stickerId,
-      );
+      const attachment =
+        await this.customStickersService.resolveStickerAttachment({
+          sourceType: input.sticker.sourceType,
+          packId: input.sticker.packId,
+          stickerId: input.sticker.stickerId,
+        });
       if (!attachment) {
         throw new NotFoundException('Sticker not found');
       }

@@ -35,7 +35,8 @@ type SendMessagePayload =
       type: 'sticker';
       text?: string;
       sticker: {
-        packId: string;
+        sourceType?: 'builtin' | 'custom';
+        packId?: string;
         stickerId: string;
       };
     }
