@@ -573,6 +573,7 @@ export function StickerPanel({
       {
         containsHighlighted: boolean;
         containsRecommended: boolean;
+        highlightedPosition: number | null;
       }
     >();
 
@@ -580,18 +581,24 @@ export function StickerPanel({
       const itemKeys = section.items.map((item) =>
         getStickerIdentity(item.sticker),
       );
+      const highlightedPosition = highlightedSearchStickerKey
+        ? itemKeys.findIndex((key) => key === highlightedSearchStickerKey) + 1
+        : 0;
       stateMap.set(section.id, {
-        containsHighlighted: highlightedSearchStickerKey
-          ? itemKeys.includes(highlightedSearchStickerKey)
-          : false,
+        containsHighlighted: highlightedPosition > 0,
         containsRecommended: firstSearchResultKey
           ? itemKeys.includes(firstSearchResultKey)
           : false,
+        highlightedPosition:
+          highlightedPosition > 0 ? highlightedPosition : null,
       });
     });
 
     return stateMap;
   }, [firstSearchResultKey, highlightedSearchStickerKey, searchSections]);
+  const highlightedSearchSectionState = highlightedSearchSection
+    ? (searchSectionStateMap.get(highlightedSearchSection.id) ?? null)
+    : null;
   const showCustomManageHint =
     !isMobile &&
     activeSectionId === "custom" &&
@@ -1274,6 +1281,14 @@ export function StickerPanel({
                             当前来源 · {highlightedSearchSection.label}
                           </span>
                         ) : null}
+                        {highlightedSearchSection &&
+                        highlightedSearchSectionState?.highlightedPosition ? (
+                          <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                            本组{" "}
+                            {highlightedSearchSectionState.highlightedPosition}/
+                            {highlightedSearchSection.items.length}
+                          </span>
+                        ) : null}
                         {recommendedSearchSection &&
                         recommendedSearchSection.id !==
                           highlightedSearchSection?.id ? (
@@ -1611,6 +1626,12 @@ export function StickerPanel({
                           {!isMobile && sectionState.containsHighlighted ? (
                             <span className="rounded-full bg-[rgba(160,90,10,0.14)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a]">
                               当前高亮
+                            </span>
+                          ) : null}
+                          {!isMobile && sectionState.highlightedPosition ? (
+                            <span className="rounded-full bg-white px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                              本组 {sectionState.highlightedPosition}/
+                              {section.items.length}
                             </span>
                           ) : null}
                           {!isMobile &&
