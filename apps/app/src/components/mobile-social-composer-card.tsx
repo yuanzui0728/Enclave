@@ -5,6 +5,8 @@ type MobileSocialComposerCardProps = {
   description: string;
   scopeLabel: string;
   scopeClassName?: string;
+  sectionId?: string;
+  textareaId?: string;
   value: string;
   placeholder: string;
   helperText: string;
@@ -22,6 +24,8 @@ export function MobileSocialComposerCard({
   description,
   scopeLabel,
   scopeClassName,
+  sectionId,
+  textareaId,
   value,
   placeholder,
   helperText,
@@ -34,7 +38,10 @@ export function MobileSocialComposerCard({
   onSubmit,
 }: MobileSocialComposerCardProps) {
   return (
-    <section className="overflow-hidden rounded-[16px] border border-black/5 bg-white">
+    <section
+      id={sectionId}
+      className="overflow-hidden rounded-[16px] border border-black/5 bg-white"
+    >
       <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-4">
         <div className="min-w-0">
           <div className="text-[16px] font-medium text-[#111827]">{title}</div>
@@ -54,6 +61,7 @@ export function MobileSocialComposerCard({
 
       <div className="px-4 pb-4 pt-2">
         <TextAreaField
+          id={textareaId}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PenSquare } from "lucide-react";
 import {
   addMomentComment,
   createUserMoment,
@@ -33,6 +33,9 @@ import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+
+const MOMENTS_COMPOSER_SECTION_ID = "moments-composer-card";
+const MOMENTS_COMPOSER_TEXTAREA_ID = "moments-composer-input";
 
 export function MomentsPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -199,6 +202,23 @@ export function MomentsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  function focusComposer() {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document
+      .getElementById(MOMENTS_COMPOSER_SECTION_ID)
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+
+    window.requestAnimationFrame(() => {
+      const textarea = document.getElementById(MOMENTS_COMPOSER_TEXTAREA_ID);
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.focus();
+      }
+    });
+  }
+
   if (isDesktopLayout) {
     const errors: string[] = [];
 
@@ -314,17 +334,43 @@ export function MomentsPage() {
               <ArrowLeft size={18} />
             </Button>
           }
+          rightActions={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+              onClick={focusComposer}
+              aria-label="发一条朋友圈"
+            >
+              <PenSquare size={18} />
+            </Button>
+          }
         />
       ) : (
         <TabPageTopBar
           title="朋友圈"
           subtitle="仅好友可见"
           className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+          rightActions={
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+              onClick={focusComposer}
+              aria-label="发一条朋友圈"
+            >
+              <PenSquare size={18} />
+            </Button>
+          }
         />
       )}
 
       <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         <MobileSocialComposerCard
+          sectionId={MOMENTS_COMPOSER_SECTION_ID}
+          textareaId={MOMENTS_COMPOSER_TEXTAREA_ID}
           title="发一条朋友圈"
           description="只让好友看到这一刻，比公开动态更近一点，也更像日常分享。"
           scopeLabel="好友可见"

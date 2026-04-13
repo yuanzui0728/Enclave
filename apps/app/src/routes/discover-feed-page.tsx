@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PenSquare } from "lucide-react";
 import {
   addFeedComment,
   createFeedPost,
@@ -33,6 +33,9 @@ import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
+
+const FEED_COMPOSER_SECTION_ID = "discover-feed-composer-card";
+const FEED_COMPOSER_TEXTAREA_ID = "discover-feed-composer-input";
 
 export function DiscoverFeedPage() {
   const navigate = useNavigate();
@@ -199,6 +202,23 @@ export function DiscoverFeedPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  function focusComposer() {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    document
+      .getElementById(FEED_COMPOSER_SECTION_ID)
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+
+    window.requestAnimationFrame(() => {
+      const textarea = document.getElementById(FEED_COMPOSER_TEXTAREA_ID);
+      if (textarea instanceof HTMLTextAreaElement) {
+        textarea.focus();
+      }
+    });
+  }
+
   if (isDesktopLayout) {
     const errors: string[] = [];
 
@@ -313,10 +333,24 @@ export function DiscoverFeedPage() {
             <ArrowLeft size={18} />
           </Button>
         }
+        rightActions={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            onClick={focusComposer}
+            aria-label="发一条广场动态"
+          >
+            <PenSquare size={18} />
+          </Button>
+        }
       />
 
       <div className="space-y-3 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         <MobileSocialComposerCard
+          sectionId={FEED_COMPOSER_SECTION_ID}
+          textareaId={FEED_COMPOSER_TEXTAREA_ID}
           title="发一条广场动态"
           description="发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。"
           scopeLabel="公开可见"
