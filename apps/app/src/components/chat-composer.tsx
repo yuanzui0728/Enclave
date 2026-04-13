@@ -220,6 +220,21 @@ const SCREENSHOT_SHORTCUT_HELP_GROUPS = [
   },
 ] as const;
 
+const CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES = 8 * 1024 * 1024;
+const CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS = [1, 0.92, 0.84, 0.76];
+const CHAT_ATTACHMENT_IMAGE_EXPORT_CANDIDATES = [
+  { mimeType: "image/png", extension: "png" },
+  { mimeType: "image/webp", extension: "webp", quality: 0.92 },
+  { mimeType: "image/webp", extension: "webp", quality: 0.84 },
+  { mimeType: "image/jpeg", extension: "jpg", quality: 0.9 },
+  { mimeType: "image/jpeg", extension: "jpg", quality: 0.82 },
+  { mimeType: "image/jpeg", extension: "jpg", quality: 0.74 },
+] satisfies Array<{
+  mimeType: "image/png" | "image/webp" | "image/jpeg";
+  extension: "png" | "webp" | "jpg";
+  quality?: number;
+}>;
+
 type ScreenshotCropResizeDraft = {
   pointerId: number;
   handle: "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -2470,7 +2485,10 @@ export function ChatComposer({
     setMobilePlusNotice(null);
 
     try {
-      await onSendAttachment(payload);
+      const uploadReadyPayload = await prepareAttachmentPayloadForUpload(
+        payload,
+      );
+      await onSendAttachment(uploadReadyPayload);
       setPlusPanelOpen(false);
       return true;
     } catch (attachmentActionError) {
@@ -2498,13 +2516,14 @@ export function ChatComposer({
 
       try {
         for (const item of currentDraft.items) {
-          await onSendAttachment({
+          const uploadReadyPayload = await prepareAttachmentPayloadForUpload({
             type: "image",
             file: item.file,
             fileName: item.fileName,
             width: item.width,
             height: item.height,
           });
+          await onSendAttachment(uploadReadyPayload);
           sentCount += 1;
         }
 
@@ -5399,16 +5418,27 @@ function waitForCaptureVideo(video: HTMLVideoElement) {
   });
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement) {
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  options?: {
+    mimeType?: string;
+    quality?: number;
+    errorMessage?: string;
+  },
+) {
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-        return;
-      }
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
 
-      reject(new Error("截图生成失败，请重试。"));
-    }, "image/png");
+        reject(new Error(options?.errorMessage ?? "截图生成失败，请重试。"));
+      },
+      options?.mimeType ?? "image/png",
+      options?.quality,
+    );
   });
 }
 
@@ -6040,6 +6070,134 @@ function loadImageElement(url: string) {
     image.onerror = () => reject(new Error("截图解析失败，请重新截图。"));
     image.src = url;
   });
+}
+
+async function prepareAttachmentPayloadForUpload(
+  payload: ChatComposerAttachmentPayload,
+): Promise<ChatComposerAttachmentPayload> {
+  if (payload.type !== "image") {
+    return payload;
+  }
+
+  if (payload.file.size <= CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES) {
+    return payload;
+  }
+
+  const optimized = await optimizeImageAttachmentForUpload(payload);
+  if (optimized.file.size > CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES) {
+    throw new Error("图片过大，请先裁剪后再发送。");
+  }
+
+  return optimized;
+}
+
+async function optimizeImageAttachmentForUpload(
+  payload: Extract<ChatComposerAttachmentPayload, { type: "image" }>,
+): Promise<Extract<ChatComposerAttachmentPayload, { type: "image" }>> {
+  const image = await loadImageElementFromFile(payload.file);
+  let smallestResult:
+    | {
+        file: File;
+        width: number;
+        height: number;
+      }
+    | null = null;
+
+  for (const scale of CHAT_ATTACHMENT_IMAGE_UPLOAD_SCALE_STEPS) {
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("当前浏览器暂不支持图片处理，请先裁剪后再发送。");
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    for (const candidate of CHAT_ATTACHMENT_IMAGE_EXPORT_CANDIDATES) {
+      const blob = await canvasToBlob(canvas, {
+        mimeType: candidate.mimeType,
+        quality: candidate.quality,
+        errorMessage: "图片处理失败，请先裁剪后再发送。",
+      });
+      const mimeType = blob.type || candidate.mimeType;
+      const nextExtension =
+        resolveImageExtensionFromMimeType(mimeType) ?? candidate.extension;
+      const nextFile = new File(
+        [blob],
+        replaceFileExtension(
+          payload.fileName || payload.file.name || "image",
+          nextExtension,
+        ),
+        { type: mimeType },
+      );
+      const result = {
+        file: nextFile,
+        width,
+        height,
+      };
+
+      if (!smallestResult || nextFile.size < smallestResult.file.size) {
+        smallestResult = result;
+      }
+
+      if (nextFile.size <= CHAT_ATTACHMENT_IMAGE_UPLOAD_LIMIT_BYTES) {
+        return {
+          ...payload,
+          file: nextFile,
+          fileName: nextFile.name,
+          width,
+          height,
+        };
+      }
+    }
+  }
+
+  if (smallestResult) {
+    return {
+      ...payload,
+      file: smallestResult.file,
+      fileName: smallestResult.file.name,
+      width: smallestResult.width,
+      height: smallestResult.height,
+    };
+  }
+
+  return payload;
+}
+
+async function loadImageElementFromFile(file: File) {
+  const url = URL.createObjectURL(file);
+
+  try {
+    return await loadImageElement(url);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function resolveImageExtensionFromMimeType(mimeType: string) {
+  if (mimeType === "image/png") {
+    return "png";
+  }
+
+  if (mimeType === "image/webp") {
+    return "webp";
+  }
+
+  if (mimeType === "image/jpeg") {
+    return "jpg";
+  }
+
+  return null;
+}
+
+function replaceFileExtension(fileName: string, nextExtension: string) {
+  const normalized = fileName.trim().replace(/\.[^.]+$/, "");
+  return `${normalized || "image"}.${nextExtension}`;
 }
 
 function clamp(value: number, min: number, max: number) {
