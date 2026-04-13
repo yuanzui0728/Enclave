@@ -334,7 +334,7 @@ export function ChannelsPage() {
         title="视频号"
         subtitle="内容推荐与视频动态"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-black/6 bg-[rgba(247,247,247,0.92)] px-3 py-2.5 sm:mx-0 sm:px-3"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -344,9 +344,9 @@ export function ChannelsPage() {
             }
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] hover:bg-black/5"
+            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -354,32 +354,34 @@ export function ChannelsPage() {
             onClick={() => generateMutation.mutate()}
             variant="ghost"
             size="sm"
-            className="h-9 rounded-full border border-black/5 bg-white px-4 text-[13px] font-medium text-[#111827] hover:bg-[#f5f5f5]"
+            className="h-8 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[12px] font-medium text-[color:var(--text-primary)] hover:bg-white"
             disabled={generateMutation.isPending}
           >
             {generateMutation.isPending ? "生成中..." : "换一批"}
           </Button>
         }
       >
-        <div className="mt-3 flex items-center gap-2">
-          <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-3 py-1 text-[11px] font-medium text-[#07c160]">
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <div className="rounded-full bg-[rgba(7,193,96,0.12)] px-2.5 py-1 text-[10px] font-medium text-[#07c160]">
             推荐
           </div>
-          <div className="rounded-full border border-black/5 bg-white px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
             朋友
           </div>
-          <div className="rounded-full border border-black/5 bg-white px-3 py-1 text-[11px] text-[color:var(--text-muted)]">
+          <div className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
             直播
           </div>
         </div>
       </TabPageTopBar>
 
-      <div className="space-y-4 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
-        <InlineNotice tone="muted">
+      <div className="space-y-3 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
+        <InlineNotice className="text-[12px] leading-5" tone="muted">
           当前先聚焦推荐流体验，系统会持续补充 AI 生成的视频内容与互动演示。
         </InlineNotice>
         {notice ? (
-          <InlineNotice tone={noticeTone}>{notice}</InlineNotice>
+          <InlineNotice className="text-[12px] leading-5" tone={noticeTone}>
+            {notice}
+          </InlineNotice>
         ) : null}
         {errorMessage ? <ErrorBlock message={errorMessage} /> : null}
         {channelsQuery.isLoading ? (
@@ -520,7 +522,7 @@ function MobileChannelsViewport({
   }, [routeSelectedPostId, posts]);
 
   return (
-    <div className="h-[calc(100dvh-10.75rem)] snap-y snap-mandatory space-y-3 overflow-y-auto overscroll-contain pb-4">
+    <div className="h-[calc(100dvh-10rem)] snap-y snap-mandatory space-y-2.5 overflow-y-auto overscroll-contain pb-3">
       {posts.map((post) => (
         <MobileChannelsCard
           key={post.id}
