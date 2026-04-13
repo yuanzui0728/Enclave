@@ -10,6 +10,7 @@ import {
   type GroupMember,
 } from "@yinjie/contracts";
 import {
+  AlertCircle,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -17,11 +18,12 @@ import {
   FileImage,
   FileText,
   Link2,
+  LoaderCircle,
   Search,
   Users,
   X,
 } from "lucide-react";
-import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import { cn } from "@yinjie/ui";
 import { isPersistedGroupConversation } from "../../../lib/conversation-route";
 import {
   formatDetailedMessageTimestamp,
@@ -461,14 +463,29 @@ export function DesktopChatHistoryPanel({
             </div>
 
             {membersQuery.isLoading ? (
-              <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
-                <LoadingBlock label="正在读取群成员..." />
-              </div>
+              <DesktopSearchFeedbackState
+                className="mt-2"
+                icon={
+                  <LoaderCircle
+                    size={16}
+                    className="animate-spin text-[color:var(--brand-primary)]"
+                  />
+                }
+                title="正在读取群成员"
+                description="稍等一下，马上就好。"
+              />
             ) : null}
             {membersQuery.isError && membersQuery.error instanceof Error ? (
-              <div className="mt-2 rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-4 py-4">
-                <ErrorBlock message={membersQuery.error.message} />
-              </div>
+              <DesktopSearchFeedbackState
+                className="mt-2"
+                icon={<AlertCircle size={16} className="text-[#d74b45]" />}
+                title="读取群成员失败"
+                description={membersQuery.error.message}
+                actionLabel="重试"
+                onAction={() => {
+                  void membersQuery.refetch();
+                }}
+              />
             ) : null}
 
             {!membersQuery.isLoading && !membersQuery.isError ? (
@@ -600,28 +617,45 @@ export function DesktopChatHistoryPanel({
           </div>
 
           {resultsQuery.isLoading ? (
-            <div className="px-4 py-4">
-              <LoadingBlock label="正在搜索聊天记录..." />
-            </div>
+            <DesktopSearchFeedbackState
+              className="px-4 py-5"
+              icon={
+                <LoaderCircle
+                  size={16}
+                  className="animate-spin text-[color:var(--brand-primary)]"
+                />
+              }
+              title="正在搜索聊天记录"
+              description="正在整理当前聊天里的匹配消息。"
+            />
           ) : null}
 
           {resultsQuery.isError && resultsQuery.error instanceof Error ? (
-            <div className="px-4 py-4">
-              <ErrorBlock message={resultsQuery.error.message} />
-            </div>
+            <DesktopSearchFeedbackState
+              className="px-4 py-5"
+              icon={<AlertCircle size={16} className="text-[#d74b45]" />}
+              title="搜索失败"
+              description={resultsQuery.error.message}
+              actionLabel="重试"
+              onAction={() => {
+                void resultsQuery.refetch();
+              }}
+            />
           ) : null}
 
           {!resultsQuery.isLoading &&
           !resultsQuery.isError &&
           !resultItems.length ? (
-            <div className="px-6 py-14 text-center">
-              <div className="text-[14px] text-[color:var(--text-primary)]">
-                {emptyStateCopy.title}
-              </div>
-              <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                {emptyStateCopy.description}
-              </div>
-            </div>
+            <DesktopSearchFeedbackState
+              className="px-6 py-8"
+              icon={
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f3f3f3] text-[color:var(--text-secondary)]">
+                  <Search size={16} />
+                </span>
+              }
+              title={emptyStateCopy.title}
+              description={emptyStateCopy.description}
+            />
           ) : null}
 
           {resultSections.length ? (
@@ -748,6 +782,49 @@ function DesktopSearchPickerView({
         <div aria-hidden="true" className="h-5 w-12" />
       </div>
       {children}
+    </div>
+  );
+}
+
+function DesktopSearchFeedbackState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  className,
+}: {
+  icon: ReactNode;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("px-3 py-3", className)}>
+      <div className="rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-5 py-8 text-center">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#f6f6f6]">
+          {icon}
+        </div>
+        <div className="mt-3 text-[14px] text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        {description ? (
+          <div className="mt-1.5 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            {description}
+          </div>
+        ) : null}
+        {actionLabel && onAction ? (
+          <button
+            type="button"
+            onClick={onAction}
+            className="mt-3 inline-flex h-8 items-center justify-center rounded-full bg-[#f6f6f6] px-3 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+          >
+            {actionLabel}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
