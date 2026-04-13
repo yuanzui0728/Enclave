@@ -62,7 +62,7 @@ export function FriendRequestsPage() {
       <TabPageTopBar
         title="新的朋友"
         titleAlign="center"
-        className="mx-0 mt-0 mb-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 py-3 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -72,9 +72,9 @@ export function FriendRequestsPage() {
             }
             variant="ghost"
             size="icon"
-            className="text-[color:var(--text-secondary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={17} />
           </Button>
         }
         rightActions={
@@ -82,41 +82,46 @@ export function FriendRequestsPage() {
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-secondary)]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({ to: "/contacts/world-characters" });
             }}
             aria-label="浏览世界角色"
           >
-            <BookUser size={18} />
+            <BookUser size={17} />
           </Button>
         }
       />
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {requestsQuery.isLoading ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <LoadingBlock label="正在读取好友请求..." />
           </div>
         ) : null}
         {requestsQuery.isError && requestsQuery.error instanceof Error ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={requestsQuery.error.message} />
           </div>
         ) : null}
         {successNotice ? (
-          <div className="px-4 pt-4">
-            <InlineNotice tone="success">{successNotice}</InlineNotice>
+          <div className="px-3 pt-2">
+            <InlineNotice
+              tone="success"
+              className="rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            >
+              {successNotice}
+            </InlineNotice>
           </div>
         ) : null}
 
         {(requestsQuery.data ?? []).length ? (
-          <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
+          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
             {(requestsQuery.data ?? []).map((request, index) => (
               <div
                 key={request.id}
                 className={cn(
-                  "px-4 py-3.5",
+                  "px-4 py-3",
                   index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                 )}
               >
@@ -129,29 +134,29 @@ export function FriendRequestsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+                        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
                           {request.characterName}
                         </div>
-                        <div className="mt-0.5 text-[12px] text-[color:var(--text-muted)]">
+                        <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
                           {getFriendRequestSourceLabel(request.triggerScene)}
                         </div>
                       </div>
-                      <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
+                      <div className="shrink-0 text-[10px] text-[color:var(--text-dim)]">
                         {formatFriendRequestDate(request.createdAt)}
                       </div>
                     </div>
 
-                    <div className="mt-2 rounded-[14px] bg-[color:var(--surface-card-hover)] px-3 py-2.5 text-[14px] leading-6 text-[color:var(--text-secondary)]">
+                    <div className="mt-2 rounded-[12px] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[13px] leading-5 text-[color:var(--text-secondary)]">
                       {request.greeting || "想认识你。"}
                     </div>
 
-                    <div className="mt-3 flex items-center justify-end gap-2">
+                    <div className="mt-2.5 flex items-center justify-end gap-2">
                       <Button
                         disabled={acceptMutation.isPending || declineMutation.isPending}
                         onClick={() => declineMutation.mutate(request.id)}
                         variant="secondary"
                         size="sm"
-                        className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
+                        className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                       >
                         {declineMutation.isPending && declineMutation.variables === request.id
                           ? "处理中..."
@@ -162,7 +167,7 @@ export function FriendRequestsPage() {
                         onClick={() => acceptMutation.mutate(request.id)}
                         variant="primary"
                         size="sm"
-                        className="rounded-[10px] bg-[#07c160] text-white shadow-none hover:bg-[#06ad56]"
+                        className="h-8 rounded-[10px] bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
                       >
                         {acceptMutation.isPending && acceptMutation.variables === request.id
                           ? "接受中..."
@@ -177,18 +182,18 @@ export function FriendRequestsPage() {
         ) : null}
 
         {acceptMutation.isError && acceptMutation.error instanceof Error ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={acceptMutation.error.message} />
           </div>
         ) : null}
         {declineMutation.isError && declineMutation.error instanceof Error ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-2.5">
             <ErrorBlock message={declineMutation.error.message} />
           </div>
         ) : null}
 
         {!requestsQuery.isLoading && !requestsQuery.isError && !requestsQuery.data?.length ? (
-          <div className="px-4 pt-6">
+          <div className="px-4 pt-4">
             <EmptyState title="暂时没有新的好友请求" description="去发现页摇一摇，或等待场景触发新的相遇。" />
           </div>
         ) : null}
