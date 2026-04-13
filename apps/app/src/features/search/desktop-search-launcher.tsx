@@ -1,15 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  BookUser,
-  ChevronRight,
-  Clock3,
-  CornerDownLeft,
-  Search,
-  UserPlus,
-  UsersRound,
-} from "lucide-react";
+import { ChevronRight, Clock3, CornerDownLeft, Search } from "lucide-react";
 import { getFriends, listCharacters } from "@yinjie/contracts";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
@@ -20,7 +12,6 @@ import {
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../contacts/contact-utils";
-import { buildWorldCharactersRouteHash } from "../contacts/world-characters-route-state";
 import { useSpeechInput } from "../chat/use-speech-input";
 import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -47,14 +38,6 @@ type DesktopSearchDropdownPanelProps = {
   speechDisplayText: string;
   speechError: string | null;
   speechStatus: SpeechInputStatus;
-};
-
-type LauncherActionEntry = {
-  key: string;
-  title: string;
-  description: string;
-  icon: typeof Search;
-  onSelect: () => void;
 };
 
 export function useDesktopSearchLauncher({
@@ -266,77 +249,13 @@ export function DesktopSearchDropdownPanel({
       .slice(0, 4);
   }, [charactersQuery.data, friendsQuery.data, normalizedKeyword]);
 
-  const featureEntries: LauncherActionEntry[] = [
-    {
-      key: "add-friend",
-      title: "添加朋友",
-      description: trimmedKeyword
-        ? `去世界角色里找“${trimmedKeyword}”，再发起好友申请`
-        : "去世界角色里找人并发起好友申请",
-      icon: UserPlus,
-      onSelect: () => {
-        onClose?.();
-        void navigate({
-          to: "/contacts/world-characters",
-          hash: buildWorldCharactersRouteHash({
-            keyword: trimmedKeyword,
-          }),
-        });
-      },
-    },
-    ...(!trimmedKeyword || matchesFeatureKeyword(normalizedKeyword, [
-      "新的朋友",
-      "好友申请",
-      "申请",
-    ])
-      ? [
-          {
-            key: "new-friends",
-            title: "新的朋友",
-            description: "查看待处理的好友申请记录",
-            icon: UsersRound,
-            onSelect: () => {
-              onClose?.();
-              void navigate({ to: "/friend-requests" });
-            },
-          } satisfies LauncherActionEntry,
-        ]
-      : []),
-    ...(!trimmedKeyword || matchesFeatureKeyword(normalizedKeyword, [
-      "世界角色",
-      "角色",
-    ])
-      ? [
-          {
-            key: "world-characters",
-            title: "世界角色",
-            description: trimmedKeyword
-              ? `浏览与“${trimmedKeyword}”相关的世界角色`
-              : "浏览尚未加入通讯录的世界角色",
-            icon: BookUser,
-            onSelect: () => {
-              onClose?.();
-              void navigate({
-                to: "/contacts/world-characters",
-                hash: buildWorldCharactersRouteHash({
-                  keyword: trimmedKeyword,
-                }),
-              });
-            },
-          } satisfies LauncherActionEntry,
-        ]
-      : []),
-  ];
-
   const suggestionsLoading =
     shouldLoadSuggestions && (friendsQuery.isLoading || charactersQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
     (friendsQuery.error instanceof Error || charactersQuery.error instanceof Error);
   const hasSuggestionResults =
-    featureEntries.length > 0 ||
-    friendMatches.length > 0 ||
-    worldCharacterMatches.length > 0;
+    friendMatches.length > 0 || worldCharacterMatches.length > 0;
 
   return (
     <div
@@ -389,14 +308,6 @@ export function DesktopSearchDropdownPanel({
                     : "语音输入已完成。"}
         </div>
       ) : null}
-
-      <SearchLauncherSection title="功能" className="mt-3">
-        <div className="space-y-1.5">
-          {featureEntries.map((entry) => (
-            <SearchLauncherActionRow key={entry.key} entry={entry} />
-          ))}
-        </div>
-      </SearchLauncherSection>
 
       {trimmedKeyword ? (
         <SearchLauncherSection title="搜索建议" className="mt-3">
@@ -531,31 +442,6 @@ function SearchLauncherSection({
   );
 }
 
-function SearchLauncherActionRow({ entry }: { entry: LauncherActionEntry }) {
-  const Icon = entry.icon;
-
-  return (
-    <button
-      type="button"
-      onClick={entry.onSelect}
-      className="flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white"
-    >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
-        <Icon size={16} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">
-          {entry.title}
-        </div>
-        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-          {entry.description}
-        </div>
-      </div>
-      <ChevronRight size={14} className="shrink-0 text-[color:var(--text-dim)]" />
-    </button>
-  );
-}
-
 function SearchLauncherCharacterRow({
   avatarName,
   avatarSrc,
@@ -594,15 +480,6 @@ function SearchLauncherCharacterRow({
       <ChevronRight size={14} className="shrink-0 text-[color:var(--text-dim)]" />
     </button>
   );
-}
-
-function matchesFeatureKeyword(keyword: string, aliases: string[]) {
-  return aliases.some((item) => {
-    const normalizedItem = item.trim().toLowerCase();
-    return (
-      normalizedItem.includes(keyword) || keyword.includes(normalizedItem)
-    );
-  });
 }
 
 function matchesFriendDirectorySearch(
