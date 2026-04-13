@@ -39,29 +39,29 @@ export function ProfilePage() {
       <div className="pb-8">
         <Link
           to="/profile/settings"
-          className="mt-1.5 flex items-center gap-3 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+          className="mt-1 flex items-center gap-2.5 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
         >
-          <AvatarChip name={username ?? "世界主人"} src={avatar} size="xl" />
+          <AvatarChip name={username ?? "世界主人"} src={avatar} size="lg" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <div className="truncate text-[18px] font-medium text-[color:var(--text-primary)]">
+            <div className="flex items-center gap-1.5">
+              <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
                 {username ?? "世界主人"}
               </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.5 py-0.5 text-[9px] font-medium tracking-[0.03em] text-[#15803d]">
+              <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-1.25 py-0.5 text-[8px] font-medium tracking-[0.04em] text-[#15803d]">
                 世界主人
               </div>
             </div>
-            <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-secondary)]">
+            <div className="mt-0.5 line-clamp-1 text-[11px] text-[color:var(--text-secondary)]">
               {signature?.trim() || "查看与编辑个人资料"}
             </div>
           </div>
           <ChevronRight
-            size={16}
+            size={15}
             className="shrink-0 text-[color:var(--text-dim)]"
           />
         </Link>
 
-        <ProfileEntryGroup className="mt-1.5">
+        <ProfileEntryGroup className="mt-1">
           <ProfileEntry
             icon={Settings}
             iconClassName="bg-[rgba(7,193,96,0.10)] text-[#15803d]"
@@ -70,7 +70,7 @@ export function ProfilePage() {
           />
         </ProfileEntryGroup>
 
-        <ProfileEntryGroup className="mt-1.5">
+        <ProfileEntryGroup className="mt-1">
           <ProfileEntry
             icon={ShieldCheck}
             iconClassName="bg-[rgba(64,169,255,0.12)] text-[#1677ff]"
@@ -128,21 +128,21 @@ function ProfileEntry({
   return (
     <Link
       to={to as never}
-      className="flex items-center gap-3 px-4 py-3 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
+      className="flex items-center gap-2.5 px-4 py-2.75 transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card-hover)]"
     >
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]",
+          "flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[9px]",
           iconClassName,
         )}
       >
-        <Icon size={16} />
+        <Icon size={15} />
       </div>
-      <div className="min-w-0 flex-1 text-[15px] text-[color:var(--text-primary)]">
+      <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
         {label}
       </div>
       <ChevronRight
-        size={14}
+        size={13}
         className="shrink-0 text-[color:var(--text-dim)]"
       />
     </Link>
