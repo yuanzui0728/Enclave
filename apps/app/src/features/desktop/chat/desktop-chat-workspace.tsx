@@ -1334,6 +1334,16 @@ export function DesktopChatWorkspace({
       </section>
 
       {activeConversation && rightPanelMode ? (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-10 cursor-default bg-transparent"
+          onPointerDown={() => {
+            closeRightPanel();
+          }}
+        />
+      ) : null}
+
+      {activeConversation && rightPanelMode ? (
         <DesktopChatSidePanel
           panelRef={sidePanelRef}
           mode={rightPanelMode}
