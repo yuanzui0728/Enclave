@@ -1270,6 +1270,16 @@ export function DesktopChatWorkspace({
           subtitle={
             rightPanelMode === "history" ? activeConversation.title : "聊天信息"
           }
+          onBack={
+            rightPanelMode === "history" && historyPanelCanReturnToDetails
+              ? () => {
+                  setRightPanelMode("details");
+                  setHistoryPanelCanReturnToDetails(false);
+                  setDetailsAnnouncementRequest(null);
+                  setDetailsMemberSearchRequest(null);
+                }
+              : undefined
+          }
           onClose={() => {
             setRightPanelMode(null);
             setHistoryPanelCanReturnToDetails(false);
