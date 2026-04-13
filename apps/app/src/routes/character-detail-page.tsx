@@ -1232,9 +1232,11 @@ export function CharacterDetailPage() {
             <ProfileRow
               label="朋友圈"
               value={
-                isFriend && isDesktopLayout
-                  ? "查看这位好友最近的朋友圈"
-                  : "后续接入"
+                !isFriend
+                  ? "加为好友后可查看"
+                  : isDesktopLayout
+                    ? "查看这位好友最近的朋友圈"
+                    : "请在桌面端查看"
               }
               onClick={
                 isFriend && isDesktopLayout
