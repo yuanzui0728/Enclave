@@ -846,6 +846,18 @@ export function StickerPanel({
     });
   };
 
+  const jumpSearchHighlight = (target: "first" | "last") => {
+    if (!activeStickerKeys.length) {
+      return;
+    }
+
+    setHighlightedStickerKey(
+      target === "first"
+        ? (activeStickerKeys[0] ?? null)
+        : (activeStickerKeys[activeStickerKeys.length - 1] ?? null),
+    );
+  };
+
   const focusManageDeleteButton = (stickerKey: string | null) => {
     if (!stickerKey) {
       return;
@@ -937,6 +949,18 @@ export function StickerPanel({
       if (event.key === "ArrowUp") {
         event.preventDefault();
         moveSearchHighlight(-4);
+        return;
+      }
+
+      if (event.key === "Home") {
+        event.preventDefault();
+        jumpSearchHighlight("first");
+        return;
+      }
+
+      if (event.key === "End") {
+        event.preventDefault();
+        jumpSearchHighlight("last");
         return;
       }
 
@@ -1305,6 +1329,18 @@ export function StickerPanel({
                         默认推荐
                       </span>
                     ) : null}
+                    {highlightedSearchPosition &&
+                    highlightedSearchPosition > 1 ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        Home 首推
+                      </span>
+                    ) : null}
+                    {highlightedSearchPosition &&
+                    highlightedSearchPosition < activeItems.length ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        End 末项
+                      </span>
+                    ) : null}
                     {highlightedSearchPosition ? (
                       <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
                         {highlightedSearchPosition}/{activeItems.length}
@@ -1322,6 +1358,12 @@ export function StickerPanel({
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
                   Enter 发送
+                </span>
+                <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                  Home 首推
+                </span>
+                <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
+                  End 末项
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
                   Esc 清空
