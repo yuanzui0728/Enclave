@@ -611,6 +611,11 @@ export function ContactsPage() {
     void navigate({ to });
   }
 
+  function handleOpenDesktopAddFriend() {
+    setNotice(null);
+    void navigate({ to: "/desktop/add-friend" });
+  }
+
   function handleDesktopSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") {
       return;
@@ -771,6 +776,17 @@ export function ContactsPage() {
       onClick: handleOpenWorldCharacters,
     },
   ];
+  const desktopShortcutItems: ContactShortcutListItem[] = [
+    {
+      key: "add-friend",
+      label: "添加朋友",
+      subtitle: "搜索隐界号或角色名，发起好友申请",
+      icon: Search,
+      iconClassName: "bg-[linear-gradient(135deg,#34d399,#07c160)]",
+      onClick: handleOpenDesktopAddFriend,
+    },
+    ...shortcutItems,
+  ];
   const mobileShortcutItems = shortcutItems;
 
   if (isDesktopLayout) {
@@ -861,7 +877,7 @@ export function ContactsPage() {
 
               <div className="px-3 py-3">
                 <ContactShortcutList
-                  items={shortcutItems}
+                  items={desktopShortcutItems}
                   compact
                   className="bg-white shadow-[var(--shadow-section)]"
                 />

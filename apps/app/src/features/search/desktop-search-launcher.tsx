@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Clock3, CornerDownLeft, Search } from "lucide-react";
 import { getFriends, listCharacters } from "@yinjie/contracts";
-import { cn } from "@yinjie/ui";
+import { Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import {
   createFriendDirectoryItems,
@@ -16,6 +16,7 @@ import { useSpeechInput } from "../chat/use-speech-input";
 import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { buildSearchRouteHash, type SearchRouteSource } from "./search-route-state";
+import { buildDesktopAddFriendRouteHash } from "../desktop/contacts/desktop-add-friend-route-state";
 import {
   hydrateSearchHistoryFromNative,
   loadSearchHistory,
@@ -384,8 +385,27 @@ export function DesktopSearchDropdownPanel({
               ) : null}
 
               {!hasSuggestionResults ? (
-                <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-                  没有直接命中的联系人或角色，可以继续用搜一搜，或去“添加朋友”里找。
+                <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3">
+                  <div className="text-xs leading-6 text-[color:var(--text-muted)]">
+                    没有直接命中的联系人或角色，可以继续用搜一搜，或去“添加朋友”里找。
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="mt-2 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                    onClick={() => {
+                      onClose?.();
+                      void navigate({
+                        to: "/desktop/add-friend",
+                        hash: buildDesktopAddFriendRouteHash({
+                          keyword: trimmedKeyword,
+                        }),
+                      });
+                    }}
+                  >
+                    去添加朋友
+                  </Button>
                 </div>
               ) : null}
             </div>

@@ -682,7 +682,7 @@ export function DesktopChatWorkspace({
     }
 
     if (key === "add-friend") {
-      void navigate({ to: "/friend-requests" });
+      void navigate({ to: "/desktop/add-friend" });
       return;
     }
 
