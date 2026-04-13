@@ -3126,6 +3126,7 @@ export function ChatComposer({
               recentItems={recentStickers}
               onClose={() => setStickerPanelOpen(false)}
               onPackChange={setActiveStickerPackId}
+              onRecentItemsChange={(items) => setRecentStickers(items)}
               onError={setAttachmentError}
               onSelect={(sticker) => void handleSendSticker(sticker)}
             />

@@ -11,7 +11,10 @@ import {
 } from "@yinjie/contracts";
 import { Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { prepareCustomStickerUpload } from "./prepare-custom-sticker-upload";
-import type { RecentStickerItem } from "./recent-stickers";
+import {
+  removeRecentSticker,
+  type RecentStickerItem,
+} from "./recent-stickers";
 
 type StickerPanelProps = {
   baseUrl?: string;
@@ -20,6 +23,7 @@ type StickerPanelProps = {
   recentItems: RecentStickerItem[];
   onClose: () => void;
   onPackChange: (packId: string) => void;
+  onRecentItemsChange?: (items: RecentStickerItem[]) => void;
   onSelect: (sticker: StickerAttachment) => void;
   onError?: (message: string | null) => void;
 };
@@ -48,6 +52,7 @@ export function StickerPanel({
   recentItems,
   onClose,
   onPackChange,
+  onRecentItemsChange,
   onSelect,
   onError,
 }: StickerPanelProps) {
@@ -153,7 +158,13 @@ export function StickerPanel({
       await deleteCustomSticker(stickerId, baseUrl);
       return stickerId;
     },
-    onSuccess: async () => {
+    onSuccess: async (stickerId) => {
+      onRecentItemsChange?.(
+        removeRecentSticker({
+          sourceType: "custom",
+          stickerId,
+        }),
+      );
       await queryClient.invalidateQueries({
         queryKey: [PANEL_QUERY_KEY, baseUrl],
       });

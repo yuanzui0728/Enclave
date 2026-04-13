@@ -141,6 +141,28 @@ export function pushRecentSticker(input: {
   return next;
 }
 
+export function removeRecentSticker(input: {
+  sourceType?: "builtin" | "custom";
+  packId?: string;
+  stickerId: string;
+}) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  const next = loadRecentStickers().filter(
+    (item) =>
+      !(
+        (item.sourceType ?? "builtin") === (input.sourceType ?? "builtin") &&
+        (item.packId ?? "") === (input.packId ?? "") &&
+        item.stickerId === input.stickerId
+      ),
+  );
+
+  writeRecentStickers(next);
+  return next;
+}
+
 export async function hydrateRecentStickersFromNative() {
   const localItems = readRecentStickersFromLocal();
   if (!isDesktopRuntimeAvailable()) {
