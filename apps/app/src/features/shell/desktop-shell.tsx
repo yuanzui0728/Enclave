@@ -654,7 +654,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 setIsOwnerCardOpen(false);
                 setOwnerCardNotice(null);
               }}
-              className="absolute inset-0 z-20 cursor-default"
+              className="absolute inset-0 z-20 cursor-default appearance-none border-0 bg-transparent p-0"
             />
           ) : null}
 
@@ -664,7 +664,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 <button
                   type="button"
                   className={cn(
-                    "group flex justify-center rounded-[16px] px-2 py-1.5",
+                    "group flex justify-center rounded-[16px] border-0 bg-transparent px-2 py-1.5 text-inherit appearance-none",
                     isOwnerCardOpen || profileRouteActive
                       ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
@@ -1107,7 +1107,7 @@ function DesktopOwnerShortcutButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex min-h-[92px] flex-col items-start rounded-[16px] border px-3 py-3 text-left transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "flex min-h-[92px] flex-col items-start rounded-[16px] border bg-transparent px-3 py-3 text-left text-inherit appearance-none transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         disabled
           ? "cursor-wait border-[color:var(--border-faint)] bg-[rgba(148,163,184,0.08)] text-[color:var(--text-muted)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:-translate-y-[1px] hover:border-[rgba(7,193,96,0.2)] hover:bg-[rgba(7,193,96,0.08)] hover:shadow-[0_12px_24px_rgba(15,23,42,0.08)]",
@@ -1150,7 +1150,7 @@ function DesktopWindowButton({
         onClick();
       }}
       className={cn(
-        "flex h-8 w-8 items-center justify-center rounded-[10px] border text-[color:var(--text-muted)] transition-[background-color,color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "flex h-8 w-8 items-center justify-center rounded-[10px] border bg-transparent text-[color:var(--text-muted)] appearance-none transition-[background-color,color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         danger
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[color:var(--border-danger)] hover:bg-[color:var(--state-danger-bg)] hover:text-[color:var(--state-danger-text)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -1213,7 +1213,7 @@ function DesktopActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex w-full flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-[11px] transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "group flex w-full flex-col items-center gap-1.5 rounded-[14px] border-0 bg-transparent px-2 py-3 text-[11px] text-inherit appearance-none transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
           : "text-white/68 hover:bg-white/8 hover:text-white",
@@ -1248,7 +1248,7 @@ function DesktopMoreMenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[12px] border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]">
         <Icon size={17} />
