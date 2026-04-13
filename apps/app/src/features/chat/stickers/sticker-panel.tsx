@@ -76,6 +76,8 @@ export function StickerPanel({
     useState<CustomStickerSortMode>("recent");
   const [customDeleteFeedback, setCustomDeleteFeedback] =
     useState<CustomDeleteFeedback | null>(null);
+  const [customDeleteFeedbackFlashActive, setCustomDeleteFeedbackFlashActive] =
+    useState(false);
   const [pendingManageFocusKey, setPendingManageFocusKey] = useState<
     string | null
   >(null);
@@ -92,6 +94,7 @@ export function StickerPanel({
   const customEmptyActionButtonRef = useRef<HTMLButtonElement | null>(null);
   const stickerItemRefs = useRef(new Map<string, HTMLDivElement>());
   const manageDeleteButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const deleteFeedbackFlashTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const stickerCatalogQuery = useQuery({
     queryKey: [PANEL_QUERY_KEY, baseUrl],
@@ -134,6 +137,18 @@ export function StickerPanel({
   const searchPending =
     trimmedKeyword.length > 0 && trimmedKeyword !== searchKeyword;
 
+  const triggerDeleteFeedbackFlash = () => {
+    if (deleteFeedbackFlashTimerRef.current !== null) {
+      window.clearTimeout(deleteFeedbackFlashTimerRef.current);
+    }
+
+    setCustomDeleteFeedbackFlashActive(true);
+    deleteFeedbackFlashTimerRef.current = window.setTimeout(() => {
+      setCustomDeleteFeedbackFlashActive(false);
+      deleteFeedbackFlashTimerRef.current = null;
+    }, 720);
+  };
+
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
       if (customStickerLibraryFull) {
@@ -169,6 +184,7 @@ export function StickerPanel({
     onSuccess: async (uploadedCount) => {
       if (uploadedCount > 0) {
         setCustomDeleteFeedback(null);
+        setCustomDeleteFeedbackFlashActive(false);
         await queryClient.invalidateQueries({
           queryKey: [PANEL_QUERY_KEY, baseUrl],
         });
@@ -210,6 +226,7 @@ export function StickerPanel({
         ),
         lastDeletedLabel: label?.trim() || null,
       }));
+      triggerDeleteFeedbackFlash();
       setPendingManageFocusKey(nextFocusKey ?? null);
       if (exitManageModeAfterDelete) {
         setCustomManageMode(false);
@@ -455,11 +472,20 @@ export function StickerPanel({
   useEffect(() => {
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomDeleteFeedback(null);
+      setCustomDeleteFeedbackFlashActive(false);
       setFocusedManageDeleteKey(null);
       setPendingManageFocusKey(null);
       setShouldFocusCustomEmptyAction(false);
     }
   }, [activeSectionId, trimmedKeyword.length]);
+
+  useEffect(() => {
+    return () => {
+      if (deleteFeedbackFlashTimerRef.current !== null) {
+        window.clearTimeout(deleteFeedbackFlashTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!trimmedKeyword) {
@@ -1016,12 +1042,16 @@ export function StickerPanel({
               className={
                 isMobile
                   ? "mb-2 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5"
-                  : `mb-3 rounded-[18px] border px-3 py-3 ${
+                  : `mb-3 rounded-[18px] border px-3 py-3 transition ${
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
                         : customStorageTone === "warning"
                           ? "border-[rgba(245,158,11,0.24)] bg-[rgba(255,251,235,0.96)]"
                           : "border-[color:var(--border-subtle)] bg-white/84"
+                    } ${
+                      customDeleteFeedbackFlashActive
+                        ? "shadow-[0_12px_28px_rgba(160,90,10,0.14)] ring-1 ring-[rgba(160,90,10,0.18)]"
+                        : ""
                     }`
               }
             >
@@ -1041,6 +1071,8 @@ export function StickerPanel({
                       : customStorageTone === "warning"
                         ? "bg-[rgba(245,158,11,0.14)] text-[#9a5a0a]"
                         : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-primary)]"
+                  } ${
+                    customDeleteFeedbackFlashActive ? "animate-pulse" : ""
                   }`}
                 >
                   {customStickerLibraryFull
@@ -1070,13 +1102,26 @@ export function StickerPanel({
                 <>
                   <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
                     <span>
-                      {customStickerLibraryFull
-                        ? "表情库已占满，删除后才能继续导入。"
-                        : customSlotsRemaining <= 20
-                          ? "空间不多了，建议先清理不常用表情。"
-                          : "支持继续添加图片和 GIF，建议保留常用项。"}
+                      {customDeleteFeedback
+                        ? `本轮已释放 ${customDeleteFeedback.deletedCount} 个位置。`
+                        : customStickerLibraryFull
+                          ? "表情库已占满，删除后才能继续导入。"
+                          : customSlotsRemaining <= 20
+                            ? "空间不多了，建议先清理不常用表情。"
+                            : "支持继续添加图片和 GIF，建议保留常用项。"}
                     </span>
-                    <span>{Math.round(customStorageRatio * 100)}%</span>
+                    <div className="flex items-center gap-2">
+                      {customDeleteFeedback ? (
+                        <span
+                          className={`rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[10px] font-medium text-[#9a5a0a] ${
+                            customDeleteFeedbackFlashActive ? "animate-pulse" : ""
+                          }`}
+                        >
+                          +{customDeleteFeedback.deletedCount} 空位
+                        </span>
+                      ) : null}
+                      <span>{Math.round(customStorageRatio * 100)}%</span>
+                    </div>
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     {catalog.customStickerCount === 0 ? (
@@ -1124,7 +1169,13 @@ export function StickerPanel({
             </div>
           ) : null}
           {showCustomManageHint ? (
-            <div className="mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/82 px-3 py-2.5 text-xs text-[color:var(--text-secondary)]">
+            <div
+              className={`mb-3 flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2.5 text-xs text-[color:var(--text-secondary)] transition ${
+                customDeleteFeedbackFlashActive
+                  ? "border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] shadow-[0_8px_20px_rgba(160,90,10,0.08)]"
+                  : "border-[rgba(15,23,42,0.08)] bg-white/82"
+              }`}
+            >
               <span>
                 {customDeleteFeedback
                   ? `已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`
@@ -1138,7 +1189,11 @@ export function StickerPanel({
                   Delete 删除
                 </span>
                 {customDeleteFeedback?.lastDeletedLabel ? (
-                  <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a]">
+                  <span
+                    className={`rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a] ${
+                      customDeleteFeedbackFlashActive ? "animate-pulse" : ""
+                    }`}
+                  >
                     最近删除：{customDeleteFeedback.lastDeletedLabel}
                   </span>
                 ) : null}
