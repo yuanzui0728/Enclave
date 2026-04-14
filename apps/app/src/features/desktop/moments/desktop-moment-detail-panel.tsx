@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentMediaGallery } from "../../../components/moment-media-gallery";
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopMomentDetailPanelProps = {
@@ -60,6 +61,7 @@ export function DesktopMomentDetailPanel({
   const ownerCommentCount = moment.comments.filter(
     (comment) => comment.authorType === "user",
   ).length;
+  const hasText = Boolean(moment.text.trim());
 
   useEffect(() => {
     scrollViewportRef.current?.scrollTo({ top: 0 });
@@ -143,9 +145,21 @@ export function DesktopMomentDetailPanel({
             </div>
           </div>
 
-          <div className="mt-4 text-[15px] leading-7 text-[color:var(--text-primary)]">
-            {moment.text}
-          </div>
+          {hasText ? (
+            <div className="mt-4 text-[15px] leading-7 text-[color:var(--text-primary)]">
+              {moment.text}
+            </div>
+          ) : null}
+
+          {moment.media.length > 0 ? (
+            <div className={hasText ? "mt-4" : "mt-5"}>
+              <MomentMediaGallery
+                contentType={moment.contentType}
+                media={moment.media}
+                variant="detail"
+              />
+            </div>
+          ) : null}
 
           <div className="mt-4 grid grid-cols-3 gap-3">
             <DetailMetric label="点赞" value={String(moment.likeCount)} />

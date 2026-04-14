@@ -10,6 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentMediaGallery } from "../../../components/moment-media-gallery";
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopMomentRowProps = {
@@ -50,6 +51,7 @@ export function DesktopMomentRow({
   const likedByOwner = Boolean(
     ownerId && moment.likes.some((like) => like.authorId === ownerId),
   );
+  const hasText = Boolean(moment.text.trim());
 
   useEffect(() => {
     if (commentDraft.trim()) {
@@ -137,9 +139,21 @@ export function DesktopMomentRow({
             </div>
           </div>
 
-          <div className="mt-3 text-[15px] leading-7 text-[color:var(--text-primary)]">
-            {moment.text}
-          </div>
+          {hasText ? (
+            <div className="mt-3 text-[15px] leading-7 text-[color:var(--text-primary)]">
+              {moment.text}
+            </div>
+          ) : null}
+
+          {moment.media.length > 0 ? (
+            <div className={hasText ? "mt-3" : "mt-4"}>
+              <MomentMediaGallery
+                contentType={moment.contentType}
+                media={moment.media}
+                stopPropagation
+              />
+            </div>
+          ) : null}
 
           <div className="mt-3 flex items-center justify-between gap-4">
             <div className="text-[12px] text-[color:var(--text-muted)]">
