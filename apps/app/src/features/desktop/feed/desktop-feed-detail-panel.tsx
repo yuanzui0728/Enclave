@@ -17,7 +17,6 @@ type DesktopFeedDetailPanelProps = {
   onCommentChange: (value: string) => void;
   onCommentSubmit: () => void;
   onLike: () => void;
-  onSelectAuthor: () => void;
   onToggleFavorite: () => void;
 };
 
@@ -33,7 +32,6 @@ export function DesktopFeedDetailPanel({
   onCommentChange,
   onCommentSubmit,
   onLike,
-  onSelectAuthor,
   onToggleFavorite,
 }: DesktopFeedDetailPanelProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -41,12 +39,12 @@ export function DesktopFeedDetailPanel({
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary)]";
   const activeFavoriteClassName =
     "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
-  const residentCommentCount = post?.comments.filter(
-    (comment) => comment.authorType === "character",
-  ).length ?? 0;
-  const ownerCommentCount = post?.comments.filter(
-    (comment) => comment.authorType === "user",
-  ).length ?? 0;
+  const residentCommentCount =
+    post?.comments.filter((comment) => comment.authorType === "character")
+      .length ?? 0;
+  const ownerCommentCount =
+    post?.comments.filter((comment) => comment.authorType === "user").length ??
+    0;
 
   useEffect(() => {
     if (!post) {
@@ -99,35 +97,26 @@ export function DesktopFeedDetailPanel({
           <>
             <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-start gap-4">
-                <button
-                  type="button"
-                  onClick={onSelectAuthor}
-                  className="shrink-0 rounded-[18px]"
-                  aria-label={`查看 ${post.authorName} 的公开动态`}
-                >
+                <div className="shrink-0 rounded-[18px]">
                   <AvatarChip
                     name={post.authorName}
                     src={post.authorAvatar}
                     size="wechat"
                   />
-                </button>
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={onSelectAuthor}
-                      className="truncate text-left text-base font-semibold text-[color:var(--text-primary)]"
-                    >
+                    <div className="truncate text-left text-base font-semibold text-[color:var(--text-primary)]">
                       {post.authorName}
-                    </button>
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
-                    post.authorType === "character"
-                      ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
-                  )}
-                >
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",
+                        post.authorType === "character"
+                          ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+                      )}
+                    >
                       {post.authorType === "character" ? (
                         <Bot size={11} />
                       ) : (
@@ -206,14 +195,6 @@ export function DesktopFeedDetailPanel({
                   <Star size={14} className={favorite ? "fill-current" : ""} />
                   {favorite ? "已收藏" : "收藏"}
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onSelectAuthor}
-                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                >
-                  查看 TA 的公开动态
-                </Button>
               </div>
             </div>
 
@@ -228,7 +209,8 @@ export function DesktopFeedDetailPanel({
                 </span>
               </div>
               <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                共 {post.commentCount} 条评论，其中 {residentCommentCount} 条来自居民，
+                共 {post.commentCount} 条评论，其中 {residentCommentCount}{" "}
+                条来自居民，
                 {ownerCommentCount} 条来自世界主人。
               </div>
 
@@ -251,7 +233,9 @@ export function DesktopFeedDetailPanel({
                               : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
                           )}
                         >
-                          {comment.authorType === "character" ? "居民" : "世界主人"}
+                          {comment.authorType === "character"
+                            ? "居民"
+                            : "世界主人"}
                         </span>
                         <span className="text-[color:var(--text-dim)]">
                           {formatTimestamp(comment.createdAt)}
@@ -264,35 +248,27 @@ export function DesktopFeedDetailPanel({
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
-                  还没有评论，你可以成为第一个回应的人。
+                <div className="mt-4 rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-[13px] text-[color:var(--text-muted)]">
+                  暂时还没有评论，你可以先说一句。
                 </div>
               )}
 
-              <div className="mt-4 border-t border-[color:var(--border-faint)] pt-4">
-                <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-                  <span>直接在右栏继续回应当前公开动态。</span>
-                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
-                    评论输入
-                  </span>
-                </div>
-                <div className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
-                  <TextField
-                    value={commentDraft}
-                    onChange={(event) => onCommentChange(event.target.value)}
-                    placeholder="在右栏继续写评论..."
-                    className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
-                  />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    disabled={!commentDraft.trim() || commentLoading}
-                    onClick={onCommentSubmit}
-                    className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                  >
-                    {commentLoading ? "发送中..." : "发送"}
-                  </Button>
-                </div>
+              <div className="mt-4 flex items-center gap-2">
+                <TextField
+                  value={commentDraft}
+                  onChange={(event) => onCommentChange(event.target.value)}
+                  placeholder="写评论..."
+                  className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.18)] focus:shadow-none"
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={!commentDraft.trim() || commentLoading}
+                  onClick={onCommentSubmit}
+                  className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                >
+                  {commentLoading ? "发送中..." : "发送"}
+                </Button>
               </div>
             </div>
           </>
@@ -305,7 +281,7 @@ export function DesktopFeedDetailPanel({
 function DetailMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
-      <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+      <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-[15px] font-semibold text-[color:var(--text-primary)]">

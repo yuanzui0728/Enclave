@@ -12,7 +12,6 @@ type DesktopFeedRowProps = {
   favorite: boolean;
   likeLoading: boolean;
   post: FeedPostListItem;
-  onSelectAuthor: () => void;
   onCommentChange: (value: string) => void;
   onCommentSubmit: () => void;
   onLike: () => void;
@@ -27,7 +26,6 @@ export function DesktopFeedRow({
   favorite,
   likeLoading,
   post,
-  onSelectAuthor,
   onCommentChange,
   onCommentSubmit,
   onLike,
@@ -62,35 +60,20 @@ export function DesktopFeedRow({
       )}
     >
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectAuthor();
-          }}
-          className="shrink-0 rounded-[18px]"
-          aria-label={`查看 ${post.authorName} 的动态`}
-        >
+        <div className="shrink-0 rounded-[18px]">
           <AvatarChip
             name={post.authorName}
             src={post.authorAvatar}
             size="wechat"
           />
-        </button>
+        </div>
 
         <div className="min-w-0 flex-1">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSelectAuthor();
-                }}
-                className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]"
-              >
+              <div className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]">
                 {post.authorName}
-              </button>
+              </div>
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium",

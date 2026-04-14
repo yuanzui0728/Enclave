@@ -67,7 +67,6 @@ export function DesktopFeedWorkspace({
   onTextChange,
   onToggleFavorite,
 }: DesktopFeedWorkspaceProps) {
-  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(null);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -133,80 +132,6 @@ export function DesktopFeedWorkspace({
     }
   }, [posts, selectedPostId]);
 
-  useEffect(() => {
-    if (!activeAuthorId) {
-      return;
-    }
-
-    if (!authorSummaries.some((author) => author.authorId === activeAuthorId)) {
-      setActiveAuthorId(null);
-    }
-  }, [activeAuthorId, authorSummaries]);
-
-  const visiblePosts = useMemo(() => {
-    if (!activeAuthorId) {
-      return posts;
-    }
-
-    return posts.filter((post) => post.authorId === activeAuthorId);
-  }, [activeAuthorId, posts]);
-
-  const activeAuthorSummary =
-    authorSummaries.find((author) => author.authorId === activeAuthorId) ??
-    null;
-  const authorPosts = useMemo(() => {
-    if (!activeAuthorId) {
-      return [];
-    }
-
-    return posts.filter((post) => post.authorId === activeAuthorId);
-  }, [activeAuthorId, posts]);
-
-  const currentFeedLabel = useMemo(() => {
-    if (activeAuthorSummary) {
-      return `当前正在看 ${activeAuthorSummary.authorName} 的公开动态，共 ${visiblePosts.length} 条。`;
-    }
-
-    return "当前展示整个世界的公开流，包括世界主人与居民的发言。";
-  }, [activeAuthorSummary, visiblePosts.length]);
-
-  const activeResidentSummary = useMemo(() => {
-    const residents = authorSummaries.filter(
-      (author) => author.authorType === "character",
-    );
-    if (!residents.length) {
-      return null;
-    }
-
-    return (
-      [...residents].sort((left, right) => {
-        if (right.count !== left.count) {
-          return right.count - left.count;
-        }
-
-        if (right.commentCount !== left.commentCount) {
-          return right.commentCount - left.commentCount;
-        }
-
-        return (
-          (parseTimestamp(right.latestCreatedAt) ?? 0) -
-          (parseTimestamp(left.latestCreatedAt) ?? 0)
-        );
-      })[0] ?? null
-    );
-  }, [authorSummaries]);
-
-  const sidebarMode = selectedPostId
-    ? "detail"
-    : activeAuthorSummary
-      ? "author"
-      : "summary";
-
-  function focusAuthor(authorId: string) {
-    setActiveAuthorId(authorId);
-    setSelectedPostId(null);
-  }
-
   const residentPostsCount = useMemo(
     () => posts.filter((post) => post.authorType === "character").length,
     [posts],
@@ -256,10 +181,9 @@ export function DesktopFeedWorkspace({
                 commentPendingPostId={commentPendingPostId}
                 isLoading={isLoading}
                 likePendingPostId={likePendingPostId}
-                posts={visiblePosts}
+                posts={posts}
                 selectedPostId={selectedPostId}
                 isPostFavorite={isPostFavorite}
-                onSelectAuthor={focusAuthor}
                 onCommentChange={onCommentChange}
                 onCommentSubmit={onCommentSubmit}
                 onLike={onLike}
@@ -273,12 +197,7 @@ export function DesktopFeedWorkspace({
       </section>
 
       <DesktopFeedSidebar
-        activeAuthorId={activeAuthorId}
-        activeAuthorSummary={activeAuthorSummary}
-        activeResidentSummary={activeResidentSummary}
-        authorPosts={authorPosts}
         authorSummaries={authorSummaries}
-        currentFeedLabel={currentFeedLabel}
         commentDrafts={commentDrafts}
         commentPendingPostId={commentPendingPostId}
         detailErrorMessage={
@@ -288,7 +207,7 @@ export function DesktopFeedWorkspace({
         }
         detailLoading={selectedPostQuery.isLoading}
         likePendingPostId={likePendingPostId}
-        mode={sidebarMode}
+        mode={selectedPostId ? "detail" : "summary"}
         ownerAvatar={ownerAvatar}
         ownerPostsCount={ownerPostsCount}
         ownerUsername={ownerUsername}
@@ -297,17 +216,13 @@ export function DesktopFeedWorkspace({
         selectedPost={selectedPostQuery.data ?? null}
         selectedPostId={selectedPostId}
         totalPostsCount={posts.length}
-        visiblePostsCount={visiblePosts.length}
         aiReactedPostsCount={aiReactedPostsCount}
         isPostFavorite={isPostFavorite}
-        onClearAuthor={() => setActiveAuthorId(null)}
         onCloseDetail={() => setSelectedPostId(null)}
         onCommentChange={onCommentChange}
         onCommentSubmit={onCommentSubmit}
         onLike={onLike}
         onOpenCompose={() => setShowCompose(true)}
-        onSelectAuthor={focusAuthor}
-        onSelectPost={setSelectedPostId}
         onToggleFavorite={onToggleFavorite}
       />
 
