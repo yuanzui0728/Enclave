@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   type Dispatch,
@@ -136,6 +137,7 @@ export function DesktopSearchWorkspace({
   visibleResults,
 }: DesktopSearchWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const normalizedKeyword = searchText.trim().toLowerCase();
   const groupedMessageHeaderIds = useMemo(
     () => new Set(messageGroups.map((item) => item.header.id)),
@@ -170,6 +172,57 @@ export function DesktopSearchWorkspace({
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  const focusSearchInput = useEffectEvent((moveCaretToEnd = false) => {
+    window.requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) {
+        return;
+      }
+
+      input.focus();
+      if (!moveCaretToEnd) {
+        return;
+      }
+
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    });
+  });
+  const scrollResultsToTop = useEffectEvent(
+    (behavior: ScrollBehavior = "smooth") => {
+      const viewport = scrollViewportRef.current;
+      if (!viewport) {
+        return;
+      }
+
+      if (behavior === "auto") {
+        viewport.scrollTop = 0;
+        return;
+      }
+
+      viewport.scrollTo({ top: 0, behavior });
+    },
+  );
+  const handleSelectCategory = useEffectEvent(
+    (category: SearchCategory, options?: { focusInput?: boolean }) => {
+      setActiveCategory(category);
+      scrollResultsToTop("smooth");
+      if (options?.focusInput) {
+        focusSearchInput(Boolean(searchText.trim()));
+      }
+    },
+  );
+  const handleApplyHistory = useEffectEvent((keyword: string) => {
+    onApplyHistory(keyword);
+    scrollResultsToTop("smooth");
+    focusSearchInput(true);
+  });
+  const handleClearKeyword = useEffectEvent(() => {
+    onClearKeyword();
+    scrollResultsToTop("smooth");
+    focusSearchInput(false);
+  });
 
   const categorySummary = useMemo(() => {
     if (!hasKeyword) {
@@ -241,7 +294,7 @@ export function DesktopSearchWorkspace({
                     {searchText ? (
                       <DesktopSearchActionButton
                         className="absolute right-3 top-1/2 -translate-y-1/2"
-                        onClick={onClearKeyword}
+                        onClick={handleClearKeyword}
                         tone="neutral"
                       >
                         清空
@@ -265,7 +318,9 @@ export function DesktopSearchWorkspace({
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => setActiveCategory(item.id)}
+                      onClick={() =>
+                        handleSelectCategory(item.id, { focusInput: true })
+                      }
                       className={cn(
                         "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
                         activeCategory === item.id
@@ -295,7 +350,7 @@ export function DesktopSearchWorkspace({
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollViewportRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[1160px] min-h-full flex-col px-6 py-6">
           {loading ? <LoadingBlock label="正在准备桌面搜索索引..." /> : null}
           {error ? <ErrorBlock message={error} /> : null}
@@ -322,10 +377,9 @@ export function DesktopSearchWorkspace({
                       count={count}
                       description={item.description}
                       icon={Icon}
-                      onClick={() => {
-                        setActiveCategory(item.id);
-                        inputRef.current?.focus();
-                      }}
+                      onClick={() =>
+                        handleSelectCategory(item.id, { focusInput: true })
+                      }
                       title={item.title}
                     />
                   );
@@ -357,7 +411,7 @@ export function DesktopSearchWorkspace({
                         >
                           <button
                             type="button"
-                            onClick={() => onApplyHistory(item.keyword)}
+                            onClick={() => handleApplyHistory(item.keyword)}
                             className="inline-flex min-w-0 flex-1 items-center gap-2 text-left"
                           >
                             <Clock3
@@ -477,7 +531,11 @@ export function DesktopSearchWorkspace({
                       action={
                         hasMore ? (
                           <DesktopSearchActionButton
-                            onClick={() => setActiveCategory(section.category)}
+                            onClick={() =>
+                              handleSelectCategory(section.category, {
+                                focusInput: true,
+                              })
+                            }
                             tone="brand"
                           >
                             查看全部
