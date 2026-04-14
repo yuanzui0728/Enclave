@@ -1659,6 +1659,7 @@ function GroupReplyRuntimeCard({
   visibleMessages: ReplyLogicHistoryItem[];
 }) {
   const queryClient = useQueryClient();
+  const taskSectionRef = useRef<HTMLDivElement | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | ReplyLogicGroupReplyTaskStatus>("all");
   const [actorFilter, setActorFilter] = useState("all");
   const [cleanupDays, setCleanupDays] = useState("14");
@@ -1821,6 +1822,33 @@ function GroupReplyRuntimeCard({
         failed: selectedArchiveActor.failedCount,
       }
     : runtime.archiveSummary?.statusCounts ?? null;
+  const hasActiveTaskFilter = actorFilter !== "all" || statusFilter !== "all";
+  const taskFilterSummary = [
+    `角色：${selectedActorOption?.name ?? "全部角色"}`,
+    `状态：${statusFilter === "all" ? "全部状态" : formatGroupReplyTaskStatus(statusFilter)}`,
+  ].join(" · ");
+
+  function scrollToTaskSection() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      taskSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function focusFilteredTasks(
+    nextActorFilter: string,
+    nextStatusFilter: "all" | ReplyLogicGroupReplyTaskStatus,
+  ) {
+    setActorFilter(nextActorFilter);
+    setStatusFilter(nextStatusFilter);
+    scrollToTaskSection();
+  }
 
   return (
     <Card className="bg-[color:var(--surface-console)]">
@@ -2017,6 +2045,35 @@ function GroupReplyRuntimeCard({
                       />
                     ) : null}
                   </div>
+                }
+                actions={
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => focusFilteredTasks(actor.actorCharacterId, "all")}
+                    >
+                      查看该角色轮次
+                    </Button>
+                    {actor.recentFailedCount > 0 ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => focusFilteredTasks(actor.actorCharacterId, "failed")}
+                      >
+                        筛到失败任务
+                      </Button>
+                    ) : null}
+                    {actor.recentCancelledCount > 0 ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => focusFilteredTasks(actor.actorCharacterId, "cancelled")}
+                      >
+                        筛到取消任务
+                      </Button>
+                    ) : null}
+                  </>
                 }
                 className="bg-white/90"
               />
@@ -2216,14 +2273,37 @@ function GroupReplyRuntimeCard({
         )}
       </AdminSubpanel>
 
-      {!filteredTurns.length ? (
-        <AdminEmptyState
-          className="mt-4"
-          title="当前筛选下没有匹配任务"
-          description="可以放宽状态或角色筛选，或者先让群聊实际跑几轮。"
-        />
-      ) : (
-        <div className="mt-4 space-y-4">
+      <div ref={taskSectionRef} className="mt-4 space-y-4">
+        {hasActiveTaskFilter ? (
+          <AdminRecordCard
+            title="当前任务筛选"
+            description="这里显示的是最近轮次里与当前筛选条件匹配的任务和对应轮次。"
+            badges={
+              <>
+                <StatusPill tone="muted">{taskFilterSummary}</StatusPill>
+                <StatusPill tone="warning">{filteredTurns.length} 轮命中</StatusPill>
+              </>
+            }
+            actions={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => focusFilteredTasks("all", "all")}
+              >
+                清空筛选
+              </Button>
+            }
+            className="bg-white/90"
+          />
+        ) : null}
+
+        {!filteredTurns.length ? (
+          <AdminEmptyState
+            title="当前筛选下没有匹配任务"
+            description="可以放宽状态或角色筛选，或者先让群聊实际跑几轮。"
+          />
+        ) : (
+        <div className="space-y-4">
           {filteredTurns.map((turn) => {
             const triggerMessage = visibleMessageMap.get(turn.triggerMessageId);
             return (
@@ -2396,7 +2476,8 @@ function GroupReplyRuntimeCard({
             );
           })}
         </div>
-      )}
+        )}
+      </div>
     </Card>
   );
 }
