@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
@@ -12,6 +18,7 @@ const logsDir = path.join(runtimeDir, "logs");
 const bodyDir = path.join(runtimeDir, "body");
 const configPath = path.join(confDir, "nginx.conf");
 const pidPath = path.join(runtimeDir, "nginx.pid");
+const bootstrapErrorLogPath = path.join(logsDir, "bootstrap-error.log");
 const appDistDir = path.join(rootDir, "apps", "app", "dist");
 const apiUpstream = "http://127.0.0.1:3000";
 const listenAddress = "127.0.0.1:5180";
@@ -35,11 +42,7 @@ if (previousConfig !== nextConfig) {
   writeFileSync(configPath, nextConfig, "utf8");
 }
 
-if (existsSync(pidPath)) {
-  runNginx(["-p", runtimeDir, "-c", configPath, "-s", "reload"]);
-} else {
-  runNginx(["-p", runtimeDir, "-c", configPath]);
-}
+restartNginx();
 
 console.log(`[web-nginx] ready at http://${listenAddress}/`);
 
@@ -136,18 +139,97 @@ http {
 }
 
 function runNginx(args) {
-  const result = spawnSync("nginx", args, {
-    cwd: rootDir,
-    env: process.env,
-    stdio: "inherit",
-    shell: false,
-  });
+  const result = spawnSync(
+    "nginx",
+    ["-g", `error_log ${bootstrapErrorLogPath};`, ...args],
+    {
+      cwd: rootDir,
+      env: process.env,
+      encoding: "utf8",
+      shell: false,
+    },
+  );
 
   if (result.error) {
     throw result.error;
   }
 
+  if (result.stdout) {
+    process.stdout.write(result.stdout);
+  }
+
+  const filteredStderr = filterBenignNginxWarnings(result.stderr ?? "");
+  if (filteredStderr) {
+    process.stderr.write(filteredStderr);
+  }
+
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
   }
+}
+
+function restartNginx() {
+  if (!existsSync(pidPath)) {
+    runNginx(["-p", runtimeDir, "-c", configPath]);
+    return;
+  }
+
+  const pid = Number.parseInt(readFileSync(pidPath, "utf8").trim(), 10);
+  if (Number.isFinite(pid)) {
+    try {
+      process.kill(pid, "SIGTERM");
+      waitForProcessExit(pid, 5_000);
+    } catch (error) {
+      if (!isMissingProcessError(error)) {
+        throw error;
+      }
+    }
+  }
+
+  rmSync(pidPath, { force: true });
+  runNginx(["-p", runtimeDir, "-c", configPath]);
+}
+
+function waitForProcessExit(pid, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    try {
+      process.kill(pid, 0);
+    } catch (error) {
+      if (isMissingProcessError(error)) {
+        return;
+      }
+
+      throw error;
+    }
+
+    spawnSync("sleep", ["0.05"], {
+      cwd: rootDir,
+      env: process.env,
+      stdio: "ignore",
+      shell: false,
+    });
+  }
+}
+
+function isMissingProcessError(error) {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    error.code === "ESRCH"
+  );
+}
+
+function filterBenignNginxWarnings(stderrText) {
+  return stderrText
+    .split("\n")
+    .filter(
+      (line) =>
+        !line.includes(
+          'could not open error log file: open() "/var/log/nginx/error.log" failed (13: Permission denied)',
+        ),
+    )
+    .join("\n")
+    .trim();
 }
