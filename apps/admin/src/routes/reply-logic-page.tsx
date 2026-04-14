@@ -1842,6 +1842,31 @@ function NarrativeCard({
   );
 }
 
+function CollapsibleConfigSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="border-t border-[color:var(--border-faint)] pt-5 first:border-t-0 first:pt-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]"
+      >
+        <span>{title}</span>
+        <span className="ml-2 text-[10px]">{open ? "▲" : "▼"}</span>
+      </button>
+      {open ? <div className="mt-4 space-y-4">{children}</div> : null}
+    </section>
+  );
+}
+
 function RuntimeRulesEditorCard({
   draft,
   isDirty,
@@ -2698,7 +2723,7 @@ function RuntimeRulesEditorCard({
               />
             </ConfigSection>
 
-            <ConfigSection title="观测说明模板">
+            <CollapsibleConfigSection title="观测说明模板" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这部分主要影响后台快照里的状态门和链路备注文案；忙碌/睡眠状态支持{" "}
                 <code>{"{{activity}}"}</code> 占位符。
@@ -2807,7 +2832,7 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
             <ConfigSection title="世界快照规则">
               <InlineNotice tone="muted">
@@ -2970,7 +2995,7 @@ function RuntimeRulesEditorCard({
               />
             </ConfigSection>
 
-            <ConfigSection title="链路解释模板">
+            <CollapsibleConfigSection title="链路解释模板" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这部分主要影响后台里"角色视图备注 / 会话分支摘要 / 候选消息预演说明 / 历史窗口注释"这些解释文字。
               </InlineNotice>
@@ -3234,9 +3259,9 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
-            <ConfigSection title="Provider 备注模板">
+            <CollapsibleConfigSection title="Provider 备注模板" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这里改的是回复逻辑总览里 Provider 差异备注，不影响真实推理请求，只影响后台解释文本。
               </InlineNotice>
@@ -3250,9 +3275,9 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
-            <ConfigSection title="角色运行备注模板">
+            <CollapsibleConfigSection title="角色运行备注模板" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这部分会出现在角色运行逻辑台的生活逻辑观测里，用来解释为什么某些调度会跳过角色。
               </InlineNotice>
@@ -3269,9 +3294,9 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
-            <ConfigSection title="调度器任务说明">
+            <CollapsibleConfigSection title="调度器任务说明" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这里改的是 Scheduler 任务列表里的描述文字，不改 cron 表达式和实际触发频率。
               </InlineNotice>
@@ -3311,9 +3336,9 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
-            <ConfigSection title="调度事件与摘要模板">
+            <CollapsibleConfigSection title="调度事件与摘要模板" defaultOpen={false}>
               <InlineNotice tone="muted">
                 这里改的是调度执行结果、生活事件和主动提醒子链路里的文本模板。支持{" "}
                 <code>{"{{count}}"}</code>、<code>{"{{characterCount}}"}</code>、<code>{"{{scene}}"}</code>、<code>{"{{postId}}"}</code>、<code>{"{{activity}}"}</code>、<code>{"{{otherName}}"}</code> 等占位符。
@@ -3344,7 +3369,7 @@ function RuntimeRulesEditorCard({
                   }))
                 }
               />
-            </ConfigSection>
+            </CollapsibleConfigSection>
 
             <div className="flex flex-wrap gap-3 border-t border-[color:var(--border-faint)] pt-5">
               <Button variant="secondary" onClick={onReset}>
