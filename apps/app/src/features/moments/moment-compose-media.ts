@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  createFeedPost,
   createUserMoment,
   uploadMomentMedia,
+  type CreateFeedPostRequest,
   type CreateUserMomentRequest,
+  type FeedPost,
+  type FeedSurface,
   type Moment,
   type MomentImageAsset,
   type MomentVideoAsset,
@@ -76,12 +80,12 @@ export function useMomentComposeDraft() {
       setMediaError(null);
 
       if (videoDraftRef.current) {
-        throw new Error("朋友圈当前不支持图片和视频混发。");
+        throw new Error("当前不支持图片和视频混发。");
       }
 
       const remainingSlots = MAX_IMAGE_COUNT - imageDraftsRef.current.length;
       if (remainingSlots <= 0) {
-        throw new Error(`图片朋友圈最多支持 ${MAX_IMAGE_COUNT} 张图片。`);
+        throw new Error(`图片动态最多支持 ${MAX_IMAGE_COUNT} 张图片。`);
       }
 
       if (pickedFiles.length > remainingSlots) {
@@ -99,7 +103,7 @@ export function useMomentComposeDraft() {
       setMediaError(null);
 
       if (imageDraftsRef.current.length > 0) {
-        throw new Error("朋友圈当前不支持图片和视频混发。");
+        throw new Error("当前不支持图片和视频混发。");
       }
 
       const nextDraft = await createMomentVideoDraft(file);
@@ -144,6 +148,19 @@ export async function publishMomentComposeDraft(input: {
 }): Promise<Moment> {
   const payload = await buildMomentCreateRequest(input);
   return createUserMoment(payload, input.baseUrl);
+}
+
+export async function publishFeedComposeDraft(input: {
+  text: string;
+  title?: string;
+  surface?: FeedSurface;
+  topicTags?: string[];
+  imageDrafts: MomentImageDraft[];
+  videoDraft: MomentVideoDraft | null;
+  baseUrl?: string;
+}): Promise<FeedPost> {
+  const payload = await buildFeedCreateRequest(input);
+  return createFeedPost(payload, input.baseUrl);
 }
 
 export function formatMomentDurationLabel(durationMs?: number) {
@@ -209,6 +226,52 @@ async function buildMomentCreateRequest(input: {
     text: text || undefined,
     location,
     contentType: "text",
+  };
+}
+
+async function buildFeedCreateRequest(input: {
+  text: string;
+  title?: string;
+  surface?: FeedSurface;
+  topicTags?: string[];
+  imageDrafts: MomentImageDraft[];
+  videoDraft: MomentVideoDraft | null;
+  baseUrl?: string;
+}): Promise<CreateFeedPostRequest> {
+  const text = input.text.trim();
+  const title = input.title?.trim() || undefined;
+  const topicTags = normalizeComposeTags(input.topicTags);
+
+  if (input.videoDraft) {
+    return {
+      text: text || undefined,
+      title,
+      surface: input.surface,
+      topicTags,
+      media: [await uploadMomentVideoDraft(input.videoDraft, input.baseUrl)],
+    };
+  }
+
+  if (input.imageDrafts.length > 0) {
+    const media: MomentImageAsset[] = [];
+    for (const draft of input.imageDrafts) {
+      media.push(await uploadMomentImageDraft(draft, input.baseUrl));
+    }
+
+    return {
+      text: text || undefined,
+      title,
+      surface: input.surface,
+      topicTags,
+      media,
+    };
+  }
+
+  return {
+    text: text || undefined,
+    title,
+    surface: input.surface,
+    topicTags,
   };
 }
 
@@ -302,7 +365,7 @@ async function createMomentVideoDraft(file: File): Promise<MomentVideoDraft> {
   try {
     const metadata = await readVideoMetadata(previewUrl);
     if (metadata.durationMs > MAX_VIDEO_DURATION_MS) {
-      throw new Error("朋友圈视频时长不能超过 5 分钟。");
+      throw new Error("视频时长不能超过 5 分钟。");
     }
 
     const posterFile = await buildMomentVideoPoster(
@@ -372,7 +435,9 @@ function readVideoMetadata(url: string) {
       const height = Math.max(1, Math.round(video.videoHeight || 0));
       const durationMs = Math.max(
         0,
-        Math.round((Number.isFinite(video.duration) ? video.duration : 0) * 1000),
+        Math.round(
+          (Number.isFinite(video.duration) ? video.duration : 0) * 1000,
+        ),
       );
 
       cleanup();
@@ -413,7 +478,10 @@ async function buildMomentVideoPoster(
       quality: 0.88,
       errorMessage: "视频封面生成失败，请稍后重试。",
     });
-    const nextFileName = replaceFileExtension(fileName || "moment-video", "jpg");
+    const nextFileName = replaceFileExtension(
+      fileName || "moment-video",
+      "jpg",
+    );
 
     return new File([blob], nextFileName, {
       type: blob.type,
@@ -432,10 +500,7 @@ function createPosterCaptureVideo(url: string, durationMs: number) {
     video.playsInline = true;
     video.crossOrigin = "anonymous";
 
-    const captureSeconds = Math.max(
-      0,
-      Math.min(durationMs / 1000 * 0.15, 1),
-    );
+    const captureSeconds = Math.max(0, Math.min((durationMs / 1000) * 0.15, 1));
 
     const cleanup = () => {
       video.onloadedmetadata = null;
@@ -491,7 +556,10 @@ function canvasToBlob(
 }
 
 function replaceFileExtension(fileName: string, nextExtension: string) {
-  const normalized = fileName.trim().replace(/\?.*$/, "").replace(/\.[^.]+$/, "");
+  const normalized = fileName
+    .trim()
+    .replace(/\?.*$/, "")
+    .replace(/\.[^.]+$/, "");
   return `${normalized || "moment-media"}.${nextExtension}`;
 }
 
@@ -519,9 +587,21 @@ function releaseMomentVideoDraft(draft: MomentVideoDraft | null) {
 }
 
 function buildDraftId(prefix: string) {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return `${prefix}-${crypto.randomUUID()}`;
   }
 
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function normalizeComposeTags(tags?: string[]) {
+  const normalized = (tags ?? [])
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 8);
+
+  return normalized.length > 0 ? normalized : undefined;
 }

@@ -3,6 +3,8 @@ import { type FeedPostWithComments } from "@yinjie/contracts";
 import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { Bot, Heart, MessageCircle, Star, UserRound, X } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentMediaGallery } from "../../../components/moment-media-gallery";
+import { resolveFeedMomentContentType } from "../../feed/feed-media";
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopFeedDetailPanelProps = {
@@ -132,9 +134,21 @@ export function DesktopFeedDetailPanel({
                 </div>
               </div>
 
-              <div className="mt-4 text-[15px] leading-7 text-[color:var(--text-primary)]">
-                {post.text}
-              </div>
+              {post.text.trim() ? (
+                <div className="mt-4 text-[15px] leading-7 text-[color:var(--text-primary)]">
+                  {post.text}
+                </div>
+              ) : null}
+
+              {post.media.length > 0 ? (
+                <div className={post.text.trim() ? "mt-4" : "mt-5"}>
+                  <MomentMediaGallery
+                    contentType={resolveFeedMomentContentType(post.media)}
+                    media={post.media}
+                    variant="detail"
+                  />
+                </div>
+              ) : null}
 
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <DetailMetric label="点赞" value={String(post.likeCount)} />

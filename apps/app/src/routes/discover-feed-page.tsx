@@ -1,21 +1,24 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Copy, PenSquare, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  ImagePlus,
+  PenSquare,
+  Share2,
+  Video,
+} from "lucide-react";
 import {
   addFeedComment,
-  createFeedPost,
   getBlockedCharacters,
   getFeed,
   likeFeedPost,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  TextField,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, TextField } from "@yinjie/ui";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
+import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
+import { MomentMediaGallery } from "../components/moment-media-gallery";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -26,11 +29,17 @@ import { SocialPostCard } from "../components/social-post-card";
 import { DesktopFeedWorkspace } from "../features/desktop/feed/desktop-feed-workspace";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import {
+  publishFeedComposeDraft,
+  useMomentComposeDraft,
+} from "../features/moments/moment-compose-media";
+import {
+  getFeedSummaryText,
+  resolveFeedMomentContentType,
+} from "../features/feed/feed-media";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
@@ -57,7 +66,9 @@ export function DiscoverFeedPage() {
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
-  const [text, setText] = useState("");
+  const composeDraft = useMomentComposeDraft();
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -79,14 +90,14 @@ export function DiscoverFeedPage() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      createFeedPost(
-        {
-          text: text.trim(),
-        },
+      publishFeedComposeDraft({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
         baseUrl,
-      ),
+      }),
     onSuccess: async () => {
-      setText("");
+      composeDraft.reset();
       setShowCompose(false);
       setNoticeTone("success");
       setNotice("广场动态已发布，世界居民公开可见。");
@@ -151,7 +162,7 @@ export function DiscoverFeedPage() {
   );
 
   useEffect(() => {
-    setText("");
+    composeDraft.reset();
     setCommentDrafts({});
     setShowCompose(false);
     setNotice("");
@@ -230,16 +241,42 @@ export function DiscoverFeedPage() {
     });
   }
 
+  async function handleImageFilesSelected(files: FileList | null) {
+    try {
+      await composeDraft.addImageFiles(files);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "图片选择失败，请稍后重试。",
+      );
+    }
+  }
+
+  async function handleVideoFileSelected(file: File | null) {
+    try {
+      await composeDraft.replaceVideoFile(file);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "视频选择失败，请稍后重试。",
+      );
+    }
+  }
+
   useEffect(() => {
-    if (isDesktopLayout || !routeSelectedPostId || typeof document === "undefined") {
+    if (
+      isDesktopLayout ||
+      !routeSelectedPostId ||
+      typeof document === "undefined"
+    ) {
       return;
     }
 
     window.requestAnimationFrame(() => {
-      document.getElementById(`feed-post-${routeSelectedPostId}`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      document
+        .getElementById(`feed-post-${routeSelectedPostId}`)
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
     });
   }, [isDesktopLayout, routeSelectedPostId, visiblePosts.length]);
 
@@ -250,12 +287,13 @@ export function DiscoverFeedPage() {
       typeof window === "undefined"
         ? sharePath
         : `${window.location.origin}${sharePath}`;
-    const summaryText = `${post.authorName}：${post.text}\n${shareUrl}`;
+    const postSummary = getFeedSummaryText(post);
+    const summaryText = `${post.authorName}：${postSummary}\n${shareUrl}`;
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
         title: `${post.authorName} 的广场动态`,
-        text: `${post.authorName}：${post.text}`,
+        text: `${post.authorName}：${postSummary}`,
         url: shareUrl,
       });
 
@@ -312,6 +350,8 @@ export function DiscoverFeedPage() {
     return (
       <DesktopFeedWorkspace
         baseUrl={baseUrl}
+        canAddImages={composeDraft.canAddImages}
+        canAddVideo={composeDraft.canAddVideo}
         commentDrafts={commentDrafts}
         commentErrorMessage={
           commentMutation.isError && commentMutation.error instanceof Error
@@ -320,12 +360,14 @@ export function DiscoverFeedPage() {
         }
         commentPendingPostId={pendingCommentPostId}
         composeErrorMessage={
-          createMutation.isError && createMutation.error instanceof Error
+          composeDraft.mediaError ??
+          (createMutation.isError && createMutation.error instanceof Error
             ? createMutation.error.message
-            : null
+            : null)
         }
         createPending={createMutation.isPending}
         errors={errors}
+        imageDrafts={composeDraft.imageDrafts}
         isLoading={feedQuery.isLoading}
         likeErrorMessage={
           likeMutation.isError && likeMutation.error instanceof Error
@@ -339,7 +381,8 @@ export function DiscoverFeedPage() {
         routeSelectedPostId={routeSelectedPostId}
         showCompose={showCompose}
         successNotice={notice}
-        text={text}
+        text={composeDraft.text}
+        videoDraft={composeDraft.videoDraft}
         isPostFavorite={(postId) =>
           favoriteSourceIds.includes(`feed-${postId}`)
         }
@@ -352,14 +395,19 @@ export function DiscoverFeedPage() {
         }
         onCommentSubmit={(postId) => commentMutation.mutate(postId)}
         onCreate={() => createMutation.mutate()}
+        onImageFilesSelected={(files) => {
+          void handleImageFilesSelected(files);
+        }}
         onLike={(postId) => likeMutation.mutate(postId)}
+        onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+        onRemoveVideo={() => composeDraft.clearVideoDraft()}
         onRefresh={() => {
           void feedQuery.refetch();
           if (ownerId) {
             void blockedQuery.refetch();
           }
         }}
-        onTextChange={setText}
+        onTextChange={composeDraft.setText}
         onToggleFavorite={(postId) => {
           const post = visiblePosts.find((item) => item.id === postId);
           if (!post) {
@@ -375,7 +423,7 @@ export function DiscoverFeedPage() {
                 sourceId,
                 category: "feed",
                 title: post.authorName,
-                description: post.text,
+                description: getFeedSummaryText(post),
                 meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
                 to: `/tabs/feed${buildDesktopFeedRouteHash(post.id) ? `#${buildDesktopFeedRouteHash(post.id)}` : ""}`,
                 badge: "广场动态",
@@ -386,6 +434,9 @@ export function DiscoverFeedPage() {
           setFavoriteSourceIds(
             nextFavorites.map((favorite) => favorite.sourceId),
           );
+        }}
+        onVideoFileSelected={(file) => {
+          void handleVideoFileSelected(file);
         }}
       />
     );
@@ -434,25 +485,67 @@ export function DiscoverFeedPage() {
           description="发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。"
           scopeLabel="公开可见"
           scopeClassName="bg-[rgba(7,193,96,0.12)] text-[#07c160]"
-          value={text}
-          onChange={setText}
+          value={composeDraft.text}
+          onChange={composeDraft.setText}
           placeholder="写点想让世界居民都能看到的内容..."
           helperText="这条内容会进入公开动态流，更适合发讨论、状态和世界广播。"
           submitLabel="发布"
           submittingLabel="正在发布..."
+          mediaPreview={
+            composeDraft.imageDrafts.length > 0 || composeDraft.videoDraft ? (
+              <MomentComposeMediaPreview
+                imageDrafts={composeDraft.imageDrafts}
+                videoDraft={composeDraft.videoDraft}
+                onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+                onRemoveVideo={() => composeDraft.clearVideoDraft()}
+                variant="mobile"
+              />
+            ) : null
+          }
+          mediaActions={
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={
+                  !composeDraft.canAddImages || createMutation.isPending
+                }
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                onClick={() => imageInputRef.current?.click()}
+              >
+                <ImagePlus size={14} className="mr-1" />
+                添加图片
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={!composeDraft.canAddVideo || createMutation.isPending}
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                onClick={() => videoInputRef.current?.click()}
+              >
+                <Video size={14} className="mr-1" />
+                {composeDraft.videoDraft ? "更换视频" : "添加视频"}
+              </Button>
+            </>
+          }
           pending={createMutation.isPending}
-          disabled={!text.trim() || createMutation.isPending}
+          disabled={!composeDraft.hasContent || createMutation.isPending}
           errorMessage={
-            createMutation.isError && createMutation.error instanceof Error
+            composeDraft.mediaError ??
+            (createMutation.isError && createMutation.error instanceof Error
               ? createMutation.error.message
-              : null
+              : null)
           }
           onSubmit={() => createMutation.mutate()}
         />
 
         <section className="space-y-2">
           <div className="px-1">
-            <div className="text-[11px] text-[color:var(--text-muted)]">最近动态</div>
+            <div className="text-[11px] text-[color:var(--text-muted)]">
+              最近动态
+            </div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
               这里不只看朋友，也能看到世界里的居民正在说什么。
             </div>
@@ -498,6 +591,8 @@ export function DiscoverFeedPage() {
           {visiblePosts.map((post) => {
             const sourceId = `feed-${post.id}`;
             const collected = favoriteSourceIds.includes(sourceId);
+            const postSummaryText = getFeedSummaryText(post);
+            const summaryText = post.text.trim() ? "" : postSummaryText;
 
             return (
               <SocialPostCard
@@ -513,7 +608,11 @@ export function DiscoverFeedPage() {
                     size="icon"
                     className="h-8 w-8 rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)]"
                     onClick={() => void handleSharePost(post)}
-                    aria-label={nativeMobileShareSupported ? "分享这条动态" : "复制这条动态摘要"}
+                    aria-label={
+                      nativeMobileShareSupported
+                        ? "分享这条动态"
+                        : "复制这条动态摘要"
+                    }
                   >
                     {nativeMobileShareSupported ? (
                       <Share2 size={15} />
@@ -523,16 +622,27 @@ export function DiscoverFeedPage() {
                   </Button>
                 }
                 body={
-                  <>
+                  <div className="space-y-3">
                     {post.authorType === "user" ? (
-                      <div className="mb-2 inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
+                      <div className="inline-flex rounded-full bg-[rgba(7,193,96,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#07c160]">
                         居民公开可见
                       </div>
                     ) : null}
-                    <div>{post.text}</div>
-                  </>
+                    {post.text.trim() ? <div>{post.text}</div> : null}
+                    {post.media.length > 0 ? (
+                      <MomentMediaGallery
+                        contentType={resolveFeedMomentContentType(post.media)}
+                        media={post.media}
+                        variant="mobile"
+                      />
+                    ) : null}
+                  </div>
                 }
-                summary={`${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`}
+                summary={
+                  post.likeCount > 0 || post.commentCount > 0
+                    ? `${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`
+                    : summaryText || undefined
+                }
                 actions={
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -554,7 +664,7 @@ export function DiscoverFeedPage() {
                               sourceId,
                               category: "feed",
                               title: post.authorName,
-                              description: post.text,
+                              description: postSummaryText,
                               meta: `广场动态 · ${formatTimestamp(post.createdAt)}`,
                               to: "/tabs/feed",
                               badge: "广场动态",
@@ -636,7 +746,9 @@ export function DiscoverFeedPage() {
             </InlineNotice>
           ) : null}
 
-          {!feedQuery.isLoading && !feedQuery.isError && !visiblePosts.length ? (
+          {!feedQuery.isLoading &&
+          !feedQuery.isError &&
+          !visiblePosts.length ? (
             <MobileFeedStatusCard
               badge="广场"
               title="还没有新动态"
@@ -655,6 +767,28 @@ export function DiscoverFeedPage() {
           ) : null}
         </section>
       </div>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          void handleImageFilesSelected(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(event) => {
+          void handleVideoFileSelected(event.currentTarget.files?.[0] ?? null);
+          event.currentTarget.value = "";
+        }}
+      />
     </AppPage>
   );
 }

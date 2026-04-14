@@ -9,8 +9,14 @@ import {
   type DesktopFeedAuthorSummary,
 } from "./desktop-feed-sidebar";
 import { DesktopFeedToolbar } from "./desktop-feed-toolbar";
+import {
+  type MomentImageDraft,
+  type MomentVideoDraft,
+} from "../../moments/moment-compose-media";
 
 type DesktopFeedWorkspaceProps = {
+  canAddImages: boolean;
+  canAddVideo: boolean;
   baseUrl?: string;
   commentDrafts: Record<string, string>;
   commentErrorMessage?: string | null;
@@ -18,6 +24,7 @@ type DesktopFeedWorkspaceProps = {
   composeErrorMessage?: string | null;
   createPending: boolean;
   errors?: string[];
+  imageDrafts: MomentImageDraft[];
   isLoading: boolean;
   likeErrorMessage?: string | null;
   likePendingPostId: string | null;
@@ -28,18 +35,25 @@ type DesktopFeedWorkspaceProps = {
   showCompose: boolean;
   successNotice?: string;
   text: string;
+  videoDraft: MomentVideoDraft | null;
   isPostFavorite: (postId: string) => boolean;
   setShowCompose: (nextValue: boolean) => void;
   onCommentChange: (postId: string, value: string) => void;
   onCommentSubmit: (postId: string) => void;
   onCreate: () => void;
+  onImageFilesSelected: (files: FileList | null) => void;
   onLike: (postId: string) => void;
+  onRemoveImage: (id: string) => void;
+  onRemoveVideo: () => void;
   onRefresh: () => void;
   onTextChange: (value: string) => void;
   onToggleFavorite: (postId: string) => void;
+  onVideoFileSelected: (file: File | null) => void;
 };
 
 export function DesktopFeedWorkspace({
+  canAddImages,
+  canAddVideo,
   baseUrl,
   commentDrafts,
   commentErrorMessage,
@@ -47,6 +61,7 @@ export function DesktopFeedWorkspace({
   composeErrorMessage,
   createPending,
   errors = [],
+  imageDrafts,
   isLoading,
   likeErrorMessage,
   likePendingPostId,
@@ -57,15 +72,20 @@ export function DesktopFeedWorkspace({
   showCompose,
   successNotice,
   text,
+  videoDraft,
   isPostFavorite,
   setShowCompose,
   onCommentChange,
   onCommentSubmit,
   onCreate,
+  onImageFilesSelected,
   onLike,
+  onRemoveImage,
+  onRemoveVideo,
   onRefresh,
   onTextChange,
   onToggleFavorite,
+  onVideoFileSelected,
 }: DesktopFeedWorkspaceProps) {
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
@@ -228,14 +248,22 @@ export function DesktopFeedWorkspace({
 
       {showCompose ? (
         <DesktopFeedComposePanel
+          canAddImages={canAddImages}
+          canAddVideo={canAddVideo}
           createPending={createPending}
           errorMessage={composeErrorMessage}
+          imageDrafts={imageDrafts}
           ownerAvatar={ownerAvatar}
           ownerUsername={ownerUsername}
           text={text}
+          videoDraft={videoDraft}
           onClose={() => setShowCompose(false)}
           onCreate={onCreate}
+          onImageFilesSelected={onImageFilesSelected}
+          onRemoveImage={onRemoveImage}
+          onRemoveVideo={onRemoveVideo}
           onTextChange={onTextChange}
+          onVideoFileSelected={onVideoFileSelected}
         />
       ) : null}
     </div>

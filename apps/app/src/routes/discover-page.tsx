@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   addFeedComment,
-  createFeedPost,
   getBlockedCharacters,
   getFeed,
   likeFeedPost,
@@ -15,10 +14,12 @@ import {
   Blocks,
   ChevronRight,
   Gamepad2,
+  ImagePlus,
   Newspaper,
   PlaySquare,
   Sparkles,
   Users,
+  Video,
 } from "lucide-react";
 import {
   AppHeader,
@@ -28,13 +29,22 @@ import {
   ErrorBlock,
   InlineNotice,
   LoadingBlock,
-  TextAreaField,
   TextField,
   cn,
 } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
+import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
+import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { SocialPostCard } from "../components/social-post-card";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import {
+  getFeedSummaryText,
+  resolveFeedMomentContentType,
+} from "../features/feed/feed-media";
+import {
+  publishFeedComposeDraft,
+  useMomentComposeDraft,
+} from "../features/moments/moment-compose-media";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -128,8 +138,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: "小程序",
     badge: "工具",
     icon: Blocks,
-    iconClassName:
-      "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,#d56c18,#ffab3d)] text-white",
     to: "/discover/mini-programs",
   },
 ];
@@ -140,7 +149,9 @@ export function DiscoverPage() {
   const ownerId = useWorldOwnerStore((state) => state.id);
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const [feedText, setFeedText] = useState("");
+  const composeDraft = useMomentComposeDraft();
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
   const [shakeMessage, setShakeMessage] = useState("");
   const [sceneMessage, setSceneMessage] = useState("");
   const [feedCommentDrafts, setFeedCommentDrafts] = useState<
@@ -160,14 +171,14 @@ export function DiscoverPage() {
 
   const createFeedPostMutation = useMutation({
     mutationFn: () =>
-      createFeedPost(
-        {
-          text: feedText.trim(),
-        },
+      publishFeedComposeDraft({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
         baseUrl,
-      ),
+      }),
     onSuccess: async () => {
-      setFeedText("");
+      composeDraft.reset();
       setSuccessNotice("广场动态已发布，世界居民公开可见。");
       await queryClient.invalidateQueries({ queryKey: ["app-feed", baseUrl] });
     },
@@ -280,7 +291,7 @@ export function DiscoverPage() {
     : null;
 
   useEffect(() => {
-    setFeedText("");
+    composeDraft.reset();
     setShakeMessage("");
     setSceneMessage("");
     setFeedCommentDrafts({});
@@ -295,6 +306,26 @@ export function DiscoverPage() {
     const timer = window.setTimeout(() => setSuccessNotice(""), 2400);
     return () => window.clearTimeout(timer);
   }, [successNotice]);
+
+  async function handleImageFilesSelected(files: FileList | null) {
+    try {
+      await composeDraft.addImageFiles(files);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "图片选择失败，请稍后重试。",
+      );
+    }
+  }
+
+  async function handleVideoFileSelected(file: File | null) {
+    try {
+      await composeDraft.replaceVideoFile(file);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "视频选择失败，请稍后重试。",
+      );
+    }
+  }
 
   if (isDesktopLayout) {
     return (
@@ -457,14 +488,61 @@ export function DiscoverPage() {
                 </div>
               </div>
 
-              <TextAreaField
-                value={feedText}
-                onChange={(event) => setFeedText(event.target.value)}
-                placeholder="写点想让世界居民都能看到的内容..."
-                className="min-h-36 resize-none"
-              />
+              <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
+                <textarea
+                  value={composeDraft.text}
+                  onChange={(event) => composeDraft.setText(event.target.value)}
+                  placeholder="写点想让世界居民都能看到的内容..."
+                  className="min-h-36 w-full resize-none border-0 bg-transparent text-sm leading-7 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)]"
+                />
+
+                {composeDraft.imageDrafts.length > 0 ||
+                composeDraft.videoDraft ? (
+                  <div className="mt-3">
+                    <MomentComposeMediaPreview
+                      imageDrafts={composeDraft.imageDrafts}
+                      videoDraft={composeDraft.videoDraft}
+                      onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+                      onRemoveVideo={() => composeDraft.clearVideoDraft()}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={
+                      !composeDraft.canAddImages ||
+                      createFeedPostMutation.isPending
+                    }
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    <ImagePlus size={14} className="mr-1" />
+                    添加图片
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={
+                      !composeDraft.canAddVideo ||
+                      createFeedPostMutation.isPending
+                    }
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-white px-3 text-[11px]"
+                    onClick={() => videoInputRef.current?.click()}
+                  >
+                    <Video size={14} className="mr-1" />
+                    {composeDraft.videoDraft ? "更换视频" : "添加视频"}
+                  </Button>
+                </div>
+              </div>
               <Button
-                disabled={!feedText.trim() || createFeedPostMutation.isPending}
+                disabled={
+                  !composeDraft.hasContent || createFeedPostMutation.isPending
+                }
                 onClick={() => createFeedPostMutation.mutate()}
                 variant="primary"
               >
@@ -475,9 +553,17 @@ export function DiscoverPage() {
               <InlineNotice tone="muted">
                 发布后会直接进入右侧公开流，世界居民公开可见。
               </InlineNotice>
-              {createFeedPostMutation.isError &&
-              createFeedPostMutation.error instanceof Error ? (
-                <ErrorBlock message={createFeedPostMutation.error.message} />
+              {composeDraft.mediaError ||
+              (createFeedPostMutation.isError &&
+                createFeedPostMutation.error instanceof Error) ? (
+                <ErrorBlock
+                  message={
+                    composeDraft.mediaError ??
+                    (createFeedPostMutation.error instanceof Error
+                      ? createFeedPostMutation.error.message
+                      : "")
+                  }
+                />
               ) : null}
             </AppSection>
           </div>
@@ -520,78 +606,97 @@ export function DiscoverPage() {
               <ErrorBlock message={feedQuery.error.message} />
             ) : null}
 
-            {visiblePosts.map((post) => (
-              <SocialPostCard
-                key={post.id}
-                authorName={post.authorName}
-                authorAvatar={post.authorAvatar}
-                meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
-                body={
-                  <>
-                    {post.authorType === "user" ? (
-                      <div className="mb-3 inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
-                        居民公开可见
-                      </div>
-                    ) : null}
-                    <div>{post.text}</div>
-                  </>
-                }
-                summary={`${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`}
-                actions={
-                  <Button
-                    disabled={likeFeedMutation.isPending}
-                    onClick={() => likeFeedMutation.mutate(post.id)}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    {pendingLikePostId === post.id ? "处理中..." : "点赞"}
-                  </Button>
-                }
-                secondary={
-                  post.commentsPreview.length > 0 ? (
-                    <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
-                      {post.commentsPreview.map((comment) => (
-                        <div
-                          key={comment.id}
-                          className="text-xs leading-6 text-[color:var(--text-secondary)]"
-                        >
-                          <span className="text-[color:var(--text-primary)]">
-                            {comment.authorName}
-                          </span>
-                          {`：${comment.text}`}
+            {visiblePosts.map((post) => {
+              const summaryText = post.text.trim()
+                ? ""
+                : getFeedSummaryText(post);
+
+              return (
+                <SocialPostCard
+                  key={post.id}
+                  authorName={post.authorName}
+                  authorAvatar={post.authorAvatar}
+                  meta={`${formatTimestamp(post.createdAt)} · ${post.authorType === "user" ? "世界主人" : "居民动态"}`}
+                  body={
+                    <div className="space-y-3">
+                      {post.authorType === "user" ? (
+                        <div className="inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
+                          居民公开可见
                         </div>
-                      ))}
+                      ) : null}
+                      {post.text.trim() ? <div>{post.text}</div> : null}
+                      {post.media.length > 0 ? (
+                        <MomentMediaGallery
+                          contentType={resolveFeedMomentContentType(post.media)}
+                          media={post.media}
+                          variant="desktop"
+                        />
+                      ) : null}
                     </div>
-                  ) : null
-                }
-                composer={
-                  <>
-                    <TextField
-                      value={feedCommentDrafts[post.id] ?? ""}
-                      onChange={(event) =>
-                        setFeedCommentDrafts((current) => ({
-                          ...current,
-                          [post.id]: event.target.value,
-                        }))
-                      }
-                      placeholder="写评论..."
-                      className="min-w-0 flex-1 rounded-full py-2 text-xs"
-                    />
+                  }
+                  summary={
+                    post.likeCount > 0 || post.commentCount > 0
+                      ? `${post.likeCount} 赞 · ${post.commentCount} 评论${post.aiReacted ? " · AI 已参与回应" : ""}`
+                      : summaryText || undefined
+                  }
+                  actions={
                     <Button
-                      disabled={
-                        !(feedCommentDrafts[post.id] ?? "").trim() ||
-                        commentFeedMutation.isPending
-                      }
-                      onClick={() => commentFeedMutation.mutate(post.id)}
-                      variant="primary"
+                      disabled={likeFeedMutation.isPending}
+                      onClick={() => likeFeedMutation.mutate(post.id)}
+                      variant="secondary"
                       size="sm"
                     >
-                      {pendingCommentPostId === post.id ? "发送中..." : "发送"}
+                      {pendingLikePostId === post.id ? "处理中..." : "点赞"}
                     </Button>
-                  </>
-                }
-              />
-            ))}
+                  }
+                  secondary={
+                    post.commentsPreview.length > 0 ? (
+                      <div className="space-y-2 rounded-[22px] bg-[color:var(--surface-soft)] p-3">
+                        {post.commentsPreview.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="text-xs leading-6 text-[color:var(--text-secondary)]"
+                          >
+                            <span className="text-[color:var(--text-primary)]">
+                              {comment.authorName}
+                            </span>
+                            {`：${comment.text}`}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null
+                  }
+                  composer={
+                    <>
+                      <TextField
+                        value={feedCommentDrafts[post.id] ?? ""}
+                        onChange={(event) =>
+                          setFeedCommentDrafts((current) => ({
+                            ...current,
+                            [post.id]: event.target.value,
+                          }))
+                        }
+                        placeholder="写评论..."
+                        className="min-w-0 flex-1 rounded-full py-2 text-xs"
+                      />
+                      <Button
+                        disabled={
+                          !(feedCommentDrafts[post.id] ?? "").trim() ||
+                          commentFeedMutation.isPending
+                        }
+                        onClick={() => commentFeedMutation.mutate(post.id)}
+                        variant="primary"
+                        size="sm"
+                      >
+                        {pendingCommentPostId === post.id
+                          ? "发送中..."
+                          : "发送"}
+                      </Button>
+                    </>
+                  }
+                />
+              );
+            })}
 
             {likeFeedMutation.isError &&
             likeFeedMutation.error instanceof Error ? (
@@ -612,6 +717,30 @@ export function DiscoverPage() {
             ) : null}
           </AppSection>
         </div>
+
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            void handleImageFilesSelected(event.currentTarget.files);
+            event.currentTarget.value = "";
+          }}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={(event) => {
+            void handleVideoFileSelected(
+              event.currentTarget.files?.[0] ?? null,
+            );
+            event.currentTarget.value = "";
+          }}
+        />
       </AppPage>
     );
   }
@@ -656,11 +785,7 @@ function DiscoverMobileSection({
         {title}
       </div>
       {items.map((item, index) => (
-        <DiscoverMobileEntryRow
-          key={item.key}
-          item={item}
-          index={index}
-        />
+        <DiscoverMobileEntryRow key={item.key} item={item} index={index} />
       ))}
     </section>
   );

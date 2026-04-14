@@ -3,6 +3,11 @@ import { type FeedPostListItem } from "@yinjie/contracts";
 import { Button, TextField, cn } from "@yinjie/ui";
 import { Bot, Heart, MessageCircle, Star, UserRound } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentMediaGallery } from "../../../components/moment-media-gallery";
+import {
+  getFeedSummaryText,
+  resolveFeedMomentContentType,
+} from "../../feed/feed-media";
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopFeedRowProps = {
@@ -48,6 +53,9 @@ export function DesktopFeedRow({
 
   const activeRowClassName =
     "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_10px_24px_rgba(15,23,42,0.05)]";
+  const hasText = Boolean(post.text.trim());
+  const hasMedia = post.media.length > 0;
+  const mediaSummaryText = hasText ? "" : getFeedSummaryText(post);
 
   return (
     <article
@@ -101,15 +109,27 @@ export function DesktopFeedRow({
             </div>
           </div>
 
-          <div className="mt-3 text-[15px] leading-7 text-[color:var(--text-primary)]">
-            {post.text}
-          </div>
+          {hasText ? (
+            <div className="mt-3 text-[15px] leading-7 text-[color:var(--text-primary)]">
+              {post.text}
+            </div>
+          ) : null}
+
+          {hasMedia ? (
+            <div className={hasText ? "mt-3" : "mt-4"}>
+              <MomentMediaGallery
+                contentType={resolveFeedMomentContentType(post.media)}
+                media={post.media}
+                stopPropagation
+              />
+            </div>
+          ) : null}
 
           <div className="mt-3 flex items-center justify-between gap-4">
             <div className="text-[12px] text-[color:var(--text-muted)]">
               {post.likeCount > 0 || post.commentCount > 0
                 ? `${post.likeCount} 赞 · ${post.commentCount} 评论`
-                : "还没有互动"}
+                : mediaSummaryText || "还没有互动"}
             </div>
             <div className="flex items-center gap-1.5">
               <button
