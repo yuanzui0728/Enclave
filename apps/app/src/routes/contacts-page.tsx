@@ -975,6 +975,7 @@ export function ContactsPage() {
           ? `${pendingRequestCount} 条待处理申请`
           : "查看好友申请",
       badgeCount: pendingRequestCount,
+      active: desktopSelection?.kind === "new-friends",
       icon: UserPlus,
       iconClassName: "bg-[linear-gradient(135deg,#34d399,#16a34a)]",
       onClick: () => {
@@ -997,6 +998,7 @@ export function ContactsPage() {
         starredFriendCount > 0
           ? `${starredFriendCount} 位常联系好友`
           : "查看星标朋友",
+      active: desktopSelection?.kind === "starred-friends",
       icon: Star,
       iconClassName: "bg-[linear-gradient(135deg,#f3d56b,#d4a72c)]",
       onClick: () => {
@@ -1022,6 +1024,7 @@ export function ContactsPage() {
         savedGroupCount > 0
           ? `${savedGroupCount} 个已保存群聊`
           : "查看已保存群聊",
+      active: desktopSelection?.kind === "groups",
       icon: Users,
       iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
       onClick: () => {
@@ -1044,6 +1047,7 @@ export function ContactsPage() {
       key: "tags",
       label: "标签",
       subtitle: tagCount > 0 ? `${tagCount} 个联系人标签` : "查看联系人标签",
+      active: desktopSelection?.kind === "tags",
       icon: Tag,
       iconClassName: "bg-[linear-gradient(135deg,#34d399,#07c160)]",
       onClick: () => {
@@ -1063,6 +1067,7 @@ export function ContactsPage() {
       key: "official-accounts",
       label: "公众号",
       subtitle: "查看已上线的内容账号",
+      active: desktopSelection?.kind === "official-accounts",
       icon: BookText,
       iconClassName: "bg-[linear-gradient(135deg,#10b981,#0f766e)]",
       onClick: () => {
@@ -1090,6 +1095,9 @@ export function ContactsPage() {
         : worldCharacterDirectoryItems.length > 0
           ? `还有 ${worldCharacterDirectoryItems.length} 个角色可认识`
           : "查看世界角色目录",
+      active:
+        (isDesktopLayout && showWorldCharacters) ||
+        desktopSelection?.kind === "world-character",
       icon: BookUser,
       iconClassName: "bg-[linear-gradient(135deg,#22c55e,#0f766e)]",
       onClick: handleOpenWorldCharacters,
@@ -1100,6 +1108,7 @@ export function ContactsPage() {
       key: "add-friend",
       label: "添加朋友",
       subtitle: "搜索隐界号或角色名，发起好友申请",
+      active: false,
       icon: Search,
       iconClassName: "bg-[linear-gradient(135deg,#34d399,#07c160)]",
       onClick: handleOpenDesktopAddFriend,
@@ -1222,7 +1231,7 @@ export function ContactsPage() {
           <ContactShortcutList
             items={desktopShortcutItems}
             compact
-            className="bg-white shadow-[var(--shadow-section)]"
+            variant="desktop-flat"
           />
         }
         notice={notice}
