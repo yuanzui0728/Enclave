@@ -34,6 +34,7 @@ import {
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
 import { adminApi } from "../lib/admin-api";
+import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
 const emptyCharacterDraft: CharacterDraft = {
   name: "",
@@ -227,9 +228,11 @@ export function CharacterEditorPage() {
 
   return (
     <div className="space-y-6">
+      {!isNew ? <CharacterWorkspaceNav characterId={characterId} /> : null}
+
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <AdminPageHero
-          eyebrow="角色编辑"
+          eyebrow={isNew ? "新建角色" : "基础资料"}
           title={isNew ? "新建角色资料" : draft.name || "编辑角色资料"}
           description="先补齐基础身份和关系，再完善提示词、特征、记忆与边界。"
           actions={
