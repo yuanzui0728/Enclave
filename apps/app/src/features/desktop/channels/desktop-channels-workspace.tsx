@@ -64,6 +64,9 @@ type DesktopChannelsWorkspaceProps = {
   onViewPost: (postId: string) => void;
 };
 
+const DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY =
+  "yinjie:channels:desktop-comment-threads";
+
 export function DesktopChannelsWorkspace({
   comments,
   commentsErrorMessage,
@@ -775,6 +778,7 @@ function DesktopChannelCommentsPanel({
   onReplyToComment: (comment: FeedComment) => void;
   onSubmit: () => void;
 }) {
+  const selectedPostId = selectedPost?.id ?? null;
   const commentAuthorNameMap = useMemo(() => {
     const map = new Map<string, string>();
     comments.forEach((comment) => {
@@ -813,18 +817,78 @@ function DesktopChannelCommentsPanel({
         .map(({ rootComment }) => rootComment.id),
     [commentThreads],
   );
-  const [collapsedThreadIds, setCollapsedThreadIds] = useState<string[]>([]);
+  const [collapsedThreadsByPostId, setCollapsedThreadsByPostId] = useState<
+    Record<string, string[]>
+  >(() => readStoredCollapsedChannelCommentThreads());
+  const collapsedThreadIds = useMemo(() => {
+    if (!selectedPostId) {
+      return [];
+    }
 
-  useEffect(() => {
-    setCollapsedThreadIds((current) =>
-      current.filter((threadId) =>
-        threadIdsWithReplies.includes(threadId),
-      ),
+    return normalizeCollapsedThreadIds(
+      collapsedThreadsByPostId[selectedPostId] ?? [],
+      threadIdsWithReplies,
     );
-  }, [threadIdsWithReplies]);
+  }, [collapsedThreadsByPostId, selectedPostId, threadIdsWithReplies]);
+
+  function updateCollapsedThreadIds(
+    updater: string[] | ((current: string[]) => string[]),
+  ) {
+    if (!selectedPostId) {
+      return;
+    }
+
+    setCollapsedThreadsByPostId((current) => {
+      const currentIds = normalizeCollapsedThreadIds(
+        current[selectedPostId] ?? [],
+        threadIdsWithReplies,
+      );
+      const nextIdsRaw =
+        typeof updater === "function" ? updater(currentIds) : updater;
+      const nextIds = normalizeCollapsedThreadIds(
+        nextIdsRaw,
+        threadIdsWithReplies,
+      );
+
+      if (areThreadIdsEqual(currentIds, nextIds)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [selectedPostId]: nextIds,
+      };
+    });
+  }
 
   useEffect(() => {
-    if (!replyTarget) {
+    if (!selectedPostId) {
+      return;
+    }
+
+    setCollapsedThreadsByPostId((current) => {
+      const currentIds = current[selectedPostId] ?? [];
+      const nextIds = normalizeCollapsedThreadIds(
+        currentIds,
+        threadIdsWithReplies,
+      );
+      if (areThreadIdsEqual(currentIds, nextIds)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [selectedPostId]: nextIds,
+      };
+    });
+  }, [selectedPostId, threadIdsWithReplies]);
+
+  useEffect(() => {
+    writeStoredCollapsedChannelCommentThreads(collapsedThreadsByPostId);
+  }, [collapsedThreadsByPostId]);
+
+  useEffect(() => {
+    if (!replyTarget || !selectedPostId) {
       return;
     }
 
@@ -837,12 +901,24 @@ function DesktopChannelCommentsPanel({
       return;
     }
 
-    setCollapsedThreadIds((current) =>
-      current.includes(matchingThread.rootComment.id)
-        ? current.filter((threadId) => threadId !== matchingThread.rootComment.id)
-        : current,
-    );
-  }, [commentThreads, replyTarget]);
+    setCollapsedThreadsByPostId((current) => {
+      const currentIds = normalizeCollapsedThreadIds(
+        current[selectedPostId] ?? [],
+        threadIdsWithReplies,
+      );
+
+      if (!currentIds.includes(matchingThread.rootComment.id)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [selectedPostId]: currentIds.filter(
+          (threadId) => threadId !== matchingThread.rootComment.id,
+        ),
+      };
+    });
+  }, [commentThreads, replyTarget, selectedPostId, threadIdsWithReplies]);
 
   return (
     <div className="mt-3 space-y-3">
@@ -862,14 +938,14 @@ function DesktopChannelCommentsPanel({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setCollapsedThreadIds([])}
+              onClick={() => updateCollapsedThreadIds([])}
               className="rounded-full border border-[color:var(--border-faint)] px-2.5 py-1 transition hover:bg-[color:var(--surface-console)]"
             >
               全部展开
             </button>
             <button
               type="button"
-              onClick={() => setCollapsedThreadIds(threadIdsWithReplies)}
+              onClick={() => updateCollapsedThreadIds(threadIdsWithReplies)}
               className="rounded-full border border-[color:var(--border-faint)] px-2.5 py-1 transition hover:bg-[color:var(--surface-console)]"
             >
               全部收起
@@ -903,7 +979,7 @@ function DesktopChannelCommentsPanel({
                   onLikeComment={onLikeComment}
                   onReplyToComment={onReplyToComment}
                   onToggleCollapsed={() =>
-                    setCollapsedThreadIds((current) =>
+                    updateCollapsedThreadIds((current) =>
                       current.includes(rootComment.id)
                         ? current.filter((threadId) => threadId !== rootComment.id)
                         : [...current, rootComment.id],
@@ -1143,4 +1219,87 @@ function DesktopThreadCommentCard({
       </div>
     </div>
   );
+}
+
+function readStoredCollapsedChannelCommentThreads() {
+  if (typeof window === "undefined") {
+    return {} as Record<string, string[]>;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(
+      DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY,
+    );
+    if (!rawValue) {
+      return {};
+    }
+
+    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed).map(([postId, threadIds]) => [
+        postId,
+        Array.isArray(threadIds)
+          ? threadIds.filter((threadId): threadId is string => typeof threadId === "string")
+          : [],
+      ]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredCollapsedChannelCommentThreads(
+  collapsedThreadsByPostId: Record<string, string[]>,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const sanitized = Object.fromEntries(
+      Object.entries(collapsedThreadsByPostId).filter(
+        ([, threadIds]) => threadIds.length > 0,
+      ),
+    );
+    if (!Object.keys(sanitized).length) {
+      window.localStorage.removeItem(
+        DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY,
+      );
+      return;
+    }
+
+    window.localStorage.setItem(
+      DESKTOP_CHANNEL_COMMENT_THREAD_STORAGE_KEY,
+      JSON.stringify(sanitized),
+    );
+  } catch {
+    return;
+  }
+}
+
+function normalizeCollapsedThreadIds(
+  threadIds: string[],
+  availableThreadIds: string[],
+) {
+  const availableThreadIdSet = new Set(availableThreadIds);
+  const nextThreadIds: string[] = [];
+
+  threadIds.forEach((threadId) => {
+    if (
+      availableThreadIdSet.has(threadId) &&
+      !nextThreadIds.includes(threadId)
+    ) {
+      nextThreadIds.push(threadId);
+    }
+  });
+
+  return nextThreadIds;
+}
+
+function areThreadIdsEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((threadId, index) => threadId === right[index]);
 }
