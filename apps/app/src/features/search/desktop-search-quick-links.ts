@@ -23,6 +23,7 @@ export type DesktopSearchQuickLink = {
   meta: string;
   badge: string;
   to: string;
+  hash?: string;
   search?: string;
   avatarName?: string;
   avatarSrc?: string;
