@@ -25,7 +25,7 @@ import { formatTimestamp } from "../../../lib/format";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
 import { buildDesktopAddFriendRouteHash } from "../contacts/desktop-add-friend-route-state";
-import { buildDesktopMomentsRouteHash } from "../moments/desktop-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
 
 type DesktopMessageAvatarPopoverProps =
   | {
@@ -433,9 +433,10 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             onClick={() => {
               onClose();
               void navigate({
-                to: "/tabs/moments",
-                hash: buildDesktopMomentsRouteHash({
-                  authorId: characterId,
+                to: "/tabs/moments/friend/$characterId",
+                params: { characterId },
+                hash: buildDesktopFriendMomentsRouteHash({
+                  source: "avatar-popover",
                 }),
               });
             }}

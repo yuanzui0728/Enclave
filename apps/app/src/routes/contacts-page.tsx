@@ -68,7 +68,7 @@ import {
   DesktopSearchDropdownPanel,
   useDesktopSearchLauncher,
 } from "../features/search/desktop-search-launcher";
-import { buildDesktopMomentsRouteHash } from "../features/desktop/moments/desktop-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { buildSearchRouteHash } from "../features/search/search-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -690,9 +690,10 @@ export function ContactsPage() {
 
     setNotice(null);
     void navigate({
-      to: "/tabs/moments",
-      hash: buildDesktopMomentsRouteHash({
-        authorId: selectedFriendItem.character.id,
+      to: "/tabs/moments/friend/$characterId",
+      params: { characterId: selectedFriendItem.character.id },
+      hash: buildDesktopFriendMomentsRouteHash({
+        source: "contacts",
       }),
     });
   }

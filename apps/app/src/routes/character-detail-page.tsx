@@ -43,7 +43,7 @@ import { useDigitalHumanEntryGuard } from "../features/chat/use-digital-human-en
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import { buildDesktopAddFriendRouteHash } from "../features/desktop/contacts/desktop-add-friend-route-state";
-import { buildDesktopMomentsRouteHash } from "../features/desktop/moments/desktop-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { formatTimestamp } from "../lib/format";
@@ -538,9 +538,10 @@ export function CharacterDetailPage() {
     }
 
     void navigate({
-      to: "/tabs/moments",
-      hash: buildDesktopMomentsRouteHash({
-        authorId: character.id,
+      to: "/tabs/moments/friend/$characterId",
+      params: { characterId: character.id },
+      hash: buildDesktopFriendMomentsRouteHash({
+        source: "character-detail",
       }),
     });
   };
@@ -1242,9 +1243,10 @@ export function CharacterDetailPage() {
                 isFriend && isDesktopLayout
                   ? () => {
                       void navigate({
-                        to: "/tabs/moments",
-                        hash: buildDesktopMomentsRouteHash({
-                          authorId: character.id,
+                        to: "/tabs/moments/friend/$characterId",
+                        params: { characterId: character.id },
+                        hash: buildDesktopFriendMomentsRouteHash({
+                          source: "character-detail",
                         }),
                       });
                     }

@@ -56,7 +56,7 @@ import {
   DesktopContactProfileSection,
   DesktopContactProfileToggleRow,
 } from "../../contacts/desktop-contact-profile-blocks";
-import { buildDesktopMomentsRouteHash } from "../moments/desktop-moments-route-state";
+import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
 import {
   useConversationBackground,
   useGroupBackground,
@@ -413,9 +413,10 @@ function DirectChatDetailsPanel({
     }
 
     void navigate({
-      to: "/tabs/moments",
-      hash: buildDesktopMomentsRouteHash({
-        authorId: targetCharacterId,
+      to: "/tabs/moments/friend/$characterId",
+      params: { characterId: targetCharacterId },
+      hash: buildDesktopFriendMomentsRouteHash({
+        source: "chat-details",
       }),
     });
   };
