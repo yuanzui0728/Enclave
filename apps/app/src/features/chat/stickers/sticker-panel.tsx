@@ -720,6 +720,34 @@ export function StickerPanel({
   const pausedManageCapacityLabel = customStickerLibraryFull
     ? "当前仍是满库"
     : `当前剩余 ${customSlotsRemaining} 个空位`;
+  const bottomEnterSearchHint =
+    highlightedSearchPosition === 1 ? "Enter 发首推" : "Enter 发当前";
+  const bottomHomeSearchHint =
+    highlightedSearchPosition && highlightedSearchPosition > 1
+      ? `Home ${
+          firstSearchResultItem?.sticker.label ??
+          firstSearchResultItem?.sticker.stickerId ??
+          "回默认"
+        }`
+      : "Home 回默认";
+  const bottomEndSearchHint =
+    highlightedSearchPosition &&
+    highlightedSearchPosition < activeItems.length &&
+    lastSearchResultItem
+      ? `End ${
+          lastSearchResultItem.sticker.label ??
+          lastSearchResultItem.sticker.stickerId
+        }`
+      : "End 末项";
+  const bottomPageUpSearchHint = previousSearchSectionLabel
+    ? `PgUp ${previousSearchSectionLabel}`
+    : "PgUp 上组";
+  const bottomPageDownSearchHint = nextSearchSectionLabel
+    ? `PgDn ${nextSearchSectionLabel}`
+    : "PgDn 下组";
+  const bottomEscSearchHint = showManageSearchPauseHint
+    ? "Esc 继续管理"
+    : "Esc 清空";
   const showSearchSectionJumpHint =
     !isMobile &&
     searching &&
@@ -1849,26 +1877,26 @@ export function StickerPanel({
                   ↑↓←→ 选择
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                  Enter 发当前
+                  {bottomEnterSearchHint}
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                  Home 回默认
+                  {bottomHomeSearchHint}
                 </span>
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                  End 末项
+                  {bottomEndSearchHint}
                 </span>
                 {showSearchSectionJumpHint ? (
                   <>
                     <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                      PgUp 上组
+                      {bottomPageUpSearchHint}
                     </span>
                     <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                      PgDn 下组
+                      {bottomPageDownSearchHint}
                     </span>
                   </>
                 ) : null}
                 <span className="ml-2 rounded-full bg-white/88 px-2 py-1">
-                  Esc 清空
+                  {bottomEscSearchHint}
                 </span>
               </div>
             </div>
