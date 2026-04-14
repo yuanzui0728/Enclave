@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   type SetStateAction,
@@ -85,6 +86,17 @@ const desktopSearchSelectedCardClassName =
   "border-[rgba(7,193,96,0.24)] shadow-[0_20px_44px_rgba(7,193,96,0.10)]";
 const desktopSearchSelectedRowClassName =
   "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.05)] shadow-[0_12px_28px_rgba(7,193,96,0.08)]";
+
+type DesktopSearchFocusRegion = "input" | "categories" | "results";
+
+const desktopSearchFocusRegionLabels: Record<
+  DesktopSearchFocusRegion,
+  string
+> = {
+  input: "搜索框",
+  categories: "分类条",
+  results: "结果区",
+};
 
 const landingScopeCards = [
   {
@@ -174,6 +186,8 @@ export function DesktopSearchWorkspace({
   const transitionHintTimeoutRef = useRef<number | null>(null);
   const [activeAllResultsSection, setActiveAllResultsSection] =
     useState<SearchResultCategory | null>(null);
+  const [keyboardFocusRegion, setKeyboardFocusRegion] =
+    useState<DesktopSearchFocusRegion>("input");
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [spotlightPanelId, setSpotlightPanelId] = useState<SearchCategory | null>(
     null,
@@ -863,6 +877,31 @@ export function DesktopSearchWorkspace({
       }
     },
   );
+  const handleWorkspaceFocusCapture = useEffectEvent(
+    (event: ReactFocusEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) {
+        return;
+      }
+
+      if (target === inputRef.current) {
+        setKeyboardFocusRegion("input");
+        return;
+      }
+
+      if (target.closest("[data-search-category-chip]")) {
+        setKeyboardFocusRegion("categories");
+        return;
+      }
+
+      if (
+        target.closest("[data-search-result-id]") ||
+        target.closest("[data-search-context-bar]")
+      ) {
+        setKeyboardFocusRegion("results");
+      }
+    },
+  );
   const handleSearchInputKeyDown = useEffectEvent(
     (event: ReactKeyboardEvent<HTMLInputElement>) => {
       if (event.nativeEvent.isComposing) {
@@ -1001,6 +1040,7 @@ export function DesktopSearchWorkspace({
   return (
     <div
       className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]"
+      onFocusCapture={handleWorkspaceFocusCapture}
       onKeyDownCapture={handleWorkspaceKeyDownCapture}
     >
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] backdrop-blur-xl">
@@ -1064,7 +1104,14 @@ export function DesktopSearchWorkspace({
               </div>
             </div>
 
-            <div className="border-t border-white/80 px-5 py-3">
+            <div
+              className={cn(
+                "border-t border-white/80 px-5 py-3 transition-[background-color,box-shadow]",
+                keyboardFocusRegion === "categories"
+                  ? "bg-[rgba(255,255,255,0.42)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65),inset_0_0_0_1px_rgba(7,193,96,0.08)]"
+                  : null,
+              )}
+            >
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {searchCategoryLabels.map((item) => {
                   const countLabel = !hasKeyword
@@ -1144,6 +1191,7 @@ export function DesktopSearchWorkspace({
                   ? "Tab 进入预选结果 · Shift+Tab 回搜索框 · ↑ ↓ 选择结果 · ← → 切分类 · Home 回顶部"
                   : undefined
               }
+              focusRegion={keyboardFocusRegion}
               onBackToAll={
                 activeCategory === "all"
                   ? undefined
@@ -1791,6 +1839,7 @@ function DesktopSearchContextBar({
   activeSection,
   categoryTitle,
   count,
+  focusRegion,
   keyboardHint,
   keyword,
   onBackToAll,
@@ -1803,6 +1852,7 @@ function DesktopSearchContextBar({
   activeSection?: SearchResultCategory | null;
   categoryTitle: string;
   count: number;
+  focusRegion: DesktopSearchFocusRegion;
   keyboardHint?: string;
   keyword: string;
   onBackToAll?: () => void;
@@ -1822,10 +1872,20 @@ function DesktopSearchContextBar({
   const activeSectionTitle = activeSection
     ? searchCategoryTitles[activeSection]
     : null;
+  const focusRegionLabel = desktopSearchFocusRegionLabels[focusRegion];
+  const focusRegionToneClassName =
+    focusRegion === "input"
+      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--brand-primary)]"
+      : focusRegion === "categories"
+        ? "bg-[rgba(15,118,110,0.10)] text-[#226448]"
+        : "bg-[rgba(59,130,246,0.10)] text-[#1d4ed8]";
 
   return (
     <div className="sticky top-0 z-10 mb-4 pt-1">
-      <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(255,255,255,0.94)] p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+      <section
+        data-search-context-bar=""
+        className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(255,255,255,0.94)] p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] backdrop-blur-xl"
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -1843,6 +1903,14 @@ function DesktopSearchContextBar({
                   当前位于 {activeSectionTitle}
                 </span>
               ) : null}
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-[10px] font-medium",
+                  focusRegionToneClassName,
+                )}
+              >
+                当前焦点在 {focusRegionLabel}
+              </span>
             </div>
             <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
               关键词“{keyword}”
