@@ -11,6 +11,10 @@ import { Smartphone } from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { EmptyState } from "../../../components/empty-state";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
+import {
+  formatConversationTimestamp,
+  formatDesktopMessageTimestamp,
+} from "../../../lib/format";
 import { buildDesktopMobileOfficialHandoffHash } from "./desktop-mobile-official-handoff-route-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
@@ -66,14 +70,8 @@ export function DesktopSubscriptionWorkspace({
   const unreadCount = inboxQuery.data?.summary?.unreadCount ?? 0;
   const groupCount = inboxQuery.data?.groups.length ?? 0;
   const lastDeliveredLabel = inboxQuery.data?.summary?.lastDeliveredAt
-    ? new Date(inboxQuery.data.summary.lastDeliveredAt).toLocaleDateString(
-        "zh-CN",
-        {
-          month: "numeric",
-          day: "numeric",
-        },
-      )
-    : "暂无推送";
+    ? formatConversationTimestamp(inboxQuery.data.summary.lastDeliveredAt)
+    : "暂无更新";
 
   useEffect(() => {
     if (
@@ -185,96 +183,109 @@ export function DesktopSubscriptionWorkspace({
 
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
-      <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(242,246,245,0.78)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
-          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-            聚合消息
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-            订阅号消息
-          </div>
-          <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-            已关注订阅号的最近推送会集中收口在这里，按微信式聚合流浏览。
-          </div>
-          <div className="mt-4">
+      <section className="flex w-[332px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[#ededed]">
+        <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                订阅号消息
+              </div>
+              <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
+                {unreadCount} 条未读 · {groupCount} 个号 · {lastDeliveredLabel} 更新
+              </div>
+            </div>
             <Button
               type="button"
-              variant="secondary"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={handleOpenMobileHandoff}
-              className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+              className="h-8 w-8 shrink-0 rounded-full text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              aria-label="到手机继续"
             >
-              <Smartphone size={14} />
-              到手机继续
+              <Smartphone size={15} />
             </Button>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <SidebarMetricCard label="未读推送" value={`${unreadCount} 条`} />
-            <SidebarMetricCard label="账号分组" value={`${groupCount} 个`} />
-            <SidebarMetricCard label="最近更新" value={lastDeliveredLabel} />
-            <SidebarMetricCard label="文章总数" value={`${feedItems.length} 篇`} />
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-3 py-3">
-          {inboxQuery.isLoading ? <LoadingBlock label="正在读取订阅号消息..." /> : null}
+        <div className="min-h-0 flex-1 overflow-auto bg-[#ededed]">
+          {inboxQuery.isLoading ? (
+            <div className="px-3 py-3">
+              <LoadingBlock label="正在读取订阅号消息..." />
+            </div>
+          ) : null}
           {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-            <ErrorBlock message={inboxQuery.error.message} />
+            <div className="px-3 pt-3">
+              <ErrorBlock message={inboxQuery.error.message} />
+            </div>
           ) : null}
           {markDeliveryReadMutation.isError &&
           markDeliveryReadMutation.error instanceof Error ? (
-            <ErrorBlock message={markDeliveryReadMutation.error.message} />
+            <div className="px-3 pt-3">
+              <ErrorBlock message={markDeliveryReadMutation.error.message} />
+            </div>
           ) : null}
 
-          {feedItems.map((delivery) => (
-            <button
-              key={delivery.id}
-              type="button"
-              onClick={() => handleSelectArticle(delivery.articleId)}
-              className={`mb-3 w-full rounded-[18px] border px-4 py-4 text-left shadow-[var(--shadow-section)] transition last:mb-0 ${
-                activeArticleId === delivery.articleId
-                  ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
-                  : "border-[color:var(--border-faint)] bg-white hover:bg-[color:var(--surface-console)]"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                    <span className="font-medium text-[color:var(--text-secondary)]">
-                      {delivery.account.name}
-                    </span>
-                    <span>·</span>
-                    <span>
-                      {new Date(delivery.deliveredAt).toLocaleDateString("zh-CN", {
-                        month: "numeric",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+          {feedItems.length ? (
+            <div className="bg-white">
+              {feedItems.map((delivery, index) => (
+                <button
+                  key={delivery.id}
+                  type="button"
+                  onClick={() => handleSelectArticle(delivery.articleId)}
+                  className={cn(
+                    "flex w-full items-start gap-3 px-4 py-3 text-left transition",
+                    index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+                    activeArticleId === delivery.articleId
+                      ? "bg-[rgba(7,193,96,0.05)]"
+                      : "bg-white hover:bg-[rgba(15,23,42,0.02)]",
+                  )}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                          {delivery.account.name}
+                        </div>
+                        <div className="mt-1 line-clamp-2 text-[12px] leading-[1.2rem] text-[color:var(--text-secondary)]">
+                          {delivery.article.title}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-[10px] text-[color:var(--text-muted)]">
+                        {formatDesktopMessageTimestamp(delivery.deliveredAt)}
+                      </div>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {!delivery.readAt ? (
+                        <div
+                          className="h-2 w-2 shrink-0 rounded-full bg-[#fa5151]"
+                          aria-label="未读"
+                        />
+                      ) : null}
+                      <div className="min-w-0 truncate text-[10px] text-[color:var(--text-muted)]">
+                        {delivery.article.summary}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-                    {delivery.article.title}
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
-                    {delivery.article.summary}
-                  </div>
-                </div>
-                {!delivery.readAt ? (
-                  <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
-                    未读
-                  </div>
-                ) : null}
-              </div>
-            </button>
-          ))}
+                  {delivery.article.coverImage ? (
+                    <img
+                      src={delivery.article.coverImage}
+                      alt={delivery.article.title}
+                      className="h-14 w-14 shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
+                    />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {!inboxQuery.isLoading && !feedItems.length ? (
-            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-              <EmptyState
-                title="还没有订阅号消息"
-                description="先关注一个订阅号，后续推送会汇总到这里。"
-              />
+            <div className="px-3 py-3">
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                <EmptyState
+                  title="还没有订阅号消息"
+                  description="先关注一个订阅号，后续推送会汇总到这里。"
+                />
+              </div>
             </div>
           ) : null}
         </div>
@@ -329,23 +340,6 @@ export function DesktopSubscriptionWorkspace({
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function SidebarMetricCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
-      <div className="text-[11px] text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
-        {value}
-      </div>
     </div>
   );
 }
