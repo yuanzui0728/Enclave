@@ -162,6 +162,7 @@ export function DesktopSearchWorkspace({
   const allResultSectionRefs = useRef<
     Partial<Record<SearchResultCategory, HTMLElement | null>>
   >({});
+  const autoSelectResultRef = useRef(false);
   const pendingAllResultsJumpRef = useRef<SearchResultCategory | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const categoryTabRefs = useRef<
@@ -589,6 +590,7 @@ export function DesktopSearchWorkspace({
     },
   );
   const handleSelectResult = useEffectEvent((resultId: string) => {
+    autoSelectResultRef.current = false;
     setSelectedResultId(resultId);
   });
   const focusResultButton = useEffectEvent((resultId: string) => {
@@ -621,6 +623,7 @@ export function DesktopSearchWorkspace({
         return;
       }
 
+      autoSelectResultRef.current = false;
       setSelectedResultId(nextResult.id);
       scrollSelectedResultIntoView(nextResult.id);
       if (options?.focusButton) {
@@ -635,6 +638,7 @@ export function DesktopSearchWorkspace({
       return;
     }
 
+    autoSelectResultRef.current = false;
     setSelectedResultId(result.id);
     onOpenResult(result);
   });
@@ -781,6 +785,7 @@ export function DesktopSearchWorkspace({
 
       if (event.key === "Escape" && selectedResultId) {
         event.preventDefault();
+        autoSelectResultRef.current = false;
         setSelectedResultId(null);
         showTransitionHint("已取消结果选择，可继续输入关键词。");
       }
@@ -835,8 +840,9 @@ export function DesktopSearchWorkspace({
   }, [activeCategory, groupedResults, hasKeyword, syncActiveAllResultsSection]);
 
   useEffect(() => {
+    autoSelectResultRef.current = hasKeyword;
     setSelectedResultId(null);
-  }, [activeCategory, searchText]);
+  }, [activeCategory, hasKeyword, searchText]);
 
   useEffect(() => {
     if (!selectedResultId) {
@@ -847,8 +853,26 @@ export function DesktopSearchWorkspace({
       return;
     }
 
+    autoSelectResultRef.current = true;
     setSelectedResultId(null);
   }, [keyboardNavigableResults, selectedResultId]);
+
+  useEffect(() => {
+    if (!hasKeyword || !keyboardNavigableResults.length) {
+      return;
+    }
+
+    if (!autoSelectResultRef.current || selectedResultId) {
+      return;
+    }
+
+    const firstResult = keyboardNavigableResults[0];
+    if (!firstResult) {
+      return;
+    }
+
+    setSelectedResultId(firstResult.id);
+  }, [hasKeyword, keyboardNavigableResults, selectedResultId]);
 
   return (
     <div
