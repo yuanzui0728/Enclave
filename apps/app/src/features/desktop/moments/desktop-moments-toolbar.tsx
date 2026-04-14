@@ -27,14 +27,8 @@ export function DesktopMomentsToolbar({
       <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+            <div className="text-[18px] font-semibold text-[color:var(--text-primary)]">
               朋友圈
-            </div>
-            <div className="mt-1 text-[18px] font-semibold text-[color:var(--text-primary)]">
-              微信式时间线
-            </div>
-            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-              主列表不再提供筛选，直接按时间连续浏览好友动态。
             </div>
           </div>
 

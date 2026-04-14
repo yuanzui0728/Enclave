@@ -84,10 +84,7 @@ export function DesktopMomentsSidebar({
       <div className="flex h-full min-h-0 flex-col">
         <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
           <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-            概览
-          </div>
-          <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
-            像微信一样直接看时间线
+            朋友圈概览
           </div>
         </div>
 
@@ -98,10 +95,6 @@ export function DesktopMomentsSidebar({
               <div className="min-w-0">
                 <div className="truncate text-base font-semibold text-[color:var(--text-primary)]">
                   {ownerUsername ?? "我"}
-                </div>
-                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                  发一条新的朋友圈，或者点开右侧最近更新的好友，进入 TA
-                  的独立朋友圈页。
                 </div>
               </div>
             </div>

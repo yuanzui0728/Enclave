@@ -342,9 +342,6 @@ export function DesktopFriendMomentsWorkspace({
               <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
                 当前只看 {displayName} 的朋友圈
               </div>
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                不再复用大朋友圈里的作者筛选，而是单独承接这位好友的时间线。
-              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
