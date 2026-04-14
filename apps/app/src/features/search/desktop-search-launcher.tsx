@@ -1165,11 +1165,11 @@ export function DesktopSearchDropdownPanel({
         <SearchLauncherSection title="快捷访问" className="mt-3">
           <div className="space-y-3">
             {recentConversations.length ? (
-              <div>
-                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                  最近聊天
-                </div>
-                <div className="mt-1.5 space-y-2">
+              <SearchLauncherCollectionCard
+                countLabel={`${recentConversations.length} 个会话`}
+                title="最近聊天"
+              >
+                <div className="space-y-2">
                   {recentConversations.map((item) => (
                     <SearchLauncherConversationThreadCard
                       key={item.id}
@@ -1181,15 +1181,15 @@ export function DesktopSearchDropdownPanel({
                     />
                   ))}
                 </div>
-              </div>
+              </SearchLauncherCollectionCard>
             ) : null}
 
             {recentOfficials.length ? (
-              <div>
-                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                  最近公众号
-                </div>
-                <div className="mt-1.5 space-y-1.5">
+              <SearchLauncherCollectionCard
+                countLabel={`${recentOfficials.length} 个入口`}
+                title="最近公众号"
+              >
+                <div className="space-y-1.5">
                   {recentOfficials.map((group) => (
                     <SearchLauncherOfficialGroupCard
                       key={group.id}
@@ -1204,15 +1204,15 @@ export function DesktopSearchDropdownPanel({
                     />
                   ))}
                 </div>
-              </div>
+              </SearchLauncherCollectionCard>
             ) : null}
 
             {recentMiniPrograms.length ? (
-              <div>
-                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                  最近使用的小程序
-                </div>
-                <div className="mt-1.5 space-y-1.5">
+              <SearchLauncherCollectionCard
+                countLabel={`${recentMiniPrograms.length} 个入口`}
+                title="最近使用的小程序"
+              >
+                <div className="space-y-1.5">
                   {recentMiniPrograms.map((item) => (
                     <SearchLauncherFeatureRow
                       key={item.id}
@@ -1225,21 +1225,23 @@ export function DesktopSearchDropdownPanel({
                     />
                   ))}
                 </div>
-              </div>
+              </SearchLauncherCollectionCard>
             ) : null}
 
             {favoritesLoading ? (
-              <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-                正在同步最近收藏...
-              </div>
+              <SearchLauncherCollectionCard title="最近收藏">
+                <div className="rounded-[12px] bg-white px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
+                  正在同步最近收藏...
+                </div>
+              </SearchLauncherCollectionCard>
             ) : null}
 
             {!favoritesLoading && recentFavorites.length ? (
-              <div>
-                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                  最近收藏
-                </div>
-                <div className="mt-1.5 space-y-1.5">
+              <SearchLauncherCollectionCard
+                countLabel={`${recentFavorites.length} 条收藏`}
+                title="最近收藏"
+              >
+                <div className="space-y-1.5">
                   {recentFavorites.map((item) => (
                     <SearchLauncherFeatureRow
                       key={item.id}
@@ -1252,45 +1254,50 @@ export function DesktopSearchDropdownPanel({
                     />
                   ))}
                 </div>
-              </div>
+              </SearchLauncherCollectionCard>
             ) : null}
           </div>
         </SearchLauncherSection>
       ) : null}
 
       <SearchLauncherSection title="历史搜索" className="mt-3">
-        {history.length ? (
-          <div className="space-y-1.5">
-            {history.map((item) => (
-              <button
-                key={item.keyword}
-                type="button"
-                onClick={() => onOpenSearch(item.keyword)}
-                onMouseEnter={() =>
-                  setActiveActionId(`history-${item.keyword}`)
-                }
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2.5 text-left text-sm transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-                  activeActionId === `history-${item.keyword}`
-                    ? "bg-[color:var(--surface-console)] text-[color:var(--text-primary)]"
-                    : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
-                )}
-              >
-                <Clock3
-                  size={14}
-                  className="shrink-0 text-[color:var(--text-dim)]"
-                />
-                <span className="truncate">
-                  {renderHighlightedText(item.keyword, trimmedKeyword)}
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-            进入搜一搜并完成一次搜索后，历史关键词会出现在这里。
-          </div>
-        )}
+        <SearchLauncherCollectionCard
+          countLabel={history.length ? `${history.length} 条记录` : undefined}
+          title="最近搜索"
+        >
+          {history.length ? (
+            <div className="space-y-1.5">
+              {history.map((item) => (
+                <button
+                  key={item.keyword}
+                  type="button"
+                  onClick={() => onOpenSearch(item.keyword)}
+                  onMouseEnter={() =>
+                    setActiveActionId(`history-${item.keyword}`)
+                  }
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-[12px] bg-white px-3 py-2.5 text-left text-sm transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    activeActionId === `history-${item.keyword}`
+                      ? "text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(15,23,42,0.06)]"
+                      : "text-[color:var(--text-secondary)] hover:bg-[rgba(7,193,96,0.04)] hover:text-[color:var(--text-primary)]",
+                  )}
+                >
+                  <Clock3
+                    size={14}
+                    className="shrink-0 text-[color:var(--text-dim)]"
+                  />
+                  <span className="truncate">
+                    {renderHighlightedText(item.keyword, trimmedKeyword)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[12px] bg-white px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
+              进入搜一搜并完成一次搜索后，历史关键词会出现在这里。
+            </div>
+          )}
+        </SearchLauncherCollectionCard>
       </SearchLauncherSection>
     </div>
   );
@@ -1313,6 +1320,32 @@ function SearchLauncherSection({
         </span>
       </div>
       {children}
+    </section>
+  );
+}
+
+function SearchLauncherCollectionCard({
+  children,
+  countLabel,
+  title,
+}: {
+  children: ReactNode;
+  countLabel?: string;
+  title: string;
+}) {
+  return (
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3.5">
+      <div className="flex items-center justify-between gap-3 px-0.5">
+        <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        {countLabel ? (
+          <div className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+            {countLabel}
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-2.5">{children}</div>
     </section>
   );
 }
