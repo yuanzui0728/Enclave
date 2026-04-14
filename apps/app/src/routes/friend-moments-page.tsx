@@ -14,8 +14,7 @@ import {
   getMoments,
   toggleMomentLike,
 } from "@yinjie/contracts";
-import { AppPage, Button, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
-import { ArrowLeft } from "lucide-react";
+import { AppPage, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
@@ -28,7 +27,6 @@ import {
   parseDesktopFriendMomentsRouteState,
 } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { DesktopFriendMomentsWorkspace } from "../features/desktop/moments/desktop-friend-moments-workspace";
-import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { formatTimestamp } from "../lib/format";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -229,6 +227,21 @@ export function FriendMomentsPage() {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+
+    void navigate({
+      to: "/friend-moments/$characterId",
+      params: { characterId },
+      ...(normalizedHash ? { hash: normalizedHash } : {}),
+      replace: true,
+    });
+  }, [characterId, hash, isDesktopLayout, navigate]);
+
   function handleBack() {
     navigateBackOrFallback(() => {
       if (routeState.source === "contacts") {
@@ -268,45 +281,11 @@ export function FriendMomentsPage() {
 
   if (!isDesktopLayout) {
     return (
-      <AppPage className="space-y-0 px-0 py-0">
-        <TabPageTopBar
-          title={displayName}
-          subtitle="好友朋友圈"
-          titleAlign="center"
-          className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
-          leftActions={
-            <Button
-              onClick={handleBack}
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-            >
-              <ArrowLeft size={17} />
-            </Button>
-          }
+      <AppPage className="flex min-h-full items-center justify-center bg-[#f2f2f2] px-4 py-8">
+        <LoadingBlock
+          label="正在切换到手机端好友朋友圈..."
+          className="w-full max-w-[360px] rounded-[24px] border-[color:var(--border-faint)] bg-white py-8 shadow-[var(--shadow-section)]"
         />
-        <div className="space-y-3 px-4 py-4">
-          <InlineNotice tone="info">
-            好友朋友圈独立页当前主要提供给桌面端使用，移动端先回到资料页或朋友圈主页查看。
-          </InlineNotice>
-          {character ? (
-            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4">
-              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
-                {displayName}
-              </div>
-              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                {signature}
-              </div>
-              <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
-                {friendMoments.length
-                  ? `当前可见 ${friendMoments.length} 条朋友圈`
-                  : isFriend
-                    ? "当前还没有可展示的朋友圈内容。"
-                    : "先加为好友后再查看。"}
-              </div>
-            </div>
-          ) : null}
-        </div>
       </AppPage>
     );
   }
