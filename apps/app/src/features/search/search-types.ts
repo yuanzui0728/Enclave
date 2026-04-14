@@ -38,6 +38,7 @@ export type SearchMessageGroup = {
   header: SearchResultItem;
   messages: SearchResultItem[];
   sortTime: number;
+  totalHits: number;
 };
 
 export type SearchOfficialAccountGroup = {
@@ -45,6 +46,7 @@ export type SearchOfficialAccountGroup = {
   header: SearchResultItem;
   articles: SearchResultItem[];
   sortTime: number;
+  totalHits: number;
 };
 
 export type SearchScopeCounts = {

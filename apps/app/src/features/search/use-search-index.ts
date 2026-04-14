@@ -510,6 +510,7 @@ export function useSearchIndex(
         return {
           id: `message-group-${conversationId}`,
           header,
+          totalHits: messages.length,
           messages: [...messages]
             .sort((left, right) => right.sortTime - left.sortTime)
             .slice(0, 3),
@@ -586,6 +587,7 @@ export function useSearchIndex(
         return {
           id: `official-account-group-${accountId}`,
           header,
+          totalHits: articles.length,
           articles: [...articles]
             .sort((left, right) => right.sortTime - left.sortTime)
             .slice(0, 3),

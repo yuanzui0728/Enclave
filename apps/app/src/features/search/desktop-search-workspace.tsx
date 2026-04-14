@@ -755,7 +755,7 @@ function DesktopSearchMessageGroupCard({
           </div>
         </div>
         <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
-          {group.messages.length} 条相关记录
+          {group.totalHits} 条相关记录
         </div>
       </button>
 
@@ -825,7 +825,7 @@ function DesktopSearchOfficialAccountGroupCard({
           </div>
         </div>
         <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
-          {group.articles.length} 篇相关文章
+          {group.totalHits} 篇相关文章
         </div>
       </button>
 
