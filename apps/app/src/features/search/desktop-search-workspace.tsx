@@ -494,20 +494,10 @@ export function DesktopSearchWorkspace({
                       : section.results.length > previewResults.length;
 
                   return (
-                    <section
+                    <DesktopSearchResultsPanel
                       key={section.category}
-                      className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                            {section.label}
-                          </div>
-                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                            共 {section.results.length} 条命中
-                          </div>
-                        </div>
-                        {hasMore ? (
+                      action={
+                        hasMore ? (
                           <button
                             type="button"
                             onClick={() => setActiveCategory(section.category)}
@@ -515,9 +505,14 @@ export function DesktopSearchWorkspace({
                           >
                             查看全部
                           </button>
-                        ) : null}
-                      </div>
-
+                        ) : null
+                      }
+                      countLabel={`${section.results.length} 条命中`}
+                      description={getDesktopSearchSectionDescription(
+                        section.category,
+                      )}
+                      title={section.label}
+                    >
                       {section.category === "messages" ? (
                         <DesktopSearchMessageResults
                           conversationResults={previewMessageConversations}
@@ -546,7 +541,7 @@ export function DesktopSearchWorkspace({
                           onOpen={onOpenResult}
                         />
                       ) : (
-                        <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                        <DesktopSearchResultStack>
                           {previewResults.map((item) => (
                             <DesktopSearchResultRow
                               key={item.id}
@@ -555,25 +550,18 @@ export function DesktopSearchWorkspace({
                               onOpen={onOpenResult}
                             />
                           ))}
-                        </div>
+                        </DesktopSearchResultStack>
                       )}
-                    </section>
+                    </DesktopSearchResultsPanel>
                   );
                 })}
               </div>
             ) : (
-              <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                      {searchCategoryTitles[activeCategory]}
-                    </div>
-                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                      共 {visibleResults.length} 条命中
-                    </div>
-                  </div>
-                </div>
-
+              <DesktopSearchResultsPanel
+                countLabel={`${visibleResults.length} 条命中`}
+                description={getDesktopSearchSectionDescription(activeCategory)}
+                title={searchCategoryTitles[activeCategory]}
+              >
                 {activeCategory === "messages" ? (
                   <DesktopSearchMessageResults
                     conversationResults={messageConversationOnlyResults}
@@ -602,7 +590,7 @@ export function DesktopSearchWorkspace({
                     onOpen={onOpenResult}
                   />
                 ) : (
-                  <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                  <DesktopSearchResultStack>
                     {visibleResults.map((item) => (
                       <DesktopSearchResultRow
                         key={item.id}
@@ -611,9 +599,9 @@ export function DesktopSearchWorkspace({
                         onOpen={onOpenResult}
                       />
                     ))}
-                  </div>
+                  </DesktopSearchResultStack>
                 )}
-              </section>
+              </DesktopSearchResultsPanel>
             )
           ) : null}
         </div>
@@ -735,6 +723,50 @@ function DesktopSearchStatusCard({
   );
 }
 
+function DesktopSearchResultsPanel({
+  action,
+  children,
+  countLabel,
+  description,
+  title,
+}: {
+  action?: ReactNode;
+  children: ReactNode;
+  countLabel: string;
+  description: string;
+  title: string;
+}) {
+  return (
+    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            {title}
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {description}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+            {countLabel}
+          </div>
+          {action}
+        </div>
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function DesktopSearchResultStack({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return <div className="space-y-2">{children}</div>;
+}
+
 function DesktopSearchMessageResults({
   conversationResults,
   keyword,
@@ -766,7 +798,7 @@ function DesktopSearchMessageResults({
           <div className="text-xs font-medium text-[color:var(--text-muted)]">
             会话命中
           </div>
-          <div className="mt-3 divide-y divide-[color:var(--border-faint)]">
+          <div className="mt-3 space-y-2">
             {conversationResults.map((item) => (
               <DesktopSearchResultRow
                 key={item.id}
@@ -813,7 +845,7 @@ function DesktopSearchOfficialAccountResults({
           <div className="text-xs font-medium text-[color:var(--text-muted)]">
             账号命中
           </div>
-          <div className="mt-3 divide-y divide-[color:var(--border-faint)]">
+          <div className="mt-3 space-y-2">
             {accountResults.map((item) => (
               <DesktopSearchResultRow
                 key={item.id}
@@ -1277,7 +1309,7 @@ function DesktopSearchResultRow({
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className="flex w-full items-center gap-3 px-0 py-3 text-left transition first:pt-0 last:pb-0 hover:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[16px] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
     >
       <AvatarChip
         name={item.avatarName ?? item.title}
@@ -1302,4 +1334,38 @@ function DesktopSearchResultRow({
       </div>
     </button>
   );
+}
+
+function getDesktopSearchSectionDescription(
+  category: SearchCategory | SearchResultCategory,
+) {
+  if (category === "messages") {
+    return "优先展示会话分组和命中的消息片段。";
+  }
+
+  if (category === "officialAccounts") {
+    return "先看账号分组，再看文章和账号命中。";
+  }
+
+  if (category === "contacts") {
+    return "按资料卡查看联系人和角色入口。";
+  }
+
+  if (category === "favorites") {
+    return "聚合消息、笔记和内容收藏结果。";
+  }
+
+  if (category === "miniPrograms") {
+    return "优先展示可直接打开的小程序入口。";
+  }
+
+  if (category === "moments") {
+    return "按内容卡查看朋友圈动态和评论命中。";
+  }
+
+  if (category === "feed") {
+    return "按内容卡查看广场动态结果。";
+  }
+
+  return "按当前分类集中查看最相关的结果。";
 }
