@@ -11,6 +11,8 @@ import {
 } from "@yinjie/ui";
 import {
   Bookmark,
+  ChevronDown,
+  ChevronRight,
   Clapperboard,
   MessageCircleMore,
   PlaySquare,
@@ -804,6 +806,38 @@ function DesktopChannelCommentsPanel({
       replies: repliesByRoot.get(rootComment.id) ?? [],
     }));
   }, [comments]);
+  const [collapsedThreadIds, setCollapsedThreadIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCollapsedThreadIds((current) =>
+      current.filter((threadId) =>
+        commentThreads.some(({ replies, rootComment }) =>
+          rootComment.id === threadId && replies.length > 0,
+        ),
+      ),
+    );
+  }, [commentThreads]);
+
+  useEffect(() => {
+    if (!replyTarget) {
+      return;
+    }
+
+    const matchingThread = commentThreads.find(
+      ({ replies, rootComment }) =>
+        rootComment.id === replyTarget.commentId ||
+        replies.some((comment) => comment.id === replyTarget.commentId),
+    );
+    if (!matchingThread?.replies.length) {
+      return;
+    }
+
+    setCollapsedThreadIds((current) =>
+      current.includes(matchingThread.rootComment.id)
+        ? current.filter((threadId) => threadId !== matchingThread.rootComment.id)
+        : current,
+    );
+  }, [commentThreads, replyTarget]);
 
   return (
     <div className="mt-3 space-y-3">
@@ -834,26 +868,22 @@ function DesktopChannelCommentsPanel({
                 onReplyToComment={onReplyToComment}
               />
               {replies.length ? (
-                <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
-                  <div className="mb-2 flex items-center justify-between text-[10px] font-medium text-[color:var(--text-muted)]">
-                    <span>楼中楼</span>
-                    <span>{replies.length} 条跟帖</span>
-                  </div>
-                  <div className="space-y-2 border-l border-[rgba(7,193,96,0.14)] pl-3">
-                    {replies.map((comment) => (
-                      <DesktopThreadCommentCard
-                        key={comment.id}
-                        comment={comment}
-                        active={replyTarget?.commentId === comment.id}
-                        commentAuthorNameMap={commentAuthorNameMap}
-                        compact
-                        likePendingCommentId={likePendingCommentId}
-                        onLikeComment={onLikeComment}
-                        onReplyToComment={onReplyToComment}
-                      />
-                    ))}
-                  </div>
-                </div>
+                <DesktopCommentThreadReplies
+                  collapsed={collapsedThreadIds.includes(rootComment.id)}
+                  replies={replies}
+                  replyTarget={replyTarget}
+                  commentAuthorNameMap={commentAuthorNameMap}
+                  likePendingCommentId={likePendingCommentId}
+                  onLikeComment={onLikeComment}
+                  onReplyToComment={onReplyToComment}
+                  onToggleCollapsed={() =>
+                    setCollapsedThreadIds((current) =>
+                      current.includes(rootComment.id)
+                        ? current.filter((threadId) => threadId !== rootComment.id)
+                        : [...current, rootComment.id],
+                    )
+                  }
+                />
               ) : null}
             </div>
           ))}
@@ -900,6 +930,80 @@ function DesktopChannelCommentsPanel({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DesktopCommentThreadReplies({
+  collapsed,
+  commentAuthorNameMap,
+  likePendingCommentId,
+  onLikeComment,
+  onReplyToComment,
+  onToggleCollapsed,
+  replies,
+  replyTarget,
+}: {
+  collapsed: boolean;
+  commentAuthorNameMap: Map<string, string>;
+  likePendingCommentId: string | null;
+  onLikeComment: (comment: FeedComment) => void;
+  onReplyToComment: (comment: FeedComment) => void;
+  onToggleCollapsed: () => void;
+  replies: FeedComment[];
+  replyTarget: {
+    authorId: string;
+    authorName: string;
+    commentId: string;
+    postId: string;
+  } | null;
+}) {
+  const latestReply = replies[replies.length - 1] ?? null;
+
+  return (
+    <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
+      <button
+        type="button"
+        onClick={onToggleCollapsed}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-2 text-[10px] font-medium text-[color:var(--text-muted)]">
+          {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+          <span>楼中楼</span>
+        </div>
+        <span className="text-[10px] text-[color:var(--text-muted)]">
+          {collapsed ? `展开 ${replies.length} 条跟帖` : `收起 ${replies.length} 条跟帖`}
+        </span>
+      </button>
+      {collapsed ? (
+        <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-[11px] leading-6 text-[color:var(--text-secondary)]">
+          {latestReply ? (
+            <>
+              <span className="font-medium text-[color:var(--text-primary)]">
+                {latestReply.authorName}
+              </span>
+              {`：${latestReply.text}`}
+            </>
+          ) : (
+            "这个线程里还有跟帖。"
+          )}
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2 border-l border-[rgba(7,193,96,0.14)] pl-3">
+          {replies.map((comment) => (
+            <DesktopThreadCommentCard
+              key={comment.id}
+              comment={comment}
+              active={replyTarget?.commentId === comment.id}
+              commentAuthorNameMap={commentAuthorNameMap}
+              compact
+              likePendingCommentId={likePendingCommentId}
+              onLikeComment={onLikeComment}
+              onReplyToComment={onReplyToComment}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
