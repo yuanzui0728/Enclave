@@ -1331,23 +1331,24 @@ export function ReplyLogicPage() {
                 </div>
               </Card>
 
-              <div id="reply-logic-rules">
-                <RuntimeRulesEditorCard
-                  draft={runtimeRulesDraft}
-                  isDirty={isRuntimeRulesDraftDirty}
-                  isPending={runtimeRulesSaveMutation.isPending}
-                  error={
-                    runtimeRulesSaveMutation.error instanceof Error
-                      ? runtimeRulesSaveMutation.error.message
-                      : null
-                  }
-                  isSuccess={runtimeRulesSaveMutation.isSuccess}
-                  onPatch={patchRuntimeRulesDraft}
-                  onReset={resetRuntimeRulesDraft}
-                  onSave={saveRuntimeRulesDraft}
-                />
-              </div>
             </div>
+          </div>
+
+          <div id="reply-logic-rules" className="mt-6">
+            <RuntimeRulesEditorCard
+              draft={runtimeRulesDraft}
+              isDirty={isRuntimeRulesDraftDirty}
+              isPending={runtimeRulesSaveMutation.isPending}
+              error={
+                runtimeRulesSaveMutation.error instanceof Error
+                  ? runtimeRulesSaveMutation.error.message
+                  : null
+              }
+              isSuccess={runtimeRulesSaveMutation.isSuccess}
+              onPatch={patchRuntimeRulesDraft}
+              onReset={resetRuntimeRulesDraft}
+              onSave={saveRuntimeRulesDraft}
+            />
           </div>
         </>
       ) : null}
