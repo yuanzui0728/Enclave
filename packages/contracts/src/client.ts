@@ -1506,6 +1506,10 @@ export function createGroup(payload: CreateGroupRequest, baseUrl?: string) {
   );
 }
 
+export function getGroups(baseUrl?: string) {
+  return requestLegacyApi<Group[]>("/groups", undefined, baseUrl);
+}
+
 export function getSavedGroups(baseUrl?: string) {
   return requestLegacyApi<Group[]>("/groups/saved", undefined, baseUrl);
 }

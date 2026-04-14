@@ -620,6 +620,11 @@ export class GroupController {
     return this.groupService.updatePreferences(id, body);
   }
 
+  @Get()
+  getGroups() {
+    return this.groupService.listGroups();
+  }
+
   @Get('saved')
   getSavedGroups() {
     return this.groupService.listSavedGroups();
