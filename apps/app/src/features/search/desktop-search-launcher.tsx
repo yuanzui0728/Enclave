@@ -1238,21 +1238,27 @@ export function DesktopSearchDropdownPanel({
           highlighted={activeFocusContext.region === "suggestions"}
         >
           {suggestionsLoading ? (
-            <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-              正在整理聊天、联系人、公众号、收藏和小程序结果...
-            </div>
+            <SearchLauncherStatusCard
+              description="正在整理聊天、联系人、公众号、收藏和小程序结果..."
+              status="pending"
+              title="搜索建议"
+            />
           ) : null}
 
           {suggestionsError ? (
-            <div className="rounded-[12px] bg-[rgba(225,29,72,0.08)] px-3 py-3 text-xs leading-6 text-[#be123c]">
-              搜索建议暂时读取失败，请先试试搜一搜。
-            </div>
+            <SearchLauncherStatusCard
+              description="搜索建议暂时读取失败，请先试试搜一搜。"
+              status="error"
+              title="搜索异常"
+            />
           ) : null}
 
           {favoritesError ? (
-            <div className="rounded-[12px] bg-[rgba(225,29,72,0.08)] px-3 py-3 text-xs leading-6 text-[#be123c]">
-              收藏列表暂时读取失败，可以直接进入搜一搜继续搜索。
-            </div>
+            <SearchLauncherStatusCard
+              description="收藏列表暂时读取失败，可以直接进入搜一搜继续搜索。"
+              status="error"
+              title="搜索异常"
+            />
           ) : null}
 
           {!suggestionsLoading && !suggestionsError ? (
@@ -1459,28 +1465,30 @@ export function DesktopSearchDropdownPanel({
               ) : null}
 
               {!hasSuggestionResults ? (
-                <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3">
-                  <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                    没有直接命中的聊天、联系人、公众号、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
-                  </div>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="mt-2 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 shadow-none hover:bg-[color:var(--surface-card-hover)]"
-                    onClick={() => {
-                      onClose?.();
-                      void navigate({
-                        to: "/desktop/add-friend",
-                        hash: buildDesktopAddFriendRouteHash({
-                          keyword: trimmedKeyword,
-                        }),
-                      });
-                    }}
-                  >
-                    去添加朋友
-                  </Button>
-                </div>
+                <SearchLauncherStatusCard
+                  action={
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                      onClick={() => {
+                        onClose?.();
+                        void navigate({
+                          to: "/desktop/add-friend",
+                          hash: buildDesktopAddFriendRouteHash({
+                            keyword: trimmedKeyword,
+                          }),
+                        });
+                      }}
+                    >
+                      去添加朋友
+                    </Button>
+                  }
+                  description="没有直接命中的聊天、联系人、公众号、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。"
+                  status="empty"
+                  title="搜索结果"
+                />
               ) : null}
             </div>
           ) : null}
@@ -1801,29 +1809,37 @@ function SearchLauncherHeroCard({
 }
 
 function SearchLauncherStatusCard({
+  action,
   description,
   status,
   title,
 }: {
+  action?: ReactNode;
   description: string;
-  status: "done" | "error" | "pending" | "recording";
+  status: "done" | "empty" | "error" | "pending" | "recording";
   title: string;
 }) {
   const toneClassName =
     status === "error"
       ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
+      : status === "empty"
+        ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
       : status === "recording"
         ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)]"
         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]";
   const badgeClassName =
     status === "error"
       ? "bg-white text-[#be123c]"
+      : status === "empty"
+        ? "bg-white text-[color:var(--text-muted)]"
       : status === "recording"
         ? "bg-white text-[color:var(--brand-primary)]"
         : "bg-white text-[color:var(--text-muted)]";
   const statusLabel =
     status === "error"
       ? "异常"
+      : status === "empty"
+        ? "无结果"
       : status === "recording"
         ? "录音中"
         : status === "pending"
@@ -1850,6 +1866,7 @@ function SearchLauncherStatusCard({
       >
         {description}
       </div>
+      {action ? <div className="mt-3 flex items-center justify-end">{action}</div> : null}
     </section>
   );
 }
