@@ -40,7 +40,6 @@ import {
   setConversationPinned,
   setFriendStarred,
   unblockCharacter,
-  type FriendListItem,
 } from "@yinjie/contracts";
 import {
   AppPage,
@@ -62,7 +61,6 @@ import {
 import { DesktopContactsWorkspace } from "../features/desktop/contacts/desktop-contacts-workspace";
 import { DesktopContactsFriendRequestsPane } from "../features/desktop/contacts/desktop-contacts-friend-requests-pane";
 import { DesktopContactsGroupsPane } from "../features/desktop/contacts/desktop-contacts-groups-pane";
-import { DesktopContactsStarredFriendsPane } from "../features/desktop/contacts/desktop-contacts-starred-friends-pane";
 import { DesktopContactsTagsPane } from "../features/desktop/contacts/desktop-contacts-tags-pane";
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import {
@@ -71,6 +69,7 @@ import {
 } from "../features/desktop/contacts/desktop-contacts-route-state";
 import {
   buildContactSections,
+  buildDesktopFriendSections,
   createFriendDirectoryItems,
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
@@ -359,6 +358,10 @@ export function ContactsPage() {
     () => buildContactSections(filteredFriendItems),
     [filteredFriendItems],
   );
+  const desktopFriendSections = useMemo(
+    () => buildDesktopFriendSections(filteredFriendItems),
+    [filteredFriendItems],
+  );
   const mobileIndexItems = useMemo(
     () =>
       friendSections.map((section) => ({
@@ -374,12 +377,6 @@ export function ContactsPage() {
         (request) => request.status === "pending",
       ).length,
     [friendRequestsQuery.data],
-  );
-  const starredFriendCount = useMemo(
-    () =>
-      (friendsQuery.data ?? []).filter((item) => item.friendship.isStarred)
-        .length,
-    [friendsQuery.data],
   );
   const savedGroupCount = savedGroupsQuery.data?.length ?? 0;
   const tagCount = useMemo(
@@ -473,13 +470,7 @@ export function ContactsPage() {
         : [],
     [conversationsQuery.data, selectedFriendItem],
   );
-  const starredFriends = useMemo(
-    () =>
-      (friendsQuery.data ?? [])
-        .filter((item) => item.friendship.isStarred)
-        .sort(compareStarredFriends),
-    [friendsQuery.data],
-  );
+  const desktopDefaultFriendItem = desktopFriendSections[0]?.items[0] ?? null;
 
   function commitDesktopRouteState(
     nextSelection: DesktopSelection,
@@ -775,9 +766,38 @@ export function ContactsPage() {
       return;
     }
 
+    if (desktopSelection?.kind !== "starred-friends") {
+      return;
+    }
+
+    const nextSelection = desktopSelection.id
+      ? ({
+          kind: "friend",
+          id: desktopSelection.id,
+        } satisfies DesktopSelection)
+      : desktopDefaultFriendItem
+        ? ({
+            kind: "friend",
+            id: desktopDefaultFriendItem.character.id,
+          } satisfies DesktopSelection)
+        : null;
+
+    setDesktopSelection(nextSelection);
+    commitDesktopRouteState(nextSelection, showWorldCharacters, true);
+  }, [
+    desktopDefaultFriendItem,
+    desktopSelection,
+    isDesktopLayout,
+    showWorldCharacters,
+  ]);
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
     if (
       desktopSelection?.kind === "new-friends" ||
-      desktopSelection?.kind === "starred-friends" ||
       desktopSelection?.kind === "groups" ||
       desktopSelection?.kind === "tags" ||
       desktopSelection?.kind === "official-accounts"
@@ -803,10 +823,10 @@ export function ContactsPage() {
       return;
     }
 
-    if (filteredFriendItems[0]) {
+    if (desktopDefaultFriendItem) {
       const nextSelection = {
         kind: "friend",
-        id: filteredFriendItems[0].character.id,
+        id: desktopDefaultFriendItem.character.id,
       } satisfies DesktopSelection;
       setDesktopSelection(nextSelection);
       commitDesktopRouteState(nextSelection, showWorldCharacters, true);
@@ -826,8 +846,8 @@ export function ContactsPage() {
     setDesktopSelection(null);
     commitDesktopRouteState(null, showWorldCharacters, true);
   }, [
+    desktopDefaultFriendItem,
     desktopSelection,
-    filteredFriendItems,
     filteredWorldCharacterItems,
     isDesktopLayout,
     showWorldCharacters,
@@ -979,32 +999,6 @@ export function ContactsPage() {
       },
     },
     {
-      key: "starred-friends",
-      label: "星标朋友",
-      subtitle:
-        starredFriendCount > 0
-          ? `${starredFriendCount} 位常联系好友`
-          : "查看星标朋友",
-      active: desktopSelection?.kind === "starred-friends",
-      icon: Star,
-      iconClassName: "bg-[linear-gradient(135deg,#f3d56b,#d4a72c)]",
-      onClick: () => {
-        if (!isDesktopLayout) {
-          handleShortcutNavigate("/contacts/starred");
-          return;
-        }
-
-        const nextSelection = {
-          kind: "starred-friends",
-          ...(starredFriends[0]?.character.id
-            ? { id: starredFriends[0].character.id }
-            : {}),
-        } satisfies DesktopSelection;
-        setDesktopSelection(nextSelection);
-        commitDesktopRouteState(nextSelection, showWorldCharacters);
-      },
-    },
-    {
       key: "group-chat",
       label: "群聊",
       subtitle:
@@ -1090,6 +1084,9 @@ export function ContactsPage() {
       onClick: handleOpenWorldCharacters,
     },
   ];
+  const desktopShortcutItems = shortcutItems.filter(
+    (item) => item.key !== "starred-friends",
+  );
   const mobileShortcutItems = shortcutItems;
   const mobileErrorItems = [
     friendsQuery.isError && friendsQuery.error instanceof Error
@@ -1171,9 +1168,9 @@ export function ContactsPage() {
   if (isDesktopLayout) {
     return (
       <DesktopContactsWorkspace
-        directoryCountLabel={`${filteredFriendItems.length}${
-          filteredWorldCharacterItems.length
-            ? ` + ${filteredWorldCharacterItems.length}`
+        directoryCountLabel={`${filteredFriendItems.length} 位联系人${
+          showWorldCharacters || normalizedSearchText
+            ? ` · ${filteredWorldCharacterItems.length} 个世界角色`
             : ""
         }`}
         searchContainerRef={desktopSearchLauncher.containerRef}
@@ -1204,7 +1201,7 @@ export function ContactsPage() {
         }}
         shortcutList={
           <ContactShortcutList
-            items={shortcutItems}
+            items={desktopShortcutItems}
             compact
             variant="desktop-flat"
           />
@@ -1212,7 +1209,7 @@ export function ContactsPage() {
         notice={notice}
         errors={desktopErrors}
         loading={friendsQuery.isLoading}
-        friendSections={friendSections}
+        friendSections={desktopFriendSections}
         activeFriendId={
           desktopSelection?.kind === "friend" ? desktopSelection.id : null
         }
@@ -1261,7 +1258,9 @@ export function ContactsPage() {
             </div>
           ) : null
         }
-        worldCharacterTitle={normalizedSearchText ? "世界角色结果" : "世界角色"}
+        worldCharacterTitle={
+          normalizedSearchText ? "世界角色搜索结果" : "尚未成为联系人"
+        }
         worldCharacterItems={filteredWorldCharacterItems}
         activeWorldCharacterId={
           desktopSelection?.kind === "world-character"
@@ -1311,57 +1310,6 @@ export function ContactsPage() {
               onDecline={(requestId) =>
                 declineFriendRequestMutation.mutate(requestId)
               }
-            />
-          ) : desktopSelection?.kind === "starred-friends" ? (
-            <DesktopContactsStarredFriendsPane
-              friends={starredFriends}
-              selectedCharacterId={desktopSelection.id ?? null}
-              loading={friendsQuery.isLoading}
-              error={
-                friendsQuery.error instanceof Error
-                  ? friendsQuery.error.message
-                  : null
-              }
-              actionError={
-                startChatMutation.error instanceof Error
-                  ? startChatMutation.error.message
-                  : setStarredMutation.error instanceof Error
-                    ? setStarredMutation.error.message
-                    : null
-              }
-              notice={notice}
-              startChatPendingId={pendingCharacterId}
-              starPendingId={
-                setStarredMutation.isPending
-                  ? (setStarredMutation.variables?.characterId ?? null)
-                  : null
-              }
-              onSelectCharacter={(characterId) => {
-                const nextSelection = {
-                  kind: "starred-friends",
-                  ...(characterId ? { id: characterId } : {}),
-                } satisfies DesktopSelection;
-                setDesktopSelection(nextSelection);
-                commitDesktopRouteState(
-                  nextSelection,
-                  showWorldCharacters,
-                  true,
-                );
-              }}
-              onStartChat={handleStartChat}
-              onToggleStarred={(characterId, starred) => {
-                setStarredMutation.mutate({ characterId, starred });
-              }}
-              onOpenProfile={handleOpenProfile}
-              onOpenMoments={(characterId) => {
-                void navigate({
-                  to: "/desktop/friend-moments/$characterId",
-                  params: { characterId },
-                  hash: buildDesktopFriendMomentsRouteHash({
-                    source: "starred-friends",
-                  }),
-                });
-              }}
             />
           ) : desktopSelection?.kind === "groups" ? (
             <DesktopContactsGroupsPane
@@ -1948,32 +1896,4 @@ function MobileContactsStatusCard({
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
     </section>
   );
-}
-
-function compareStarredFriends(left: FriendListItem, right: FriendListItem) {
-  const starredAtDelta =
-    getSortableTimestamp(right.friendship.starredAt) -
-    getSortableTimestamp(left.friendship.starredAt);
-
-  if (starredAtDelta !== 0) {
-    return starredAtDelta;
-  }
-
-  const leftName = left.friendship.remarkName?.trim() || left.character.name;
-  const rightName = right.friendship.remarkName?.trim() || right.character.name;
-  const nameDiff = leftName.localeCompare(rightName, "zh-CN");
-  if (nameDiff !== 0) {
-    return nameDiff;
-  }
-
-  return left.character.id.localeCompare(right.character.id);
-}
-
-function getSortableTimestamp(value?: string) {
-  if (!value) {
-    return 0;
-  }
-
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : 0;
 }

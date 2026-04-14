@@ -250,7 +250,7 @@ export function FriendMomentsPage() {
       }
 
       if (routeState.source === "starred-friends") {
-        void navigate({ to: "/contacts/starred" });
+        void navigate({ to: isDesktopLayout ? "/tabs/contacts" : "/contacts/starred" });
         return;
       }
 

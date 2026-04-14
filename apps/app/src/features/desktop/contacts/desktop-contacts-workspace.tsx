@@ -179,6 +179,7 @@ export function DesktopContactsWorkspace({
 
               {!loading && friendSections.length ? (
                 <div className="overflow-hidden">
+                  <DesktopDirectoryTitle title="联系人" />
                   {friendSections.map((section, sectionIndex) => (
                     <div
                       key={section.key}
@@ -215,7 +216,7 @@ export function DesktopContactsWorkspace({
                   id="world-character-directory"
                   className="mt-3 overflow-hidden border-t border-[rgba(0,0,0,0.04)] pt-2"
                 >
-                  <DesktopSectionHeader title={worldCharacterTitle} />
+                  <DesktopDirectoryTitle title={worldCharacterTitle} />
                   {worldCharacterItems.map((item, index) => (
                     <DesktopWorldCharacterRow
                       key={item.character.id}
@@ -235,6 +236,14 @@ export function DesktopContactsWorkspace({
           </section>
         </div>
       </AppPage>
+    </div>
+  );
+}
+
+function DesktopDirectoryTitle({ title }: { title: string }) {
+  return (
+    <div className="px-4 pb-1 pt-1 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
+      {title}
     </div>
   );
 }

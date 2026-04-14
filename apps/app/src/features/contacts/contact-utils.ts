@@ -103,6 +103,30 @@ export function buildContactSections<TItem extends { indexLabel: string }>(
   );
 }
 
+export function buildDesktopFriendSections(
+  items: FriendDirectoryItem[],
+): ContactSection<FriendDirectoryItem>[] {
+  const starredItems = items.filter((item) => item.friendship.isStarred);
+  const regularSections = buildContactSections(
+    items.filter((item) => !item.friendship.isStarred),
+  );
+
+  if (!starredItems.length) {
+    return regularSections;
+  }
+
+  return [
+    {
+      key: "starred-friends",
+      title: "星标朋友",
+      indexLabel: "★",
+      anchorId: "contact-section-starred",
+      items: starredItems,
+    },
+    ...regularSections,
+  ];
+}
+
 export function matchesCharacterSearch(
   character: Pick<
     Character,

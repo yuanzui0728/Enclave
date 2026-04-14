@@ -24,7 +24,6 @@ import {
   getFriendDisplayName,
   matchesFriendSearch,
 } from "../features/contacts/contact-utils";
-import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
@@ -41,7 +40,6 @@ export function StarredFriendsPage() {
 
     void navigate({
       to: "/tabs/contacts",
-      hash: buildDesktopContactsRouteHash({ pane: "starred-friends" }),
       replace: true,
     });
   }, [isDesktopLayout, navigate]);
