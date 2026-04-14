@@ -9,9 +9,18 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Clock3, CornerDownLeft, Search } from "lucide-react";
-import { getFriends, listCharacters } from "@yinjie/contracts";
+import {
+  getConversations,
+  getFriends,
+  listCharacters,
+} from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
+import { getConversationPreviewParts } from "../../lib/conversation-preview";
+import {
+  getConversationThreadLabel,
+  getConversationThreadPath,
+} from "../../lib/conversation-route";
 import {
   createFriendDirectoryItems,
   createWorldCharacterDirectoryItems,
@@ -21,6 +30,7 @@ import {
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../contacts/contact-utils";
+import { useLocalChatMessageActionState } from "../chat/local-chat-message-actions";
 import { useSpeechInput } from "../chat/use-speech-input";
 import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -228,9 +238,10 @@ export function DesktopSearchDropdownPanel({
   const navigate = useNavigate();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const localMessageActionState = useLocalChatMessageActionState();
   const trimmedKeyword = keyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
-  const shouldLoadSuggestions = Boolean(normalizedKeyword);
+  const shouldLoadSuggestions = true;
   const {
     favoriteMatches,
     favoritesError,
@@ -249,6 +260,12 @@ export function DesktopSearchDropdownPanel({
   const charactersQuery = useQuery({
     queryKey: ["app-characters", baseUrl],
     queryFn: () => listCharacters(baseUrl),
+    enabled: shouldLoadSuggestions,
+    staleTime: 30_000,
+  });
+  const conversationsQuery = useQuery({
+    queryKey: ["app-conversations", baseUrl],
+    queryFn: () => getConversations(baseUrl),
     enabled: shouldLoadSuggestions,
     staleTime: 30_000,
   });
@@ -282,15 +299,56 @@ export function DesktopSearchDropdownPanel({
       )
       .slice(0, 4);
   }, [charactersQuery.data, friendsQuery.data, normalizedKeyword]);
+  const conversationQuickLinks = useMemo(() => {
+    return (conversationsQuery.data ?? []).map((conversation) => {
+      const preview = getConversationPreviewParts(
+        conversation,
+        localMessageActionState,
+      );
+
+      return {
+        id: `conversation-${conversation.id}`,
+        title: conversation.title,
+        description: `${preview.prefix}${preview.text}`,
+        meta: `${getConversationThreadLabel(conversation)} · ${conversation.participants.length} 位参与者`,
+        badge: getConversationThreadLabel(conversation),
+        to: getConversationThreadPath(conversation),
+        avatarName: conversation.title,
+      } satisfies DesktopSearchQuickLink;
+    });
+  }, [conversationsQuery.data, localMessageActionState]);
+  const conversationMatches = useMemo(() => {
+    if (!normalizedKeyword) {
+      return [] as DesktopSearchQuickLink[];
+    }
+
+    return conversationQuickLinks
+      .filter((item) =>
+        [item.title, item.description, item.meta, item.badge]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedKeyword),
+      )
+      .slice(0, 4);
+  }, [conversationQuickLinks, normalizedKeyword]);
+  const recentConversations = useMemo(
+    () => conversationQuickLinks.slice(0, 4),
+    [conversationQuickLinks],
+  );
 
   const suggestionsLoading =
     shouldLoadSuggestions &&
-    (friendsQuery.isLoading || charactersQuery.isLoading);
+    (friendsQuery.isLoading ||
+      charactersQuery.isLoading ||
+      conversationsQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
     (friendsQuery.error instanceof Error ||
-      charactersQuery.error instanceof Error);
+      charactersQuery.error instanceof Error ||
+      conversationsQuery.error instanceof Error);
   const hasSuggestionResults =
+    conversationMatches.length > 0 ||
     friendMatches.length > 0 ||
     worldCharacterMatches.length > 0 ||
     favoriteMatches.length > 0 ||
@@ -318,6 +376,13 @@ export function DesktopSearchDropdownPanel({
     ];
 
     if (trimmedKeyword) {
+      conversationMatches.forEach((item) => {
+        items.push({
+          id: item.id,
+          onSelect: () => handleOpenQuickLink(item),
+        });
+      });
+
       friendMatches.forEach((item) => {
         items.push({
           id: `friend-${item.character.id}`,
@@ -358,6 +423,13 @@ export function DesktopSearchDropdownPanel({
         });
       });
     } else {
+      recentConversations.forEach((item) => {
+        items.push({
+          id: item.id,
+          onSelect: () => handleOpenQuickLink(item),
+        });
+      });
+
       recentMiniPrograms.forEach((item) => {
         items.push({
           id: item.id,
@@ -382,6 +454,7 @@ export function DesktopSearchDropdownPanel({
 
     return items;
   }, [
+    conversationMatches,
     favoriteMatches,
     friendMatches,
     handleOpenQuickLink,
@@ -391,6 +464,7 @@ export function DesktopSearchDropdownPanel({
     navigate,
     onClose,
     onOpenSearch,
+    recentConversations,
     recentFavorites,
     recentMiniPrograms,
     trimmedKeyword,
@@ -534,7 +608,7 @@ export function DesktopSearchDropdownPanel({
         <SearchLauncherSection title="搜索建议" className="mt-3">
           {suggestionsLoading ? (
             <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-              正在整理联系人、收藏和小程序结果...
+              正在整理聊天、联系人、收藏和小程序结果...
             </div>
           ) : null}
 
@@ -552,6 +626,25 @@ export function DesktopSearchDropdownPanel({
 
           {!suggestionsLoading && !suggestionsError ? (
             <div className="space-y-3">
+              {conversationMatches.length ? (
+                <div>
+                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                    聊天
+                  </div>
+                  <div className="mt-1.5 space-y-1.5">
+                    {conversationMatches.map((item) => (
+                      <SearchLauncherQuickLinkRow
+                        key={item.id}
+                        active={activeActionId === item.id}
+                        item={item}
+                        onMouseEnter={() => setActiveActionId(item.id)}
+                        onClick={() => handleOpenQuickLink(item)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {friendMatches.length ? (
                 <div>
                   <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
@@ -666,7 +759,7 @@ export function DesktopSearchDropdownPanel({
               {!hasSuggestionResults ? (
                 <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3">
                   <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                    没有直接命中的联系人、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
+                    没有直接命中的聊天、联系人、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
                   </div>
                   <Button
                     type="button"
@@ -695,6 +788,25 @@ export function DesktopSearchDropdownPanel({
       {!trimmedKeyword ? (
         <SearchLauncherSection title="快捷访问" className="mt-3">
           <div className="space-y-3">
+            {recentConversations.length ? (
+              <div>
+                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                  最近聊天
+                </div>
+                <div className="mt-1.5 space-y-1.5">
+                  {recentConversations.map((item) => (
+                    <SearchLauncherQuickLinkRow
+                      key={item.id}
+                      active={activeActionId === item.id}
+                      item={item}
+                      onMouseEnter={() => setActiveActionId(item.id)}
+                      onClick={() => handleOpenQuickLink(item)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {recentMiniPrograms.length ? (
               <div>
                 <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
