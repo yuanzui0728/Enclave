@@ -78,7 +78,8 @@ import {
   openDesktopChatImageViewerWindow,
   type DesktopChatImageViewerSessionItem,
 } from "../features/desktop/chat/desktop-chat-image-viewer-route-state";
-import { openDesktopNoteWindow } from "../features/desktop/chat/desktop-note-window-route-state";
+import { buildDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
+import { createDesktopNoteDraft } from "../features/desktop/chat/desktop-notes-storage";
 import {
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
@@ -1452,10 +1453,20 @@ export function ChatMessageList({
 
     if (attachment.kind === "note_card") {
       if (variant === "desktop") {
-        void openDesktopNoteWindow({
-          noteId: attachment.noteId,
+        const draft = createDesktopNoteDraft({
           draftId: attachment.noteId,
-          returnTo: "/tabs/favorites",
+          noteId: attachment.noteId,
+        });
+        void navigate({
+          to: "/tabs/favorites",
+          hash: buildDesktopNoteWindowRouteHash({
+            draftId: draft.draftId,
+            noteId: attachment.noteId,
+            returnTo:
+              typeof window !== "undefined"
+                ? `${window.location.pathname}${window.location.hash}`
+                : "/tabs/favorites",
+          }),
         });
         return;
       }
