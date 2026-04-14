@@ -11,6 +11,7 @@ import {
 import {
   Blocks,
   Bookmark,
+  ChevronRight,
   Clock3,
   MessageSquareText,
   Newspaper,
@@ -857,52 +858,60 @@ export function DesktopSearchWorkspace({
                 })}
               </div>
             ) : (
-              <DesktopSearchResultsPanel
-                countLabel={`${visibleResults.length} 条命中`}
-                description={getDesktopSearchSectionDescription(activeCategory)}
-                highlighted={spotlightPanelId === activeCategory}
-                title={searchCategoryTitles[activeCategory]}
-              >
-                {activeCategory === "messages" ? (
-                  <DesktopSearchMessageResults
-                    conversationResults={messageConversationOnlyResults}
-                    keyword={normalizedKeyword}
-                    messageGroups={messageGroups}
-                    onOpen={onOpenResult}
-                  />
-                ) : activeCategory === "officialAccounts" ? (
-                  <DesktopSearchOfficialAccountResults
-                    accountResults={officialAccountOnlyResults}
-                    keyword={normalizedKeyword}
-                    officialAccountGroups={officialAccountGroups}
-                    onOpen={onOpenResult}
-                  />
-                ) : isDesktopFeatureCardCategory(activeCategory) ? (
-                  <DesktopSearchFeatureResults
-                    category={activeCategory}
-                    items={visibleResults}
-                    keyword={normalizedKeyword}
-                    onOpen={onOpenResult}
-                  />
-                ) : isDesktopContentCategory(activeCategory) ? (
-                  <DesktopSearchContentResults
-                    items={visibleResults}
-                    keyword={normalizedKeyword}
-                    onOpen={onOpenResult}
-                  />
-                ) : (
-                  <DesktopSearchResultStack>
-                    {visibleResults.map((item) => (
-                      <DesktopSearchResultRow
-                        key={item.id}
-                        item={item}
-                        keyword={normalizedKeyword}
-                        onOpen={onOpenResult}
-                      />
-                    ))}
-                  </DesktopSearchResultStack>
-                )}
-              </DesktopSearchResultsPanel>
+              <div className="space-y-4">
+                <DesktopSearchDrilldownBanner
+                  category={activeCategory}
+                  count={visibleResults.length}
+                  keyword={keywordLabel}
+                  onBack={() => handleBackToAllResults(activeCategory)}
+                />
+                <DesktopSearchResultsPanel
+                  countLabel={`${visibleResults.length} 条命中`}
+                  description={`从全部结果展开，继续查看${searchCategoryTitles[activeCategory]}的完整命中。`}
+                  highlighted={spotlightPanelId === activeCategory}
+                  title={`${searchCategoryTitles[activeCategory]}全部结果`}
+                >
+                  {activeCategory === "messages" ? (
+                    <DesktopSearchMessageResults
+                      conversationResults={messageConversationOnlyResults}
+                      keyword={normalizedKeyword}
+                      messageGroups={messageGroups}
+                      onOpen={onOpenResult}
+                    />
+                  ) : activeCategory === "officialAccounts" ? (
+                    <DesktopSearchOfficialAccountResults
+                      accountResults={officialAccountOnlyResults}
+                      keyword={normalizedKeyword}
+                      officialAccountGroups={officialAccountGroups}
+                      onOpen={onOpenResult}
+                    />
+                  ) : isDesktopFeatureCardCategory(activeCategory) ? (
+                    <DesktopSearchFeatureResults
+                      category={activeCategory}
+                      items={visibleResults}
+                      keyword={normalizedKeyword}
+                      onOpen={onOpenResult}
+                    />
+                  ) : isDesktopContentCategory(activeCategory) ? (
+                    <DesktopSearchContentResults
+                      items={visibleResults}
+                      keyword={normalizedKeyword}
+                      onOpen={onOpenResult}
+                    />
+                  ) : (
+                    <DesktopSearchResultStack>
+                      {visibleResults.map((item) => (
+                        <DesktopSearchResultRow
+                          key={item.id}
+                          item={item}
+                          keyword={normalizedKeyword}
+                          onOpen={onOpenResult}
+                        />
+                      ))}
+                    </DesktopSearchResultStack>
+                  )}
+                </DesktopSearchResultsPanel>
+              </div>
             )
           ) : null}
         </div>
@@ -1280,6 +1289,43 @@ function DesktopSearchContextBar({
         ) : null}
       </section>
     </div>
+  );
+}
+
+function DesktopSearchDrilldownBanner({
+  category,
+  count,
+  keyword,
+  onBack,
+}: {
+  category: SearchResultCategory;
+  count: number;
+  keyword: string;
+  onBack: () => void;
+}) {
+  return (
+    <section className="rounded-[18px] border border-[#dce9dd] bg-[linear-gradient(135deg,rgba(7,193,96,0.10),rgba(7,193,96,0.04)_40%,white)] p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-dim)]">
+            <span className="rounded-full bg-white px-2.5 py-1">全部结果</span>
+            <ChevronRight size={12} />
+            <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[color:var(--brand-primary)]">
+              {searchCategoryTitles[category]}
+            </span>
+          </div>
+          <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
+            已展开 {searchCategoryTitles[category]} 全部结果
+          </div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+            当前仍保留关键词“{keyword}”，共 {count} 条命中；返回时会回到聚合页里的对应分区。
+          </div>
+        </div>
+        <DesktopSearchActionButton onClick={onBack} tone="brand">
+          回到全部结果
+        </DesktopSearchActionButton>
+      </div>
+    </section>
   );
 }
 
