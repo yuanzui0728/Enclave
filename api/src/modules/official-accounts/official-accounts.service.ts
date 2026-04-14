@@ -149,7 +149,7 @@ export class OfficialAccountsService {
         accountId: In(accounts.map((account) => account.id)),
       },
     });
-    const followSet = new Set(follows.map((follow) => follow.accountId));
+    const followMap = new Map(follows.map((follow) => [follow.accountId, follow]));
     const recentArticles = await this.getRecentArticlesForAccounts(
       accounts.map((account) => account.id),
     );
@@ -157,7 +157,7 @@ export class OfficialAccountsService {
     return accounts.map((account) =>
       this.serializeAccountSummary(
         account,
-        followSet.has(account.id),
+        followMap.get(account.id) ?? null,
         recentArticles.get(account.id)?.[0],
       ),
     );
@@ -177,7 +177,7 @@ export class OfficialAccountsService {
       take: 24,
     });
 
-    return this.serializeAccountDetail(account, Boolean(follow), articles);
+    return this.serializeAccountDetail(account, follow, articles);
   }
 
   async listAccountArticles(id: string) {
@@ -226,12 +226,18 @@ export class OfficialAccountsService {
 
     await this.ensureServiceMessages(owner.id, serviceAccountIds);
 
-    const [accounts, recentArticles, messages] = await Promise.all([
+    const [accounts, follows, recentArticles, messages] = await Promise.all([
       this.accountRepo.find({
         where: {
           id: In(serviceAccountIds),
           accountType: 'service',
           isEnabled: true,
+        },
+      }),
+      this.followRepo.find({
+        where: {
+          ownerId: owner.id,
+          accountId: In(serviceAccountIds),
         },
       }),
       this.getRecentArticlesForAccounts(serviceAccountIds),
@@ -244,10 +250,13 @@ export class OfficialAccountsService {
       }),
     ]);
 
+    const followMap = new Map(follows.map((follow) => [follow.accountId, follow]));
+
     return accounts
       .flatMap((account) => {
         const summary = this.serializeServiceConversationSummary(
           account,
+          followMap.get(account.id) ?? null,
           messages.filter((message) => message.accountId === account.id),
           recentArticles.get(account.id)?.[0],
         );
@@ -383,6 +392,8 @@ export class OfficialAccountsService {
       const follow = this.followRepo.create({
         ownerId: owner.id,
         accountId: id,
+        isMuted: account.accountType === 'service',
+        mutedAt: account.accountType === 'service' ? new Date() : null,
       });
       await this.followRepo.save(follow);
     }
@@ -419,13 +430,19 @@ export class OfficialAccountsService {
 
     await this.ensureSubscriptionDeliveries(ownerId, subscriptionAccountIds);
 
-    const [accounts, deliveries, recentArticles] = await Promise.all([
+    const [accounts, follows, deliveries, recentArticles] = await Promise.all([
       this.accountRepo.find({
         where: {
           id: In(subscriptionAccountIds),
           isEnabled: true,
         },
         order: { lastPublishedAt: 'DESC', createdAt: 'DESC' },
+      }),
+      this.followRepo.find({
+        where: {
+          ownerId,
+          accountId: In(subscriptionAccountIds),
+        },
       }),
       this.deliveryRepo.find({
         where: {
@@ -450,41 +467,45 @@ export class OfficialAccountsService {
       where: { id: In(articleIds) },
     });
     const articleMap = new Map(articles.map((article) => [article.id, article]));
+    const followMap = new Map(follows.map((follow) => [follow.accountId, follow]));
 
     const groups = accounts.flatMap((account) => {
-        const serializedDeliveries = deliveries
-          .filter((delivery) => delivery.accountId === account.id)
-          .map((delivery) => {
-            const article = articleMap.get(delivery.articleId);
-            if (!article) {
-              return null;
-            }
+      const serializedDeliveries = deliveries
+        .filter((delivery) => delivery.accountId === account.id)
+        .map((delivery) => {
+          const article = articleMap.get(delivery.articleId);
+          if (!article) {
+            return null;
+          }
 
-            return this.serializeDeliveryItem(
-              delivery,
-              account,
-              article,
-              recentArticles.get(account.id)?.[0],
-            );
-          })
-          .flatMap((delivery) => (delivery ? [delivery] : []));
+          return this.serializeDeliveryItem(
+            delivery,
+            account,
+            followMap.get(account.id) ?? null,
+            article,
+            recentArticles.get(account.id)?.[0],
+          );
+        })
+        .flatMap((delivery) => (delivery ? [delivery] : []));
 
-        if (!serializedDeliveries.length) {
-          return [];
-        }
+      if (!serializedDeliveries.length) {
+        return [];
+      }
 
-        return [{
+      return [
+        {
           account: this.serializeAccountSummary(
             account,
-            true,
+            followMap.get(account.id) ?? null,
             recentArticles.get(account.id)?.[0],
           ),
           deliveries: serializedDeliveries,
           unreadCount: serializedDeliveries.filter((delivery) => !delivery.readAt)
             .length,
           lastDeliveredAt: serializedDeliveries[0]?.deliveredAt,
-        }];
-      });
+        },
+      ];
+    });
 
     const latestDelivery = groups[0]?.deliveries[0];
 
@@ -588,7 +609,7 @@ export class OfficialAccountsService {
       ...this.serializeArticleSummary(article),
       account: this.serializeAccountSummary(
         account,
-        Boolean(follow),
+        follow,
         relatedArticles[0],
       ),
       contentHtml: article.contentHtml,
@@ -758,7 +779,7 @@ export class OfficialAccountsService {
 
   private serializeAccountSummary(
     account: OfficialAccountEntity,
-    isFollowing: boolean,
+    follow: OfficialAccountFollowEntity | null,
     recentArticle?: OfficialAccountArticleEntity,
   ) {
     return {
@@ -770,7 +791,9 @@ export class OfficialAccountsService {
       accountType: account.accountType,
       coverImage: account.coverImage ?? undefined,
       isVerified: account.isVerified,
-      isFollowing,
+      isFollowing: Boolean(follow),
+      isMuted: Boolean(follow?.isMuted),
+      mutedAt: follow?.mutedAt?.toISOString(),
       lastPublishedAt: account.lastPublishedAt?.toISOString(),
       recentArticle: recentArticle
         ? this.serializeArticleSummary(recentArticle)
@@ -780,11 +803,11 @@ export class OfficialAccountsService {
 
   private serializeAccountDetail(
     account: OfficialAccountEntity,
-    isFollowing: boolean,
+    follow: OfficialAccountFollowEntity | null,
     articles: OfficialAccountArticleEntity[],
   ) {
     return {
-      ...this.serializeAccountSummary(account, isFollowing, articles[0]),
+      ...this.serializeAccountSummary(account, follow, articles[0]),
       articles: articles.map((article) => this.serializeArticleSummary(article)),
     };
   }
@@ -806,6 +829,7 @@ export class OfficialAccountsService {
   private serializeDeliveryItem(
     delivery: OfficialAccountDeliveryEntity,
     account: OfficialAccountEntity,
+    follow: OfficialAccountFollowEntity | null,
     article: OfficialAccountArticleEntity,
     recentArticle?: OfficialAccountArticleEntity,
   ) {
@@ -816,13 +840,14 @@ export class OfficialAccountsService {
       deliveryKind: delivery.deliveryKind,
       deliveredAt: delivery.deliveredAt.toISOString(),
       readAt: delivery.readAt?.toISOString(),
-      account: this.serializeAccountSummary(account, true, recentArticle),
+      account: this.serializeAccountSummary(account, follow, recentArticle),
       article: this.serializeArticleSummary(article),
     };
   }
 
   private serializeServiceConversationSummary(
     account: OfficialAccountEntity,
+    follow: OfficialAccountFollowEntity | null,
     messages: OfficialAccountServiceMessageEntity[],
     recentArticle?: OfficialAccountArticleEntity,
   ) {
@@ -834,7 +859,9 @@ export class OfficialAccountsService {
     const latestAttachment = this.parseServiceAttachment(latestMessage);
     return {
       accountId: account.id,
-      account: this.serializeAccountSummary(account, true, recentArticle),
+      account: this.serializeAccountSummary(account, follow, recentArticle),
+      isMuted: Boolean(follow?.isMuted),
+      mutedAt: follow?.mutedAt?.toISOString(),
       unreadCount: messages.filter((message) => !message.readAt).length,
       lastDeliveredAt: latestMessage.createdAt.toISOString(),
       preview:

@@ -26,6 +26,8 @@ export interface OfficialAccountSummary {
   coverImage?: string;
   isVerified: boolean;
   isFollowing: boolean;
+  isMuted: boolean;
+  mutedAt?: string;
   lastPublishedAt?: string;
   recentArticle?: OfficialAccountArticleSummary;
 }
@@ -68,6 +70,8 @@ export interface OfficialAccountSubscriptionInboxGroup {
 export interface OfficialAccountServiceConversationSummary {
   accountId: string;
   account: OfficialAccountSummary;
+  isMuted: boolean;
+  mutedAt?: string;
   unreadCount: number;
   lastDeliveredAt?: string;
   preview?: string;
