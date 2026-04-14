@@ -2645,6 +2645,61 @@ export function ChatComposer({
     void speech.start();
   };
 
+  const desktopComposerStatus = (() => {
+    if (!isDesktop) {
+      return null;
+    }
+
+    if (composerError) {
+      return {
+        tone: "danger" as const,
+        label: composerError,
+      };
+    }
+
+    if (speech.status === "requesting-permission") {
+      return {
+        tone: "muted" as const,
+        label: "正在请求麦克风权限...",
+        secondaryActionLabel: "取消",
+        onSecondaryAction: speech.cancel,
+      };
+    }
+
+    if (speech.status === "listening") {
+      return {
+        tone: "success" as const,
+        label: "正在听你说话，停止后会继续整理转写。",
+        primaryActionLabel: "停止",
+        onPrimaryAction: speech.stop,
+        secondaryActionLabel: "取消",
+        onSecondaryAction: speech.cancel,
+      };
+    }
+
+    if (speech.status === "processing") {
+      return {
+        tone: "muted" as const,
+        label: "正在转写语音...",
+        secondaryActionLabel: "取消",
+        onSecondaryAction: speech.cancel,
+      };
+    }
+
+    if (speech.status === "ready" && speechDisplayText) {
+      return {
+        tone: "success" as const,
+        label: `识别完成：${speechDisplayText}`,
+        primaryActionLabel: "插入输入框",
+        onPrimaryAction: commitSpeechInput,
+        secondaryActionLabel: "取消",
+        onSecondaryAction: speech.cancel,
+      };
+    }
+
+    return null;
+  })();
+
   return (
     <>
       <div
@@ -2797,53 +2852,6 @@ export function ChatComposer({
             onClose={onCancelReply}
           />
         ) : null}
-        {isDesktop && (speech.status !== "idle" || speechDisplayText) ? (
-          <InlineNotice
-            className="mb-3 flex flex-wrap items-center gap-2 rounded-[12px] border-black/6 bg-white text-xs"
-            tone={speech.error ? "danger" : "info"}
-          >
-            <span>
-              {speech.status === "listening"
-                ? "正在聆听..."
-                : speech.status === "processing"
-                  ? "正在转写语音..."
-                  : speech.status === "ready"
-                    ? `识别完成：${speechDisplayText}`
-                    : speech.status === "requesting-permission"
-                      ? "正在请求麦克风权限..."
-                      : (composerError ?? "语音输入已停止")}
-            </span>
-            {speech.status === "ready" && speech.canCommit ? (
-              <button
-                type="button"
-                onClick={commitSpeechInput}
-                className="inline-flex items-center gap-1 text-[#15803d]"
-              >
-                <WandSparkles size={12} />
-                插入输入框
-              </button>
-            ) : null}
-            {speech.status === "listening" ? (
-              <button
-                type="button"
-                onClick={speech.stop}
-                className="text-[#15803d]"
-              >
-                停止
-              </button>
-            ) : null}
-            {speech.status !== "idle" ? (
-              <button
-                type="button"
-                onClick={speech.cancel}
-                className="inline-flex items-center gap-1 text-[color:var(--text-secondary)]"
-              >
-                <X size={12} />
-                取消
-              </button>
-            ) : null}
-          </InlineNotice>
-        ) : null}
         {isDesktop && mentionPickerOpen ? (
           <DesktopMentionPicker
             candidates={filteredMentionCandidates}
@@ -2924,16 +2932,18 @@ export function ChatComposer({
                 />
               </div>
 
-              <div className="flex items-center justify-between border-t border-black/6 bg-[#fafafa] px-3.5 py-2.5">
-                <div className="flex items-center gap-0.5">
-                  <DesktopToolbarButton
-                    label="表情"
-                    icon={<Smile size={16} />}
-                    active={stickerPanelOpen}
-                    onClick={toggleStickerPanel}
-                  />
+              <div className="flex items-center justify-between gap-3 border-t border-black/6 bg-[#fafafa] px-3.5 py-2.5">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <DesktopToolbarGroup>
+                    <DesktopToolbarButton
+                      label="表情"
+                      icon={<Smile size={16} />}
+                      active={stickerPanelOpen}
+                      onClick={toggleStickerPanel}
+                    />
+                  </DesktopToolbarGroup>
                   {onSendAttachment ? (
-                    <>
+                    <DesktopToolbarGroup>
                       <div ref={desktopPlusRef} className="relative">
                         <DesktopToolbarButton
                           label="收藏"
@@ -2979,30 +2989,46 @@ export function ChatComposer({
                           void captureDesktopScreenshot();
                         }}
                       />
-                    </>
+                    </DesktopToolbarGroup>
                   ) : null}
                   {showSpeechEntry ? (
-                    <DesktopToolbarButton
-                      label={
-                        speech.status === "listening" ? "停止语音输入" : "语音输入"
+                    <DesktopToolbarGroup>
+                      <DesktopToolbarButton
+                        label={
+                          speech.status === "listening" ? "停止语音输入" : "语音输入"
+                        }
+                        icon={
+                          speech.status === "listening" ? (
+                            <Square size={14} fill="currentColor" />
+                          ) : (
+                            <Mic size={16} />
+                          )
+                        }
+                        active={speech.status === "listening"}
+                        disabled={
+                          speechButtonDisabled && speech.status !== "listening"
+                        }
+                        title={speechDisabledReason ?? undefined}
+                        onClick={handleDesktopSpeechToggle}
+                      />
+                    </DesktopToolbarGroup>
+                  ) : null}
+                  {desktopComposerStatus ? (
+                    <DesktopComposerStatusStrip
+                      tone={desktopComposerStatus.tone}
+                      label={desktopComposerStatus.label}
+                      primaryActionLabel={
+                        desktopComposerStatus.primaryActionLabel
                       }
-                      icon={
-                        speech.status === "listening" ? (
-                          <Square size={14} fill="currentColor" />
-                        ) : (
-                          <Mic size={16} />
-                        )
+                      onPrimaryAction={desktopComposerStatus.onPrimaryAction}
+                      secondaryActionLabel={
+                        desktopComposerStatus.secondaryActionLabel
                       }
-                      active={speech.status === "listening"}
-                      disabled={
-                        speechButtonDisabled && speech.status !== "listening"
-                      }
-                      title={speechDisabledReason ?? undefined}
-                      onClick={handleDesktopSpeechToggle}
+                      onSecondaryAction={desktopComposerStatus.onSecondaryAction}
                     />
                   ) : null}
                 </div>
-                <div className="flex items-center gap-2 border-l border-black/6 pl-3">
+                <div className="flex shrink-0 items-center gap-2 border-l border-black/6 pl-3">
                   <div className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-dim)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                     {desktopEditorExpanded
                       ? "Ctrl/Cmd + Enter 发送"
@@ -3343,13 +3369,6 @@ export function ChatComposer({
         }}
         canCommit={speech.canCommit && !attachmentBusy}
       />
-      {isDesktop && error ? (
-        <div className="px-4 pb-3">
-          <InlineNotice className="text-xs" tone="danger">
-            {error}
-          </InlineNotice>
-        </div>
-      ) : null}
     </>
   );
 }
@@ -3450,14 +3469,80 @@ function DesktopToolbarButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-[8px] transition disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-8.5 w-8.5 items-center justify-center rounded-[10px] border border-transparent transition disabled:cursor-not-allowed disabled:opacity-45",
         active
-          ? "bg-[#ededed] text-[color:var(--text-primary)]"
-          : "text-[color:var(--text-secondary)] hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
+          ? "border-black/6 bg-[#f3f4f6] text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+          : "text-[color:var(--text-secondary)] hover:border-black/6 hover:bg-[#f5f5f5] hover:text-[color:var(--text-primary)]",
       )}
     >
       <span>{icon}</span>
     </button>
+  );
+}
+
+function DesktopToolbarGroup({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-[11px] border border-black/6 bg-white px-1 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+      {children}
+    </div>
+  );
+}
+
+function DesktopComposerStatusStrip({
+  tone,
+  label,
+  primaryActionLabel,
+  onPrimaryAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+}: {
+  tone: "muted" | "success" | "danger";
+  label: string;
+  primaryActionLabel?: string;
+  onPrimaryAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 flex-1 items-center gap-2 rounded-[11px] border px-2.5 py-1.5 text-[11px] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
+        tone === "danger"
+          ? "border-[#fecaca] bg-[#fff4f4] text-[#b42318]"
+          : tone === "success"
+            ? "border-[rgba(7,193,96,0.16)] bg-[#f6fbf7] text-[#15803d]"
+            : "border-black/6 bg-white text-[color:var(--text-secondary)]",
+      )}
+    >
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {primaryActionLabel && onPrimaryAction ? (
+        <button
+          type="button"
+          onClick={onPrimaryAction}
+          className={cn(
+            "shrink-0 rounded-full px-2 py-0.5 font-medium transition",
+            tone === "danger"
+              ? "bg-white text-[#b42318] hover:bg-[#fffafa]"
+              : "bg-white text-[#15803d] hover:bg-[#f5f5f5]",
+          )}
+        >
+          {primaryActionLabel}
+        </button>
+      ) : null}
+      {secondaryActionLabel && onSecondaryAction ? (
+        <button
+          type="button"
+          onClick={onSecondaryAction}
+          className="shrink-0 rounded-full px-2 py-0.5 font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+        >
+          {secondaryActionLabel}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -3475,14 +3560,17 @@ function DesktopAttachmentDraftBar({
   onSend: () => void;
 }) {
   return (
-    <div className="mb-3 rounded-[12px] border border-black/6 bg-white px-4 py-3">
+    <div className="mb-2.5 rounded-[12px] border border-[rgba(7,193,96,0.14)] bg-[#f8fbf8] px-3.5 py-3">
+      <div className="mb-2.5 text-[11px] font-medium text-[#07a35a]">
+        待发送附件
+      </div>
       {draft.kind === "images" ? (
         <>
           <div className="flex flex-wrap gap-2">
             {draft.items.map((item, index) => (
               <div
                 key={`${item.previewUrl}-${index}`}
-                className="relative h-16 w-16 overflow-hidden rounded-[14px] border border-black/6 bg-[#f4f4f4]"
+                className="relative h-14 w-14 overflow-hidden rounded-[12px] border border-black/6 bg-[#f4f4f4]"
               >
                 <img
                   src={item.previewUrl}
@@ -3502,14 +3590,14 @@ function DesktopAttachmentDraftBar({
               </div>
             ))}
           </div>
-          <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-2.5 text-[12px] text-[color:var(--text-muted)]">
             已选择 {draft.items.length} 张图片
           </div>
         </>
       ) : (
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
-            <FileText size={20} />
+        <div className="flex items-center gap-3 rounded-[12px] border border-black/6 bg-white px-3 py-2.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#f3f4f6] text-[color:var(--text-secondary)]">
+            <FileText size={18} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -3522,13 +3610,13 @@ function DesktopAttachmentDraftBar({
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-end gap-2">
+      <div className="mt-2.5 flex items-center justify-end gap-2">
         <Button
           type="button"
           variant="ghost"
           onClick={onCancel}
           disabled={pending}
-          className="rounded-[8px]"
+          className="h-8 rounded-[8px] px-3"
         >
           取消
         </Button>
@@ -3537,7 +3625,7 @@ function DesktopAttachmentDraftBar({
           variant="primary"
           onClick={onSend}
           disabled={pending}
-          className="rounded-[8px] bg-[#07c160] text-white hover:bg-[#06ad56]"
+          className="h-8 rounded-[8px] bg-[#07c160] px-3 text-white hover:bg-[#06ad56]"
         >
           {pending ? "正在发送..." : "发送附件"}
         </Button>
