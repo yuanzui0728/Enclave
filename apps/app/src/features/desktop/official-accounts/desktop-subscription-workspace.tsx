@@ -12,14 +12,24 @@ import { EmptyState } from "../../../components/empty-state";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
-export function DesktopSubscriptionWorkspace() {
+export function DesktopSubscriptionWorkspace({
+  selectedArticleId,
+  onOpenAccount,
+  onOpenArticle,
+}: {
+  selectedArticleId?: string;
+  onOpenAccount?: (accountId: string, articleId?: string) => void;
+  onOpenArticle?: (articleId: string) => void;
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastMarkedDeliveryIdRef = useRef<string | null>(null);
   const lastMarkedArticleIdRef = useRef<string | null>(null);
-  const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
+  const [activeArticleId, setActiveArticleId] = useState<string | null>(
+    selectedArticleId ?? null,
+  );
 
   const inboxQuery = useQuery({
     queryKey: ["app-official-subscription-inbox", baseUrl],
@@ -59,27 +69,43 @@ export function DesktopSubscriptionWorkspace() {
     : "暂无推送";
 
   useEffect(() => {
+    if (
+      selectedArticleId === undefined ||
+      selectedArticleId === activeArticleId
+    ) {
+      return;
+    }
+
+    setActiveArticleId(selectedArticleId);
+  }, [activeArticleId, selectedArticleId]);
+
+  useEffect(() => {
     if (!activeArticleId && feedItems[0]?.articleId) {
       setActiveArticleId(feedItems[0].articleId);
       return;
     }
 
     if (
+      !selectedArticleId &&
       activeArticleId &&
       feedItems.length > 0 &&
       !feedItems.some((delivery) => delivery.articleId === activeArticleId)
     ) {
       setActiveArticleId(feedItems[0]?.articleId ?? null);
     }
-  }, [activeArticleId, feedItems]);
+  }, [activeArticleId, feedItems, selectedArticleId]);
 
   useEffect(() => {
+    if (selectedArticleId) {
+      return;
+    }
+
     if (feedItems.length > 0) {
       return;
     }
 
     setActiveArticleId(null);
-  }, [feedItems.length]);
+  }, [feedItems.length, selectedArticleId]);
 
   useEffect(() => {
     if (
@@ -130,6 +156,11 @@ export function DesktopSubscriptionWorkspace() {
     markArticleReadMutation.mutate(articleQuery.data.id);
   }, [articleQuery.data?.id, markArticleReadMutation]);
 
+  function handleSelectArticle(articleId: string) {
+    setActiveArticleId(articleId);
+    onOpenArticle?.(articleId);
+  }
+
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
       <section className="flex w-[360px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(242,246,245,0.78)]">
@@ -165,7 +196,7 @@ export function DesktopSubscriptionWorkspace() {
             <button
               key={delivery.id}
               type="button"
-              onClick={() => setActiveArticleId(delivery.articleId)}
+              onClick={() => handleSelectArticle(delivery.articleId)}
               className={`mb-3 w-full rounded-[18px] border px-4 py-4 text-left shadow-[var(--shadow-section)] transition last:mb-0 ${
                 activeArticleId === delivery.articleId
                   ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
@@ -229,12 +260,17 @@ export function DesktopSubscriptionWorkspace() {
           <OfficialArticleViewer
             article={articleQuery.data}
             onOpenAccount={(accountId) => {
+              if (onOpenAccount) {
+                onOpenAccount(accountId, articleQuery.data.id);
+                return;
+              }
+
               void navigate({
                 to: "/official-accounts/$accountId",
                 params: { accountId },
               });
             }}
-            onOpenArticle={(articleId) => setActiveArticleId(articleId)}
+            onOpenArticle={handleSelectArticle}
           />
         ) : (
           <div className="mx-auto max-w-[560px] py-10">

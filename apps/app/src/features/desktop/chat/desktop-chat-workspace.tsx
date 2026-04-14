@@ -121,12 +121,15 @@ import {
   type DesktopMessageEntry,
 } from "./desktop-message-entry-types";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
+import { buildDesktopOfficialMessageRouteHash } from "./desktop-official-message-route-state";
 import { openDesktopNoteWindow } from "./desktop-note-window-route-state";
 import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
+import { buildDesktopContactsRouteHash } from "../contacts/desktop-contacts-route-state";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
   selectedServiceAccountId?: string;
+  selectedOfficialArticleId?: string;
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
   selectedSpecialView?: "subscription-inbox";
@@ -162,6 +165,7 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 export function DesktopChatWorkspace({
   selectedConversationId,
   selectedServiceAccountId,
+  selectedOfficialArticleId,
   highlightedMessageId,
   routeContextNotice,
   selectedSpecialView,
@@ -1247,11 +1251,51 @@ export function DesktopChatWorkspace({
 
       <section className="min-w-0 flex-1">
         {subscriptionInboxActive ? (
-          <DesktopSubscriptionWorkspace />
+          <DesktopSubscriptionWorkspace
+            selectedArticleId={selectedOfficialArticleId}
+            onOpenArticle={(articleId) => {
+              void navigate({
+                to: "/chat/subscription-inbox",
+                hash: buildDesktopOfficialMessageRouteHash({ articleId }),
+                replace: true,
+              });
+            }}
+            onOpenAccount={(accountId, articleId) => {
+              void navigate({
+                to: "/tabs/contacts",
+                hash: buildDesktopContactsRouteHash({
+                  pane: "official-accounts",
+                  accountId,
+                  articleId,
+                  showWorldCharacters: false,
+                }),
+              });
+            }}
+          />
         ) : selectedServiceAccountId ? (
           <OfficialAccountServiceThread
             accountId={selectedServiceAccountId}
             variant="desktop"
+            selectedArticleId={selectedOfficialArticleId}
+            onOpenArticle={(articleId, accountId) => {
+              void navigate({
+                to: "/official-accounts/service/$accountId",
+                params: { accountId },
+                hash: buildDesktopOfficialMessageRouteHash({ articleId }),
+                replace: true,
+              });
+            }}
+            onOpenAccount={(accountId, articleId) => {
+              void navigate({
+                to: "/tabs/contacts",
+                hash: buildDesktopContactsRouteHash({
+                  pane: "official-accounts",
+                  accountId,
+                  articleId,
+                  showWorldCharacters: false,
+                }),
+              });
+            }}
           />
         ) : activeConversation ? (
           isPersistedGroupConversation(activeConversation) ? (

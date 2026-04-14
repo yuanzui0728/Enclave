@@ -26,10 +26,16 @@ export function OfficialAccountServiceThread({
   accountId,
   variant = "mobile",
   onBack,
+  selectedArticleId,
+  onOpenAccount,
+  onOpenArticle,
 }: {
   accountId: string;
   variant?: "mobile" | "desktop";
   onBack?: () => void;
+  selectedArticleId?: string;
+  onOpenAccount?: (accountId: string, articleId?: string) => void;
+  onOpenArticle?: (articleId: string, accountId: string) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -70,6 +76,19 @@ export function OfficialAccountServiceThread({
       return;
     }
 
+    if (
+      selectedArticleId !== undefined &&
+      selectedArticleId !== activeDesktopArticleId
+    ) {
+      setActiveDesktopArticleId(selectedArticleId);
+    }
+  }, [activeDesktopArticleId, isDesktop, selectedArticleId]);
+
+  useEffect(() => {
+    if (!isDesktop || selectedArticleId) {
+      return;
+    }
+
     if (!defaultDesktopArticleId) {
       setActiveDesktopArticleId(null);
       return;
@@ -83,7 +102,13 @@ export function OfficialAccountServiceThread({
     }
 
     setActiveDesktopArticleId(defaultDesktopArticleId);
-  }, [activeDesktopArticleId, articleCardIds, defaultDesktopArticleId, isDesktop]);
+  }, [
+    activeDesktopArticleId,
+    articleCardIds,
+    defaultDesktopArticleId,
+    isDesktop,
+    selectedArticleId,
+  ]);
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, activeDesktopArticleId],
@@ -193,6 +218,23 @@ export function OfficialAccountServiceThread({
       ? markArticleReadMutation.error.message
       : null);
 
+  function handleOpenAccount(nextAccountId: string, articleId?: string) {
+    if (onOpenAccount) {
+      onOpenAccount(nextAccountId, articleId);
+      return;
+    }
+
+    void navigate({
+      to: "/official-accounts/$accountId",
+      params: { accountId: nextAccountId },
+    });
+  }
+
+  function handleOpenDesktopArticle(articleId: string) {
+    setActiveDesktopArticleId(articleId);
+    onOpenArticle?.(articleId, accountId);
+  }
+
   if (isDesktop) {
     return (
       <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
@@ -231,12 +273,9 @@ export function OfficialAccountServiceThread({
                   variant="secondary"
                   size="sm"
                   className="rounded-xl"
-                  onClick={() => {
-                    void navigate({
-                      to: "/official-accounts/$accountId",
-                      params: { accountId },
-                    });
-                  }}
+                  onClick={() =>
+                    handleOpenAccount(accountId, activeDesktopArticleId ?? undefined)
+                  }
                 >
                   <BookOpenText size={14} />
                   公众号主页
@@ -285,9 +324,7 @@ export function OfficialAccountServiceThread({
                     message={message}
                     variant="desktop"
                     activeArticleId={activeDesktopArticleId}
-                    onOpenArticle={(articleId) => {
-                      setActiveDesktopArticleId(articleId);
-                    }}
+                    onOpenArticle={handleOpenDesktopArticle}
                   />
                 ))}
               </div>
@@ -309,15 +346,10 @@ export function OfficialAccountServiceThread({
           {articleQuery.data ? (
             <OfficialArticleViewer
               article={articleQuery.data}
-              onOpenAccount={(nextAccountId) => {
-                void navigate({
-                  to: "/official-accounts/$accountId",
-                  params: { accountId: nextAccountId },
-                });
-              }}
-              onOpenArticle={(articleId) => {
-                setActiveDesktopArticleId(articleId);
-              }}
+              onOpenAccount={(nextAccountId) =>
+                handleOpenAccount(nextAccountId, articleQuery.data.id)
+              }
+              onOpenArticle={handleOpenDesktopArticle}
             />
           ) : (
             <DesktopServiceThreadOverview
@@ -327,12 +359,9 @@ export function OfficialAccountServiceThread({
               isMuted={accountQuery.data?.isMuted ?? false}
               articleCount={articleCardIds.length}
               canToggleMute={Boolean(accountQuery.data?.isFollowing)}
-              onOpenAccount={() => {
-                void navigate({
-                  to: "/official-accounts/$accountId",
-                  params: { accountId },
-                });
-              }}
+              onOpenAccount={() =>
+                handleOpenAccount(accountId, activeDesktopArticleId ?? undefined)
+              }
               onToggleMute={() => {
                 if (!accountQuery.data?.isFollowing) {
                   return;

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, BookOpenText } from "lucide-react";
 import {
   getOfficialAccountSubscriptionInbox,
@@ -15,15 +15,28 @@ import {
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { OfficialArticleCard } from "../components/official-article-card";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
+import { parseDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function SubscriptionInboxPage() {
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({
+    select: (state) => state.location.hash,
+  });
+  const routeState = useMemo(
+    () => parseDesktopOfficialMessageRouteHash(hash),
+    [hash],
+  );
 
   if (isDesktopLayout) {
-    return <DesktopChatWorkspace selectedSpecialView="subscription-inbox" />;
+    return (
+      <DesktopChatWorkspace
+        selectedSpecialView="subscription-inbox"
+        selectedOfficialArticleId={routeState.articleId}
+      />
+    );
   }
 
   return <MobileSubscriptionInboxPage />;
