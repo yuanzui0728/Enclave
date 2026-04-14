@@ -25,6 +25,10 @@ import {
   pushSearchHistory,
 } from "./search-history";
 import type { SearchHistoryItem } from "./search-types";
+import {
+  type DesktopSearchQuickLink,
+  useDesktopSearchQuickLinks,
+} from "./desktop-search-quick-links";
 
 type UseDesktopSearchLauncherOptions = {
   keyword: string;
@@ -212,6 +216,14 @@ export function DesktopSearchDropdownPanel({
   const trimmedKeyword = keyword.trim();
   const normalizedKeyword = trimmedKeyword.toLowerCase();
   const shouldLoadSuggestions = Boolean(normalizedKeyword);
+  const {
+    favoriteMatches,
+    favoritesError,
+    favoritesLoading,
+    miniProgramMatches,
+    recentFavorites,
+    recentMiniPrograms,
+  } = useDesktopSearchQuickLinks(trimmedKeyword);
 
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
@@ -258,7 +270,18 @@ export function DesktopSearchDropdownPanel({
     shouldLoadSuggestions &&
     (friendsQuery.error instanceof Error || charactersQuery.error instanceof Error);
   const hasSuggestionResults =
-    friendMatches.length > 0 || worldCharacterMatches.length > 0;
+    friendMatches.length > 0 ||
+    worldCharacterMatches.length > 0 ||
+    favoriteMatches.length > 0 ||
+    miniProgramMatches.length > 0;
+
+  function handleOpenQuickLink(item: DesktopSearchQuickLink) {
+    onClose?.();
+    void navigate({
+      to: item.to as never,
+      search: item.search as never,
+    });
+  }
 
   return (
     <div
@@ -316,13 +339,19 @@ export function DesktopSearchDropdownPanel({
         <SearchLauncherSection title="搜索建议" className="mt-3">
           {suggestionsLoading ? (
             <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-              正在整理联系人和世界角色结果...
+              正在整理联系人、收藏和小程序结果...
             </div>
           ) : null}
 
           {suggestionsError ? (
             <div className="rounded-[12px] bg-[rgba(225,29,72,0.08)] px-3 py-3 text-xs leading-6 text-[#be123c]">
               联系人目录暂时读取失败，请先试试搜一搜。
+            </div>
+          ) : null}
+
+          {favoritesError ? (
+            <div className="rounded-[12px] bg-[rgba(225,29,72,0.08)] px-3 py-3 text-xs leading-6 text-[#be123c]">
+              收藏列表暂时读取失败，可以直接进入搜一搜继续搜索。
             </div>
           ) : null}
 
@@ -386,10 +415,44 @@ export function DesktopSearchDropdownPanel({
                 </div>
               ) : null}
 
+              {favoriteMatches.length ? (
+                <div>
+                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                    收藏
+                  </div>
+                  <div className="mt-1.5 space-y-1.5">
+                    {favoriteMatches.map((item) => (
+                      <SearchLauncherQuickLinkRow
+                        key={item.id}
+                        item={item}
+                        onClick={() => handleOpenQuickLink(item)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {miniProgramMatches.length ? (
+                <div>
+                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                    小程序
+                  </div>
+                  <div className="mt-1.5 space-y-1.5">
+                    {miniProgramMatches.map((item) => (
+                      <SearchLauncherQuickLinkRow
+                        key={item.id}
+                        item={item}
+                        onClick={() => handleOpenQuickLink(item)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {!hasSuggestionResults ? (
                 <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3">
                   <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                    没有直接命中的联系人或角色，可以继续用搜一搜，或去“添加朋友”里找。
+                    没有直接命中的联系人、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
                   </div>
                   <Button
                     type="button"
@@ -412,6 +475,52 @@ export function DesktopSearchDropdownPanel({
               ) : null}
             </div>
           ) : null}
+        </SearchLauncherSection>
+      ) : null}
+
+      {!trimmedKeyword ? (
+        <SearchLauncherSection title="快捷访问" className="mt-3">
+          <div className="space-y-3">
+            {recentMiniPrograms.length ? (
+              <div>
+                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                  最近使用的小程序
+                </div>
+                <div className="mt-1.5 space-y-1.5">
+                  {recentMiniPrograms.map((item) => (
+                    <SearchLauncherQuickLinkRow
+                      key={item.id}
+                      item={item}
+                      onClick={() => handleOpenQuickLink(item)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {favoritesLoading ? (
+              <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
+                正在同步最近收藏...
+              </div>
+            ) : null}
+
+            {!favoritesLoading && recentFavorites.length ? (
+              <div>
+                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                  最近收藏
+                </div>
+                <div className="mt-1.5 space-y-1.5">
+                  {recentFavorites.map((item) => (
+                    <SearchLauncherQuickLinkRow
+                      key={item.id}
+                      item={item}
+                      onClick={() => handleOpenQuickLink(item)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </SearchLauncherSection>
       ) : null}
 
@@ -461,6 +570,41 @@ function SearchLauncherSection({
       </div>
       {children}
     </section>
+  );
+}
+
+function SearchLauncherQuickLinkRow({
+  item,
+  onClick,
+}: {
+  item: DesktopSearchQuickLink;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
+    >
+      <AvatarChip name={item.avatarName ?? item.title} src={item.avatarSrc} size="sm" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {item.title}
+          </span>
+          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+            {item.badge}
+          </span>
+        </div>
+        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+          {item.meta}
+        </div>
+        <div className="mt-1 truncate text-[11px] text-[color:var(--text-secondary)]">
+          {item.description}
+        </div>
+      </div>
+      <ChevronRight size={14} className="shrink-0 text-[color:var(--text-dim)]" />
+    </button>
   );
 }
 
