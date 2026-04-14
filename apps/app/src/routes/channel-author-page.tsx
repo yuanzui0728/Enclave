@@ -362,55 +362,77 @@ export function ChannelAuthorPage() {
                     isDesktopLayout ? "grid-cols-2" : "grid-cols-1",
                   )}
                 >
-                  {visiblePosts.map((post) => (
-                    <button
-                      key={post.id}
-                      type="button"
-                      onClick={() => openChannelPost(post)}
-                      className="overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white text-left shadow-[var(--shadow-section)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
-                    >
-                      <div className="flex min-h-[10.5rem] gap-4 px-4 py-4">
-                        <ChannelPostCover post={post} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
-                            <span>{formatTimestamp(post.createdAt)}</span>
-                            <span>·</span>
-                            <span>{post.mediaType === "video" ? "短片" : "内容卡片"}</span>
-                          </div>
-                          {post.title ? (
-                            <div className="mt-2 line-clamp-2 text-[16px] font-semibold leading-6 text-[color:var(--text-primary)]">
-                              {post.title}
+                  {visiblePosts.map((post) => {
+                    const postStatus = resolveChannelPostCardStatus(post);
+
+                    return (
+                      <button
+                        key={post.id}
+                        type="button"
+                        onClick={() => openChannelPost(post)}
+                        className="overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white text-left shadow-[var(--shadow-section)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
+                      >
+                        <div className="flex min-h-[10.5rem] gap-4 px-4 py-4">
+                          <ChannelPostCover post={post} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                                  postStatus.primaryBadgeClassName,
+                                )}
+                              >
+                                {postStatus.label}
+                              </span>
+                              <span
+                                className={cn(
+                                  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px]",
+                                  postStatus.secondaryBadgeClassName,
+                                )}
+                              >
+                                {postStatus.secondaryLabel}
+                              </span>
                             </div>
-                          ) : null}
-                          <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                            {post.text}
-                          </div>
-                          {post.topicTags?.length ? (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {post.topicTags.slice(0, 3).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
-                                >
-                                  #{tag}
-                                </span>
-                              ))}
+                            <div className="mt-2 flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
+                              <span>{formatTimestamp(post.createdAt)}</span>
+                              <span>·</span>
+                              <span>{postStatus.metaLabel}</span>
                             </div>
-                          ) : null}
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
-                              <PlaySquare size={12} />
-                              {post.viewCount} 播放
-                            </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
-                              <MessageCircleMore size={12} />
-                              {post.commentCount} 评论
-                            </span>
+                            {post.title ? (
+                              <div className="mt-2 line-clamp-2 text-[16px] font-semibold leading-6 text-[color:var(--text-primary)]">
+                                {post.title}
+                              </div>
+                            ) : null}
+                            <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                              {post.text}
+                            </div>
+                            {post.topicTags?.length ? (
+                              <div className="mt-3 flex flex-wrap gap-1.5">
+                                {post.topicTags.slice(0, 3).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
+                                  >
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
+                                <PlaySquare size={12} />
+                                {post.viewCount} 播放
+                              </span>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
+                                <MessageCircleMore size={12} />
+                                {post.commentCount} 评论
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-section)]">
@@ -588,6 +610,48 @@ function resolveChannelPostCoverPresentation(post: FeedPostListItem) {
       "bg-[linear-gradient(180deg,#166534,#14532d)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
     secondaryLabel: `${formatTimestamp(post.createdAt)} · 内容更新`,
     title: "内容卡片",
+  };
+}
+
+function resolveChannelPostCardStatus(post: FeedPostListItem) {
+  if (post.sourceKind === "live_clip") {
+    return {
+      label: "直播回放",
+      metaLabel: "直播精选",
+      primaryBadgeClassName:
+        "border-[rgba(185,28,28,0.12)] bg-[rgba(185,28,28,0.08)] text-[#991b1b]",
+      secondaryBadgeClassName:
+        "border-[rgba(127,29,29,0.1)] bg-[rgba(127,29,29,0.05)] text-[#7f1d1d]",
+      secondaryLabel: post.durationMs
+        ? `${Math.max(1, Math.round(post.durationMs / 60000))} 分钟回放`
+        : "作者直播内容",
+    };
+  }
+
+  if (post.mediaType === "video") {
+    return {
+      label: "视频",
+      metaLabel: "短片更新",
+      primaryBadgeClassName:
+        "border-[rgba(15,23,42,0.08)] bg-[rgba(15,23,42,0.05)] text-[#0f172a]",
+      secondaryBadgeClassName:
+        "border-[rgba(15,23,42,0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+      secondaryLabel: post.durationMs
+        ? `${Math.max(1, Math.round(post.durationMs / 1000))} 秒短片`
+        : "视频号短片",
+    };
+  }
+
+  return {
+    label: "动态",
+    metaLabel: "内容卡片",
+    primaryBadgeClassName:
+      "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]",
+    secondaryBadgeClassName:
+      "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+    secondaryLabel: post.topicTags?.length
+      ? `#${post.topicTags[0]}`
+      : "内容更新",
   };
 }
 
