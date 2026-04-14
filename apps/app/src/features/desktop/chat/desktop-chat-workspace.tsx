@@ -136,7 +136,8 @@ import {
 } from "./desktop-message-entry-types";
 import { buildDesktopChatRouteHash } from "./desktop-chat-route-state";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
-import { openDesktopNoteWindow } from "./desktop-note-window-route-state";
+import { buildDesktopNoteWindowRouteHash } from "./desktop-note-window-route-state";
+import { createDesktopNoteDraft } from "./desktop-notes-storage";
 import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
 
 type DesktopChatWorkspaceProps = {
@@ -939,11 +940,16 @@ export function DesktopChatWorkspace({
       return;
     }
 
-    void openDesktopNoteWindow({
-      returnTo:
-        typeof window !== "undefined"
-          ? `${window.location.pathname}${window.location.hash}`
-          : "/tabs/chat",
+    const draft = createDesktopNoteDraft();
+    void navigate({
+      to: "/tabs/favorites",
+      hash: buildDesktopNoteWindowRouteHash({
+        draftId: draft.draftId,
+        returnTo:
+          typeof window !== "undefined"
+            ? `${window.location.pathname}${window.location.hash}`
+            : "/tabs/chat",
+      }),
     });
   }
 

@@ -1,14 +1,25 @@
+import { useEffect } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { AppPage, Button } from "@yinjie/ui";
-import { DesktopNotesWorkspace } from "../features/desktop/chat/desktop-notes-workspace";
-import { parseDesktopNoteWindowRouteHash } from "../features/desktop/chat/desktop-note-window-route-state";
+import { AppPage, Button, LoadingBlock } from "@yinjie/ui";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 
 export function NotesPage() {
   const navigate = useNavigate();
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
-  const routeState = parseNoteEditorHash(hash);
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+    void navigate({
+      to: "/tabs/favorites",
+      hash: normalizedHash || undefined,
+      replace: true,
+    });
+  }, [hash, isDesktopLayout, navigate]);
 
   if (!isDesktopLayout) {
     return (
@@ -35,32 +46,18 @@ export function NotesPage() {
   }
 
   return (
-    <DesktopNotesWorkspace
-      selectedNoteId={routeState.noteId}
-      draftId={routeState.draftId}
-      returnTo="/tabs/favorites"
-      onSavedNote={(noteId, draftId) => {
-        void navigate({
-          to: "/notes",
-          hash: noteId
-            ? `draftId=${encodeURIComponent(draftId)}&noteId=${encodeURIComponent(noteId)}`
-            : undefined,
-          replace: true,
-        });
-      }}
-    />
+    <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
+      <div className="w-full max-w-md rounded-[22px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="text-lg font-semibold text-[color:var(--text-primary)]">
+          正在切换到收藏
+        </div>
+        <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+          笔记已经并入收藏，这个兼容入口会自动带你回到收藏里的笔记视图。
+        </div>
+        <div className="mt-6">
+          <LoadingBlock label="正在打开收藏笔记..." />
+        </div>
+      </div>
+    </AppPage>
   );
-}
-
-function parseNoteEditorHash(hash: string) {
-  const routeState = parseDesktopNoteWindowRouteHash(hash);
-  if (routeState) {
-    return routeState;
-  }
-
-  const normalized = hash.startsWith("#") ? hash.slice(1) : hash;
-  return {
-    noteId: normalized || undefined,
-    draftId: normalized || undefined,
-  };
 }

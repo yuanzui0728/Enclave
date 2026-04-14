@@ -821,7 +821,7 @@ export function DesktopNotesWorkspace({
             {!standaloneWindow ? (
               <button
                 type="button"
-                onClick={() => void navigate({ to: "/tabs/favorites" })}
+                onClick={() => void handleClose()}
                 className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
                 aria-label="返回收藏"
               >

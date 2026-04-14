@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
 import {
   getFavoriteNotes,
@@ -19,6 +19,12 @@ import {
 import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
+import { DesktopNotesWorkspace } from "../features/desktop/chat/desktop-notes-workspace";
+import {
+  buildDesktopNoteWindowRouteHash,
+  parseDesktopNoteEditorRouteHash,
+} from "../features/desktop/chat/desktop-note-window-route-state";
+import { createDesktopNoteDraft } from "../features/desktop/chat/desktop-notes-storage";
 import {
   hydrateDesktopFavoritesFromNative,
   mergeDesktopFavoriteRecords,
@@ -27,7 +33,6 @@ import {
   type DesktopFavoriteCategory,
   type DesktopFavoriteRecord,
 } from "../features/desktop/favorites/desktop-favorites-storage";
-import { openDesktopNoteWindow } from "../features/desktop/chat/desktop-note-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { formatTimestamp } from "../lib/format";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -48,10 +53,12 @@ const categoryLabels: Array<{
 
 export function FavoritesPage() {
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const [favorites, setFavorites] = useState(() =>
     mergeDesktopFavoriteRecords([], readDesktopFavorites()),
   );
@@ -72,6 +79,10 @@ export function FavoritesPage() {
     queryKey: ["favorite-notes", baseUrl],
     queryFn: () => getFavoriteNotes(baseUrl),
   });
+  const noteEditorRouteState = useMemo(
+    () => parseDesktopNoteEditorRouteHash(hash),
+    [hash],
+  );
 
   const normalizedSearchText = deferredSearchText.trim().toLowerCase();
   const favoriteNoteSummaryMap = useMemo(() => {
@@ -142,6 +153,22 @@ export function FavoritesPage() {
     const timer = window.setTimeout(() => setNotice(null), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  useEffect(() => {
+    if (!noteEditorRouteState) {
+      return;
+    }
+
+    setActiveCategory("notes");
+
+    if (!noteEditorRouteState.noteId) {
+      return;
+    }
+
+    setSelectedFavoriteSourceId(
+      buildFavoriteNoteSourceId(noteEditorRouteState.noteId),
+    );
+  }, [noteEditorRouteState]);
 
   const removeMutation = useMutation({
     mutationFn: async (item: DesktopFavoriteRecord) => {
@@ -230,23 +257,42 @@ export function FavoritesPage() {
     return null;
   }
 
+  function openInlineNoteEditor(input?: {
+    noteId?: string;
+    draftId?: string;
+    returnTo?: string;
+  }) {
+    const draft = createDesktopNoteDraft({
+      draftId: input?.draftId,
+      noteId: input?.noteId,
+    });
+    void navigate({
+      to: "/tabs/favorites",
+      hash: buildDesktopNoteWindowRouteHash({
+        draftId: draft.draftId,
+        noteId: input?.noteId?.trim() || undefined,
+        returnTo: input?.returnTo?.trim() || undefined,
+      }),
+    });
+  }
+
   return (
     <DesktopUtilityShell
       title="收藏"
       subtitle={
-        normalizedSearchText
-          ? `搜索“${searchText.trim()}”命中 ${filteredFavorites.length} 项`
-          : `${counts.all} 项内容已收进桌面收藏`
+        noteEditorRouteState
+          ? noteEditorRouteState.noteId
+            ? "这条笔记默认属于收藏，保存后会继续留在收藏列表里。"
+            : "新建笔记会直接作为收藏内容保存。"
+          : normalizedSearchText
+            ? `搜索“${searchText.trim()}”命中 ${filteredFavorites.length} 项`
+            : `${counts.all} 项内容已收进桌面收藏`
       }
       toolbar={
         <Button
           variant="primary"
           size="sm"
-          onClick={() =>
-            void openDesktopNoteWindow({
-              returnTo: "/tabs/favorites",
-            })
-          }
+          onClick={() => openInlineNoteEditor({ returnTo: "/tabs/favorites" })}
           className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
         >
           <FileText size={15} />
@@ -309,214 +355,244 @@ export function FavoritesPage() {
         </>
       }
       aside={
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              收藏详情
+        noteEditorRouteState ? null : (
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
+              <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                收藏详情
+              </div>
+              <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                右侧预览当前选中的收藏条目。
+              </div>
             </div>
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              右侧预览当前选中的收藏条目。
+
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              {selectedFavorite ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <AvatarChip
+                      name={
+                        selectedFavorite.avatarName ?? selectedFavorite.title
+                      }
+                      src={selectedFavorite.avatarSrc}
+                      size="wechat"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                          {selectedFavorite.title}
+                        </div>
+                        <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                          {selectedFavorite.badge}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {selectedFavorite.meta}
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedFavoriteNoteSummary ? (
+                    <FavoriteNotePreview
+                      summary={selectedFavoriteNoteSummary}
+                    />
+                  ) : (
+                    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+                      <div className="text-xs text-[color:var(--text-muted)]">
+                        内容摘要
+                      </div>
+                      <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                        {selectedFavorite.description}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+                    <div className="text-xs text-[color:var(--text-muted)]">
+                      收藏信息
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      <FavoriteMetric
+                        label="分类"
+                        value={resolveFavoriteCategoryLabel(
+                          selectedFavorite.category,
+                        )}
+                      />
+                      <FavoriteMetric
+                        label="收藏时间"
+                        value={formatTimestamp(selectedFavorite.collectedAt)}
+                      />
+                      {selectedFavoriteNoteSummary ? (
+                        <FavoriteMetric
+                          label="最近修改"
+                          value={formatTimestamp(
+                            selectedFavoriteNoteSummary.updatedAt,
+                          )}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFavorite.category === "notes" ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const noteId = parseFavoriteNoteIdFromSourceId(
+                            selectedFavorite.sourceId,
+                          );
+                          if (!noteId) {
+                            return;
+                          }
+
+                          openInlineNoteEditor({
+                            noteId,
+                            returnTo: "/tabs/favorites",
+                          });
+                        }}
+                        className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                      >
+                        打开笔记
+                      </button>
+                    ) : (
+                      <Link
+                        to={selectedFavorite.to as never}
+                        className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                      >
+                        打开内容
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeMutation.mutate(selectedFavorite)}
+                      disabled={
+                        removeMutation.isPending &&
+                        removeMutation.variables?.sourceId ===
+                          selectedFavorite.sourceId
+                      }
+                      className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {removeMutation.isPending &&
+                      removeMutation.variables?.sourceId ===
+                        selectedFavorite.sourceId
+                        ? "移除中..."
+                        : "取消收藏"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <EmptyState
+                    title="先从中间选择一条收藏"
+                    description="这里会显示摘要、来源和操作入口。"
+                  />
+                </div>
+              )}
             </div>
           </div>
+        )
+      }
+      contentClassName={
+        noteEditorRouteState ? "min-h-0 overflow-hidden" : undefined
+      }
+    >
+      {noteEditorRouteState ? (
+        <DesktopNotesWorkspace
+          selectedNoteId={noteEditorRouteState.noteId}
+          draftId={noteEditorRouteState.draftId}
+          returnTo={noteEditorRouteState.returnTo || "/tabs/favorites"}
+          onSavedNote={(noteId, draftId) => {
+            void navigate({
+              to: "/tabs/favorites",
+              hash: buildDesktopNoteWindowRouteHash({
+                draftId,
+                noteId,
+                returnTo: noteEditorRouteState.returnTo,
+              }),
+              replace: true,
+            });
+          }}
+        />
+      ) : (
+        <div className="p-4">
+          {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
+          {favoritesQuery.isError && favoritesQuery.error instanceof Error ? (
+            <div className="mb-4">
+              <ErrorBlock message={favoritesQuery.error.message} />
+            </div>
+          ) : null}
+          {removeMutation.isError && removeMutation.error instanceof Error ? (
+            <div className="mb-4">
+              <ErrorBlock message={removeMutation.error.message} />
+            </div>
+          ) : null}
 
-          <div className="min-h-0 flex-1 overflow-auto p-5">
-            {selectedFavorite ? (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
+          {favoritesQuery.isLoading && !favorites.length ? (
+            <LoadingBlock label="正在读取收藏..." />
+          ) : null}
+
+          {!favoritesQuery.isLoading && !filteredFavorites.length ? (
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+              <EmptyState
+                title={
+                  normalizedSearchText ? "没有匹配的收藏" : "还没有收藏内容"
+                }
+                description={
+                  normalizedSearchText
+                    ? "换个关键词，或者切回其他分类继续查看。"
+                    : activeCategory === "notes"
+                      ? "点击右上角“新建笔记”，把第一条收藏笔记写下来。"
+                      : "先到聊天、内容流或公众号里把重要内容加入收藏。"
+                }
+              />
+            </div>
+          ) : null}
+
+          {filteredFavorites.length ? (
+            <div className="space-y-2">
+              {filteredFavorites.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedFavoriteSourceId(item.sourceId)}
+                  className={cn(
+                    "flex w-full items-start gap-4 rounded-[14px] border px-4 py-4 text-left transition",
+                    item.sourceId === selectedFavoriteSourceId
+                      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
+                      : "border-[color:var(--border-faint)] bg-white hover:bg-[rgba(255,255,255,0.92)]",
+                  )}
+                >
                   <AvatarChip
-                    name={selectedFavorite.avatarName ?? selectedFavorite.title}
-                    src={selectedFavorite.avatarSrc}
+                    name={item.avatarName ?? item.title}
+                    src={item.avatarSrc}
                     size="wechat"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
-                        {selectedFavorite.title}
+                      <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+                        {item.title}
                       </div>
                       <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
-                        {selectedFavorite.badge}
+                        {item.badge}
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                      {selectedFavorite.meta}
+                      {item.meta}
                     </div>
-                  </div>
-                </div>
-
-                {selectedFavoriteNoteSummary ? (
-                  <FavoriteNotePreview summary={selectedFavoriteNoteSummary} />
-                ) : (
-                  <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
-                    <div className="text-xs text-[color:var(--text-muted)]">
-                      内容摘要
+                    <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                      {item.description}
                     </div>
-                    <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
-                      {selectedFavorite.description}
-                    </div>
+                    {renderFavoriteListExtra(
+                      item,
+                      resolveFavoriteNoteSummary(item, favoriteNoteSummaryMap),
+                    )}
                   </div>
-                )}
-
-                <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
-                  <div className="text-xs text-[color:var(--text-muted)]">
-                    收藏信息
-                  </div>
-                  <div className="mt-3 space-y-3">
-                    <FavoriteMetric
-                      label="分类"
-                      value={resolveFavoriteCategoryLabel(
-                        selectedFavorite.category,
-                      )}
-                    />
-                    <FavoriteMetric
-                      label="收藏时间"
-                      value={formatTimestamp(selectedFavorite.collectedAt)}
-                    />
-                    {selectedFavoriteNoteSummary ? (
-                      <FavoriteMetric
-                        label="最近修改"
-                        value={formatTimestamp(
-                          selectedFavoriteNoteSummary.updatedAt,
-                        )}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {selectedFavorite.category === "notes" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const noteId = parseFavoriteNoteIdFromSourceId(
-                          selectedFavorite.sourceId,
-                        );
-                        if (!noteId) {
-                          return;
-                        }
-
-                        void openDesktopNoteWindow({
-                          noteId,
-                          returnTo: "/tabs/favorites",
-                        });
-                      }}
-                      className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
-                    >
-                      打开笔记
-                    </button>
-                  ) : (
-                    <Link
-                      to={selectedFavorite.to as never}
-                      className="inline-flex h-10 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
-                    >
-                      打开内容
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeMutation.mutate(selectedFavorite)}
-                    disabled={
-                      removeMutation.isPending &&
-                      removeMutation.variables?.sourceId ===
-                        selectedFavorite.sourceId
-                    }
-                    className="inline-flex h-10 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[#f5f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {removeMutation.isPending &&
-                    removeMutation.variables?.sourceId ===
-                      selectedFavorite.sourceId
-                      ? "移除中..."
-                      : "取消收藏"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <EmptyState
-                  title="先从中间选择一条收藏"
-                  description="这里会显示摘要、来源和操作入口。"
-                />
-              </div>
-            )}
-          </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
-      }
-    >
-      <div className="p-4">
-        {notice ? <InlineNotice tone="success">{notice}</InlineNotice> : null}
-        {favoritesQuery.isError && favoritesQuery.error instanceof Error ? (
-          <div className="mb-4">
-            <ErrorBlock message={favoritesQuery.error.message} />
-          </div>
-        ) : null}
-        {removeMutation.isError && removeMutation.error instanceof Error ? (
-          <div className="mb-4">
-            <ErrorBlock message={removeMutation.error.message} />
-          </div>
-        ) : null}
-
-        {favoritesQuery.isLoading && !favorites.length ? (
-          <LoadingBlock label="正在读取收藏..." />
-        ) : null}
-
-        {!favoritesQuery.isLoading && !filteredFavorites.length ? (
-          <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
-            <EmptyState
-              title={normalizedSearchText ? "没有匹配的收藏" : "还没有收藏内容"}
-              description={
-                normalizedSearchText
-                  ? "换个关键词，或者切回其他分类继续查看。"
-                  : activeCategory === "notes"
-                    ? "点击右上角“新建笔记”，把第一条收藏笔记写下来。"
-                    : "先到聊天、内容流或公众号里把重要内容加入收藏。"
-              }
-            />
-          </div>
-        ) : null}
-
-        {filteredFavorites.length ? (
-          <div className="space-y-2">
-            {filteredFavorites.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelectedFavoriteSourceId(item.sourceId)}
-                className={cn(
-                  "flex w-full items-start gap-4 rounded-[14px] border px-4 py-4 text-left transition",
-                  item.sourceId === selectedFavoriteSourceId
-                    ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] shadow-[var(--shadow-soft)]"
-                    : "border-[color:var(--border-faint)] bg-white hover:bg-[rgba(255,255,255,0.92)]",
-                )}
-              >
-                <AvatarChip
-                  name={item.avatarName ?? item.title}
-                  src={item.avatarSrc}
-                  size="wechat"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                      {item.title}
-                    </div>
-                    <span className="rounded-full bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
-                      {item.badge}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                    {item.meta}
-                  </div>
-                  <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                    {item.description}
-                  </div>
-                  {renderFavoriteListExtra(
-                    item,
-                    resolveFavoriteNoteSummary(item, favoriteNoteSummaryMap),
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      )}
     </DesktopUtilityShell>
   );
 }
@@ -591,6 +667,10 @@ function parseFavoriteNoteIdFromSourceId(sourceId: string) {
   return sourceId.startsWith("favorite-note-")
     ? sourceId.slice("favorite-note-".length) || null
     : null;
+}
+
+function buildFavoriteNoteSourceId(noteId: string) {
+  return `favorite-note-${noteId}`;
 }
 
 function resolveFavoriteNoteSummary(

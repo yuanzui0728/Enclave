@@ -52,6 +52,24 @@ export function parseDesktopNoteWindowRouteHash(hash: string) {
   } satisfies DesktopNoteWindowRouteState;
 }
 
+export function parseDesktopNoteEditorRouteHash(hash: string) {
+  const routeState = parseDesktopNoteWindowRouteHash(hash);
+  if (routeState) {
+    return routeState;
+  }
+
+  const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
+  if (!normalizedHash) {
+    return null;
+  }
+
+  return {
+    draftId: normalizedHash,
+    noteId: normalizedHash,
+    returnTo: undefined,
+  } satisfies DesktopNoteWindowRouteState;
+}
+
 export function buildDesktopNoteWindowPath(input: DesktopNoteWindowRouteState) {
   const hash = buildDesktopNoteWindowRouteHash(input);
   return hash
