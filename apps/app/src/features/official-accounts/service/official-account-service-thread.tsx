@@ -190,13 +190,11 @@ export function OfficialAccountServiceThread({
       ? markArticleReadMutation.error.message
       : null);
   const desktopHeaderMeta = [
-    "服务号",
     accountQuery.data?.isVerified ? "已认证" : null,
     accountQuery.data?.isMuted ? "已免打扰" : null,
     accountQuery.data?.handle ? `@${accountQuery.data.handle}` : null,
   ].filter(Boolean);
   const mobileHeaderMeta = [
-    "服务号",
     accountQuery.data?.isVerified ? "已认证" : null,
     accountQuery.data?.isMuted ? "已免打扰" : null,
   ].filter(Boolean);
@@ -253,48 +251,42 @@ export function OfficialAccountServiceThread({
             className="absolute inset-0 z-10 bg-transparent"
           />
         ) : null}
-        <header className="border-b border-[color:var(--border-faint)] bg-white px-5 py-3.5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
+        <header className="border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-2.5">
               {selectedArticleId ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 rounded-full text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                   onClick={handleCloseDesktopArticle}
-                  className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                  aria-label="返回消息"
                 >
-                  <ArrowLeft size={14} />
-                  返回消息
-                </button>
+                  <ArrowLeft size={15} />
+                </Button>
               ) : null}
-              {!selectedArticleId ? (
-                <div className="text-[10px] tracking-[0.08em] text-[color:var(--text-muted)]">
-                  服务号消息
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                  {accountQuery.data?.name ?? "服务号消息"}
                 </div>
-              ) : null}
-              <div
-                className={cn(
-                  "truncate font-medium text-[color:var(--text-primary)]",
-                  selectedArticleId ? "mt-1.5 text-[16px]" : "mt-1 text-[15px]",
-                )}
-              >
-                {accountQuery.data?.name ?? "服务号消息"}
+                {desktopHeaderMeta.length ? (
+                  <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
+                    {desktopHeaderMeta.join(" · ")}
+                  </div>
+                ) : null}
               </div>
-              {!selectedArticleId && desktopHeaderMeta.length ? (
-                <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
-                  {desktopHeaderMeta.join(" · ")}
-                </div>
-              ) : null}
             </div>
             <div className="relative z-20 flex shrink-0 items-center">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 rounded-full text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
+                className="h-8 w-8 rounded-full text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                 onClick={() => setIsDesktopMenuOpen((current) => !current)}
                 aria-label="打开服务号菜单"
               >
-                <MoreHorizontal size={17} />
+                <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
                 <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
@@ -461,9 +453,6 @@ export function OfficialAccountServiceThread({
             <ArrowLeft size={17} />
           </Button>
           <div className="min-w-0 flex-1">
-            <div className="text-[9px] tracking-[0.06em] text-[color:var(--text-muted)]">
-              服务号消息
-            </div>
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
@@ -477,7 +466,7 @@ export function OfficialAccountServiceThread({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
+            className="h-8 w-8 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({
                 to: "/official-accounts/$accountId",
@@ -486,7 +475,7 @@ export function OfficialAccountServiceThread({
             }}
             aria-label="查看公众号资料"
           >
-            <MoreHorizontal size={17} />
+            <MoreHorizontal size={16} />
           </Button>
         </div>
       </header>
