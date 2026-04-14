@@ -17,9 +17,9 @@ import {
   getGroupMembers,
   getGroupMessages,
   type FriendListItem,
-  type GroupMessage,
   markGroupRead,
   sendGroupMessage,
+  type SendGroupMessageRequest,
   type StickerAttachment,
   uploadChatAttachment,
 } from "@yinjie/contracts";
@@ -63,6 +63,17 @@ import {
   onConversationUpdated,
 } from "../../lib/socket";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import { useWorldOwnerStore } from "../../store/world-owner-store";
+import {
+  buildGroupRetryPayload,
+  buildOptimisticGroupMessage,
+  type GroupThreadMessage,
+  markThreadMessageSending,
+  markThreadMessagesFailed,
+  mergeGroupMessageWindow,
+  replaceGroupLocalMessage,
+  upsertIncomingGroupMessage,
+} from "./chat-message-delivery";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
 
 type GroupChatThreadPanelProps = {
@@ -101,10 +112,13 @@ export function GroupChatThreadPanel({
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
+  const ownerId = useWorldOwnerStore((state) => state.id);
+  const ownerName = useWorldOwnerStore((state) => state.username);
+  const ownerAvatar = useWorldOwnerStore((state) => state.avatar);
   const backgroundQuery = useGroupBackground(groupId);
   const [text, setText] = useState("");
   const [replyDraft, setReplyDraft] = useState<ChatReplyMetadata | null>(null);
-  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [messages, setMessages] = useState<GroupThreadMessage[]>([]);
   const [desktopCallPanelState, setDesktopCallPanelState] = useState<{
     kind: DesktopChatCallKind;
     source: CallInviteSource | null;
@@ -164,7 +178,7 @@ export function GroupChatThreadPanel({
     pendingCount,
     suppressNextPendingCount,
     scrollToBottom,
-  } = useScrollAnchor<HTMLDivElement>(messagesQuery.data?.length ?? 0);
+  } = useScrollAnchor<HTMLDivElement>(messages.length);
   const handleDismissRouteContextNotice = () => {
     routeContextNotice?.onDismiss?.();
   };
@@ -188,7 +202,9 @@ export function GroupChatThreadPanel({
   }, [baseUrl, groupId]);
 
   useEffect(() => {
-    setMessages(messagesQuery.data ?? []);
+    setMessages((current) =>
+      mergeGroupMessageWindow(current, messagesQuery.data ?? []),
+    );
   }, [messagesQuery.data]);
 
   useEffect(() => {
@@ -234,12 +250,7 @@ export function GroupChatThreadPanel({
         return;
       }
 
-      queryClient.setQueriesData<GroupMessage[] | undefined>(
-        {
-          queryKey: ["app-group-messages", baseUrl, groupId],
-        },
-        (current) => upsertGroupMessage(current, payload),
-      );
+      setMessages((current) => upsertIncomingGroupMessage(current, payload));
       void queryClient.invalidateQueries({
         queryKey: ["app-conversations", baseUrl],
       });
@@ -289,11 +300,20 @@ export function GroupChatThreadPanel({
   ]);
 
   const sendMutation = useMutation({
-    mutationFn: (payload: Parameters<typeof sendGroupMessage>[1]) =>
-      sendGroupMessage(groupId, payload, baseUrl),
-    onSuccess: async () => {
-      setText("");
-      setReplyDraft(null);
+    mutationFn: async (input: {
+      payload: SendGroupMessageRequest;
+      localMessageId: string;
+    }) => {
+      const message = await sendGroupMessage(groupId, input.payload, baseUrl);
+      return {
+        ...input,
+        message,
+      };
+    },
+    onSuccess: async (result) => {
+      setMessages((current) =>
+        replaceGroupLocalMessage(current, result.localMessageId, result.message),
+      );
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-group-messages", baseUrl, groupId],
@@ -302,6 +322,11 @@ export function GroupChatThreadPanel({
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+    },
+    onError: (_error, input) => {
+      setMessages((current) =>
+        markThreadMessagesFailed(current, [input.localMessageId]),
+      );
     },
   });
 
@@ -356,6 +381,32 @@ export function GroupChatThreadPanel({
           (parseTimestamp(right.createdAt) ?? 0),
       ),
     [messages],
+  );
+  const enqueueOutgoingGroupMessage = useCallback(
+    (payload: SendGroupMessageRequest) => {
+      const optimisticMessage = buildOptimisticGroupMessage({
+        payload,
+        groupId,
+        ownerId,
+        senderName: ownerName?.trim() || "我",
+        senderAvatar: ownerAvatar,
+      });
+      setMessages((current) =>
+        mergeGroupMessageWindow(current, [optimisticMessage]),
+      );
+      return optimisticMessage.id;
+    },
+    [groupId, ownerAvatar, ownerId, ownerName],
+  );
+  const submitOutgoingGroupMessage = useCallback(
+    async (payload: SendGroupMessageRequest) => {
+      const localMessageId = enqueueOutgoingGroupMessage(payload);
+      await sendMutation.mutateAsync({
+        payload,
+        localMessageId,
+      });
+    },
+    [enqueueOutgoingGroupMessage, sendMutation],
   );
   const friendMap = useMemo<Map<string, FriendListItem>>(
     () =>
@@ -497,7 +548,8 @@ export function GroupChatThreadPanel({
         throw new Error("图片上传结果异常。");
       }
 
-      await sendMutation.mutateAsync({
+      setReplyDraft(null);
+      await submitOutgoingGroupMessage({
         type: "image",
         text: replyText || undefined,
         attachment: result.attachment,
@@ -515,7 +567,8 @@ export function GroupChatThreadPanel({
         throw new Error("文件上传结果异常。");
       }
 
-      await sendMutation.mutateAsync({
+      setReplyDraft(null);
+      await submitOutgoingGroupMessage({
         type: "file",
         text: replyText || undefined,
         attachment: result.attachment,
@@ -536,7 +589,8 @@ export function GroupChatThreadPanel({
         throw new Error("语音上传结果异常。");
       }
 
-      await sendMutation.mutateAsync({
+      setReplyDraft(null);
+      await submitOutgoingGroupMessage({
         type: "voice",
         text: replyText || undefined,
         attachment: result.attachment,
@@ -546,7 +600,8 @@ export function GroupChatThreadPanel({
     }
 
     if (payload.type === "contact_card") {
-      await sendMutation.mutateAsync({
+      setReplyDraft(null);
+      await submitOutgoingGroupMessage({
         type: "contact_card",
         text: replyText || undefined,
         attachment: payload.attachment,
@@ -555,7 +610,8 @@ export function GroupChatThreadPanel({
       return;
     }
 
-    await sendMutation.mutateAsync({
+    setReplyDraft(null);
+    await submitOutgoingGroupMessage({
       type: "location_card",
       text: replyText || undefined,
       attachment: payload.attachment,
@@ -564,7 +620,8 @@ export function GroupChatThreadPanel({
   };
 
   const handleSendSticker = async (sticker: StickerAttachment) => {
-    await sendMutation.mutateAsync({
+    setReplyDraft(null);
+    await submitOutgoingGroupMessage({
       type: "sticker",
       text: replyDraft ? encodeChatReplyText("", replyDraft) : undefined,
       attachment: sticker,
@@ -573,21 +630,48 @@ export function GroupChatThreadPanel({
   };
 
   const handleSendPresetText = async (presetText: string) => {
-    await sendMutation.mutateAsync({
+    setText("");
+    setReplyDraft(null);
+    await submitOutgoingGroupMessage({
       text: replyDraft
         ? encodeChatReplyText(presetText, replyDraft)
         : presetText.trim(),
     });
     scrollToBottom("smooth");
-    setReplyDraft(null);
   };
 
   const handleSubmit = async () => {
-    await sendMutation.mutateAsync({
+    setText("");
+    setReplyDraft(null);
+    await submitOutgoingGroupMessage({
       text: replyDraft ? encodeChatReplyText(text, replyDraft) : text.trim(),
     });
     scrollToBottom("smooth");
   };
+
+  const retryMessage = useCallback(
+    async (messageId: string) => {
+      const failedMessage = messages.find(
+        (message) =>
+          message.id === messageId && message.localStatus === "failed",
+      );
+      if (!failedMessage) {
+        return;
+      }
+
+      const payload = buildGroupRetryPayload(failedMessage);
+      if (!payload) {
+        throw new Error("这条消息暂时无法重试发送。");
+      }
+
+      setMessages((current) => markThreadMessageSending(current, messageId));
+      await sendMutation.mutateAsync({
+        payload,
+        localMessageId: messageId,
+      });
+    },
+    [messages, sendMutation],
+  );
 
   const loadOlderMessages = useCallback(async () => {
     if (messagesQuery.isFetching || !hasOlderMessages) {
@@ -1140,6 +1224,7 @@ export function GroupChatThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
+              onRetryMessage={(message) => retryMessage(message.id)}
               onOpenGroupCallInvite={(input) => {
                 if (isDesktop) {
                   setDesktopCallPanelState(input);
@@ -1323,43 +1408,6 @@ function describeReplyPreview(message: ChatRenderableMessage) {
   }
 
   return "消息";
-}
-
-function upsertGroupMessage(
-  current: GroupMessage[] | undefined,
-  incoming: GroupMessage,
-) {
-  if (!current?.length) {
-    return [incoming];
-  }
-
-  const existingIndex = current.findIndex(
-    (message) => message.id === incoming.id,
-  );
-  if (existingIndex < 0) {
-    return [...current, incoming];
-  }
-
-  const nextMessages = [...current];
-  nextMessages[existingIndex] = incoming;
-  return nextMessages;
-}
-
-function mergeGroupMessageWindow(
-  current: GroupMessage[],
-  incoming: GroupMessage[],
-) {
-  const merged = new Map<string, GroupMessage>();
-
-  for (const message of [...current, ...incoming]) {
-    merged.set(message.id, message);
-  }
-
-  return [...merged.values()].sort(
-    (left, right) =>
-      (parseTimestamp(left.createdAt) ?? 0) -
-      (parseTimestamp(right.createdAt) ?? 0),
-  );
 }
 
 const INITIAL_MESSAGE_LIMIT = 60;

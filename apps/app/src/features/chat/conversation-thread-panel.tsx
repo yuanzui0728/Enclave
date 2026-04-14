@@ -112,6 +112,7 @@ export function ConversationThreadPanel({
     sendAttachmentMessage,
     sendStickerMessage,
     sendTextMessage,
+    retryMessage,
     setSocketError,
     setText,
     socketError,
@@ -628,6 +629,7 @@ export function ConversationThreadPanel({
               unreadMarkerMessageId={unreadMarkerMessageId}
               unreadMarkerCount={initialUnreadCount}
               onReplyMessage={handleReplyMessage}
+              onRetryMessage={(message) => retryMessage(message.id)}
               onOpenDirectCallInvite={(input) => {
                 handleDesktopCallAction(input.kind);
               }}
