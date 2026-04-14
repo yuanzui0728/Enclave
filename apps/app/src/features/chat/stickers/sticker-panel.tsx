@@ -828,6 +828,10 @@ export function StickerPanel({
   const resumeUploadShortcutTitle = customUploadResumed
     ? `当前已腾出 ${customUploadResumedSlots} 个空位，点这里直接继续添加图片或 GIF。`
     : undefined;
+  const featuredShortcutTitle = "切到精选表情，先看看内置常用表情。";
+  const customShortcutTitle = "切回自定义表情，查看自己保存的图片和 GIF。";
+  const recentAddedShortcutTitle =
+    "切到最近添加，优先查看和清理最近导入的表情。";
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
     ? "现在去添加"
     : catalog.customStickerCount === 0
@@ -2188,6 +2192,7 @@ export function StickerPanel({
                           <button
                             type="button"
                             onClick={switchToFeatured}
+                            title={featuredShortcutTitle}
                             className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                           >
                             去精选看看
@@ -2198,6 +2203,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchCustomSortToAdded}
+                          title={recentAddedShortcutTitle}
                           className="rounded-full bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                         >
                           看最近添加
@@ -2286,6 +2292,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchToFeatured}
+                          title={featuredShortcutTitle}
                           className="rounded-full bg-white/88 px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
                         >
                           去精选看看
@@ -2334,6 +2341,7 @@ export function StickerPanel({
                           <button
                             type="button"
                             onClick={switchCustomSortToAdded}
+                            title={recentAddedShortcutTitle}
                             className="rounded-full bg-white/88 px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
                           >
                             看最近添加
@@ -2483,6 +2491,7 @@ export function StickerPanel({
                     <button
                       type="button"
                       onClick={switchCustomSortToAdded}
+                      title={recentAddedShortcutTitle}
                       className="rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                     >
                       看最近添加
@@ -2690,6 +2699,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchToFeatured}
+                          title={featuredShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           看精选
@@ -2700,6 +2710,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchToCustom}
+                          title={customShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           看自定义
@@ -2711,6 +2722,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchCustomSortToAdded}
+                          title={recentAddedShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           看最近添加
@@ -2770,6 +2782,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={switchToFeatured}
+                          title={featuredShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           去精选看看
@@ -2791,6 +2804,7 @@ export function StickerPanel({
                   <button
                     type="button"
                     onClick={switchToFeatured}
+                    title={featuredShortcutTitle}
                     className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition"
                   >
                     去精选看看
