@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { Copy, Share2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import {
   blockCharacter,
   clearConversationHistory,
@@ -18,6 +18,7 @@ import {
   setConversationPinned,
 } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
+import { AvatarChip } from "../components/avatar-chip";
 import { InlineNoticeActionButton } from "../components/inline-notice-action-button";
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { DigitalHumanEntryNotice } from "../features/chat/digital-human-entry-notice";
@@ -118,7 +119,11 @@ export function ChatDetailsPage() {
   });
 
   useEffect(() => {
-    if (conversationsQuery.isLoading || conversationsQuery.isError || conversation) {
+    if (
+      conversationsQuery.isLoading ||
+      conversationsQuery.isError ||
+      conversation
+    ) {
       return;
     }
 
@@ -152,15 +157,34 @@ export function ChatDetailsPage() {
     conversation?.strongReminderUntil,
     nowTimestamp,
   );
-  const isFriend = (friendsQuery.data ?? []).some(
-    (item) => item.character.id === targetCharacterId,
+  const friendRecord = useMemo(
+    () =>
+      (friendsQuery.data ?? []).find(
+        (item) => item.character.id === targetCharacterId,
+      ) ?? null,
+    [friendsQuery.data, targetCharacterId],
   );
+  const friendship = friendRecord?.friendship ?? null;
+  const isFriend = Boolean(friendship);
   const hasPendingFriendRequest = (friendRequestsQuery.data ?? []).some(
-    (item) => item.characterId === targetCharacterId && item.status === "pending",
+    (item) =>
+      item.characterId === targetCharacterId && item.status === "pending",
   );
   const isBlocked = (blockedQuery.data ?? []).some(
     (item) => item.characterId === targetCharacterId,
   );
+  const contactDisplayName =
+    friendship?.remarkName?.trim() ||
+    targetCharacter?.name ||
+    conversation?.title ||
+    "对方";
+  const contactProfileSubtitle = friendship?.remarkName?.trim()
+    ? `昵称：${targetCharacter?.name ?? "未设置"}`
+    : targetCharacter?.relationship?.trim() ||
+      (isFriend ? "通讯录朋友" : "世界联系人");
+  const contactIdentifier = targetCharacterId
+    ? `隐界号：yinjie_${targetCharacterId.slice(0, 8)}`
+    : null;
   const contactSummary = useMemo(() => {
     if (!conversation) {
       return null;
@@ -173,16 +197,23 @@ export function ChatDetailsPage() {
       typeof window === "undefined"
         ? contactPath
         : `${window.location.origin}${contactPath}`;
-    const contactName = targetCharacter?.name ?? conversation.title ?? "联系人";
+    const contactName =
+      friendship?.remarkName?.trim() ||
+      targetCharacter?.name ||
+      conversation.title ||
+      "联系人";
     const relationship =
-      targetCharacter?.relationship?.trim() || (isFriend ? "通讯录朋友" : "世界联系人");
+      targetCharacter?.relationship?.trim() ||
+      (isFriend ? "通讯录朋友" : "世界联系人");
 
     return {
       title: `${contactName} 的隐界名片`,
       text: [
         `${contactName} 的隐界名片`,
         relationship,
-        targetCharacterId ? `隐界号：yinjie_${targetCharacterId.slice(0, 8)}` : undefined,
+        targetCharacterId
+          ? `隐界号：yinjie_${targetCharacterId.slice(0, 8)}`
+          : undefined,
         contactUrl,
       ]
         .filter(Boolean)
@@ -192,11 +223,23 @@ export function ChatDetailsPage() {
   }, [
     conversation,
     conversationId,
+    friendship?.remarkName,
     isFriend,
     targetCharacter?.name,
     targetCharacter?.relationship,
     targetCharacterId,
   ]);
+
+  const handleOpenCharacterProfile = () => {
+    if (!targetCharacterId) {
+      return;
+    }
+
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId: targetCharacterId },
+    });
+  };
 
   async function handleShareContact() {
     if (!contactSummary) {
@@ -480,16 +523,9 @@ export function ChatDetailsPage() {
   const memberItems = [
     {
       key: targetCharacterId || conversation?.title || "character",
-      label: targetCharacter?.name ?? conversation?.title ?? "对方",
+      label: contactDisplayName,
       src: targetCharacter?.avatar,
-      onClick: targetCharacterId
-        ? () => {
-            void navigate({
-              to: "/character/$characterId",
-              params: { characterId: targetCharacterId },
-            });
-          }
-        : undefined,
+      onClick: targetCharacterId ? handleOpenCharacterProfile : undefined,
     },
     {
       key: "add",
@@ -520,7 +556,8 @@ export function ChatDetailsPage() {
       : dangerSheetAction === "clear"
         ? {
             title: "清空聊天记录",
-            description: "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。",
+            description:
+              "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。",
             confirmLabel: "清空聊天记录",
             confirmDescription: "此操作不可恢复",
             confirmDanger: true,
@@ -574,27 +611,12 @@ export function ChatDetailsPage() {
   return (
     <ChatDetailsShell
       title={conversation?.title ?? "聊天信息"}
-      subtitle={targetCharacter?.relationship?.trim() || undefined}
       onBack={() => {
         void navigate({
           to: "/chat/$conversationId",
           params: { conversationId },
         });
       }}
-      rightActions={
-        contactSummary ? (
-          <Button
-            type="button"
-            onClick={() => void handleShareContact()}
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-[color:var(--surface-card-hover)]"
-            aria-label={nativeMobileShareSupported ? "分享联系人" : "复制联系人摘要"}
-          >
-            {nativeMobileShareSupported ? <Share2 size={18} /> : <Copy size={18} />}
-          </Button>
-        ) : undefined
-      }
     >
       {conversationsQuery.isLoading ? (
         <div className="px-2.5">
@@ -727,7 +749,55 @@ export function ChatDetailsPage() {
 
       {conversation ? (
         <>
-          <ChatDetailsSection title="聊天成员" variant="wechat">
+          <ChatDetailsSection
+            title={isFriend ? "朋友资料" : "详细资料"}
+            variant="wechat"
+          >
+            <button
+              type="button"
+              onClick={handleOpenCharacterProfile}
+              disabled={!targetCharacterId}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+            >
+              <AvatarChip
+                name={contactDisplayName}
+                src={targetCharacter?.avatar}
+                size="wechat"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[15px] text-[#111827]">
+                  {contactDisplayName}
+                </div>
+                <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+                  {contactProfileSubtitle}
+                </div>
+                {contactIdentifier ? (
+                  <div className="mt-0.5 truncate text-[11px] text-[#8c8c8c]">
+                    {contactIdentifier}
+                  </div>
+                ) : null}
+              </div>
+              <ChevronRight size={18} className="shrink-0 text-[#c7c7cc]" />
+            </button>
+            {contactSummary ? (
+              <div className="border-t border-[color:var(--border-faint)]">
+                <ChatSettingRow
+                  label="推荐给朋友"
+                  value={
+                    nativeMobileShareSupported
+                      ? "打开系统分享面板"
+                      : "复制联系人摘要"
+                  }
+                  variant="wechat"
+                  onClick={() => {
+                    void handleShareContact();
+                  }}
+                />
+              </div>
+            ) : null}
+          </ChatDetailsSection>
+
+          <ChatDetailsSection variant="wechat">
             <ChatMemberGrid items={memberItems} variant="wechat" />
           </ChatDetailsSection>
 
