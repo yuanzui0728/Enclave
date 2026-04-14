@@ -874,55 +874,40 @@ export function DesktopSearchDropdownPanel({
         className,
       )}
     >
-      <button
-        type="button"
+      <SearchLauncherHeroCard
+        active={activeActionId === "launcher-search"}
+        keyword={trimmedKeyword}
         onClick={() => onOpenSearch(keyword)}
         onMouseEnter={() => setActiveActionId("launcher-search")}
-        className={cn(
-          "flex w-full min-w-0 items-center gap-3 rounded-[12px] px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-          activeActionId === "launcher-search"
-            ? "bg-[rgba(7,193,96,0.13)]"
-            : "bg-[rgba(7,193,96,0.08)] hover:bg-[rgba(7,193,96,0.13)]",
-        )}
-      >
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-white text-[color:var(--brand-primary)]">
-          <Search size={16} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-[color:var(--text-primary)]">
-            搜一搜
-          </div>
-          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
-            {trimmedKeyword ? `搜索“${trimmedKeyword}”` : "打开全局搜索工作区"}
-          </div>
-        </div>
-        <CornerDownLeft
-          size={14}
-          className="shrink-0 text-[color:var(--text-dim)]"
-        />
-      </button>
+      />
 
       {speechStatus !== "idle" || speechError ? (
-        <div
-          className={cn(
-            "mt-2 rounded-[12px] px-3 py-2.5 text-xs leading-6",
+        <SearchLauncherStatusCard
+          description={
             speechError
-              ? "bg-[rgba(225,29,72,0.08)] text-[#be123c]"
-              : "bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
-          )}
-        >
-          {speechError
-            ? speechError
-            : speechStatus === "requesting-permission"
-              ? "正在请求麦克风权限..."
+              ? speechError
+              : speechStatus === "requesting-permission"
+                ? "正在请求麦克风权限..."
+                : speechStatus === "listening"
+                  ? "正在听你说，完成后再点一次语音图标。"
+                  : speechStatus === "processing"
+                    ? "正在整理语音内容..."
+                    : speechDisplayText
+                      ? `识别结果：${speechDisplayText}`
+                      : "语音输入已完成。"
+          }
+          status={
+            speechError
+              ? "error"
               : speechStatus === "listening"
-                ? "正在听你说，完成后再点一次语音图标。"
-                : speechStatus === "processing"
-                  ? "正在整理语音内容..."
-                  : speechDisplayText
-                    ? `识别结果：${speechDisplayText}`
-                    : "语音输入已完成。"}
-        </div>
+                ? "recording"
+                : speechStatus === "processing" ||
+                    speechStatus === "requesting-permission"
+                  ? "pending"
+                  : "done"
+          }
+          title="语音输入"
+        />
       ) : null}
 
       {trimmedKeyword ? (
@@ -1320,6 +1305,111 @@ function SearchLauncherSection({
         </span>
       </div>
       {children}
+    </section>
+  );
+}
+
+function SearchLauncherHeroCard({
+  active,
+  keyword,
+  onClick,
+  onMouseEnter,
+}: {
+  active: boolean;
+  keyword: string;
+  onClick: () => void;
+  onMouseEnter?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      className={cn(
+        "w-full overflow-hidden rounded-[18px] border text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        active
+          ? "border-[#cfe4d2] bg-[linear-gradient(135deg,rgba(7,193,96,0.18),rgba(7,193,96,0.08)_45%,white)]"
+          : "border-[#dce9dd] bg-[linear-gradient(135deg,rgba(7,193,96,0.14),rgba(7,193,96,0.05)_45%,white)] hover:border-[#cfe4d2] hover:bg-[linear-gradient(135deg,rgba(7,193,96,0.18),rgba(7,193,96,0.08)_45%,white)]",
+      )}
+    >
+      <div className="flex items-start gap-3 px-4 py-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-white text-[color:var(--brand-primary)] shadow-[0_8px_18px_rgba(7,193,96,0.10)]">
+          <Search size={17} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-medium text-[color:var(--text-primary)]">
+              搜一搜
+            </div>
+            <div className="shrink-0 rounded-full bg-white/90 px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+              Enter
+            </div>
+          </div>
+          <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+            {keyword ? `直接搜索“${keyword}”，进入完整结果页。` : "打开全局搜索工作区，继续按分类查看完整结果。"}
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-white/80 px-4 py-2.5">
+        <div className="flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-muted)]">
+          <span>{keyword ? "按回车立即搜索" : "支持聊天、联系人、公众号、收藏和小程序"}</span>
+          <CornerDownLeft size={14} className="shrink-0" />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function SearchLauncherStatusCard({
+  description,
+  status,
+  title,
+}: {
+  description: string;
+  status: "done" | "error" | "pending" | "recording";
+  title: string;
+}) {
+  const toneClassName =
+    status === "error"
+      ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
+      : status === "recording"
+        ? "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)]"
+        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]";
+  const badgeClassName =
+    status === "error"
+      ? "bg-white text-[#be123c]"
+      : status === "recording"
+        ? "bg-white text-[color:var(--brand-primary)]"
+        : "bg-white text-[color:var(--text-muted)]";
+  const statusLabel =
+    status === "error"
+      ? "异常"
+      : status === "recording"
+        ? "录音中"
+        : status === "pending"
+          ? "处理中"
+          : "已完成";
+
+  return (
+    <section className={cn("mt-2 rounded-[16px] border p-3.5", toneClassName)}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        <div className={cn("rounded-full px-2.5 py-1 text-[10px]", badgeClassName)}>
+          {statusLabel}
+        </div>
+      </div>
+      <div
+        className={cn(
+          "mt-2 rounded-[12px] bg-white px-3 py-2.5 text-xs leading-6",
+          status === "error"
+            ? "text-[#be123c]"
+            : "text-[color:var(--text-secondary)]",
+        )}
+      >
+        {description}
+      </div>
     </section>
   );
 }
