@@ -813,6 +813,15 @@ export function StickerPanel({
     customUploadResumed &&
     !customStickerLibraryFull &&
     !uploadMutation.isPending;
+  const showSearchManageAction =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    searching &&
+    !showManageSearchPauseHint &&
+    (customStickerLibraryFull || customSlotsRemaining <= 20);
+  const searchManageActionLabel = customStickerLibraryFull
+    ? "去管理"
+    : "去清理";
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
     ? "现在去添加"
     : catalog.customStickerCount === 0
@@ -2649,6 +2658,15 @@ export function StickerPanel({
                           {searchResumeUploadButtonLabel}
                         </button>
                       ) : null}
+                      {showSearchManageAction ? (
+                        <button
+                          type="button"
+                          onClick={openCustomManageMode}
+                          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                        >
+                          {searchManageActionLabel}
+                        </button>
+                      ) : null}
                       {activeSectionId !== "featured" ? (
                         <button
                           type="button"
@@ -2687,7 +2705,11 @@ export function StickerPanel({
                           : "也可以先继续删除当前自定义表情，之后再回来搜。"
                         : showSearchResumeUploadAction
                           ? "也可以直接继续添加图片或 GIF，之后再回来搜。"
-                          : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
+                          : showSearchManageAction
+                            ? customStickerLibraryFull
+                              ? "也可以先去管理里删掉几张，再回来继续搜。"
+                              : "也可以先去清理不常用表情，再回来继续搜。"
+                            : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
                     </div>
                   </div>
                 ) : null}
