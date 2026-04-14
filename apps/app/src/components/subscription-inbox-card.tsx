@@ -1,3 +1,4 @@
+import { type MouseEvent as ReactMouseEvent } from "react";
 import type { OfficialAccountSubscriptionInboxSummary } from "@yinjie/contracts";
 import { Newspaper } from "lucide-react";
 import { cn } from "@yinjie/ui";
@@ -8,11 +9,13 @@ export function SubscriptionInboxCard({
   active = false,
   variant = "mobile",
   onClick,
+  onContextMenu,
 }: {
   summary: OfficialAccountSubscriptionInboxSummary;
   active?: boolean;
   variant?: "mobile" | "desktop";
   onClick?: () => void;
+  onContextMenu?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 }) {
   const isDesktop = variant === "desktop";
 
@@ -20,6 +23,7 @@ export function SubscriptionInboxCard({
     <button
       type="button"
       onClick={onClick}
+      onContextMenu={onContextMenu}
       className={cn(
         isDesktop
           ? "flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-left transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"

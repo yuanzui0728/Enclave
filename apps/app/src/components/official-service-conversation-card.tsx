@@ -1,3 +1,4 @@
+import { type MouseEvent as ReactMouseEvent } from "react";
 import type { OfficialAccountServiceConversationSummary } from "@yinjie/contracts";
 import { BellOff } from "lucide-react";
 import { cn } from "@yinjie/ui";
@@ -9,11 +10,13 @@ export function OfficialServiceConversationCard({
   active = false,
   variant = "mobile",
   onClick,
+  onContextMenu,
 }: {
   conversation: OfficialAccountServiceConversationSummary;
   active?: boolean;
   variant?: "mobile" | "desktop";
   onClick?: () => void;
+  onContextMenu?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
 }) {
   const isDesktop = variant === "desktop";
 
@@ -21,6 +24,7 @@ export function OfficialServiceConversationCard({
     <button
       type="button"
       onClick={onClick}
+      onContextMenu={onContextMenu}
       className={cn(
         isDesktop
           ? "flex w-full items-center gap-3 rounded-[18px] px-4 py-3 text-left transition-[background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"

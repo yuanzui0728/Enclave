@@ -14,6 +14,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   BellOff,
   BellRing,
+  BookOpenText,
+  CheckCheck,
+  ExternalLink,
   FileText,
   LoaderCircle,
   Mic,
@@ -35,9 +38,14 @@ import {
   markConversationUnread,
   markGroupRead,
   markGroupUnread,
+  markOfficialAccountServiceMessagesRead,
+  markOfficialAccountSubscriptionInboxRead,
+  type OfficialAccountServiceConversationSummary,
+  type OfficialAccountSubscriptionInboxSummary,
   setConversationMuted,
   setConversationPinned,
   setGroupPinned,
+  updateOfficialAccountPreferences,
   updateGroupPreferences,
   type ConversationListItem,
 } from "@yinjie/contracts";
@@ -113,6 +121,10 @@ import {
 import { DesktopChatConfirmDialog } from "./desktop-chat-confirm-dialog";
 import { DesktopConversationContextMenu } from "./desktop-conversation-context-menu";
 import { DesktopCreateGroupDialog } from "./desktop-create-group-dialog";
+import {
+  DesktopOfficialMessageContextMenu,
+  type DesktopOfficialMessageContextMenuItem,
+} from "./desktop-official-message-context-menu";
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
@@ -199,6 +211,21 @@ export function DesktopChatWorkspace({
     x: number;
     y: number;
   } | null>(null);
+  const [officialMessageContextMenu, setOfficialMessageContextMenu] = useState<
+    | {
+        kind: "subscription";
+        summary: OfficialAccountSubscriptionInboxSummary;
+        x: number;
+        y: number;
+      }
+    | {
+        kind: "service";
+        conversation: OfficialAccountServiceConversationSummary;
+        x: number;
+        y: number;
+      }
+    | null
+  >(null);
   const [conversationDangerAction, setConversationDangerAction] = useState<{
     action: DesktopConversationDangerAction;
     conversation: ConversationListItem;
@@ -483,6 +510,23 @@ export function DesktopChatWorkspace({
   }, [conversationContextMenu]);
 
   useEffect(() => {
+    if (!officialMessageContextMenu) {
+      return;
+    }
+
+    const closeMenu = () => setOfficialMessageContextMenu(null);
+    window.addEventListener("pointerdown", closeMenu);
+    window.addEventListener("resize", closeMenu);
+    window.addEventListener("scroll", closeMenu, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", closeMenu);
+      window.removeEventListener("resize", closeMenu);
+      window.removeEventListener("scroll", closeMenu, true);
+    };
+  }, [officialMessageContextMenu]);
+
+  useEffect(() => {
     if (!isQuickMenuOpen) {
       return;
     }
@@ -761,6 +805,88 @@ export function DesktopChatWorkspace({
     };
   }, [conversationDangerAction]);
 
+  const officialMessageActionMutation = useMutation({
+    mutationFn: async (
+      action:
+        | { kind: "subscription-read" }
+        | {
+            kind: "service-read";
+            conversation: OfficialAccountServiceConversationSummary;
+          }
+        | {
+            kind: "service-mute";
+            conversation: OfficialAccountServiceConversationSummary;
+          },
+    ) => {
+      switch (action.kind) {
+        case "subscription-read":
+          return markOfficialAccountSubscriptionInboxRead(baseUrl);
+        case "service-read":
+          return markOfficialAccountServiceMessagesRead(
+            action.conversation.accountId,
+            baseUrl,
+          );
+        case "service-mute":
+          return updateOfficialAccountPreferences(
+            action.conversation.accountId,
+            { isMuted: !action.conversation.isMuted },
+            baseUrl,
+          );
+      }
+    },
+    onSuccess: async (_, action) => {
+      setOfficialMessageContextMenu(null);
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-official-message-entries", baseUrl],
+        }),
+        action.kind === "subscription-read"
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-official-subscription-inbox", baseUrl],
+            })
+          : Promise.resolve(),
+        action.kind !== "subscription-read"
+          ? queryClient.invalidateQueries({
+              queryKey: [
+                "app-official-service-messages",
+                baseUrl,
+                action.conversation.accountId,
+              ],
+            })
+          : Promise.resolve(),
+        action.kind === "service-mute"
+          ? queryClient.invalidateQueries({
+              queryKey: [
+                "app-official-account",
+                baseUrl,
+                action.conversation.accountId,
+              ],
+            })
+          : Promise.resolve(),
+        action.kind === "service-mute"
+          ? queryClient.invalidateQueries({
+              queryKey: ["app-official-accounts", baseUrl],
+            })
+          : Promise.resolve(),
+      ]);
+
+      setNotice(
+        action.kind === "subscription-read"
+          ? "已将订阅号消息标为已读。"
+          : action.kind === "service-read"
+            ? `已将 ${action.conversation.account.name} 标为已读。`
+            : action.conversation.isMuted
+              ? `已关闭 ${action.conversation.account.name} 的消息免打扰。`
+              : `已开启 ${action.conversation.account.name} 的消息免打扰。`,
+      );
+    },
+    onError: (error) => {
+      setOfficialMessageContextMenu(null);
+      setNotice(error instanceof Error ? error.message : "公众号消息操作失败。");
+    },
+  });
+
   function handleQuickAction(key: DesktopQuickActionItem["key"]) {
     setIsQuickMenuOpen(false);
     setNotice(null);
@@ -909,7 +1035,36 @@ export function DesktopChatWorkspace({
     conversation: ConversationListItem,
   ) {
     event.preventDefault();
+    setOfficialMessageContextMenu(null);
     setConversationContextMenu({
+      conversation,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  }
+
+  function handleSubscriptionContextMenu(
+    event: MouseEvent<HTMLElement>,
+    summary: OfficialAccountSubscriptionInboxSummary,
+  ) {
+    event.preventDefault();
+    setConversationContextMenu(null);
+    setOfficialMessageContextMenu({
+      kind: "subscription",
+      summary,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  }
+
+  function handleServiceConversationContextMenu(
+    event: MouseEvent<HTMLElement>,
+    conversation: OfficialAccountServiceConversationSummary,
+  ) {
+    event.preventDefault();
+    setConversationContextMenu(null);
+    setOfficialMessageContextMenu({
+      kind: "service",
       conversation,
       x: event.clientX,
       y: event.clientY,
@@ -1231,6 +1386,10 @@ export function DesktopChatWorkspace({
                     conversationContextMenu?.conversation.id
                   }
                   onConversationContextMenu={handleConversationContextMenu}
+                  onSubscriptionContextMenu={handleSubscriptionContextMenu}
+                  onServiceConversationContextMenu={
+                    handleServiceConversationContextMenu
+                  }
                 />
               ))}
             </div>
@@ -1538,6 +1697,158 @@ export function DesktopChatWorkspace({
         />
       ) : null}
 
+      {officialMessageContextMenu ? (
+        <DesktopOfficialMessageContextMenu
+          x={officialMessageContextMenu.x}
+          y={officialMessageContextMenu.y}
+          onClose={() => setOfficialMessageContextMenu(null)}
+          items={
+            officialMessageContextMenu.kind === "subscription"
+              ? ([
+                  {
+                    key: "open-subscription",
+                    label: "打开订阅号消息",
+                    icon: <BookOpenText size={15} />,
+                    onClick: () => {
+                      setOfficialMessageContextMenu(null);
+                      void navigate({
+                        to: "/chat/subscription-inbox",
+                        hash: subscriptionInboxActive && selectedOfficialArticleId
+                          ? buildDesktopOfficialMessageRouteHash({
+                              articleId: selectedOfficialArticleId,
+                            })
+                          : undefined,
+                      });
+                    },
+                  },
+                  {
+                    key: "open-directory",
+                    label:
+                      subscriptionInboxActive && selectedOfficialArticleId
+                        ? "在通讯录中打开当前文章"
+                        : "打开公众号目录",
+                    icon: <ExternalLink size={15} />,
+                    dividerBefore: true,
+                    onClick: () => {
+                      setOfficialMessageContextMenu(null);
+
+                      if (subscriptionInboxActive && selectedOfficialArticleId) {
+                        void navigate({
+                          to: "/official-accounts/articles/$articleId",
+                          params: { articleId: selectedOfficialArticleId },
+                        });
+                        return;
+                      }
+
+                      void navigate({
+                        to: "/tabs/contacts",
+                        hash: buildDesktopContactsRouteHash({
+                          pane: "official-accounts",
+                          showWorldCharacters: false,
+                        }),
+                      });
+                    },
+                  },
+                  officialMessageContextMenu.summary.unreadCount > 0
+                    ? {
+                        key: "subscription-read",
+                        label: "标记全部已读",
+                        icon: <CheckCheck size={15} />,
+                        dividerBefore: true,
+                        disabled: officialMessageActionMutation.isPending,
+                        onClick: () => {
+                          officialMessageActionMutation.mutate({
+                            kind: "subscription-read",
+                          });
+                        },
+                      }
+                    : null,
+                ].filter(Boolean) as DesktopOfficialMessageContextMenuItem[])
+              : ([
+                  {
+                    key: "open-service",
+                    label: "打开服务号消息",
+                    icon: <BookOpenText size={15} />,
+                    onClick: () => {
+                      setOfficialMessageContextMenu(null);
+                      void navigate({
+                        to: "/official-accounts/service/$accountId",
+                        params: {
+                          accountId: officialMessageContextMenu.conversation.accountId,
+                        },
+                        hash:
+                          selectedServiceAccountId ===
+                            officialMessageContextMenu.conversation.accountId &&
+                          selectedOfficialArticleId
+                            ? buildDesktopOfficialMessageRouteHash({
+                                articleId: selectedOfficialArticleId,
+                              })
+                            : undefined,
+                      });
+                    },
+                  },
+                  {
+                    key: "open-account",
+                    label: "打开公众号主页",
+                    icon: <ExternalLink size={15} />,
+                    dividerBefore: true,
+                    onClick: () => {
+                      setOfficialMessageContextMenu(null);
+                      void navigate({
+                        to: "/tabs/contacts",
+                        hash: buildDesktopContactsRouteHash({
+                          pane: "official-accounts",
+                          accountId: officialMessageContextMenu.conversation.accountId,
+                          articleId:
+                            selectedServiceAccountId ===
+                            officialMessageContextMenu.conversation.accountId
+                              ? selectedOfficialArticleId
+                              : undefined,
+                          showWorldCharacters: false,
+                        }),
+                      });
+                    },
+                  },
+                  officialMessageContextMenu.conversation.unreadCount > 0
+                    ? {
+                        key: "service-read",
+                        label: "标记已读",
+                        icon: <CheckCheck size={15} />,
+                        dividerBefore: true,
+                        disabled: officialMessageActionMutation.isPending,
+                        onClick: () => {
+                          officialMessageActionMutation.mutate({
+                            kind: "service-read",
+                            conversation: officialMessageContextMenu.conversation,
+                          });
+                        },
+                      }
+                    : null,
+                  {
+                    key: "service-mute",
+                    label: officialMessageContextMenu.conversation.isMuted
+                      ? "关闭免打扰"
+                      : "消息免打扰",
+                    icon: officialMessageContextMenu.conversation.isMuted ? (
+                      <BellRing size={15} />
+                    ) : (
+                      <BellOff size={15} />
+                    ),
+                    dividerBefore:
+                      officialMessageContextMenu.conversation.unreadCount === 0,
+                    disabled: officialMessageActionMutation.isPending,
+                    onClick: () => {
+                      officialMessageActionMutation.mutate({
+                        kind: "service-mute",
+                        conversation: officialMessageContextMenu.conversation,
+                      });
+                    },
+                  },
+                ].filter(Boolean) as DesktopOfficialMessageContextMenuItem[])
+          }
+        />
+      ) : null}
+
       <DesktopChatConfirmDialog
         open={Boolean(activeConversationDangerConfirm)}
         title={activeConversationDangerConfirm?.title ?? ""}
@@ -1571,6 +1882,8 @@ function DesktopMessageEntryCard({
   localMessageActionState,
   conversationContextMenuId,
   onConversationContextMenu,
+  onSubscriptionContextMenu,
+  onServiceConversationContextMenu,
 }: {
   entry: DesktopMessageEntry;
   activeConversationId?: string;
@@ -1582,6 +1895,14 @@ function DesktopMessageEntryCard({
   onConversationContextMenu: (
     event: MouseEvent<HTMLElement>,
     conversation: ConversationListItem,
+  ) => void;
+  onSubscriptionContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    summary: OfficialAccountSubscriptionInboxSummary,
+  ) => void;
+  onServiceConversationContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    conversation: OfficialAccountServiceConversationSummary,
   ) => void;
 }) {
   const navigate = useNavigate();
@@ -1603,6 +1924,9 @@ function DesktopMessageEntryCard({
                 : undefined,
           });
         }}
+        onContextMenu={(event) =>
+          onSubscriptionContextMenu(event, entry.summary)
+        }
       />
     );
   }
@@ -1626,6 +1950,9 @@ function DesktopMessageEntryCard({
                 : undefined,
           });
         }}
+        onContextMenu={(event) =>
+          onServiceConversationContextMenu(event, entry.conversation)
+        }
       />
     );
   }
