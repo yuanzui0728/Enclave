@@ -548,6 +548,7 @@ export interface ReplyLogicGroupReplyRuntimeSummary {
   processingTaskCount: number;
   failedTaskCount: number;
   archiveSummary?: ReplyLogicGroupReplyArchiveSummary | null;
+  actorDriftSummary: ReplyLogicGroupReplyActorDriftSummary[];
   issueSummary: ReplyLogicGroupReplyIssueSummary[];
   recentTurns: ReplyLogicGroupReplyTurnSummary[];
   notes: string[];
@@ -585,6 +586,31 @@ export interface ReplyLogicGroupReplyIssueSummary {
   source: "cancel_reason" | "error_message";
   status: "cancelled" | "failed";
   count: number;
+}
+
+export interface ReplyLogicGroupReplyActorDriftSummary {
+  actorCharacterId: string;
+  actorName: string;
+  severity: "stable" | "watch" | "warning";
+  baselineSource: "actor_archive" | "group_archive" | "none";
+  recentTaskCount: number;
+  recentTurnCount: number;
+  openTaskCount: number;
+  recentSentCount: number;
+  recentCancelledCount: number;
+  recentFailedCount: number;
+  recentFailureRate: number;
+  recentCancelRate: number;
+  recentIssueRate: number;
+  baselineTaskCount: number;
+  baselineTurnCount: number;
+  baselineFailureRate: number;
+  baselineCancelRate: number;
+  baselineIssueRate: number;
+  failureRateDelta: number;
+  cancelRateDelta: number;
+  issueRateDelta: number;
+  issueSummary: ReplyLogicGroupReplyIssueSummary[];
 }
 
 export interface ReplyLogicGroupReplyArchiveSummary {

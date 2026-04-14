@@ -36,6 +36,7 @@ import type {
   ReplyLogicCharacterSnapshot,
   ReplyLogicCharacterObservability,
   ReplyLogicConversationSnapshot,
+  ReplyLogicGroupReplyActorDriftSummary,
   ReplyLogicGroupReplyArchiveSummary,
   ReplyLogicGroupReplyArchiveActorSummary,
   ReplyLogicGroupReplyArchiveTrendPoint,
@@ -1111,12 +1112,17 @@ export class ReplyLogicAdminService {
       .slice(0, 8)
       .map((tasks) => this.toGroupReplyTurnSummary(tasks));
     const issueSummary = buildGroupReplyIssueSummaryFromTasks(taskEntities, 8);
+    const archiveSummary = this.toGroupReplyArchiveSummary(groupId, archiveStore);
 
     return {
       pendingTaskCount,
       processingTaskCount,
       failedTaskCount,
-      archiveSummary: this.toGroupReplyArchiveSummary(groupId, archiveStore),
+      archiveSummary,
+      actorDriftSummary: this.buildGroupReplyActorDriftSummary(
+        recentTurns,
+        archiveSummary,
+      ),
       issueSummary,
       recentTurns,
       notes: [
@@ -1363,6 +1369,230 @@ export class ReplyLogicAdminService {
       lastArchivedAt: bucket.lastArchivedAt ?? null,
       lastCutoff: bucket.lastCutoff ?? null,
     };
+  }
+
+  private buildGroupReplyActorDriftSummary(
+    recentTurns: ReplyLogicGroupReplyTurnSummary[],
+    archiveSummary: ReplyLogicGroupReplyArchiveSummary | null,
+  ): ReplyLogicGroupReplyActorDriftSummary[] {
+    const actorRuntimeMap = new Map<
+      string,
+      {
+        actorName: string;
+        tasks: ReplyLogicGroupReplyTaskSummary[];
+        turnIds: Set<string>;
+        openTaskCount: number;
+      }
+    >();
+
+    for (const turn of recentTurns) {
+      for (const task of turn.tasks) {
+        const actorRuntime =
+          actorRuntimeMap.get(task.actorCharacterId) ?? {
+            actorName: task.actorName,
+            tasks: [],
+            turnIds: new Set<string>(),
+            openTaskCount: 0,
+          };
+        actorRuntime.actorName = task.actorName;
+        actorRuntime.tasks.push(task);
+        actorRuntime.turnIds.add(turn.turnId);
+        if (task.status === 'pending' || task.status === 'processing') {
+          actorRuntime.openTaskCount += 1;
+        }
+        actorRuntimeMap.set(task.actorCharacterId, actorRuntime);
+      }
+    }
+
+    const groupBaseline =
+      archiveSummary && archiveSummary.archivedTaskCount >= 12
+        ? {
+            source: 'group_archive' as const,
+            taskCount: archiveSummary.archivedTaskCount,
+            turnCount: archiveSummary.archivedTurnCount,
+            failureRate: archiveSummary.failureRate,
+            cancelRate: archiveSummary.cancelRate,
+            issueRate: archiveSummary.failureRate + archiveSummary.cancelRate,
+          }
+        : null;
+
+    return [...actorRuntimeMap.entries()]
+      .map(([actorCharacterId, actorRuntime]) => {
+        const terminalTasks = actorRuntime.tasks.filter(
+          (task) =>
+            task.status === 'sent' ||
+            task.status === 'cancelled' ||
+            task.status === 'failed',
+        );
+        const recentTaskCount = terminalTasks.length;
+        const recentSentCount = terminalTasks.filter(
+          (task) => task.status === 'sent',
+        ).length;
+        const recentCancelledCount = terminalTasks.filter(
+          (task) => task.status === 'cancelled',
+        ).length;
+        const recentFailedCount = terminalTasks.filter(
+          (task) => task.status === 'failed',
+        ).length;
+        const recentFailureRate =
+          recentTaskCount > 0 ? recentFailedCount / recentTaskCount : 0;
+        const recentCancelRate =
+          recentTaskCount > 0 ? recentCancelledCount / recentTaskCount : 0;
+        const recentIssueRate =
+          recentTaskCount > 0
+            ? (recentFailedCount + recentCancelledCount) / recentTaskCount
+            : 0;
+        const actorArchiveSummary =
+          archiveSummary?.actorSummary.find(
+            (actor) => actor.actorCharacterId === actorCharacterId,
+          ) ?? null;
+        const actorBaseline =
+          actorArchiveSummary &&
+          actorArchiveSummary.taskCount >= 6 &&
+          actorArchiveSummary.turnCount >= 3
+            ? {
+                source: 'actor_archive' as const,
+                taskCount: actorArchiveSummary.taskCount,
+                turnCount: actorArchiveSummary.turnCount,
+                failureRate: actorArchiveSummary.failureRate,
+                cancelRate: actorArchiveSummary.cancelRate,
+                issueRate: actorArchiveSummary.issueRate,
+              }
+            : null;
+        const baseline = actorBaseline ?? groupBaseline;
+        const baselineSource: ReplyLogicGroupReplyActorDriftSummary['baselineSource'] =
+          baseline?.source ?? 'none';
+        const baselineTaskCount = baseline?.taskCount ?? 0;
+        const baselineTurnCount = baseline?.turnCount ?? 0;
+        const baselineFailureRate = baseline?.failureRate ?? 0;
+        const baselineCancelRate = baseline?.cancelRate ?? 0;
+        const baselineIssueRate = baseline?.issueRate ?? 0;
+        const failureRateDelta = recentFailureRate - baselineFailureRate;
+        const cancelRateDelta = recentCancelRate - baselineCancelRate;
+        const issueRateDelta = recentIssueRate - baselineIssueRate;
+
+        return {
+          actorCharacterId,
+          actorName: actorRuntime.actorName,
+          severity: this.classifyGroupReplyActorDrift({
+            baselineSource,
+            recentTaskCount,
+            recentFailureRate,
+            recentCancelRate,
+            recentIssueRate,
+            failureRateDelta,
+            cancelRateDelta,
+            issueRateDelta,
+          }),
+          baselineSource,
+          recentTaskCount,
+          recentTurnCount: actorRuntime.turnIds.size,
+          openTaskCount: actorRuntime.openTaskCount,
+          recentSentCount,
+          recentCancelledCount,
+          recentFailedCount,
+          recentFailureRate,
+          recentCancelRate,
+          recentIssueRate,
+          baselineTaskCount,
+          baselineTurnCount,
+          baselineFailureRate,
+          baselineCancelRate,
+          baselineIssueRate,
+          failureRateDelta,
+          cancelRateDelta,
+          issueRateDelta,
+          issueSummary: buildGroupReplyIssueSummaryFromTasks(
+            terminalTasks.map((task) => ({
+              status: task.status,
+              cancelReason: task.cancelReason,
+              errorMessage: task.errorMessage,
+            })),
+            3,
+          ),
+        };
+      })
+      .sort((left, right) => {
+        const severityDelta =
+          this.rankGroupReplyActorDriftSeverity(right.severity) -
+          this.rankGroupReplyActorDriftSeverity(left.severity);
+        if (severityDelta !== 0) {
+          return severityDelta;
+        }
+        if (right.issueRateDelta !== left.issueRateDelta) {
+          return right.issueRateDelta - left.issueRateDelta;
+        }
+        if (right.recentIssueRate !== left.recentIssueRate) {
+          return right.recentIssueRate - left.recentIssueRate;
+        }
+        return right.recentTaskCount - left.recentTaskCount;
+      });
+  }
+
+  private classifyGroupReplyActorDrift(input: {
+    baselineSource: 'actor_archive' | 'group_archive' | 'none';
+    recentTaskCount: number;
+    recentFailureRate: number;
+    recentCancelRate: number;
+    recentIssueRate: number;
+    failureRateDelta: number;
+    cancelRateDelta: number;
+    issueRateDelta: number;
+  }): ReplyLogicGroupReplyActorDriftSummary['severity'] {
+    if (input.recentTaskCount < 2) {
+      return 'stable';
+    }
+
+    if (input.baselineSource === 'none') {
+      if (
+        input.recentTaskCount >= 3 &&
+        (input.recentIssueRate >= 0.5 ||
+          input.recentFailureRate >= 0.34 ||
+          input.recentCancelRate >= 0.5)
+      ) {
+        return 'warning';
+      }
+      if (
+        input.recentIssueRate >= 0.34 ||
+        input.recentFailureRate >= 0.25 ||
+        input.recentCancelRate >= 0.34
+      ) {
+        return 'watch';
+      }
+      return 'stable';
+    }
+
+    if (
+      input.recentTaskCount >= 3 &&
+      (input.issueRateDelta >= 0.25 ||
+        input.failureRateDelta >= 0.2 ||
+        input.cancelRateDelta >= 0.2)
+    ) {
+      return 'warning';
+    }
+
+    if (
+      input.issueRateDelta >= 0.12 ||
+      input.failureRateDelta >= 0.1 ||
+      input.cancelRateDelta >= 0.1
+    ) {
+      return 'watch';
+    }
+
+    return 'stable';
+  }
+
+  private rankGroupReplyActorDriftSeverity(
+    severity: ReplyLogicGroupReplyActorDriftSummary['severity'],
+  ) {
+    switch (severity) {
+      case 'warning':
+        return 2;
+      case 'watch':
+        return 1;
+      default:
+        return 0;
+    }
   }
 
   private async loadNarrativeArcs(ownerId: string, characterIds: string[]) {
