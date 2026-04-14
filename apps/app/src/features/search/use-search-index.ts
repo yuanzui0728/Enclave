@@ -35,6 +35,7 @@ import {
   emptySearchScopeCounts,
   type SearchCategory,
   type SearchMessageGroup,
+  type SearchOfficialAccountGroup,
   type SearchResultItem,
 } from "./search-types";
 import { useDesktopSearchQuickLinks } from "./desktop-search-quick-links";
@@ -359,7 +360,7 @@ export function useSearchIndex(
     const officialAccountArticleResults: SearchResultItem[] = (
       officialAccountArticlesQuery.data ?? []
     ).map(({ account, article }) => ({
-      id: `official-article-${article.id}`,
+      id: `official-article:${account.id}:${article.id}`,
       category: "officialAccounts",
       title: article.title,
       description: article.summary || `来自 ${account.name} 的公众号文章`,
@@ -532,6 +533,82 @@ export function useSearchIndex(
       });
   }, [indexedResults, normalizedSearchText]);
 
+  const officialAccountGroups = useMemo<SearchOfficialAccountGroup[]>(() => {
+    if (!normalizedSearchText) {
+      return [] as SearchOfficialAccountGroup[];
+    }
+
+    const officialAccountResults = indexedResults.filter(
+      (item) =>
+        item.category === "officialAccounts" &&
+        item.id.startsWith("official-") &&
+        !item.id.startsWith("official-article:"),
+    );
+    const officialAccountResultById = new Map(
+      officialAccountResults.map((item) => [
+        item.id.replace(/^official-/, ""),
+        item,
+      ]),
+    );
+    const articleResults = filterSearchResults(
+      indexedResults.filter(
+        (item) =>
+          item.category === "officialAccounts" &&
+          item.id.startsWith("official-article:"),
+      ),
+      normalizedSearchText,
+      "officialAccounts",
+    );
+    const groupedArticles = new Map<string, SearchResultItem[]>();
+
+    for (const item of articleResults) {
+      const accountId = resolveOfficialAccountId(item.id);
+      if (!accountId) {
+        continue;
+      }
+
+      const current = groupedArticles.get(accountId);
+      if (current) {
+        current.push(item);
+        continue;
+      }
+
+      groupedArticles.set(accountId, [item]);
+    }
+
+    return Array.from(groupedArticles.entries())
+      .map(([accountId, articles]) => {
+        const header = officialAccountResultById.get(accountId);
+        if (!header) {
+          return null;
+        }
+
+        return {
+          id: `official-account-group-${accountId}`,
+          header,
+          articles: [...articles]
+            .sort((left, right) => right.sortTime - left.sortTime)
+            .slice(0, 3),
+          sortTime: Math.max(
+            header.sortTime,
+            articles[0]?.sortTime ?? header.sortTime,
+          ),
+        };
+      })
+      .filter((item): item is SearchOfficialAccountGroup => Boolean(item))
+      .sort((left, right) => {
+        if (left.sortTime !== right.sortTime) {
+          return right.sortTime - left.sortTime;
+        }
+
+        return sortSearchResults(
+          left.header,
+          right.header,
+          normalizedSearchText,
+        );
+      });
+  }, [indexedResults, normalizedSearchText]);
+
   const allMatchedResults = useMemo(
     () => filterSearchResults(indexedResults, normalizedSearchText, "all"),
     [indexedResults, normalizedSearchText],
@@ -602,6 +679,7 @@ export function useSearchIndex(
     loading,
     matchedCounts,
     messageGroups,
+    officialAccountGroups,
     normalizedSearchText,
     recentFavorites,
     recentMiniPrograms,
@@ -633,5 +711,10 @@ function extractErrorMessage(error: unknown) {
 
 function resolveMessageConversationId(to: string) {
   const match = to.match(/\/(?:chat|group)\/([^/?#]+)/);
+  return match?.[1] ?? null;
+}
+
+function resolveOfficialAccountId(resultId: string) {
+  const match = resultId.match(/^official-article:([^:]+):/);
   return match?.[1] ?? null;
 }

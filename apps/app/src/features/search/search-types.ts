@@ -40,6 +40,13 @@ export type SearchMessageGroup = {
   sortTime: number;
 };
 
+export type SearchOfficialAccountGroup = {
+  id: string;
+  header: SearchResultItem;
+  articles: SearchResultItem[];
+  sortTime: number;
+};
+
 export type SearchScopeCounts = {
   conversations: number;
   contacts: number;
