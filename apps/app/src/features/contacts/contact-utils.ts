@@ -34,6 +34,8 @@ const pinyinCollator = new Intl.Collator("zh-CN-u-co-pinyin", {
 
 export type FriendDirectoryItem = FriendListItem & {
   indexLabel: string;
+  displayName: string;
+  sortLabel: string;
 };
 
 export type WorldCharacterDirectoryItem = {
@@ -49,16 +51,22 @@ export type ContactSection<TItem> = {
   items: TItem[];
 };
 
-export function createFriendDirectoryItems(items: FriendListItem[]): FriendDirectoryItem[] {
+export function createFriendDirectoryItems(
+  items: FriendListItem[],
+): FriendDirectoryItem[] {
   return sortDirectoryItems(
     items.map((item) => ({
       ...item,
-      indexLabel: getContactIndexLabel(item.character.name),
+      displayName: getFriendDisplayName(item),
+      sortLabel: getFriendDisplayName(item),
+      indexLabel: getContactIndexLabel(getFriendDisplayName(item)),
     })),
   );
 }
 
-export function createWorldCharacterDirectoryItems(items: Character[]): WorldCharacterDirectoryItem[] {
+export function createWorldCharacterDirectoryItems(
+  items: Character[],
+): WorldCharacterDirectoryItem[] {
   return sortDirectoryItems(
     items.map((character) => ({
       character,
@@ -67,7 +75,9 @@ export function createWorldCharacterDirectoryItems(items: Character[]): WorldCha
   );
 }
 
-export function buildContactSections<TItem extends { indexLabel: string }>(items: TItem[]): ContactSection<TItem>[] {
+export function buildContactSections<TItem extends { indexLabel: string }>(
+  items: TItem[],
+): ContactSection<TItem>[] {
   const sections = new Map<string, ContactSection<TItem>>();
 
   for (const item of items) {
@@ -87,11 +97,22 @@ export function buildContactSections<TItem extends { indexLabel: string }>(items
     });
   }
 
-  return [...sections.values()].sort((left, right) => getSectionRank(left.indexLabel) - getSectionRank(right.indexLabel));
+  return [...sections.values()].sort(
+    (left, right) =>
+      getSectionRank(left.indexLabel) - getSectionRank(right.indexLabel),
+  );
 }
 
 export function matchesCharacterSearch(
-  character: Pick<Character, "name" | "relationship" | "bio" | "currentStatus" | "currentActivity" | "expertDomains">,
+  character: Pick<
+    Character,
+    | "name"
+    | "relationship"
+    | "bio"
+    | "currentStatus"
+    | "currentActivity"
+    | "expertDomains"
+  >,
   normalizedSearchText: string,
 ) {
   if (!normalizedSearchText) {
@@ -107,17 +128,59 @@ export function matchesCharacterSearch(
     character.expertDomains.join(" "),
   ];
 
-  return haystacks.some((value) => value.toLowerCase().includes(normalizedSearchText));
+  return haystacks.some((value) =>
+    value.toLowerCase().includes(normalizedSearchText),
+  );
 }
 
-function sortDirectoryItems<TItem extends { character: Character; indexLabel: string }>(items: TItem[]) {
+export function matchesFriendSearch(
+  item: Pick<FriendListItem, "character" | "friendship">,
+  normalizedSearchText: string,
+) {
+  if (!normalizedSearchText) {
+    return true;
+  }
+
+  if (matchesCharacterSearch(item.character, normalizedSearchText)) {
+    return true;
+  }
+
+  const haystacks = [
+    item.friendship.remarkName ?? "",
+    item.friendship.region ?? "",
+    item.friendship.source ?? "",
+    item.friendship.tags?.join(" ") ?? "",
+  ];
+
+  return haystacks.some((value) =>
+    value.toLowerCase().includes(normalizedSearchText),
+  );
+}
+
+export function getFriendDisplayName(
+  item: Pick<FriendListItem, "character" | "friendship">,
+) {
+  return item.friendship.remarkName?.trim() || item.character.name;
+}
+
+function sortDirectoryItems<
+  TItem extends {
+    character: Character;
+    indexLabel: string;
+    sortLabel?: string;
+  },
+>(items: TItem[]) {
   return [...items].sort((left, right) => {
-    const sectionDiff = getSectionRank(left.indexLabel) - getSectionRank(right.indexLabel);
+    const sectionDiff =
+      getSectionRank(left.indexLabel) - getSectionRank(right.indexLabel);
     if (sectionDiff !== 0) {
       return sectionDiff;
     }
 
-    const nameDiff = pinyinCollator.compare(left.character.name, right.character.name);
+    const nameDiff = pinyinCollator.compare(
+      left.sortLabel ?? left.character.name,
+      right.sortLabel ?? right.character.name,
+    );
     if (nameDiff !== 0) {
       return nameDiff;
     }
@@ -142,7 +205,11 @@ function getContactIndexLabel(name?: string | null) {
     return "#";
   }
 
-  for (let index = chineseSectionBoundaries.length - 1; index >= 0; index -= 1) {
+  for (
+    let index = chineseSectionBoundaries.length - 1;
+    index >= 0;
+    index -= 1
+  ) {
     const boundary = chineseSectionBoundaries[index];
     if (pinyinCollator.compare(firstCharacter, boundary.start) >= 0) {
       return boundary.label;
