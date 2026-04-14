@@ -26,16 +26,20 @@ export function OfficialServiceMessageBubble({
       <div
         className={
           isDesktop
-            ? "w-full max-w-[34rem]"
-            : "w-full max-w-[24.5rem]"
+            ? "w-full max-w-[33rem]"
+            : "w-full max-w-[24rem]"
         }
       >
-        <div className={isDesktop ? "mb-2.5 flex justify-center" : "mb-2 flex justify-center"}>
+        <div
+          className={
+            isDesktop ? "mb-2 flex justify-center" : "mb-1.5 flex justify-center"
+          }
+        >
           <div
             className={
               isDesktop
-                ? "rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]"
-                : "rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[9px] text-[color:var(--text-secondary)]"
+                ? "rounded-full bg-[rgba(15,23,42,0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
+                : "rounded-full bg-[rgba(15,23,42,0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
             }
           >
             {formatMessageTimestamp(message.createdAt)}
@@ -57,8 +61,8 @@ export function OfficialServiceMessageBubble({
             <div
               className={
                 isDesktop
-                  ? "px-4 py-3.5 text-[14px] leading-7 text-[color:var(--text-primary)]"
-                  : "px-3 py-2.5 text-[12px] leading-[1.45rem] text-[color:var(--text-primary)]"
+                  ? "px-4 py-3 text-[13px] leading-6 text-[color:var(--text-primary)]"
+                  : "px-3 py-2.5 text-[12px] leading-[1.4rem] text-[color:var(--text-primary)]"
               }
             >
               {message.text}
@@ -90,12 +94,12 @@ export function OfficialServiceMessageBubble({
                   <div
                     className={
                       isDesktop
-                        ? "flex items-center gap-2 text-xs text-[color:var(--text-muted)]"
-                        : "flex items-center gap-1.5 text-[10px] text-[color:var(--text-muted)]"
+                        ? "flex items-center gap-1.5 text-[11px] tracking-[0.04em] text-[color:var(--text-muted)]"
+                        : "flex items-center gap-1 text-[9px] tracking-[0.03em] text-[color:var(--text-muted)]"
                     }
                   >
                     <FileText
-                      size={isDesktop ? 14 : 12}
+                      size={isDesktop ? 13 : 11}
                       className="text-[color:var(--text-dim)]"
                     />
                     <span>服务号文章</span>
@@ -110,8 +114,8 @@ export function OfficialServiceMessageBubble({
                       <div
                         className={
                           isDesktop
-                            ? "text-[15px] font-medium leading-6 text-[color:var(--text-primary)]"
-                            : "text-[13px] font-medium leading-[1.4rem] text-[color:var(--text-primary)]"
+                            ? "text-[14px] font-medium leading-5.5 text-[color:var(--text-primary)]"
+                            : "text-[13px] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
                         }
                       >
                         {message.attachment.title}
@@ -119,8 +123,8 @@ export function OfficialServiceMessageBubble({
                       <div
                         className={
                           isDesktop
-                            ? "mt-1.5 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]"
-                            : "mt-1 line-clamp-2 text-[10px] leading-[1.125rem] text-[color:var(--text-secondary)]"
+                            ? "mt-1.5 line-clamp-2 text-[11px] leading-[1.125rem] text-[color:var(--text-secondary)]"
+                            : "mt-1 line-clamp-2 text-[10px] leading-[1.1rem] text-[color:var(--text-secondary)]"
                         }
                       >
                         {message.attachment.summary}
@@ -152,13 +156,13 @@ export function OfficialServiceMessageBubble({
                 <div
                   className={
                     isDesktop
-                      ? "flex items-center justify-between border-t border-[color:var(--border-faint)] px-4 py-3 text-[12px] text-[color:var(--text-secondary)]"
-                      : "flex items-center justify-between border-t border-[color:var(--border-faint)] px-3 py-2.5 text-[10px] text-[color:var(--text-secondary)]"
+                      ? "flex items-center justify-between border-t border-[color:var(--border-faint)] px-4 py-2.5 text-[11px] text-[color:var(--text-secondary)]"
+                      : "flex items-center justify-between border-t border-[color:var(--border-faint)] px-3 py-2 text-[9px] text-[color:var(--text-secondary)]"
                   }
                 >
                   <span>阅读全文</span>
                   <ArrowRight
-                    size={isDesktop ? 14 : 12}
+                    size={isDesktop ? 13 : 11}
                     className="shrink-0 text-[color:var(--text-dim)]"
                   />
                 </div>

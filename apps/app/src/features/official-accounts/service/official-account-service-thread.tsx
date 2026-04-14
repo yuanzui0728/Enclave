@@ -266,16 +266,21 @@ export function OfficialAccountServiceThread({
                   返回消息
                 </button>
               ) : null}
+              {!selectedArticleId ? (
+                <div className="text-[10px] tracking-[0.08em] text-[color:var(--text-muted)]">
+                  服务号消息
+                </div>
+              ) : null}
               <div
                 className={cn(
-                  "truncate text-[16px] font-medium text-[color:var(--text-primary)]",
-                  selectedArticleId ? "mt-1.5" : "",
+                  "truncate font-medium text-[color:var(--text-primary)]",
+                  selectedArticleId ? "mt-1.5 text-[16px]" : "mt-1 text-[15px]",
                 )}
               >
                 {accountQuery.data?.name ?? "服务号消息"}
               </div>
               {!selectedArticleId && desktopHeaderMeta.length ? (
-                <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
                   {desktopHeaderMeta.join(" · ")}
                 </div>
               ) : null}
@@ -456,11 +461,14 @@ export function OfficialAccountServiceThread({
             <ArrowLeft size={17} />
           </Button>
           <div className="min-w-0 flex-1">
+            <div className="text-[9px] tracking-[0.06em] text-[color:var(--text-muted)]">
+              服务号消息
+            </div>
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
             {mobileHeaderMeta.length ? (
-              <div className="mt-0.5 truncate text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 truncate text-[9px] leading-[1rem] text-[color:var(--text-muted)]">
                 {mobileHeaderMeta.join(" · ")}
               </div>
             ) : null}
