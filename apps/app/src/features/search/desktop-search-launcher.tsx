@@ -948,11 +948,11 @@ export function DesktopSearchDropdownPanel({
           {!suggestionsLoading && !suggestionsError ? (
             <div className="space-y-3">
               {conversationMessageGroups.length || conversationOnlyMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    聊天
-                  </div>
-                  <div className="mt-1.5 space-y-2">
+                <SearchLauncherCollectionCard
+                  countLabel={`${conversationMessageGroups.length + conversationOnlyMatches.length} 组结果`}
+                  title="聊天"
+                >
+                  <div className="space-y-2">
                     {conversationMessageGroups.map((group) => (
                       <SearchLauncherConversationGroupCard
                         key={group.id}
@@ -987,15 +987,15 @@ export function DesktopSearchDropdownPanel({
                       </div>
                     ) : null}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {officialMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    公众号
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
+                <SearchLauncherCollectionCard
+                  countLabel={`${officialMatches.length} 个入口`}
+                  title="公众号"
+                >
+                  <div className="space-y-1.5">
                     {officialMatches.map((group) => (
                       <SearchLauncherOfficialGroupCard
                         key={group.id}
@@ -1010,15 +1010,15 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {friendMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    联系人
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
+                <SearchLauncherCollectionCard
+                  countLabel={`${friendMatches.length} 位联系人`}
+                  title="联系人"
+                >
+                  <div className="space-y-1.5">
                     {friendMatches.map((item) => (
                       <SearchLauncherCharacterRow
                         key={`friend-${item.character.id}`}
@@ -1045,15 +1045,15 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {worldCharacterMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    世界角色
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
+                <SearchLauncherCollectionCard
+                  countLabel={`${worldCharacterMatches.length} 位角色`}
+                  title="世界角色"
+                >
+                  <div className="space-y-1.5">
                     {worldCharacterMatches.map((item) => (
                       <SearchLauncherCharacterRow
                         key={`world-character-${item.character.id}`}
@@ -1087,15 +1087,15 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {favoriteMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    收藏
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
+                <SearchLauncherCollectionCard
+                  countLabel={`${favoriteMatches.length} 条收藏`}
+                  title="收藏"
+                >
+                  <div className="space-y-1.5">
                     {favoriteMatches.map((item) => (
                       <SearchLauncherFeatureRow
                         key={item.id}
@@ -1108,15 +1108,15 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {miniProgramMatches.length ? (
-                <div>
-                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
-                    小程序
-                  </div>
-                  <div className="mt-1.5 space-y-1.5">
+                <SearchLauncherCollectionCard
+                  countLabel={`${miniProgramMatches.length} 个入口`}
+                  title="小程序"
+                >
+                  <div className="space-y-1.5">
                     {miniProgramMatches.map((item) => (
                       <SearchLauncherFeatureRow
                         key={item.id}
@@ -1129,7 +1129,7 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
                   </div>
-                </div>
+                </SearchLauncherCollectionCard>
               ) : null}
 
               {!hasSuggestionResults ? (
