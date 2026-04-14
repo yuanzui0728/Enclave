@@ -139,7 +139,11 @@ export function DesktopSearchWorkspace({
 }: DesktopSearchWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const spotlightPanelTimeoutRef = useRef<number | null>(null);
   const transitionHintTimeoutRef = useRef<number | null>(null);
+  const [spotlightPanelId, setSpotlightPanelId] = useState<SearchCategory | null>(
+    null,
+  );
   const [transitionHint, setTransitionHint] = useState<string | null>(null);
   const normalizedKeyword = searchText.trim().toLowerCase();
   const groupedMessageHeaderIds = useMemo(
@@ -178,6 +182,9 @@ export function DesktopSearchWorkspace({
 
   useEffect(() => {
     return () => {
+      if (spotlightPanelTimeoutRef.current !== null) {
+        window.clearTimeout(spotlightPanelTimeoutRef.current);
+      }
       if (transitionHintTimeoutRef.current !== null) {
         window.clearTimeout(transitionHintTimeoutRef.current);
       }
@@ -226,14 +233,45 @@ export function DesktopSearchWorkspace({
       transitionHintTimeoutRef.current = null;
     }, 2200);
   });
+  const showPanelSpotlight = useEffectEvent((panelId: SearchCategory | null) => {
+    if (spotlightPanelTimeoutRef.current !== null) {
+      window.clearTimeout(spotlightPanelTimeoutRef.current);
+    }
+
+    if (!panelId) {
+      setSpotlightPanelId(null);
+      spotlightPanelTimeoutRef.current = null;
+      return;
+    }
+
+    setSpotlightPanelId(panelId);
+    spotlightPanelTimeoutRef.current = window.setTimeout(() => {
+      setSpotlightPanelId(null);
+      spotlightPanelTimeoutRef.current = null;
+    }, 2200);
+  });
   const resolveCategoryHintTitle = (category: SearchCategory) =>
     category === "all" ? "全部结果" : searchCategoryTitles[category];
+  const resolveSpotlightPanelId = (
+    category: SearchCategory,
+  ): SearchCategory | null => {
+    if (!hasKeyword) {
+      return null;
+    }
+
+    if (category === "all") {
+      return groupedResults[0]?.category ?? null;
+    }
+
+    return category;
+  };
   const handleSelectCategory = useEffectEvent(
     (category: SearchCategory, options?: { focusInput?: boolean }) => {
       const categoryChanged = category !== activeCategory;
       setActiveCategory(category);
       scrollResultsToTop("smooth");
       if (categoryChanged) {
+        showPanelSpotlight(resolveSpotlightPanelId(category));
         showTransitionHint(
           hasKeyword
             ? `已切换到${resolveCategoryHintTitle(category)}，结果已回到顶部。`
@@ -587,6 +625,7 @@ export function DesktopSearchWorkspace({
                       description={getDesktopSearchSectionDescription(
                         section.category,
                       )}
+                      highlighted={spotlightPanelId === section.category}
                       title={section.label}
                     >
                       {section.category === "messages" ? (
@@ -636,6 +675,7 @@ export function DesktopSearchWorkspace({
               <DesktopSearchResultsPanel
                 countLabel={`${visibleResults.length} 条命中`}
                 description={getDesktopSearchSectionDescription(activeCategory)}
+                highlighted={spotlightPanelId === activeCategory}
                 title={searchCategoryTitles[activeCategory]}
               >
                 {activeCategory === "messages" ? (
@@ -947,16 +987,25 @@ function DesktopSearchResultsPanel({
   children,
   countLabel,
   description,
+  highlighted = false,
   title,
 }: {
   action?: ReactNode;
   children: ReactNode;
   countLabel: string;
   description: string;
+  highlighted?: boolean;
   title: string;
 }) {
   return (
-    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+    <section
+      className={cn(
+        "rounded-[20px] border bg-[color:var(--surface-console)] p-4 transition-[border-color,box-shadow,transform]",
+        highlighted
+          ? "border-[rgba(7,193,96,0.24)] shadow-[0_20px_44px_rgba(7,193,96,0.10)]"
+          : "border-[color:var(--border-faint)]",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -967,6 +1016,11 @@ function DesktopSearchResultsPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {highlighted ? (
+            <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+              刚刚定位
+            </div>
+          ) : null}
           <div className="rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
             {countLabel}
           </div>
