@@ -64,6 +64,7 @@ import { DesktopContactsFriendRequestsPane } from "../features/desktop/contacts/
 import { DesktopContactsGroupsPane } from "../features/desktop/contacts/desktop-contacts-groups-pane";
 import { DesktopContactsStarredFriendsPane } from "../features/desktop/contacts/desktop-contacts-starred-friends-pane";
 import { DesktopContactsTagsPane } from "../features/desktop/contacts/desktop-contacts-tags-pane";
+import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
@@ -119,6 +120,11 @@ type DesktopSelection =
   | {
       kind: "tags";
     }
+  | {
+      kind: "official-accounts";
+      accountId?: string;
+      articleId?: string;
+    }
   | null;
 
 function areDesktopSelectionsEqual(
@@ -132,7 +138,11 @@ function areDesktopSelectionsEqual(
   return (
     left.kind === right.kind &&
     ("id" in left ? left.id : undefined) ===
-      ("id" in right ? right.id : undefined)
+      ("id" in right ? right.id : undefined) &&
+    ("accountId" in left ? left.accountId : undefined) ===
+      ("accountId" in right ? right.accountId : undefined) &&
+    ("articleId" in left ? left.articleId : undefined) ===
+      ("articleId" in right ? right.articleId : undefined)
   );
 }
 
@@ -161,6 +171,14 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
   if (routeState.pane === "tags") {
     return {
       kind: "tags",
+    };
+  }
+
+  if (routeState.pane === "official-accounts") {
+    return {
+      kind: "official-accounts",
+      ...(routeState.accountId ? { accountId: routeState.accountId } : {}),
+      ...(routeState.articleId ? { articleId: routeState.articleId } : {}),
     };
   }
 
@@ -478,6 +496,14 @@ export function ContactsPage() {
       pane: nextSelection?.kind ?? "friend",
       characterId:
         nextSelection && "id" in nextSelection ? nextSelection.id : undefined,
+      accountId:
+        nextSelection?.kind === "official-accounts"
+          ? nextSelection.accountId
+          : undefined,
+      articleId:
+        nextSelection?.kind === "official-accounts"
+          ? nextSelection.articleId
+          : undefined,
       showWorldCharacters: nextShowWorldCharacters,
     });
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -759,7 +785,8 @@ export function ContactsPage() {
       desktopSelection?.kind === "new-friends" ||
       desktopSelection?.kind === "starred-friends" ||
       desktopSelection?.kind === "groups" ||
-      desktopSelection?.kind === "tags"
+      desktopSelection?.kind === "tags" ||
+      desktopSelection?.kind === "official-accounts"
     ) {
       return;
     }
@@ -1038,7 +1065,18 @@ export function ContactsPage() {
       subtitle: "查看已上线的内容账号",
       icon: BookText,
       iconClassName: "bg-[linear-gradient(135deg,#10b981,#0f766e)]",
-      onClick: () => handleShortcutNavigate("/contacts/official-accounts"),
+      onClick: () => {
+        if (!isDesktopLayout) {
+          handleShortcutNavigate("/contacts/official-accounts");
+          return;
+        }
+
+        const nextSelection = {
+          kind: "official-accounts",
+        } satisfies DesktopSelection;
+        setDesktopSelection(nextSelection);
+        commitDesktopRouteState(nextSelection, showWorldCharacters);
+      },
     },
     {
       key: "world-characters",
@@ -1387,6 +1425,36 @@ export function ContactsPage() {
             />
           ) : desktopSelection?.kind === "tags" ? (
             <DesktopContactsTagsPane />
+          ) : desktopSelection?.kind === "official-accounts" ? (
+            <DesktopOfficialAccountsWorkspace
+              selectedAccountId={desktopSelection.accountId}
+              selectedArticleId={desktopSelection.articleId}
+              onOpenAccount={(accountId) => {
+                const nextSelection = {
+                  kind: "official-accounts",
+                  accountId,
+                } satisfies DesktopSelection;
+                setDesktopSelection(nextSelection);
+                commitDesktopRouteState(
+                  nextSelection,
+                  showWorldCharacters,
+                  true,
+                );
+              }}
+              onOpenArticle={(articleId, accountId) => {
+                const nextSelection = {
+                  kind: "official-accounts",
+                  accountId,
+                  articleId,
+                } satisfies DesktopSelection;
+                setDesktopSelection(nextSelection);
+                commitDesktopRouteState(
+                  nextSelection,
+                  showWorldCharacters,
+                  true,
+                );
+              }}
+            />
           ) : (
             <ContactDetailPane
               character={

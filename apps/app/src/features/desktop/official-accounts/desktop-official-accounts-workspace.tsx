@@ -32,9 +32,13 @@ import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 export function DesktopOfficialAccountsWorkspace({
   selectedAccountId,
   selectedArticleId,
+  onOpenAccount,
+  onOpenArticle,
 }: {
   selectedAccountId?: string;
   selectedArticleId?: string;
+  onOpenAccount?: (accountId: string) => void;
+  onOpenArticle?: (articleId: string, accountId: string) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -340,6 +344,30 @@ export function DesktopOfficialAccountsWorkspace({
     setFavoriteSourceIds(nextFavorites.map((item) => item.sourceId));
   }
 
+  function handleOpenAccount(accountId: string) {
+    if (onOpenAccount) {
+      onOpenAccount(accountId);
+      return;
+    }
+
+    void navigate({
+      to: "/official-accounts/$accountId",
+      params: { accountId },
+    });
+  }
+
+  function handleOpenArticle(articleId: string, accountId: string) {
+    if (onOpenArticle) {
+      onOpenArticle(articleId, accountId);
+      return;
+    }
+
+    void navigate({
+      to: "/official-accounts/articles/$articleId",
+      params: { articleId },
+    });
+  }
+
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
       <section className="flex w-[300px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
@@ -401,12 +429,7 @@ export function DesktopOfficialAccountsWorkspace({
                 account={entry}
                 active={entry.id === effectiveAccountId}
                 dense
-                onClick={() => {
-                  void navigate({
-                    to: "/official-accounts/$accountId",
-                    params: { accountId: entry.id },
-                  });
-                }}
+                onClick={() => handleOpenAccount(entry.id)}
               />
             ))}
           </div>
@@ -634,12 +657,9 @@ export function DesktopOfficialAccountsWorkspace({
                         favorite={favoriteSourceIds.includes(
                           `official-article-${article.id}`,
                         )}
-                        onClick={() => {
-                          void navigate({
-                            to: "/official-accounts/articles/$articleId",
-                            params: { articleId: article.id },
-                          });
-                        }}
+                        onClick={() =>
+                          handleOpenArticle(article.id, account.id)
+                        }
                         onToggleFavorite={() =>
                           toggleArticleSummaryFavorite(article.id)
                         }
@@ -727,18 +747,10 @@ export function DesktopOfficialAccountsWorkspace({
                 ? favoriteSourceIds.includes(articleFavoriteSourceId)
                 : false
             }
-            onOpenAccount={(accountId) => {
-              void navigate({
-                to: "/official-accounts/$accountId",
-                params: { accountId },
-              });
-            }}
-            onOpenArticle={(nextArticleId) => {
-              void navigate({
-                to: "/official-accounts/articles/$articleId",
-                params: { articleId: nextArticleId },
-              });
-            }}
+            onOpenAccount={handleOpenAccount}
+            onOpenArticle={(nextArticleId) =>
+              handleOpenArticle(nextArticleId, activeArticle.account.id)
+            }
             onToggleFavorite={toggleArticleFavorite}
           />
         ) : (

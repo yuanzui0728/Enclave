@@ -4,11 +4,14 @@ export type DesktopContactsPane =
   | "new-friends"
   | "starred-friends"
   | "groups"
-  | "tags";
+  | "tags"
+  | "official-accounts";
 
 export type DesktopContactsRouteState = {
   pane: DesktopContactsPane;
   characterId?: string;
+  accountId?: string;
+  articleId?: string;
   showWorldCharacters: boolean;
 };
 
@@ -25,6 +28,7 @@ const desktopContactsPanes = new Set<DesktopContactsPane>([
   "starred-friends",
   "groups",
   "tags",
+  "official-accounts",
 ]);
 
 export function parseDesktopContactsRouteState(
@@ -38,6 +42,8 @@ export function parseDesktopContactsRouteState(
   const params = new URLSearchParams(normalizedHash);
   const pane = params.get("pane")?.trim();
   const characterId = params.get("characterId")?.trim() || undefined;
+  const accountId = params.get("accountId")?.trim() || undefined;
+  const articleId = params.get("articleId")?.trim() || undefined;
 
   return {
     pane:
@@ -45,6 +51,8 @@ export function parseDesktopContactsRouteState(
         ? (pane as DesktopContactsPane)
         : DEFAULT_DESKTOP_CONTACTS_ROUTE_STATE.pane,
     characterId,
+    accountId,
+    articleId,
     showWorldCharacters: params.get("world") === "1",
   };
 }
@@ -64,6 +72,14 @@ export function buildDesktopContactsRouteHash(
 
   if (state.characterId?.trim()) {
     params.set("characterId", state.characterId.trim());
+  }
+
+  if (state.accountId?.trim()) {
+    params.set("accountId", state.accountId.trim());
+  }
+
+  if (state.articleId?.trim()) {
+    params.set("articleId", state.articleId.trim());
   }
 
   if (state.showWorldCharacters) {

@@ -23,7 +23,7 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
-import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -35,9 +35,25 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 export function OfficialAccountDetailPage() {
   const { accountId } = useParams({ from: "/official-accounts/$accountId" });
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        accountId,
+      }),
+      replace: true,
+    });
+  }, [accountId, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
-    return <DesktopOfficialAccountsWorkspace selectedAccountId={accountId} />;
+    return null;
   }
 
   return <MobileOfficialAccountDetailPage accountId={accountId} />;

@@ -20,7 +20,7 @@ import {
   removeDesktopFavorite,
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
-import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -34,9 +34,25 @@ export function OfficialAccountArticlePage() {
     from: "/official-accounts/articles/$articleId",
   });
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        articleId,
+      }),
+      replace: true,
+    });
+  }, [articleId, isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
-    return <DesktopOfficialAccountsWorkspace selectedArticleId={articleId} />;
+    return null;
   }
 
   return <MobileOfficialAccountArticlePage articleId={articleId} />;

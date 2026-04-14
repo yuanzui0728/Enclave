@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Newspaper, Search } from "lucide-react";
@@ -6,16 +6,29 @@ import { listOfficialAccounts } from "@yinjie/contracts";
 import { AppPage, Button, cn } from "@yinjie/ui";
 import { OfficialAccountListItem } from "../components/official-account-list-item";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function OfficialAccountsPage() {
   const isDesktopLayout = useDesktopLayout();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({ pane: "official-accounts" }),
+      replace: true,
+    });
+  }, [isDesktopLayout, navigate]);
 
   if (isDesktopLayout) {
-    return <DesktopOfficialAccountsWorkspace />;
+    return null;
   }
 
   return <MobileOfficialAccountsPage />;
