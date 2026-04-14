@@ -432,7 +432,7 @@ export class FavoritesService {
       title: note.title,
       description: note.excerpt,
       meta: formatFavoriteTimestamp(new Date(note.updatedAt)),
-      to: `/notes#${note.id}`,
+      to: `/tabs/favorites#draftId=${encodeURIComponent(note.id)}&noteId=${encodeURIComponent(note.id)}`,
       badge: '笔记',
       avatarName: note.title,
       collectedAt: note.updatedAt,
