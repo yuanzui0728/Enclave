@@ -390,6 +390,24 @@ const momentsRoute = createRoute({
 const friendMomentsRoute = createRoute({
   getParentRoute: () => tabsRoute,
   path: "/moments/friend/$characterId",
+  beforeLoad: ({ location, params }) => {
+    const normalizedHash = location.hash.startsWith("#")
+      ? location.hash.slice(1)
+      : location.hash;
+
+    throw redirect({
+      to: "/desktop/friend-moments/$characterId",
+      params: { characterId: params.characterId },
+      ...(normalizedHash ? { hash: normalizedHash } : {}),
+      replace: true,
+    });
+  },
+});
+
+const desktopFriendMomentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/desktop/friend-moments/$characterId",
+  beforeLoad: requireWorldReady,
   component: FriendMomentsPage,
 });
 
@@ -860,6 +878,7 @@ const routeTree = rootRoute.addChildren([
   discoverMiniProgramsRoute,
   profileSettingsRoute,
   desktopMobileRoute,
+  desktopFriendMomentsRoute,
   desktopChatFilesRoute,
   desktopChatHistoryRoute,
   desktopChatImageViewerRoute,

@@ -690,7 +690,7 @@ export function ContactsPage() {
 
     setNotice(null);
     void navigate({
-      to: "/tabs/moments/friend/$characterId",
+      to: "/desktop/friend-moments/$characterId",
       params: { characterId: selectedFriendItem.character.id },
       hash: buildDesktopFriendMomentsRouteHash({
         source: "contacts",
