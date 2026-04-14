@@ -822,6 +822,9 @@ export function StickerPanel({
   const searchManageActionLabel = customStickerLibraryFull
     ? "去管理"
     : "去清理";
+  const manageShortcutTitle = customStickerLibraryFull
+    ? "表情库已满，进入管理删除后再继续添加。"
+    : "空间不多了，先去清理不常用表情。";
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
     ? "现在去添加"
     : catalog.customStickerCount === 0
@@ -2310,11 +2313,7 @@ export function StickerPanel({
                           <button
                             type="button"
                             onClick={openCustomManageMode}
-                            title={
-                              customStickerLibraryFull
-                                ? "表情库已满，进入管理删除后再继续添加。"
-                                : "空间不多了，先去清理不常用表情。"
-                            }
+                            title={manageShortcutTitle}
                             className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                           >
                             {customStickerLibraryFull ? "去管理" : "去清理"}
@@ -2482,6 +2481,7 @@ export function StickerPanel({
                     <button
                       type="button"
                       onClick={openCustomManageMode}
+                      title={manageShortcutTitle}
                       className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#92400e] shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                     >
                       {customStickerLibraryFull ? "去管理" : "去清理"}
@@ -2667,6 +2667,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={openCustomManageMode}
+                          title={manageShortcutTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           {searchManageActionLabel}
