@@ -71,6 +71,10 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { revealSavedFile } from "../runtime/reveal-saved-file";
 import { saveLocalFile } from "../runtime/save-local-file";
 import { useChatPreferencesStore } from "../store/chat-preferences-store";
+import {
+  isChatMentionPrefixBoundary,
+  isChatMentionTokenCharacter,
+} from "../lib/chat-text";
 
 type ChatComposerProps = {
   value: string;
@@ -6279,7 +6283,7 @@ function findActiveMentionToken(value: string, cursor: number) {
       break;
     }
 
-    if (/\s/.test(current)) {
+    if (!isChatMentionTokenCharacter(current)) {
       return null;
     }
 
@@ -6290,12 +6294,12 @@ function findActiveMentionToken(value: string, cursor: number) {
     return null;
   }
 
-  if (atIndex > 0 && !/\s/.test(value[atIndex - 1] ?? "")) {
+  if (!isChatMentionPrefixBoundary(value[atIndex - 1] ?? "")) {
     return null;
   }
 
   let endIndex = atIndex + 1;
-  while (endIndex < value.length && !/\s/.test(value[endIndex] ?? "")) {
+  while (endIndex < value.length && isChatMentionTokenCharacter(value[endIndex])) {
     endIndex += 1;
   }
 

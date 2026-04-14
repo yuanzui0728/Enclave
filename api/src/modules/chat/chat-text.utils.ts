@@ -1,6 +1,7 @@
 const CHAT_REPLY_PREFIX_PATTERN = /^\[\[chat_reply:([^\]]+)\]\]\n?/;
 const MENTION_TOKEN_PATTERN = /@[\p{L}\p{N}_-]{1,40}/gu;
 const MENTION_BOUNDARY_PATTERN = /[\s([{'"“‘，。！？、：；,.!?/\\-]/u;
+const BLOCKED_MENTION_PREFIX_PATTERN = /[A-Za-z0-9._%+-]/u;
 
 export type ChatReplyMetadata = {
   messageId: string;
@@ -13,6 +14,18 @@ export type ChatMentionSummary = {
   hasMentionAll: boolean;
   mentions: string[];
 };
+
+function isMentionPrefixBoundary(value?: string | null) {
+  if (!value) {
+    return true;
+  }
+
+  if (MENTION_BOUNDARY_PATTERN.test(value)) {
+    return true;
+  }
+
+  return !BLOCKED_MENTION_PREFIX_PATTERN.test(value);
+}
 
 export function extractChatReplyMetadata(text: string): {
   reply?: ChatReplyMetadata;
@@ -68,7 +81,7 @@ export function summarizeChatMentions(text: string): ChatMentionSummary {
     }
 
     const beforeCharacter = rawIndex > 0 ? text[rawIndex - 1] : undefined;
-    if (beforeCharacter && !MENTION_BOUNDARY_PATTERN.test(beforeCharacter)) {
+    if (!isMentionPrefixBoundary(beforeCharacter)) {
       continue;
     }
 
