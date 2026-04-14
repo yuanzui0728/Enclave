@@ -13,6 +13,7 @@ export function OfficialArticleViewer({
   article,
   accountName,
   mobile = false,
+  desktopSurface = "card",
   favorite = false,
   showShareAction = true,
   onOpenAccount,
@@ -22,6 +23,7 @@ export function OfficialArticleViewer({
   article: OfficialAccountArticleDetail;
   accountName?: string;
   mobile?: boolean;
+  desktopSurface?: "card" | "reader";
   favorite?: boolean;
   showShareAction?: boolean;
   onOpenAccount?: (accountId: string) => void;
@@ -137,7 +139,9 @@ export function OfficialArticleViewer({
       className={
         mobile
           ? "w-full bg-white px-4 py-3"
-          : "mx-auto w-full max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
+          : desktopSurface === "reader"
+            ? "mx-auto w-full max-w-[780px] bg-white px-6 py-8 sm:px-8"
+            : "mx-auto w-full max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
       }
     >
       <div
