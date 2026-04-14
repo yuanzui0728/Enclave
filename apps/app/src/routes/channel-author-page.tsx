@@ -202,166 +202,145 @@ export function ChannelAuthorPage() {
         ) : null}
 
         {!profileQuery.isLoading && !profileQuery.isError && profile ? (
-          <div
-            className={cn(
-              "grid gap-4",
-              isDesktopLayout ? "grid-cols-[320px_minmax(0,1fr)] items-start" : "grid-cols-1",
-            )}
-          >
-            <aside className="rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,248,246,0.96))] p-5 shadow-[var(--shadow-section)]">
-              <div className="rounded-[22px] bg-[linear-gradient(180deg,#1f4132,#132721)] px-5 py-6 text-white">
-                <div className="flex items-start justify-between gap-4">
-                  <AvatarChip
-                    name={profile.authorName}
-                    src={profile.authorAvatar}
-                    size="xl"
-                  />
-                  <div className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/84">
-                    {profile.authorType === "character" ? "居民作者" : "世界主人"}
+          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[26px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+            <section
+              className={cn(
+                "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
+                isDesktopLayout ? "px-6 pb-6 pt-6" : "px-4 pb-5 pt-5",
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <AvatarChip
+                  name={profile.authorName}
+                  src={profile.authorAvatar}
+                  size="xl"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="truncate text-[24px] font-semibold text-[color:var(--text-primary)]">
+                      {profile.authorName}
+                    </div>
+                    <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                      {profile.authorType === "character" ? "居民作者" : "世界主人"}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                    {profile.bio?.trim() || fallbackBio}
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <ChannelAuthorHeaderStat
+                      icon={<Users size={14} />}
+                      label="关注者"
+                      value={String(profile.followerCount)}
+                    />
+                    <ChannelAuthorHeaderStat
+                      icon={<Clapperboard size={14} />}
+                      label="最近内容"
+                      value={String(profile.recentPosts.length)}
+                    />
+                    <ChannelAuthorHeaderStat
+                      icon={<RadioTower size={14} />}
+                      label="直播回放"
+                      value={String(
+                        (profile.recentPosts ?? []).filter(
+                          (post) => post.sourceKind === "live_clip",
+                        ).length,
+                      )}
+                    />
                   </div>
                 </div>
-                <div className="mt-4 text-[22px] font-semibold">
-                  {profile.authorName}
-                </div>
-                <div className="mt-2 text-[13px] leading-6 text-white/76">
-                  {profile.bio?.trim() || fallbackBio}
-                </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <AuthorMetricCard
-                  icon={<Users size={15} />}
-                  label="关注者"
-                  value={String(profile.followerCount)}
-                />
-                <AuthorMetricCard
-                  icon={<Clapperboard size={15} />}
-                  label="最近内容"
-                  value={String(profile.recentPosts.length)}
-                />
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button
+                  variant={profile.isFollowing ? "secondary" : "primary"}
+                  size="lg"
+                  disabled={followMutation.isPending}
+                  onClick={() => followMutation.mutate()}
+                  className={cn(
+                    "h-11 rounded-full px-5 shadow-none",
+                    profile.isFollowing
+                      ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]"
+                      : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
+                  )}
+                >
+                  {followMutation.isPending
+                    ? "处理中..."
+                    : profile.isFollowing
+                      ? "已关注"
+                      : "+关注"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={navigateBackToChannels}
+                  className="h-11 rounded-full border-[color:var(--border-faint)] bg-white px-5 text-[color:var(--text-primary)] shadow-none"
+                >
+                  返回视频号
+                </Button>
               </div>
+            </section>
 
-              <div className="mt-4 overflow-hidden rounded-[22px] border border-[rgba(31,65,50,0.12)] bg-[linear-gradient(180deg,rgba(22,48,38,0.98),rgba(17,34,28,0.98))] text-white shadow-[0_18px_34px_rgba(15,23,42,0.08)]">
-                <div className="flex items-center justify-between px-4 pt-4">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/84">
+            {featuredLivePost ? (
+              <button
+                type="button"
+                onClick={() => openChannelPost(featuredLivePost)}
+                className="flex w-full items-start justify-between gap-3 border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(127,29,29,0.04),rgba(127,29,29,0.01))] px-4 py-4 text-left transition hover:bg-[rgba(127,29,29,0.06)]"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(127,29,29,0.08)] px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
                     <RadioTower size={13} />
-                    直播入口
+                    最近直播回放
                   </div>
-                  <div className="text-[11px] text-white/58">
-                    {featuredLivePost ? "最近直播" : "等待开播"}
+                  <div className="mt-3 line-clamp-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+                    {featuredLivePost.title?.trim() || "查看作者最近一次直播回放"}
                   </div>
-                </div>
-                <div className="px-4 pb-4 pt-3">
-                  <div className="text-[16px] font-semibold">
-                    {featuredLivePost?.title?.trim() || "作者暂时还没有直播回放"}
+                  <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                    {formatTimestamp(featuredLivePost.createdAt)} · {featuredLivePost.viewCount} 播放
                   </div>
-                  <div className="mt-2 text-[12px] leading-6 text-white/70">
-                    {featuredLivePost
-                      ? `${formatTimestamp(featuredLivePost.createdAt)} · ${featuredLivePost.viewCount} 播放 · 从作者主页直接回到直播内容`
-                      : "先把直播入口卡片放进作者主页，后续接真实直播状态和开播中入口。"}
-                  </div>
-                  <div className="mt-3 rounded-[16px] bg-white/8 px-3.5 py-3 text-[12px] leading-6 text-white/82">
-                    {featuredLivePost?.text ||
-                      "当前还没有直播回放内容，等作者下一次开播后，这里会优先展示最新回放。"}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      disabled={!featuredLivePost}
-                      onClick={() => {
-                        if (featuredLivePost) {
-                          openChannelPost(featuredLivePost);
-                        }
-                      }}
-                      className="h-9 rounded-full bg-white px-4 text-[12px] text-[#163026] shadow-none hover:bg-white/92 disabled:bg-white/16 disabled:text-white/45"
-                    >
-                      {featuredLivePost ? "查看回放" : "暂无回放"}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setActiveCollection("live")}
-                      className="h-9 rounded-full border border-white/14 bg-white/8 px-4 text-[12px] text-white shadow-none hover:bg-white/12"
-                    >
-                      浏览直播分栏
-                    </Button>
+                  <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                    {featuredLivePost.text}
                   </div>
                 </div>
-              </div>
+                <span className="shrink-0 rounded-full border border-[rgba(127,29,29,0.12)] bg-white px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
+                  查看回放
+                </span>
+              </button>
+            ) : null}
 
-              <Button
-                variant={profile.isFollowing ? "secondary" : "primary"}
-                size="lg"
-                disabled={followMutation.isPending}
-                onClick={() => followMutation.mutate()}
-                className={cn(
-                  "mt-4 h-11 w-full rounded-full shadow-none",
-                  profile.isFollowing
-                    ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]"
-                    : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
-                )}
-              >
-                {followMutation.isPending
-                  ? "处理中..."
-                  : profile.isFollowing
-                    ? "已关注"
-                    : "+关注"}
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={navigateBackToChannels}
-                className="mt-3 h-11 w-full rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] shadow-none"
-              >
-                返回视频号
-              </Button>
-            </aside>
-
-            <section className="space-y-4">
-              <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
-                <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[color:var(--text-dim)]">
-                  Recent Posts
-                </div>
-                <div className="mt-2 text-[20px] font-semibold text-[color:var(--text-primary)]">
-                  作品合集
-                </div>
-                <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                  对齐微信作者主页，先把作者最近内容按作品类型拆成分栏，方便从作者页继续下钻。
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
+            <section>
+              <div className="border-y border-[color:var(--border-faint)] bg-white px-3">
+                <div className="flex overflow-x-auto">
                   {collectionTabs.map((tab) => (
                     <button
                       key={tab.key}
                       type="button"
                       onClick={() => setActiveCollection(tab.key)}
                       className={cn(
-                        "rounded-full border px-3 py-1.5 text-[12px] transition",
+                        "relative shrink-0 px-4 py-3 text-[14px] transition",
                         activeCollection === tab.key
-                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.1)] font-medium text-[color:var(--brand-primary)]"
-                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white",
+                          ? "font-medium text-[color:var(--text-primary)]"
+                          : "text-[color:var(--text-secondary)]",
                       )}
                     >
                       {tab.label}
                       <span className="ml-1 text-[11px] opacity-70">
                         {tab.count}
                       </span>
+                      {activeCollection === tab.key ? (
+                        <span className="absolute inset-x-4 bottom-0 h-[2px] rounded-full bg-[color:var(--brand-primary)]" />
+                      ) : null}
                     </button>
                   ))}
                 </div>
-                <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] text-[color:var(--text-secondary)]">
-                  当前分栏：{activeCollectionLabel}，共 {visiblePosts.length} 条内容。
-                </div>
+              </div>
+
+              <div className="bg-[color:var(--surface-console)] px-4 py-3 text-[12px] text-[color:var(--text-secondary)]">
+                当前分栏：{activeCollectionLabel}，共 {visiblePosts.length} 条内容。
               </div>
 
               {visiblePosts.length ? (
-                <div
-                  className={cn(
-                    "grid gap-3",
-                    isDesktopLayout ? "grid-cols-2" : "grid-cols-1",
-                  )}
-                >
+                <div className="divide-y divide-[color:var(--border-faint)] bg-white">
                   {visiblePosts.map((post) => {
                     const postStatus = resolveChannelPostCardStatus(post);
 
@@ -370,72 +349,70 @@ export function ChannelAuthorPage() {
                         key={post.id}
                         type="button"
                         onClick={() => openChannelPost(post)}
-                        className="overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white text-left shadow-[var(--shadow-section)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(15,23,42,0.08)]"
+                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(15,23,42,0.02)]"
                       >
-                        <div className="flex min-h-[10.5rem] gap-4 px-4 py-4">
-                          <ChannelPostCover post={post} />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium",
-                                  postStatus.primaryBadgeClassName,
-                                )}
-                              >
-                                {postStatus.label}
-                              </span>
-                              <span
-                                className={cn(
-                                  "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px]",
-                                  postStatus.secondaryBadgeClassName,
-                                )}
-                              >
-                                {postStatus.secondaryLabel}
-                              </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                                postStatus.primaryBadgeClassName,
+                              )}
+                            >
+                              {postStatus.label}
+                            </span>
+                            <span
+                              className={cn(
+                                "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px]",
+                                postStatus.secondaryBadgeClassName,
+                              )}
+                            >
+                              {postStatus.secondaryLabel}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
+                            <span>{formatTimestamp(post.createdAt)}</span>
+                            <span>·</span>
+                            <span>{postStatus.metaLabel}</span>
+                          </div>
+                          {post.title ? (
+                            <div className="mt-2 line-clamp-2 text-[16px] font-semibold leading-6 text-[color:var(--text-primary)]">
+                              {post.title}
                             </div>
-                            <div className="mt-2 flex items-center gap-2 text-[10px] text-[color:var(--text-dim)]">
-                              <span>{formatTimestamp(post.createdAt)}</span>
-                              <span>·</span>
-                              <span>{postStatus.metaLabel}</span>
+                          ) : null}
+                          <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                            {post.text}
+                          </div>
+                          {post.topicTags?.length ? (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {post.topicTags.slice(0, 3).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
                             </div>
-                            {post.title ? (
-                              <div className="mt-2 line-clamp-2 text-[16px] font-semibold leading-6 text-[color:var(--text-primary)]">
-                                {post.title}
-                              </div>
-                            ) : null}
-                            <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                              {post.text}
-                            </div>
-                            {post.topicTags?.length ? (
-                              <div className="mt-3 flex flex-wrap gap-1.5">
-                                {post.topicTags.slice(0, 3).map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-1 text-[10px] text-[color:var(--text-secondary)]"
-                                  >
-                                    #{tag}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : null}
-                            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
-                                <PlaySquare size={12} />
-                                {post.viewCount} 播放
-                              </span>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
-                                <MessageCircleMore size={12} />
-                                {post.commentCount} 评论
-                              </span>
-                            </div>
+                          ) : null}
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
+                              <PlaySquare size={12} />
+                              {post.viewCount} 播放
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
+                              <MessageCircleMore size={12} />
+                              {post.commentCount} 评论
+                            </span>
                           </div>
                         </div>
+                        <ChannelPostCover post={post} />
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-section)]">
+                <div className="bg-white p-6">
                   <EmptyState
                     title={`${activeCollectionLabel}分栏暂时没有内容`}
                     description="切换其他分栏看看，或者等作者发布新的内容后再回来。"
@@ -450,7 +427,7 @@ export function ChannelAuthorPage() {
   );
 }
 
-function AuthorMetricCard({
+function ChannelAuthorHeaderStat({
   icon,
   label,
   value,
@@ -460,13 +437,15 @@ function AuthorMetricCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-[color:var(--text-primary)]">
-      <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(7,193,96,0.1)] text-[color:var(--brand-primary)]">
+    <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-3.5 py-2 text-[color:var(--text-primary)]">
+      <div className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(7,193,96,0.1)] text-[color:var(--brand-primary)]">
         {icon}
       </div>
-      <div className="mt-3 text-[22px] font-semibold">{value}</div>
-      <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
-        {label}
+      <div>
+        <div className="text-[14px] font-semibold">{value}</div>
+        <div className="text-[11px] text-[color:var(--text-secondary)]">
+          {label}
+        </div>
       </div>
     </div>
   );
