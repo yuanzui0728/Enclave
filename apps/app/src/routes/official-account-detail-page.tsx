@@ -276,17 +276,16 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
         {account ? (
           <>
-          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
-            <div className="flex items-center gap-3 px-4 py-3">
-              <AvatarChip name={account.name} src={account.avatar} size="lg" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[17px] font-semibold text-[color:var(--text-primary)]">
+            <section className="overflow-hidden border-b border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
+              <div className="flex flex-col items-center text-center">
+                <AvatarChip name={account.name} src={account.avatar} size="xl" />
+                <div className="mt-3 truncate text-[19px] font-semibold text-[color:var(--text-primary)]">
                   {account.name}
                 </div>
-                <div className="mt-0.5 text-[12px] text-[color:var(--text-secondary)]">
+                <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
                   @{account.handle}
                 </div>
-                <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px]">
+                <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-[10px]">
                   <span className="rounded-full bg-[rgba(47,122,63,0.12)] px-2 py-0.5 text-[#2f7a3f]">
                     {account.accountType === "service" ? "服务号" : "订阅号"}
                   </span>
@@ -295,117 +294,126 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                       已认证
                     </span>
                   ) : null}
+                  {account.isFollowing ? (
+                    <span className="rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[color:var(--brand-primary)]">
+                      已关注
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-3 max-w-[20rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                  {account.description}
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2 border-t border-[color:var(--border-faint)] px-4 py-2">
-              <Button
-                type="button"
-                onClick={() => followMutation.mutate()}
-                disabled={followMutation.isPending}
-                variant={account.isFollowing ? "secondary" : "primary"}
-                className="h-8 w-full rounded-[10px] text-[12px]"
-              >
-                {followMutation.isPending
-                  ? "处理中..."
-                  : account.isFollowing
-                    ? "取消关注"
-                    : "关注公众号"}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={toggleAccountFavorite}
-                className="h-8 w-full rounded-[10px] text-[12px]"
-              >
-                {accountFavoriteSourceId &&
-                favoriteSourceIds.includes(accountFavoriteSourceId)
-                  ? "取消收藏"
-                  : "收藏主页"}
-              </Button>
-            </div>
-
-            {followMutation.isError && followMutation.error instanceof Error ? (
-              <div className="border-t border-[color:var(--border-faint)] px-4 py-2">
-                <InlineNotice
-                  className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
-                  tone="danger"
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  onClick={() => followMutation.mutate()}
+                  disabled={followMutation.isPending}
+                  variant={account.isFollowing ? "secondary" : "primary"}
+                  className="h-9 w-full rounded-full text-[12px]"
                 >
-                  {followMutation.error.message}
-                </InlineNotice>
+                  {followMutation.isPending
+                    ? "处理中..."
+                    : account.isFollowing
+                      ? "取消关注"
+                      : "关注公众号"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={toggleAccountFavorite}
+                  className="h-9 w-full rounded-full text-[12px]"
+                >
+                  {accountFavoriteSourceId &&
+                  favoriteSourceIds.includes(accountFavoriteSourceId)
+                    ? "取消收藏"
+                    : "收藏主页"}
+                </Button>
               </div>
-            ) : null}
-          </section>
 
-          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
-            <button
-              type="button"
-              disabled={!account.isFollowing}
-              onClick={() => {
-                if (account.accountType === "service") {
-                  void navigate({
-                    to: "/official-accounts/service/$accountId",
-                    params: { accountId: account.id },
-                  });
-                  return;
-                }
+              {followMutation.isError && followMutation.error instanceof Error ? (
+                <div className="mt-3">
+                  <InlineNotice
+                    className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+                    tone="danger"
+                  >
+                    {followMutation.error.message}
+                  </InlineNotice>
+                </div>
+              ) : null}
+            </section>
 
-                void navigate({ to: "/chat/subscription-inbox" });
-              }}
-              className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left disabled:cursor-default disabled:opacity-80"
-            >
-              <div className="min-w-0 flex-1">
+            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+              <button
+                type="button"
+                disabled={!account.isFollowing}
+                onClick={() => {
+                  if (account.accountType === "service") {
+                    void navigate({
+                      to: "/official-accounts/service/$accountId",
+                      params: { accountId: account.id },
+                    });
+                    return;
+                  }
+
+                  void navigate({ to: "/chat/subscription-inbox" });
+                }}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default disabled:opacity-80"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                    {account.accountType === "service"
+                      ? "服务号消息"
+                      : "订阅号消息"}
+                  </div>
+                  <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+                    {account.isFollowing
+                      ? account.accountType === "service"
+                        ? "已关注，可直接进入服务消息线程。"
+                        : "已关注，后续推送会汇总到订阅号消息。"
+                      : "关注后可从消息页查看这类内容。"}
+                  </div>
+                </div>
+                {account.isFollowing ? (
+                  <ChevronRight
+                    size={14}
+                    className="shrink-0 text-[color:var(--text-muted)]"
+                  />
+                ) : null}
+              </button>
+            </section>
+
+            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+              <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
                 <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
-                  {account.accountType === "service" ? "服务消息" : "订阅号消息"}
+                  最近文章
                 </div>
                 <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
-                  {account.isFollowing
-                    ? account.accountType === "service"
-                      ? "已关注，可直接进入服务消息线程。"
-                      : "已关注，后续推送会汇总到订阅号消息。"
-                    : "关注后可从消息页查看这类内容。"}
+                  {account.articles.length
+                    ? `${account.articles.length} 篇最近推送`
+                    : "这个公众号还没有公开文章。"}
                 </div>
               </div>
-              {account.isFollowing ? (
-                <ChevronRight
-                  size={14}
-                  className="shrink-0 text-[color:var(--text-muted)]"
+
+              {account.articles.map((article) => (
+                <OfficialArticleCard
+                  key={article.id}
+                  article={article}
+                  favorite={favoriteSourceIds.includes(
+                    `official-article-${article.id}`,
+                  )}
+                  dense
+                  onClick={() => {
+                    void navigate({
+                      to: "/official-accounts/articles/$articleId",
+                      params: { articleId: article.id },
+                    });
+                  }}
+                  onToggleFavorite={() => toggleArticleFavorite(article.id)}
                 />
-              ) : null}
-            </button>
-          </section>
-
-          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
-            <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
-                最近文章
-              </div>
-              <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
-                {account.articles.length
-                  ? `${account.articles.length} 篇最近推送`
-                  : "这个公众号还没有公开文章。"}
-              </div>
-            </div>
-
-            {account.articles.map((article) => (
-              <OfficialArticleCard
-                key={article.id}
-                article={article}
-                favorite={favoriteSourceIds.includes(
-                  `official-article-${article.id}`,
-                )}
-                dense
-                onClick={() => {
-                  void navigate({
-                    to: "/official-accounts/articles/$articleId",
-                    params: { articleId: article.id },
-                  });
-                }}
-                onToggleFavorite={() => toggleArticleFavorite(article.id)}
-              />
-            ))}
-          </section>
+              ))}
+            </section>
           </>
         ) : null}
       </div>
