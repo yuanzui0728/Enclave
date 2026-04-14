@@ -1051,6 +1051,22 @@ export function ChatMessageList({
     });
   };
 
+  const handleMobileCharacterAvatarClick = (
+    event: MouseEvent<HTMLButtonElement>,
+    message: ChatRenderableMessage,
+  ) => {
+    event.stopPropagation();
+    const characterId = message.senderId?.trim();
+    if (!characterId) {
+      return;
+    }
+
+    void navigate({
+      to: "/character/$characterId",
+      params: { characterId },
+    });
+  };
+
   const handleDesktopOwnerAvatarClick = (
     event: MouseEvent<HTMLButtonElement>,
   ) => {
@@ -2363,16 +2379,28 @@ export function ChatMessageList({
                   />
                 ) : null}
                 {!isUser ? (
-                  canOpenDesktopAvatarPopover(
+                  resolveCharacterAvatarAction(
                     message,
                     isDesktop,
                     selectionMode,
+                    threadContext?.type,
                   ) ? (
                     <button
                       type="button"
-                      onClick={(event) =>
-                        handleDesktopAvatarClick(event, message)
-                      }
+                      onClick={(event) => {
+                        const avatarAction = resolveCharacterAvatarAction(
+                          message,
+                          isDesktop,
+                          selectionMode,
+                          threadContext?.type,
+                        );
+                        if (avatarAction === "desktop-popover") {
+                          handleDesktopAvatarClick(event, message);
+                          return;
+                        }
+
+                        handleMobileCharacterAvatarClick(event, message);
+                      }}
                       className="rounded-xl transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(7,193,96,0.34)] focus-visible:ring-offset-2"
                       aria-label={`查看${message.senderName?.trim() || "联系人"}资料`}
                     >
@@ -3147,6 +3175,23 @@ function canOpenDesktopAvatarPopover(
     message.senderType === "character" &&
     Boolean(message.senderId?.trim())
   );
+}
+
+function resolveCharacterAvatarAction(
+  message: ChatRenderableMessage,
+  isDesktop: boolean,
+  selectionMode: boolean,
+  threadType?: "direct" | "group",
+) {
+  if (canOpenDesktopAvatarPopover(message, isDesktop, selectionMode)) {
+    return "desktop-popover" as const;
+  }
+
+  if (selectionMode || message.senderType !== "character" || !message.senderId?.trim()) {
+    return null;
+  }
+
+  return threadType === "direct" ? ("mobile-profile" as const) : null;
 }
 
 function UnreadMarkerDivider({
