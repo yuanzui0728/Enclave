@@ -864,6 +864,9 @@ export function StickerPanel({
         : customSlotsRemaining <= 20
           ? "进入删除管理，优先清理不常用表情。"
           : "进入删除管理。";
+  const resumeManageShortcutTitle = showManageSearchPauseHint
+    ? desktopManageButtonTitle
+    : undefined;
   const desktopManageAfterFinishLabel =
     !isMobile && activeSectionId === "custom" && customManageMode
       ? customUploadResumed
@@ -1775,6 +1778,7 @@ export function StickerPanel({
                     ? clearSearchAndResumeManage
                     : clearSearch
                 }
+                title={resumeManageShortcutTitle}
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)]"
                 aria-label={
                   showManageSearchPauseHint
@@ -1821,6 +1825,7 @@ export function StickerPanel({
                 <button
                   type="button"
                   onClick={clearSearchAndResumeManage}
+                  title={resumeManageShortcutTitle}
                   className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:bg-[color:var(--surface-console)]"
                 >
                   继续管理
@@ -2654,6 +2659,7 @@ export function StickerPanel({
                             ? clearSearchAndResumeManage
                             : clearSearch
                         }
+                        title={resumeManageShortcutTitle}
                         className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                       >
                         {showManageSearchPauseHint
