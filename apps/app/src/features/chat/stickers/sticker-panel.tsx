@@ -828,6 +828,11 @@ export function StickerPanel({
   const resumeUploadShortcutTitle = customUploadResumed
     ? `当前已腾出 ${customUploadResumedSlots} 个空位，点这里直接继续添加图片或 GIF。`
     : undefined;
+  const addFirstUploadShortcutTitle =
+    "打开文件选择，添加第一张自定义表情图片或 GIF。";
+  const addUploadShortcutTitle = "打开文件选择，添加自定义表情图片或 GIF。";
+  const continueUploadShortcutTitle =
+    "打开文件选择，继续添加自定义表情图片或 GIF。";
   const featuredShortcutTitle = "切到精选表情，先看看内置常用表情。";
   const customShortcutTitle = "切回自定义表情，查看自己保存的图片和 GIF。";
   const recentAddedShortcutTitle =
@@ -943,9 +948,11 @@ export function StickerPanel({
       ? resumeUploadShortcutTitle
       : showPausedManageResumeUploadShortcut
         ? resumeUploadShortcutTitle
-        : customStickerLibraryFull
-          ? "自定义表情已满，请先删除几个再继续添加"
-          : undefined;
+        : desktopCustomHeaderContext && catalog.customStickerCount === 0
+          ? addFirstUploadShortcutTitle
+          : customStickerLibraryFull
+            ? "自定义表情已满，请先删除几个再继续添加"
+            : addUploadShortcutTitle;
   const searchInputPlaceholder =
     !isMobile && activeSectionId === "custom"
       ? showManageSearchPauseHint
@@ -2171,6 +2178,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={openUploadPicker}
+                          title={continueUploadShortcutTitle}
                           disabled={uploadMutation.isPending}
                           className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
                         >
@@ -2184,6 +2192,7 @@ export function StickerPanel({
                           <button
                             type="button"
                             onClick={openUploadPicker}
+                            title={addFirstUploadShortcutTitle}
                             disabled={uploadMutation.isPending}
                             className="rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] transition active:bg-[rgba(160,90,10,0.18)] disabled:opacity-45"
                           >
@@ -2285,6 +2294,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={openUploadPicker}
+                          title={addFirstUploadShortcutTitle}
                           className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                         >
                           添加第一张
@@ -2769,6 +2779,11 @@ export function StickerPanel({
                         ref={customEmptyActionButtonRef}
                         type="button"
                         onClick={openUploadPicker}
+                        title={
+                          customDeleteFeedback?.deletedCount
+                            ? continueUploadShortcutTitle
+                            : addFirstUploadShortcutTitle
+                        }
                         disabled={
                           uploadMutation.isPending || customStickerLibraryFull
                         }
