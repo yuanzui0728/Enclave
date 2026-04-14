@@ -114,6 +114,40 @@ type SearchLauncherConversationGroup = {
   totalHits: number;
 };
 
+type SearchLauncherFocusRegion =
+  | "input"
+  | "suggestions"
+  | "quickAccess"
+  | "history";
+
+type SearchLauncherFocusPanelId =
+  | "chatSuggestions"
+  | "officialSuggestions"
+  | "contactSuggestions"
+  | "worldCharacterSuggestions"
+  | "favoriteSuggestions"
+  | "miniProgramSuggestions"
+  | "recentConversations"
+  | "recentOfficials"
+  | "recentMiniPrograms"
+  | "recentFavorites"
+  | "history"
+  | null;
+
+const searchLauncherFocusRegionLabels: Record<
+  SearchLauncherFocusRegion,
+  string
+> = {
+  input: "搜索框",
+  suggestions: "建议区",
+  quickAccess: "快捷访问",
+  history: "历史搜索",
+};
+
+function buildSearchLauncherHistoryActionId(keyword: string) {
+  return `history-${keyword}`;
+}
+
 export function useDesktopSearchLauncher({
   keyword,
   onKeywordChange,
@@ -764,7 +798,7 @@ export function DesktopSearchDropdownPanel({
 
       history.forEach((item) => {
         items.push({
-          id: `history-${item.keyword}`,
+          id: buildSearchLauncherHistoryActionId(item.keyword),
           onSelect: () => onOpenSearch(item.keyword),
         });
       });
@@ -783,6 +817,171 @@ export function DesktopSearchDropdownPanel({
     navigate,
     onClose,
     onOpenSearch,
+    officialMatches,
+    recentConversations,
+    recentFavorites,
+    recentOfficials,
+    recentMiniPrograms,
+    trimmedKeyword,
+    worldCharacterMatches,
+  ]);
+  const activeFocusContext = useMemo(() => {
+    if (activeActionId === "launcher-search") {
+      return {
+        panelId: null as SearchLauncherFocusPanelId,
+        panelTitle: "搜一搜主入口",
+        region: "input" as SearchLauncherFocusRegion,
+      };
+    }
+
+    const historyIds = new Set(
+      history.map((item) => buildSearchLauncherHistoryActionId(item.keyword)),
+    );
+    if (historyIds.has(activeActionId)) {
+      return {
+        panelId: "history" as SearchLauncherFocusPanelId,
+        panelTitle: "最近搜索",
+        region: "history" as SearchLauncherFocusRegion,
+      };
+    }
+
+    if (trimmedKeyword) {
+      const chatSuggestionIds = new Set<string>();
+      conversationMessageGroups.forEach((group) => {
+        chatSuggestionIds.add(group.header.id);
+        group.messages.forEach((item) => {
+          chatSuggestionIds.add(item.id);
+        });
+      });
+      conversationOnlyMatches.forEach((item) => {
+        chatSuggestionIds.add(item.id);
+      });
+      if (chatSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "chatSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "聊天",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      const officialSuggestionIds = new Set<string>();
+      officialMatches.forEach((group) => {
+        officialSuggestionIds.add(group.header.id);
+        if (group.article) {
+          officialSuggestionIds.add(group.article.id);
+        }
+      });
+      if (officialSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "officialSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "公众号",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      const contactSuggestionIds = new Set(
+        friendMatches.map((item) => `friend-${item.character.id}`),
+      );
+      if (contactSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "contactSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "联系人",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      const worldCharacterSuggestionIds = new Set(
+        worldCharacterMatches.map((item) => `world-character-${item.character.id}`),
+      );
+      if (worldCharacterSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "worldCharacterSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "世界角色",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      const favoriteSuggestionIds = new Set(
+        favoriteMatches.map((item) => item.id),
+      );
+      if (favoriteSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "favoriteSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "收藏",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      const miniProgramSuggestionIds = new Set(
+        miniProgramMatches.map((item) => item.id),
+      );
+      if (miniProgramSuggestionIds.has(activeActionId)) {
+        return {
+          panelId: "miniProgramSuggestions" as SearchLauncherFocusPanelId,
+          panelTitle: "小程序",
+          region: "suggestions" as SearchLauncherFocusRegion,
+        };
+      }
+
+      return {
+        panelId: null as SearchLauncherFocusPanelId,
+        panelTitle: "搜索建议",
+        region: "suggestions" as SearchLauncherFocusRegion,
+      };
+    }
+
+    if (recentConversations.some((item) => item.id === activeActionId)) {
+      return {
+        panelId: "recentConversations" as SearchLauncherFocusPanelId,
+        panelTitle: "最近聊天",
+        region: "quickAccess" as SearchLauncherFocusRegion,
+      };
+    }
+
+    const recentOfficialIds = new Set<string>();
+    recentOfficials.forEach((group) => {
+      recentOfficialIds.add(group.header.id);
+      if (group.article) {
+        recentOfficialIds.add(group.article.id);
+      }
+    });
+    if (recentOfficialIds.has(activeActionId)) {
+      return {
+        panelId: "recentOfficials" as SearchLauncherFocusPanelId,
+        panelTitle: "最近公众号",
+        region: "quickAccess" as SearchLauncherFocusRegion,
+      };
+    }
+
+    if (recentMiniPrograms.some((item) => item.id === activeActionId)) {
+      return {
+        panelId: "recentMiniPrograms" as SearchLauncherFocusPanelId,
+        panelTitle: "最近使用的小程序",
+        region: "quickAccess" as SearchLauncherFocusRegion,
+      };
+    }
+
+    if (recentFavorites.some((item) => item.id === activeActionId)) {
+      return {
+        panelId: "recentFavorites" as SearchLauncherFocusPanelId,
+        panelTitle: "最近收藏",
+        region: "quickAccess" as SearchLauncherFocusRegion,
+      };
+    }
+
+    return {
+      panelId: null as SearchLauncherFocusPanelId,
+      panelTitle: "快捷访问",
+      region: "quickAccess" as SearchLauncherFocusRegion,
+    };
+  }, [
+    activeActionId,
+    conversationMessageGroups,
+    conversationOnlyMatches,
+    favoriteMatches,
+    friendMatches,
+    history,
+    miniProgramMatches,
     officialMatches,
     recentConversations,
     recentFavorites,
@@ -910,8 +1109,18 @@ export function DesktopSearchDropdownPanel({
         />
       ) : null}
 
+      <SearchLauncherFocusStrip
+        keyword={trimmedKeyword}
+        panelTitle={activeFocusContext.panelTitle}
+        region={activeFocusContext.region}
+      />
+
       {trimmedKeyword ? (
-        <SearchLauncherSection title="搜索建议" className="mt-3">
+        <SearchLauncherSection
+          title="搜索建议"
+          className="mt-3"
+          highlighted={activeFocusContext.region === "suggestions"}
+        >
           {suggestionsLoading ? (
             <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
               正在整理聊天、联系人、公众号、收藏和小程序结果...
@@ -935,6 +1144,7 @@ export function DesktopSearchDropdownPanel({
               {conversationMessageGroups.length || conversationOnlyMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${conversationMessageGroups.length + conversationOnlyMatches.length} 组结果`}
+                  highlighted={activeFocusContext.panelId === "chatSuggestions"}
                   title="聊天"
                 >
                   <div className="space-y-2">
@@ -978,6 +1188,9 @@ export function DesktopSearchDropdownPanel({
               {officialMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${officialMatches.length} 个入口`}
+                  highlighted={
+                    activeFocusContext.panelId === "officialSuggestions"
+                  }
                   title="公众号"
                 >
                   <div className="space-y-1.5">
@@ -1001,6 +1214,9 @@ export function DesktopSearchDropdownPanel({
               {friendMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${friendMatches.length} 位联系人`}
+                  highlighted={
+                    activeFocusContext.panelId === "contactSuggestions"
+                  }
                   title="联系人"
                 >
                   <div className="space-y-1.5">
@@ -1036,6 +1252,9 @@ export function DesktopSearchDropdownPanel({
               {worldCharacterMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${worldCharacterMatches.length} 位角色`}
+                  highlighted={
+                    activeFocusContext.panelId === "worldCharacterSuggestions"
+                  }
                   title="世界角色"
                 >
                   <div className="space-y-1.5">
@@ -1078,6 +1297,9 @@ export function DesktopSearchDropdownPanel({
               {favoriteMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${favoriteMatches.length} 条收藏`}
+                  highlighted={
+                    activeFocusContext.panelId === "favoriteSuggestions"
+                  }
                   title="收藏"
                 >
                   <div className="space-y-1.5">
@@ -1099,6 +1321,9 @@ export function DesktopSearchDropdownPanel({
               {miniProgramMatches.length ? (
                 <SearchLauncherCollectionCard
                   countLabel={`${miniProgramMatches.length} 个入口`}
+                  highlighted={
+                    activeFocusContext.panelId === "miniProgramSuggestions"
+                  }
                   title="小程序"
                 >
                   <div className="space-y-1.5">
@@ -1147,11 +1372,16 @@ export function DesktopSearchDropdownPanel({
       ) : null}
 
       {!trimmedKeyword ? (
-        <SearchLauncherSection title="快捷访问" className="mt-3">
+        <SearchLauncherSection
+          title="快捷访问"
+          className="mt-3"
+          highlighted={activeFocusContext.region === "quickAccess"}
+        >
           <div className="space-y-3">
             {recentConversations.length ? (
               <SearchLauncherCollectionCard
                 countLabel={`${recentConversations.length} 个会话`}
+                highlighted={activeFocusContext.panelId === "recentConversations"}
                 title="最近聊天"
               >
                 <div className="space-y-2">
@@ -1172,6 +1402,7 @@ export function DesktopSearchDropdownPanel({
             {recentOfficials.length ? (
               <SearchLauncherCollectionCard
                 countLabel={`${recentOfficials.length} 个入口`}
+                highlighted={activeFocusContext.panelId === "recentOfficials"}
                 title="最近公众号"
               >
                 <div className="space-y-1.5">
@@ -1195,6 +1426,7 @@ export function DesktopSearchDropdownPanel({
             {recentMiniPrograms.length ? (
               <SearchLauncherCollectionCard
                 countLabel={`${recentMiniPrograms.length} 个入口`}
+                highlighted={activeFocusContext.panelId === "recentMiniPrograms"}
                 title="最近使用的小程序"
               >
                 <div className="space-y-1.5">
@@ -1214,7 +1446,10 @@ export function DesktopSearchDropdownPanel({
             ) : null}
 
             {favoritesLoading ? (
-              <SearchLauncherCollectionCard title="最近收藏">
+              <SearchLauncherCollectionCard
+                highlighted={activeFocusContext.panelId === "recentFavorites"}
+                title="最近收藏"
+              >
                 <div className="rounded-[12px] bg-white px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
                   正在同步最近收藏...
                 </div>
@@ -1224,6 +1459,7 @@ export function DesktopSearchDropdownPanel({
             {!favoritesLoading && recentFavorites.length ? (
               <SearchLauncherCollectionCard
                 countLabel={`${recentFavorites.length} 条收藏`}
+                highlighted={activeFocusContext.panelId === "recentFavorites"}
                 title="最近收藏"
               >
                 <div className="space-y-1.5">
@@ -1245,9 +1481,14 @@ export function DesktopSearchDropdownPanel({
         </SearchLauncherSection>
       ) : null}
 
-      <SearchLauncherSection title="历史搜索" className="mt-3">
+      <SearchLauncherSection
+        title="历史搜索"
+        className="mt-3"
+        highlighted={activeFocusContext.region === "history"}
+      >
         <SearchLauncherCollectionCard
           countLabel={history.length ? `${history.length} 条记录` : undefined}
+          highlighted={activeFocusContext.region === "history"}
           title="最近搜索"
         >
           {history.length ? (
@@ -1258,11 +1499,13 @@ export function DesktopSearchDropdownPanel({
                   type="button"
                   onClick={() => onOpenSearch(item.keyword)}
                   onMouseEnter={() =>
-                    setActiveActionId(`history-${item.keyword}`)
+                    setActiveActionId(
+                      buildSearchLauncherHistoryActionId(item.keyword),
+                    )
                   }
                   className={cn(
                     "flex w-full items-center gap-2.5 rounded-[12px] bg-white px-3 py-2.5 text-left text-sm transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-                    activeActionId === `history-${item.keyword}`
+                    activeActionId === buildSearchLauncherHistoryActionId(item.keyword)
                       ? "text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(15,23,42,0.06)]"
                       : "text-[color:var(--text-secondary)] hover:bg-[rgba(7,193,96,0.04)] hover:text-[color:var(--text-primary)]",
                   )}
@@ -1291,20 +1534,89 @@ export function DesktopSearchDropdownPanel({
 function SearchLauncherSection({
   children,
   className,
+  highlighted = false,
   title,
 }: {
   children: ReactNode;
   className?: string;
+  highlighted?: boolean;
   title: string;
 }) {
   return (
     <section className={className}>
       <div className="mb-2 flex items-center justify-between px-1">
-        <span className="text-[11px] font-medium text-[color:var(--text-primary)]">
+        <span
+          className={cn(
+            "text-[11px] font-medium",
+            highlighted
+              ? "text-[color:var(--brand-primary)]"
+              : "text-[color:var(--text-primary)]",
+          )}
+        >
           {title}
         </span>
+        {highlighted ? (
+          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+            当前定位
+          </span>
+        ) : null}
       </div>
       {children}
+    </section>
+  );
+}
+
+function SearchLauncherFocusStrip({
+  keyword,
+  panelTitle,
+  region,
+}: {
+  keyword: string;
+  panelTitle: string;
+  region: SearchLauncherFocusRegion;
+}) {
+  const regionLabel = searchLauncherFocusRegionLabels[region];
+  const toneClassName =
+    region === "input"
+      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--brand-primary)]"
+      : region === "suggestions"
+        ? "bg-[rgba(59,130,246,0.10)] text-[#1d4ed8]"
+        : region === "quickAccess"
+          ? "bg-[rgba(15,118,110,0.10)] text-[#226448]"
+          : "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]";
+  const description =
+    region === "input"
+      ? keyword
+        ? `当前仍在搜索框里输入，按 Enter 可直接搜索“${keyword}”。`
+        : "当前仍在搜索框里输入，继续键入关键词或按 Enter 打开搜一搜。"
+      : region === "history"
+        ? "当前正在浏览最近搜索，按 Enter 可直接复用这条关键词。"
+        : `当前定位在${panelTitle}，按 ↑ ↓ 继续切换，按 Enter 直接打开当前项。`;
+
+  return (
+    <section className="mt-2 rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,250,250,0.94)] px-3.5 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
+          当前定位
+        </span>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[10px] font-medium",
+            toneClassName,
+          )}
+        >
+          {regionLabel}
+        </span>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+          {panelTitle}
+        </span>
+      </div>
+      <div className="mt-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
+      <div className="mt-2 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+        ↑ ↓ 切换 · Enter 打开 · Esc 关闭
+      </div>
     </section>
   );
 }
@@ -1417,14 +1729,23 @@ function SearchLauncherStatusCard({
 function SearchLauncherCollectionCard({
   children,
   countLabel,
+  highlighted = false,
   title,
 }: {
   children: ReactNode;
   countLabel?: string;
+  highlighted?: boolean;
   title: string;
 }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3.5">
+    <section
+      className={cn(
+        "rounded-[18px] border p-3.5 transition-[border-color,box-shadow,background]",
+        highlighted
+          ? "border-[rgba(7,193,96,0.16)] bg-[linear-gradient(180deg,rgba(7,193,96,0.08),rgba(7,193,96,0.03)_40%,white)] shadow-[0_12px_28px_rgba(7,193,96,0.08)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
+      )}
+    >
       <div className="flex items-center justify-between gap-3 px-0.5">
         <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
           {title}
