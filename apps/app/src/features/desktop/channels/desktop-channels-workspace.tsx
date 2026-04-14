@@ -780,6 +780,30 @@ function DesktopChannelCommentsPanel({
     });
     return map;
   }, [comments]);
+  const commentThreads = useMemo(() => {
+    const commentMap = new Map(comments.map((comment) => [comment.id, comment]));
+    const rootComments = comments.filter(
+      (comment) =>
+        !comment.parentCommentId ||
+        !commentMap.has(comment.parentCommentId),
+    );
+    const repliesByRoot = new Map<string, FeedComment[]>();
+
+    comments.forEach((comment) => {
+      if (!comment.parentCommentId || !commentMap.has(comment.parentCommentId)) {
+        return;
+      }
+
+      const currentReplies = repliesByRoot.get(comment.parentCommentId) ?? [];
+      currentReplies.push(comment);
+      repliesByRoot.set(comment.parentCommentId, currentReplies);
+    });
+
+    return rootComments.map((rootComment) => ({
+      rootComment,
+      replies: repliesByRoot.get(rootComment.id) ?? [],
+    }));
+  }, [comments]);
 
   return (
     <div className="mt-3 space-y-3">
@@ -793,87 +817,46 @@ function DesktopChannelCommentsPanel({
           这条内容还没有评论，你可以先开口。
         </div>
       ) : null}
-      {comments.length ? (
+      {commentThreads.length ? (
         <div className="max-h-[320px] space-y-3 overflow-auto pr-1">
-          {comments.map((comment) => {
-            const replyTargetName = comment.replyToCommentId
-              ? commentAuthorNameMap.get(comment.replyToCommentId) ?? null
-              : null;
-
-            return (
-              <div
-                key={comment.id}
-                className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
-              >
-                <div className="flex items-start gap-3">
-                  <AvatarChip
-                    name={comment.authorName}
-                    src={comment.authorAvatar}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-medium text-[color:var(--text-primary)]">
-                        {comment.authorName}
-                      </span>
-                      <span
-                        className={cn(
-                          "rounded-md border px-2 py-0.5 text-[10px] font-medium",
-                          comment.authorType === "character"
-                            ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
-                            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
-                        )}
-                      >
-                        {comment.authorType === "character" ? "居民" : "世界主人"}
-                      </span>
-                      <span className="text-[color:var(--text-dim)]">
-                        {formatTimestamp(comment.createdAt)}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {replyTargetName ? (
-                        <span className="text-[color:var(--text-muted)]">
-                          回复 {replyTargetName}
-                          {"："}
-                        </span>
-                      ) : null}
-                      {comment.text}
-                    </div>
-                    <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
-                      <button
-                        type="button"
-                        onClick={() => onReplyToComment(comment)}
-                        className="transition hover:text-[color:var(--text-primary)]"
-                      >
-                        回复
-                      </button>
-                      <button
-                        type="button"
-                        disabled={
-                          comment.likedByOwner ||
-                          likePendingCommentId === comment.id
-                        }
-                        onClick={() => onLikeComment(comment)}
-                        className={cn(
-                          "inline-flex items-center gap-1 transition",
-                          comment.likedByOwner
-                            ? "text-[color:var(--brand-primary)]"
-                            : "hover:text-[color:var(--text-primary)]",
-                        )}
-                      >
-                        <ThumbsUp size={12} />
-                        {likePendingCommentId === comment.id
-                          ? "处理中"
-                          : comment.likedByOwner
-                            ? `已赞 ${comment.likeCount}`
-                            : `赞 ${comment.likeCount}`}
-                      </button>
-                    </div>
+          {commentThreads.map(({ replies, rootComment }) => (
+            <div
+              key={rootComment.id}
+              className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
+            >
+              <DesktopThreadCommentCard
+                comment={rootComment}
+                active={replyTarget?.commentId === rootComment.id}
+                commentAuthorNameMap={commentAuthorNameMap}
+                compact={false}
+                likePendingCommentId={likePendingCommentId}
+                onLikeComment={onLikeComment}
+                onReplyToComment={onReplyToComment}
+              />
+              {replies.length ? (
+                <div className="mt-3 rounded-[14px] border border-[rgba(7,193,96,0.12)] bg-white px-3 py-3">
+                  <div className="mb-2 flex items-center justify-between text-[10px] font-medium text-[color:var(--text-muted)]">
+                    <span>楼中楼</span>
+                    <span>{replies.length} 条跟帖</span>
+                  </div>
+                  <div className="space-y-2 border-l border-[rgba(7,193,96,0.14)] pl-3">
+                    {replies.map((comment) => (
+                      <DesktopThreadCommentCard
+                        key={comment.id}
+                        comment={comment}
+                        active={replyTarget?.commentId === comment.id}
+                        commentAuthorNameMap={commentAuthorNameMap}
+                        compact
+                        likePendingCommentId={likePendingCommentId}
+                        onLikeComment={onLikeComment}
+                        onReplyToComment={onReplyToComment}
+                      />
+                    ))}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              ) : null}
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -915,6 +898,117 @@ function DesktopChannelCommentsPanel({
           >
             {submitPending ? "发送中..." : "发送"}
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopThreadCommentCard({
+  active,
+  comment,
+  commentAuthorNameMap,
+  compact,
+  likePendingCommentId,
+  onLikeComment,
+  onReplyToComment,
+}: {
+  active: boolean;
+  comment: FeedComment;
+  commentAuthorNameMap: Map<string, string>;
+  compact: boolean;
+  likePendingCommentId: string | null;
+  onLikeComment: (comment: FeedComment) => void;
+  onReplyToComment: (comment: FeedComment) => void;
+}) {
+  const replyTargetName = comment.replyToCommentId
+    ? commentAuthorNameMap.get(comment.replyToCommentId) ?? null
+    : null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-[14px] border px-3 py-3 transition-colors",
+        compact
+          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+          : "border-[color:var(--border-faint)] bg-white",
+        active &&
+          "border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.06)] shadow-[inset_3px_0_0_0_var(--brand-primary)]",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <AvatarChip
+          name={comment.authorName}
+          src={comment.authorAvatar}
+          size={compact ? "sm" : "wechat"}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-medium text-[color:var(--text-primary)]">
+              {comment.authorName}
+            </span>
+            <span
+              className={cn(
+                "rounded-md border px-2 py-0.5 text-[10px] font-medium",
+                comment.authorType === "character"
+                  ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+              )}
+            >
+              {comment.authorType === "character" ? "居民" : "世界主人"}
+            </span>
+            {compact ? (
+              <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                回复层
+              </span>
+            ) : (
+              <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                主评论
+              </span>
+            )}
+            <span className="text-[color:var(--text-dim)]">
+              {formatTimestamp(comment.createdAt)}
+            </span>
+          </div>
+          <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+            {replyTargetName ? (
+              <span className="text-[color:var(--text-muted)]">
+                回复 {replyTargetName}
+                {"："}
+              </span>
+            ) : null}
+            {comment.text}
+          </div>
+          <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
+            <button
+              type="button"
+              onClick={() => onReplyToComment(comment)}
+              className="transition hover:text-[color:var(--text-primary)]"
+            >
+              回复
+            </button>
+            <button
+              type="button"
+              disabled={
+                comment.likedByOwner ||
+                likePendingCommentId === comment.id
+              }
+              onClick={() => onLikeComment(comment)}
+              className={cn(
+                "inline-flex items-center gap-1 transition",
+                comment.likedByOwner
+                  ? "text-[color:var(--brand-primary)]"
+                  : "hover:text-[color:var(--text-primary)]",
+              )}
+            >
+              <ThumbsUp size={12} />
+              {likePendingCommentId === comment.id
+                ? "处理中"
+                : comment.likedByOwner
+                  ? `已赞 ${comment.likeCount}`
+                  : `赞 ${comment.likeCount}`}
+            </button>
+          </div>
         </div>
       </div>
     </div>
