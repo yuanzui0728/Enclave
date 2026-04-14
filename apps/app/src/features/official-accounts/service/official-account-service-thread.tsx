@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -50,6 +50,7 @@ export function OfficialAccountServiceThread({
   const desktopThreadScrollTopRef = useRef(0);
   const desktopThreadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isDesktop = variant === "desktop";
+  const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
   const accountQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, accountId],
@@ -139,6 +140,14 @@ export function OfficialAccountServiceThread({
   }, [isDesktop, selectedArticleId]);
 
   useEffect(() => {
+    if (!isDesktop) {
+      return;
+    }
+
+    setIsDesktopMenuOpen(false);
+  }, [accountId, isDesktop, selectedArticleId]);
+
+  useEffect(() => {
     const latestUnread = [...(messagesQuery.data ?? [])]
       .reverse()
       .find((message) => !message.readAt);
@@ -194,6 +203,7 @@ export function OfficialAccountServiceThread({
   }
 
   function handleOpenDesktopArticle(articleId: string) {
+    setIsDesktopMenuOpen(false);
     if (isDesktop) {
       desktopThreadScrollTopRef.current =
         desktopThreadScrollContainerRef.current?.scrollTop ?? 0;
@@ -202,10 +212,12 @@ export function OfficialAccountServiceThread({
   }
 
   function handleCloseDesktopArticle() {
+    setIsDesktopMenuOpen(false);
     onCloseArticle?.(accountId);
   }
 
   function handleOpenMobileHandoff() {
+    setIsDesktopMenuOpen(false);
     void navigate({
       to: "/desktop/mobile",
       hash: buildDesktopMobileOfficialHandoffHash({
@@ -221,7 +233,15 @@ export function OfficialAccountServiceThread({
 
   if (isDesktop) {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+      <div className="relative flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+        {isDesktopMenuOpen ? (
+          <button
+            type="button"
+            aria-label="关闭服务号菜单"
+            onClick={() => setIsDesktopMenuOpen(false)}
+            className="absolute inset-0 z-10 bg-transparent"
+          />
+        ) : null}
         <header className="border-b border-[color:var(--border-faint)] bg-white/92 px-5 py-4 backdrop-blur-xl">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -256,60 +276,72 @@ export function OfficialAccountServiceThread({
                   <span>@{accountQuery.data.handle}</span>
                 ) : null}
               </div>
-              {!selectedArticleId ? (
-                <div className="mt-1.5 max-w-[34rem] text-[12px] leading-5 text-[color:var(--text-secondary)]">
-                  {accountQuery.data?.description ?? "服务通知和文章入口会集中在这里。"}
+            </div>
+            <div className="relative z-20 flex shrink-0 items-center">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
+                onClick={() => setIsDesktopMenuOpen((current) => !current)}
+                aria-label="打开服务号菜单"
+              >
+                <MoreHorizontal size={17} />
+              </Button>
+              {isDesktopMenuOpen ? (
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDesktopMenuOpen(false);
+                      handleOpenAccount(accountId, selectedArticleId ?? undefined);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                  >
+                    <BookOpenText size={15} className="text-[color:var(--text-secondary)]" />
+                    <span>公众号主页</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenMobileHandoff}
+                    className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                  >
+                    <Smartphone size={15} className="text-[color:var(--text-secondary)]" />
+                    <span>到手机继续</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!accountQuery.data?.isFollowing || muteMutation.isPending}
+                    onClick={() => {
+                      setIsDesktopMenuOpen(false);
+                      if (!accountQuery.data?.isFollowing) {
+                        return;
+                      }
+
+                      muteMutation.mutate(!accountQuery.data.isMuted);
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] transition",
+                      !accountQuery.data?.isFollowing || muteMutation.isPending
+                        ? "cursor-not-allowed opacity-45"
+                        : "text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]",
+                    )}
+                  >
+                    {accountQuery.data?.isMuted ? (
+                      <BellRing size={15} className="text-[color:var(--text-secondary)]" />
+                    ) : (
+                      <BellOff size={15} className="text-[color:var(--text-secondary)]" />
+                    )}
+                    <span>
+                      {muteMutation.isPending
+                        ? "处理中..."
+                        : accountQuery.data?.isMuted
+                          ? "关闭免打扰"
+                          : "消息免打扰"}
+                    </span>
+                  </button>
                 </div>
               ) : null}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="rounded-xl"
-                onClick={() =>
-                  handleOpenAccount(accountId, selectedArticleId ?? undefined)
-                }
-              >
-                <BookOpenText size={14} />
-                公众号主页
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="rounded-xl"
-                onClick={handleOpenMobileHandoff}
-              >
-                <Smartphone size={14} />
-                到手机继续
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="rounded-xl"
-                disabled={!accountQuery.data?.isFollowing || muteMutation.isPending}
-                onClick={() => {
-                  if (!accountQuery.data?.isFollowing) {
-                    return;
-                  }
-
-                  muteMutation.mutate(!accountQuery.data.isMuted);
-                }}
-              >
-                {accountQuery.data?.isMuted ? (
-                  <BellRing size={14} />
-                ) : (
-                  <BellOff size={14} />
-                )}
-                {muteMutation.isPending
-                  ? "处理中..."
-                  : accountQuery.data?.isMuted
-                    ? "关闭免打扰"
-                    : "消息免打扰"}
-              </Button>
             </div>
           </div>
         </header>
