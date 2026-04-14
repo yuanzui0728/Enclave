@@ -452,6 +452,26 @@ export function StickerPanel({
       )?.sticker ?? null
     );
   }, [focusedManageDeleteKey, manageableCustomItems]);
+  const nextManageDeleteOutcomeLabel = useMemo(() => {
+    if (!focusedManageSticker) {
+      return null;
+    }
+
+    const nextSlotsAvailable = Math.min(
+      catalog.maxCustomStickerCount,
+      customSlotsRemaining + 1,
+    );
+    if (manageableCustomItems.length <= 1) {
+      return `删当前后会清空表情库，可继续添加 ${nextSlotsAvailable} 张。`;
+    }
+
+    return `删当前后：剩 ${manageableCustomItems.length - 1} 张，可再加 ${nextSlotsAvailable} 张。`;
+  }, [
+    catalog.maxCustomStickerCount,
+    customSlotsRemaining,
+    focusedManageSticker,
+    manageableCustomItems.length,
+  ]);
   const highlightedSearchItem = useMemo(() => {
     if (!searching || searchPending || activeItems.length === 0) {
       return null;
@@ -2042,6 +2062,11 @@ export function StickerPanel({
                   <span className="max-w-[150px] truncate rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
                     删后跳到：
                     {nextManageSticker.label ?? nextManageSticker.stickerId}
+                  </span>
+                ) : null}
+                {nextManageDeleteOutcomeLabel ? (
+                  <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[11px] text-[#9a5a0a]">
+                    {nextManageDeleteOutcomeLabel}
                   </span>
                 ) : null}
                 {customDeleteFeedback?.lastDeletedLabel ? (
