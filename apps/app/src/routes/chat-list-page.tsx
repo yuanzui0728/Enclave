@@ -488,7 +488,7 @@ function MobileChatListPage() {
 
       <TabPageTopBar
         title="消息"
-        className="z-40 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="z-40 mx-0 mt-0 space-y-1.5 overflow-visible border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none sm:mx-0"
         titleAlign="center"
         titleClassName="text-[17px] font-medium tracking-normal"
         rightActions={
