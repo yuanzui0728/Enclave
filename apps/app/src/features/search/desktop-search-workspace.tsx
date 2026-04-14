@@ -680,7 +680,7 @@ export function DesktopSearchWorkspace({
     activeCategory === "all" ? "全部结果" : searchCategoryTitles[activeCategory];
   const contextKeyboardHint = useMemo(() => {
     if (keyboardFocusRegion === "results" && keyboardNavigableResults.length) {
-      return "↑ ↓ 切换结果 · Enter 打开 · Esc 回搜索框 · Home 回顶部";
+      return "↑ ↓ 切换当前项 · Enter 打开当前项 · Esc 回搜索框 · Home 回顶部";
     }
 
     if (keyboardFocusRegion === "categories") {
@@ -689,11 +689,11 @@ export function DesktopSearchWorkspace({
 
     if (keyboardNavigableResults.length) {
       return selectedResultId
-        ? "Tab 进入预选结果 · Enter 打开 · Esc 取消预选"
-        : "Tab 进入预选结果 · ↑ ↓ 选择结果 · Esc 清空关键词";
+        ? "Tab 进入结果层 · Enter 打开当前项 · Esc 取消预选"
+        : "Tab 进入结果层 · ↑ ↓ 预选当前项 · Esc 清空关键词";
     }
 
-    return "Enter 搜索 · Esc 清空关键词";
+    return "Enter 执行搜索 · Esc 清空关键词";
   }, [
     keyboardFocusRegion,
     keyboardNavigableResults.length,

@@ -1705,15 +1705,15 @@ function SearchLauncherFocusStrip({
   const description =
     layer === "input"
       ? keyword
-        ? `当前仍在搜索框里输入，按 Tab 进入当前结果层，按 Enter 可直接搜索“${keyword}”，按 Esc 关闭下拉。`
-        : "当前仍在搜索框里输入，继续键入关键词，或按 Tab / Enter 进入下一步；按 Esc 关闭下拉。"
+        ? `当前停留在搜索框，按 Tab 进入结果层，按 Enter 执行搜索“${keyword}”，按 Esc 关闭下拉。`
+        : "当前停留在搜索框，继续输入关键词，或按 Tab 进入结果层；按 Enter 执行搜索，按 Esc 关闭下拉。"
       : region === "history"
-        ? "当前正在浏览最近搜索，按 Tab 继续切换，按 Shift+Tab 或 Esc 回搜索框。"
-        : `当前定位在${panelTitle}，按 Tab / ↑ ↓ 继续切换，按 Shift+Tab 或 Esc 回搜索框。`;
+        ? "当前停留在最近搜索，按 Tab / ↑ ↓ 切换当前项，按 Enter 打开当前项，按 Shift+Tab 或 Esc 回搜索框。"
+        : `当前停留在${panelTitle}，按 Tab / ↑ ↓ 切换当前项，按 Enter 打开当前项，按 Shift+Tab 或 Esc 回搜索框。`;
   const keyboardHint =
     layer === "input"
-      ? "Tab 进面板 · Enter 搜索 · Esc 关闭"
-      : "Tab 切换 · Shift+Tab / Esc 回搜索框 · Enter 打开";
+      ? "Tab 进入结果层 · Enter 执行搜索 · Esc 关闭"
+      : "Tab / ↑ ↓ 切换当前项 · Enter 打开当前项 · Shift+Tab / Esc 回搜索框";
 
   return (
     <section className="mt-2 rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,250,250,0.94)] px-3.5 py-3">
@@ -1780,13 +1780,19 @@ function SearchLauncherHeroCard({
             </div>
           </div>
           <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-secondary)]">
-            {keyword ? `直接搜索“${keyword}”，进入完整结果页。` : "打开全局搜索工作区，继续按分类查看完整结果。"}
+            {keyword
+              ? `执行搜索“${keyword}”，进入完整结果页继续查看。`
+              : "执行一次全局搜索，进入完整结果页后继续按分类查看。"}
           </div>
         </div>
       </div>
       <div className="border-t border-white/80 px-4 py-2.5">
         <div className="flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-muted)]">
-          <span>{keyword ? "按回车立即搜索" : "支持聊天、联系人、公众号、收藏和小程序"}</span>
+          <span>
+            {keyword
+              ? "Enter 执行搜索 · Tab 进入结果层"
+              : "Tab 进入结果层 · 支持聊天、联系人、公众号、收藏和小程序"}
+          </span>
           <CornerDownLeft size={14} className="shrink-0" />
         </div>
       </div>
