@@ -7,10 +7,10 @@ export function DesktopContactPaneEmptyState() {
   return (
     <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
       <div className="flex max-w-sm flex-col items-center text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(0,0,0,0.06)] bg-white text-xl text-[color:var(--text-dim)]">
+        <div className="flex h-18 w-18 items-center justify-center rounded-[20px] border border-[rgba(0,0,0,0.06)] bg-white text-xl text-[color:var(--text-dim)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           ···
         </div>
-        <div className="mt-4 text-[15px] font-medium text-[color:var(--text-primary)]">
+        <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
           选择联系人
         </div>
         <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
@@ -32,7 +32,7 @@ export function DesktopContactProfileShell({
     <div className="flex h-full overflow-auto bg-[#f5f5f5]">
       <div
         className={cn(
-          "mx-auto flex min-h-full w-full max-w-[640px] flex-col bg-[#f5f5f5] py-6",
+          "mx-auto flex min-h-full w-full max-w-[560px] flex-col bg-[#f5f5f5] px-6 py-10",
           className,
         )}
       >
@@ -62,27 +62,32 @@ export function DesktopContactProfileHeader({
   return (
     <div
       className={cn(
-        "border-b border-[rgba(0,0,0,0.06)] bg-white",
-        compact ? "px-4 py-4" : "px-6 py-6",
+        "overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        compact ? "px-4 py-5" : "px-8 py-8",
       )}
     >
       <div
         className={cn(
-          "flex items-start justify-between gap-4",
-          compact && "items-center",
+          "flex flex-col items-center text-center",
+          compact ? "gap-3" : "gap-4",
         )}
       >
-        <div className="flex min-w-0 flex-1 items-start gap-4">
+        <div
+          className={cn(
+            "flex min-w-0 flex-col items-center",
+            compact ? "gap-3" : "gap-4",
+          )}
+        >
           <AvatarChip
             name={name}
             src={avatar}
             size={compact ? "wechat" : "xl"}
           />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <h2
               className={cn(
                 "truncate font-medium text-[color:var(--text-primary)]",
-                compact ? "text-[18px]" : "text-[22px]",
+                compact ? "text-[20px]" : "text-[24px]",
               )}
             >
               {displayName}
@@ -115,9 +120,9 @@ export function DesktopContactProfileSection({
   action?: ReactNode;
 }) {
   return (
-    <section className="mt-2 overflow-hidden bg-white first:mt-0">
-      <div className="flex items-center justify-between gap-3 px-6 pb-1.5 pt-4">
-        <div className="text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-dim)]">
+    <section className="mt-3 overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] first:mt-0">
+      <div className="flex items-center justify-between gap-3 px-5 pb-1.5 pt-4">
+        <div className="text-[12px] font-medium text-[color:var(--text-muted)]">
           {title}
         </div>
         {action}
@@ -139,8 +144,8 @@ export function DesktopContactProfileRow({
   multiline?: boolean;
 }) {
   return (
-    <div className="flex min-h-12 items-start gap-4 border-b border-[rgba(0,0,0,0.06)] px-6 py-3 text-sm last:border-b-0">
-      <div className="w-20 shrink-0 pt-0.5 text-[13px] text-[color:var(--text-dim)]">
+    <div className="flex min-h-13 items-start gap-4 border-b border-[rgba(0,0,0,0.06)] px-5 py-3 text-sm last:border-b-0">
+      <div className="w-22 shrink-0 pt-0.5 text-[13px] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div
@@ -174,11 +179,11 @@ export function DesktopContactProfileToggleRow({
       type="button"
       onClick={onToggle}
       disabled={disabled || !onToggle}
-      className="flex min-h-12 w-full items-center gap-4 border-b border-[rgba(0,0,0,0.06)] px-6 py-3 text-left text-sm transition-colors hover:bg-[rgba(0,0,0,0.02)] disabled:opacity-60 last:border-b-0"
+      className="flex min-h-13 w-full items-center gap-4 border-b border-[rgba(0,0,0,0.06)] px-5 py-3 text-left text-sm transition-colors hover:bg-[rgba(0,0,0,0.02)] disabled:opacity-60 last:border-b-0"
       role="switch"
       aria-checked={checked}
     >
-      <div className="w-20 shrink-0 text-[13px] text-[color:var(--text-primary)]">
+      <div className="w-22 shrink-0 text-[13px] text-[color:var(--text-primary)]">
         {label}
       </div>
       <div className="flex flex-1 justify-end">
@@ -223,14 +228,14 @@ export function DesktopContactProfileActionRow({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex min-h-12 w-full items-center gap-4 border-b border-[rgba(0,0,0,0.06)] px-6 py-3 text-left text-sm transition-colors last:border-b-0",
+        "flex min-h-13 w-full items-center gap-4 border-b border-[rgba(0,0,0,0.06)] px-5 py-3 text-left text-sm transition-colors last:border-b-0",
         danger
           ? "hover:bg-[rgba(239,68,68,0.05)]"
           : "hover:bg-[rgba(0,0,0,0.02)]",
         disabled && "opacity-60",
       )}
     >
-      <div className="w-20 shrink-0 text-[13px] text-[color:var(--text-primary)]">
+      <div className="w-22 shrink-0 text-[13px] text-[color:var(--text-primary)]">
         {label}
       </div>
       <div

@@ -190,7 +190,7 @@ export function ContactDetailPane({
             <Button
               variant="primary"
               size="lg"
-              className="min-w-24 rounded-[10px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
+              className="min-w-28 rounded-[10px] bg-[#07c160] px-6 text-white shadow-none hover:bg-[#06ad56]"
               onClick={onStartChat}
               disabled={chatPending}
             >
@@ -201,16 +201,16 @@ export function ContactDetailPane({
             <Button
               variant="primary"
               size="lg"
-              className="min-w-24 rounded-[10px] bg-[#07c160] px-5 text-white shadow-none hover:bg-[#06ad56]"
+              className="min-w-28 rounded-[10px] bg-[#07c160] px-6 text-white shadow-none hover:bg-[#06ad56]"
               onClick={onOpenProfile}
             >
-              查看资料
+              查看详细资料
             </Button>
           )
         }
       />
 
-      <DesktopContactProfileSection title={isFriend ? "基础资料" : "资料"}>
+      <DesktopContactProfileSection title={isFriend ? "朋友信息" : "角色信息"}>
         {profileNotice ? (
           <div className="px-6 pb-2">
             <InlineNotice tone="success">{profileNotice}</InlineNotice>
@@ -261,7 +261,7 @@ export function ContactDetailPane({
         )}
       </DesktopContactProfileSection>
 
-      <DesktopContactProfileSection title="内容入口">
+      <DesktopContactProfileSection title="社交与内容">
         <DesktopContactProfileActionRow
           label="朋友圈"
           value={isFriend && onOpenMoments ? "查看这位好友最近的朋友圈" : "加为好友后可查看"}
@@ -282,7 +282,7 @@ export function ContactDetailPane({
         />
         {showProfileEntry ? (
           <DesktopContactProfileActionRow
-            label="更多资料"
+            label="详细资料"
             value={isFriend ? "查看角色档案与扩展介绍" : "查看角色资料"}
             onClick={onOpenProfile}
           />
@@ -303,7 +303,7 @@ export function ContactDetailPane({
 
       {isFriend ? (
         <>
-          <DesktopContactProfileSection title="聊天设置">
+          <DesktopContactProfileSection title="聊天与提醒">
             <DesktopContactProfileToggleRow
               label="星标朋友"
               checked={isStarred}
@@ -324,7 +324,7 @@ export function ContactDetailPane({
             />
           </DesktopContactProfileSection>
 
-          <DesktopContactProfileSection title="联系人管理">
+          <DesktopContactProfileSection title="管理">
             {onToggleBlock ? (
               <DesktopContactProfileActionRow
                 label={isBlocked ? "黑名单" : "加入黑名单"}
