@@ -1095,6 +1095,11 @@ export function DesktopSearchDropdownPanel({
 
       if (event.key === "Escape") {
         event.preventDefault();
+        if (navigationLayer === "panel") {
+          activateLauncherSearch();
+          return;
+        }
+
         onClose?.();
         return;
       }
@@ -1700,11 +1705,15 @@ function SearchLauncherFocusStrip({
   const description =
     layer === "input"
       ? keyword
-        ? `当前仍在搜索框里输入，按 Tab 进入当前结果层，按 Enter 可直接搜索“${keyword}”。`
-        : "当前仍在搜索框里输入，继续键入关键词，或按 Tab / Enter 进入下一步。"
+        ? `当前仍在搜索框里输入，按 Tab 进入当前结果层，按 Enter 可直接搜索“${keyword}”，按 Esc 关闭下拉。`
+        : "当前仍在搜索框里输入，继续键入关键词，或按 Tab / Enter 进入下一步；按 Esc 关闭下拉。"
       : region === "history"
-        ? "当前正在浏览最近搜索，按 Tab 继续切换，按 Shift+Tab 回搜索框。"
-        : `当前定位在${panelTitle}，按 Tab / ↑ ↓ 继续切换，按 Shift+Tab 回搜索框。`;
+        ? "当前正在浏览最近搜索，按 Tab 继续切换，按 Shift+Tab 或 Esc 回搜索框。"
+        : `当前定位在${panelTitle}，按 Tab / ↑ ↓ 继续切换，按 Shift+Tab 或 Esc 回搜索框。`;
+  const keyboardHint =
+    layer === "input"
+      ? "Tab 进面板 · Enter 搜索 · Esc 关闭"
+      : "Tab 切换 · Shift+Tab / Esc 回搜索框 · Enter 打开";
 
   return (
     <section className="mt-2 rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,250,250,0.94)] px-3.5 py-3">
@@ -1728,7 +1737,7 @@ function SearchLauncherFocusStrip({
         {description}
       </div>
       <div className="mt-2 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
-        Tab 进面板 · Shift+Tab 回搜索框 · ↑ ↓ 切换 · Enter 打开 · Esc 关闭
+        {keyboardHint}
       </div>
     </section>
   );
