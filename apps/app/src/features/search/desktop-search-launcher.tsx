@@ -8,7 +8,16 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronRight, Clock3, CornerDownLeft, Search } from "lucide-react";
+import {
+  Blocks,
+  Bookmark,
+  ChevronRight,
+  Clock3,
+  CornerDownLeft,
+  Search,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
 import {
   getConversations,
   getFriends,
@@ -803,6 +812,7 @@ export function DesktopSearchDropdownPanel({
                         badge="联系人"
                         description={buildFriendSuggestionDescription(item)}
                         title={getFriendDisplayName(item)}
+                        variant="contact"
                         onMouseEnter={() =>
                           setActiveActionId(`friend-${item.character.id}`)
                         }
@@ -841,6 +851,7 @@ export function DesktopSearchDropdownPanel({
                           "打开资料卡后可发起好友申请"
                         }
                         title={item.character.name}
+                        variant="worldCharacter"
                         onMouseEnter={() =>
                           setActiveActionId(
                             `world-character-${item.character.id}`,
@@ -866,10 +877,11 @@ export function DesktopSearchDropdownPanel({
                   </div>
                   <div className="mt-1.5 space-y-1.5">
                     {favoriteMatches.map((item) => (
-                      <SearchLauncherQuickLinkRow
+                      <SearchLauncherFeatureRow
                         key={item.id}
                         active={activeActionId === item.id}
                         item={item}
+                        variant="favorites"
                         onMouseEnter={() => setActiveActionId(item.id)}
                         onClick={() => handleOpenQuickLink(item)}
                       />
@@ -885,10 +897,11 @@ export function DesktopSearchDropdownPanel({
                   </div>
                   <div className="mt-1.5 space-y-1.5">
                     {miniProgramMatches.map((item) => (
-                      <SearchLauncherQuickLinkRow
+                      <SearchLauncherFeatureRow
                         key={item.id}
                         active={activeActionId === item.id}
                         item={item}
+                        variant="miniPrograms"
                         onMouseEnter={() => setActiveActionId(item.id)}
                         onClick={() => handleOpenQuickLink(item)}
                       />
@@ -974,10 +987,11 @@ export function DesktopSearchDropdownPanel({
                 </div>
                 <div className="mt-1.5 space-y-1.5">
                   {recentMiniPrograms.map((item) => (
-                    <SearchLauncherQuickLinkRow
+                    <SearchLauncherFeatureRow
                       key={item.id}
                       active={activeActionId === item.id}
                       item={item}
+                      variant="miniPrograms"
                       onMouseEnter={() => setActiveActionId(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
@@ -999,10 +1013,11 @@ export function DesktopSearchDropdownPanel({
                 </div>
                 <div className="mt-1.5 space-y-1.5">
                   {recentFavorites.map((item) => (
-                    <SearchLauncherQuickLinkRow
+                    <SearchLauncherFeatureRow
                       key={item.id}
                       active={activeActionId === item.id}
                       item={item}
+                      variant="favorites"
                       onMouseEnter={() => setActiveActionId(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
@@ -1132,6 +1147,7 @@ function SearchLauncherCharacterRow({
   onMouseEnter,
   onClick,
   title,
+  variant,
 }: {
   active?: boolean;
   avatarName: string;
@@ -1141,37 +1157,144 @@ function SearchLauncherCharacterRow({
   onMouseEnter?: () => void;
   onClick: () => void;
   title: string;
+  variant: "contact" | "worldCharacter";
 }) {
+  const toneClassName =
+    variant === "contact"
+      ? active
+        ? "border-[#cfe0cf] bg-[linear-gradient(180deg,#f5fbf6,white)]"
+        : "border-[#d9e7d9] bg-[linear-gradient(180deg,#f9fcfa,white)] hover:border-[#cfe0cf] hover:bg-[linear-gradient(180deg,#f5fbf6,white)]"
+      : active
+        ? "border-[#e7e0c8] bg-[linear-gradient(180deg,#fffaf0,white)]"
+        : "border-[#eee6ce] bg-[linear-gradient(180deg,#fffdf7,white)] hover:border-[#e7e0c8] hover:bg-[linear-gradient(180deg,#fffaf0,white)]";
+  const badgeClassName =
+    variant === "contact"
+      ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+      : "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]";
+  const metaTextClassName =
+    variant === "contact"
+      ? "text-[color:var(--text-muted)]"
+      : "text-[#8a6a24]";
+  const iconClassName =
+    variant === "contact"
+      ? "bg-[rgba(7,193,96,0.10)] text-[#15803d]"
+      : "bg-[rgba(180,132,23,0.12)] text-[#a16207]";
+
   return (
     <button
       type="button"
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={cn(
-        "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] px-3 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-        active
-          ? "bg-[color:var(--surface-console)]"
-          : "bg-white hover:bg-[color:var(--surface-console)]",
+        "flex w-full items-center gap-3 rounded-[14px] border px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        toneClassName,
       )}
     >
-      <AvatarChip name={avatarName} src={avatarSrc} size="sm" />
+      <AvatarChip name={avatarName} src={avatarSrc} size="wechat" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
             {title}
           </span>
-          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px]",
+              badgeClassName,
+            )}
+          >
             {badge}
           </span>
         </div>
-        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+        <div className={cn("mt-1 truncate text-[11px]", metaTextClassName)}>
           {description}
         </div>
       </div>
-      <ChevronRight
-        size={14}
-        className="shrink-0 text-[color:var(--text-dim)]"
+      <div
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+          iconClassName,
+        )}
+      >
+        {variant === "contact" ? <UsersRound size={15} /> : <Sparkles size={15} />}
+      </div>
+    </button>
+  );
+}
+
+function SearchLauncherFeatureRow({
+  active = false,
+  item,
+  onMouseEnter,
+  onClick,
+  variant,
+}: {
+  active?: boolean;
+  item: DesktopSearchQuickLink;
+  onMouseEnter?: () => void;
+  onClick: () => void;
+  variant: "favorites" | "miniPrograms";
+}) {
+  const toneClassName =
+    variant === "favorites"
+      ? active
+        ? "border-[#e7d8ad] bg-[linear-gradient(180deg,#fff9ee,white)]"
+        : "border-[#efe2bf] bg-[linear-gradient(180deg,#fffdf7,white)] hover:border-[#e7d8ad] hover:bg-[linear-gradient(180deg,#fff9ee,white)]"
+      : active
+        ? "border-[#cfe2d8] bg-[linear-gradient(180deg,#f5faf7,white)]"
+        : "border-[#d8e7df] bg-[linear-gradient(180deg,#f7fbf9,white)] hover:border-[#cfe2d8] hover:bg-[linear-gradient(180deg,#f5faf7,white)]";
+  const badgeClassName =
+    variant === "favorites"
+      ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
+      : "bg-[rgba(15,118,110,0.10)] text-[#226448]";
+  const iconClassName =
+    variant === "favorites"
+      ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
+      : "bg-[rgba(15,118,110,0.12)] text-[#0f766e]";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      className={cn(
+        "flex w-full items-start gap-3 rounded-[14px] border px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        toneClassName,
+      )}
+    >
+      <AvatarChip
+        name={item.avatarName ?? item.title}
+        src={item.avatarSrc}
+        size="wechat"
       />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {item.title}
+          </span>
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px]",
+              badgeClassName,
+            )}
+          >
+            {item.badge}
+          </span>
+        </div>
+        <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+          {item.meta}
+        </div>
+        <div className="mt-2 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+          {item.description}
+        </div>
+      </div>
+      <div
+        className={cn(
+          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+          iconClassName,
+        )}
+      >
+        {variant === "favorites" ? <Bookmark size={15} /> : <Blocks size={15} />}
+      </div>
     </button>
   );
 }
