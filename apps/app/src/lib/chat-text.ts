@@ -6,7 +6,9 @@ const internalReasoningTagPattern = /<\/?internal_reasoning\b[^>]*>/gi;
 const internalSpeakerPrefixPattern = /^\[[^\]\n]{1,120}\]:\s*/gm;
 const chatReplyPrefixPattern = /^\[\[chat_reply:([^\]]+)\]\]\n?/;
 const mentionTokenPattern = /@[\p{L}\p{N}_-]{1,40}/gu;
+const mentionTokenCharacterPattern = /[\p{L}\p{N}_-]/u;
 const mentionBoundaryPattern = /[\s([{'"“‘，。！？、：；,.!?/\\-]/u;
+const blockedMentionPrefixPattern = /[A-Za-z0-9._%+-]/u;
 
 export type ChatReplyMetadata = {
   messageId: string;
@@ -30,6 +32,22 @@ export type ChatMentionSummary = {
   hasMentionAll: boolean;
   mentions: string[];
 };
+
+export function isChatMentionTokenCharacter(value?: string | null) {
+  return Boolean(value && mentionTokenCharacterPattern.test(value));
+}
+
+export function isChatMentionPrefixBoundary(value?: string | null) {
+  if (!value) {
+    return true;
+  }
+
+  if (mentionBoundaryPattern.test(value)) {
+    return true;
+  }
+
+  return !blockedMentionPrefixPattern.test(value);
+}
 
 export function sanitizeDisplayedChatText(text: string): string {
   const { body } = extractChatReplyMetadata(text);
@@ -100,7 +118,7 @@ export function splitChatTextSegments(text: string): ChatTextSegment[] {
     }
 
     const beforeCharacter = rawIndex > 0 ? sanitized[rawIndex - 1] : undefined;
-    if (beforeCharacter && !mentionBoundaryPattern.test(beforeCharacter)) {
+    if (!isChatMentionPrefixBoundary(beforeCharacter)) {
       continue;
     }
 
