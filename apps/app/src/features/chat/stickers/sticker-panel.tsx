@@ -2477,13 +2477,29 @@ export function StickerPanel({
                 </div>
                 {searching ? (
                   <div className="flex flex-col items-center gap-2">
+                    {showManageSearchPauseHint ? (
+                      <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
+                        <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
+                          {pausedManageResumeLabel}
+                        </span>
+                        <span className="rounded-full bg-white/88 px-2 py-1">
+                          {pausedManageCapacityLabel}
+                        </span>
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={clearSearch}
+                        onClick={
+                          showManageSearchPauseHint
+                            ? clearSearchAndResumeManage
+                            : clearSearch
+                        }
                         className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                       >
-                        清空重试
+                        {showManageSearchPauseHint
+                          ? "清空并继续管理"
+                          : "清空重试"}
                       </button>
                       {activeSectionId !== "featured" ? (
                         <button
@@ -2517,7 +2533,9 @@ export function StickerPanel({
                       ) : null}
                     </div>
                     <div className="text-[11px] text-[color:var(--text-muted)]">
-                      试试换个关键词，或者先看看精选 / 自定义里的常用表情
+                      {showManageSearchPauseHint
+                        ? "也可以先继续删除当前自定义表情，之后再回来搜。"
+                        : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
                     </div>
                   </div>
                 ) : null}
