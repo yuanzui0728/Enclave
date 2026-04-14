@@ -345,14 +345,6 @@ export function DesktopSearchWorkspace({
         : -1,
     [keyboardNavigableResults, selectedResultId],
   );
-  const selectedResultItem = useMemo(
-    () =>
-      selectedResultId
-        ? keyboardNavigableResults.find((item) => item.id === selectedResultId) ?? null
-        : null,
-    [keyboardNavigableResults, selectedResultId],
-  );
-
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -599,28 +591,162 @@ export function DesktopSearchWorkspace({
   const handleSelectResult = useEffectEvent((resultId: string) => {
     setSelectedResultId(resultId);
   });
-  const handleMoveSelectedResult = useEffectEvent((direction: -1 | 1) => {
-    if (!keyboardNavigableResults.length) {
-      return;
-    }
-
-    const nextIndex =
-      selectedResultIndex === -1
-        ? direction === 1
-          ? 0
-          : keyboardNavigableResults.length - 1
-        : Math.min(
-            Math.max(selectedResultIndex + direction, 0),
-            keyboardNavigableResults.length - 1,
-          );
-    const nextResult = keyboardNavigableResults[nextIndex];
-    if (!nextResult) {
-      return;
-    }
-
-    setSelectedResultId(nextResult.id);
-    scrollSelectedResultIntoView(nextResult.id);
+  const focusResultButton = useEffectEvent((resultId: string) => {
+    window.requestAnimationFrame(() => {
+      resultButtonRefs.current[resultId]?.focus();
+    });
   });
+  const focusCategoryChip = useEffectEvent((category: SearchCategory) => {
+    window.requestAnimationFrame(() => {
+      categoryTabRefs.current[category]?.focus();
+    });
+  });
+  const handleMoveSelectedResult = useEffectEvent(
+    (direction: -1 | 1, options?: { focusButton?: boolean }) => {
+      if (!keyboardNavigableResults.length) {
+        return;
+      }
+
+      const nextIndex =
+        selectedResultIndex === -1
+          ? direction === 1
+            ? 0
+            : keyboardNavigableResults.length - 1
+          : Math.min(
+              Math.max(selectedResultIndex + direction, 0),
+              keyboardNavigableResults.length - 1,
+            );
+      const nextResult = keyboardNavigableResults[nextIndex];
+      if (!nextResult) {
+        return;
+      }
+
+      setSelectedResultId(nextResult.id);
+      scrollSelectedResultIntoView(nextResult.id);
+      if (options?.focusButton) {
+        focusResultButton(nextResult.id);
+      }
+    },
+  );
+  const handleOpenSelectedResult = useEffectEvent((resultId: string) => {
+    const result =
+      keyboardNavigableResults.find((item) => item.id === resultId) ?? null;
+    if (!result) {
+      return;
+    }
+
+    setSelectedResultId(result.id);
+    onOpenResult(result);
+  });
+  const handleMoveCategoryChip = useEffectEvent(
+    (category: SearchCategory, direction: -1 | 1) => {
+      const index = searchCategoryLabels.findIndex((item) => item.id === category);
+      if (index === -1) {
+        return;
+      }
+
+      const nextIndex = Math.min(
+        Math.max(index + direction, 0),
+        searchCategoryLabels.length - 1,
+      );
+      const nextCategory = searchCategoryLabels[nextIndex]?.id;
+      if (!nextCategory) {
+        return;
+      }
+
+      handleSelectCategory(nextCategory);
+      focusCategoryChip(nextCategory);
+    },
+  );
+  const handleWorkspaceKeyDownCapture = useEffectEvent(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      const resultButton = target?.closest<HTMLElement>("[data-search-result-id]");
+      if (resultButton) {
+        const resultId = resultButton.dataset.searchResultId;
+        if (!resultId) {
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          handleMoveSelectedResult(1, { focusButton: true });
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          handleMoveSelectedResult(-1, { focusButton: true });
+          return;
+        }
+
+        if (event.key === "Enter") {
+          event.preventDefault();
+          handleOpenSelectedResult(resultId);
+          return;
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          focusSearchInput(true);
+          showTransitionHint("已回到搜索框，可继续输入或切换分类。");
+        }
+        return;
+      }
+
+      const categoryChip = target?.closest<HTMLElement>("[data-search-category-chip]");
+      if (categoryChip) {
+        const category = categoryChip.dataset.searchCategoryChip as
+          | SearchCategory
+          | undefined;
+        if (!category) {
+          return;
+        }
+
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          handleMoveCategoryChip(category, 1);
+          return;
+        }
+
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          handleMoveCategoryChip(category, -1);
+          return;
+        }
+
+        if (event.key === "Home") {
+          event.preventDefault();
+          handleSelectCategory("all");
+          focusCategoryChip("all");
+          return;
+        }
+
+        if (event.key === "End") {
+          event.preventDefault();
+          const lastCategory =
+            searchCategoryLabels[searchCategoryLabels.length - 1]?.id;
+          if (!lastCategory) {
+            return;
+          }
+
+          handleSelectCategory(lastCategory);
+          focusCategoryChip(lastCategory);
+          return;
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          focusSearchInput(true);
+          showTransitionHint("已回到搜索框，可继续输入或选择结果。");
+        }
+      }
+    },
+  );
   const handleSearchInputKeyDown = useEffectEvent(
     (event: ReactKeyboardEvent<HTMLInputElement>) => {
       if (event.nativeEvent.isComposing) {
@@ -647,9 +773,9 @@ export function DesktopSearchWorkspace({
         return;
       }
 
-      if (event.key === "Enter" && selectedResultItem) {
+      if (event.key === "Enter" && selectedResultId) {
         event.preventDefault();
-        onOpenResult(selectedResultItem);
+        handleOpenSelectedResult(selectedResultId);
         return;
       }
 
@@ -725,7 +851,10 @@ export function DesktopSearchWorkspace({
   }, [keyboardNavigableResults, selectedResultId]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+    <div
+      className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]"
+      onKeyDownCapture={handleWorkspaceKeyDownCapture}
+    >
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1160px] px-6 py-5">
           <div className="overflow-hidden rounded-[24px] border border-[#dce9dd] bg-[linear-gradient(135deg,rgba(7,193,96,0.14),rgba(7,193,96,0.05)_40%,white)]">
@@ -797,6 +926,7 @@ export function DesktopSearchWorkspace({
 
                   return (
                     <button
+                      data-search-category-chip={item.id}
                       key={item.id}
                       ref={(node) => {
                         categoryTabRefs.current[item.id] = node;
@@ -862,7 +992,7 @@ export function DesktopSearchWorkspace({
               keyword={keywordLabel}
               keyboardHint={
                 keyboardNavigableResults.length
-                  ? "↑ ↓ 选择结果 · Enter 打开 · Esc 取消"
+                  ? "↑ ↓ 选择结果 · ← → 切分类 · Enter 打开 · Esc 返回输入"
                   : undefined
               }
               onBackToAll={
@@ -1980,8 +2110,10 @@ function DesktopSearchFeatureCard({
     <button
       ref={buttonRef}
       aria-selected={selected}
+      data-search-result-id={item.id}
       type="button"
       onClick={() => onOpen(item)}
+      onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
@@ -2133,8 +2265,10 @@ function DesktopSearchMessageGroupCard({
           registerResultRef(group.header.id, node);
         }}
         aria-selected={isHeaderSelected}
+        data-search-result-id={group.header.id}
         type="button"
         onClick={() => onOpen(group.header)}
+        onFocus={() => onSelect(group.header.id)}
         onMouseEnter={() => onSelect(group.header.id)}
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
@@ -2177,8 +2311,10 @@ function DesktopSearchMessageGroupCard({
                 registerResultRef(item.id, node);
               }}
               aria-selected={selectedResultId === item.id}
+              data-search-result-id={item.id}
               type="button"
               onClick={() => onOpen(item)}
+              onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
                 "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
@@ -2240,8 +2376,10 @@ function DesktopSearchOfficialAccountGroupCard({
           registerResultRef(group.header.id, node);
         }}
         aria-selected={isHeaderSelected}
+        data-search-result-id={group.header.id}
         type="button"
         onClick={() => onOpen(group.header)}
+        onFocus={() => onSelect(group.header.id)}
         onMouseEnter={() => onSelect(group.header.id)}
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
@@ -2287,8 +2425,10 @@ function DesktopSearchOfficialAccountGroupCard({
                 registerResultRef(item.id, node);
               }}
               aria-selected={selectedResultId === item.id}
+              data-search-result-id={item.id}
               type="button"
               onClick={() => onOpen(item)}
+              onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
                 "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
@@ -2349,8 +2489,10 @@ function DesktopSearchContentCard({
     <button
       ref={buttonRef}
       aria-selected={selected}
+      data-search-result-id={item.id}
       type="button"
       onClick={() => onOpen(item)}
+      onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
@@ -2435,8 +2577,10 @@ function DesktopSearchResultRow({
     <button
       ref={buttonRef}
       aria-selected={selected}
+      data-search-result-id={item.id}
       type="button"
       onClick={() => onOpen(item)}
+      onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
