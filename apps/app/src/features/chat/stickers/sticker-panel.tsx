@@ -878,6 +878,9 @@ export function StickerPanel({
   const resumeManageShortcutTitle = showManageSearchPauseHint
     ? desktopManageButtonTitle
     : undefined;
+  const clearSearchShortcutTitle = showManageSearchPauseHint
+    ? resumeManageShortcutTitle
+    : "清空当前关键词，重新查看表情结果。";
   const desktopManageAfterFinishLabel =
     !isMobile && activeSectionId === "custom" && customManageMode
       ? customUploadResumed
@@ -1791,7 +1794,7 @@ export function StickerPanel({
                     ? clearSearchAndResumeManage
                     : clearSearch
                 }
-                title={resumeManageShortcutTitle}
+                title={clearSearchShortcutTitle}
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)]"
                 aria-label={
                   showManageSearchPauseHint
@@ -2685,7 +2688,7 @@ export function StickerPanel({
                             ? clearSearchAndResumeManage
                             : clearSearch
                         }
-                        title={resumeManageShortcutTitle}
+                        title={clearSearchShortcutTitle}
                         className="rounded-full bg-[rgba(160,90,10,0.14)] px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[rgba(160,90,10,0.18)]"
                       >
                         {showManageSearchPauseHint
