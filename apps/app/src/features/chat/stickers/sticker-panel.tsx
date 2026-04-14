@@ -837,6 +837,8 @@ export function StickerPanel({
   const customShortcutTitle = "切回自定义表情，查看自己保存的图片和 GIF。";
   const recentAddedShortcutTitle =
     "切到最近添加，优先查看和清理最近导入的表情。";
+  const recentUsedSortTitle = "切到最近使用，优先查看最近发过的常用表情。";
+  const recentAddedSortTitle = "切到最近添加，优先查看和整理最近导入的表情。";
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
     ? "现在去添加"
     : catalog.customStickerCount === 0
@@ -2463,6 +2465,11 @@ export function StickerPanel({
                     key={mode}
                     type="button"
                     onClick={() => setCustomSortMode(mode)}
+                    title={
+                      mode === "recent"
+                        ? recentUsedSortTitle
+                        : recentAddedSortTitle
+                    }
                     className={
                       isMobile
                         ? `rounded-full px-2.5 py-1 text-[11px] transition ${
