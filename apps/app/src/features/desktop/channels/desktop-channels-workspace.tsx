@@ -167,47 +167,8 @@ export function DesktopChannelsWorkspace({
     activeLiveSession?.channelPostId ?? liveDraft.referencePostId;
   const liveCompanionReferencePost =
     posts.find((post) => post.id === liveCompanionReferencePostId) ?? null;
-  const nextPosts = useMemo(
-    () => posts.filter((post) => post.id !== selectedPost?.id),
-    [posts, selectedPost?.id],
-  );
-  const selectedSidebarItemClassName =
-    "border-[rgba(7,193,96,0.12)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]";
   const activeFavoriteActionClassName =
     "border-[rgba(180,123,23,0.18)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_rgba(180,123,23,0.78)]";
-  const authorSummaries = useMemo(() => {
-    const map = new Map<
-      string,
-      { avatar: string; count: number; latestCreatedAt: string; name: string }
-    >();
-
-    posts.forEach((post) => {
-      const current = map.get(post.authorId);
-      if (current) {
-        current.count += 1;
-        if (current.latestCreatedAt < post.createdAt) {
-          current.latestCreatedAt = post.createdAt;
-        }
-        return;
-      }
-
-      map.set(post.authorId, {
-        avatar: post.authorAvatar,
-        count: 1,
-        latestCreatedAt: post.createdAt,
-        name: post.authorName,
-      });
-    });
-
-    return Array.from(map.entries())
-      .map(([authorId, summary]) => ({
-        authorId,
-        ...summary,
-      }))
-      .sort((left, right) =>
-        right.latestCreatedAt.localeCompare(left.latestCreatedAt),
-      );
-  }, [posts]);
 
   useEffect(() => {
     onSelectedPostChange(selectedPost?.id ?? null);
@@ -220,241 +181,81 @@ export function DesktopChannelsWorkspace({
   }, [onSelectedPostChange, onViewPost, selectedPost?.id]);
 
   return (
-    <div className="flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
-      <aside className="flex w-[292px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-5 py-5 backdrop-blur-xl">
-          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-            Channels
+    <div className="flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
+      <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+              Channels
+            </div>
+            <div className="mt-1 text-[22px] font-semibold text-[color:var(--text-primary)]">
+              视频号
+            </div>
+            <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+              桌面端收成微信式内容浏览结构，主区域看视频，右侧接住作者、评论和推荐队列。
+            </div>
           </div>
-          <div className="mt-2 text-[22px] font-semibold text-[color:var(--text-primary)]">
-            视频号
-          </div>
-          <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-            桌面版按微信频道工作区组织 AI
-            生成短视频，左边浏览，右边持续接住评论和下一条推荐。
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={onRefresh}>
+              <RefreshCcw size={14} />
+              换一批
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                void navigate({ to: "/desktop/channels/live-companion" })
+              }
+            >
+              <RadioTower size={14} />
+              直播伴侣
+            </Button>
           </div>
         </div>
 
-        <div className="space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="text-xs text-[color:var(--text-muted)]">
-              当前节奏
-            </div>
-            <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
+        {selectedPost ? (
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
               推荐流 {posts.length} 条
-            </div>
-            {selectedPost ? (
-              <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-                当前播放：{selectedPost.authorName} ·{" "}
-                {formatTimestamp(selectedPost.createdAt)}
-              </div>
-            ) : null}
-            <div className="mt-3 flex gap-2">
-              <Button variant="secondary" size="sm" onClick={onRefresh}>
-                <RefreshCcw size={14} />
-                换一批
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  void navigate({ to: "/desktop/channels/live-companion" })
-                }
-              >
-                <RadioTower size={14} />
-                直播伴侣
-              </Button>
-            </div>
+            </span>
+            <span>当前播放：{selectedPost.authorName}</span>
+            <span>·</span>
+            <span>{formatTimestamp(selectedPost.createdAt)}</span>
+            <span>·</span>
+            <span>{formatChannelMeta(selectedPost)}</span>
           </div>
+        ) : null}
 
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                直播伴侣状态
-              </div>
-              <Clapperboard
-                size={16}
-                className="text-[color:var(--brand-primary)]"
-              />
-            </div>
-            <div className="mt-2 text-sm leading-6 text-[color:var(--text-primary)]">
-              {activeLiveSession?.title ||
-                liveDraft.title.trim() ||
-                "还没有直播准备稿"}
-            </div>
-            <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-              {activeLiveSession
-                ? `直播中 · ${resolveLiveModeLabel(activeLiveSession.mode)} · ${resolveLiveQualityLabel(activeLiveSession.quality)}`
-                : liveDraft.title.trim()
-                  ? `准备中 · ${resolveLiveModeLabel(liveDraft.mode)} · ${resolveLiveQualityLabel(liveDraft.quality)}`
-                  : "从直播伴侣挑一条内容后，这里会回带当前准备状态。"}
-            </div>
-            {liveCompanionReferencePost ? (
-              <div className="mt-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
-                <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-                  当前参考内容
-                </div>
-                <div className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
-                  {liveCompanionReferencePost.text}
-                </div>
-                <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-                  {liveCompanionReferencePost.authorName} ·{" "}
-                  {formatTimestamp(liveCompanionReferencePost.createdAt)}
-                </div>
-              </div>
-            ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  void navigate({ to: "/desktop/channels/live-companion" })
-                }
-              >
-                <RadioTower size={14} />
-                打开伴侣
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={!liveCompanionReferencePost}
-                onClick={() => {
-                  if (liveCompanionReferencePost) {
-                    setSelectedPostId(liveCompanionReferencePost.id);
-                  }
-                }}
-              >
-                定位参考内容
-              </Button>
-            </div>
+        {successNotice ? (
+          <div className="mt-4">
+            <InlineNotice
+              tone="success"
+              className="border-[color:var(--border-faint)] bg-white"
+            >
+              {successNotice}
+            </InlineNotice>
           </div>
-
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              推荐作者
-            </div>
-            <div className="mt-3 space-y-2">
-              {authorSummaries.map((author) => (
-                <button
-                  key={author.authorId}
-                  type="button"
-                  onClick={() => {
-                    const nextPost = posts.find(
-                      (post) => post.authorId === author.authorId,
-                    );
-                    if (nextPost) {
-                      setSelectedPostId(nextPost.id);
-                    }
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
-                    selectedPost?.authorId === author.authorId
-                      ? selectedSidebarItemClassName
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
-                  )}
-                >
-                  <AvatarChip name={author.name} src={author.avatar} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                      {author.name}
-                    </div>
-                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                      {author.count} 条内容 · 最近更新于{" "}
-                      {formatTimestamp(author.latestCreatedAt)}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+        ) : null}
+        {errorMessage ? (
+          <div className="mt-4">
+            <ErrorBlock message={errorMessage} />
           </div>
+        ) : null}
+      </div>
 
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                内容队列
-              </div>
-              <div className="text-xs text-[color:var(--text-muted)]">
-                最近更新
-              </div>
-            </div>
-            <div className="mt-3 space-y-2">
-              {posts.map((post) => (
-                <button
-                  key={post.id}
-                  type="button"
-                  onClick={() => setSelectedPostId(post.id)}
-                  className={cn(
-                    "w-full rounded-[18px] border px-3 py-3 text-left transition",
-                    selectedPost?.id === post.id
-                      ? selectedSidebarItemClassName
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
-                  )}
-                >
-                  <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
-                    {post.text}
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
-                    <span>{post.authorName}</span>
-                    <span>·</span>
-                    <span>{formatTimestamp(post.createdAt)}</span>
-                    {post.id === liveCompanionReferencePostId ? (
-                      <>
-                        <span>·</span>
-                        <span className="rounded-md border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
-                          直播参考
-                        </span>
-                      </>
-                    ) : null}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </aside>
+      <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
+        {isLoading ? <LoadingBlock label="正在读取视频号内容..." /> : null}
 
-      <section className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-5 backdrop-blur-xl">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-                AI 视频流
-              </div>
-              <div className="mt-1 text-[20px] font-semibold text-[color:var(--text-primary)]">
-                推荐内容持续播放，右侧承接互动和下一条
-              </div>
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
-                首轮先只接 AI 生成内容与视频，不混入普通聊天域。
-              </div>
-            </div>
-            {successNotice ? (
-              <InlineNotice
-                tone="success"
-                className="border-[color:var(--border-faint)] bg-white"
-              >
-                {successNotice}
-              </InlineNotice>
-            ) : null}
-          </div>
-          {errorMessage ? (
-            <div className="mt-4">
-              <ErrorBlock message={errorMessage} />
-            </div>
-          ) : null}
-        </div>
+        {!isLoading && !posts.length ? (
+          <EmptyState
+            title="视频号还没有内容"
+            description="先等系统注入 AI 演示内容，或者后续接入真实生成视频后再回来查看。"
+          />
+        ) : null}
 
-        <div className="min-h-0 flex-1 overflow-auto px-6 py-6">
-          {isLoading ? <LoadingBlock label="正在读取视频号内容..." /> : null}
-
-          {!isLoading && !posts.length ? (
-            <EmptyState
-              title="视频号还没有内容"
-              description="先等系统注入 AI 演示内容，或者后续接入真实生成视频后再回来查看。"
-            />
-          ) : null}
-
-          {!isLoading && selectedPost ? (
-            <div className="mx-auto max-w-[860px] space-y-5">
+        {!isLoading && selectedPost ? (
+          <div className="mx-auto grid max-w-[1240px] gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section className="min-w-0">
               <article className="overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
                 <div className="relative bg-[#0f1115]">
                   <video
@@ -463,16 +264,16 @@ export function DesktopChannelsWorkspace({
                     controls
                     playsInline
                     preload="metadata"
-                    className="mx-auto block max-h-[620px] w-full bg-black object-contain"
+                    className="mx-auto block max-h-[720px] w-full bg-black object-contain"
                   />
                   <div className="pointer-events-none absolute left-5 top-5 rounded-md bg-[rgba(15,23,42,0.68)] px-3 py-1 text-[11px] font-medium text-white">
                     视频号推荐
                   </div>
                 </div>
 
-                  <div className="space-y-5 px-6 py-5">
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
+                <div className="space-y-5 px-6 py-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
@@ -500,14 +301,22 @@ export function DesktopChannelsWorkspace({
                           </div>
                         </button>
                         <Button
-                          variant={selectedPost.ownerState?.isFollowingAuthor ? "secondary" : "primary"}
+                          variant={
+                            selectedPost.ownerState?.isFollowingAuthor
+                              ? "secondary"
+                              : "primary"
+                          }
                           size="sm"
                           onClick={() => onToggleFollowAuthor(selectedPost)}
-                          className={selectedPost.ownerState?.isFollowingAuthor
-                            ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                            : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"}
+                          className={
+                            selectedPost.ownerState?.isFollowingAuthor
+                              ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                              : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                          }
                         >
-                          {selectedPost.ownerState?.isFollowingAuthor ? "已关注" : "+关注"}
+                          {selectedPost.ownerState?.isFollowingAuthor
+                            ? "已关注"
+                            : "+关注"}
                         </Button>
                       </div>
                       {selectedPost.title ? (
@@ -530,7 +339,7 @@ export function DesktopChannelsWorkspace({
                           ))}
                         </div>
                       ) : null}
-                      </div>
+                    </div>
 
                     <div className="flex items-center gap-2">
                       <Button
@@ -548,7 +357,16 @@ export function DesktopChannelsWorkspace({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => setSelectedPostId(selectedPost.id)}
+                        onClick={() => {
+                          if (typeof document !== "undefined") {
+                            document
+                              .getElementById("desktop-channel-comments-panel")
+                              ?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              });
+                          }
+                        }}
                         className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                       >
                         <MessageCircleMore size={15} />
@@ -558,9 +376,11 @@ export function DesktopChannelsWorkspace({
                         variant="secondary"
                         size="sm"
                         onClick={() => onToggleFavorite(selectedPost)}
-                        className={isPostFavorite(selectedPost.id)
-                          ? activeFavoriteActionClassName
-                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"}
+                        className={
+                          isPostFavorite(selectedPost.id)
+                            ? activeFavoriteActionClassName
+                            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                        }
                       >
                         <Bookmark size={15} />
                         {isPostFavorite(selectedPost.id) ? "取消收藏" : "收藏"}
@@ -568,138 +388,209 @@ export function DesktopChannelsWorkspace({
                     </div>
                   </div>
 
-                  <div className="border-t border-[color:var(--border-faint)] px-6 py-4">
-                    <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-                      <span>完整评论面板已收进右侧，可以直接回复、点赞和发送。</span>
-                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
-                        {selectedPost.commentCount} 条评论
-                      </span>
-                    </div>
-                    <div className="mt-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
-                      右侧评论面板会展示完整评论链路，并持续接住当前内容的回复与互动。
-                    </div>
+                  <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                    评论、作者入口和推荐队列已经收进右侧，主区域只保留当前内容播放和正文信息。
                   </div>
                 </div>
               </article>
-            </div>
-          ) : null}
-        </div>
-      </section>
+            </section>
 
-      <aside className="flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,249,0.92)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-5 py-4 backdrop-blur-xl">
-          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-            互动侧栏
-          </div>
-          <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
-            评论与下一条
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 space-y-4 overflow-auto px-4 py-4">
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                当前内容
-              </div>
-              <PlaySquare
-                size={16}
-                className="text-[color:var(--brand-primary)]"
-              />
-            </div>
-            {selectedPost ? (
-              <>
-                <div className="mt-3 text-sm leading-7 text-[color:var(--text-primary)]">
-                  {selectedPost.text}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[12px] text-[color:var(--text-muted)]">
-                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-                    {selectedPost.likeCount} 赞
-                  </span>
-                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-                    {selectedPost.commentCount} 评论
-                  </span>
-                </div>
-              </>
-            ) : null}
-          </div>
-
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  评论面板
-                </div>
-                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  当前内容下的完整评论列表与回复输入区
-                </div>
-              </div>
-              <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                {selectedPost?.commentCount ?? 0} 条
-              </span>
-            </div>
-            {commentsErrorMessage ? (
-              <div className="mt-3">
-                <ErrorBlock message={commentsErrorMessage} />
-              </div>
-            ) : null}
-            <DesktopChannelCommentsPanel
-              comments={comments}
-              commentsLoading={commentsLoading}
-              draft={selectedPost ? commentDrafts[selectedPost.id] ?? "" : ""}
-              likePendingCommentId={commentLikePendingId}
-              replyTarget={commentReplyTarget}
-              selectedPost={selectedPost}
-              submitPending={commentPendingPostId === selectedPost?.id}
-              onCancelReply={onCancelCommentReply}
-              onDraftChange={(value) => {
-                if (!selectedPost) {
-                  return;
-                }
-
-                onCommentChange(selectedPost.id, value);
-              }}
-              onLikeComment={onLikeComment}
-              onReplyToComment={onReplyToComment}
-              onSubmit={() => {
-                if (!selectedPost) {
-                  return;
-                }
-
-                onCommentSubmit(selectedPost.id);
-              }}
-            />
-          </div>
-
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                下一条推荐
-              </div>
-              <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                {nextPosts.slice(0, 5).length} 条
-              </span>
-            </div>
-            <div className="mt-3 space-y-2">
-              {nextPosts.slice(0, 5).map((post) => (
-                <button
-                  key={post.id}
-                  type="button"
-                  onClick={() => setSelectedPostId(post.id)}
-                  className="w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-left transition-[background-color,box-shadow] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
-                    {post.text}
+            <aside className="space-y-4">
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                <div className="flex items-start gap-3">
+                  <AvatarChip
+                    name={selectedPost.authorName}
+                    src={selectedPost.authorAvatar}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
+                      {selectedPost.authorName}
+                    </div>
+                    <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+                      {formatTimestamp(selectedPost.createdAt)} ·{" "}
+                      {selectedPost.viewCount} 播放
+                    </div>
                   </div>
-                  <div className="mt-2 text-xs text-[color:var(--text-muted)]">
-                    {post.authorName} · {formatTimestamp(post.createdAt)}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      void navigate({
+                        to: "/channels/authors/$authorId",
+                        params: { authorId: selectedPost.authorId },
+                      })
+                    }
+                  >
+                    <PlaySquare size={14} />
+                    作者主页
+                  </Button>
+                  <Button
+                    variant={
+                      selectedPost.ownerState?.isFollowingAuthor
+                        ? "secondary"
+                        : "primary"
+                    }
+                    size="sm"
+                    onClick={() => onToggleFollowAuthor(selectedPost)}
+                    className={
+                      selectedPost.ownerState?.isFollowingAuthor
+                        ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                        : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                    }
+                  >
+                    {selectedPost.ownerState?.isFollowingAuthor
+                      ? "已关注"
+                      : "+关注"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    直播伴侣
                   </div>
-                </button>
-              ))}
-            </div>
+                  <Clapperboard
+                    size={16}
+                    className="text-[color:var(--brand-primary)]"
+                  />
+                </div>
+                <div className="mt-2 text-sm leading-6 text-[color:var(--text-primary)]">
+                  {activeLiveSession?.title ||
+                    liveDraft.title.trim() ||
+                    "还没有直播准备稿"}
+                </div>
+                <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
+                  {activeLiveSession
+                    ? `直播中 · ${resolveLiveModeLabel(activeLiveSession.mode)} · ${resolveLiveQualityLabel(activeLiveSession.quality)}`
+                    : liveDraft.title.trim()
+                      ? `准备中 · ${resolveLiveModeLabel(liveDraft.mode)} · ${resolveLiveQualityLabel(liveDraft.quality)}`
+                      : "从直播伴侣挑一条内容后，这里会回带当前准备状态。"}
+                </div>
+                {liveCompanionReferencePost ? (
+                  <div className="mt-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
+                    <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+                      当前参考内容
+                    </div>
+                    <div className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
+                      {liveCompanionReferencePost.text}
+                    </div>
+                    <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                      {liveCompanionReferencePost.authorName} ·{" "}
+                      {formatTimestamp(liveCompanionReferencePost.createdAt)}
+                    </div>
+                  </div>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      void navigate({ to: "/desktop/channels/live-companion" })
+                    }
+                  >
+                    <RadioTower size={14} />
+                    打开伴侣
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!liveCompanionReferencePost}
+                    onClick={() => {
+                      if (liveCompanionReferencePost) {
+                        setSelectedPostId(liveCompanionReferencePost.id);
+                      }
+                    }}
+                  >
+                    定位参考内容
+                  </Button>
+                </div>
+              </div>
+
+              <div
+                id="desktop-channel-comments-panel"
+                className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                      评论面板
+                    </div>
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      当前内容下的完整评论列表与回复输入区
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    {selectedPost.commentCount} 条
+                  </span>
+                </div>
+                {commentsErrorMessage ? (
+                  <div className="mt-3">
+                    <ErrorBlock message={commentsErrorMessage} />
+                  </div>
+                ) : null}
+                <DesktopChannelCommentsPanel
+                  comments={comments}
+                  commentsLoading={commentsLoading}
+                  draft={commentDrafts[selectedPost.id] ?? ""}
+                  likePendingCommentId={commentLikePendingId}
+                  replyTarget={commentReplyTarget}
+                  selectedPost={selectedPost}
+                  submitPending={commentPendingPostId === selectedPost.id}
+                  onCancelReply={onCancelCommentReply}
+                  onDraftChange={(value) => onCommentChange(selectedPost.id, value)}
+                  onLikeComment={onLikeComment}
+                  onReplyToComment={onReplyToComment}
+                  onSubmit={() => onCommentSubmit(selectedPost.id)}
+                />
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    推荐队列
+                  </div>
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    {posts.length} 条
+                  </span>
+                </div>
+                <div className="mt-3 space-y-2">
+                  {posts.map((post) => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => setSelectedPostId(post.id)}
+                      className={cn(
+                        "w-full rounded-[16px] border px-3 py-3 text-left transition-[background-color,box-shadow]",
+                        selectedPost.id === post.id
+                          ? "border-[rgba(7,193,96,0.14)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
+                      )}
+                    >
+                      <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-primary)]">
+                        {post.text}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]">
+                        <span>{post.authorName}</span>
+                        <span>·</span>
+                        <span>{formatTimestamp(post.createdAt)}</span>
+                        {post.id === liveCompanionReferencePostId ? (
+                          <span className="rounded-md border border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                            直播参考
+                          </span>
+                        ) : null}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
           </div>
-        </div>
-      </aside>
+        ) : null}
+      </div>
     </div>
   );
 }
