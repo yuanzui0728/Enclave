@@ -353,7 +353,7 @@ export function OfficialAccountServiceThread({
           ref={selectedArticleId ? undefined : desktopThreadScrollContainerRef}
           className={cn(
             "min-h-0 flex-1 overflow-auto",
-            selectedArticleId ? "bg-white" : "bg-[rgba(255,255,255,0.62)]",
+            selectedArticleId ? "bg-white" : "bg-[#ededed]",
           )}
         >
           {selectedArticleId ? (
@@ -392,15 +392,25 @@ export function OfficialAccountServiceThread({
               ) : null}
             </div>
           ) : (
-            <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col px-6 py-6">
+            <div className="mx-auto flex min-h-full w-full max-w-[760px] flex-col px-4 py-8 sm:px-6 sm:py-10">
               {accountQuery.isLoading || messagesQuery.isLoading ? (
-                <LoadingBlock label="正在读取服务号消息..." />
+                <div className="mx-auto w-full max-w-[34rem]">
+                  <LoadingBlock label="正在读取服务号消息..." />
+                </div>
               ) : null}
-              {pageErrorMessage ? <ErrorBlock message={pageErrorMessage} /> : null}
-              {actionErrorMessage ? <ErrorBlock message={actionErrorMessage} /> : null}
+              {pageErrorMessage ? (
+                <div className="mx-auto w-full max-w-[34rem]">
+                  <ErrorBlock message={pageErrorMessage} />
+                </div>
+              ) : null}
+              {actionErrorMessage ? (
+                <div className="mx-auto w-full max-w-[34rem]">
+                  <ErrorBlock message={actionErrorMessage} />
+                </div>
+              ) : null}
 
               {messagesQuery.data?.length ? (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {messagesQuery.data.map((message) => (
                     <OfficialServiceMessageBubble
                       key={message.id}
@@ -412,7 +422,7 @@ export function OfficialAccountServiceThread({
                   ))}
                 </div>
               ) : !messagesQuery.isLoading ? (
-                <div className="flex min-h-[28rem] items-center justify-center">
+                <div className="mx-auto flex min-h-[24rem] w-full max-w-[34rem] items-center justify-center">
                   <EmptyState
                     title="还没有服务消息"
                     description="关注服务号后，通知和文章卡片会出现在这里。"
@@ -473,7 +483,7 @@ export function OfficialAccountServiceThread({
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto px-4 py-3">
+      <div className="flex-1 overflow-auto bg-[#ededed] px-3.5 py-4">
         {accountQuery.isLoading || messagesQuery.isLoading ? (
           <MobileOfficialStatusCard
             badge="读取中"
@@ -500,7 +510,7 @@ export function OfficialAccountServiceThread({
         ) : null}
 
         {messagesQuery.data?.length ? (
-          <div className="space-y-2.5">
+          <div className="space-y-4">
             {messagesQuery.data.map((message) => (
               <OfficialServiceMessageBubble
                 key={message.id}
