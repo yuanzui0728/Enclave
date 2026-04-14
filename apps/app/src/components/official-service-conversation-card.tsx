@@ -1,4 +1,5 @@
 import type { OfficialAccountServiceConversationSummary } from "@yinjie/contracts";
+import { BellOff } from "lucide-react";
 import { cn } from "@yinjie/ui";
 import { AvatarChip } from "./avatar-chip";
 import { formatConversationTimestamp } from "../lib/format";
@@ -53,11 +54,27 @@ export function OfficialServiceConversationCard({
             <div className="text-[10px] text-[color:var(--text-dim)]">
               {formatConversationTimestamp(conversation.lastDeliveredAt)}
             </div>
-            {conversation.unreadCount > 0 ? (
-              <div className="min-w-5 rounded-full bg-[color:var(--brand-primary)] [background-image:var(--brand-gradient)] px-1.5 py-0.5 text-center text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(7,193,96,0.14)]">
-                {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
-              </div>
-            ) : null}
+            <div className="flex items-center gap-1.5">
+              {conversation.isMuted ? (
+                <BellOff
+                  size={13}
+                  className="text-[color:var(--text-dim)]"
+                  aria-label="消息免打扰"
+                />
+              ) : null}
+              {conversation.unreadCount > 0 ? (
+                conversation.isMuted ? (
+                  <div
+                    className="h-2 w-2 rounded-full bg-[#fa5151]"
+                    aria-label={`${conversation.unreadCount} 条未读消息`}
+                  />
+                ) : (
+                  <div className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]">
+                    {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+                  </div>
+                )
+              ) : null}
+            </div>
           </div>
         </div>
       </div>

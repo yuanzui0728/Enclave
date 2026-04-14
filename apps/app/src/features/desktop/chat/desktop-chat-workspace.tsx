@@ -116,6 +116,10 @@ import { DesktopCreateGroupDialog } from "./desktop-create-group-dialog";
 import { DesktopChatSidePanel } from "./desktop-chat-side-panel";
 import { DesktopChatDetailsPanel } from "./desktop-chat-details-panel";
 import { DesktopChatHistoryPanel } from "./desktop-chat-history-panel";
+import {
+  buildDesktopMessageEntries,
+  type DesktopMessageEntry,
+} from "./desktop-message-entry-types";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
 import { openDesktopNoteWindow } from "./desktop-note-window-route-state";
 import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
@@ -269,21 +273,6 @@ export function DesktopChatWorkspace({
     [blockedCharacterIds, conversationsQuery.data],
   );
 
-  const filteredConversations = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-    if (!keyword) {
-      return conversations;
-    }
-
-    return conversations.filter((conversation) => {
-      const title = conversation.title.toLowerCase();
-      const preview = getConversationPreviewParts(
-        conversation,
-        localMessageActionState,
-      ).text.toLowerCase();
-      return title.includes(keyword) || preview.includes(keyword);
-    });
-  }, [conversations, localMessageActionState, searchTerm]);
   const {
     filteredReminderEntries,
     filteredReminderGroups,
@@ -309,6 +298,31 @@ export function DesktopChatWorkspace({
     () => messageEntriesQuery.data?.serviceConversations ?? [],
     [messageEntriesQuery.data?.serviceConversations],
   );
+  const desktopMessageEntries = useMemo(
+    () =>
+      buildDesktopMessageEntries({
+        conversations,
+        subscriptionInboxSummary,
+        serviceConversations,
+        searchTerm,
+        getConversationPreviewText: (conversation) =>
+          getConversationPreviewParts(conversation, localMessageActionState).text,
+      }),
+    [
+      conversations,
+      localMessageActionState,
+      searchTerm,
+      serviceConversations,
+      subscriptionInboxSummary,
+    ],
+  );
+  const filteredConversations = useMemo(
+    () =>
+      desktopMessageEntries.flatMap((entry) =>
+        entry.kind === "conversation" ? [entry.conversation] : [],
+      ),
+    [desktopMessageEntries],
+  );
 
   useEffect(() => {
     if (!hasNotifiedReminderGroup && isNotifiedReminderGroupExpanded) {
@@ -318,34 +332,6 @@ export function DesktopChatWorkspace({
 
   const subscriptionInboxActive = selectedSpecialView === "subscription-inbox";
   const serviceConversationActive = Boolean(selectedServiceAccountId);
-  const showSubscriptionInboxItem = useMemo(() => {
-    if (!subscriptionInboxSummary) {
-      return false;
-    }
-
-    const keyword = searchTerm.trim().toLowerCase();
-    if (!keyword) {
-      return true;
-    }
-
-    return (
-      "订阅号消息".includes(keyword) ||
-      (subscriptionInboxSummary.preview ?? "").toLowerCase().includes(keyword)
-    );
-  }, [searchTerm, subscriptionInboxSummary]);
-  const filteredServiceConversations = useMemo(() => {
-    const keyword = searchTerm.trim().toLowerCase();
-    if (!keyword) {
-      return serviceConversations;
-    }
-
-    return serviceConversations.filter((conversation) => {
-      return (
-        conversation.account.name.toLowerCase().includes(keyword) ||
-        (conversation.preview ?? "").toLowerCase().includes(keyword)
-      );
-    });
-  }, [searchTerm, serviceConversations]);
   const selectedServiceConversationExists = useMemo(
     () =>
       selectedServiceAccountId
@@ -1223,51 +1209,23 @@ export function DesktopChatWorkspace({
                 </section>
               ) : null}
 
-              {showSubscriptionInboxItem && subscriptionInboxSummary ? (
-                <SubscriptionInboxCard
-                  summary={subscriptionInboxSummary}
-                  variant="desktop"
-                  active={subscriptionInboxActive}
-                  onClick={() => {
-                    void navigate({ to: "/chat/subscription-inbox" });
-                  }}
-                />
-              ) : null}
-
-              {filteredServiceConversations.map((conversation) => (
-                <OfficialServiceConversationCard
-                  key={conversation.accountId}
-                  conversation={conversation}
-                  variant="desktop"
-                  active={conversation.accountId === selectedServiceAccountId}
-                  onClick={() => {
-                    void navigate({
-                      to: "/official-accounts/service/$accountId",
-                      params: { accountId: conversation.accountId },
-                    });
-                  }}
-                />
-              ))}
-
-              {filteredConversations.map((conversation) => (
-                <ConversationCard
-                  key={conversation.id}
-                  active={conversation.id === activeConversation?.id}
-                  conversation={conversation}
+              {desktopMessageEntries.map((entry) => (
+                <DesktopMessageEntryCard
+                  key={entry.id}
+                  entry={entry}
+                  activeConversationId={activeConversation?.id}
+                  selectedServiceAccountId={selectedServiceAccountId}
+                  subscriptionInboxActive={subscriptionInboxActive}
                   localMessageActionState={localMessageActionState}
-                  contextMenuOpen={
-                    conversationContextMenu?.conversation.id === conversation.id
-                  }
-                  onContextMenu={handleConversationContextMenu}
+                  conversationContextMenuId={conversationContextMenu?.conversation.id}
+                  onConversationContextMenu={handleConversationContextMenu}
                 />
               ))}
             </div>
 
             {!conversationsQuery.isLoading &&
             !filteredReminderEntries.length &&
-            !filteredConversations.length &&
-            !filteredServiceConversations.length &&
-            !showSubscriptionInboxItem &&
+            !desktopMessageEntries.length &&
             searchTerm.trim() ? (
               <div className="px-2 pt-5">
                 <EmptyState
@@ -1549,6 +1507,68 @@ export function DesktopChatWorkspace({
         }}
       />
     </div>
+  );
+}
+
+function DesktopMessageEntryCard({
+  entry,
+  activeConversationId,
+  selectedServiceAccountId,
+  subscriptionInboxActive,
+  localMessageActionState,
+  conversationContextMenuId,
+  onConversationContextMenu,
+}: {
+  entry: DesktopMessageEntry;
+  activeConversationId?: string;
+  selectedServiceAccountId?: string;
+  subscriptionInboxActive: boolean;
+  localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
+  conversationContextMenuId?: string;
+  onConversationContextMenu: (
+    event: MouseEvent<HTMLElement>,
+    conversation: ConversationListItem,
+  ) => void;
+}) {
+  const navigate = useNavigate();
+
+  if (entry.kind === "subscription-inbox") {
+    return (
+      <SubscriptionInboxCard
+        summary={entry.summary}
+        variant="desktop"
+        active={subscriptionInboxActive}
+        onClick={() => {
+          void navigate({ to: "/chat/subscription-inbox" });
+        }}
+      />
+    );
+  }
+
+  if (entry.kind === "service-account") {
+    return (
+      <OfficialServiceConversationCard
+        conversation={entry.conversation}
+        variant="desktop"
+        active={entry.conversation.accountId === selectedServiceAccountId}
+        onClick={() => {
+          void navigate({
+            to: "/official-accounts/service/$accountId",
+            params: { accountId: entry.conversation.accountId },
+          });
+        }}
+      />
+    );
+  }
+
+  return (
+    <ConversationCard
+      active={entry.conversation.id === activeConversationId}
+      conversation={entry.conversation}
+      localMessageActionState={localMessageActionState}
+      contextMenuOpen={conversationContextMenuId === entry.conversation.id}
+      onContextMenu={onConversationContextMenu}
+    />
   );
 }
 
