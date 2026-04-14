@@ -42,6 +42,7 @@ import {
 
 type DesktopSearchWorkspaceProps = {
   activeCategory: SearchCategory;
+  committedSearchText: string;
   error: string | null;
   groupedResults: SearchResultSection[];
   hasKeyword: boolean;
@@ -146,6 +147,7 @@ type DesktopSearchScopeCardCategory = (typeof landingScopeCards)[number]["id"];
 
 export function DesktopSearchWorkspace({
   activeCategory,
+  committedSearchText,
   error,
   groupedResults,
   hasKeyword,
@@ -192,7 +194,12 @@ export function DesktopSearchWorkspace({
     null,
   );
   const [transitionHint, setTransitionHint] = useState<string | null>(null);
-  const normalizedKeyword = searchText.trim().toLowerCase();
+  const trimmedInputKeyword = searchText.trim();
+  const trimmedCommittedKeyword = committedSearchText.trim();
+  const normalizedInputKeyword = trimmedInputKeyword.toLowerCase();
+  const normalizedCommittedKeyword = trimmedCommittedKeyword.toLowerCase();
+  const normalizedKeyword = normalizedCommittedKeyword;
+  const searchPending = normalizedInputKeyword !== normalizedCommittedKeyword;
   const groupedMessageHeaderIds = useMemo(
     () => new Set(messageGroups.map((item) => item.header.id)),
     [messageGroups],
@@ -619,7 +626,7 @@ export function DesktopSearchWorkspace({
     (category: SearchResultCategory) => {
       setActiveCategory(category);
       scrollResultsToTop("smooth");
-      focusSearchInput(Boolean(searchText.trim()));
+      focusSearchInput(Boolean(trimmedInputKeyword));
       showPanelSpotlight(category);
       showTransitionHint(`已展开${searchCategoryTitles[category]}全部结果。`);
     },
@@ -638,7 +645,7 @@ export function DesktopSearchWorkspace({
         );
       }
       if (options?.focusInput) {
-        focusSearchInput(Boolean(searchText.trim()));
+        focusSearchInput(Boolean(trimmedInputKeyword));
       }
     },
   );
@@ -656,28 +663,55 @@ export function DesktopSearchWorkspace({
   });
 
   const categorySummary = useMemo(() => {
+    if (searchPending) {
+      return trimmedInputKeyword
+        ? `已输入“${trimmedInputKeyword}”，点搜索图标或按 Enter 执行搜索。`
+        : "输入已清空，点搜索图标或按 Enter 回到搜索首页。";
+    }
+
     if (!hasKeyword) {
       return "从聊天、联系人、公众号、收藏和小程序里继续找。";
     }
 
     if (activeCategory === "all") {
-      return `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条结果，可继续按分类收窄。`;
+      return `关键词“${trimmedCommittedKeyword}”命中 ${visibleResults.length} 条结果，可继续按分类收窄。`;
     }
 
     return `当前查看 ${searchCategoryTitles[activeCategory]}，共 ${visibleResults.length} 条结果。`;
-  }, [activeCategory, hasKeyword, searchText, visibleResults.length]);
-  const headerTitle = hasKeyword
-    ? `搜索“${searchText.trim()}”`
-    : "搜索聊天、联系人与内容";
-  const headerBadge = !hasKeyword
-    ? "桌面全局搜索"
-    : activeCategory === "all"
-      ? `${visibleResults.length} 条结果`
-      : `${searchCategoryTitles[activeCategory]} · ${visibleResults.length}`;
-  const keywordLabel = searchText.trim();
+  }, [
+    activeCategory,
+    hasKeyword,
+    searchPending,
+    trimmedCommittedKeyword,
+    trimmedInputKeyword,
+    visibleResults.length,
+  ]);
+  const headerTitle = searchPending
+    ? trimmedInputKeyword
+      ? trimmedCommittedKeyword
+        ? `等待搜索“${trimmedInputKeyword}”`
+        : `准备搜索“${trimmedInputKeyword}”`
+      : "等待清空当前搜索"
+    : hasKeyword
+      ? `搜索“${trimmedCommittedKeyword}”`
+      : "搜索聊天、联系人与内容";
+  const headerBadge = searchPending
+    ? "待执行"
+    : !hasKeyword
+      ? "桌面全局搜索"
+      : activeCategory === "all"
+        ? `${visibleResults.length} 条结果`
+        : `${searchCategoryTitles[activeCategory]} · ${visibleResults.length}`;
+  const keywordLabel = trimmedCommittedKeyword;
   const contextCategoryTitle =
     activeCategory === "all" ? "全部结果" : searchCategoryTitles[activeCategory];
   const contextKeyboardHint = useMemo(() => {
+    if (searchPending) {
+      return trimmedInputKeyword
+        ? "Enter 执行搜索 · Esc 清空关键词"
+        : "Enter 回到搜索首页";
+    }
+
     if (keyboardFocusRegion === "results" && keyboardNavigableResults.length) {
       return "↑ ↓ 切换当前项 · Enter 打开当前项 · Esc 回搜索框 · Home 回顶部";
     }
@@ -688,19 +722,21 @@ export function DesktopSearchWorkspace({
 
     if (keyboardNavigableResults.length) {
       return selectedResultId
-        ? "Tab 进入结果层 · Enter 打开当前项 · Esc 取消预选"
-        : "Tab 进入结果层 · ↑ ↓ 预选当前项 · Esc 清空关键词";
+        ? "Tab 进入结果层 · ↑ ↓ 切换当前项 · Enter 执行搜索 · Esc 取消预选"
+        : "Tab 进入结果层 · ↑ ↓ 预选当前项 · Enter 执行搜索 · Esc 清空关键词";
     }
 
     return "Enter 执行搜索 · Esc 清空关键词";
   }, [
     keyboardFocusRegion,
     keyboardNavigableResults.length,
+    searchPending,
     selectedResultId,
+    trimmedInputKeyword,
   ]);
   const handleScrollToTopContext = useEffectEvent(() => {
     scrollResultsToTop("smooth");
-    focusSearchInput(Boolean(searchText.trim()));
+    focusSearchInput(Boolean(trimmedInputKeyword));
     showPanelSpotlight(resolveSpotlightPanelId(activeCategory));
     showTransitionHint("已回到顶部，可继续调整关键词或切换分类。");
   });
@@ -709,7 +745,7 @@ export function DesktopSearchWorkspace({
       pendingAllResultsJumpRef.current = category;
       setActiveAllResultsSection(category);
       setActiveCategory("all");
-      focusSearchInput(Boolean(searchText.trim()));
+      focusSearchInput(Boolean(trimmedInputKeyword));
       showTransitionHint(`已回到全部结果，并定位到${searchCategoryTitles[category]}分区。`);
     },
   );
@@ -801,7 +837,7 @@ export function DesktopSearchWorkspace({
     showTransitionHint(
       selectedResultId
         ? "已回到搜索框，再按 Esc 可取消预选结果。"
-        : searchText.trim()
+        : trimmedInputKeyword
           ? "已回到搜索框，再按 Esc 可清空关键词。"
           : "已回到搜索框，可继续输入或切换分类。",
     );
@@ -810,7 +846,7 @@ export function DesktopSearchWorkspace({
     autoSelectResultRef.current = false;
     setSelectedResultId(null);
     showTransitionHint(
-      searchText.trim()
+      trimmedInputKeyword
         ? "已取消结果选择，再按 Esc 可清空关键词。"
         : "已取消结果选择，可继续输入关键词。",
     );
@@ -946,6 +982,10 @@ export function DesktopSearchWorkspace({
       }
 
       if (event.key === "ArrowDown") {
+        if (searchPending) {
+          return;
+        }
+
         if (!keyboardNavigableResults.length) {
           return;
         }
@@ -956,6 +996,10 @@ export function DesktopSearchWorkspace({
       }
 
       if (event.key === "ArrowUp") {
+        if (searchPending) {
+          return;
+        }
+
         if (!keyboardNavigableResults.length) {
           return;
         }
@@ -966,6 +1010,10 @@ export function DesktopSearchWorkspace({
       }
 
       if (event.key === "Tab" && !event.shiftKey) {
+        if (searchPending) {
+          return;
+        }
+
         const targetResultId = selectedResultId ?? preferredAutoSelectedResultId;
         if (!targetResultId) {
           return;
@@ -976,13 +1024,7 @@ export function DesktopSearchWorkspace({
         return;
       }
 
-      if (event.key === "Enter" && selectedResultId) {
-        event.preventDefault();
-        handleOpenSelectedResult(selectedResultId);
-        return;
-      }
-
-      if (event.key === "Escape" && !selectedResultId && searchText.trim()) {
+      if (event.key === "Escape" && !selectedResultId && trimmedInputKeyword) {
         event.preventDefault();
         handleClearKeyword();
         return;
@@ -1045,7 +1087,16 @@ export function DesktopSearchWorkspace({
   useEffect(() => {
     autoSelectResultRef.current = hasKeyword;
     setSelectedResultId(null);
-  }, [activeCategory, hasKeyword, searchText]);
+  }, [activeCategory, committedSearchText, hasKeyword]);
+
+  useEffect(() => {
+    if (!searchPending) {
+      return;
+    }
+
+    autoSelectResultRef.current = false;
+    setSelectedResultId(null);
+  }, [searchPending]);
 
   useEffect(() => {
     if (!selectedResultId) {
@@ -1111,10 +1162,19 @@ export function DesktopSearchWorkspace({
                       onCommitSearch(searchText);
                     }}
                   >
-                    <Search
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
-                    />
+                    <button
+                      type="submit"
+                      aria-label="执行搜索"
+                      title="执行搜索"
+                      className={cn(
+                        "absolute left-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-[10px] transition",
+                        searchPending && trimmedInputKeyword
+                          ? "bg-[rgba(7,193,96,0.12)] text-[color:var(--brand-primary)] hover:bg-[rgba(7,193,96,0.16)]"
+                          : "text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+                      )}
+                    >
+                      <Search size={15} />
+                    </button>
                     <input
                       ref={inputRef}
                       type="search"
