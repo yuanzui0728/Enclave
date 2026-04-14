@@ -300,6 +300,13 @@ type MobilePlusNoticeState = {
 
 type MobileComposerMode = "text" | "speech" | "sticker" | "plus";
 
+type MobileComposerStatusState = {
+  tone: "muted" | "info" | "success" | "danger";
+  label: string;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
 export function ChatComposer({
   value,
   placeholder,
@@ -2699,6 +2706,62 @@ export function ChatComposer({
 
     return null;
   })();
+  const mobileComposerStatus = (() => {
+    if (isDesktop || plusPanelOpen) {
+      return null;
+    }
+
+    if (composerError) {
+      return {
+        tone: "danger" as const,
+        label: composerError,
+        actionLabel:
+          speech.permissionDenied && nativeMobileShellSupported
+            ? "去设置"
+            : undefined,
+        onAction:
+          speech.permissionDenied && nativeMobileShellSupported
+            ? () => {
+                void openAppSettings();
+              }
+            : undefined,
+      };
+    }
+
+    if (speech.mode !== "voice" && speech.status === "ready" && speechDisplayText) {
+      return {
+        tone: "success" as const,
+        label: `识别完成：${speechDisplayText}`,
+        actionLabel: "插入",
+        onAction: commitSpeechInput,
+      };
+    }
+
+    if (mobilePlusNotice) {
+      return {
+        tone: "info" as const,
+        label: mobilePlusNotice.message,
+        actionLabel: mobilePlusNotice.actionLabel,
+        onAction: mobilePlusNotice.onAction,
+      };
+    }
+
+    if (composerPending) {
+      return {
+        tone: "muted" as const,
+        label: "正在发送...",
+      };
+    }
+
+    if (speechDisabledReason) {
+      return {
+        tone: "muted" as const,
+        label: speechDisabledReason,
+      };
+    }
+
+    return null;
+  })();
 
   return (
     <>
@@ -3242,69 +3305,16 @@ export function ChatComposer({
             onUnavailableFallback={handleUnavailableFallback}
           />
         ) : null}
-        {mobilePlusNotice && !isDesktop && !plusPanelOpen ? (
-          <InlineNotice
-            className="mt-1 flex items-center justify-between gap-2 rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-            tone="info"
-          >
-            <span className="min-w-0 flex-1">{mobilePlusNotice.message}</span>
-            {mobilePlusNotice.onAction ? (
-              <InlineNoticeActionButton
-                label={mobilePlusNotice.actionLabel}
-                onClick={mobilePlusNotice.onAction}
-                className="border-[#60a5fa]/20 bg-white text-[#1d4ed8]"
-              />
-            ) : null}
-          </InlineNotice>
+        {!isDesktop && mobileComposerStatus ? (
+          <MobileComposerStatusRail
+            tone={mobileComposerStatus.tone}
+            label={mobileComposerStatus.label}
+            actionLabel={mobileComposerStatus.actionLabel}
+            onAction={mobileComposerStatus.onAction}
+          />
         ) : null}
-        {speechDisabledReason ? (
-          <InlineNotice
-            className="mt-1 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-            tone="muted"
-          >
-            {speechDisabledReason}
-          </InlineNotice>
-        ) : null}
-        {!isDesktop &&
-        speech.mode !== "voice" &&
-        speech.status === "ready" &&
-        speechDisplayText ? (
-          <InlineNotice
-            className="mt-1 flex items-center justify-between gap-2 rounded-[11px] border-[rgba(7,193,96,0.12)] bg-[rgba(247,251,248,0.98)] px-2.5 py-1.5 text-[10px] leading-4 text-[#166534] shadow-none"
-            tone="info"
-          >
-            <span className="truncate">识别完成：{speechDisplayText}</span>
-            <button
-              type="button"
-              onClick={commitSpeechInput}
-              className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#15803d]"
-            >
-              插入输入框
-            </button>
-          </InlineNotice>
-        ) : null}
-        {composerError && !isDesktop ? (
-          <InlineNotice
-            className="mt-1 flex items-center justify-between gap-2.5 rounded-[11px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-            tone="danger"
-          >
-            <span>{composerError}</span>
-            {speech.permissionDenied && nativeMobileShellSupported ? (
-              <InlineNoticeActionButton
-                onClick={() => {
-                  void openAppSettings();
-                }}
-              />
-            ) : null}
-          </InlineNotice>
-        ) : null}
-        {composerPending ? (
-          <div
-            className={cn(
-              "mt-1 flex items-center gap-1.5 px-0.5 text-[10px] text-[color:var(--text-muted)]",
-              isDesktop ? "justify-end pr-1" : "",
-            )}
-          >
+        {composerPending && isDesktop ? (
+          <div className="mt-1 flex items-center justify-end gap-1.5 px-0.5 pr-1 text-[10px] text-[color:var(--text-muted)]">
             <SendHorizontal size={10} />
             <span>正在发送...</span>
           </div>
@@ -3541,6 +3551,46 @@ function DesktopComposerStatusStrip({
         >
           {secondaryActionLabel}
         </button>
+      ) : null}
+    </div>
+  );
+}
+
+function MobileComposerStatusRail({
+  tone,
+  label,
+  actionLabel,
+  onAction,
+}: MobileComposerStatusState) {
+  return (
+    <div
+      className={cn(
+        "mt-1.5 flex items-center justify-between gap-2 rounded-[12px] border px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+        tone === "danger"
+          ? "border-[#fecaca] bg-[#fff5f5] text-[#b42318]"
+          : tone === "success"
+            ? "border-[rgba(7,193,96,0.14)] bg-[#f6fbf7] text-[#15803d]"
+            : tone === "info"
+              ? "border-[rgba(96,165,250,0.18)] bg-[#f7fbff] text-[#1d4ed8]"
+              : "border-black/6 bg-[rgba(255,255,255,0.88)] text-[color:var(--text-muted)]",
+      )}
+    >
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {actionLabel && onAction ? (
+        <InlineNoticeActionButton
+          label={actionLabel}
+          onClick={onAction}
+          className={cn(
+            "shrink-0 bg-white",
+            tone === "danger"
+              ? "border-[#fecaca] text-[#b42318]"
+              : tone === "success"
+                ? "border-[rgba(7,193,96,0.14)] text-[#15803d]"
+                : tone === "info"
+                  ? "border-[#bfdbfe] text-[#1d4ed8]"
+                  : "border-black/6 text-[color:var(--text-secondary)]",
+          )}
+        />
       ) : null}
     </div>
   );
