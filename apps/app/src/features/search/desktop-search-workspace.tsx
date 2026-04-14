@@ -804,6 +804,12 @@ export function DesktopSearchWorkspace({
           event.preventDefault();
           focusSearchInput(true);
           showTransitionHint("已回到搜索框，可继续输入或切换分类。");
+          return;
+        }
+
+        if (event.key === "Home") {
+          event.preventDefault();
+          handleScrollToTopContext();
         }
         return;
       }
@@ -897,6 +903,12 @@ export function DesktopSearchWorkspace({
       if (event.key === "Enter" && selectedResultId) {
         event.preventDefault();
         handleOpenSelectedResult(selectedResultId);
+        return;
+      }
+
+      if (event.key === "Escape" && !selectedResultId && searchText.trim()) {
+        event.preventDefault();
+        handleClearKeyword();
         return;
       }
 
@@ -1041,6 +1053,7 @@ export function DesktopSearchWorkspace({
                       <DesktopSearchActionButton
                         className="absolute right-3 top-1/2 -translate-y-1/2"
                         onClick={handleClearKeyword}
+                        priority="secondary"
                         tone="neutral"
                       >
                         清空
@@ -1128,7 +1141,7 @@ export function DesktopSearchWorkspace({
               keyword={keywordLabel}
               keyboardHint={
                 keyboardNavigableResults.length
-                  ? "Tab 进入预选结果 · Shift+Tab 回搜索框 · ↑ ↓ 选择结果 · ← → 切分类"
+                  ? "Tab 进入预选结果 · Shift+Tab 回搜索框 · ↑ ↓ 选择结果 · ← → 切分类 · Home 回顶部"
                   : undefined
               }
               onBackToAll={
@@ -1278,6 +1291,7 @@ export function DesktopSearchWorkspace({
                             onClick={() =>
                               handleExpandAllResultsSection(section.category)
                             }
+                            priority="secondary"
                             tone="brand"
                           >
                             查看全部
@@ -1528,11 +1542,13 @@ function DesktopSearchActionButton({
   children,
   className,
   onClick,
+  priority = "primary",
   tone,
 }: {
   children: ReactNode;
   className?: string;
   onClick: () => void;
+  priority?: "primary" | "secondary";
   tone: "brand" | "danger" | "neutral";
 }) {
   const toneClassName =
@@ -1546,6 +1562,7 @@ function DesktopSearchActionButton({
     <button
       type="button"
       onClick={onClick}
+      tabIndex={priority === "secondary" ? -1 : undefined}
       className={cn(
         "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] transition",
         desktopSearchChipFocusClassName,
@@ -1841,14 +1858,26 @@ function DesktopSearchContextBar({
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {onBackToAll ? (
-              <DesktopSearchActionButton onClick={onBackToAll} tone="brand">
+              <DesktopSearchActionButton
+                onClick={onBackToAll}
+                priority="secondary"
+                tone="brand"
+              >
                 回到全部结果
               </DesktopSearchActionButton>
             ) : null}
-            <DesktopSearchActionButton onClick={onScrollToTop} tone="neutral">
+            <DesktopSearchActionButton
+              onClick={onScrollToTop}
+              priority="secondary"
+              tone="neutral"
+            >
               回到顶部
             </DesktopSearchActionButton>
-            <DesktopSearchActionButton onClick={onClearKeyword} tone="neutral">
+            <DesktopSearchActionButton
+              onClick={onClearKeyword}
+              priority="secondary"
+              tone="neutral"
+            >
               清空关键词
             </DesktopSearchActionButton>
           </div>
@@ -1922,7 +1951,11 @@ function DesktopSearchDrilldownBanner({
             当前仍保留关键词“{keyword}”，共 {count} 条命中；返回时会回到聚合页里的对应分区。
           </div>
         </div>
-        <DesktopSearchActionButton onClick={onBack} tone="brand">
+        <DesktopSearchActionButton
+          onClick={onBack}
+          priority="secondary"
+          tone="brand"
+        >
           回到全部结果
         </DesktopSearchActionButton>
       </div>
