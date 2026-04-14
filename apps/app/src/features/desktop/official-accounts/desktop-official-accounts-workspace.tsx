@@ -16,6 +16,7 @@ import { OfficialAccountListItem } from "../../../components/official-account-li
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import { EmptyState } from "../../../components/empty-state";
+import { buildDesktopOfficialMessageRouteHash } from "../chat/desktop-official-message-route-state";
 import {
   buildOfficialAccountFavoriteRecord,
   buildOfficialArticleFavoriteRecord,
@@ -368,6 +369,25 @@ export function DesktopOfficialAccountsWorkspace({
     });
   }
 
+  function openServiceWorkspace(accountId: string, articleId?: string | null) {
+    void navigate({
+      to: "/official-accounts/service/$accountId",
+      params: { accountId },
+      hash: buildDesktopOfficialMessageRouteHash({
+        articleId: articleId ?? undefined,
+      }),
+    });
+  }
+
+  function openSubscriptionWorkspace(articleId?: string | null) {
+    void navigate({
+      to: "/chat/subscription-inbox",
+      hash: buildDesktopOfficialMessageRouteHash({
+        articleId: articleId ?? undefined,
+      }),
+    });
+  }
+
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
       <section className="flex w-[300px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
@@ -498,12 +518,9 @@ export function DesktopOfficialAccountsWorkspace({
                     type="button"
                     variant="primary"
                     className="rounded-xl bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                    onClick={() => {
-                      void navigate({
-                        to: "/official-accounts/service/$accountId",
-                        params: { accountId: account.id },
-                      });
-                    }}
+                    onClick={() =>
+                      openServiceWorkspace(account.id, activeArticleId)
+                    }
                   >
                     <MessageSquareText size={15} />
                     发消息
@@ -514,9 +531,7 @@ export function DesktopOfficialAccountsWorkspace({
                     type="button"
                     variant="secondary"
                     className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                    onClick={() => {
-                      void navigate({ to: "/chat/subscription-inbox" });
-                    }}
+                    onClick={() => openSubscriptionWorkspace(activeArticleId)}
                   >
                     <BookOpenText size={15} />
                     订阅号消息
@@ -632,14 +647,11 @@ export function DesktopOfficialAccountsWorkspace({
                   actionDisabled={!account.isFollowing}
                   onAction={() => {
                     if (account.accountType === "service") {
-                      void navigate({
-                        to: "/official-accounts/service/$accountId",
-                        params: { accountId: account.id },
-                      });
+                      openServiceWorkspace(account.id, activeArticleId);
                       return;
                     }
 
-                    void navigate({ to: "/chat/subscription-inbox" });
+                    openSubscriptionWorkspace(activeArticleId);
                   }}
                 />
 
