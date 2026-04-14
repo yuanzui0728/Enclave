@@ -414,6 +414,13 @@ export function DesktopSearchWorkspace({
                     isDesktopContentCategory(section.category)
                       ? section.results.slice(0, 4)
                       : [];
+                  const previewFeatureResults =
+                    isDesktopFeatureCardCategory(section.category)
+                      ? section.results.slice(
+                          0,
+                          section.category === "favorites" ? 3 : 4,
+                        )
+                      : [];
                   const previewMessageGroups =
                     section.category === "messages"
                       ? messageGroups.slice(0, 3)
@@ -447,6 +454,8 @@ export function DesktopSearchWorkspace({
                             previewOfficialAccountGroups.length ||
                           officialAccountOnlyResults.length >
                             previewOfficialAccounts.length
+                      : isDesktopFeatureCardCategory(section.category)
+                        ? section.results.length > previewFeatureResults.length
                       : isDesktopContentCategory(section.category)
                         ? section.results.length > previewContentResults.length
                       : section.results.length > previewResults.length;
@@ -488,6 +497,13 @@ export function DesktopSearchWorkspace({
                           accountResults={previewOfficialAccounts}
                           keyword={normalizedKeyword}
                           officialAccountGroups={previewOfficialAccountGroups}
+                          onOpen={onOpenResult}
+                        />
+                      ) : isDesktopFeatureCardCategory(section.category) ? (
+                        <DesktopSearchFeatureResults
+                          category={section.category}
+                          items={previewFeatureResults}
+                          keyword={normalizedKeyword}
                           onOpen={onOpenResult}
                         />
                       ) : isDesktopContentCategory(section.category) ? (
@@ -537,6 +553,13 @@ export function DesktopSearchWorkspace({
                     accountResults={officialAccountOnlyResults}
                     keyword={normalizedKeyword}
                     officialAccountGroups={officialAccountGroups}
+                    onOpen={onOpenResult}
+                  />
+                ) : isDesktopFeatureCardCategory(activeCategory) ? (
+                  <DesktopSearchFeatureResults
+                    category={activeCategory}
+                    items={visibleResults}
+                    keyword={normalizedKeyword}
                     onOpen={onOpenResult}
                   />
                 ) : isDesktopContentCategory(activeCategory) ? (
@@ -701,6 +724,43 @@ function DesktopSearchOfficialAccountResults({
   );
 }
 
+function DesktopSearchFeatureResults({
+  category,
+  items,
+  keyword,
+  onOpen,
+}: {
+  category: "contacts" | "favorites" | "miniPrograms";
+  items: SearchResultItem[];
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cn(
+        "mt-4 gap-4",
+        category === "favorites"
+          ? "space-y-3"
+          : "grid xl:grid-cols-2",
+      )}
+    >
+      {items.map((item) => (
+        <DesktopSearchFeatureCard
+          key={item.id}
+          category={category}
+          item={item}
+          keyword={keyword}
+          onOpen={onOpen}
+        />
+      ))}
+    </div>
+  );
+}
+
 function DesktopSearchContentResults({
   items,
   keyword,
@@ -721,6 +781,118 @@ function DesktopSearchContentResults({
         />
       ))}
     </div>
+  );
+}
+
+function DesktopSearchFeatureCard({
+  category,
+  item,
+  keyword,
+  onOpen,
+}: {
+  category: "contacts" | "favorites" | "miniPrograms";
+  item: SearchResultItem;
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  const toneClassName =
+    category === "contacts"
+      ? "border-[#d9e7d9] bg-[linear-gradient(180deg,#f9fcfa,white)]"
+      : category === "favorites"
+        ? "border-[#efe2bf] bg-[linear-gradient(180deg,#fffdf7,white)]"
+        : "border-[#d8e7df] bg-[linear-gradient(180deg,#f7fbf9,white)]";
+  const badgeClassName =
+    category === "contacts"
+      ? "bg-[rgba(7,193,96,0.10)] text-[#1d6a37]"
+      : category === "favorites"
+        ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
+        : "bg-[rgba(15,118,110,0.10)] text-[#226448]";
+  const iconToneClassName =
+    category === "contacts"
+      ? "bg-[rgba(7,193,96,0.10)] text-[#15803d]"
+      : category === "favorites"
+        ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
+        : "bg-[rgba(15,118,110,0.12)] text-[#0f766e]";
+  const ActionIcon =
+    category === "contacts"
+      ? UsersRound
+      : category === "favorites"
+        ? Bookmark
+        : Blocks;
+  const actionLabel =
+    category === "contacts"
+      ? "查看资料与聊天入口"
+      : category === "favorites"
+        ? "打开收藏内容"
+        : "打开小程序";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      className={cn(
+        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
+        toneClassName,
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <AvatarChip
+          name={item.avatarName ?? item.title}
+          src={item.avatarSrc}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {renderHighlightedText(item.title, keyword)}
+            </div>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                badgeClassName,
+              )}
+            >
+              {item.badge}
+            </span>
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {renderHighlightedText(item.meta, keyword)}
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "mt-4 rounded-[16px] px-4 py-4",
+          category === "favorites"
+            ? "bg-[rgba(255,247,230,0.72)]"
+            : "bg-[color:var(--surface-console)]",
+        )}
+      >
+        <div
+          className={cn(
+            "text-[color:var(--text-secondary)]",
+            category === "favorites"
+              ? "line-clamp-3 text-sm leading-6"
+              : "line-clamp-3 text-sm leading-7",
+          )}
+        >
+          {renderHighlightedText(item.description, keyword)}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
+        <span>{actionLabel}</span>
+        <div
+          className={cn(
+            "flex h-8 w-8 items-center justify-center rounded-full",
+            iconToneClassName,
+          )}
+        >
+          <ActionIcon size={15} />
+        </div>
+      </div>
+    </button>
   );
 }
 
@@ -975,6 +1147,16 @@ function isDesktopContentCategory(
   category: SearchCategory | SearchResultCategory,
 ) {
   return category === "moments" || category === "feed";
+}
+
+function isDesktopFeatureCardCategory(
+  category: SearchCategory | SearchResultCategory,
+): category is "contacts" | "favorites" | "miniPrograms" {
+  return (
+    category === "contacts" ||
+    category === "favorites" ||
+    category === "miniPrograms"
+  );
 }
 
 function DesktopSearchResultRow({
