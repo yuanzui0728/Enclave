@@ -3,6 +3,7 @@ import {
   useEffectEvent,
   useMemo,
   useRef,
+  useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
@@ -138,6 +139,8 @@ export function DesktopSearchWorkspace({
 }: DesktopSearchWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const transitionHintTimeoutRef = useRef<number | null>(null);
+  const [transitionHint, setTransitionHint] = useState<string | null>(null);
   const normalizedKeyword = searchText.trim().toLowerCase();
   const groupedMessageHeaderIds = useMemo(
     () => new Set(messageGroups.map((item) => item.header.id)),
@@ -173,6 +176,14 @@ export function DesktopSearchWorkspace({
     inputRef.current?.focus();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (transitionHintTimeoutRef.current !== null) {
+        window.clearTimeout(transitionHintTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const focusSearchInput = useEffectEvent((moveCaretToEnd = false) => {
     window.requestAnimationFrame(() => {
       const input = inputRef.current;
@@ -204,10 +215,31 @@ export function DesktopSearchWorkspace({
       viewport.scrollTo({ top: 0, behavior });
     },
   );
+  const showTransitionHint = useEffectEvent((message: string) => {
+    if (transitionHintTimeoutRef.current !== null) {
+      window.clearTimeout(transitionHintTimeoutRef.current);
+    }
+
+    setTransitionHint(message);
+    transitionHintTimeoutRef.current = window.setTimeout(() => {
+      setTransitionHint(null);
+      transitionHintTimeoutRef.current = null;
+    }, 2200);
+  });
+  const resolveCategoryHintTitle = (category: SearchCategory) =>
+    category === "all" ? "全部结果" : searchCategoryTitles[category];
   const handleSelectCategory = useEffectEvent(
     (category: SearchCategory, options?: { focusInput?: boolean }) => {
+      const categoryChanged = category !== activeCategory;
       setActiveCategory(category);
       scrollResultsToTop("smooth");
+      if (categoryChanged) {
+        showTransitionHint(
+          hasKeyword
+            ? `已切换到${resolveCategoryHintTitle(category)}，结果已回到顶部。`
+            : `已切换到${resolveCategoryHintTitle(category)}，继续输入关键词开始搜索。`,
+        );
+      }
       if (options?.focusInput) {
         focusSearchInput(Boolean(searchText.trim()));
       }
@@ -217,11 +249,13 @@ export function DesktopSearchWorkspace({
     onApplyHistory(keyword);
     scrollResultsToTop("smooth");
     focusSearchInput(true);
+    showTransitionHint(`已应用历史关键词“${keyword}”，结果已回到顶部。`);
   });
   const handleClearKeyword = useEffectEvent(() => {
     onClearKeyword();
     scrollResultsToTop("smooth");
     focusSearchInput(false);
+    showTransitionHint("已清空关键词，回到搜索首页。");
   });
 
   const categorySummary = useMemo(() => {
@@ -354,6 +388,13 @@ export function DesktopSearchWorkspace({
         <div className="mx-auto flex w-full max-w-[1160px] min-h-full flex-col px-6 py-6">
           {loading ? <LoadingBlock label="正在准备桌面搜索索引..." /> : null}
           {error ? <ErrorBlock message={error} /> : null}
+          {!loading && !error && transitionHint ? (
+            <DesktopSearchStatusCard
+              description={transitionHint}
+              status="done"
+              title="定位反馈"
+            />
+          ) : null}
 
           {!loading && !error && hasKeyword && searchingMessages ? (
             <DesktopSearchStatusCard
