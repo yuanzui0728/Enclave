@@ -298,6 +298,8 @@ type MobilePlusNoticeState = {
   onAction?: () => void;
 };
 
+type MobileComposerMode = "text" | "speech" | "sticker" | "plus";
+
 export function ChatComposer({
   value,
   placeholder,
@@ -440,8 +442,16 @@ export function ChatComposer({
   const composerError = error ?? speech.error ?? attachmentError;
   const speechDisplayText = speech.displayText.trim();
   const composerPending = pending || attachmentBusy;
-  const mobileSpeechMode =
-    !isDesktop && showSpeechEntry && mobileInputMode === "speech";
+  const mobileComposerMode: MobileComposerMode = isDesktop
+    ? "text"
+    : plusPanelOpen
+      ? "plus"
+      : stickerPanelOpen
+        ? "sticker"
+        : showSpeechEntry && mobileInputMode === "speech"
+          ? "speech"
+          : "text";
+  const mobileSpeechMode = !isDesktop && mobileComposerMode === "speech";
   const activeMention = useMemo(
     () =>
       mentionCandidates?.length && !mobileSpeechMode
@@ -543,6 +553,55 @@ export function ChatComposer({
     setMobileSpeechSheetOpen(false);
   }, [resetMobileSpeechGesture]);
 
+  const setMobileComposerMode = useCallback(
+    (nextMode: MobileComposerMode) => {
+      if (isDesktop) {
+        return;
+      }
+
+      if (nextMode === "speech" && !showSpeechEntry) {
+        return;
+      }
+
+      if (nextMode === "sticker" && !onSendSticker) {
+        return;
+      }
+
+      if (nextMode === "plus" && !onSendAttachment) {
+        return;
+      }
+
+      if (speech.status !== "idle") {
+        speech.cancel();
+      }
+      closeMobileSpeechSheet();
+      setStickerPanelOpen(nextMode === "sticker");
+      setPlusPanelOpen(nextMode === "plus");
+      setMobilePlusNotice(null);
+
+      if (nextMode === "speech") {
+        setAttachmentError(null);
+        blurActiveElement();
+        setMobileInputMode("speech");
+        return;
+      }
+
+      setMobileInputMode("text");
+      if (nextMode === "sticker" || nextMode === "plus") {
+        setAttachmentError(null);
+        blurActiveElement();
+      }
+    },
+    [
+      closeMobileSpeechSheet,
+      isDesktop,
+      onSendAttachment,
+      onSendSticker,
+      showSpeechEntry,
+      speech,
+    ],
+  );
+
   const cancelMobileSpeech = () => {
     speech.cancel();
     closeMobileSpeechSheet();
@@ -566,8 +625,7 @@ export function ChatComposer({
   const commitSpeechInput = useEffectEvent(() => {
     const mergedValue = speech.commitToInput(value);
     onChange(mergedValue);
-    setMobileInputMode("text");
-    closeMobileSpeechSheet();
+    setMobileComposerMode("text");
     focusInput();
   });
 
@@ -698,19 +756,13 @@ export function ChatComposer({
       return;
     }
 
-    blurActiveElement();
-    closeMobileTransientSurfaces();
-    const nextMode = mobileInputMode === "text" ? "speech" : "text";
-    if (nextMode === "text") {
-      if (speech.status !== "idle") {
-        speech.cancel();
-      }
-      closeMobileSpeechSheet();
-      setMobileInputMode(nextMode);
+    if (mobileComposerMode === "speech") {
+      setMobileComposerMode("text");
       focusInput();
       return;
     }
-    setMobileInputMode(nextMode);
+
+    setMobileComposerMode("speech");
   };
 
   useEffect(() => {
@@ -1114,23 +1166,13 @@ export function ChatComposer({
     }
 
     if (!isDesktop) {
-      if (speech.status !== "idle") {
-        speech.cancel();
-      }
-      closeMobileSpeechSheet();
-      setMobileInputMode("text");
-      setAttachmentError(null);
-      setMobilePlusNotice(null);
-      setPlusPanelOpen(false);
-
-      if (stickerPanelOpen) {
-        setStickerPanelOpen(false);
+      if (mobileComposerMode === "sticker") {
+        setMobileComposerMode("text");
         focusInput();
         return;
       }
 
-      blurActiveElement();
-      setStickerPanelOpen(true);
+      setMobileComposerMode("sticker");
       return;
     }
 
@@ -1149,16 +1191,12 @@ export function ChatComposer({
       return;
     }
 
-    blurActiveElement();
-    if (speech.status !== "idle") {
-      speech.cancel();
+    if (mobileComposerMode === "plus") {
+      setMobileComposerMode("text");
+      return;
     }
-    closeMobileSpeechSheet();
-    setMobileInputMode("text");
-    setStickerPanelOpen(false);
-    setAttachmentError(null);
-    setMobilePlusNotice(null);
-    setPlusPanelOpen((current) => !current);
+
+    setMobileComposerMode("plus");
   };
 
   const closeDesktopPlusMenu = useCallback(() => {
@@ -1427,16 +1465,7 @@ export function ChatComposer({
       return;
     }
 
-    blurActiveElement();
-    if (speech.status !== "idle") {
-      speech.cancel();
-    }
-    closeMobileSpeechSheet();
-    setStickerPanelOpen(false);
-    setAttachmentError(null);
-    setMobilePlusNotice(null);
-    setPlusPanelOpen(false);
-    setMobileInputMode("speech");
+    setMobileComposerMode("speech");
   };
 
   const handleUnavailableFallback = (
@@ -2826,8 +2855,7 @@ export function ChatComposer({
           <MobileMentionPickerSheet
             open={
               mentionPickerOpen &&
-              !plusPanelOpen &&
-              !stickerPanelOpen &&
+              mobileComposerMode === "text" &&
               Boolean(activeMention) &&
               !mobileMentionDismissed
             }
@@ -3005,10 +3033,12 @@ export function ChatComposer({
                   }
                   className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full bg-white/72 text-[#606266] transition active:bg-white disabled:opacity-45"
                   aria-label={
-                    mobileSpeechMode ? "切换到键盘输入" : "切换到语音输入"
+                    mobileComposerMode === "speech"
+                      ? "切换到键盘输入"
+                      : "切换到语音输入"
                   }
                 >
-                  {mobileSpeechMode ? (
+                  {mobileComposerMode === "speech" ? (
                     <Keyboard size={18} />
                   ) : (
                     <Mic size={18} />
@@ -3085,11 +3115,13 @@ export function ChatComposer({
                 onClick={toggleStickerPanel}
                 className={cn(
                   "flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full bg-white/72 text-[#606266] transition active:bg-white",
-                  stickerPanelOpen ? "bg-white text-[#111827]" : "",
+                  mobileComposerMode === "sticker" ? "bg-white text-[#111827]" : "",
                 )}
-                aria-label={stickerPanelOpen ? "切换到键盘输入" : "表情"}
+                aria-label={
+                  mobileComposerMode === "sticker" ? "切换到键盘输入" : "表情"
+                }
               >
-                {stickerPanelOpen ? (
+                {mobileComposerMode === "sticker" ? (
                   <Keyboard size={18} />
                 ) : (
                   <Smile size={18} />
@@ -3112,7 +3144,7 @@ export function ChatComposer({
                   disabled={!onSendAttachment || attachmentBusy}
                   className={cn(
                     "flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full bg-white/72 text-[#606266] transition active:bg-white disabled:opacity-45",
-                    plusPanelOpen ? "bg-white text-[#111827]" : "",
+                    mobileComposerMode === "plus" ? "bg-white text-[#111827]" : "",
                   )}
                   aria-label="更多功能"
                 >
