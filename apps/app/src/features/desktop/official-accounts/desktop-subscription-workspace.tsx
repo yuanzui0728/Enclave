@@ -5,7 +5,7 @@ import {
   getOfficialAccountArticle,
   getOfficialAccountSubscriptionInbox,
   markOfficialAccountArticleRead,
-  markOfficialAccountSubscriptionInboxRead,
+  markOfficialAccountDeliveryRead,
 } from "@yinjie/contracts";
 import { ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import { EmptyState } from "../../../components/empty-state";
@@ -17,7 +17,7 @@ export function DesktopSubscriptionWorkspace() {
   const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
-  const lastAutoReadDeliveryRef = useRef<string | null>(null);
+  const lastMarkedDeliveryIdRef = useRef<string | null>(null);
   const lastMarkedArticleIdRef = useRef<string | null>(null);
   const [activeArticleId, setActiveArticleId] = useState<string | null>(null);
 
@@ -26,8 +26,9 @@ export function DesktopSubscriptionWorkspace() {
     queryFn: () => getOfficialAccountSubscriptionInbox(baseUrl),
   });
 
-  const markReadMutation = useMutation({
-    mutationFn: () => markOfficialAccountSubscriptionInboxRead(baseUrl),
+  const markDeliveryReadMutation = useMutation({
+    mutationFn: (deliveryId: string) =>
+      markOfficialAccountDeliveryRead(deliveryId, baseUrl),
     onSuccess: (updatedInbox) => {
       queryClient.setQueryData(
         ["app-official-subscription-inbox", baseUrl],
@@ -42,6 +43,11 @@ export function DesktopSubscriptionWorkspace() {
   const deliveries = useMemo(
     () => inboxQuery.data?.groups.flatMap((group) => group.deliveries) ?? [],
     [inboxQuery.data?.groups],
+  );
+  const activeDelivery = useMemo(
+    () =>
+      deliveries.find((delivery) => delivery.articleId === activeArticleId) ?? null,
+    [activeArticleId, deliveries],
   );
   const unreadCount = inboxQuery.data?.summary?.unreadCount ?? 0;
   const groupCount = inboxQuery.data?.groups.length ?? 0;
@@ -79,22 +85,17 @@ export function DesktopSubscriptionWorkspace() {
   }, [deliveries.length]);
 
   useEffect(() => {
-    const latestDeliveryAt = inboxQuery.data?.summary?.lastDeliveredAt;
     if (
-      !inboxQuery.data?.summary?.unreadCount ||
-      !latestDeliveryAt ||
-      lastAutoReadDeliveryRef.current === latestDeliveryAt
+      !activeDelivery?.id ||
+      activeDelivery.readAt ||
+      lastMarkedDeliveryIdRef.current === activeDelivery.id
     ) {
       return;
     }
 
-    lastAutoReadDeliveryRef.current = latestDeliveryAt;
-    markReadMutation.mutate();
-  }, [
-    inboxQuery.data?.summary?.lastDeliveredAt,
-    inboxQuery.data?.summary?.unreadCount,
-    markReadMutation,
-  ]);
+    lastMarkedDeliveryIdRef.current = activeDelivery.id;
+    markDeliveryReadMutation.mutate(activeDelivery.id);
+  }, [activeDelivery, markDeliveryReadMutation]);
 
   const articleQuery = useQuery({
     queryKey: ["app-official-account-article", baseUrl, activeArticleId],
@@ -158,8 +159,9 @@ export function DesktopSubscriptionWorkspace() {
           {inboxQuery.isError && inboxQuery.error instanceof Error ? (
             <ErrorBlock message={inboxQuery.error.message} />
           ) : null}
-          {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-            <ErrorBlock message={markReadMutation.error.message} />
+          {markDeliveryReadMutation.isError &&
+          markDeliveryReadMutation.error instanceof Error ? (
+            <ErrorBlock message={markDeliveryReadMutation.error.message} />
           ) : null}
 
           {inboxQuery.data?.groups.map((group) => (

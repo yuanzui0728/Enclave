@@ -2282,6 +2282,19 @@ export function markOfficialAccountServiceMessagesRead(
   );
 }
 
+export function markOfficialAccountDeliveryRead(
+  deliveryId: string,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<OfficialAccountSubscriptionInbox>(
+    `/official-accounts/deliveries/${deliveryId}/read`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
 export function markOfficialAccountSubscriptionInboxRead(baseUrl?: string) {
   return requestLegacyApi<OfficialAccountSubscriptionInbox>(
     "/official-accounts/subscription-inbox/read",
