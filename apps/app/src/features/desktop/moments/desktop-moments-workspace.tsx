@@ -8,10 +8,7 @@ import {
   DesktopMomentsSidebar,
   type DesktopMomentAuthorSummary,
 } from "./desktop-moments-sidebar";
-import {
-  DesktopMomentsToolbar,
-  type DesktopMomentsFeedFilter,
-} from "./desktop-moments-toolbar";
+import { DesktopMomentsToolbar } from "./desktop-moments-toolbar";
 
 type DesktopMomentsWorkspaceProps = {
   commentDrafts: Record<string, string>;
@@ -27,7 +24,6 @@ type DesktopMomentsWorkspaceProps = {
   ownerAvatar?: string | null;
   ownerId?: string | null;
   ownerUsername?: string | null;
-  routeSelectedAuthorId?: string | null;
   routeSelectedMomentId?: string | null;
   showCompose: boolean;
   successNotice?: string;
@@ -62,7 +58,6 @@ export function DesktopMomentsWorkspace({
   ownerAvatar,
   ownerId,
   ownerUsername,
-  routeSelectedAuthorId = null,
   routeSelectedMomentId = null,
   showCompose,
   successNotice,
@@ -79,12 +74,6 @@ export function DesktopMomentsWorkspace({
   onRouteStateChange,
   onTextChange,
 }: DesktopMomentsWorkspaceProps) {
-  const [activeFilter, setActiveFilter] =
-    useState<DesktopMomentsFeedFilter>("all");
-  const [searchText, setSearchText] = useState("");
-  const [activeAuthorId, setActiveAuthorId] = useState<string | null>(
-    routeSelectedAuthorId,
-  );
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(
     routeSelectedMomentId,
   );
@@ -95,17 +84,6 @@ export function DesktopMomentsWorkspace({
       current === routeSelectedMomentId ? current : routeSelectedMomentId,
     );
   }, [routeSelectedMomentId]);
-
-  useEffect(() => {
-    if (routeSelectedAuthorId) {
-      setActiveFilter("all");
-      scrollViewportRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    setActiveAuthorId((current) =>
-      current === routeSelectedAuthorId ? current : routeSelectedAuthorId,
-    );
-  }, [routeSelectedAuthorId]);
 
   const authorSummaries = useMemo(() => {
     const map = new Map<string, Omit<DesktopMomentAuthorSummary, "authorId">>();
@@ -141,89 +119,26 @@ export function DesktopMomentsWorkspace({
       );
   }, [moments]);
 
-  const filteredMoments = useMemo(() => {
-    const keyword = searchText.trim().toLowerCase();
-
-    return moments.filter((moment) => {
-      if (activeFilter === "owner" && moment.authorType !== "user") {
-        return false;
-      }
-
-      if (activeFilter === "character" && moment.authorType !== "character") {
-        return false;
-      }
-
-      if (activeAuthorId && moment.authorId !== activeAuthorId) {
-        return false;
-      }
-
-      if (!keyword) {
-        return true;
-      }
-
-      const commentText = moment.comments
-        .map((comment) => comment.text)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        moment.authorName.toLowerCase().includes(keyword) ||
-        moment.text.toLowerCase().includes(keyword) ||
-        commentText.includes(keyword)
-      );
-    });
-  }, [activeAuthorId, activeFilter, moments, searchText]);
-
-  const activeAuthorSummary =
-    authorSummaries.find((author) => author.authorId === activeAuthorId) ??
-    null;
-
-  const authorMoments = useMemo(() => {
-    if (!activeAuthorId) {
-      return [];
-    }
-
-    return moments.filter((moment) => moment.authorId === activeAuthorId);
-  }, [activeAuthorId, moments]);
-
-  const filteredCountLabel = useMemo(() => {
-    if (activeAuthorId) {
-      return `${activeAuthorSummary?.authorName ?? "当前联系人"} · ${filteredMoments.length} 条`;
-    }
-
-    if (searchText.trim()) {
-      return `搜索结果 ${filteredMoments.length} 条`;
-    }
-
-    return `当前展示 ${filteredMoments.length} 条`;
-  }, [activeAuthorId, activeAuthorSummary, filteredMoments.length, searchText]);
-
   useEffect(() => {
     if (
       selectedMomentId &&
-      !filteredMoments.some((moment) => moment.id === selectedMomentId)
+      !moments.some((moment) => moment.id === selectedMomentId)
     ) {
       setSelectedMomentId(null);
     }
-  }, [filteredMoments, selectedMomentId]);
+  }, [moments, selectedMomentId]);
 
   const selectedMoment = useMemo(
-    () =>
-      filteredMoments.find((moment) => moment.id === selectedMomentId) ?? null,
-    [filteredMoments, selectedMomentId],
+    () => moments.find((moment) => moment.id === selectedMomentId) ?? null,
+    [moments, selectedMomentId],
   );
-  const sidebarMode = selectedMoment
-    ? "detail"
-    : activeAuthorId
-      ? "author"
-      : "summary";
+  const sidebarMode = selectedMoment ? "detail" : "summary";
 
   useEffect(() => {
     onRouteStateChange?.({
-      authorId: activeAuthorId ?? undefined,
       momentId: selectedMomentId ?? undefined,
     });
-  }, [activeAuthorId, onRouteStateChange, selectedMomentId]);
+  }, [onRouteStateChange, selectedMomentId]);
 
   function focusAuthor(authorId: string, momentId?: string) {
     if (onOpenAuthorMoments) {
@@ -234,8 +149,6 @@ export function DesktopMomentsWorkspace({
       return;
     }
 
-    setActiveFilter("all");
-    setActiveAuthorId(authorId);
     setSelectedMomentId(momentId ?? null);
   }
 
@@ -244,23 +157,19 @@ export function DesktopMomentsWorkspace({
       <section className="min-w-0 flex-1 border-r border-[color:var(--border-faint)] bg-[rgba(245,248,247,0.96)]">
         <div className="flex h-full min-h-0 flex-col">
           <DesktopMomentsToolbar
-            activeFilter={activeFilter}
             commentErrorMessage={commentErrorMessage}
             errors={errors}
-            filteredCountLabel={filteredCountLabel}
             likeErrorMessage={likeErrorMessage}
-            searchText={searchText}
             successNotice={successNotice}
+            totalCount={moments.length}
             onBackToTop={() => {
               scrollViewportRef.current?.scrollTo({
                 top: 0,
                 behavior: "smooth",
               });
             }}
-            onFilterChange={setActiveFilter}
             onOpenCompose={() => setShowCompose(true)}
             onRefresh={onRefresh}
-            onSearchChange={setSearchText}
           />
 
           <div
@@ -269,21 +178,16 @@ export function DesktopMomentsWorkspace({
           >
             <div className="mx-auto w-full max-w-[760px]">
               <DesktopMomentsFeed
-                activeAuthorId={activeAuthorId}
-                activeAuthorName={activeAuthorSummary?.authorName ?? null}
                 commentDrafts={commentDrafts}
                 commentPendingMomentId={commentPendingMomentId}
                 isLoading={isLoading}
                 likePendingMomentId={likePendingMomentId}
-                moments={filteredMoments}
+                moments={moments}
                 ownerId={ownerId}
-                searchText={searchText}
                 selectedMomentId={selectedMomentId}
-                totalMomentsCount={moments.length}
                 isMomentFavorite={isMomentFavorite}
                 onCommentChange={onCommentChange}
                 onCommentSubmit={onCommentSubmit}
-                onClearAuthor={() => setActiveAuthorId(null)}
                 onLike={onLike}
                 onToggleFavorite={onToggleFavorite}
                 onOpenCompose={() => setShowCompose(true)}
@@ -298,9 +202,6 @@ export function DesktopMomentsWorkspace({
       </section>
 
       <DesktopMomentsSidebar
-        activeAuthorId={activeAuthorId}
-        activeAuthorSummary={activeAuthorSummary}
-        authorMoments={authorMoments}
         authorSummaries={authorSummaries}
         commentDrafts={commentDrafts}
         commentPendingMomentId={commentPendingMomentId}
@@ -312,7 +213,6 @@ export function DesktopMomentsWorkspace({
         ownerUsername={ownerUsername}
         selectedMoment={selectedMoment}
         isMomentFavorite={isMomentFavorite}
-        onClearAuthor={() => setActiveAuthorId(null)}
         onCloseDetail={() => setSelectedMomentId(null)}
         onCommentChange={onCommentChange}
         onCommentSubmit={onCommentSubmit}
@@ -320,7 +220,6 @@ export function DesktopMomentsWorkspace({
         onToggleFavorite={onToggleFavorite}
         onOpenCompose={() => setShowCompose(true)}
         onSelectAuthor={focusAuthor}
-        onSelectMoment={setSelectedMomentId}
       />
 
       {showCompose ? (
