@@ -720,6 +720,9 @@ export function StickerPanel({
   const pausedManageCapacityLabel = customStickerLibraryFull
     ? "当前仍是满库"
     : `当前剩余 ${customSlotsRemaining} 个空位`;
+  const pausedManageUploadLabel = customDeleteFeedback?.slotsRemaining
+    ? `已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可直接添加`
+    : null;
   const bottomEnterSearchHint =
     highlightedSearchPosition === 1 ? "Enter 发首推" : "Enter 发当前";
   const bottomHomeSearchHint =
@@ -775,6 +778,7 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     searching &&
     manageSearchPauseHintVisible;
+  const customUploadResumed = Boolean(customDeleteFeedback?.slotsRemaining);
   const showDesktopManageStoragePreview =
     !isMobile &&
     activeSectionId === "custom" &&
@@ -785,6 +789,12 @@ export function StickerPanel({
     !isMobile &&
     activeSectionId === "custom" &&
     (trimmedKeyword.length === 0 || showManageSearchPauseHint);
+  const showPausedManageResumeUploadShortcut =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    showManageSearchPauseHint &&
+    customUploadResumed &&
+    !uploadMutation.isPending;
   const desktopManageButtonLabel = showManageSearchPauseHint
     ? "继续管理"
     : customManageMode
@@ -802,7 +812,6 @@ export function StickerPanel({
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
   const desktopCustomHeaderContext =
     !isMobile && activeSectionId === "custom" && trimmedKeyword.length === 0;
-  const customUploadResumed = Boolean(customDeleteFeedback?.slotsRemaining);
   const mobileCustomStorageSummary = isMobile
     ? customDeleteFeedback
       ? customDeleteFeedback.slotsRemaining > 0
@@ -845,7 +854,7 @@ export function StickerPanel({
     !uploadMutation.isPending;
   const headerUploadButtonLabel = isMobile
     ? "添加"
-    : headerUsesResumeUploadShortcut
+    : headerUsesResumeUploadShortcut || showPausedManageResumeUploadShortcut
       ? "继续添加"
       : headerUsesManageShortcut
         ? "去管理"
@@ -854,16 +863,20 @@ export function StickerPanel({
           : "添加表情";
   const headerUploadButtonTone = headerUsesResumeUploadShortcut
     ? "resume"
-    : headerUsesManageShortcut
-      ? "manage"
-      : "default";
+    : showPausedManageResumeUploadShortcut
+      ? "resume"
+      : headerUsesManageShortcut
+        ? "manage"
+        : "default";
   const headerUploadButtonTitle = headerUsesManageShortcut
     ? "自定义表情已满，先去管理里删掉几张再继续添加。"
     : headerUsesResumeUploadShortcut
       ? "已经腾出空位，退出管理后可继续添加图片或 GIF。"
-      : customStickerLibraryFull
-        ? "自定义表情已满，请先删除几个再继续添加"
-        : undefined;
+      : showPausedManageResumeUploadShortcut
+        ? "搜索中也可以直接继续添加图片或 GIF。"
+        : customStickerLibraryFull
+          ? "自定义表情已满，请先删除几个再继续添加"
+          : undefined;
   const openCustomManageMode = () => {
     setCustomSortMode("added");
     setCustomDeleteFeedback(null);
@@ -908,6 +921,17 @@ export function StickerPanel({
     setPendingManageFocusKey(pausedManageFocusKey);
     setPausedManageFocusKey(null);
     setPausedManageFocusLabel(null);
+  };
+  const clearSearchAndOpenUpload = () => {
+    setKeyword("");
+    setSearchKeyword("");
+    setManageSearchPauseHintVisible(false);
+    setCustomManageMode(false);
+    setPausedManageFocusKey(null);
+    setPausedManageFocusLabel(null);
+    window.setTimeout(() => {
+      openUploadPicker();
+    }, 0);
   };
   const switchToFeatured = () => {
     setKeyword("");
@@ -1579,6 +1603,11 @@ export function StickerPanel({
             <button
               type="button"
               onClick={() => {
+                if (showPausedManageResumeUploadShortcut) {
+                  clearSearchAndOpenUpload();
+                  return;
+                }
+
                 if (headerUsesResumeUploadShortcut) {
                   exitManageModeAndOpenUpload();
                   return;
@@ -1679,11 +1708,25 @@ export function StickerPanel({
                     <span className="rounded-full bg-white/88 px-2 py-1">
                       {pausedManageCapacityLabel}
                     </span>
+                    {pausedManageUploadLabel ? (
+                      <span className="rounded-full bg-white/88 px-2 py-1 text-[#9a5a0a]">
+                        {pausedManageUploadLabel}
+                      </span>
+                    ) : null}
                     <span className="rounded-full bg-white/88 px-2 py-1">
                       Esc 继续管理
                     </span>
                   </div>
                 </div>
+                {showPausedManageResumeUploadShortcut ? (
+                  <button
+                    type="button"
+                    onClick={clearSearchAndOpenUpload}
+                    className="shrink-0 rounded-full bg-[rgba(160,90,10,0.14)] px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:bg-[rgba(160,90,10,0.18)]"
+                  >
+                    现在去添加
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={clearSearchAndResumeManage}
