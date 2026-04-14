@@ -619,12 +619,15 @@ export interface ReplyLogicGroupReplyArchiveActorSummary {
   actorCharacterId: string;
   actorName: string;
   taskCount: number;
+  turnCount: number;
   sentCount: number;
   cancelledCount: number;
   failedCount: number;
   failureRate: number;
   cancelRate: number;
   issueRate: number;
+  trend: ReplyLogicGroupReplyArchiveTrendPoint[];
+  issueSummary: ReplyLogicGroupReplyIssueSummary[];
 }
 
 export interface ReplyLogicPreviewRequest {

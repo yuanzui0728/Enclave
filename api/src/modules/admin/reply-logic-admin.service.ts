@@ -1321,12 +1321,12 @@ export class ReplyLogicAdminService {
           }
           return right.taskCount - left.taskCount;
         })
-        .slice(0, 8)
         .map(
           (item): ReplyLogicGroupReplyArchiveActorSummary => ({
             actorCharacterId: item.actorCharacterId,
             actorName: item.actorName,
             taskCount: item.taskCount,
+            turnCount: item.turnCount,
             sentCount: item.statusCounts.sent,
             cancelledCount: item.statusCounts.cancelled,
             failedCount: item.statusCounts.failed,
@@ -1337,6 +1337,26 @@ export class ReplyLogicAdminService {
                 ? (item.statusCounts.failed + item.statusCounts.cancelled) /
                   item.taskCount
                 : 0,
+            trend: Object.values(item.dailyStats)
+              .sort((left, right) => left.date.localeCompare(right.date))
+              .slice(-30)
+              .map(
+                (dailyItem): ReplyLogicGroupReplyArchiveTrendPoint => ({
+                  date: dailyItem.date,
+                  taskCount: dailyItem.taskCount,
+                  turnCount: dailyItem.turnCount,
+                  sentCount: dailyItem.statusCounts.sent,
+                  cancelledCount: dailyItem.statusCounts.cancelled,
+                  failedCount: dailyItem.statusCounts.failed,
+                  failureRate: calculateGroupReplyFailureRate(
+                    dailyItem.statusCounts,
+                  ),
+                  cancelRate: calculateGroupReplyCancelRate(
+                    dailyItem.statusCounts,
+                  ),
+                }),
+              ),
+            issueSummary: item.issueSummary,
           }),
         ),
       issueSummary: bucket.issueSummary,

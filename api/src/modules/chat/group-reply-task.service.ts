@@ -593,6 +593,9 @@ export class GroupReplyTaskService {
     bucket.archivedTaskCount += tasks.length;
     bucket.archivedTurnCount += new Set(tasks.map((task) => task.turnId)).size;
     const turnIdsByDate = new Map<string, Set<string>>();
+    const turnIdsByActor = new Map<string, Set<string>>();
+    const turnIdsByActorDate = new Map<string, Map<string, Set<string>>>();
+    const tasksByActor = new Map<string, GroupReplyTaskEntity[]>();
 
     for (const task of tasks) {
       if (task.status === 'sent') {
@@ -638,7 +641,38 @@ export class GroupReplyTaskService {
       } else if (task.status === 'failed') {
         actorStat.statusCounts.failed += 1;
       }
+
+      const actorDailyStat =
+        actorStat.dailyStats[archiveDate] ??
+        createEmptyGroupReplyTaskArchiveDailyStat(archiveDate);
+      actorDailyStat.taskCount += 1;
+      if (task.status === 'sent') {
+        actorDailyStat.statusCounts.sent += 1;
+      } else if (task.status === 'cancelled') {
+        actorDailyStat.statusCounts.cancelled += 1;
+      } else if (task.status === 'failed') {
+        actorDailyStat.statusCounts.failed += 1;
+      }
+      actorStat.dailyStats[archiveDate] = actorDailyStat;
       bucket.actorStats[task.actorCharacterId] = actorStat;
+
+      const actorTurnIds =
+        turnIdsByActor.get(task.actorCharacterId) ?? new Set<string>();
+      actorTurnIds.add(task.turnId);
+      turnIdsByActor.set(task.actorCharacterId, actorTurnIds);
+
+      const actorTurnIdsByDate =
+        turnIdsByActorDate.get(task.actorCharacterId) ??
+        new Map<string, Set<string>>();
+      const actorDateTurnIds =
+        actorTurnIdsByDate.get(archiveDate) ?? new Set<string>();
+      actorDateTurnIds.add(task.turnId);
+      actorTurnIdsByDate.set(archiveDate, actorDateTurnIds);
+      turnIdsByActorDate.set(task.actorCharacterId, actorTurnIdsByDate);
+
+      const actorTasks = tasksByActor.get(task.actorCharacterId) ?? [];
+      actorTasks.push(task);
+      tasksByActor.set(task.actorCharacterId, actorTasks);
     }
 
     for (const [date, turnIds] of turnIdsByDate.entries()) {
@@ -647,6 +681,35 @@ export class GroupReplyTaskService {
         createEmptyGroupReplyTaskArchiveDailyStat(date);
       dailyStat.turnCount += turnIds.size;
       bucket.dailyStats[date] = dailyStat;
+    }
+
+    for (const [actorCharacterId, turnIds] of turnIdsByActor.entries()) {
+      const actorStat = bucket.actorStats[actorCharacterId];
+      if (!actorStat) {
+        continue;
+      }
+
+      actorStat.turnCount += turnIds.size;
+      const actorDailyTurns = turnIdsByActorDate.get(actorCharacterId);
+      if (actorDailyTurns) {
+        for (const [date, actorDateTurnIds] of actorDailyTurns.entries()) {
+          const actorDailyStat =
+            actorStat.dailyStats[date] ??
+            createEmptyGroupReplyTaskArchiveDailyStat(date);
+          actorDailyStat.turnCount += actorDateTurnIds.size;
+          actorStat.dailyStats[date] = actorDailyStat;
+        }
+      }
+
+      actorStat.issueSummary = mergeGroupReplyIssueSummaries(
+        actorStat.issueSummary,
+        buildGroupReplyIssueSummaryFromTasks(
+          tasksByActor.get(actorCharacterId) ?? [],
+          8,
+        ),
+        8,
+      );
+      bucket.actorStats[actorCharacterId] = actorStat;
     }
 
     bucket.issueSummary = mergeGroupReplyIssueSummaries(

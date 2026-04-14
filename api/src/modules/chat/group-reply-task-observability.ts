@@ -30,7 +30,10 @@ export type GroupReplyTaskArchiveActorStat = {
   actorCharacterId: string;
   actorName: string;
   taskCount: number;
+  turnCount: number;
   statusCounts: GroupReplyTaskArchiveStatusCounts;
+  dailyStats: Record<string, GroupReplyTaskArchiveDailyStat>;
+  issueSummary: GroupReplyIssueSummaryRecord[];
 };
 
 export type GroupReplyTaskArchiveBucket = {
@@ -77,7 +80,10 @@ export function createEmptyGroupReplyTaskArchiveActorStat(
     actorCharacterId,
     actorName,
     taskCount: 0,
+    turnCount: 0,
     statusCounts: createEmptyGroupReplyTaskArchiveStatusCounts(),
+    dailyStats: {},
+    issueSummary: [],
   };
 }
 
@@ -242,6 +248,20 @@ export function normalizeGroupReplyTaskArchiveStore(
               ...createEmptyGroupReplyTaskArchiveStatusCounts(),
               ...(value?.statusCounts ?? {}),
             },
+            dailyStats: Object.fromEntries(
+              Object.entries(value?.dailyStats ?? {}).map(([date, dailyValue]) => [
+                date,
+                {
+                  ...createEmptyGroupReplyTaskArchiveDailyStat(date),
+                  ...dailyValue,
+                  statusCounts: {
+                    ...createEmptyGroupReplyTaskArchiveStatusCounts(),
+                    ...(dailyValue?.statusCounts ?? {}),
+                  },
+                },
+              ]),
+            ),
+            issueSummary: value?.issueSummary ?? [],
           },
         ]),
       ),
