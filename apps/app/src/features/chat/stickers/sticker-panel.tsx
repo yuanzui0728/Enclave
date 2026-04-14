@@ -90,6 +90,8 @@ export function StickerPanel({
   const [focusedManageDeleteKey, setFocusedManageDeleteKey] = useState<
     string | null
   >(null);
+  const [manageSearchPauseHintVisible, setManageSearchPauseHintVisible] =
+    useState(false);
   const [shouldFocusCustomEmptyAction, setShouldFocusCustomEmptyAction] =
     useState(false);
   const [highlightedStickerKey, setHighlightedStickerKey] = useState<
@@ -726,6 +728,11 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
     customManageMode;
+  const showManageSearchPauseHint =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    searching &&
+    manageSearchPauseHintVisible;
   const customManageKeyboardActive =
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
   const desktopCustomHeaderContext =
@@ -828,6 +835,12 @@ export function StickerPanel({
       searchInputRef.current?.focus();
     }, 0);
   };
+  const clearSearchAndResumeManage = () => {
+    setKeyword("");
+    setSearchKeyword("");
+    setManageSearchPauseHintVisible(false);
+    setCustomManageMode(true);
+  };
   const switchToFeatured = () => {
     setKeyword("");
     setSearchKeyword("");
@@ -853,8 +866,23 @@ export function StickerPanel({
   };
 
   useEffect(() => {
+    if (
+      !isMobile &&
+      activeSectionId === "custom" &&
+      trimmedKeyword.length > 0 &&
+      customManageMode
+    ) {
+      setManageSearchPauseHintVisible(true);
+    }
+
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomManageMode(false);
+    }
+  }, [activeSectionId, customManageMode, isMobile, trimmedKeyword.length]);
+
+  useEffect(() => {
+    if (activeSectionId !== "custom" || trimmedKeyword.length === 0) {
+      setManageSearchPauseHintVisible(false);
     }
   }, [activeSectionId, trimmedKeyword.length]);
 
@@ -1533,6 +1561,22 @@ export function StickerPanel({
               </button>
             ) : null}
           </label>
+          {showManageSearchPauseHint ? (
+            <div className="px-1 pt-2">
+              <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
+                <span>
+                  搜索中已暂停删除管理，清空搜索后可继续从当前自定义表情开始删。
+                </span>
+                <button
+                  type="button"
+                  onClick={clearSearchAndResumeManage}
+                  className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition hover:bg-[color:var(--surface-console)]"
+                >
+                  继续管理
+                </button>
+              </div>
+            </div>
+          ) : null}
           {showSearchKeyboardHint ? (
             <div className="px-1 pt-2">
               {highlightedSearchItem ? (
