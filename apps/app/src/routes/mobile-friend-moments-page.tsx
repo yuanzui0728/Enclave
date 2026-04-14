@@ -22,6 +22,7 @@ import {
 import { ArrowLeft, Heart, MapPin, MessageCircle } from "lucide-react";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
+import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -117,10 +118,9 @@ export function MobileFriendMomentsPage() {
       (item) => item.characterId === resolvedCharacterId,
     ),
   );
-  const displayName =
-    friendItem?.friendship.remarkName?.trim() ||
-    character?.name ||
-    "好友朋友圈";
+  const displayName = friendItem
+    ? getFriendDisplayName(friendItem)
+    : character?.name || "好友朋友圈";
   const signature =
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||

@@ -27,6 +27,7 @@ import {
   parseDesktopFriendMomentsRouteState,
 } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { DesktopFriendMomentsWorkspace } from "../features/desktop/moments/desktop-friend-moments-workspace";
+import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { formatTimestamp } from "../lib/format";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -138,10 +139,9 @@ export function FriendMomentsPage() {
   const isBlocked = Boolean(
     (blockedQuery.data ?? []).some((item) => item.characterId === characterId),
   );
-  const displayName =
-    friendItem?.friendship.remarkName?.trim() ||
-    character?.name ||
-    "好友朋友圈";
+  const displayName = friendItem
+    ? getFriendDisplayName(friendItem)
+    : character?.name || "好友朋友圈";
   const signature =
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||
