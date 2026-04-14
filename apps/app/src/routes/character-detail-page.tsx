@@ -537,12 +537,20 @@ export function CharacterDetailPage() {
       return;
     }
 
+    if (isDesktopLayout) {
+      void navigate({
+        to: "/desktop/friend-moments/$characterId",
+        params: { characterId: character.id },
+        hash: buildDesktopFriendMomentsRouteHash({
+          source: "character-detail",
+        }),
+      });
+      return;
+    }
+
     void navigate({
-      to: "/desktop/friend-moments/$characterId",
+      to: "/friend-moments/$characterId",
       params: { characterId: character.id },
-      hash: buildDesktopFriendMomentsRouteHash({
-        source: "character-detail",
-      }),
     });
   };
   const dangerSheetConfig =
@@ -1235,23 +1243,9 @@ export function CharacterDetailPage() {
               value={
                 !isFriend
                   ? "加为好友后可查看"
-                  : isDesktopLayout
-                    ? "查看这位好友最近的朋友圈"
-                    : "请在桌面端查看"
+                  : "查看这位好友最近的朋友圈"
               }
-              onClick={
-                isFriend && isDesktopLayout
-                  ? () => {
-                      void navigate({
-                        to: "/desktop/friend-moments/$characterId",
-                        params: { characterId: character.id },
-                        hash: buildDesktopFriendMomentsRouteHash({
-                          source: "character-detail",
-                        }),
-                      });
-                    }
-                  : undefined
-              }
+              onClick={isFriend ? handleOpenMoments : undefined}
               compact={!isDesktopLayout}
             />
           </ProfileSection>
