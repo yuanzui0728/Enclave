@@ -2041,6 +2041,7 @@ export function StickerPanel({
                   ) ?? {
                     containsHighlighted: false,
                     containsRecommended: false,
+                    highlightedPosition: null,
                   };
                   return (
                     <section
