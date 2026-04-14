@@ -623,6 +623,22 @@ export function StickerPanel({
       ) ?? null
     );
   }, [firstSearchResultKey, searchSections]);
+  const recommendedSearchSectionIndex = recommendedSearchSection
+    ? searchSectionNavigation.findIndex(
+        (section) => section.id === recommendedSearchSection.id,
+      )
+    : -1;
+  const searchSectionOffsetFromRecommended =
+    highlightedSearchSectionIndex >= 0 && recommendedSearchSectionIndex >= 0
+      ? highlightedSearchSectionIndex - recommendedSearchSectionIndex
+      : null;
+  const searchSectionOffsetLabel =
+    searchSectionOffsetFromRecommended &&
+    searchSectionOffsetFromRecommended !== 0
+      ? searchSectionOffsetFromRecommended > 0
+        ? `当前比首推晚 ${searchSectionOffsetFromRecommended} 组`
+        : `当前比首推早 ${Math.abs(searchSectionOffsetFromRecommended)} 组`
+      : null;
   const searchSectionStateMap = useMemo(() => {
     const stateMap = new Map<
       string,
@@ -1545,24 +1561,31 @@ export function StickerPanel({
                       </div>
                       {firstSearchResultItem &&
                       firstSearchResultKey !== highlightedSearchStickerKey ? (
-                        <div className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                          <img
-                            src={firstSearchResultItem.sticker.url}
-                            alt={
-                              firstSearchResultItem.sticker.label ??
-                              firstSearchResultItem.sticker.stickerId
-                            }
-                            className="h-4 w-4 rounded-[6px] object-contain"
-                            loading="lazy"
-                          />
-                          <span className="truncate">
-                            默认先发：
-                            {firstSearchResultItem.sticker.label ??
-                              firstSearchResultItem.sticker.stickerId}
-                          </span>
-                          {recommendedSearchSection ? (
-                            <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 py-0.5 text-[9px] text-[#9a5a0a]">
-                              {recommendedSearchSection.label}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <div className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                            <img
+                              src={firstSearchResultItem.sticker.url}
+                              alt={
+                                firstSearchResultItem.sticker.label ??
+                                firstSearchResultItem.sticker.stickerId
+                              }
+                              className="h-4 w-4 rounded-[6px] object-contain"
+                              loading="lazy"
+                            />
+                            <span className="truncate">
+                              默认先发：
+                              {firstSearchResultItem.sticker.label ??
+                                firstSearchResultItem.sticker.stickerId}
+                            </span>
+                            {recommendedSearchSection ? (
+                              <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 py-0.5 text-[9px] text-[#9a5a0a]">
+                                {recommendedSearchSection.label}
+                              </span>
+                            ) : null}
+                          </div>
+                          {searchSectionOffsetLabel ? (
+                            <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-1.5 py-1 text-[10px] text-[#9a5a0a] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                              {searchSectionOffsetLabel}
                             </span>
                           ) : null}
                         </div>
