@@ -115,6 +115,7 @@ type DesktopSelection =
     }
   | {
       kind: "official-accounts";
+      mode?: "feed" | "accounts";
       accountId?: string;
       articleId?: string;
     }
@@ -132,6 +133,8 @@ function areDesktopSelectionsEqual(
     left.kind === right.kind &&
     ("id" in left ? left.id : undefined) ===
       ("id" in right ? right.id : undefined) &&
+    ("mode" in left ? left.mode : undefined) ===
+      ("mode" in right ? right.mode : undefined) &&
     ("accountId" in left ? left.accountId : undefined) ===
       ("accountId" in right ? right.accountId : undefined) &&
     ("articleId" in left ? left.articleId : undefined) ===
@@ -164,6 +167,9 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
   if (routeState.pane === "official-accounts") {
     return {
       kind: "official-accounts",
+      mode:
+        routeState.officialMode ??
+        (routeState.accountId || routeState.articleId ? "accounts" : "feed"),
       ...(routeState.accountId ? { accountId: routeState.accountId } : {}),
       ...(routeState.articleId ? { articleId: routeState.articleId } : {}),
     };
@@ -467,6 +473,10 @@ export function ContactsPage() {
       articleId:
         nextSelection?.kind === "official-accounts"
           ? nextSelection.articleId
+          : undefined,
+      officialMode:
+        nextSelection?.kind === "official-accounts"
+          ? nextSelection.mode
           : undefined,
       showWorldCharacters: nextShowWorldCharacters,
     });
@@ -1016,6 +1026,7 @@ export function ContactsPage() {
 
         const nextSelection = {
           kind: "official-accounts",
+          mode: "feed",
         } satisfies DesktopSelection;
         setDesktopSelection(nextSelection);
         commitDesktopRouteState(nextSelection, showWorldCharacters);
@@ -1311,11 +1322,31 @@ export function ContactsPage() {
             />
           ) : desktopSelection?.kind === "official-accounts" ? (
             <DesktopOfficialAccountsWorkspace
+              selectedMode={desktopSelection.mode}
               selectedAccountId={desktopSelection.accountId}
               selectedArticleId={desktopSelection.articleId}
+              onModeChange={(mode) => {
+                const nextSelection = {
+                  kind: "official-accounts",
+                  mode,
+                  ...(desktopSelection.accountId
+                    ? { accountId: desktopSelection.accountId }
+                    : {}),
+                  ...(desktopSelection.articleId
+                    ? { articleId: desktopSelection.articleId }
+                    : {}),
+                } satisfies DesktopSelection;
+                setDesktopSelection(nextSelection);
+                commitDesktopRouteState(
+                  nextSelection,
+                  showWorldCharacters,
+                  true,
+                );
+              }}
               onOpenAccount={(accountId) => {
                 const nextSelection = {
                   kind: "official-accounts",
+                  mode: "accounts",
                   accountId,
                 } satisfies DesktopSelection;
                 setDesktopSelection(nextSelection);
@@ -1328,6 +1359,7 @@ export function ContactsPage() {
               onOpenArticle={(articleId, accountId) => {
                 const nextSelection = {
                   kind: "official-accounts",
+                  mode: "accounts",
                   accountId,
                   articleId,
                 } satisfies DesktopSelection;
