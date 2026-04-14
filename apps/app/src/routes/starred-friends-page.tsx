@@ -21,6 +21,7 @@ import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import { matchesCharacterSearch } from "../features/contacts/contact-utils";
+import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -434,6 +435,19 @@ function DesktopStarredFriendsPage() {
                 params: { characterId: selectedFriend.character.id },
               });
             }}
+            onOpenMoments={
+              selectedFriend
+                ? () => {
+                    void navigate({
+                      to: "/desktop/friend-moments/$characterId",
+                      params: { characterId: selectedFriend.character.id },
+                      hash: buildDesktopFriendMomentsRouteHash({
+                        source: "starred-friends",
+                      }),
+                    });
+                  }
+                : undefined
+            }
           />
         </section>
       </div>

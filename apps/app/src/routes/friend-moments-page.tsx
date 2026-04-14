@@ -37,7 +37,7 @@ import { useWorldOwnerStore } from "../store/world-owner-store";
 
 export function FriendMomentsPage() {
   const { characterId } = useParams({
-    from: "/tabs/moments/friend/$characterId",
+    from: "/desktop/friend-moments/$characterId",
   });
   const isDesktopLayout = useDesktopLayout();
   const navigate = useNavigate();
@@ -236,6 +236,16 @@ export function FriendMomentsPage() {
         return;
       }
 
+      if (routeState.source === "starred-friends") {
+        void navigate({ to: "/contacts/starred" });
+        return;
+      }
+
+      if (routeState.source === "tags") {
+        void navigate({ to: "/contacts/tags" });
+        return;
+      }
+
       if (routeState.source === "character-detail" && characterId) {
         void navigate({
           to: "/character/$characterId",
@@ -427,7 +437,7 @@ export function FriendMomentsPage() {
         }
 
         void navigate({
-          to: "/tabs/moments/friend/$characterId",
+          to: "/desktop/friend-moments/$characterId",
           params: { characterId },
           hash: nextHash,
           replace: true,

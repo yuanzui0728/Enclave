@@ -56,6 +56,7 @@
 - `subscription-inbox-page.tsx`：订阅号消息页，移动端承载“消息 -> 订阅号消息”聚合流，桌面端承载消息工作区内的订阅号阅读面板
 - `profile/settings`：我的二级设置页，集中承载资料编辑与专属 API Key 配置
 - `desktop/mobile`：桌面端底部“手机”入口承接页，后续承接设备联动能力
+- `desktop/friend-moments/$characterId`：桌面端好友朋友圈独立页，对齐微信电脑版，从联系人资料入口进入某个好友的独立朋友圈时间线
 - `desktop/chat-files`：桌面端“聊天文件”页，承接会话附件聚合浏览
 - `desktop/chat-history`：桌面端“聊天记录管理”页，承接会话记录查看与管理
 - `desktop/chat-image-viewer`：桌面端图片独立窗口路由，承接聊天图片的新窗口预览、打印与回跳原消息
@@ -88,7 +89,7 @@
 - `group/$groupId/members/remove`：群成员移除页，承载群成员微信式减号选择移除
 - `notes-page.tsx`：收藏笔记兼容编辑页，桌面端在主窗口内兜底承接收藏笔记编辑
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
-- `friend-moments-page.tsx`：桌面端好友朋友圈独立页，对齐微信电脑版，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
+- `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
 ## 数据库实体（29个，物理表保持兼容）

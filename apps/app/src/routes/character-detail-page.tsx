@@ -538,7 +538,7 @@ export function CharacterDetailPage() {
     }
 
     void navigate({
-      to: "/tabs/moments/friend/$characterId",
+      to: "/desktop/friend-moments/$characterId",
       params: { characterId: character.id },
       hash: buildDesktopFriendMomentsRouteHash({
         source: "character-detail",
@@ -1243,7 +1243,7 @@ export function CharacterDetailPage() {
                 isFriend && isDesktopLayout
                   ? () => {
                       void navigate({
-                        to: "/tabs/moments/friend/$characterId",
+                        to: "/desktop/friend-moments/$characterId",
                         params: { characterId: character.id },
                         hash: buildDesktopFriendMomentsRouteHash({
                           source: "character-detail",

@@ -89,7 +89,7 @@ export const desktopPrimaryNavItems: DesktopNavRouteItem[] = [
     label: "朋友圈",
     shortLabel: "朋友圈",
     to: "/tabs/moments",
-    matches: ["/tabs/moments", "/discover/moments"],
+    matches: ["/tabs/moments", "/discover/moments", "/desktop/friend-moments/"],
   },
   {
     kind: "route",

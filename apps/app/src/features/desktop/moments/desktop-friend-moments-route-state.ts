@@ -1,10 +1,12 @@
-const DESKTOP_FRIEND_MOMENTS_BASE_PATH = "/tabs/moments/friend";
+const DESKTOP_FRIEND_MOMENTS_BASE_PATH = "/desktop/friend-moments";
 
 export type DesktopFriendMomentsRouteSource =
   | "contacts"
   | "character-detail"
   | "chat-details"
   | "avatar-popover"
+  | "starred-friends"
+  | "tags"
   | "moments";
 
 export type DesktopFriendMomentsRouteState = {
@@ -13,7 +15,15 @@ export type DesktopFriendMomentsRouteState = {
 };
 
 const desktopFriendMomentsRouteSources = new Set<DesktopFriendMomentsRouteSource>(
-  ["contacts", "character-detail", "chat-details", "avatar-popover", "moments"],
+  [
+    "contacts",
+    "character-detail",
+    "chat-details",
+    "avatar-popover",
+    "starred-friends",
+    "tags",
+    "moments",
+  ],
 );
 
 export function parseDesktopFriendMomentsRouteState(

@@ -433,7 +433,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
             onClick={() => {
               onClose();
               void navigate({
-                to: "/tabs/moments/friend/$characterId",
+                to: "/desktop/friend-moments/$characterId",
                 params: { characterId },
                 hash: buildDesktopFriendMomentsRouteHash({
                   source: "avatar-popover",

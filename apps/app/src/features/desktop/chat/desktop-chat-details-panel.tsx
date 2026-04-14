@@ -413,7 +413,7 @@ function DirectChatDetailsPanel({
     }
 
     void navigate({
-      to: "/tabs/moments/friend/$characterId",
+      to: "/desktop/friend-moments/$characterId",
       params: { characterId: targetCharacterId },
       hash: buildDesktopFriendMomentsRouteHash({
         source: "chat-details",

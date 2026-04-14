@@ -29,6 +29,7 @@ import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
 import { matchesCharacterSearch } from "../features/contacts/contact-utils";
+import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { navigateBackOrFallback } from "../lib/history-back";
@@ -703,6 +704,19 @@ function DesktopTagsPage() {
             onDeleteFriend={
               selectedFriend
                 ? () => deleteFriendMutation.mutate(selectedFriend.character.id)
+                : undefined
+            }
+            onOpenMoments={
+              selectedFriend
+                ? () => {
+                    void navigate({
+                      to: "/desktop/friend-moments/$characterId",
+                      params: { characterId: selectedFriend.character.id },
+                      hash: buildDesktopFriendMomentsRouteHash({
+                        source: "tags",
+                      }),
+                    });
+                  }
                 : undefined
             }
             onOpenProfile={() => {

@@ -225,7 +225,7 @@ export function MomentsPage() {
     }
 
     void navigate({
-      to: "/tabs/moments/friend/$characterId",
+      to: "/desktop/friend-moments/$characterId",
       params: { characterId: routeSelectedAuthorId },
       hash: buildDesktopFriendMomentsRouteHash({
         momentId: routeSelectedMomentId ?? undefined,
@@ -398,7 +398,7 @@ export function MomentsPage() {
         onLike={(momentId) => likeMutation.mutate(momentId)}
         onOpenAuthorMoments={({ authorId, momentId }) => {
           void navigate({
-            to: "/tabs/moments/friend/$characterId",
+            to: "/desktop/friend-moments/$characterId",
             params: { characterId: authorId },
             hash: buildDesktopFriendMomentsRouteHash({
               momentId,
