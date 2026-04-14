@@ -2591,6 +2591,11 @@ export function StickerPanel({
                         <span className="rounded-full bg-white/88 px-2 py-1">
                           {pausedManageCapacityLabel}
                         </span>
+                        {pausedManageUploadLabel ? (
+                          <span className="rounded-full bg-white/88 px-2 py-1 text-[#9a5a0a]">
+                            {pausedManageUploadLabel}
+                          </span>
+                        ) : null}
                       </div>
                     ) : null}
                     <div className="flex flex-wrap items-center justify-center gap-2">
@@ -2607,6 +2612,15 @@ export function StickerPanel({
                           ? "清空并继续管理"
                           : "清空重试"}
                       </button>
+                      {showPausedManageResumeUploadShortcut ? (
+                        <button
+                          type="button"
+                          onClick={clearSearchAndOpenUpload}
+                          className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[color:var(--surface-console)]"
+                        >
+                          现在去添加
+                        </button>
+                      ) : null}
                       {activeSectionId !== "featured" ? (
                         <button
                           type="button"
@@ -2640,7 +2654,9 @@ export function StickerPanel({
                     </div>
                     <div className="text-[11px] text-[color:var(--text-muted)]">
                       {showManageSearchPauseHint
-                        ? "也可以先继续删除当前自定义表情，之后再回来搜。"
+                        ? showPausedManageResumeUploadShortcut
+                          ? "也可以直接继续添加图片或 GIF，或者先回到删除管理再清理。"
+                          : "也可以先继续删除当前自定义表情，之后再回来搜。"
                         : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
                     </div>
                   </div>
