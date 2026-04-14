@@ -36,12 +36,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 
 import { AvatarChip } from "../components/avatar-chip";
 import { OfficialServiceConversationCard } from "../components/official-service-conversation-card";
@@ -73,6 +68,7 @@ import { useMessageReminders } from "../features/chat/use-message-reminders";
 import { useChatReminderActions } from "../features/chat/use-chat-reminder-actions";
 import { useChatReminderEntries } from "../features/chat/use-chat-reminder-entries";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
+import { parseDesktopChatRouteHash } from "../features/desktop/chat/desktop-chat-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import {
   getConversationPreviewParts,
@@ -134,9 +130,35 @@ const HIDE_UNDO_WINDOW_MS = 5_000;
 
 export function ChatListPage() {
   const isDesktopLayout = useDesktopLayout();
+  const hash = useRouterState({ select: (state) => state.location.hash });
+  const desktopRouteState = useMemo(
+    () => parseDesktopChatRouteHash(hash),
+    [hash],
+  );
 
   if (isDesktopLayout) {
-    return <DesktopChatWorkspace />;
+    return (
+      <DesktopChatWorkspace
+        selectedServiceAccountId={
+          desktopRouteState.officialView === "service-account"
+            ? desktopRouteState.accountId
+            : undefined
+        }
+        selectedOfficialArticleId={desktopRouteState.articleId}
+        selectedSpecialView={
+          desktopRouteState.officialView === "subscription-inbox"
+            ? "subscription-inbox"
+            : desktopRouteState.officialView === "official-accounts"
+              ? "official-accounts"
+              : undefined
+        }
+        selectedOfficialAccountId={
+          desktopRouteState.officialView === "official-accounts"
+            ? desktopRouteState.accountId
+            : undefined
+        }
+      />
+    );
   }
 
   return <MobileChatListPage />;
@@ -746,9 +768,9 @@ function MobileChatListPage() {
                                     ? "bg-[#fff1f0] text-[#d74b45]"
                                     : "bg-[#eaf8ef] text-[#07c160]",
                               )}
-                              >
-                                {group.title}
-                              </span>
+                            >
+                              {group.title}
+                            </span>
                           </div>
                           <ChatReminderMetaPill className="px-1.5 py-0.5 text-[8px] text-[#8f9992]">
                             <ChatReminderCountText count={group.count} />
@@ -1129,7 +1151,9 @@ function ConversationListItemLink({
     <div
       className={cn(
         "flex items-center gap-2.5 px-4 py-2.5",
-        isPinned ? "bg-[color:var(--surface-panel)]" : "bg-[color:var(--bg-canvas-elevated)]",
+        isPinned
+          ? "bg-[color:var(--surface-panel)]"
+          : "bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
       <AvatarChip name={conversation.title} size="wechat" />

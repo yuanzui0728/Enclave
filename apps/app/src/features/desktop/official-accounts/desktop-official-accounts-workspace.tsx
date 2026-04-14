@@ -36,11 +36,18 @@ export function DesktopOfficialAccountsWorkspace({
   selectedArticleId,
   onOpenAccount,
   onOpenArticle,
+  onOpenServiceMessages,
+  onOpenSubscriptionInbox,
 }: {
   selectedAccountId?: string;
   selectedArticleId?: string;
   onOpenAccount?: (accountId: string) => void;
   onOpenArticle?: (articleId: string, accountId: string) => void;
+  onOpenServiceMessages?: (
+    accountId: string,
+    articleId?: string | null,
+  ) => void;
+  onOpenSubscriptionInbox?: (articleId?: string | null) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -127,7 +134,9 @@ export function DesktopOfficialAccountsWorkspace({
   const hasAccountFiltering =
     accountFilter !== "all" || searchTerm.trim().length > 0;
   const followingCount = useMemo(
-    () => (accountsQuery.data ?? []).filter((account) => account.isFollowing).length,
+    () =>
+      (accountsQuery.data ?? []).filter((account) => account.isFollowing)
+        .length,
     [accountsQuery.data],
   );
   const subscriptionCount = useMemo(
@@ -162,7 +171,9 @@ export function DesktopOfficialAccountsWorkspace({
     if (
       !hasAccountFiltering &&
       selectedAccountId &&
-      (accountsQuery.data ?? []).some((account) => account.id === selectedAccountId)
+      (accountsQuery.data ?? []).some(
+        (account) => account.id === selectedAccountId,
+      )
     ) {
       return selectedAccountId;
     }
@@ -202,7 +213,8 @@ export function DesktopOfficialAccountsWorkspace({
     if (
       selectedArticleId &&
       pinnedArticleQuery.data?.account.id === effectiveAccountId &&
-      (pinnedArticleQuery.isLoading || pinnedArticleQuery.data?.id === selectedArticleId)
+      (pinnedArticleQuery.isLoading ||
+        pinnedArticleQuery.data?.id === selectedArticleId)
     ) {
       return selectedArticleId;
     }
@@ -371,6 +383,11 @@ export function DesktopOfficialAccountsWorkspace({
   }
 
   function openServiceWorkspace(accountId: string, articleId?: string | null) {
+    if (onOpenServiceMessages) {
+      onOpenServiceMessages(accountId, articleId);
+      return;
+    }
+
     void navigate({
       to: "/official-accounts/service/$accountId",
       params: { accountId },
@@ -381,6 +398,11 @@ export function DesktopOfficialAccountsWorkspace({
   }
 
   function openSubscriptionWorkspace(articleId?: string | null) {
+    if (onOpenSubscriptionInbox) {
+      onOpenSubscriptionInbox(articleId);
+      return;
+    }
+
     void navigate({
       to: "/chat/subscription-inbox",
       hash: buildDesktopOfficialMessageRouteHash({
@@ -415,7 +437,8 @@ export function DesktopOfficialAccountsWorkspace({
             公众号
           </div>
           <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
-            已关注 {followingCount} · 订阅 {subscriptionCount} · 服务 {serviceCount}
+            已关注 {followingCount} · 订阅 {subscriptionCount} · 服务{" "}
+            {serviceCount}
           </div>
           <TextField
             value={searchTerm}
@@ -545,7 +568,8 @@ export function DesktopOfficialAccountsWorkspace({
                     发消息
                   </Button>
                 ) : null}
-                {account.accountType === "subscription" && account.isFollowing ? (
+                {account.accountType === "subscription" &&
+                account.isFollowing ? (
                   <Button
                     type="button"
                     variant="secondary"
@@ -719,7 +743,9 @@ export function DesktopOfficialAccountsWorkspace({
               <div className="space-y-3">
                 <DesktopOfficialProfileRow
                   label="账号类型"
-                  value={account.accountType === "service" ? "服务号" : "订阅号"}
+                  value={
+                    account.accountType === "service" ? "服务号" : "订阅号"
+                  }
                 />
                 <DesktopOfficialProfileRow
                   label="账号状态"
@@ -739,13 +765,12 @@ export function DesktopOfficialAccountsWorkspace({
                   label="最近更新"
                   value={
                     account.articles[0]?.publishedAt
-                      ? new Date(account.articles[0].publishedAt).toLocaleDateString(
-                          "zh-CN",
-                          {
-                            month: "numeric",
-                            day: "numeric",
-                          },
-                        )
+                      ? new Date(
+                          account.articles[0].publishedAt,
+                        ).toLocaleDateString("zh-CN", {
+                          month: "numeric",
+                          day: "numeric",
+                        })
                       : "暂无更新"
                   }
                 />

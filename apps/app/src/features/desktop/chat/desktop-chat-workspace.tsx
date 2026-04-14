@@ -59,8 +59,10 @@ import {
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
 import { GroupAvatarChip } from "../../../components/group-avatar-chip";
+import { OfficialAccountsEntryCard } from "../../../components/official-accounts-entry-card";
 import { OfficialServiceConversationCard } from "../../../components/official-service-conversation-card";
 import { SubscriptionInboxCard } from "../../../components/subscription-inbox-card";
+import { DesktopOfficialAccountsWorkspace } from "../official-accounts/desktop-official-accounts-workspace";
 import { DesktopSubscriptionWorkspace } from "../official-accounts/desktop-subscription-workspace";
 import { OfficialAccountServiceThread } from "../../official-accounts/service/official-account-service-thread";
 import {
@@ -132,19 +134,19 @@ import {
   buildDesktopMessageEntries,
   type DesktopMessageEntry,
 } from "./desktop-message-entry-types";
+import { buildDesktopChatRouteHash } from "./desktop-chat-route-state";
 import { buildDesktopMobileCallHandoffHash } from "./desktop-mobile-call-handoff-route-state";
-import { buildDesktopOfficialMessageRouteHash } from "./desktop-official-message-route-state";
 import { openDesktopNoteWindow } from "./desktop-note-window-route-state";
 import { openDesktopChatWindow } from "./desktop-chat-window-route-state";
-import { buildDesktopContactsRouteHash } from "../contacts/desktop-contacts-route-state";
 
 type DesktopChatWorkspaceProps = {
   selectedConversationId?: string;
   selectedServiceAccountId?: string;
+  selectedOfficialAccountId?: string;
   selectedOfficialArticleId?: string;
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
-  selectedSpecialView?: "subscription-inbox";
+  selectedSpecialView?: "subscription-inbox" | "official-accounts";
   standaloneWindow?: boolean;
 };
 
@@ -177,6 +179,7 @@ const desktopQuickActionItems: DesktopQuickActionItem[] = [
 export function DesktopChatWorkspace({
   selectedConversationId,
   selectedServiceAccountId,
+  selectedOfficialAccountId,
   selectedOfficialArticleId,
   highlightedMessageId,
   routeContextNotice,
@@ -363,6 +366,7 @@ export function DesktopChatWorkspace({
   }, [hasNotifiedReminderGroup, isNotifiedReminderGroupExpanded]);
 
   const subscriptionInboxActive = selectedSpecialView === "subscription-inbox";
+  const officialAccountsActive = selectedSpecialView === "official-accounts";
   const serviceConversationActive = Boolean(selectedServiceAccountId);
   const selectedServiceConversationExists = useMemo(
     () =>
@@ -385,7 +389,11 @@ export function DesktopChatWorkspace({
   );
 
   const activeConversation = useMemo(() => {
-    if (subscriptionInboxActive || serviceConversationActive) {
+    if (
+      subscriptionInboxActive ||
+      officialAccountsActive ||
+      serviceConversationActive
+    ) {
       return null;
     }
 
@@ -410,6 +418,7 @@ export function DesktopChatWorkspace({
     conversations,
     filteredConversations,
     selectedConversationId,
+    officialAccountsActive,
     serviceConversationActive,
     standaloneWindow,
     subscriptionInboxActive,
@@ -448,6 +457,7 @@ export function DesktopChatWorkspace({
       standaloneWindow ||
       !selectedConversationId ||
       subscriptionInboxActive ||
+      officialAccountsActive ||
       serviceConversationActive ||
       conversationsQuery.isLoading ||
       conversationsQuery.isError ||
@@ -464,6 +474,7 @@ export function DesktopChatWorkspace({
     conversationsQuery.isError,
     conversationsQuery.isLoading,
     navigate,
+    officialAccountsActive,
     selectedConversationExists,
     selectedConversationId,
     serviceConversationActive,
@@ -475,13 +486,19 @@ export function DesktopChatWorkspace({
     if (
       !activeConversation ||
       subscriptionInboxActive ||
+      officialAccountsActive ||
       serviceConversationActive
     ) {
       setRightPanelMode(null);
       setDetailsAnnouncementRequest(null);
       setDetailsMemberSearchRequest(null);
     }
-  }, [activeConversation, serviceConversationActive, subscriptionInboxActive]);
+  }, [
+    activeConversation,
+    officialAccountsActive,
+    serviceConversationActive,
+    subscriptionInboxActive,
+  ]);
 
   useEffect(() => {
     if (!notice) {
@@ -600,6 +617,7 @@ export function DesktopChatWorkspace({
     if (
       !hasActiveThread ||
       subscriptionInboxActive ||
+      officialAccountsActive ||
       serviceConversationActive
     ) {
       return;
@@ -627,7 +645,12 @@ export function DesktopChatWorkspace({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeConversation, serviceConversationActive, subscriptionInboxActive]);
+  }, [
+    activeConversation,
+    officialAccountsActive,
+    serviceConversationActive,
+    subscriptionInboxActive,
+  ]);
 
   const conversationActionMutation = useMutation({
     mutationFn: async ({
@@ -883,7 +906,9 @@ export function DesktopChatWorkspace({
     },
     onError: (error) => {
       setOfficialMessageContextMenu(null);
-      setNotice(error instanceof Error ? error.message : "公众号消息操作失败。");
+      setNotice(
+        error instanceof Error ? error.message : "公众号消息操作失败。",
+      );
     },
   });
 
@@ -996,7 +1021,8 @@ export function DesktopChatWorkspace({
     if (
       !activeConversation ||
       selectedServiceAccountId ||
-      subscriptionInboxActive
+      subscriptionInboxActive ||
+      officialAccountsActive
     ) {
       return;
     }
@@ -1028,7 +1054,12 @@ export function DesktopChatWorkspace({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeConversation, selectedServiceAccountId, subscriptionInboxActive]);
+  }, [
+    activeConversation,
+    officialAccountsActive,
+    selectedServiceAccountId,
+    subscriptionInboxActive,
+  ]);
 
   function handleConversationContextMenu(
     event: MouseEvent<HTMLElement>,
@@ -1378,6 +1409,8 @@ export function DesktopChatWorkspace({
                   key={entry.id}
                   entry={entry}
                   activeConversationId={activeConversation?.id}
+                  officialAccountsActive={officialAccountsActive}
+                  selectedOfficialAccountId={selectedOfficialAccountId}
                   selectedServiceAccountId={selectedServiceAccountId}
                   selectedOfficialArticleId={selectedOfficialArticleId}
                   subscriptionInboxActive={subscriptionInboxActive}
@@ -1410,25 +1443,75 @@ export function DesktopChatWorkspace({
       )}
 
       <section className="min-w-0 flex-1">
-        {subscriptionInboxActive ? (
+        {officialAccountsActive ? (
+          <DesktopOfficialAccountsWorkspace
+            selectedAccountId={selectedOfficialAccountId}
+            selectedArticleId={selectedOfficialArticleId}
+            onOpenAccount={(accountId) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
+                  accountId,
+                }),
+                replace: true,
+              });
+            }}
+            onOpenArticle={(articleId, accountId) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
+                  accountId,
+                  articleId,
+                }),
+                replace: true,
+              });
+            }}
+            onOpenServiceMessages={(accountId, articleId) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "service-account",
+                  accountId,
+                  articleId: articleId ?? undefined,
+                }),
+                replace: true,
+              });
+            }}
+            onOpenSubscriptionInbox={(articleId) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "subscription-inbox",
+                  articleId: articleId ?? undefined,
+                }),
+                replace: true,
+              });
+            }}
+          />
+        ) : subscriptionInboxActive ? (
           <DesktopSubscriptionWorkspace
             selectedArticleId={selectedOfficialArticleId}
             onOpenArticle={(articleId) => {
               void navigate({
-                to: "/chat/subscription-inbox",
-                hash: buildDesktopOfficialMessageRouteHash({ articleId }),
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "subscription-inbox",
+                  articleId,
+                }),
                 replace: true,
               });
             }}
             onOpenAccount={(accountId, articleId) => {
               void navigate({
-                to: "/tabs/contacts",
-                hash: buildDesktopContactsRouteHash({
-                  pane: "official-accounts",
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
                   accountId,
                   articleId,
-                  showWorldCharacters: false,
                 }),
+                replace: true,
               });
             }}
           />
@@ -1439,21 +1522,24 @@ export function DesktopChatWorkspace({
             selectedArticleId={selectedOfficialArticleId}
             onOpenArticle={(articleId, accountId) => {
               void navigate({
-                to: "/official-accounts/service/$accountId",
-                params: { accountId },
-                hash: buildDesktopOfficialMessageRouteHash({ articleId }),
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "service-account",
+                  accountId,
+                  articleId,
+                }),
                 replace: true,
               });
             }}
             onOpenAccount={(accountId, articleId) => {
               void navigate({
-                to: "/tabs/contacts",
-                hash: buildDesktopContactsRouteHash({
-                  pane: "official-accounts",
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
                   accountId,
                   articleId,
-                  showWorldCharacters: false,
                 }),
+                replace: true,
               });
             }}
           />
@@ -1712,12 +1798,14 @@ export function DesktopChatWorkspace({
                     onClick: () => {
                       setOfficialMessageContextMenu(null);
                       void navigate({
-                        to: "/chat/subscription-inbox",
-                        hash: subscriptionInboxActive && selectedOfficialArticleId
-                          ? buildDesktopOfficialMessageRouteHash({
-                              articleId: selectedOfficialArticleId,
-                            })
-                          : undefined,
+                        to: "/tabs/chat",
+                        hash: buildDesktopChatRouteHash({
+                          officialView: "subscription-inbox",
+                          articleId:
+                            subscriptionInboxActive && selectedOfficialArticleId
+                              ? selectedOfficialArticleId
+                              : undefined,
+                        }),
                       });
                     },
                   },
@@ -1732,19 +1820,24 @@ export function DesktopChatWorkspace({
                     onClick: () => {
                       setOfficialMessageContextMenu(null);
 
-                      if (subscriptionInboxActive && selectedOfficialArticleId) {
+                      if (
+                        subscriptionInboxActive &&
+                        selectedOfficialArticleId
+                      ) {
                         void navigate({
-                          to: "/official-accounts/articles/$articleId",
-                          params: { articleId: selectedOfficialArticleId },
+                          to: "/tabs/chat",
+                          hash: buildDesktopChatRouteHash({
+                            officialView: "official-accounts",
+                            articleId: selectedOfficialArticleId,
+                          }),
                         });
                         return;
                       }
 
                       void navigate({
-                        to: "/tabs/contacts",
-                        hash: buildDesktopContactsRouteHash({
-                          pane: "official-accounts",
-                          showWorldCharacters: false,
+                        to: "/tabs/chat",
+                        hash: buildDesktopChatRouteHash({
+                          officialView: "official-accounts",
                         }),
                       });
                     },
@@ -1772,18 +1865,18 @@ export function DesktopChatWorkspace({
                     onClick: () => {
                       setOfficialMessageContextMenu(null);
                       void navigate({
-                        to: "/official-accounts/service/$accountId",
-                        params: {
-                          accountId: officialMessageContextMenu.conversation.accountId,
-                        },
-                        hash:
-                          selectedServiceAccountId ===
-                            officialMessageContextMenu.conversation.accountId &&
-                          selectedOfficialArticleId
-                            ? buildDesktopOfficialMessageRouteHash({
-                                articleId: selectedOfficialArticleId,
-                              })
-                            : undefined,
+                        to: "/tabs/chat",
+                        hash: buildDesktopChatRouteHash({
+                          officialView: "service-account",
+                          accountId:
+                            officialMessageContextMenu.conversation.accountId,
+                          articleId:
+                            selectedServiceAccountId ===
+                              officialMessageContextMenu.conversation
+                                .accountId && selectedOfficialArticleId
+                              ? selectedOfficialArticleId
+                              : undefined,
+                        }),
                       });
                     },
                   },
@@ -1795,16 +1888,16 @@ export function DesktopChatWorkspace({
                     onClick: () => {
                       setOfficialMessageContextMenu(null);
                       void navigate({
-                        to: "/tabs/contacts",
-                        hash: buildDesktopContactsRouteHash({
-                          pane: "official-accounts",
-                          accountId: officialMessageContextMenu.conversation.accountId,
+                        to: "/tabs/chat",
+                        hash: buildDesktopChatRouteHash({
+                          officialView: "official-accounts",
+                          accountId:
+                            officialMessageContextMenu.conversation.accountId,
                           articleId:
                             selectedServiceAccountId ===
                             officialMessageContextMenu.conversation.accountId
                               ? selectedOfficialArticleId
                               : undefined,
-                          showWorldCharacters: false,
                         }),
                       });
                     },
@@ -1819,7 +1912,8 @@ export function DesktopChatWorkspace({
                         onClick: () => {
                           officialMessageActionMutation.mutate({
                             kind: "service-read",
-                            conversation: officialMessageContextMenu.conversation,
+                            conversation:
+                              officialMessageContextMenu.conversation,
                           });
                         },
                       }
@@ -1876,6 +1970,8 @@ export function DesktopChatWorkspace({
 function DesktopMessageEntryCard({
   entry,
   activeConversationId,
+  officialAccountsActive,
+  selectedOfficialAccountId,
   selectedServiceAccountId,
   selectedOfficialArticleId,
   subscriptionInboxActive,
@@ -1887,6 +1983,8 @@ function DesktopMessageEntryCard({
 }: {
   entry: DesktopMessageEntry;
   activeConversationId?: string;
+  officialAccountsActive: boolean;
+  selectedOfficialAccountId?: string;
   selectedServiceAccountId?: string;
   selectedOfficialArticleId?: string;
   subscriptionInboxActive: boolean;
@@ -1907,6 +2005,37 @@ function DesktopMessageEntryCard({
 }) {
   const navigate = useNavigate();
 
+  if (entry.kind === "official-accounts") {
+    return (
+      <OfficialAccountsEntryCard
+        unreadCount={entry.summary.unreadCount}
+        lastActivityAt={entry.summary.lastActivityAt}
+        preview={entry.summary.preview}
+        active={officialAccountsActive}
+        onClick={() => {
+          const accountId = officialAccountsActive
+            ? selectedOfficialAccountId
+            : selectedServiceAccountId;
+          const articleId =
+            officialAccountsActive ||
+            selectedServiceAccountId ||
+            subscriptionInboxActive
+              ? selectedOfficialArticleId
+              : undefined;
+
+          void navigate({
+            to: "/tabs/chat",
+            hash: buildDesktopChatRouteHash({
+              officialView: "official-accounts",
+              accountId,
+              articleId,
+            }),
+          });
+        }}
+      />
+    );
+  }
+
   if (entry.kind === "subscription-inbox") {
     return (
       <SubscriptionInboxCard
@@ -1915,13 +2044,14 @@ function DesktopMessageEntryCard({
         active={subscriptionInboxActive}
         onClick={() => {
           void navigate({
-            to: "/chat/subscription-inbox",
-            hash:
-              subscriptionInboxActive && selectedOfficialArticleId
-                ? buildDesktopOfficialMessageRouteHash({
-                    articleId: selectedOfficialArticleId,
-                  })
-                : undefined,
+            to: "/tabs/chat",
+            hash: buildDesktopChatRouteHash({
+              officialView: "subscription-inbox",
+              articleId:
+                subscriptionInboxActive && selectedOfficialArticleId
+                  ? selectedOfficialArticleId
+                  : undefined,
+            }),
           });
         }}
         onContextMenu={(event) =>
@@ -1939,15 +2069,16 @@ function DesktopMessageEntryCard({
         active={entry.conversation.accountId === selectedServiceAccountId}
         onClick={() => {
           void navigate({
-            to: "/official-accounts/service/$accountId",
-            params: { accountId: entry.conversation.accountId },
-            hash:
-              entry.conversation.accountId === selectedServiceAccountId &&
-              selectedOfficialArticleId
-                ? buildDesktopOfficialMessageRouteHash({
-                    articleId: selectedOfficialArticleId,
-                  })
-                : undefined,
+            to: "/tabs/chat",
+            hash: buildDesktopChatRouteHash({
+              officialView: "service-account",
+              accountId: entry.conversation.accountId,
+              articleId:
+                entry.conversation.accountId === selectedServiceAccountId &&
+                selectedOfficialArticleId
+                  ? selectedOfficialArticleId
+                  : undefined,
+            }),
           });
         }}
         onContextMenu={(event) =>

@@ -6,6 +6,15 @@ import type {
 
 export type DesktopMessageEntry =
   | {
+      kind: "official-accounts";
+      id: "official-accounts";
+      summary: {
+        unreadCount: number;
+        lastActivityAt?: string;
+        preview: string;
+      };
+    }
+  | {
       kind: "subscription-inbox";
       id: "subscription-inbox";
       summary: OfficialAccountSubscriptionInboxSummary;
@@ -29,13 +38,37 @@ export function buildDesktopMessageEntries({
   getConversationPreviewText,
 }: {
   conversations: ConversationListItem[];
-  subscriptionInboxSummary: OfficialAccountSubscriptionInboxSummary | null | undefined;
+  subscriptionInboxSummary:
+    | OfficialAccountSubscriptionInboxSummary
+    | null
+    | undefined;
   serviceConversations: OfficialAccountServiceConversationSummary[];
   searchTerm: string;
   getConversationPreviewText: (conversation: ConversationListItem) => string;
 }) {
   const normalizedKeyword = searchTerm.trim().toLowerCase();
   const entries: DesktopMessageEntry[] = [];
+  const officialAccountsSummary = buildDesktopOfficialAccountsEntrySummary({
+    subscriptionInboxSummary,
+    serviceConversations,
+  });
+
+  if (
+    matchesDesktopMessageEntryKeyword(normalizedKeyword, [
+      "公众号",
+      "公众号消息",
+      "公众号主页",
+      "订阅号",
+      "服务号",
+      officialAccountsSummary.preview,
+    ])
+  ) {
+    entries.push({
+      kind: "official-accounts",
+      id: "official-accounts",
+      summary: officialAccountsSummary,
+    });
+  }
 
   if (
     subscriptionInboxSummary &&
@@ -93,7 +126,10 @@ export function buildDesktopMessageEntries({
       return pinnedDifference;
     }
 
-    if (isDesktopMessageEntryPinned(left) && isDesktopMessageEntryPinned(right)) {
+    if (
+      isDesktopMessageEntryPinned(left) &&
+      isDesktopMessageEntryPinned(right)
+    ) {
       return (
         getDesktopMessageEntryTimestamp(right, "pinned") -
         getDesktopMessageEntryTimestamp(left, "pinned")
@@ -105,6 +141,50 @@ export function buildDesktopMessageEntries({
       getDesktopMessageEntryTimestamp(left, "activity")
     );
   });
+}
+
+function buildDesktopOfficialAccountsEntrySummary({
+  subscriptionInboxSummary,
+  serviceConversations,
+}: {
+  subscriptionInboxSummary:
+    | OfficialAccountSubscriptionInboxSummary
+    | null
+    | undefined;
+  serviceConversations: OfficialAccountServiceConversationSummary[];
+}) {
+  const unreadCount =
+    (subscriptionInboxSummary?.unreadCount ?? 0) +
+    serviceConversations.reduce(
+      (total, conversation) => total + conversation.unreadCount,
+      0,
+    );
+  const serviceCount = serviceConversations.length;
+  const lastActivityAt = [
+    subscriptionInboxSummary?.lastDeliveredAt,
+    ...serviceConversations.map((conversation) => conversation.lastDeliveredAt),
+  ]
+    .filter(Boolean)
+    .sort((left, right) => {
+      const leftTimestamp = left ? new Date(left).getTime() : 0;
+      const rightTimestamp = right ? new Date(right).getTime() : 0;
+      return rightTimestamp - leftTimestamp;
+    })[0];
+
+  let preview = "查看公众号主页、订阅号和服务号消息";
+  if (serviceCount && subscriptionInboxSummary) {
+    preview = "服务号通知和订阅号文章都在这里查看";
+  } else if (serviceCount) {
+    preview = "查看服务号通知和公众号主页";
+  } else if (subscriptionInboxSummary) {
+    preview = "查看订阅号文章和公众号主页";
+  }
+
+  return {
+    unreadCount,
+    lastActivityAt,
+    preview,
+  };
 }
 
 function matchesDesktopMessageEntryKeyword(
@@ -129,13 +209,15 @@ function getDesktopMessageEntryTimestamp(
   field: "pinned" | "activity",
 ) {
   const rawTimestamp =
-    entry.kind === "subscription-inbox"
-      ? entry.summary.lastDeliveredAt
-      : entry.kind === "service-account"
-        ? entry.conversation.lastDeliveredAt
-        : field === "pinned"
-          ? entry.conversation.pinnedAt
-          : entry.conversation.lastActivityAt;
+    entry.kind === "official-accounts"
+      ? entry.summary.lastActivityAt
+      : entry.kind === "subscription-inbox"
+        ? entry.summary.lastDeliveredAt
+        : entry.kind === "service-account"
+          ? entry.conversation.lastDeliveredAt
+          : field === "pinned"
+            ? entry.conversation.pinnedAt
+            : entry.conversation.lastActivityAt;
 
   return rawTimestamp ? new Date(rawTimestamp).getTime() : 0;
 }
