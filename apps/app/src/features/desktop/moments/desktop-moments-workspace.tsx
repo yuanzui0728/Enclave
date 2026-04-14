@@ -5,6 +5,10 @@ import { type DesktopMomentsRouteState } from "./desktop-moments-route-state";
 import { DesktopMomentComposePanel } from "./desktop-moment-compose-panel";
 import { DesktopMomentsFeed } from "./desktop-moments-feed";
 import {
+  type MomentImageDraft,
+  type MomentVideoDraft,
+} from "../../moments/moment-compose-media";
+import {
   DesktopMomentsSidebar,
   type DesktopMomentAuthorSummary,
 } from "./desktop-moments-sidebar";
@@ -17,6 +21,7 @@ type DesktopMomentsWorkspaceProps = {
   composeErrorMessage?: string | null;
   createPending: boolean;
   errors?: string[];
+  imageDrafts: MomentImageDraft[];
   isLoading: boolean;
   likeErrorMessage?: string | null;
   likePendingMomentId: string | null;
@@ -28,20 +33,25 @@ type DesktopMomentsWorkspaceProps = {
   showCompose: boolean;
   successNotice?: string;
   text: string;
+  videoDraft: MomentVideoDraft | null;
   isMomentFavorite: (momentId: string) => boolean;
   setShowCompose: (nextValue: boolean) => void;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
   onCreate: () => void;
+  onImageFilesSelected: (files: FileList | null) => void;
   onLike: (momentId: string) => void;
   onOpenAuthorMoments?: (input: {
     authorId: string;
     momentId?: string;
   }) => void;
+  onRemoveImage: (id: string) => void;
+  onRemoveVideo: () => void;
   onToggleFavorite: (momentId: string) => void;
   onRefresh: () => void;
   onRouteStateChange?: (state: DesktopMomentsRouteState) => void;
   onTextChange: (value: string) => void;
+  onVideoFileSelected: (file: File | null) => void;
 };
 
 export function DesktopMomentsWorkspace({
@@ -51,6 +61,7 @@ export function DesktopMomentsWorkspace({
   composeErrorMessage,
   createPending,
   errors = [],
+  imageDrafts,
   isLoading,
   likeErrorMessage,
   likePendingMomentId,
@@ -62,17 +73,22 @@ export function DesktopMomentsWorkspace({
   showCompose,
   successNotice,
   text,
+  videoDraft,
   isMomentFavorite,
   setShowCompose,
   onCommentChange,
   onCommentSubmit,
   onCreate,
+  onImageFilesSelected,
   onLike,
   onOpenAuthorMoments,
+  onRemoveImage,
+  onRemoveVideo,
   onToggleFavorite,
   onRefresh,
   onRouteStateChange,
   onTextChange,
+  onVideoFileSelected,
 }: DesktopMomentsWorkspaceProps) {
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(
     routeSelectedMomentId,
@@ -225,13 +241,21 @@ export function DesktopMomentsWorkspace({
       {showCompose ? (
         <DesktopMomentComposePanel
           createPending={createPending}
+          canAddImages={imageDrafts.length < 9 && !videoDraft}
+          canAddVideo={!imageDrafts.length}
           errorMessage={composeErrorMessage}
+          imageDrafts={imageDrafts}
           ownerAvatar={ownerAvatar}
           ownerUsername={ownerUsername}
           text={text}
+          videoDraft={videoDraft}
           onClose={() => setShowCompose(false)}
           onCreate={onCreate}
+          onImageFilesSelected={onImageFilesSelected}
+          onRemoveImage={onRemoveImage}
+          onRemoveVideo={onRemoveVideo}
           onTextChange={onTextChange}
+          onVideoFileSelected={onVideoFileSelected}
         />
       ) : null}
     </div>

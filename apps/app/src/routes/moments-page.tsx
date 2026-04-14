@@ -1,10 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Copy, PenSquare, Share2 } from "lucide-react";
+import { ArrowLeft, Copy, ImagePlus, PenSquare, Share2, Video } from "lucide-react";
 import {
   addMomentComment,
-  createUserMoment,
   getBlockedCharacters,
   getMoments,
   toggleMomentLike,
@@ -16,6 +15,7 @@ import {
   TextField,
 } from "@yinjie/ui";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
+import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
 import { SocialPostCard } from "../components/social-post-card";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -33,6 +33,10 @@ import {
 import { DesktopMomentsWorkspace } from "../features/desktop/moments/desktop-moments-workspace";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import {
+  publishMomentComposeDraft,
+  useMomentComposeDraft,
+} from "../features/moments/moment-compose-media";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -64,7 +68,7 @@ export function MomentsPage() {
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
-  const [text, setText] = useState("");
+  const composeDraft = useMomentComposeDraft();
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -75,6 +79,8 @@ export function MomentsPage() {
   const routeState = parseDesktopMomentsRouteState(hash);
   const routeSelectedAuthorId = routeState.authorId ?? null;
   const routeSelectedMomentId = routeState.momentId ?? null;
+  const mobileImageInputRef = useRef<HTMLInputElement | null>(null);
+  const mobileVideoInputRef = useRef<HTMLInputElement | null>(null);
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
@@ -88,14 +94,14 @@ export function MomentsPage() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      createUserMoment(
-        {
-          text: text.trim(),
-        },
+      publishMomentComposeDraft({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
         baseUrl,
-      ),
+      }),
     onSuccess: async () => {
-      setText("");
+      composeDraft.reset();
       setShowCompose(false);
       setNoticeTone("success");
       setNotice("朋友圈已发布，仅好友可见。");
@@ -157,7 +163,7 @@ export function MomentsPage() {
   const isDiscoverSubPage = pathname === "/discover/moments";
 
   useEffect(() => {
-    setText("");
+    composeDraft.reset();
     setCommentDrafts({});
     setShowCompose(false);
     setNotice("");
@@ -255,6 +261,26 @@ export function MomentsPage() {
         textarea.focus();
       }
     });
+  }
+
+  async function handleImageFilesSelected(files: FileList | null) {
+    try {
+      await composeDraft.addImageFiles(files);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "图片选择失败，请稍后重试。",
+      );
+    }
+  }
+
+  async function handleVideoFileSelected(file: File | null) {
+    try {
+      await composeDraft.replaceVideoFile(file);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "视频选择失败，请稍后重试。",
+      );
+    }
   }
 
   useEffect(() => {
@@ -362,12 +388,14 @@ export function MomentsPage() {
         }
         commentPendingMomentId={pendingCommentMomentId}
         composeErrorMessage={
-          createMutation.isError && createMutation.error instanceof Error
+          composeDraft.mediaError ??
+          (createMutation.isError && createMutation.error instanceof Error
             ? createMutation.error.message
-            : null
+            : null)
         }
         createPending={createMutation.isPending}
         errors={errors}
+        imageDrafts={composeDraft.imageDrafts}
         isLoading={momentsQuery.isLoading}
         likeErrorMessage={
           likeMutation.isError && likeMutation.error instanceof Error
@@ -382,7 +410,8 @@ export function MomentsPage() {
         routeSelectedMomentId={routeSelectedMomentId}
         showCompose={showCompose}
         successNotice={notice}
-        text={text}
+        text={composeDraft.text}
+        videoDraft={composeDraft.videoDraft}
         isMomentFavorite={(momentId) =>
           favoriteSourceIds.includes(`moment-${momentId}`)
         }
@@ -395,6 +424,9 @@ export function MomentsPage() {
         }
         onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
         onCreate={() => createMutation.mutate()}
+        onImageFilesSelected={(files) => {
+          void handleImageFilesSelected(files);
+        }}
         onLike={(momentId) => likeMutation.mutate(momentId)}
         onOpenAuthorMoments={({ authorId, momentId }) => {
           void navigate({
@@ -456,7 +488,12 @@ export function MomentsPage() {
             replace: true,
           });
         }}
-        onTextChange={setText}
+        onTextChange={composeDraft.setText}
+        onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+        onRemoveVideo={() => composeDraft.clearVideoDraft()}
+        onVideoFileSelected={(file) => {
+          void handleVideoFileSelected(file);
+        }}
       />
     );
   }
@@ -524,20 +561,79 @@ export function MomentsPage() {
           description="只让好友看到这一刻，比公开动态更近一点，也更像日常分享。"
           scopeLabel="好友可见"
           scopeClassName="bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]"
-          value={text}
-          onChange={setText}
+          value={composeDraft.text}
+          onChange={composeDraft.setText}
           placeholder="写点只想留给好友看的内容..."
-          helperText="发出后仅好友可见，适合留住更私密一点的生活片段。"
+          helperText="发出后仅好友可见，支持 1 到 9 张图片或 1 条视频。"
           submitLabel="发布"
           submittingLabel="正在发布..."
+          mediaPreview={
+            composeDraft.imageDrafts.length > 0 || composeDraft.videoDraft ? (
+              <MomentComposeMediaPreview
+                imageDrafts={composeDraft.imageDrafts}
+                videoDraft={composeDraft.videoDraft}
+                onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+                onRemoveVideo={() => composeDraft.clearVideoDraft()}
+                variant="mobile"
+              />
+            ) : null
+          }
+          mediaActions={
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={!composeDraft.canAddImages || createMutation.isPending}
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                onClick={() => mobileImageInputRef.current?.click()}
+              >
+                <ImagePlus size={14} className="mr-1" />
+                添加图片
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={!composeDraft.canAddVideo || createMutation.isPending}
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                onClick={() => mobileVideoInputRef.current?.click()}
+              >
+                <Video size={14} className="mr-1" />
+                {composeDraft.videoDraft ? "更换视频" : "添加视频"}
+              </Button>
+            </>
+          }
           pending={createMutation.isPending}
-          disabled={!text.trim() || createMutation.isPending}
+          disabled={!composeDraft.hasContent || createMutation.isPending}
           errorMessage={
-            createMutation.isError && createMutation.error instanceof Error
+            composeDraft.mediaError ??
+            (createMutation.isError && createMutation.error instanceof Error
               ? createMutation.error.message
-              : null
+              : null)
           }
           onSubmit={() => createMutation.mutate()}
+        />
+        <input
+          ref={mobileImageInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(event) => {
+            void handleImageFilesSelected(event.currentTarget.files);
+            event.currentTarget.value = "";
+          }}
+        />
+        <input
+          ref={mobileVideoInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={(event) => {
+            void handleVideoFileSelected(event.currentTarget.files?.[0] ?? null);
+            event.currentTarget.value = "";
+          }}
         />
 
         <section className="space-y-2">

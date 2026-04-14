@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button, TextAreaField, cn } from "@yinjie/ui";
 
 type MobileSocialComposerCardProps = {
@@ -12,6 +13,8 @@ type MobileSocialComposerCardProps = {
   helperText: string;
   submitLabel: string;
   submittingLabel: string;
+  mediaPreview?: ReactNode;
+  mediaActions?: ReactNode;
   pending?: boolean;
   disabled?: boolean;
   errorMessage?: string | null;
@@ -31,6 +34,8 @@ export function MobileSocialComposerCard({
   helperText,
   submitLabel,
   submittingLabel,
+  mediaPreview,
+  mediaActions,
   pending = false,
   disabled = false,
   errorMessage,
@@ -69,6 +74,14 @@ export function MobileSocialComposerCard({
           placeholder={placeholder}
           className="min-h-[7rem] resize-none rounded-[12px] border-0 bg-[color:var(--surface-console)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none"
         />
+
+        {mediaPreview ? <div className="mt-3">{mediaPreview}</div> : null}
+
+        {mediaActions ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {mediaActions}
+          </div>
+        ) : null}
 
         <div className="mt-2.5 flex items-center justify-between gap-3">
           <div className="text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">

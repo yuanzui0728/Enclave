@@ -17,6 +17,10 @@ import {
 import { DesktopMomentComposePanel } from "./desktop-moment-compose-panel";
 import { DesktopMomentDetailPanel } from "./desktop-moment-detail-panel";
 import { DesktopMomentRow } from "./desktop-moment-row";
+import {
+  type MomentImageDraft,
+  type MomentVideoDraft,
+} from "../../moments/moment-compose-media";
 
 type DesktopFriendMomentsWorkspaceProps = {
   character: Character;
@@ -27,6 +31,7 @@ type DesktopFriendMomentsWorkspaceProps = {
   createPending: boolean;
   displayName: string;
   errors?: string[];
+  imageDrafts: MomentImageDraft[];
   isBlocked?: boolean;
   isFriend?: boolean;
   isLoading: boolean;
@@ -41,18 +46,23 @@ type DesktopFriendMomentsWorkspaceProps = {
   signature: string;
   successNotice?: string;
   text: string;
+  videoDraft: MomentVideoDraft | null;
   isMomentFavorite: (momentId: string) => boolean;
   setShowCompose: (nextValue: boolean) => void;
   onBack: () => void;
   onCommentChange: (momentId: string, value: string) => void;
   onCommentSubmit: (momentId: string) => void;
   onCreate: () => void;
+  onImageFilesSelected: (files: FileList | null) => void;
   onLike: (momentId: string) => void;
   onOpenMomentsHome: () => void;
   onOpenProfile: () => void;
+  onRemoveImage: (id: string) => void;
+  onRemoveVideo: () => void;
   onRouteStateChange?: (state: DesktopFriendMomentsRouteState) => void;
   onTextChange: (value: string) => void;
   onToggleFavorite: (momentId: string) => void;
+  onVideoFileSelected: (file: File | null) => void;
 };
 
 export function DesktopFriendMomentsWorkspace({
@@ -64,6 +74,7 @@ export function DesktopFriendMomentsWorkspace({
   createPending,
   displayName,
   errors = [],
+  imageDrafts,
   isBlocked = false,
   isFriend = true,
   isLoading,
@@ -78,18 +89,23 @@ export function DesktopFriendMomentsWorkspace({
   signature,
   successNotice,
   text,
+  videoDraft,
   isMomentFavorite,
   setShowCompose,
   onBack,
   onCommentChange,
   onCommentSubmit,
   onCreate,
+  onImageFilesSelected,
   onLike,
   onOpenMomentsHome,
   onOpenProfile,
+  onRemoveImage,
+  onRemoveVideo,
   onRouteStateChange,
   onTextChange,
   onToggleFavorite,
+  onVideoFileSelected,
 }: DesktopFriendMomentsWorkspaceProps) {
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const [selectedMomentId, setSelectedMomentId] = useState<string | null>(
@@ -449,13 +465,21 @@ export function DesktopFriendMomentsWorkspace({
       {showCompose ? (
         <DesktopMomentComposePanel
           createPending={createPending}
+          canAddImages={imageDrafts.length < 9 && !videoDraft}
+          canAddVideo={!imageDrafts.length}
           errorMessage={composeErrorMessage}
+          imageDrafts={imageDrafts}
           ownerAvatar={ownerAvatar}
           ownerUsername={ownerUsername}
           text={text}
+          videoDraft={videoDraft}
           onClose={() => setShowCompose(false)}
           onCreate={onCreate}
+          onImageFilesSelected={onImageFilesSelected}
+          onRemoveImage={onRemoveImage}
+          onRemoveVideo={onRemoveVideo}
           onTextChange={onTextChange}
+          onVideoFileSelected={onVideoFileSelected}
         />
       ) : null}
     </div>

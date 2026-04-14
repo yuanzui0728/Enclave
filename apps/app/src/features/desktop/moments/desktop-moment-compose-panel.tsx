@@ -1,29 +1,53 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button, ErrorBlock, TextAreaField } from "@yinjie/ui";
-import { X } from "lucide-react";
+import { ImagePlus, Video, X } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { MomentComposeMediaPreview } from "../../../components/moment-compose-media-preview";
+import {
+  type MomentImageDraft,
+  type MomentVideoDraft,
+} from "../../moments/moment-compose-media";
 
 type DesktopMomentComposePanelProps = {
   createPending: boolean;
+  canAddImages: boolean;
+  canAddVideo: boolean;
   errorMessage?: string | null;
+  imageDrafts: MomentImageDraft[];
   ownerAvatar?: string | null;
   ownerUsername?: string | null;
   text: string;
+  videoDraft: MomentVideoDraft | null;
   onClose: () => void;
   onCreate: () => void;
+  onImageFilesSelected: (files: FileList | null) => void;
+  onRemoveImage: (id: string) => void;
+  onRemoveVideo: () => void;
   onTextChange: (value: string) => void;
+  onVideoFileSelected: (file: File | null) => void;
 };
 
 export function DesktopMomentComposePanel({
   createPending,
+  canAddImages,
+  canAddVideo,
   errorMessage,
+  imageDrafts,
   ownerAvatar,
   ownerUsername,
   text,
+  videoDraft,
   onClose,
   onCreate,
+  onImageFilesSelected,
+  onRemoveImage,
+  onRemoveVideo,
   onTextChange,
+  onVideoFileSelected,
 }: DesktopMomentComposePanelProps) {
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -75,13 +99,13 @@ export function DesktopMomentComposePanel({
                   {ownerUsername ?? "我"}
                 </div>
                 <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
-                  桌面端先支持文本朋友圈发布
+                  图文和单条视频都可以直接发到朋友圈
                 </div>
               </div>
             </div>
 
             <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
-              当前桌面端先支持纯文本朋友圈，发布后会直接出现在当前动态流顶部。
+              图片最多 9 张，视频当前支持 1 条且不超过 5 分钟。图片和视频暂不混发。
             </div>
 
             <TextAreaField
@@ -91,6 +115,38 @@ export function DesktopMomentComposePanel({
               className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:bg-white focus:shadow-none"
               autoFocus
             />
+
+            {imageDrafts.length > 0 || videoDraft ? (
+              <div className="mt-4">
+                <MomentComposeMediaPreview
+                  imageDrafts={imageDrafts}
+                  videoDraft={videoDraft}
+                  onRemoveImage={onRemoveImage}
+                  onRemoveVideo={onRemoveVideo}
+                />
+              </div>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={!canAddImages || createPending}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ImagePlus size={15} />
+                添加图片
+              </button>
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                disabled={!canAddVideo || createPending}
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Video size={15} />
+                {videoDraft ? "更换视频" : "添加视频"}
+              </button>
+            </div>
 
             {errorMessage ? (
               <div className="mt-4">
@@ -116,7 +172,7 @@ export function DesktopMomentComposePanel({
                 </Button>
                 <Button
                   variant="primary"
-                  disabled={!text.trim() || createPending}
+                  disabled={(!text.trim() && !imageDrafts.length && !videoDraft) || createPending}
                   onClick={onCreate}
                   className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                 >
@@ -127,6 +183,28 @@ export function DesktopMomentComposePanel({
           </div>
         </div>
       </div>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          onImageFilesSelected(event.currentTarget.files);
+          event.currentTarget.value = "";
+        }}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={(event) => {
+          onVideoFileSelected(event.currentTarget.files?.[0] ?? null);
+          event.currentTarget.value = "";
+        }}
+      />
     </div>
   );
 }

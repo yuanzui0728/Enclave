@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-router";
 import {
   addMomentComment,
-  createUserMoment,
   getBlockedCharacters,
   getCharacter,
   getFriends,
@@ -28,6 +27,10 @@ import {
 } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { DesktopFriendMomentsWorkspace } from "../features/desktop/moments/desktop-friend-moments-workspace";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
+import {
+  publishMomentComposeDraft,
+  useMomentComposeDraft,
+} from "../features/moments/moment-compose-media";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { formatTimestamp } from "../lib/format";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
@@ -50,7 +53,7 @@ export function FriendMomentsPage() {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const nativeDesktopFavorites = runtimeConfig.appPlatform === "desktop";
-  const [text, setText] = useState("");
+  const composeDraft = useMomentComposeDraft();
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -80,14 +83,14 @@ export function FriendMomentsPage() {
 
   const createMutation = useMutation({
     mutationFn: () =>
-      createUserMoment(
-        {
-          text: text.trim(),
-        },
+      publishMomentComposeDraft({
+        text: composeDraft.text,
+        imageDrafts: composeDraft.imageDrafts,
+        videoDraft: composeDraft.videoDraft,
         baseUrl,
-      ),
+      }),
     onSuccess: async () => {
-      setText("");
+      composeDraft.reset();
       setShowCompose(false);
       setNotice("朋友圈已发布，仅好友可见。");
       await queryClient.invalidateQueries({
@@ -165,7 +168,7 @@ export function FriendMomentsPage() {
   );
 
   useEffect(() => {
-    setText("");
+    composeDraft.reset();
     setCommentDrafts({});
     setShowCompose(false);
     setNotice("");
@@ -226,6 +229,26 @@ export function FriendMomentsPage() {
     const timer = window.setTimeout(() => setNotice(""), 2400);
     return () => window.clearTimeout(timer);
   }, [notice]);
+
+  async function handleImageFilesSelected(files: FileList | null) {
+    try {
+      await composeDraft.addImageFiles(files);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "图片选择失败，请稍后重试。",
+      );
+    }
+  }
+
+  async function handleVideoFileSelected(file: File | null) {
+    try {
+      await composeDraft.replaceVideoFile(file);
+    } catch (error) {
+      composeDraft.setMediaError(
+        error instanceof Error ? error.message : "视频选择失败，请稍后重试。",
+      );
+    }
+  }
 
   useEffect(() => {
     if (isDesktopLayout) {
@@ -356,13 +379,15 @@ export function FriendMomentsPage() {
       }
       commentPendingMomentId={pendingCommentMomentId}
       composeErrorMessage={
-        createMutation.isError && createMutation.error instanceof Error
+        composeDraft.mediaError ??
+        (createMutation.isError && createMutation.error instanceof Error
           ? createMutation.error.message
-          : null
+          : null)
       }
       createPending={createMutation.isPending}
       displayName={displayName}
       errors={errors}
+      imageDrafts={composeDraft.imageDrafts}
       isBlocked={isBlocked}
       isFriend={isFriend}
       isLoading={momentsQuery.isLoading}
@@ -380,7 +405,8 @@ export function FriendMomentsPage() {
       showCompose={showCompose}
       signature={signature}
       successNotice={notice}
-      text={text}
+      text={composeDraft.text}
+      videoDraft={composeDraft.videoDraft}
       isMomentFavorite={(momentId) =>
         favoriteSourceIds.includes(`moment-${momentId}`)
       }
@@ -394,6 +420,9 @@ export function FriendMomentsPage() {
       }
       onCommentSubmit={(momentId) => commentMutation.mutate(momentId)}
       onCreate={() => createMutation.mutate()}
+      onImageFilesSelected={(files) => {
+        void handleImageFilesSelected(files);
+      }}
       onLike={(momentId) => likeMutation.mutate(momentId)}
       onOpenMomentsHome={() => {
         void navigate({ to: "/tabs/moments" });
@@ -422,7 +451,9 @@ export function FriendMomentsPage() {
           replace: true,
         });
       }}
-      onTextChange={setText}
+      onTextChange={composeDraft.setText}
+      onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
+      onRemoveVideo={() => composeDraft.clearVideoDraft()}
       onToggleFavorite={(momentId) => {
         const moment = friendMoments.find((item) => item.id === momentId);
         if (!moment) {
@@ -452,6 +483,9 @@ export function FriendMomentsPage() {
         setFavoriteSourceIds(
           nextFavorites.map((favorite) => favorite.sourceId),
         );
+      }}
+      onVideoFileSelected={(file) => {
+        void handleVideoFileSelected(file);
       }}
     />
   );
