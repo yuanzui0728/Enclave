@@ -601,6 +601,15 @@ export function StickerPanel({
         (section) => section.id === highlightedSearchSection.id,
       )
     : -1;
+  const previousSearchSectionLabel =
+    highlightedSearchSectionIndex > 0
+      ? (searchSections[highlightedSearchSectionIndex - 1]?.label ?? null)
+      : null;
+  const nextSearchSectionLabel =
+    highlightedSearchSectionIndex >= 0 &&
+    highlightedSearchSectionIndex < searchSections.length - 1
+      ? (searchSections[highlightedSearchSectionIndex + 1]?.label ?? null)
+      : null;
   const recommendedSearchSection = useMemo(() => {
     if (!firstSearchResultKey) {
       return null;
@@ -1578,18 +1587,14 @@ export function StickerPanel({
                         End 末项
                       </span>
                     ) : null}
-                    {showSearchSectionJumpHint &&
-                    highlightedSearchSectionIndex > 0 ? (
+                    {showSearchSectionJumpHint && previousSearchSectionLabel ? (
                       <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                        PgUp 上组
+                        PgUp {previousSearchSectionLabel}
                       </span>
                     ) : null}
-                    {showSearchSectionJumpHint &&
-                    highlightedSearchSectionIndex >= 0 &&
-                    highlightedSearchSectionIndex <
-                      searchSectionNavigation.length - 1 ? (
+                    {showSearchSectionJumpHint && nextSearchSectionLabel ? (
                       <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                        PgDn 下组
+                        PgDn {nextSearchSectionLabel}
                       </span>
                     ) : null}
                     {highlightedSearchPosition ? (
