@@ -12,6 +12,7 @@ import { ChevronRight, Clock3, CornerDownLeft, Search } from "lucide-react";
 import {
   getConversations,
   getFriends,
+  listOfficialAccounts,
   listCharacters,
 } from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
@@ -269,6 +270,12 @@ export function DesktopSearchDropdownPanel({
     enabled: shouldLoadSuggestions,
     staleTime: 30_000,
   });
+  const officialAccountsQuery = useQuery({
+    queryKey: ["app-official-accounts", baseUrl],
+    queryFn: () => listOfficialAccounts(baseUrl),
+    enabled: shouldLoadSuggestions,
+    staleTime: 30_000,
+  });
 
   const friendMatches = useMemo(() => {
     if (!normalizedKeyword) {
@@ -336,21 +343,120 @@ export function DesktopSearchDropdownPanel({
     () => conversationQuickLinks.slice(0, 4),
     [conversationQuickLinks],
   );
+  const officialQuickLinks = useMemo(() => {
+    return (officialAccountsQuery.data ?? []).flatMap((account) => {
+      const accountLink = {
+        id: `official-account-${account.id}`,
+        title: account.name,
+        description:
+          account.description ||
+          account.recentArticle?.summary ||
+          "打开公众号主页与最近文章。",
+        meta: `${account.accountType === "service" ? "服务号" : "订阅号"} · @${
+          account.handle
+        }`,
+        badge: account.accountType === "service" ? "服务号" : "订阅号",
+        to: `/official-accounts/${account.id}`,
+        avatarName: account.name,
+        avatarSrc: account.avatar,
+      } satisfies DesktopSearchQuickLink;
+
+      if (!account.recentArticle) {
+        return [accountLink];
+      }
+
+      return [
+        accountLink,
+        {
+          id: `official-article-${account.recentArticle.id}`,
+          title: account.recentArticle.title,
+          description:
+            account.recentArticle.summary || `来自 ${account.name} 的最近文章`,
+          meta: `公众号文章 · ${account.name}`,
+          badge: "公众号文章",
+          to: `/official-accounts/articles/${account.recentArticle.id}`,
+          avatarName: account.name,
+          avatarSrc: account.avatar,
+        } satisfies DesktopSearchQuickLink,
+      ];
+    });
+  }, [officialAccountsQuery.data]);
+  const officialMatches = useMemo(() => {
+    if (!normalizedKeyword) {
+      return [] as DesktopSearchQuickLink[];
+    }
+
+    return officialQuickLinks
+      .filter((item) =>
+        [item.title, item.description, item.meta, item.badge]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedKeyword),
+      )
+      .slice(0, 4);
+  }, [normalizedKeyword, officialQuickLinks]);
+  const recentOfficials = useMemo(() => {
+    return (officialAccountsQuery.data ?? [])
+      .slice()
+      .sort((left, right) => {
+        const rightTime = Date.parse(
+          right.recentArticle?.publishedAt ?? right.lastPublishedAt ?? "",
+        );
+        const leftTime = Date.parse(
+          left.recentArticle?.publishedAt ?? left.lastPublishedAt ?? "",
+        );
+
+        return (Number.isNaN(rightTime) ? 0 : rightTime) -
+          (Number.isNaN(leftTime) ? 0 : leftTime);
+      })
+      .slice(0, 4)
+      .map((account) =>
+        account.recentArticle
+          ? ({
+              id: `recent-official-article-${account.recentArticle.id}`,
+              title: account.recentArticle.title,
+              description:
+                account.recentArticle.summary ||
+                `继续阅读 ${account.name} 的最近文章`,
+              meta: `公众号文章 · ${account.name}`,
+              badge: "公众号文章",
+              to: `/official-accounts/articles/${account.recentArticle.id}`,
+              avatarName: account.name,
+              avatarSrc: account.avatar,
+            } satisfies DesktopSearchQuickLink)
+          : ({
+              id: `recent-official-account-${account.id}`,
+              title: account.name,
+              description: account.description || "打开公众号主页",
+              meta: `${account.accountType === "service" ? "服务号" : "订阅号"} · @${
+                account.handle
+              }`,
+              badge: account.accountType === "service" ? "服务号" : "订阅号",
+              to: `/official-accounts/${account.id}`,
+              avatarName: account.name,
+              avatarSrc: account.avatar,
+            } satisfies DesktopSearchQuickLink),
+      );
+  }, [officialAccountsQuery.data]);
 
   const suggestionsLoading =
     shouldLoadSuggestions &&
     (friendsQuery.isLoading ||
       charactersQuery.isLoading ||
-      conversationsQuery.isLoading);
+      conversationsQuery.isLoading ||
+      officialAccountsQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
     (friendsQuery.error instanceof Error ||
       charactersQuery.error instanceof Error ||
-      conversationsQuery.error instanceof Error);
+      conversationsQuery.error instanceof Error ||
+      officialAccountsQuery.error instanceof Error);
   const hasSuggestionResults =
     conversationMatches.length > 0 ||
     friendMatches.length > 0 ||
     worldCharacterMatches.length > 0 ||
+    officialMatches.length > 0 ||
     favoriteMatches.length > 0 ||
     miniProgramMatches.length > 0;
   const [activeActionId, setActiveActionId] =
@@ -377,6 +483,13 @@ export function DesktopSearchDropdownPanel({
 
     if (trimmedKeyword) {
       conversationMatches.forEach((item) => {
+        items.push({
+          id: item.id,
+          onSelect: () => handleOpenQuickLink(item),
+        });
+      });
+
+      officialMatches.forEach((item) => {
         items.push({
           id: item.id,
           onSelect: () => handleOpenQuickLink(item),
@@ -430,6 +543,13 @@ export function DesktopSearchDropdownPanel({
         });
       });
 
+      recentOfficials.forEach((item) => {
+        items.push({
+          id: item.id,
+          onSelect: () => handleOpenQuickLink(item),
+        });
+      });
+
       recentMiniPrograms.forEach((item) => {
         items.push({
           id: item.id,
@@ -464,8 +584,10 @@ export function DesktopSearchDropdownPanel({
     navigate,
     onClose,
     onOpenSearch,
+    officialMatches,
     recentConversations,
     recentFavorites,
+    recentOfficials,
     recentMiniPrograms,
     trimmedKeyword,
     worldCharacterMatches,
@@ -608,13 +730,13 @@ export function DesktopSearchDropdownPanel({
         <SearchLauncherSection title="搜索建议" className="mt-3">
           {suggestionsLoading ? (
             <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-              正在整理聊天、联系人、收藏和小程序结果...
+              正在整理聊天、联系人、公众号、收藏和小程序结果...
             </div>
           ) : null}
 
           {suggestionsError ? (
             <div className="rounded-[12px] bg-[rgba(225,29,72,0.08)] px-3 py-3 text-xs leading-6 text-[#be123c]">
-              联系人目录暂时读取失败，请先试试搜一搜。
+              搜索建议暂时读取失败，请先试试搜一搜。
             </div>
           ) : null}
 
@@ -633,6 +755,25 @@ export function DesktopSearchDropdownPanel({
                   </div>
                   <div className="mt-1.5 space-y-1.5">
                     {conversationMatches.map((item) => (
+                      <SearchLauncherQuickLinkRow
+                        key={item.id}
+                        active={activeActionId === item.id}
+                        item={item}
+                        onMouseEnter={() => setActiveActionId(item.id)}
+                        onClick={() => handleOpenQuickLink(item)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {officialMatches.length ? (
+                <div>
+                  <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                    公众号
+                  </div>
+                  <div className="mt-1.5 space-y-1.5">
+                    {officialMatches.map((item) => (
                       <SearchLauncherQuickLinkRow
                         key={item.id}
                         active={activeActionId === item.id}
@@ -759,7 +900,7 @@ export function DesktopSearchDropdownPanel({
               {!hasSuggestionResults ? (
                 <div className="rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3">
                   <div className="text-xs leading-6 text-[color:var(--text-muted)]">
-                    没有直接命中的聊天、联系人、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
+                    没有直接命中的聊天、联系人、公众号、收藏或小程序，可以继续用搜一搜，或去“添加朋友”里找。
                   </div>
                   <Button
                     type="button"
@@ -795,6 +936,25 @@ export function DesktopSearchDropdownPanel({
                 </div>
                 <div className="mt-1.5 space-y-1.5">
                   {recentConversations.map((item) => (
+                    <SearchLauncherQuickLinkRow
+                      key={item.id}
+                      active={activeActionId === item.id}
+                      item={item}
+                      onMouseEnter={() => setActiveActionId(item.id)}
+                      onClick={() => handleOpenQuickLink(item)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {recentOfficials.length ? (
+              <div>
+                <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
+                  最近公众号
+                </div>
+                <div className="mt-1.5 space-y-1.5">
+                  {recentOfficials.map((item) => (
                     <SearchLauncherQuickLinkRow
                       key={item.id}
                       active={activeActionId === item.id}
