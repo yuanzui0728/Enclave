@@ -572,9 +572,11 @@ export function StickerPanel({
   const activeTab = tabs.find((tab) => tab.id === activeSectionId) ?? tabs[0];
   const panelSubtitle =
     trimmedKeyword.length > 0
-      ? searchPending
-        ? `正在搜索“${trimmedKeyword}”`
-        : `搜索“${trimmedKeyword}”`
+      ? activeSectionId === "custom" && manageSearchPauseHintVisible
+        ? `搜索“${trimmedKeyword}” · 删除管理已暂停`
+        : searchPending
+          ? `正在搜索“${trimmedKeyword}”`
+          : `搜索“${trimmedKeyword}”`
       : activeSectionId === "custom" && customManageMode
         ? `管理自定义表情 · 已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`
         : activeSectionId === "custom" && customStickerLibraryFull
@@ -733,6 +735,10 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     searching &&
     manageSearchPauseHintVisible;
+  const showDesktopManageButton =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    (trimmedKeyword.length === 0 || showManageSearchPauseHint);
   const customManageKeyboardActive =
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
   const desktopCustomHeaderContext =
@@ -1456,12 +1462,15 @@ export function StickerPanel({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            {!isMobile &&
-            activeSectionId === "custom" &&
-            trimmedKeyword.length === 0 ? (
+            {showDesktopManageButton ? (
               <button
                 type="button"
                 onClick={() => {
+                  if (showManageSearchPauseHint) {
+                    clearSearchAndResumeManage();
+                    return;
+                  }
+
                   if (customManageMode) {
                     setCustomManageMode(false);
                     return;
@@ -1470,12 +1479,18 @@ export function StickerPanel({
                   openCustomManageMode();
                 }}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  customManageMode
-                    ? "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]"
-                    : "text-[color:var(--text-secondary)] hover:bg-white/80"
+                  showManageSearchPauseHint
+                    ? "bg-[rgba(160,90,10,0.14)] text-[#9a5a0a] hover:bg-[rgba(160,90,10,0.18)]"
+                    : customManageMode
+                      ? "bg-[rgba(15,23,42,0.08)] text-[color:var(--text-primary)]"
+                      : "text-[color:var(--text-secondary)] hover:bg-white/80"
                 }`}
               >
-                {customManageMode ? "完成" : "管理"}
+                {showManageSearchPauseHint
+                  ? "继续管理"
+                  : customManageMode
+                    ? "完成"
+                    : "管理"}
               </button>
             ) : null}
             <button
