@@ -41,6 +41,7 @@ import { GroupReplyTaskEntity } from './modules/chat/group-reply-task.entity';
 import { ChatCustomStickerEntity } from './modules/chat/custom-sticker.entity';
 import { FeedPostEntity } from './modules/feed/feed-post.entity';
 import { FeedCommentEntity } from './modules/feed/feed-comment.entity';
+import { VideoChannelFollowEntity } from './modules/feed/video-channel-follow.entity';
 import { WorldContextEntity } from './modules/world/world-context.entity';
 import { NarrativeArcEntity } from './modules/narrative/narrative-arc.entity';
 import { AIBehaviorLogEntity } from './modules/analytics/ai-behavior-log.entity';
@@ -72,7 +73,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
           SystemConfigEntity, MomentEntity, MomentPostEntity, MomentCommentEntity,
           MomentLikeEntity, FriendshipEntity, FriendRequestEntity, AIRelationshipEntity,
           GroupEntity, GroupMemberEntity, GroupMessageEntity, GroupReplyTaskEntity, ChatCustomStickerEntity,
-          FeedPostEntity, FeedCommentEntity, WorldContextEntity,
+          FeedPostEntity, FeedCommentEntity, VideoChannelFollowEntity, WorldContextEntity,
           NarrativeArcEntity, AIBehaviorLogEntity, UserFeedInteractionEntity,
           OfficialAccountEntity, OfficialAccountArticleEntity, OfficialAccountDeliveryEntity, OfficialAccountFollowEntity, OfficialAccountServiceMessageEntity,
           ModerationReportEntity,

@@ -23,6 +23,7 @@ import { MomentCommentEntity } from '../moments/moment-comment.entity';
 import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
+import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { AIBehaviorLogEntity } from '../analytics/ai-behavior-log.entity';
 import { ModerationReportEntity } from '../moderation/moderation-report.entity';
@@ -194,6 +195,7 @@ export class CharactersService {
       const momentLikeRepo = manager.getRepository(MomentLikeEntity);
       const feedPostRepo = manager.getRepository(FeedPostEntity);
       const feedCommentRepo = manager.getRepository(FeedCommentEntity);
+      const videoChannelFollowRepo = manager.getRepository(VideoChannelFollowEntity);
       const feedInteractionRepo = manager.getRepository(
         UserFeedInteractionEntity,
       );
@@ -260,6 +262,7 @@ export class CharactersService {
 
       await friendRequestRepo.delete({ characterId: id });
       await friendshipRepo.delete({ characterId: id });
+      await videoChannelFollowRepo.delete({ authorId: id, authorType: 'character' });
       await narrativeArcRepo.delete({ characterId: id });
       await aiBehaviorLogRepo.delete({ characterId: id });
       await moderationReportRepo.delete({ targetType: 'character', targetId: id });

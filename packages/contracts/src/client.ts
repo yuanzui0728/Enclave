@@ -49,10 +49,15 @@ import type {
   CreateFeedCommentRequest,
   FeedComment,
   CreateFeedPostRequest,
+  FeedChannelAuthorProfile,
+  FeedChannelHomeResponse,
+  FeedChannelHomeSection,
   FeedListResponse,
   FeedPost,
   FeedPostWithComments,
+  FeedShareRequest,
   FeedSurface,
+  FeedViewRequest,
 } from "./feed";
 import type {
   CreateMessageFavoriteRequest,
@@ -2210,6 +2215,41 @@ export function getFeedPost(id: string, baseUrl?: string) {
   );
 }
 
+export function getChannelHome(
+  baseUrl?: string,
+  options?: {
+    section?: FeedChannelHomeSection;
+    page?: number;
+    limit?: number;
+  },
+) {
+  const params = new URLSearchParams();
+
+  if (options?.section) {
+    params.set("section", options.section);
+  }
+  if (typeof options?.page === "number") {
+    params.set("page", String(options.page));
+  }
+  if (typeof options?.limit === "number") {
+    params.set("limit", String(options.limit));
+  }
+
+  return requestLegacyApi<FeedChannelHomeResponse>(
+    `/feed/channels/home${params.size ? `?${params.toString()}` : ""}`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function getChannelAuthorProfile(authorId: string, baseUrl?: string) {
+  return requestLegacyApi<FeedChannelAuthorProfile>(
+    `/feed/channels/authors/${authorId}`,
+    undefined,
+    baseUrl,
+  );
+}
+
 export function createFeedPost(
   payload: CreateFeedPostRequest,
   baseUrl?: string,
@@ -2239,9 +2279,122 @@ export function addFeedComment(
   );
 }
 
+export function listFeedComments(id: string, baseUrl?: string) {
+  return requestLegacyApi<FeedComment[]>(
+    `/feed/${id}/comments`,
+    undefined,
+    baseUrl,
+  );
+}
+
+export function replyFeedComment(
+  id: string,
+  payload: CreateFeedCommentRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<FeedComment>(
+    `/feed/comments/${id}/reply`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+    baseUrl,
+  );
+}
+
 export function likeFeedPost(id: string, baseUrl?: string) {
   return requestLegacyApi<void>(
     `/feed/${id}/like`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function favoriteFeedPost(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/favorite`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function unfavoriteFeedPost(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/favorite`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function shareFeedPost(
+  id: string,
+  payload?: FeedShareRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/share`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    },
+    baseUrl,
+  );
+}
+
+export function viewFeedPost(
+  id: string,
+  payload?: FeedViewRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/view`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    },
+    baseUrl,
+  );
+}
+
+export function markFeedPostNotInterested(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/${id}/not-interested`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function followChannelAuthor(authorId: string, baseUrl?: string) {
+  return requestLegacyApi<FeedChannelAuthorProfile>(
+    `/feed/channels/authors/${authorId}/follow`,
+    {
+      method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function unfollowChannelAuthor(authorId: string, baseUrl?: string) {
+  return requestLegacyApi<FeedChannelAuthorProfile>(
+    `/feed/channels/authors/${authorId}/follow`,
+    {
+      method: "DELETE",
+    },
+    baseUrl,
+  );
+}
+
+export function likeFeedComment(id: string, baseUrl?: string) {
+  return requestLegacyApi<void>(
+    `/feed/comments/${id}/like`,
     {
       method: "POST",
     },

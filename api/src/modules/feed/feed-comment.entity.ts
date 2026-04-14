@@ -23,6 +23,21 @@ export class FeedCommentEntity {
   @Column('text')
   text: string;
 
+  @Column({ type: 'text', nullable: true })
+  parentCommentId?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  replyToCommentId?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  replyToAuthorId?: string | null;
+
+  @Column({ default: 0 })
+  likeCount: number;
+
+  @Column({ default: 'published' })
+  status: string; // 'published' | 'hidden' | 'deleted'
+
   @CreateDateColumn()
   createdAt: Date;
 }
