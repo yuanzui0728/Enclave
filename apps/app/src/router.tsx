@@ -38,6 +38,16 @@ const FriendMomentsPage = lazy(async () => {
   return { default: mod.FriendMomentsPage };
 });
 
+const MobileFriendMomentsPage = lazy(async () => {
+  const mod = await import("./routes/mobile-friend-moments-page");
+  return { default: mod.MobileFriendMomentsPage };
+});
+
+const LegacyFriendMomentsRedirectPage = lazy(async () => {
+  const mod = await import("./routes/legacy-friend-moments-redirect-page");
+  return { default: mod.LegacyFriendMomentsRedirectPage };
+});
+
 const FeedPage = lazy(async () => {
   const mod = await import("./routes/feed-page");
   return { default: mod.FeedPage };
@@ -390,18 +400,14 @@ const momentsRoute = createRoute({
 const friendMomentsRoute = createRoute({
   getParentRoute: () => tabsRoute,
   path: "/moments/friend/$characterId",
-  beforeLoad: ({ location, params }) => {
-    const normalizedHash = location.hash.startsWith("#")
-      ? location.hash.slice(1)
-      : location.hash;
+  component: LegacyFriendMomentsRedirectPage,
+});
 
-    throw redirect({
-      to: "/desktop/friend-moments/$characterId",
-      params: { characterId: params.characterId },
-      ...(normalizedHash ? { hash: normalizedHash } : {}),
-      replace: true,
-    });
-  },
+const mobileFriendMomentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/friend-moments/$characterId",
+  beforeLoad: requireWorldReady,
+  component: MobileFriendMomentsPage,
 });
 
 const desktopFriendMomentsRoute = createRoute({
@@ -878,6 +884,7 @@ const routeTree = rootRoute.addChildren([
   discoverMiniProgramsRoute,
   profileSettingsRoute,
   desktopMobileRoute,
+  mobileFriendMomentsRoute,
   desktopFriendMomentsRoute,
   desktopChatFilesRoute,
   desktopChatHistoryRoute,
