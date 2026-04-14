@@ -35,6 +35,7 @@ import {
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
+import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
 const ACTIVITY_OPTIONS = [
   { value: "", label: "未设置" },
@@ -126,9 +127,11 @@ export function CharacterRuntimePage() {
 
   return (
     <div className="space-y-6">
+      <CharacterWorkspaceNav characterId={characterId} />
+
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <AdminPageHero
-          eyebrow="角色运行逻辑台"
+          eyebrow="角色运行台"
           title={snapshot.character.name}
           description="聚焦查看并调整这个角色当前的回复链路、生活状态、记忆摘要与叙事进度。"
           actions={
