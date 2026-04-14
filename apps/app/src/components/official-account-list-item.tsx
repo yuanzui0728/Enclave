@@ -25,12 +25,12 @@ export function OfficialAccountListItem({
         compact
           ? "gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
-            ? "gap-2.5 border-b border-[color:var(--border-faint)] bg-white px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
-            : "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3.5 hover:bg-[color:var(--surface-console)]",
+            ? "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3 hover:bg-[rgba(247,250,250,0.92)]"
+            : "gap-3 border-b border-[color:var(--border-faint)] bg-white px-4 py-3.5 hover:bg-[rgba(247,250,250,0.92)]",
         active
           ? compact
             ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)]"
-            : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]"
+            : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.06)]"
           : undefined,
       )}
     >
@@ -41,7 +41,7 @@ export function OfficialAccountListItem({
           <div
             className={cn(
               "truncate font-medium text-[color:var(--text-primary)]",
-              dense ? "text-[13px]" : "text-[15px]",
+              dense ? "text-[14px]" : "text-[15px]",
             )}
           >
             {account.name}
@@ -56,7 +56,7 @@ export function OfficialAccountListItem({
         <div
           className={cn(
             "flex items-center gap-1.5 text-[color:var(--text-muted)]",
-            dense ? "mt-0.5 text-[9px]" : "mt-1 text-[11px]",
+            dense ? "mt-0.5 text-[11px]" : "mt-1 text-[11px]",
           )}
         >
           <Radio size={dense ? 10 : 12} className="shrink-0" />
@@ -65,14 +65,18 @@ export function OfficialAccountListItem({
             <span
               className={cn(
                 "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]",
-                dense ? "px-1.5 py-0.5 text-[8px]" : "px-1.5 py-0.5 text-[10px]",
+                dense ? "px-1.5 py-0.5 text-[9px]" : "px-1.5 py-0.5 text-[10px]",
               )}
             >
               已关注
             </span>
           ) : null}
         </div>
-        {dense ? null : (
+        {dense ? (
+          <div className="mt-1 truncate text-[11px] text-[color:var(--text-dim)]">
+            @{account.handle}
+          </div>
+        ) : (
           <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
             {account.description}
           </div>

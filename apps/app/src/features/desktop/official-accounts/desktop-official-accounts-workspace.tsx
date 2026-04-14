@@ -358,12 +358,6 @@ export function DesktopOfficialAccountsWorkspace({
   const feedUnreadCount = filteredFeedItems.filter(
     (item) => item.unread,
   ).length;
-  const nextDisplayMode: DesktopOfficialDisplayMode =
-    displayMode === "feed" ? "accounts" : "feed";
-  const nextDisplayModeLabel =
-    nextDisplayMode === "feed" ? "常看与文章" : "按号查看";
-  const NextDisplayModeIcon =
-    nextDisplayMode === "feed" ? BookOpenText : MessageSquareText;
 
   const followMutation = useMutation({
     mutationFn: () => {
@@ -495,41 +489,61 @@ export function DesktopOfficialAccountsWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
-      <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] px-5 py-4 backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-4">
+      <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-5 py-3.5 backdrop-blur-xl">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
               公众号
             </div>
-            <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[11px] leading-5 text-[color:var(--text-muted)]">
               已关注 {followingCount} · 订阅 {subscriptionCount} · 服务{" "}
               {serviceCount}
               {displayMode === "feed" ? ` · 未读 ${feedUnreadCount}` : ""}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-full border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] p-1">
             <Button
               type="button"
-              variant="secondary"
+              variant="ghost"
               size="sm"
-              onClick={() => handleDisplayModeChange(nextDisplayMode)}
-              className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+              onClick={() => handleDisplayModeChange("feed")}
+              className={cn(
+                "h-8 rounded-full px-3 text-[12px] shadow-none",
+                displayMode === "feed"
+                  ? "bg-white text-[color:var(--text-primary)]"
+                  : "text-[color:var(--text-secondary)] hover:bg-white/80",
+              )}
             >
-              <NextDisplayModeIcon size={14} />
-              {nextDisplayModeLabel}
+              <BookOpenText size={14} />
+              常看与文章
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDisplayModeChange("accounts")}
+              className={cn(
+                "h-8 rounded-full px-3 text-[12px] shadow-none",
+                displayMode === "accounts"
+                  ? "bg-white text-[color:var(--text-primary)]"
+                  : "text-[color:var(--text-secondary)] hover:bg-white/80",
+              )}
+            >
+              <MessageSquareText size={14} />
+              按号查看
             </Button>
           </div>
         </div>
 
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-3 flex items-center gap-3">
           <TextField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder={
               displayMode === "feed" ? "搜索常看公众号或文章" : "搜索公众号"
             }
-            className="rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+            className="rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:translate-y-0 focus:border-[rgba(7,193,96,0.14)] focus:bg-white focus:shadow-none"
           />
           {displayMode === "accounts" ? (
             <div className="flex gap-2">
@@ -592,16 +606,34 @@ export function DesktopOfficialAccountsWorkspace({
         />
       ) : (
         <div className="flex min-h-0 flex-1 bg-[color:var(--bg-app)]">
-          <section className="flex w-[300px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
-            <div className="min-h-0 flex-1 overflow-auto px-2 py-2.5">
+          <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
+            <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
+              <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                {accountFilter === "following" ? "已关注公众号" : "全部公众号"}
+              </div>
+              <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
+                {filteredAccounts.length} 个结果
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-auto">
               {accountsQuery.isLoading ? (
-                <LoadingBlock label="正在读取公众号..." />
+                <OfficialWorkspaceStatusPane
+                  title="正在读取公众号"
+                  description="稍等一下，正在同步账号目录。"
+                  tone="loading"
+                  className="m-4"
+                />
               ) : null}
               {accountsQuery.isError && accountsQuery.error instanceof Error ? (
-                <ErrorBlock message={accountsQuery.error.message} />
+                <OfficialWorkspaceStatusPane
+                  title="公众号目录暂时不可用"
+                  description={accountsQuery.error.message}
+                  tone="danger"
+                  className="m-4"
+                />
               ) : null}
 
-              <div className="overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white">
+              <div className="bg-white">
                 {filteredAccounts.map((entry) => (
                   <OfficialAccountListItem
                     key={entry.id}
@@ -614,35 +646,48 @@ export function DesktopOfficialAccountsWorkspace({
               </div>
 
               {!accountsQuery.isLoading && !filteredAccounts.length ? (
-                <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
-                  <EmptyState
-                    title="没有匹配的公众号"
-                    description={
-                      accountFilter === "following"
-                        ? "当前筛选下还没有已关注账号。"
-                        : "换个关键词试试。"
-                    }
-                  />
-                </div>
+                <OfficialWorkspaceStatusPane
+                  title="没有匹配的公众号"
+                  description={
+                    accountFilter === "following"
+                      ? "当前筛选下还没有已关注账号。"
+                      : "换个关键词试试。"
+                  }
+                  className="m-4"
+                />
               ) : null}
             </div>
           </section>
 
-          <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] p-5">
+          <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-white">
             {accountDetailQuery.isLoading ? (
-              <LoadingBlock label="正在读取公众号主页..." />
+              <OfficialWorkspaceStatusPane
+                title="正在读取公众号主页"
+                description="稍等一下，正在同步账号资料和最近文章。"
+                tone="loading"
+                className="mx-auto mt-5 max-w-[820px]"
+              />
             ) : null}
             {accountDetailQuery.isError &&
             accountDetailQuery.error instanceof Error ? (
-              <ErrorBlock message={accountDetailQuery.error.message} />
+              <OfficialWorkspaceStatusPane
+                title="公众号主页暂时不可用"
+                description={accountDetailQuery.error.message}
+                tone="danger"
+                className="mx-auto mt-5 max-w-[820px]"
+              />
             ) : null}
             {followMutation.isError && followMutation.error instanceof Error ? (
-              <ErrorBlock message={followMutation.error.message} />
+              <OfficialWorkspaceInlineNotice
+                message={followMutation.error.message}
+                tone="danger"
+                className="mx-auto mt-5 max-w-[820px]"
+              />
             ) : null}
 
             {account ? (
-              <div className="mx-auto max-w-[920px]">
-                <section className="rounded-[26px] border border-[color:var(--border-faint)] bg-white px-6 py-6 shadow-[var(--shadow-section)]">
+              <div className="mx-auto max-w-[820px]">
+                <section className="border-b border-[color:var(--border-faint)] px-7 py-7">
                   <div className="flex items-start gap-4">
                     <AvatarChip
                       name={account.name}
@@ -650,36 +695,36 @@ export function DesktopOfficialAccountsWorkspace({
                       size="lg"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[24px] font-semibold text-[color:var(--text-primary)]">
+                      <div className="text-[22px] font-semibold text-[color:var(--text-primary)]">
                         {account.name}
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[color:var(--brand-primary)]">
+                      <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
+                        <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]">
                           {account.accountType === "service"
                             ? "服务号"
                             : "订阅号"}
                         </span>
-                        <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[color:var(--text-muted)]">
+                        <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[color:var(--text-muted)]">
                           @{account.handle}
                         </span>
                         {account.isVerified ? (
-                          <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-3 py-1 text-[#315b9a]">
+                          <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2.5 py-1 text-[#315b9a]">
                             已认证
                           </span>
                         ) : null}
                         {account.isFollowing ? (
-                          <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
+                          <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[color:var(--text-secondary)]">
                             已关注
                           </span>
                         ) : null}
                         {account.accountType === "service" &&
                         account.isMuted ? (
-                          <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
+                          <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[color:var(--text-secondary)]">
                             已免打扰
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                      <div className="mt-3 max-w-[40rem] text-[14px] leading-7 text-[color:var(--text-secondary)]">
                         {account.description}
                       </div>
                     </div>
@@ -748,8 +793,8 @@ export function DesktopOfficialAccountsWorkspace({
                   </div>
                 </section>
 
-                <div className="mt-4 rounded-[22px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
-                  <div className="border-b border-[color:var(--border-faint)] px-5 py-3">
+                <div className="bg-white">
+                  <div className="border-b border-[color:var(--border-faint)] px-7 py-3">
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -776,7 +821,7 @@ export function DesktopOfficialAccountsWorkspace({
                     </div>
                   </div>
 
-                  <div className="bg-[rgba(247,250,250,0.72)] px-4 py-4">
+                  <div className="bg-white px-7 py-5">
                     {detailTab === "updates" ? (
                       <div className="space-y-4">
                         <DesktopOfficialEntryCard
@@ -813,7 +858,7 @@ export function DesktopOfficialAccountsWorkspace({
                           }}
                         />
 
-                        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+                        <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white">
                           <div className="border-b border-[color:var(--border-faint)] px-4 py-3 text-sm font-medium text-[color:var(--text-primary)]">
                             最近文章
                           </div>
@@ -891,7 +936,7 @@ export function DesktopOfficialAccountsWorkspace({
                           label="文章数量"
                           value={`${account.articles.length} 篇`}
                         />
-                        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] p-4">
                           <div className="text-sm font-medium text-[color:var(--text-primary)]">
                             账号简介
                           </div>
@@ -905,12 +950,11 @@ export function DesktopOfficialAccountsWorkspace({
                 </div>
               </div>
             ) : !accountDetailQuery.isLoading ? (
-              <div className="mx-auto max-w-[560px] py-10">
-                <EmptyState
-                  title="还没有可浏览的公众号"
-                  description="先从左侧选择一个公众号，或切回常看与文章模式查看精选流。"
-                />
-              </div>
+              <OfficialWorkspaceStatusPane
+                title="还没有可浏览的公众号"
+                description="先从左侧选择一个公众号，或切回常看与文章模式查看精选流。"
+                className="mx-auto mt-5 max-w-[560px]"
+              />
             ) : null}
           </section>
         </div>
@@ -1126,7 +1170,7 @@ function DesktopOfficialEntryCard({
   onAction: () => void;
 }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] p-4">
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
@@ -1155,12 +1199,74 @@ function DesktopOfficialProfileRow({
   value: string;
 }) {
   return (
-    <section className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)]">
+    <section className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] px-4 py-3">
       <div className="text-sm text-[color:var(--text-muted)]">{label}</div>
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {value}
       </div>
     </section>
+  );
+}
+
+function OfficialWorkspaceStatusPane({
+  title,
+  description,
+  tone = "default",
+  className,
+}: {
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.98),rgba(254,242,242,0.95))]"
+          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+        className,
+      )}
+    >
+      {tone === "loading" ? (
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div className={cn("font-medium text-[color:var(--text-primary)]", tone === "loading" ? "mt-3" : undefined)}>
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[26rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </section>
+  );
+}
+
+function OfficialWorkspaceInlineNotice({
+  message,
+  tone = "default",
+  className,
+}: {
+  message: string;
+  tone?: "default" | "danger";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[14px] border px-3 py-2 text-[12px] leading-6 shadow-none",
+        tone === "danger"
+          ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+        className,
+      )}
+    >
+      {message}
+    </div>
   );
 }
 
