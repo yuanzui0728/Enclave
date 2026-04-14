@@ -32,10 +32,14 @@ export function SearchPage() {
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseSearchRouteState(hash);
   const [searchText, setSearchText] = useState(routeState.keyword);
+  const [committedSearchText, setCommittedSearchText] = useState(
+    routeState.keyword,
+  );
   const [activeCategory, setActiveCategory] = useState<SearchCategory>(
     routeState.category,
   );
   const [history, setHistory] = useState(() => loadSearchHistory());
+  const effectiveSearchText = isDesktopLayout ? committedSearchText : searchText;
   const {
     error,
     filteredResults,
@@ -49,16 +53,18 @@ export function SearchPage() {
     recentMiniPrograms,
     scopeCounts,
     searchingMessages,
-  } = useSearchIndex(searchText, activeCategory, isDesktopLayout);
+  } = useSearchIndex(effectiveSearchText, activeCategory, isDesktopLayout);
 
   useEffect(() => {
-    if (searchText !== routeState.keyword) {
-      setSearchText(routeState.keyword);
+    setSearchText(routeState.keyword);
+    if (isDesktopLayout) {
+      setCommittedSearchText(routeState.keyword);
     }
-    if (activeCategory !== routeState.category) {
-      setActiveCategory(routeState.category);
-    }
-  }, [activeCategory, routeState.category, routeState.keyword, searchText]);
+  }, [isDesktopLayout, routeState.keyword]);
+
+  useEffect(() => {
+    setActiveCategory(routeState.category);
+  }, [routeState.category]);
 
   useEffect(() => {
     if (pathname !== "/tabs/search") {
@@ -67,7 +73,7 @@ export function SearchPage() {
 
     const nextHash = buildSearchRouteHash({
       category: activeCategory,
-      keyword: searchText,
+      keyword: effectiveSearchText,
       source: routeState.source,
     });
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -81,7 +87,14 @@ export function SearchPage() {
       hash: nextHash,
       replace: true,
     });
-  }, [activeCategory, hash, navigate, pathname, routeState.source, searchText]);
+  }, [
+    activeCategory,
+    effectiveSearchText,
+    hash,
+    navigate,
+    pathname,
+    routeState.source,
+  ]);
 
   useEffect(() => {
     if (!isDesktopLayout || !nativeDesktopSearchHistory) {
@@ -129,11 +142,23 @@ export function SearchPage() {
   }, [isDesktopLayout, nativeDesktopSearchHistory]);
 
   function handleCommitSearch(keyword: string) {
-    setHistory(pushSearchHistory(keyword));
+    const normalizedKeyword = keyword.trim();
+    setSearchText(normalizedKeyword);
+
+    if (isDesktopLayout) {
+      setCommittedSearchText(normalizedKeyword);
+    }
+
+    if (normalizedKeyword) {
+      setHistory(pushSearchHistory(normalizedKeyword));
+    }
   }
 
   function handleApplyHistory(keyword: string) {
     setSearchText(keyword);
+    if (isDesktopLayout) {
+      setCommittedSearchText(keyword);
+    }
     setHistory(pushSearchHistory(keyword));
   }
 
@@ -146,7 +171,7 @@ export function SearchPage() {
   }
 
   function handleOpenResult(item: SearchResultItem) {
-    handleCommitSearch(searchText);
+    handleCommitSearch(effectiveSearchText);
     void navigate({
       to: item.to as never,
       search: item.search as never,
@@ -186,8 +211,12 @@ export function SearchPage() {
         officialAccountGroups={officialAccountGroups}
         onApplyHistory={handleApplyHistory}
         onClearHistory={handleClearHistory}
-        onClearKeyword={() => setSearchText("")}
+        onClearKeyword={() => {
+          setSearchText("");
+          setCommittedSearchText("");
+        }}
         onCommitSearch={handleCommitSearch}
+        committedSearchText={committedSearchText}
         onOpenQuickLink={handleOpenQuickLink}
         onOpenResult={handleOpenResult}
         onRemoveHistory={handleRemoveHistory}
