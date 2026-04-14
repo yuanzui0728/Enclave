@@ -7,6 +7,7 @@ import { AdminService } from './admin.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharacterBlueprintService } from '../characters/character-blueprint.service';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
+import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -15,6 +16,7 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly replyLogicAdminService: ReplyLogicAdminService,
     private readonly characterBlueprintService: CharacterBlueprintService,
+    private readonly ai: AiOrchestratorService,
   ) {}
 
   @Get('stats')
@@ -55,6 +57,11 @@ export class AdminController {
   @Post('characters/presets/install-batch')
   installCharacterPresetBatch(@Body() body: { presetKeys?: string[] | null }) {
     return this.adminService.installCharacterPresetBatch(body.presetKeys ?? []);
+  }
+
+  @Post('characters/generate-quick')
+  async generateQuickCharacter(@Body() body: { description: string }) {
+    return this.ai.generateQuickCharacter(body.description?.trim() ?? '');
   }
 
   @Post('characters')

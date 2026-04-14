@@ -24,6 +24,7 @@ import {
   AdminActionFeedback,
   AdminInfoRows,
   AdminPageHero,
+  AdminSectionHeader,
   AdminSectionNav,
   AdminSelectField as SelectField,
   AdminTextArea as TextAreaField,
@@ -32,6 +33,7 @@ import {
 } from "../components/admin-workbench";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
+import { adminApi } from "../lib/admin-api";
 
 const emptyCharacterDraft: CharacterDraft = {
   name: "",
@@ -171,6 +173,48 @@ export function CharacterEditorPage() {
     resetSaveMutation();
   }, [baseUrl, characterId, resetSaveMutation]);
 
+  const [aiDescription, setAiDescription] = useState("");
+
+  const aiGenerateMutation = useMutation({
+    mutationFn: () => adminApi.generateQuickCharacter(aiDescription.trim()),
+    onSuccess: (raw) => {
+      const str = (v: unknown) => (typeof v === "string" ? v : "");
+      const strList = (v: unknown) =>
+        Array.isArray(v) ? v.map((x) => String(x)).filter(Boolean) : [];
+
+      setDraft((current) => ({
+        ...current,
+        name: str(raw.name) || current.name,
+        avatar: str(raw.avatar) || current.avatar,
+        relationship: str(raw.relationship) || current.relationship,
+        relationshipType: (str(raw.relationshipType) as Character["relationshipType"]) || current.relationshipType,
+        bio: str(raw.bio) || current.bio,
+        expertDomains: strList(raw.expertDomains).length ? strList(raw.expertDomains) : (current.expertDomains ?? []),
+        profile: {
+          ...(current.profile ?? emptyCharacterDraft.profile!),
+          basePrompt: str(raw.basePrompt) || current.profile?.basePrompt,
+          memorySummary: str(raw.memorySummary) || current.profile?.memorySummary ?? "",
+          traits: {
+            ...(current.profile?.traits ?? emptyCharacterDraft.profile!.traits),
+            speechPatterns: strList(raw.speechPatterns).length ? strList(raw.speechPatterns) : (current.profile?.traits.speechPatterns ?? []),
+            catchphrases: strList(raw.catchphrases).length ? strList(raw.catchphrases) : (current.profile?.traits.catchphrases ?? []),
+            topicsOfInterest: strList(raw.topicsOfInterest).length ? strList(raw.topicsOfInterest) : (current.profile?.traits.topicsOfInterest ?? []),
+            emotionalTone: str(raw.emotionalTone) || current.profile?.traits.emotionalTone || "grounded",
+            responseLength: (str(raw.responseLength) as "short" | "medium" | "long") || current.profile?.traits.responseLength || "medium",
+            emojiUsage: (str(raw.emojiUsage) as "none" | "occasional" | "frequent") || current.profile?.traits.emojiUsage || "occasional",
+          },
+          identity: {
+            ...(current.profile?.identity ?? emptyCharacterDraft.profile!.identity!),
+            occupation: str(raw.occupation) || current.profile?.identity?.occupation || "",
+            background: str(raw.background) || current.profile?.identity?.background || "",
+            motivation: str(raw.motivation) || current.profile?.identity?.motivation || "",
+            worldview: str(raw.worldview) || current.profile?.identity?.worldview || "",
+          },
+        },
+      }));
+    },
+  });
+
   const profile = draft.profile ?? emptyCharacterDraft.profile!;
   const canSave = Boolean(draft.name?.trim() && draft.relationship?.trim());
 
@@ -244,6 +288,46 @@ export function CharacterEditorPage() {
           title="角色已保存"
           description="正在返回角色名册..."
         />
+      ) : null}
+
+      {isNew ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <AdminSectionHeader
+            title="AI 快速生成"
+            actions={
+              <StatusPill tone={aiGenerateMutation.isSuccess ? "healthy" : "muted"}>
+                {aiGenerateMutation.isSuccess ? "已填入" : "一键生成"}
+              </StatusPill>
+            }
+          />
+          <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
+            输入对角色的简短描述，AI 会自动生成姓名、简介、人格特征、职业背景等字段并填入表单，你可以在下方继续微调。
+          </p>
+          <div className="mt-4 flex flex-col gap-3">
+            <textarea
+              className="w-full rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3 text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--accent-primary)] resize-none min-h-[80px]"
+              placeholder="例如：一个温柔开朗的心理咨询师，喜欢音乐和烹饪，说话温和有亲和力"
+              value={aiDescription}
+              onChange={(e) => setAiDescription(e.target.value)}
+            />
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                disabled={!aiDescription.trim() || aiGenerateMutation.isPending}
+                onClick={() => aiGenerateMutation.mutate()}
+              >
+                {aiGenerateMutation.isPending ? "生成中..." : "AI 生成角色"}
+              </Button>
+              {aiGenerateMutation.isSuccess ? (
+                <span className="text-sm text-[color:var(--text-success)]">已生成并填入，请在下方检查和微调</span>
+              ) : null}
+            </div>
+          </div>
+          {aiGenerateMutation.isError && aiGenerateMutation.error instanceof Error ? (
+            <ErrorBlock className="mt-3" message={aiGenerateMutation.error.message} />
+          ) : null}
+        </Card>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
