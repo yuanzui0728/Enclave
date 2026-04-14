@@ -44,6 +44,7 @@ export function SearchPage() {
     loading,
     matchedCounts,
     messageGroups,
+    officialAccountGroups,
     recentFavorites,
     recentMiniPrograms,
     scopeCounts,
@@ -182,6 +183,7 @@ export function SearchPage() {
         loading={loading}
         matchedCounts={matchedCounts}
         messageGroups={messageGroups}
+        officialAccountGroups={officialAccountGroups}
         onApplyHistory={handleApplyHistory}
         onClearHistory={handleClearHistory}
         onClearKeyword={() => setSearchText("")}
