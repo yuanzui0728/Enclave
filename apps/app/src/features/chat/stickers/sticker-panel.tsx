@@ -598,6 +598,10 @@ export function StickerPanel({
   const firstSearchResultKey = firstSearchResultItem
     ? getStickerIdentity(firstSearchResultItem.sticker)
     : null;
+  const lastSearchResultItem =
+    searching && !searchPending
+      ? (activeItems[activeItems.length - 1] ?? null)
+      : null;
   const highlightedSearchSectionIndex = highlightedSearchSection
     ? searchSectionNavigation.findIndex(
         (section) => section.id === highlightedSearchSection.id,
@@ -1644,14 +1648,24 @@ export function StickerPanel({
                     ) : null}
                     {highlightedSearchPosition &&
                     highlightedSearchPosition > 1 ? (
-                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                        Home 回默认
+                      <span className="inline-flex max-w-[140px] items-center rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        <span className="truncate">
+                          Home{" "}
+                          {firstSearchResultItem?.sticker.label ??
+                            firstSearchResultItem?.sticker.stickerId ??
+                            "回默认"}
+                        </span>
                       </span>
                     ) : null}
                     {highlightedSearchPosition &&
                     highlightedSearchPosition < activeItems.length ? (
-                      <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                        End 末项
+                      <span className="inline-flex max-w-[140px] items-center rounded-full bg-white/88 px-2 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                        <span className="truncate">
+                          End{" "}
+                          {lastSearchResultItem?.sticker.label ??
+                            lastSearchResultItem?.sticker.stickerId ??
+                            "末项"}
+                        </span>
                       </span>
                     ) : null}
                     {showSearchSectionJumpHint && previousSearchSectionLabel ? (
