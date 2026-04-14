@@ -24,13 +24,17 @@ import {
   getFriends,
   listOfficialAccounts,
   listCharacters,
+  searchConversationMessages,
+  searchGroupMessages,
 } from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../components/avatar-chip";
 import { getConversationPreviewParts } from "../../lib/conversation-preview";
+import { formatMessageTimestamp } from "../../lib/format";
 import {
   getConversationThreadLabel,
   getConversationThreadPath,
+  isPersistedGroupConversation,
 } from "../../lib/conversation-route";
 import {
   createFriendDirectoryItems,
@@ -41,7 +45,10 @@ import {
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../contacts/contact-utils";
-import { useLocalChatMessageActionState } from "../chat/local-chat-message-actions";
+import {
+  shouldHideSearchableChatMessage,
+  useLocalChatMessageActionState,
+} from "../chat/local-chat-message-actions";
 import { useSpeechInput } from "../chat/use-speech-input";
 import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
@@ -55,7 +62,7 @@ import {
   loadSearchHistory,
   pushSearchHistory,
 } from "./search-history";
-import { renderHighlightedText } from "./search-utils";
+import { buildSearchPreview, renderHighlightedText } from "./search-utils";
 import type { SearchHistoryItem } from "./search-types";
 import {
   type DesktopSearchQuickLink,
@@ -89,6 +96,22 @@ type SearchLauncherOfficialGroup = {
   header: DesktopSearchQuickLink;
   id: string;
   sortTime: number;
+};
+
+type SearchLauncherConversationMessageRow = {
+  conversationId: string;
+  createdAt: string;
+  messageId: string;
+  senderName: string;
+  text: string;
+};
+
+type SearchLauncherConversationGroup = {
+  header: DesktopSearchQuickLink;
+  id: string;
+  messages: DesktopSearchQuickLink[];
+  sortTime: number;
+  totalHits: number;
 };
 
 export function useDesktopSearchLauncher({
@@ -324,14 +347,28 @@ export function DesktopSearchDropdownPanel({
       )
       .slice(0, 4);
   }, [charactersQuery.data, friendsQuery.data, normalizedKeyword]);
+  const conversations = useMemo(
+    () => conversationsQuery.data ?? [],
+    [conversationsQuery.data],
+  );
+  const conversationsSearchKey = useMemo(
+    () =>
+      conversations
+        .map(
+          (item) =>
+            `${item.source ?? item.type}:${item.id}:${item.lastActivityAt}`,
+        )
+        .join("|"),
+    [conversations],
+  );
   const conversationQuickLinks = useMemo(() => {
-    return (conversationsQuery.data ?? []).map((conversation) => {
+    return conversations.map((conversation) => {
       const preview = getConversationPreviewParts(
         conversation,
         localMessageActionState,
       );
 
-      return {
+      const quickLink: DesktopSearchQuickLink = {
         id: `conversation-${conversation.id}`,
         title: conversation.title,
         description: `${preview.prefix}${preview.text}`,
@@ -339,9 +376,145 @@ export function DesktopSearchDropdownPanel({
         badge: getConversationThreadLabel(conversation),
         to: getConversationThreadPath(conversation),
         avatarName: conversation.title,
-      } satisfies DesktopSearchQuickLink;
+      };
+
+      return quickLink;
     });
-  }, [conversationsQuery.data, localMessageActionState]);
+  }, [conversations, localMessageActionState]);
+  const conversationQuickLinkById = useMemo(
+    () =>
+      new Map(
+        conversationQuickLinks.map((item) => [
+          item.id.replace(/^conversation-/, ""),
+          item,
+        ]),
+      ),
+    [conversationQuickLinks],
+  );
+  const conversationMessageMatchesQuery = useQuery({
+    queryKey: [
+      "desktop-search-launcher-message-matches",
+      baseUrl,
+      conversationsSearchKey,
+      normalizedKeyword,
+    ],
+    enabled:
+      shouldLoadSuggestions &&
+      Boolean(normalizedKeyword) &&
+      conversations.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const settledResults = await Promise.allSettled(
+        conversations.map(async (conversation) => {
+          const response = isPersistedGroupConversation(conversation)
+            ? await searchGroupMessages(
+                conversation.id,
+                {
+                  keyword: normalizedKeyword,
+                  limit: 3,
+                },
+                baseUrl,
+              )
+            : await searchConversationMessages(
+                conversation.id,
+                {
+                  keyword: normalizedKeyword,
+                  limit: 3,
+                },
+                baseUrl,
+              );
+
+          return response.items.map((message) => ({
+            conversationId: conversation.id,
+            createdAt: message.createdAt,
+            messageId: message.messageId,
+            senderName: message.senderName,
+            text: message.previewText || "这条消息没有可展示文本。",
+          }));
+        }),
+      );
+
+      return settledResults.flatMap((result) =>
+        result.status === "fulfilled" ? result.value : [],
+      ) as SearchLauncherConversationMessageRow[];
+    },
+  });
+  const conversationMessageGroups = useMemo<SearchLauncherConversationGroup[]>(
+    () => {
+      if (!normalizedKeyword) {
+        return [] as SearchLauncherConversationGroup[];
+      }
+
+      const groupedMessages = new Map<string, SearchLauncherConversationMessageRow[]>();
+      const nextGroups: SearchLauncherConversationGroup[] = [];
+
+      for (const message of conversationMessageMatchesQuery.data ?? []) {
+        if (
+          shouldHideSearchableChatMessage(
+            message.messageId,
+            localMessageActionState,
+          )
+        ) {
+          continue;
+        }
+
+        const current = groupedMessages.get(message.conversationId);
+        if (current) {
+          current.push(message);
+          continue;
+        }
+
+        groupedMessages.set(message.conversationId, [message]);
+      }
+
+      for (const [conversationId, messages] of groupedMessages.entries()) {
+        const header = conversationQuickLinkById.get(conversationId);
+        if (!header) {
+          continue;
+        }
+
+        const sortedMessages = [...messages].sort(
+          (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+        );
+        const latestTime = Date.parse(sortedMessages[0]?.createdAt ?? "");
+
+        nextGroups.push({
+            header,
+            id: `conversation-group-${conversationId}`,
+            messages: sortedMessages.slice(0, 3).map((message) => ({
+              avatarName: header.avatarName,
+              avatarSrc: header.avatarSrc,
+              badge: header.badge === "群聊" ? "群聊记录" : "单聊记录",
+              description: `${message.senderName}：${buildSearchPreview(
+                message.text,
+                normalizedKeyword,
+              )}`,
+              hash: `chat-message-${message.messageId}`,
+              id: `conversation-message-${message.messageId}`,
+              meta: `聊天记录 · ${formatMessageTimestamp(message.createdAt)}`,
+              title: header.title,
+              to: header.to,
+            })),
+            sortTime: Number.isNaN(latestTime) ? 0 : latestTime,
+            totalHits: messages.length,
+          });
+      }
+
+      return nextGroups
+        .sort((left, right) => right.sortTime - left.sortTime)
+        .slice(0, 4);
+    },
+    [
+      conversationMessageMatchesQuery.data,
+      conversationQuickLinkById,
+      localMessageActionState,
+      normalizedKeyword,
+    ],
+  );
+  const conversationGroupHeaderIds = useMemo(
+    () => new Set(conversationMessageGroups.map((item) => item.header.id)),
+    [conversationMessageGroups],
+  );
   const conversationMatches = useMemo(() => {
     if (!normalizedKeyword) {
       return [] as DesktopSearchQuickLink[];
@@ -357,6 +530,13 @@ export function DesktopSearchDropdownPanel({
       )
       .slice(0, 4);
   }, [conversationQuickLinks, normalizedKeyword]);
+  const conversationOnlyMatches = useMemo(
+    () =>
+      conversationMatches.filter(
+        (item) => !conversationGroupHeaderIds.has(item.id),
+      ),
+    [conversationGroupHeaderIds, conversationMatches],
+  );
   const recentConversations = useMemo(
     () => conversationQuickLinks.slice(0, 4),
     [conversationQuickLinks],
@@ -430,6 +610,7 @@ export function DesktopSearchDropdownPanel({
     (friendsQuery.isLoading ||
       charactersQuery.isLoading ||
       conversationsQuery.isLoading ||
+      conversationMessageMatchesQuery.isLoading ||
       officialAccountsQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
@@ -438,7 +619,8 @@ export function DesktopSearchDropdownPanel({
       conversationsQuery.error instanceof Error ||
       officialAccountsQuery.error instanceof Error);
   const hasSuggestionResults =
-    conversationMatches.length > 0 ||
+    conversationMessageGroups.length > 0 ||
+    conversationOnlyMatches.length > 0 ||
     friendMatches.length > 0 ||
     worldCharacterMatches.length > 0 ||
     officialMatches.length > 0 ||
@@ -451,6 +633,7 @@ export function DesktopSearchDropdownPanel({
     (item: DesktopSearchQuickLink) => {
       onClose?.();
       void navigate({
+        hash: item.hash as never,
         to: item.to as never,
         search: item.search as never,
       });
@@ -467,7 +650,21 @@ export function DesktopSearchDropdownPanel({
     ];
 
     if (trimmedKeyword) {
-      conversationMatches.forEach((item) => {
+      conversationMessageGroups.forEach((group) => {
+        items.push({
+          id: group.header.id,
+          onSelect: () => handleOpenQuickLink(group.header),
+        });
+
+        group.messages.forEach((item) => {
+          items.push({
+            id: item.id,
+            onSelect: () => handleOpenQuickLink(item),
+          });
+        });
+      });
+
+      conversationOnlyMatches.forEach((item) => {
         items.push({
           id: item.id,
           onSelect: () => handleOpenQuickLink(item),
@@ -575,7 +772,8 @@ export function DesktopSearchDropdownPanel({
 
     return items;
   }, [
-    conversationMatches,
+    conversationMessageGroups,
+    conversationOnlyMatches,
     favoriteMatches,
     friendMatches,
     handleOpenQuickLink,
@@ -749,13 +947,27 @@ export function DesktopSearchDropdownPanel({
 
           {!suggestionsLoading && !suggestionsError ? (
             <div className="space-y-3">
-              {conversationMatches.length ? (
+              {conversationMessageGroups.length || conversationOnlyMatches.length ? (
                 <div>
                   <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
                     聊天
                   </div>
-                  <div className="mt-1.5 space-y-1.5">
-                    {conversationMatches.map((item) => (
+                  <div className="mt-1.5 space-y-2">
+                    {conversationMessageGroups.map((group) => (
+                      <SearchLauncherConversationGroupCard
+                        key={group.id}
+                        activeHeaderId={activeActionId}
+                        activeMessageId={activeActionId}
+                        group={group}
+                        keyword={trimmedKeyword}
+                        onOpenHeader={(item) => handleOpenQuickLink(item)}
+                        onOpenMessage={(item) => handleOpenQuickLink(item)}
+                        onSelectHeader={(item) => setActiveActionId(item.id)}
+                        onSelectMessage={(item) => setActiveActionId(item.id)}
+                      />
+                    ))}
+
+                    {conversationOnlyMatches.map((item) => (
                       <SearchLauncherQuickLinkRow
                         key={item.id}
                         active={activeActionId === item.id}
@@ -1094,6 +1306,100 @@ function SearchLauncherSection({
         </span>
       </div>
       {children}
+    </section>
+  );
+}
+
+function SearchLauncherConversationGroupCard({
+  activeHeaderId,
+  activeMessageId,
+  group,
+  keyword,
+  onOpenHeader,
+  onOpenMessage,
+  onSelectHeader,
+  onSelectMessage,
+}: {
+  activeHeaderId: string;
+  activeMessageId: string;
+  group: SearchLauncherConversationGroup;
+  keyword: string;
+  onOpenHeader: (item: DesktopSearchQuickLink) => void;
+  onOpenMessage: (item: DesktopSearchQuickLink) => void;
+  onSelectHeader: (item: DesktopSearchQuickLink) => void;
+  onSelectMessage: (item: DesktopSearchQuickLink) => void;
+}) {
+  const headerActive = activeHeaderId === group.header.id;
+
+  return (
+    <section className="overflow-hidden rounded-[16px] border border-[#dde8dc] bg-[linear-gradient(180deg,#f9fcfa,white)]">
+      <button
+        type="button"
+        onClick={() => onOpenHeader(group.header)}
+        onMouseEnter={() => onSelectHeader(group.header)}
+        className={cn(
+          "flex w-full items-start gap-3 px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+          headerActive ? "bg-[rgba(7,193,96,0.06)]" : "hover:bg-[rgba(7,193,96,0.04)]",
+        )}
+      >
+        <AvatarChip
+          name={group.header.avatarName ?? group.header.title}
+          src={group.header.avatarSrc}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {renderHighlightedText(group.header.title, keyword)}
+            </span>
+            <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+              {group.header.badge}
+            </span>
+          </div>
+          <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+            {renderHighlightedText(group.header.meta, keyword)}
+          </div>
+          <div className="mt-2 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+            {renderHighlightedText(group.header.description, keyword)}
+          </div>
+        </div>
+        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+          {group.totalHits} 条相关记录
+        </div>
+      </button>
+
+      <div className="border-t border-[color:var(--border-faint)] px-3.5 py-2.5">
+        <div className="space-y-2">
+          {group.messages.map((item) => {
+            const active = activeMessageId === item.id;
+
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onOpenMessage(item)}
+                onMouseEnter={() => onSelectMessage(item)}
+                className={cn(
+                  "flex w-full items-start gap-3 rounded-[12px] px-3 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                  active ? "bg-[rgba(7,193,96,0.06)]" : "bg-white hover:bg-[rgba(7,193,96,0.04)]",
+                )}
+              >
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+                  <MessageSquareText size={15} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+                    {renderHighlightedText(item.description, keyword)}
+                  </div>
+                  <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+                    {renderHighlightedText(item.meta, keyword)}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }
