@@ -2328,11 +2328,7 @@ export function StickerPanel({
                         <button
                           type="button"
                           onClick={() => setCustomManageMode(false)}
-                          title={
-                            customUploadResumed
-                              ? `结束删除管理并回到自定义列表，当前已腾出 ${customUploadResumedSlots} 个空位。`
-                              : "结束删除管理并回到自定义列表。"
-                          }
+                          title={desktopManageButtonTitle}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                         >
                           完成清理
