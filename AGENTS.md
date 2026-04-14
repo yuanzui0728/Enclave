@@ -38,7 +38,7 @@
 - 底部 Tab：`tabs/chat-list-page` · `contacts-page` · `discover-page` · `profile-page`
 - 桌面端一级 Tab：`tabs/chat` · `tabs/contacts` · `tabs/favorites` · `tabs/moments` · `tabs/feed` · `tabs/channels` · `tabs/search` · `tabs/games` · `tabs/mini-programs`
 - `discover-page.tsx`：移动端承载微信式发现入口列表，点击后进入独立子页面
-- `discover/moments` · `discover/encounter` · `discover/scene` · `discover/feed` · `discover/channels` · `discover/games` · `discover/mini-programs`：发现二级页，分别承载朋友圈 / 摇一摇 / 场景相遇 / 广场动态 / 视频号 / 游戏中心 / 小程序
+- `discover/moments` · `discover/moments/publish` · `discover/encounter` · `discover/scene` · `discover/feed` · `discover/channels` · `discover/games` · `discover/mini-programs`：发现二级页，分别承载朋友圈时间线 / 移动端朋友圈发布页 / 摇一摇 / 场景相遇 / 广场动态 / 视频号 / 游戏中心 / 小程序
 - `favorites-page.tsx`：桌面端收藏工作区入口，承接跨聊天与内容流收藏，并内嵌收藏笔记的新建 / 打开 / 编辑体验
 - `feed-page.tsx`：桌面端广场动态一级入口，承载居民公开动态流
 - `channels-page.tsx`：桌面端视频号一级入口，后续承接短视频与直播内容流
@@ -92,6 +92,7 @@
 - `group/$groupId/members/remove`：群成员移除页，承载群成员微信式减号选择移除
 - `notes-page.tsx`：收藏笔记兼容跳转页，桌面端自动重定向回收藏工作区内的笔记视图
 - `moments-page.tsx`：保留独立朋友圈页能力，当前主要作为发现页内二级能力的兼容承载
+- `mobile-moments-publish-page.tsx`：移动端朋友圈独立发布页，对齐微信手机版“朋友圈 -> 发表”，承载图片 / 视频 / 文本朋友圈发布
 - `mobile-friend-moments-page.tsx`：移动端好友朋友圈独立页，当前由 `friend-moments/$characterId` 承载，对齐微信手机版资料页进入单个好友朋友圈的路径
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`

@@ -33,6 +33,11 @@ const MomentsPage = lazy(async () => {
   return { default: mod.MomentsPage };
 });
 
+const MobileMomentsPublishPage = lazy(async () => {
+  const mod = await import("./routes/mobile-moments-publish-page");
+  return { default: mod.MobileMomentsPublishPage };
+});
+
 const FriendMomentsPage = lazy(async () => {
   const mod = await import("./routes/friend-moments-page");
   return { default: mod.FriendMomentsPage };
@@ -705,6 +710,13 @@ const discoverMomentsRoute = createRoute({
   component: MomentsPage,
 });
 
+const discoverMomentsPublishRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover/moments/publish",
+  beforeLoad: requireWorldReady,
+  component: MobileMomentsPublishPage,
+});
+
 const discoverEncounterRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/discover/encounter",
@@ -901,6 +913,7 @@ const routeTree = rootRoute.addChildren([
   createGroupRoute,
   notesRoute,
   discoverMomentsRoute,
+  discoverMomentsPublishRoute,
   discoverEncounterRoute,
   discoverSceneRoute,
   discoverFeedRoute,

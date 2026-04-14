@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ArrowLeft, Copy, ImagePlus, PenSquare, Share2, Video } from "lucide-react";
+import { ArrowLeft, Copy, PenSquare, Share2 } from "lucide-react";
 import {
   addMomentComment,
   getBlockedCharacters,
@@ -14,8 +14,6 @@ import {
   InlineNotice,
   TextField,
 } from "@yinjie/ui";
-import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
-import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
 import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { SocialPostCard } from "../components/social-post-card";
 import {
@@ -34,6 +32,7 @@ import {
 import { DesktopMomentsWorkspace } from "../features/desktop/moments/desktop-moments-workspace";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { consumeMomentPublishFlash } from "../features/moments/moment-publish-flash";
 import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
@@ -47,9 +46,6 @@ import {
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../store/world-owner-store";
-
-const MOMENTS_COMPOSER_SECTION_ID = "moments-composer-card";
-const MOMENTS_COMPOSER_TEXTAREA_ID = "moments-composer-input";
 
 export function MomentsPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -81,8 +77,6 @@ export function MomentsPage() {
   const routeState = parseDesktopMomentsRouteState(hash);
   const routeSelectedAuthorId = routeState.authorId ?? null;
   const routeSelectedMomentId = routeState.momentId ?? null;
-  const mobileImageInputRef = useRef<HTMLInputElement | null>(null);
-  const mobileVideoInputRef = useRef<HTMLInputElement | null>(null);
 
   const momentsQuery = useQuery({
     queryKey: ["app-moments", baseUrl],
@@ -168,6 +162,13 @@ export function MomentsPage() {
     composeDraft.reset();
     setCommentDrafts({});
     setShowCompose(false);
+    const flashNotice = consumeMomentPublishFlash();
+    if (flashNotice) {
+      setNoticeTone("success");
+      setNotice(flashNotice);
+      return;
+    }
+
     setNotice("");
   }, [baseUrl]);
 
@@ -247,23 +248,6 @@ export function MomentsPage() {
     routeSelectedAuthorId,
     routeSelectedMomentId,
   ]);
-
-  function focusComposer() {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    document
-      .getElementById(MOMENTS_COMPOSER_SECTION_ID)
-      ?.scrollIntoView({ block: "start", behavior: "smooth" });
-
-    window.requestAnimationFrame(() => {
-      const textarea = document.getElementById(MOMENTS_COMPOSER_TEXTAREA_ID);
-      if (textarea instanceof HTMLTextAreaElement) {
-        textarea.focus();
-      }
-    });
-  }
 
   async function handleImageFilesSelected(files: FileList | null) {
     try {
@@ -529,7 +513,7 @@ export function MomentsPage() {
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-              onClick={focusComposer}
+              onClick={() => void navigate({ to: "/discover/moments/publish" })}
               aria-label="发一条朋友圈"
             >
               <PenSquare size={17} />
@@ -547,7 +531,7 @@ export function MomentsPage() {
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-full border-0 bg-transparent text-[color:var(--text-primary)] active:bg-black/[0.05]"
-              onClick={focusComposer}
+              onClick={() => void navigate({ to: "/discover/moments/publish" })}
               aria-label="发一条朋友圈"
             >
               <PenSquare size={17} />
@@ -557,88 +541,6 @@ export function MomentsPage() {
       )}
 
       <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
-        <MobileSocialComposerCard
-          sectionId={MOMENTS_COMPOSER_SECTION_ID}
-          textareaId={MOMENTS_COMPOSER_TEXTAREA_ID}
-          title="发一条朋友圈"
-          description="只让好友看到这一刻，比公开动态更近一点，也更像日常分享。"
-          scopeLabel="好友可见"
-          scopeClassName="bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]"
-          value={composeDraft.text}
-          onChange={composeDraft.setText}
-          placeholder="写点只想留给好友看的内容..."
-          helperText="发出后仅好友可见，支持 1 到 9 张图片或 1 条视频。"
-          submitLabel="发布"
-          submittingLabel="正在发布..."
-          mediaPreview={
-            composeDraft.imageDrafts.length > 0 || composeDraft.videoDraft ? (
-              <MomentComposeMediaPreview
-                imageDrafts={composeDraft.imageDrafts}
-                videoDraft={composeDraft.videoDraft}
-                onRemoveImage={(id) => composeDraft.removeImageDraft(id)}
-                onRemoveVideo={() => composeDraft.clearVideoDraft()}
-                variant="mobile"
-              />
-            ) : null
-          }
-          mediaActions={
-            <>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={!composeDraft.canAddImages || createMutation.isPending}
-                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
-                onClick={() => mobileImageInputRef.current?.click()}
-              >
-                <ImagePlus size={14} className="mr-1" />
-                添加图片
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={!composeDraft.canAddVideo || createMutation.isPending}
-                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
-                onClick={() => mobileVideoInputRef.current?.click()}
-              >
-                <Video size={14} className="mr-1" />
-                {composeDraft.videoDraft ? "更换视频" : "添加视频"}
-              </Button>
-            </>
-          }
-          pending={createMutation.isPending}
-          disabled={!composeDraft.hasContent || createMutation.isPending}
-          errorMessage={
-            composeDraft.mediaError ??
-            (createMutation.isError && createMutation.error instanceof Error
-              ? createMutation.error.message
-              : null)
-          }
-          onSubmit={() => createMutation.mutate()}
-        />
-        <input
-          ref={mobileImageInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(event) => {
-            void handleImageFilesSelected(event.currentTarget.files);
-            event.currentTarget.value = "";
-          }}
-        />
-        <input
-          ref={mobileVideoInputRef}
-          type="file"
-          accept="video/*"
-          className="hidden"
-          onChange={(event) => {
-            void handleVideoFileSelected(event.currentTarget.files?.[0] ?? null);
-            event.currentTarget.value = "";
-          }}
-        />
-
         <section className="space-y-2">
           <div className="px-1">
             <div className="text-[11px] text-[color:var(--text-muted)]">最近动态</div>
@@ -842,7 +744,7 @@ export function MomentsPage() {
                   variant="primary"
                   size="sm"
                   className="h-8 rounded-full bg-[#07c160] px-3.5 text-[11px] text-white hover:bg-[#06ad56]"
-                  onClick={focusComposer}
+                  onClick={() => void navigate({ to: "/discover/moments/publish" })}
                 >
                   发一条朋友圈
                 </Button>
