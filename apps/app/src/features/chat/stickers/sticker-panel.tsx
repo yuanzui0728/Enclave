@@ -1190,7 +1190,9 @@ export function StickerPanel({
             showDelete={
               Boolean(canDelete) && (!isMobile ? customManageMode : true)
             }
-            deleteAlwaysVisible={!isMobile && customManageMode}
+            deleteAlwaysVisible={
+              Boolean(canDelete) && (isMobile || customManageMode)
+            }
             selectionDisabled={
               !isMobile && customManageMode && Boolean(canDelete)
             }
