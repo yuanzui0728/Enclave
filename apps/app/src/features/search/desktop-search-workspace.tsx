@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   type SetStateAction,
 } from "react";
@@ -80,6 +81,10 @@ const desktopSearchChipFocusClassName = cn(
   desktopSearchFocusRingClassName,
   "focus-visible:shadow-[0_10px_24px_rgba(7,193,96,0.08)]",
 );
+const desktopSearchSelectedCardClassName =
+  "border-[rgba(7,193,96,0.24)] shadow-[0_20px_44px_rgba(7,193,96,0.10)]";
+const desktopSearchSelectedRowClassName =
+  "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.05)] shadow-[0_12px_28px_rgba(7,193,96,0.08)]";
 
 const landingScopeCards = [
   {
@@ -162,11 +167,13 @@ export function DesktopSearchWorkspace({
   const categoryTabRefs = useRef<
     Partial<Record<SearchCategory, HTMLButtonElement | null>>
   >({});
+  const resultButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const scrollViewportRef = useRef<HTMLDivElement | null>(null);
   const spotlightPanelTimeoutRef = useRef<number | null>(null);
   const transitionHintTimeoutRef = useRef<number | null>(null);
   const [activeAllResultsSection, setActiveAllResultsSection] =
     useState<SearchResultCategory | null>(null);
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [spotlightPanelId, setSpotlightPanelId] = useState<SearchCategory | null>(
     null,
   );
@@ -200,6 +207,150 @@ export function DesktopSearchWorkspace({
           !groupedOfficialAccountHeaderIds.has(item.id),
       ),
     [groupedOfficialAccountHeaderIds, visibleResults],
+  );
+  const allResultPreviewSections = useMemo(
+    () =>
+      groupedResults.map((section) => {
+        const previewContentResults = isDesktopContentCategory(section.category)
+          ? section.results.slice(0, 4)
+          : [];
+        const previewFeatureResults = isDesktopFeatureCardCategory(section.category)
+          ? section.results.slice(0, section.category === "favorites" ? 3 : 4)
+          : [];
+        const previewMessageGroups =
+          section.category === "messages" ? messageGroups.slice(0, 3) : [];
+        const previewMessageConversations =
+          section.category === "messages"
+            ? messageConversationOnlyResults.slice(
+                0,
+                Math.max(0, 5 - previewMessageGroups.length),
+              )
+            : [];
+        const previewOfficialAccountGroups =
+          section.category === "officialAccounts"
+            ? officialAccountGroups.slice(0, 3)
+            : [];
+        const previewOfficialAccounts =
+          section.category === "officialAccounts"
+            ? officialAccountOnlyResults.slice(
+                0,
+                Math.max(0, 5 - previewOfficialAccountGroups.length),
+              )
+            : [];
+        const previewResults = section.results.slice(0, 6);
+        const hasMore =
+          section.category === "messages"
+            ? messageGroups.length > previewMessageGroups.length ||
+              messageConversationOnlyResults.length >
+                previewMessageConversations.length
+            : section.category === "officialAccounts"
+              ? officialAccountGroups.length > previewOfficialAccountGroups.length ||
+                officialAccountOnlyResults.length > previewOfficialAccounts.length
+              : isDesktopFeatureCardCategory(section.category)
+                ? section.results.length > previewFeatureResults.length
+                : isDesktopContentCategory(section.category)
+                  ? section.results.length > previewContentResults.length
+                  : section.results.length > previewResults.length;
+
+        return {
+          hasMore,
+          previewContentResults,
+          previewFeatureResults,
+          previewMessageConversations,
+          previewMessageGroups,
+          previewOfficialAccountGroups,
+          previewOfficialAccounts,
+          previewResults,
+          section,
+        };
+      }),
+    [
+      groupedResults,
+      messageConversationOnlyResults,
+      messageGroups,
+      officialAccountGroups,
+      officialAccountOnlyResults,
+    ],
+  );
+  const keyboardNavigableResults = useMemo(() => {
+    if (!hasKeyword) {
+      return [] as SearchResultItem[];
+    }
+
+    if (activeCategory === "all") {
+      return allResultPreviewSections.flatMap((entry) => {
+        const { section } = entry;
+
+        if (section.category === "messages") {
+          return [
+            ...entry.previewMessageGroups.map((group) => group.header),
+            ...entry.previewMessageGroups.flatMap((group) => group.messages),
+            ...entry.previewMessageConversations,
+          ];
+        }
+
+        if (section.category === "officialAccounts") {
+          return [
+            ...entry.previewOfficialAccountGroups.map((group) => group.header),
+            ...entry.previewOfficialAccountGroups.flatMap(
+              (group) => group.articles,
+            ),
+            ...entry.previewOfficialAccounts,
+          ];
+        }
+
+        if (isDesktopFeatureCardCategory(section.category)) {
+          return entry.previewFeatureResults;
+        }
+
+        if (isDesktopContentCategory(section.category)) {
+          return entry.previewContentResults;
+        }
+
+        return entry.previewResults;
+      });
+    }
+
+    if (activeCategory === "messages") {
+      return [
+        ...messageGroups.map((group) => group.header),
+        ...messageGroups.flatMap((group) => group.messages),
+        ...messageConversationOnlyResults,
+      ];
+    }
+
+    if (activeCategory === "officialAccounts") {
+      return [
+        ...officialAccountGroups.map((group) => group.header),
+        ...officialAccountGroups.flatMap((group) => group.articles),
+        ...officialAccountOnlyResults,
+      ];
+    }
+
+    return visibleResults;
+  }, [
+    activeCategory,
+    allResultPreviewSections,
+    hasKeyword,
+    messageConversationOnlyResults,
+    messageGroups,
+    officialAccountGroups,
+    officialAccountOnlyResults,
+    visibleResults,
+  ]);
+  const selectedResultIndex = useMemo(
+    () =>
+      selectedResultId
+        ? keyboardNavigableResults.findIndex((item) => item.id === selectedResultId)
+        : -1,
+    [keyboardNavigableResults, selectedResultId],
+  );
+  const selectedResultItem = useMemo(
+    () =>
+      selectedResultId
+        ? keyboardNavigableResults.find((item) => item.id === selectedResultId) ?? null
+        : null,
+    [keyboardNavigableResults, selectedResultId],
   );
 
   useEffect(() => {
@@ -269,6 +420,15 @@ export function DesktopSearchWorkspace({
       transitionHintTimeoutRef.current = null;
     }, 2200);
   });
+  const scrollSelectedResultIntoView = useEffectEvent(
+    (resultId: string, behavior: ScrollBehavior = "smooth") => {
+      resultButtonRefs.current[resultId]?.scrollIntoView({
+        behavior,
+        block: "nearest",
+        inline: "nearest",
+      });
+    },
+  );
   const showPanelSpotlight = useEffectEvent((panelId: SearchCategory | null) => {
     if (spotlightPanelTimeoutRef.current !== null) {
       window.clearTimeout(spotlightPanelTimeoutRef.current);
@@ -436,6 +596,70 @@ export function DesktopSearchWorkspace({
       showTransitionHint(`已回到全部结果，并定位到${searchCategoryTitles[category]}分区。`);
     },
   );
+  const handleSelectResult = useEffectEvent((resultId: string) => {
+    setSelectedResultId(resultId);
+  });
+  const handleMoveSelectedResult = useEffectEvent((direction: -1 | 1) => {
+    if (!keyboardNavigableResults.length) {
+      return;
+    }
+
+    const nextIndex =
+      selectedResultIndex === -1
+        ? direction === 1
+          ? 0
+          : keyboardNavigableResults.length - 1
+        : Math.min(
+            Math.max(selectedResultIndex + direction, 0),
+            keyboardNavigableResults.length - 1,
+          );
+    const nextResult = keyboardNavigableResults[nextIndex];
+    if (!nextResult) {
+      return;
+    }
+
+    setSelectedResultId(nextResult.id);
+    scrollSelectedResultIntoView(nextResult.id);
+  });
+  const handleSearchInputKeyDown = useEffectEvent(
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
+
+      if (event.key === "ArrowDown") {
+        if (!keyboardNavigableResults.length) {
+          return;
+        }
+
+        event.preventDefault();
+        handleMoveSelectedResult(1);
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        if (!keyboardNavigableResults.length) {
+          return;
+        }
+
+        event.preventDefault();
+        handleMoveSelectedResult(-1);
+        return;
+      }
+
+      if (event.key === "Enter" && selectedResultItem) {
+        event.preventDefault();
+        onOpenResult(selectedResultItem);
+        return;
+      }
+
+      if (event.key === "Escape" && selectedResultId) {
+        event.preventDefault();
+        setSelectedResultId(null);
+        showTransitionHint("已取消结果选择，可继续输入关键词。");
+      }
+    },
+  );
 
   useEffect(() => {
     if (!hasKeyword || activeCategory !== "all") {
@@ -484,6 +708,22 @@ export function DesktopSearchWorkspace({
     };
   }, [activeCategory, groupedResults, hasKeyword, syncActiveAllResultsSection]);
 
+  useEffect(() => {
+    setSelectedResultId(null);
+  }, [activeCategory, searchText]);
+
+  useEffect(() => {
+    if (!selectedResultId) {
+      return;
+    }
+
+    if (keyboardNavigableResults.some((item) => item.id === selectedResultId)) {
+      return;
+    }
+
+    setSelectedResultId(null);
+  }, [keyboardNavigableResults, selectedResultId]);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] backdrop-blur-xl">
@@ -528,6 +768,7 @@ export function DesktopSearchWorkspace({
                       type="search"
                       value={searchText}
                       onChange={(event) => setSearchText(event.target.value)}
+                      onKeyDown={handleSearchInputKeyDown}
                       placeholder="搜索聊天记录、联系人、公众号、收藏和小程序"
                       className="h-12 w-full rounded-[16px] border border-white/80 bg-white/96 pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:shadow-[0_0_0_4px_rgba(7,193,96,0.08)]"
                     />
@@ -619,6 +860,11 @@ export function DesktopSearchWorkspace({
               categoryTitle={contextCategoryTitle}
               count={visibleResults.length}
               keyword={keywordLabel}
+              keyboardHint={
+                keyboardNavigableResults.length
+                  ? "↑ ↓ 选择结果 · Enter 打开 · Esc 取消"
+                  : undefined
+              }
               onBackToAll={
                 activeCategory === "all"
                   ? undefined
@@ -755,62 +1001,13 @@ export function DesktopSearchWorkspace({
           {!loading && !error && hasKeyword ? (
             activeCategory === "all" ? (
               <div className="space-y-6">
-                {groupedResults.map((section) => {
-                  const previewContentResults =
-                    isDesktopContentCategory(section.category)
-                      ? section.results.slice(0, 4)
-                      : [];
-                  const previewFeatureResults =
-                    isDesktopFeatureCardCategory(section.category)
-                      ? section.results.slice(
-                          0,
-                          section.category === "favorites" ? 3 : 4,
-                        )
-                      : [];
-                  const previewMessageGroups =
-                    section.category === "messages"
-                      ? messageGroups.slice(0, 3)
-                      : [];
-                  const previewMessageConversations =
-                    section.category === "messages"
-                      ? messageConversationOnlyResults.slice(
-                          0,
-                          Math.max(0, 5 - previewMessageGroups.length),
-                        )
-                      : [];
-                  const previewOfficialAccountGroups =
-                    section.category === "officialAccounts"
-                      ? officialAccountGroups.slice(0, 3)
-                      : [];
-                  const previewOfficialAccounts =
-                    section.category === "officialAccounts"
-                      ? officialAccountOnlyResults.slice(
-                          0,
-                          Math.max(0, 5 - previewOfficialAccountGroups.length),
-                        )
-                      : [];
-                  const previewResults = section.results.slice(0, 6);
-                  const hasMore =
-                    section.category === "messages"
-                      ? messageGroups.length > previewMessageGroups.length ||
-                        messageConversationOnlyResults.length >
-                          previewMessageConversations.length
-                      : section.category === "officialAccounts"
-                        ? officialAccountGroups.length >
-                            previewOfficialAccountGroups.length ||
-                          officialAccountOnlyResults.length >
-                            previewOfficialAccounts.length
-                      : isDesktopFeatureCardCategory(section.category)
-                        ? section.results.length > previewFeatureResults.length
-                      : isDesktopContentCategory(section.category)
-                        ? section.results.length > previewContentResults.length
-                      : section.results.length > previewResults.length;
-
+                {allResultPreviewSections.map((entry) => {
+                  const { section } = entry;
                   return (
                     <DesktopSearchResultsPanel
                       key={section.category}
                       action={
-                        hasMore ? (
+                        entry.hasMore ? (
                           <DesktopSearchActionButton
                             onClick={() =>
                               handleExpandAllResultsSection(section.category)
@@ -833,39 +1030,64 @@ export function DesktopSearchWorkspace({
                     >
                       {section.category === "messages" ? (
                         <DesktopSearchMessageResults
-                          conversationResults={previewMessageConversations}
+                          conversationResults={entry.previewMessageConversations}
                           keyword={normalizedKeyword}
-                          messageGroups={previewMessageGroups}
+                          messageGroups={entry.previewMessageGroups}
                           onOpen={onOpenResult}
+                          onSelect={handleSelectResult}
+                          registerResultRef={(resultId, node) => {
+                            resultButtonRefs.current[resultId] = node;
+                          }}
+                          selectedResultId={selectedResultId}
                         />
                       ) : section.category === "officialAccounts" ? (
                         <DesktopSearchOfficialAccountResults
-                          accountResults={previewOfficialAccounts}
+                          accountResults={entry.previewOfficialAccounts}
                           keyword={normalizedKeyword}
-                          officialAccountGroups={previewOfficialAccountGroups}
+                          officialAccountGroups={entry.previewOfficialAccountGroups}
                           onOpen={onOpenResult}
+                          onSelect={handleSelectResult}
+                          registerResultRef={(resultId, node) => {
+                            resultButtonRefs.current[resultId] = node;
+                          }}
+                          selectedResultId={selectedResultId}
                         />
                       ) : isDesktopFeatureCardCategory(section.category) ? (
                         <DesktopSearchFeatureResults
                           category={section.category}
-                          items={previewFeatureResults}
+                          items={entry.previewFeatureResults}
                           keyword={normalizedKeyword}
                           onOpen={onOpenResult}
+                          onSelect={handleSelectResult}
+                          registerResultRef={(resultId, node) => {
+                            resultButtonRefs.current[resultId] = node;
+                          }}
+                          selectedResultId={selectedResultId}
                         />
                       ) : isDesktopContentCategory(section.category) ? (
                         <DesktopSearchContentResults
-                          items={previewContentResults}
+                          items={entry.previewContentResults}
                           keyword={normalizedKeyword}
                           onOpen={onOpenResult}
+                          onSelect={handleSelectResult}
+                          registerResultRef={(resultId, node) => {
+                            resultButtonRefs.current[resultId] = node;
+                          }}
+                          selectedResultId={selectedResultId}
                         />
                       ) : (
                         <DesktopSearchResultStack>
-                          {previewResults.map((item) => (
+                          {entry.previewResults.map((item) => (
                             <DesktopSearchResultRow
                               key={item.id}
+                              buttonRef={(node) => {
+                                resultButtonRefs.current[item.id] = node;
+                              }}
                               item={item}
                               keyword={normalizedKeyword}
                               onOpen={onOpenResult}
+                              onSelect={handleSelectResult}
+                              selected={selectedResultId === item.id}
                             />
                           ))}
                         </DesktopSearchResultStack>
@@ -889,43 +1111,68 @@ export function DesktopSearchWorkspace({
                   title={`${searchCategoryTitles[activeCategory]}全部结果`}
                 >
                   {activeCategory === "messages" ? (
-                    <DesktopSearchMessageResults
-                      conversationResults={messageConversationOnlyResults}
-                      keyword={normalizedKeyword}
-                      messageGroups={messageGroups}
-                      onOpen={onOpenResult}
-                    />
-                  ) : activeCategory === "officialAccounts" ? (
-                    <DesktopSearchOfficialAccountResults
-                      accountResults={officialAccountOnlyResults}
-                      keyword={normalizedKeyword}
-                      officialAccountGroups={officialAccountGroups}
-                      onOpen={onOpenResult}
-                    />
-                  ) : isDesktopFeatureCardCategory(activeCategory) ? (
-                    <DesktopSearchFeatureResults
-                      category={activeCategory}
-                      items={visibleResults}
-                      keyword={normalizedKeyword}
-                      onOpen={onOpenResult}
-                    />
-                  ) : isDesktopContentCategory(activeCategory) ? (
-                    <DesktopSearchContentResults
-                      items={visibleResults}
-                      keyword={normalizedKeyword}
-                      onOpen={onOpenResult}
-                    />
-                  ) : (
-                    <DesktopSearchResultStack>
-                      {visibleResults.map((item) => (
-                        <DesktopSearchResultRow
-                          key={item.id}
-                          item={item}
-                          keyword={normalizedKeyword}
-                          onOpen={onOpenResult}
-                        />
-                      ))}
-                    </DesktopSearchResultStack>
+                  <DesktopSearchMessageResults
+                    conversationResults={messageConversationOnlyResults}
+                    keyword={normalizedKeyword}
+                    messageGroups={messageGroups}
+                    onOpen={onOpenResult}
+                    onSelect={handleSelectResult}
+                    registerResultRef={(resultId, node) => {
+                      resultButtonRefs.current[resultId] = node;
+                    }}
+                    selectedResultId={selectedResultId}
+                  />
+                ) : activeCategory === "officialAccounts" ? (
+                  <DesktopSearchOfficialAccountResults
+                    accountResults={officialAccountOnlyResults}
+                    keyword={normalizedKeyword}
+                    officialAccountGroups={officialAccountGroups}
+                    onOpen={onOpenResult}
+                    onSelect={handleSelectResult}
+                    registerResultRef={(resultId, node) => {
+                      resultButtonRefs.current[resultId] = node;
+                    }}
+                    selectedResultId={selectedResultId}
+                  />
+                ) : isDesktopFeatureCardCategory(activeCategory) ? (
+                  <DesktopSearchFeatureResults
+                    category={activeCategory}
+                    items={visibleResults}
+                    keyword={normalizedKeyword}
+                    onOpen={onOpenResult}
+                    onSelect={handleSelectResult}
+                    registerResultRef={(resultId, node) => {
+                      resultButtonRefs.current[resultId] = node;
+                    }}
+                    selectedResultId={selectedResultId}
+                  />
+                ) : isDesktopContentCategory(activeCategory) ? (
+                  <DesktopSearchContentResults
+                    items={visibleResults}
+                    keyword={normalizedKeyword}
+                    onOpen={onOpenResult}
+                    onSelect={handleSelectResult}
+                    registerResultRef={(resultId, node) => {
+                      resultButtonRefs.current[resultId] = node;
+                    }}
+                    selectedResultId={selectedResultId}
+                  />
+                ) : (
+                  <DesktopSearchResultStack>
+                    {visibleResults.map((item) => (
+                      <DesktopSearchResultRow
+                        key={item.id}
+                        buttonRef={(node) => {
+                          resultButtonRefs.current[item.id] = node;
+                        }}
+                        item={item}
+                        keyword={normalizedKeyword}
+                        onOpen={onOpenResult}
+                        onSelect={handleSelectResult}
+                        selected={selectedResultId === item.id}
+                      />
+                    ))}
+                  </DesktopSearchResultStack>
                   )}
                 </DesktopSearchResultsPanel>
               </div>
@@ -1261,6 +1508,7 @@ function DesktopSearchContextBar({
   activeSection,
   categoryTitle,
   count,
+  keyboardHint,
   keyword,
   onBackToAll,
   onClearKeyword,
@@ -1272,6 +1520,7 @@ function DesktopSearchContextBar({
   activeSection?: SearchResultCategory | null;
   categoryTitle: string;
   count: number;
+  keyboardHint?: string;
   keyword: string;
   onBackToAll?: () => void;
   onClearKeyword: () => void;
@@ -1318,6 +1567,11 @@ function DesktopSearchContextBar({
             <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
               {contextDescription}
             </div>
+            {keyboardHint ? (
+              <div className="mt-2 inline-flex items-center rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+                {keyboardHint}
+              </div>
+            ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {onBackToAll ? (
@@ -1476,11 +1730,17 @@ function DesktopSearchMessageResults({
   keyword,
   messageGroups,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   conversationResults: SearchResultItem[];
   keyword: string;
   messageGroups: SearchMessageGroup[];
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
   if (!messageGroups.length && !conversationResults.length) {
     return null;
@@ -1494,6 +1754,9 @@ function DesktopSearchMessageResults({
           group={group}
           keyword={keyword}
           onOpen={onOpen}
+          onSelect={onSelect}
+          registerResultRef={registerResultRef}
+          selectedResultId={selectedResultId}
         />
       ))}
 
@@ -1503,9 +1766,14 @@ function DesktopSearchMessageResults({
             {conversationResults.map((item) => (
               <DesktopSearchResultRow
                 key={item.id}
+                buttonRef={(node) => {
+                  registerResultRef(item.id, node);
+                }}
                 item={item}
                 keyword={keyword}
                 onOpen={onOpen}
+                onSelect={onSelect}
+                selected={selectedResultId === item.id}
               />
             ))}
           </div>
@@ -1520,11 +1788,17 @@ function DesktopSearchOfficialAccountResults({
   keyword,
   officialAccountGroups,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   accountResults: SearchResultItem[];
   keyword: string;
   officialAccountGroups: SearchOfficialAccountGroup[];
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
   if (!officialAccountGroups.length && !accountResults.length) {
     return null;
@@ -1538,6 +1812,9 @@ function DesktopSearchOfficialAccountResults({
           group={group}
           keyword={keyword}
           onOpen={onOpen}
+          onSelect={onSelect}
+          registerResultRef={registerResultRef}
+          selectedResultId={selectedResultId}
         />
       ))}
 
@@ -1547,9 +1824,14 @@ function DesktopSearchOfficialAccountResults({
             {accountResults.map((item) => (
               <DesktopSearchResultRow
                 key={item.id}
+                buttonRef={(node) => {
+                  registerResultRef(item.id, node);
+                }}
                 item={item}
                 keyword={keyword}
                 onOpen={onOpen}
+                onSelect={onSelect}
+                selected={selectedResultId === item.id}
               />
             ))}
           </div>
@@ -1581,11 +1863,17 @@ function DesktopSearchFeatureResults({
   items,
   keyword,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   category: "contacts" | "favorites" | "miniPrograms";
   items: SearchResultItem[];
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
   if (!items.length) {
     return null;
@@ -1603,10 +1891,15 @@ function DesktopSearchFeatureResults({
       {items.map((item) => (
         <DesktopSearchFeatureCard
           key={item.id}
+          buttonRef={(node) => {
+            registerResultRef(item.id, node);
+          }}
           category={category}
           item={item}
           keyword={keyword}
           onOpen={onOpen}
+          onSelect={onSelect}
+          selected={selectedResultId === item.id}
         />
       ))}
     </div>
@@ -1617,19 +1910,30 @@ function DesktopSearchContentResults({
   items,
   keyword,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   items: SearchResultItem[];
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
   return (
     <div className="mt-4 grid gap-4 xl:grid-cols-2">
       {items.map((item) => (
         <DesktopSearchContentCard
           key={item.id}
+          buttonRef={(node) => {
+            registerResultRef(item.id, node);
+          }}
           item={item}
           keyword={keyword}
           onOpen={onOpen}
+          onSelect={onSelect}
+          selected={selectedResultId === item.id}
         />
       ))}
     </div>
@@ -1637,15 +1941,21 @@ function DesktopSearchContentResults({
 }
 
 function DesktopSearchFeatureCard({
+  buttonRef,
   category,
   item,
   keyword,
   onOpen,
+  onSelect,
+  selected,
 }: {
+  buttonRef?: (node: HTMLButtonElement | null) => void;
   category: "contacts" | "favorites" | "miniPrograms";
   item: SearchResultItem;
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  selected: boolean;
 }) {
   const toneClassName =
     category === "contacts"
@@ -1668,11 +1978,15 @@ function DesktopSearchFeatureCard({
 
   return (
     <button
+      ref={buttonRef}
+      aria-selected={selected}
       type="button"
       onClick={() => onOpen(item)}
+      onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
         desktopSearchCardFocusClassName,
+        selected ? desktopSearchSelectedCardClassName : null,
         toneClassName,
       )}
     >
@@ -1789,19 +2103,43 @@ function DesktopSearchMessageGroupCard({
   group,
   keyword,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   group: SearchMessageGroup;
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
+  const isHeaderSelected = selectedResultId === group.header.id;
+  const hasSelectedMessage = group.messages.some(
+    (item) => item.id === selectedResultId,
+  );
+
   return (
-    <section className="overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+    <section
+      className={cn(
+        "overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
+        isHeaderSelected || hasSelectedMessage
+          ? desktopSearchSelectedCardClassName
+          : null,
+      )}
+    >
       <button
+        ref={(node) => {
+          registerResultRef(group.header.id, node);
+        }}
+        aria-selected={isHeaderSelected}
         type="button"
         onClick={() => onOpen(group.header)}
+        onMouseEnter={() => onSelect(group.header.id)}
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
           desktopSearchRowFocusClassName,
+          isHeaderSelected ? "bg-[rgba(7,193,96,0.05)]" : null,
         )}
       >
         <AvatarChip
@@ -1835,11 +2173,17 @@ function DesktopSearchMessageGroupCard({
           {group.messages.map((item) => (
             <button
               key={item.id}
+              ref={(node) => {
+                registerResultRef(item.id, node);
+              }}
+              aria-selected={selectedResultId === item.id}
               type="button"
               onClick={() => onOpen(item)}
+              onMouseEnter={() => onSelect(item.id)}
               className={cn(
                 "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
+                selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
@@ -1866,19 +2210,43 @@ function DesktopSearchOfficialAccountGroupCard({
   group,
   keyword,
   onOpen,
+  onSelect,
+  registerResultRef,
+  selectedResultId,
 }: {
   group: SearchOfficialAccountGroup;
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  registerResultRef: (resultId: string, node: HTMLButtonElement | null) => void;
+  selectedResultId: string | null;
 }) {
+  const isHeaderSelected = selectedResultId === group.header.id;
+  const hasSelectedArticle = group.articles.some(
+    (item) => item.id === selectedResultId,
+  );
+
   return (
-    <section className="overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+    <section
+      className={cn(
+        "overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
+        isHeaderSelected || hasSelectedArticle
+          ? desktopSearchSelectedCardClassName
+          : null,
+      )}
+    >
       <button
+        ref={(node) => {
+          registerResultRef(group.header.id, node);
+        }}
+        aria-selected={isHeaderSelected}
         type="button"
         onClick={() => onOpen(group.header)}
+        onMouseEnter={() => onSelect(group.header.id)}
         className={cn(
           "group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white",
           desktopSearchRowFocusClassName,
+          isHeaderSelected ? "bg-[rgba(7,193,96,0.05)]" : null,
         )}
       >
         <AvatarChip
@@ -1915,11 +2283,17 @@ function DesktopSearchOfficialAccountGroupCard({
           {group.articles.map((item) => (
             <button
               key={item.id}
+              ref={(node) => {
+                registerResultRef(item.id, node);
+              }}
+              aria-selected={selectedResultId === item.id}
               type="button"
               onClick={() => onOpen(item)}
+              onMouseEnter={() => onSelect(item.id)}
               className={cn(
                 "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
+                selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
@@ -1946,13 +2320,19 @@ function DesktopSearchOfficialAccountGroupCard({
 }
 
 function DesktopSearchContentCard({
+  buttonRef,
   item,
   keyword,
   onOpen,
+  onSelect,
+  selected,
 }: {
+  buttonRef?: (node: HTMLButtonElement | null) => void;
   item: SearchResultItem;
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  selected: boolean;
 }) {
   const toneClassName =
     item.category === "moments"
@@ -1967,11 +2347,15 @@ function DesktopSearchContentCard({
 
   return (
     <button
+      ref={buttonRef}
+      aria-selected={selected}
       type="button"
       onClick={() => onOpen(item)}
+      onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
         desktopSearchCardFocusClassName,
+        selected ? desktopSearchSelectedCardClassName : null,
         toneClassName,
       )}
     >
@@ -2033,21 +2417,31 @@ function isDesktopFeatureCardCategory(
 }
 
 function DesktopSearchResultRow({
+  buttonRef,
   item,
   keyword,
   onOpen,
+  onSelect,
+  selected,
 }: {
+  buttonRef?: (node: HTMLButtonElement | null) => void;
   item: SearchResultItem;
   keyword: string;
   onOpen: (item: SearchResultItem) => void;
+  onSelect: (resultId: string) => void;
+  selected: boolean;
 }) {
   return (
     <button
+      ref={buttonRef}
+      aria-selected={selected}
       type="button"
       onClick={() => onOpen(item)}
+      onMouseEnter={() => onSelect(item.id)}
       className={cn(
         "group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
         desktopSearchRowFocusClassName,
+        selected ? desktopSearchSelectedRowClassName : null,
       )}
     >
       <AvatarChip
