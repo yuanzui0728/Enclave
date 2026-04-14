@@ -11,6 +11,8 @@ import {
   type ConversationListItem,
   type FavoriteNoteAsset,
   type FavoriteNoteDocument,
+  type FavoriteNoteSummary,
+  type FavoriteRecord,
   type NoteCardAttachment,
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
@@ -160,6 +162,19 @@ export function DesktopNotesWorkspace({
         updatedAt: new Date().toISOString(),
       });
 
+      queryClient.setQueryData<FavoriteNoteDocument>(
+        ["favorite-note", baseUrl, savedNote.id],
+        savedNote,
+      );
+      queryClient.setQueryData<FavoriteNoteSummary[]>(
+        ["favorite-notes", baseUrl],
+        (current) => upsertFavoriteNoteSummary(current, savedNote),
+      );
+      queryClient.setQueryData<FavoriteRecord[]>(
+        ["app-favorites", baseUrl],
+        (current) => upsertFavoriteNoteRecord(current, savedNote),
+      );
+
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-favorites", baseUrl],
@@ -197,6 +212,17 @@ export function DesktopNotesWorkspace({
       }
 
       setSendDialogNote(null);
+
+      if (noteId) {
+        queryClient.setQueryData<FavoriteNoteSummary[]>(
+          ["favorite-notes", baseUrl],
+          (current) => removeFavoriteNoteSummary(current, noteId),
+        );
+        queryClient.setQueryData<FavoriteRecord[]>(
+          ["app-favorites", baseUrl],
+          (current) => removeFavoriteNoteRecord(current, noteId),
+        );
+      }
 
       await Promise.all([
         queryClient.invalidateQueries({
@@ -1323,6 +1349,85 @@ function buildNoteCardAttachment(
     assets: note.assets.map((asset) => ({ ...asset })),
     updatedAt: note.updatedAt,
   };
+}
+
+function buildFavoriteNoteSummary(
+  note: FavoriteNoteDocument,
+): FavoriteNoteSummary {
+  return {
+    id: note.id,
+    title: note.title,
+    excerpt: note.excerpt,
+    tags: [...note.tags],
+    assets: note.assets.map((asset) => ({ ...asset })),
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+  };
+}
+
+function buildFavoriteNoteRecord(note: FavoriteNoteDocument): FavoriteRecord {
+  return {
+    id: `favorite-${note.id}`,
+    sourceId: buildFavoriteNoteSourceId(note.id),
+    category: "notes",
+    title: note.title,
+    description: note.excerpt,
+    meta: formatFavoriteTimestamp(note.updatedAt),
+    to: `/tabs/favorites#draftId=${encodeURIComponent(note.id)}&noteId=${encodeURIComponent(note.id)}`,
+    badge: "笔记",
+    avatarName: note.title,
+    collectedAt: note.updatedAt,
+  };
+}
+
+function upsertFavoriteNoteSummary(
+  current: FavoriteNoteSummary[] | undefined,
+  note: FavoriteNoteDocument,
+) {
+  const nextNote = buildFavoriteNoteSummary(note);
+  return [
+    nextNote,
+    ...(current ?? []).filter((item) => item.id !== note.id),
+  ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+function upsertFavoriteNoteRecord(
+  current: FavoriteRecord[] | undefined,
+  note: FavoriteNoteDocument,
+) {
+  const nextRecord = buildFavoriteNoteRecord(note);
+  return [
+    nextRecord,
+    ...(current ?? []).filter((item) => item.sourceId !== nextRecord.sourceId),
+  ].sort((left, right) => right.collectedAt.localeCompare(left.collectedAt));
+}
+
+function removeFavoriteNoteSummary(
+  current: FavoriteNoteSummary[] | undefined,
+  noteId: string,
+) {
+  return (current ?? []).filter((item) => item.id !== noteId);
+}
+
+function removeFavoriteNoteRecord(
+  current: FavoriteRecord[] | undefined,
+  noteId: string,
+) {
+  const sourceId = buildFavoriteNoteSourceId(noteId);
+  return (current ?? []).filter((item) => item.sourceId !== sourceId);
+}
+
+function buildFavoriteNoteSourceId(noteId: string) {
+  return `favorite-note-${noteId}`;
+}
+
+function formatFavoriteTimestamp(iso: string) {
+  const date = new Date(iso);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${month}月${day}日 ${hours}:${minutes}`;
 }
 
 function escapeHtml(value: string) {
