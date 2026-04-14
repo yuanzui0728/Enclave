@@ -1045,6 +1045,27 @@ export function DesktopMobilePage() {
                     <RecentArticleRow
                       key={account.id}
                       account={account}
+                      onOpenAccount={() => {
+                        void navigate({
+                          to: "/tabs/contacts",
+                          hash: buildDesktopContactsRouteHash({
+                            pane: "official-accounts",
+                            accountId: account.id,
+                            showWorldCharacters: false,
+                          }),
+                        });
+                      }}
+                      onOpenArticle={() => {
+                        void navigate({
+                          to: "/tabs/contacts",
+                          hash: buildDesktopContactsRouteHash({
+                            pane: "official-accounts",
+                            accountId: account.id,
+                            articleId: account.recentArticle?.id,
+                            showWorldCharacters: false,
+                          }),
+                        });
+                      }}
                       onCopyAccount={() =>
                         void handleCopyHandoff({
                           description: "继续查看账号资料与最近推送。",
@@ -1683,10 +1704,14 @@ function RecentConversationRow({
 
 function RecentArticleRow({
   account,
+  onOpenAccount,
+  onOpenArticle,
   onCopyAccount,
   onCopyArticle,
 }: {
   account: OfficialAccountSummary;
+  onOpenAccount: () => void;
+  onOpenArticle: () => void;
   onCopyAccount: () => void;
   onCopyArticle: () => void;
 }) {
@@ -1721,11 +1746,29 @@ function RecentArticleRow({
             <Button
               variant="secondary"
               size="sm"
+              onClick={onOpenArticle}
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+            >
+              <ArrowUpRight size={14} />
+              桌面打开文章
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={onCopyAccount}
               className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <ArrowUpRight size={14} />
               发主页到手机
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onOpenAccount}
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+            >
+              <ArrowUpRight size={14} />
+              桌面打开主页
             </Button>
           </div>
         </div>
