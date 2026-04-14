@@ -11,7 +11,7 @@ import {
   type OfficialAccountSummary,
   unfollowOfficialAccount,
 } from "@yinjie/contracts";
-import { BookOpenText, MessageSquareText, Smartphone } from "lucide-react";
+import { BookOpenText, MessageSquareText } from "lucide-react";
 import { Button, ErrorBlock, LoadingBlock, TextField, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
 import { EmptyState } from "../../../components/empty-state";
@@ -32,7 +32,6 @@ import {
   buildDesktopOfficialArticleWindowPath,
   openDesktopOfficialArticleWindow,
 } from "./desktop-official-article-window-route-state";
-import { buildDesktopMobileOfficialHandoffHash } from "./desktop-mobile-official-handoff-route-state";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 
 type DesktopOfficialDisplayMode = "feed" | "accounts";
@@ -494,63 +493,6 @@ export function DesktopOfficialAccountsWorkspace({
     });
   }
 
-  const mobileHandoffPayload = useMemo(() => {
-    if (displayMode === "accounts" && account) {
-      const activeArticle = account.articles.find(
-        (article) => article.id === activeAccountArticleId,
-      );
-
-      return {
-        accountId: account.id,
-        accountName: account.name,
-        articleId: activeArticle?.id,
-        articleTitle: activeArticle?.title,
-        accountType: account.accountType,
-      } as const;
-    }
-
-    const activeFeedItem =
-      filteredFeedItems.find(
-        (item) => item.article.id === highlightedFeedArticleId,
-      ) ?? filteredFeedItems[0];
-
-    if (!activeFeedItem) {
-      return null;
-    }
-
-    return {
-      accountId: activeFeedItem.account.id,
-      accountName: activeFeedItem.account.name,
-      articleId: activeFeedItem.article.id,
-      articleTitle: activeFeedItem.article.title,
-      accountType: activeFeedItem.account.accountType,
-    } as const;
-  }, [
-    account,
-    activeAccountArticleId,
-    displayMode,
-    filteredFeedItems,
-    highlightedFeedArticleId,
-  ]);
-
-  function openMobileHandoff() {
-    if (!mobileHandoffPayload) {
-      return;
-    }
-
-    void navigate({
-      to: "/desktop/mobile",
-      hash: buildDesktopMobileOfficialHandoffHash({
-        surface: "directory",
-        accountId: mobileHandoffPayload.accountId,
-        articleId: mobileHandoffPayload.articleId,
-        accountName: mobileHandoffPayload.accountName,
-        articleTitle: mobileHandoffPayload.articleTitle,
-        accountType: mobileHandoffPayload.accountType,
-      }),
-    });
-  }
-
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.82)] px-5 py-4 backdrop-blur-xl">
@@ -576,16 +518,6 @@ export function DesktopOfficialAccountsWorkspace({
             >
               <NextDisplayModeIcon size={14} />
               {nextDisplayModeLabel}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={openMobileHandoff}
-              className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-            >
-              <Smartphone size={14} />
-              到手机继续
             </Button>
           </div>
         </div>
