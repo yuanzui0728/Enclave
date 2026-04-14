@@ -5,13 +5,18 @@ import { formatMessageTimestamp } from "../lib/format";
 export function OfficialServiceMessageBubble({
   message,
   variant = "mobile",
+  activeArticleId,
   onOpenArticle,
 }: {
   message: OfficialAccountServiceMessage;
   variant?: "mobile" | "desktop";
+  activeArticleId?: string | null;
   onOpenArticle?: (articleId: string) => void;
 }) {
   const isDesktop = variant === "desktop";
+  const articleCardActive =
+    message.attachment?.kind === "article_card" &&
+    message.attachment.articleId === activeArticleId;
 
   return (
     <div className="flex justify-start">
@@ -40,8 +45,12 @@ export function OfficialServiceMessageBubble({
             onClick={() => onOpenArticle?.(message.attachment!.articleId)}
             className={
               isDesktop
-                ? "w-full rounded-[22px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-4 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
-                : "w-full rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-2.5 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
+                ? articleCardActive
+                  ? "w-full rounded-[22px] border border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.11)] p-4 text-left shadow-[0_10px_24px_rgba(7,193,96,0.08)] transition"
+                  : "w-full rounded-[22px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-4 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
+                : articleCardActive
+                  ? "w-full rounded-[16px] border border-[rgba(7,193,96,0.18)] bg-[rgba(7,193,96,0.11)] px-3 py-2.5 text-left shadow-none transition"
+                  : "w-full rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-2.5 text-left shadow-none transition hover:bg-[color:var(--surface-console)]"
             }
           >
             <div
@@ -58,22 +67,22 @@ export function OfficialServiceMessageBubble({
               <span>文章卡片</span>
             </div>
             <div
-            className={
-              isDesktop
-                ? "mt-3 text-sm font-medium text-[color:var(--text-primary)]"
-                : "mt-1.5 text-[12px] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
-            }
-          >
-            {message.attachment.title}
+              className={
+                isDesktop
+                  ? "mt-3 text-sm font-medium text-[color:var(--text-primary)]"
+                  : "mt-1.5 text-[12px] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
+              }
+            >
+              {message.attachment.title}
             </div>
             <div
-            className={
-              isDesktop
-                ? "mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]"
-                : "mt-1 line-clamp-2 text-[10px] leading-[1.125rem] text-[color:var(--text-secondary)]"
-            }
-          >
-            {message.attachment.summary}
+              className={
+                isDesktop
+                  ? "mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]"
+                  : "mt-1 line-clamp-2 text-[10px] leading-[1.125rem] text-[color:var(--text-secondary)]"
+              }
+            >
+              {message.attachment.summary}
             </div>
           </button>
         ) : null}
