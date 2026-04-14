@@ -189,6 +189,17 @@ export function OfficialAccountServiceThread({
     markArticleReadMutation.error instanceof Error
       ? markArticleReadMutation.error.message
       : null);
+  const desktopHeaderMeta = [
+    "服务号",
+    accountQuery.data?.isVerified ? "已认证" : null,
+    accountQuery.data?.isMuted ? "已免打扰" : null,
+    accountQuery.data?.handle ? `@${accountQuery.data.handle}` : null,
+  ].filter(Boolean);
+  const mobileHeaderMeta = [
+    "服务号",
+    accountQuery.data?.isVerified ? "已认证" : null,
+    accountQuery.data?.isMuted ? "已免打扰" : null,
+  ].filter(Boolean);
 
   function handleOpenAccount(nextAccountId: string, articleId?: string) {
     if (onOpenAccount) {
@@ -242,40 +253,32 @@ export function OfficialAccountServiceThread({
             className="absolute inset-0 z-10 bg-transparent"
           />
         ) : null}
-        <header className="border-b border-[color:var(--border-faint)] bg-white/92 px-5 py-4 backdrop-blur-xl">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <header className="border-b border-[color:var(--border-faint)] bg-white px-5 py-3.5">
+          <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               {selectedArticleId ? (
                 <button
                   type="button"
                   onClick={handleCloseDesktopArticle}
-                  className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                  className="inline-flex items-center gap-1 text-[12px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
                 >
-                  <ArrowLeft size={12} />
+                  <ArrowLeft size={14} />
                   返回消息
                 </button>
               ) : null}
-              <div className={cn("truncate text-[16px] font-medium text-[color:var(--text-primary)]", selectedArticleId ? "mt-2" : "")}>
+              <div
+                className={cn(
+                  "truncate text-[16px] font-medium text-[color:var(--text-primary)]",
+                  selectedArticleId ? "mt-1.5" : "",
+                )}
+              >
                 {accountQuery.data?.name ?? "服务号消息"}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[color:var(--brand-primary)]">
-                  服务号
-                </span>
-                {accountQuery.data?.isVerified ? (
-                  <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2 py-0.5 text-[#315b9a]">
-                    已认证
-                  </span>
-                ) : null}
-                {accountQuery.data?.isMuted ? (
-                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-0.5 text-[color:var(--text-secondary)]">
-                    已免打扰
-                  </span>
-                ) : null}
-                {accountQuery.data?.handle ? (
-                  <span>@{accountQuery.data.handle}</span>
-                ) : null}
-              </div>
+              {!selectedArticleId && desktopHeaderMeta.length ? (
+                <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                  {desktopHeaderMeta.join(" · ")}
+                </div>
+              ) : null}
             </div>
             <div className="relative z-20 flex shrink-0 items-center">
               <Button
@@ -348,27 +351,39 @@ export function OfficialAccountServiceThread({
 
         <div
           ref={selectedArticleId ? undefined : desktopThreadScrollContainerRef}
-          className="min-h-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)]"
+          className={cn(
+            "min-h-0 flex-1 overflow-auto",
+            selectedArticleId ? "bg-white" : "bg-[rgba(255,255,255,0.62)]",
+          )}
         >
           {selectedArticleId ? (
-            <div className="px-6 py-6">
+            <div className="min-h-full bg-white">
               {articleQuery.isLoading ? (
-                <LoadingBlock label="正在读取文章..." />
+                <div className="mx-auto max-w-[780px] px-8 py-10">
+                  <LoadingBlock label="正在读取文章..." />
+                </div>
               ) : null}
               {articleQuery.isError && articleQuery.error instanceof Error ? (
-                <ErrorBlock message={articleQuery.error.message} />
+                <div className="mx-auto max-w-[780px] px-8 py-10">
+                  <ErrorBlock message={articleQuery.error.message} />
+                </div>
               ) : null}
-              {actionErrorMessage ? <ErrorBlock message={actionErrorMessage} /> : null}
+              {actionErrorMessage ? (
+                <div className="mx-auto max-w-[780px] px-8 pt-8">
+                  <ErrorBlock message={actionErrorMessage} />
+                </div>
+              ) : null}
               {articleQuery.data ? (
                 <OfficialArticleViewer
                   article={articleQuery.data}
+                  desktopSurface="reader"
                   onOpenAccount={(nextAccountId) =>
                     handleOpenAccount(nextAccountId, articleQuery.data.id)
                   }
                   onOpenArticle={handleOpenDesktopArticle}
                 />
               ) : !articleQuery.isLoading && !articleQuery.isError ? (
-                <div className="mx-auto max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-8 py-10 shadow-[var(--shadow-section)]">
+                <div className="mx-auto flex min-h-full max-w-[780px] items-center px-8 py-14">
                   <EmptyState
                     title="这篇文章暂时不可用"
                     description="可以先返回服务号消息，稍后再试。"
@@ -434,9 +449,11 @@ export function OfficialAccountServiceThread({
             <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
-            <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
-              服务通知和文章入口会集中在这里。
-            </div>
+            {mobileHeaderMeta.length ? (
+              <div className="mt-0.5 truncate text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+                {mobileHeaderMeta.join(" · ")}
+              </div>
+            ) : null}
           </div>
           <Button
             type="button"
