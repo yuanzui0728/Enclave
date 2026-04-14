@@ -839,6 +839,22 @@ export function StickerPanel({
     "切到最近添加，优先查看和清理最近导入的表情。";
   const recentUsedSortTitle = "切到最近使用，优先查看最近发过的常用表情。";
   const recentAddedSortTitle = "切到最近添加，优先查看和整理最近导入的表情。";
+  const closePanelTitle = "收起表情面板。";
+  const getTabShortcutTitle = (tabId: string, tabLabel: string) => {
+    if (tabId === "recent") {
+      return recentUsedSortTitle;
+    }
+
+    if (tabId === "featured") {
+      return featuredShortcutTitle;
+    }
+
+    if (tabId === "custom") {
+      return customShortcutTitle;
+    }
+
+    return `切到${tabLabel}表情分组。`;
+  };
   const searchResumeUploadButtonLabel = showManageSearchPauseHint
     ? "现在去添加"
     : catalog.customStickerCount === 0
@@ -1757,6 +1773,7 @@ export function StickerPanel({
             <button
               type="button"
               onClick={onClose}
+              title={closePanelTitle}
               className={
                 isMobile
                   ? "rounded-full bg-white px-2.5 py-1 text-[11px] text-[#7b7f84] transition active:bg-[#f5f5f5]"
@@ -2867,7 +2884,7 @@ export function StickerPanel({
                           : "bg-transparent hover:bg-white/76"
                       }`
                 }
-                title={tab.label}
+                title={getTabShortcutTitle(tab.id, tab.label)}
               >
                 {isMobile ? (
                   tab.label
