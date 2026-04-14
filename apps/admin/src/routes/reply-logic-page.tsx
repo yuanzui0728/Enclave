@@ -1673,11 +1673,14 @@ function GroupReplyRuntimeCard({
         actorMap.set(candidate.characterId, candidate.characterName);
       }
     }
+    for (const archivedActor of runtime.archiveSummary?.actorSummary ?? []) {
+      actorMap.set(archivedActor.actorCharacterId, archivedActor.actorName);
+    }
 
     return [...actorMap.entries()]
       .map(([id, name]) => ({ id, name }))
       .sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
-  }, [runtime.recentTurns]);
+  }, [runtime.archiveSummary?.actorSummary, runtime.recentTurns]);
 
   const retryMutation = useMutation({
     mutationFn: async (taskId: string) => adminApi.retryReplyLogicGroupReplyTask(taskId),
@@ -1747,14 +1750,65 @@ function GroupReplyRuntimeCard({
       })
       .filter((turn): turn is ReplyLogicGroupReplyTurnSummary => Boolean(turn));
   }, [actorFilter, runtime.recentTurns, statusFilter]);
+  const visibleIssueSummary = useMemo(() => {
+    if (actorFilter === "all" && statusFilter === "all") {
+      return runtime.issueSummary;
+    }
+
+    return buildVisibleGroupReplyIssueSummary(
+      filteredTurns.flatMap((turn) => turn.tasks),
+      8,
+    );
+  }, [actorFilter, filteredTurns, runtime.issueSummary, statusFilter]);
+  const selectedArchiveActor = useMemo(() => {
+    if (!runtime.archiveSummary || actorFilter === "all") {
+      return null;
+    }
+
+    return (
+      runtime.archiveSummary.actorSummary.find(
+        (actor) => actor.actorCharacterId === actorFilter,
+      ) ?? null
+    );
+  }, [actorFilter, runtime.archiveSummary]);
   const visibleArchiveTrend = useMemo(() => {
     if (!runtime.archiveSummary) {
       return [];
     }
 
     const windowSize = Number(archiveTrendWindow) || 14;
-    return runtime.archiveSummary.trend.slice(-windowSize);
-  }, [archiveTrendWindow, runtime.archiveSummary]);
+    const trendSource = selectedArchiveActor?.trend ?? runtime.archiveSummary.trend;
+    return trendSource.slice(-windowSize);
+  }, [archiveTrendWindow, runtime.archiveSummary, selectedArchiveActor]);
+  const visibleArchiveActors = useMemo(() => {
+    if (!runtime.archiveSummary) {
+      return [];
+    }
+
+    if (selectedArchiveActor) {
+      return [selectedArchiveActor];
+    }
+
+    return runtime.archiveSummary.actorSummary.slice(0, 8);
+  }, [runtime.archiveSummary, selectedArchiveActor]);
+  const visibleArchiveIssueSummary = useMemo(() => {
+    if (!runtime.archiveSummary) {
+      return [];
+    }
+
+    return selectedArchiveActor?.issueSummary ?? runtime.archiveSummary.issueSummary;
+  }, [runtime.archiveSummary, selectedArchiveActor]);
+  const selectedActorOption = useMemo(
+    () => actorOptions.find((actor) => actor.id === actorFilter) ?? null,
+    [actorFilter, actorOptions],
+  );
+  const archiveMetricStatusCounts = selectedArchiveActor
+    ? {
+        sent: selectedArchiveActor.sentCount,
+        cancelled: selectedArchiveActor.cancelledCount,
+        failed: selectedArchiveActor.failedCount,
+      }
+    : runtime.archiveSummary?.statusCounts ?? null;
 
   return (
     <Card className="bg-[color:var(--surface-console)]">
@@ -1853,14 +1907,18 @@ function GroupReplyRuntimeCard({
       ) : null}
 
       <AdminSubpanel title="问题聚合" contentClassName="mt-4">
-        {!runtime.issueSummary.length ? (
+        {!visibleIssueSummary.length ? (
           <AdminEmptyState
             title="最近没有失败或取消集中点"
-            description="当前任务执行比较稳定，最近轮次里没有显著的失败/取消原因聚合。"
+            description={
+              actorFilter === "all" && statusFilter === "all"
+                ? "当前任务执行比较稳定，最近轮次里没有显著的失败/取消原因聚合。"
+                : "当前筛选条件下，没有发现明显的失败或取消原因聚合。"
+            }
           />
         ) : (
           <div className="space-y-3">
-            {runtime.issueSummary.map((issue) => (
+            {visibleIssueSummary.map((issue) => (
               <AdminRecordCard
                 key={issue.key}
                 title={issue.label}
@@ -1889,36 +1947,69 @@ function GroupReplyRuntimeCard({
           />
         ) : (
           <div className="space-y-4">
+            {actorFilter !== "all" ? (
+              selectedArchiveActor ? (
+                <InlineNotice tone="muted">
+                  历史归档已按角色过滤：{selectedArchiveActor.actorName}。
+                </InlineNotice>
+              ) : (
+                <AdminEmptyState
+                  title="当前角色还没有归档数据"
+                  description={`实时任务里能看到 ${selectedActorOption?.name ?? "该角色"}，但历史归档中暂时还没有它的终态统计。`}
+                />
+              )
+            ) : null}
+
+            {actorFilter !== "all" && !selectedArchiveActor ? null : (
+              <>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label="已归档任务" value={runtime.archiveSummary.archivedTaskCount} />
-              <MetricCard label="已归档轮次" value={runtime.archiveSummary.archivedTurnCount} />
+              <MetricCard
+                label="已归档任务"
+                value={selectedArchiveActor?.taskCount ?? runtime.archiveSummary.archivedTaskCount}
+              />
+              <MetricCard
+                label="已归档轮次"
+                value={selectedArchiveActor?.turnCount ?? runtime.archiveSummary.archivedTurnCount}
+              />
               <MetricCard
                 label="历史失败率"
-                value={`${(runtime.archiveSummary.failureRate * 100).toFixed(1)}%`}
+                value={`${(
+                  (selectedArchiveActor?.failureRate ?? runtime.archiveSummary.failureRate) * 100
+                ).toFixed(1)}%`}
               />
               <MetricCard
                 label="历史取消率"
-                value={`${(runtime.archiveSummary.cancelRate * 100).toFixed(1)}%`}
+                value={`${(
+                  (selectedArchiveActor?.cancelRate ?? runtime.archiveSummary.cancelRate) * 100
+                ).toFixed(1)}%`}
               />
             </div>
 
             <AdminRecordCard
-              title="归档状态分布"
+              title={
+                selectedArchiveActor
+                  ? `归档状态分布 · ${selectedArchiveActor.actorName}`
+                  : "归档状态分布"
+              }
               badges={
                 <>
                   <StatusPill tone="healthy">
-                    已发送 {runtime.archiveSummary.statusCounts.sent}
+                    已发送 {archiveMetricStatusCounts?.sent ?? 0}
                   </StatusPill>
                   <StatusPill tone="muted">
-                    已取消 {runtime.archiveSummary.statusCounts.cancelled}
+                    已取消 {archiveMetricStatusCounts?.cancelled ?? 0}
                   </StatusPill>
                   <StatusPill tone="warning">
-                    失败 {runtime.archiveSummary.statusCounts.failed}
+                    失败 {archiveMetricStatusCounts?.failed ?? 0}
                   </StatusPill>
                 </>
               }
               meta={`最近归档：${formatDateTime(runtime.archiveSummary.lastArchivedAt)} · 归档截止：${formatDateTime(runtime.archiveSummary.lastCutoff)}`}
-              description="这些统计来自已经被清理出任务表的历史终态任务，用来保留长期运行趋势。"
+              description={
+                selectedArchiveActor
+                  ? "这些统计只看当前角色已经归档的终态任务，用来判断它是否在长期上持续恶化。"
+                  : "这些统计来自已经被清理出任务表的历史终态任务，用来保留长期运行趋势。"
+              }
               className="bg-white/90"
             />
 
@@ -1967,20 +2058,21 @@ function GroupReplyRuntimeCard({
             </AdminSubpanel>
 
             <AdminSubpanel title="角色异常率">
-              {!runtime.archiveSummary.actorSummary.length ? (
+              {!visibleArchiveActors.length ? (
                 <AdminEmptyState
                   title="还没有角色归档画像"
                   description="当前归档数据还不足以形成角色级长期统计。"
                 />
               ) : (
                 <div className="space-y-3">
-                  {runtime.archiveSummary.actorSummary.map((actor) => (
+                  {visibleArchiveActors.map((actor) => (
                     <AdminRecordCard
                       key={actor.actorCharacterId}
                       title={actor.actorName}
                       badges={
                         <>
                           <StatusPill tone="muted">{actor.taskCount} 任务</StatusPill>
+                          <StatusPill tone="muted">{actor.turnCount} 轮</StatusPill>
                           <StatusPill tone="warning">
                             异常率 {(actor.issueRate * 100).toFixed(1)}%
                           </StatusPill>
@@ -2000,14 +2092,18 @@ function GroupReplyRuntimeCard({
               )}
             </AdminSubpanel>
 
-            {!runtime.archiveSummary.issueSummary.length ? (
+            {!visibleArchiveIssueSummary.length ? (
               <AdminEmptyState
                 title="归档里没有异常热点"
-                description="已归档的历史任务里，当前没有形成显著的失败/取消原因聚合。"
+                description={
+                  selectedArchiveActor
+                    ? "当前角色的已归档历史里，没有形成显著的失败或取消原因聚合。"
+                    : "已归档的历史任务里，当前没有形成显著的失败/取消原因聚合。"
+                }
               />
             ) : (
               <div className="space-y-3">
-                {runtime.archiveSummary.issueSummary.map((issue) => (
+                {visibleArchiveIssueSummary.map((issue) => (
                   <AdminRecordCard
                     key={`archived-${issue.key}`}
                     title={issue.label}
@@ -2027,6 +2123,8 @@ function GroupReplyRuntimeCard({
                   />
                 ))}
               </div>
+            )}
+              </>
             )}
           </div>
         )}
@@ -4687,6 +4785,64 @@ function describeArchivedGroupReplyIssue(issue: ReplyLogicGroupReplyIssueSummary
   }
 
   return `这是已经归档的历史失败热点，累计出现 ${issue.count} 次，适合用来判断某类 provider 或上下文错误是否反复出现。`;
+}
+
+function buildVisibleGroupReplyIssueSummary(
+  tasks: ReplyLogicGroupReplyTurnSummary["tasks"],
+  limit = 8,
+): ReplyLogicGroupReplyIssueSummary[] {
+  const issueCounts = new Map<string, ReplyLogicGroupReplyIssueSummary>();
+
+  for (const task of tasks) {
+    if (task.status === "cancelled" && task.cancelReason) {
+      const key = `cancel:${task.cancelReason}`;
+      const existing = issueCounts.get(key);
+      issueCounts.set(key, {
+        key,
+        label: formatGroupReplyIssueLabel("cancel_reason", task.cancelReason),
+        source: "cancel_reason",
+        status: "cancelled",
+        count: (existing?.count ?? 0) + 1,
+      });
+    }
+
+    if (task.status === "failed" && task.errorMessage) {
+      const normalizedError = normalizeGroupReplyErrorMessage(task.errorMessage);
+      const key = `error:${normalizedError}`;
+      const existing = issueCounts.get(key);
+      issueCounts.set(key, {
+        key,
+        label: formatGroupReplyIssueLabel("error_message", normalizedError),
+        source: "error_message",
+        status: "failed",
+        count: (existing?.count ?? 0) + 1,
+      });
+    }
+  }
+
+  return [...issueCounts.values()]
+    .sort((left, right) => right.count - left.count)
+    .slice(0, limit);
+}
+
+function normalizeGroupReplyErrorMessage(message: string) {
+  return message.trim().slice(0, 80) || "unknown_error";
+}
+
+function formatGroupReplyIssueLabel(
+  source: ReplyLogicGroupReplyIssueSummary["source"],
+  value: string,
+) {
+  if (source === "cancel_reason") {
+    if (value === "superseded_by_new_user_message") {
+      return "新用户消息覆盖了旧轮任务";
+    }
+    if (value === "actor_missing") {
+      return "角色缺失或画像不可用";
+    }
+  }
+
+  return value;
 }
 
 function formatArchiveTrendDate(date: string) {
