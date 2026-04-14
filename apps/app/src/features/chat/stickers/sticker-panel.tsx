@@ -92,6 +92,12 @@ export function StickerPanel({
   >(null);
   const [manageSearchPauseHintVisible, setManageSearchPauseHintVisible] =
     useState(false);
+  const [pausedManageFocusKey, setPausedManageFocusKey] = useState<
+    string | null
+  >(null);
+  const [pausedManageFocusLabel, setPausedManageFocusLabel] = useState<
+    string | null
+  >(null);
   const [shouldFocusCustomEmptyAction, setShouldFocusCustomEmptyAction] =
     useState(false);
   const [highlightedStickerKey, setHighlightedStickerKey] = useState<
@@ -708,6 +714,9 @@ export function StickerPanel({
           highlightedSearchSectionState.highlightedPosition - 1
         } 项`
       : null;
+  const pausedManageResumeLabel = pausedManageFocusLabel
+    ? `恢复后回到：${pausedManageFocusLabel}`
+    : "恢复后回到上次删除位置";
   const showSearchSectionJumpHint =
     !isMobile &&
     searching &&
@@ -846,6 +855,9 @@ export function StickerPanel({
     setSearchKeyword("");
     setManageSearchPauseHintVisible(false);
     setCustomManageMode(true);
+    setPendingManageFocusKey(pausedManageFocusKey);
+    setPausedManageFocusKey(null);
+    setPausedManageFocusLabel(null);
   };
   const switchToFeatured = () => {
     setKeyword("");
@@ -879,18 +891,37 @@ export function StickerPanel({
       customManageMode
     ) {
       setManageSearchPauseHintVisible(true);
+      setPausedManageFocusKey(focusedManageDeleteKey);
+      setPausedManageFocusLabel(
+        focusedManageSticker?.label ?? focusedManageSticker?.stickerId ?? null,
+      );
     }
 
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
       setCustomManageMode(false);
     }
-  }, [activeSectionId, customManageMode, isMobile, trimmedKeyword.length]);
+  }, [
+    activeSectionId,
+    customManageMode,
+    focusedManageDeleteKey,
+    focusedManageSticker,
+    isMobile,
+    trimmedKeyword.length,
+  ]);
 
   useEffect(() => {
     if (activeSectionId !== "custom" || trimmedKeyword.length === 0) {
       setManageSearchPauseHintVisible(false);
     }
-  }, [activeSectionId, trimmedKeyword.length]);
+
+    if (
+      activeSectionId !== "custom" ||
+      (trimmedKeyword.length === 0 && !customManageMode)
+    ) {
+      setPausedManageFocusKey(null);
+      setPausedManageFocusLabel(null);
+    }
+  }, [activeSectionId, customManageMode, trimmedKeyword.length]);
 
   useEffect(() => {
     if (activeSectionId !== "custom" || trimmedKeyword.length > 0) {
@@ -1589,8 +1620,9 @@ export function StickerPanel({
           {showManageSearchPauseHint ? (
             <div className="px-1 pt-2">
               <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
-                <span>
-                  搜索中已暂停删除管理，清空搜索后可继续从当前自定义表情开始删。
+                <span>搜索中已暂停删除管理，清空搜索后可继续删除。</span>
+                <span className="rounded-full bg-white/88 px-2 py-1 text-[10px] text-[#9a5a0a]">
+                  {pausedManageResumeLabel}
                 </span>
                 <button
                   type="button"
