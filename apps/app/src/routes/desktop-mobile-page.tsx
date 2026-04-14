@@ -10,10 +10,12 @@ import {
   type OfficialAccountSummary,
 } from "@yinjie/contracts";
 import {
+  BookOpenText,
   ArrowUpRight,
   Blocks,
   CheckCircle2,
   Copy,
+  MessageSquareText,
   RefreshCw,
   RadioTower,
   Smartphone,
@@ -41,6 +43,12 @@ import {
 } from "../features/mini-programs/mini-programs-storage";
 import { DesktopUtilityShell } from "../features/desktop/desktop-utility-shell";
 import { parseDesktopMobileCallHandoffHash } from "../features/desktop/chat/desktop-mobile-call-handoff-route-state";
+import {
+  parseDesktopMobileOfficialHandoffHash,
+  resolveDesktopMobileOfficialHandoffPath,
+} from "../features/desktop/official-accounts/desktop-mobile-official-handoff-route-state";
+import { buildDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { getConversationPreviewParts } from "../lib/conversation-preview";
 import {
@@ -191,6 +199,10 @@ export function DesktopMobilePage() {
     () => parseDesktopMobileCallHandoffHash(hash),
     [hash],
   );
+  const officialHandoffState = useMemo(
+    () => parseDesktopMobileOfficialHandoffHash(hash),
+    [hash],
+  );
 
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -267,6 +279,9 @@ export function DesktopMobilePage() {
       ? "视频通话"
       : "语音通话"
     : "";
+  const officialHandoffPath = officialHandoffState
+    ? resolveDesktopMobileOfficialHandoffPath(officialHandoffState)
+    : null;
 
   useEffect(() => {
     if (!nativeDesktopHandoff) {
@@ -374,6 +389,39 @@ export function DesktopMobilePage() {
   const callHandoffTitle =
     callHandoffState?.title?.trim() ||
     (callHandoffState?.conversationType === "group" ? "当前群聊" : "当前聊天");
+  const officialHandoffAccount = useMemo(
+    () =>
+      officialHandoffState?.accountId
+        ? (officialAccountsQuery.data ?? []).find(
+            (account) => account.id === officialHandoffState.accountId,
+          ) ?? null
+        : null,
+    [officialAccountsQuery.data, officialHandoffState?.accountId],
+  );
+  const officialHandoffTitle =
+    officialHandoffState?.articleTitle?.trim() ||
+    officialHandoffState?.accountName?.trim() ||
+    officialHandoffAccount?.name ||
+    "公众号";
+  const officialHandoffTypeLabel =
+    officialHandoffState?.articleId
+      ? "公众号文章"
+      : officialHandoffState?.surface === "service"
+        ? "服务号消息"
+        : officialHandoffState?.surface === "subscription"
+          ? "订阅号消息"
+          : officialHandoffState?.accountType === "service"
+            ? "服务号主页"
+            : "公众号主页";
+  const officialHandoffDescription = officialHandoffState
+    ? officialHandoffState.articleId
+      ? `把 ${officialHandoffTitle} 发到手机继续阅读。`
+      : officialHandoffState.surface === "service"
+        ? `把 ${officialHandoffTitle} 的服务消息入口带到手机继续。`
+        : officialHandoffState.surface === "subscription"
+          ? "把当前订阅号聚合阅读入口带到手机继续。"
+          : `把 ${officialHandoffTitle} 的公众号主页带到手机继续查看。`
+    : "";
   const activeLiveSession =
     liveHistory.find((item) => item.status === "live") ?? null;
   const activeMiniProgram = miniProgramsState.activeMiniProgramId
@@ -426,6 +474,43 @@ export function DesktopMobilePage() {
         .filter((group) => group.items.length),
     [activeHandoffHistory],
   );
+
+  function handleOpenOfficialHandoffOnDesktop() {
+    if (!officialHandoffState) {
+      return;
+    }
+
+    if (officialHandoffState.surface === "service" && officialHandoffState.accountId) {
+      void navigate({
+        to: "/official-accounts/service/$accountId",
+        params: { accountId: officialHandoffState.accountId },
+        hash: buildDesktopOfficialMessageRouteHash({
+          articleId: officialHandoffState.articleId,
+        }),
+      });
+      return;
+    }
+
+    if (officialHandoffState.surface === "subscription") {
+      void navigate({
+        to: "/chat/subscription-inbox",
+        hash: buildDesktopOfficialMessageRouteHash({
+          articleId: officialHandoffState.articleId,
+        }),
+      });
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({
+        pane: "official-accounts",
+        accountId: officialHandoffState.accountId,
+        articleId: officialHandoffState.articleId,
+        showWorldCharacters: false,
+      }),
+    });
+  }
   const recentGroupInviteHandoffs = useMemo(
     () =>
       activeHandoffHistory
@@ -671,6 +756,77 @@ export function DesktopMobilePage() {
                 </Link>
               </div>
             </section>
+        ) : null}
+
+        {officialHandoffState && officialHandoffPath ? (
+          <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] p-5 shadow-[var(--shadow-section)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
+                  {officialHandoffState.surface === "service" ? (
+                    <MessageSquareText
+                      size={16}
+                      className="text-[color:var(--brand-primary)]"
+                    />
+                  ) : (
+                    <BookOpenText
+                      size={16}
+                      className="text-[color:var(--brand-primary)]"
+                    />
+                  )}
+                  <span>{officialHandoffTypeLabel}接力</span>
+                </div>
+                <div className="mt-2 text-sm text-[color:var(--text-primary)]">
+                  把 <span className="font-medium">{officialHandoffTitle}</span>{" "}
+                  带到手机继续。
+                </div>
+                <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
+                  {officialHandoffDescription}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  void navigate({
+                    to: "/desktop/mobile",
+                    hash: "",
+                    replace: true,
+                  })
+                }
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+              >
+                收起
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                onClick={() =>
+                  void handleCopyHandoff({
+                    description: officialHandoffDescription,
+                    label: officialHandoffTitle,
+                    path: officialHandoffPath,
+                    setHistory: setHandoffHistory,
+                    setNotice,
+                  })
+                }
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              >
+                <Copy size={14} />
+                复制到手机
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleOpenOfficialHandoffOnDesktop}
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              >
+                <ArrowUpRight size={14} />
+                桌面回到当前工作区
+              </Button>
+            </div>
+          </section>
         ) : null}
 
           {conversationsQuery.isError &&
