@@ -381,7 +381,7 @@ export function GroupChatThreadPanel({
       !groupQuery.isLoading &&
       unreadSnapshotReady,
     disabled: Boolean(highlightedMessageId),
-    scrollToBottom,
+    containerRef: scrollAnchorRef,
   });
 
   useEffect(() => {

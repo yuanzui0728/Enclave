@@ -1,19 +1,17 @@
-import { useEffect, useRef } from "react";
-
-type ScrollToBottom = (behavior?: "auto" | "smooth") => void;
+import { useEffect, useRef, type RefObject } from "react";
 
 type UseThreadEntryScrollToBottomInput = {
   threadKey: string;
   ready: boolean;
   disabled?: boolean;
-  scrollToBottom: ScrollToBottom;
+  containerRef: RefObject<HTMLElement | null>;
 };
 
 export function useThreadEntryScrollToBottom({
   threadKey,
   ready,
   disabled = false,
-  scrollToBottom,
+  containerRef,
 }: UseThreadEntryScrollToBottomInput) {
   const completedRef = useRef(false);
 
@@ -27,21 +25,50 @@ export function useThreadEntryScrollToBottom({
     }
 
     completedRef.current = true;
-    let firstFrame = 0;
-    let secondFrame = 0;
+    let frame = 0;
+    let stopped = false;
+    const stopLock = () => {
+      stopped = true;
+    };
+    const pinToBottom = () => {
+      const element = containerRef.current;
+      if (!element) {
+        return;
+      }
 
-    // Run after the first stable paint so unread dividers and header notices
-    // have already affected layout before we pin the viewport to the tail.
-    firstFrame = window.requestAnimationFrame(() => {
-      scrollToBottom("auto");
-      secondFrame = window.requestAnimationFrame(() => {
-        scrollToBottom("auto");
-      });
-    });
+      element.scrollTop = element.scrollHeight;
+    };
+    const runFrame = (startedAt: number) => {
+      if (stopped) {
+        return;
+      }
+
+      pinToBottom();
+      if (performance.now() - startedAt >= ENTRY_SCROLL_LOCK_MS) {
+        return;
+      }
+
+      frame = window.requestAnimationFrame(() => runFrame(startedAt));
+    };
+
+    // Keep the viewport pinned to the tail for a short window so late layout
+    // changes such as media sizing or divider insertion do not pull the user
+    // back above the latest message.
+    frame = window.requestAnimationFrame(() => runFrame(performance.now()));
+
+    const element = containerRef.current;
+    element?.addEventListener("wheel", stopLock, { passive: true });
+    element?.addEventListener("touchstart", stopLock, { passive: true });
+    element?.addEventListener("pointerdown", stopLock, { passive: true });
 
     return () => {
-      window.cancelAnimationFrame(firstFrame);
-      window.cancelAnimationFrame(secondFrame);
+      stopLock();
+      window.cancelAnimationFrame(frame);
+      element?.removeEventListener("wheel", stopLock);
+      element?.removeEventListener("touchstart", stopLock);
+      element?.removeEventListener("pointerdown", stopLock);
     };
-  }, [disabled, ready, scrollToBottom, threadKey]);
+  }, [containerRef, disabled, ready, threadKey]);
 }
+
+const ENTRY_SCROLL_LOCK_MS = 1200;

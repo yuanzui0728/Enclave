@@ -165,7 +165,7 @@ export function ConversationThreadPanel({
     threadKey: conversationId,
     ready: !messagesQuery.isLoading && unreadSnapshotReady,
     disabled: Boolean(highlightedMessageId),
-    scrollToBottom,
+    containerRef: scrollAnchorRef,
   });
 
   useEffect(() => {
