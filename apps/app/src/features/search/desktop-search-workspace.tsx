@@ -315,6 +315,15 @@ export function DesktopSearchWorkspace({
     : activeCategory === "all"
       ? `${visibleResults.length} 条结果`
       : `${searchCategoryTitles[activeCategory]} · ${visibleResults.length}`;
+  const keywordLabel = searchText.trim();
+  const contextCategoryTitle =
+    activeCategory === "all" ? "全部结果" : searchCategoryTitles[activeCategory];
+  const handleScrollToTopContext = useEffectEvent(() => {
+    scrollResultsToTop("smooth");
+    focusSearchInput(Boolean(searchText.trim()));
+    showPanelSpotlight(resolveSpotlightPanelId(activeCategory));
+    showTransitionHint("已回到顶部，可继续调整关键词或切换分类。");
+  });
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
@@ -439,6 +448,21 @@ export function DesktopSearchWorkspace({
               description="聊天记录结果还在继续补全，稍后会自动刷新更多命中。"
               status="pending"
               title="搜索状态"
+            />
+          ) : null}
+          {!loading && !error && hasKeyword ? (
+            <DesktopSearchContextBar
+              activeCategory={activeCategory}
+              categoryTitle={contextCategoryTitle}
+              count={visibleResults.length}
+              keyword={keywordLabel}
+              onBackToAll={
+                activeCategory === "all"
+                  ? undefined
+                  : () => handleSelectCategory("all", { focusInput: true })
+              }
+              onClearKeyword={handleClearKeyword}
+              onScrollToTop={handleScrollToTopContext}
             />
           ) : null}
 
@@ -979,6 +1003,70 @@ function DesktopSearchScopeCard({
         <span>查看该分类</span>
       </div>
     </button>
+  );
+}
+
+function DesktopSearchContextBar({
+  activeCategory,
+  categoryTitle,
+  count,
+  keyword,
+  onBackToAll,
+  onClearKeyword,
+  onScrollToTop,
+}: {
+  activeCategory: SearchCategory;
+  categoryTitle: string;
+  count: number;
+  keyword: string;
+  onBackToAll?: () => void;
+  onClearKeyword: () => void;
+  onScrollToTop: () => void;
+}) {
+  const contextDescription =
+    activeCategory === "all"
+      ? "当前正在查看聚合结果，继续滚动时这条上下文会一直保留。"
+      : `当前结果已收窄到${categoryTitle}，需要扩展范围时可随时回到全部结果。`;
+
+  return (
+    <div className="sticky top-0 z-10 mb-4 pt-1">
+      <section className="rounded-[18px] border border-[rgba(7,193,96,0.14)] bg-[rgba(255,255,255,0.94)] p-4 shadow-[0_18px_42px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                当前搜索
+              </span>
+              <span className="rounded-full bg-[color:var(--surface-console)] px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+                {categoryTitle}
+              </span>
+              <span className="rounded-full bg-[color:var(--surface-console)] px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+                {count} 条命中
+              </span>
+            </div>
+            <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
+              关键词“{keyword}”
+            </div>
+            <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+              {contextDescription}
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+            {onBackToAll ? (
+              <DesktopSearchActionButton onClick={onBackToAll} tone="brand">
+                查看全部结果
+              </DesktopSearchActionButton>
+            ) : null}
+            <DesktopSearchActionButton onClick={onScrollToTop} tone="neutral">
+              回到顶部
+            </DesktopSearchActionButton>
+            <DesktopSearchActionButton onClick={onClearKeyword} tone="neutral">
+              清空关键词
+            </DesktopSearchActionButton>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
 
