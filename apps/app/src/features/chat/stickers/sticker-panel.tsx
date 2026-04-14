@@ -585,7 +585,7 @@ export function StickerPanel({
             searchPending ? "正在搜索" : "搜索"
           }“${trimmedKeyword}” · 删除管理已暂停${
             customUploadResumed
-              ? ` · 已腾出 ${customUploadResumedSlots} 个空位`
+              ? ` · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`
               : ""
           }`
         : searchPending
@@ -593,7 +593,7 @@ export function StickerPanel({
           : `搜索“${trimmedKeyword}”`
       : activeSectionId === "custom" && customManageMode
         ? customUploadResumed
-          ? `管理自定义表情 · 已腾出 ${customUploadResumedSlots} 个空位`
+          ? `管理自定义表情 · 已腾出 ${customUploadResumedSlots} 个空位，可继续添加`
           : `管理自定义表情 · 已保存 ${catalog.customStickerCount} / ${catalog.maxCustomStickerCount}`
         : activeSectionId === "custom" && customStickerLibraryFull
           ? "自定义表情已满，请先删除几个再继续添加"
@@ -811,6 +811,27 @@ export function StickerPanel({
         ? "完成清理"
         : "完成"
       : "管理";
+  const desktopManageButtonTitle = showManageSearchPauseHint
+    ? pausedManageFocusLabel
+      ? `清空搜索并继续删除管理，恢复到：${pausedManageFocusLabel}。${
+          customUploadResumed
+            ? ` 当前已腾出 ${customUploadResumedSlots} 个空位。`
+            : ""
+        }`
+      : `清空搜索并继续删除管理。${
+          customUploadResumed
+            ? ` 当前已腾出 ${customUploadResumedSlots} 个空位。`
+            : ""
+        }`
+    : customManageMode
+      ? customUploadResumed
+        ? `结束删除管理并回到自定义列表，当前已腾出 ${customUploadResumedSlots} 个空位，可继续添加。`
+        : "结束删除管理并回到自定义列表。"
+      : customStickerLibraryFull
+        ? "进入删除管理，先删几张再继续添加。"
+        : customSlotsRemaining <= 20
+          ? "进入删除管理，优先清理不常用表情。"
+          : "进入删除管理。";
   const desktopManageAfterFinishLabel =
     !isMobile && activeSectionId === "custom" && customManageMode
       ? customUploadResumed
@@ -1624,6 +1645,7 @@ export function StickerPanel({
 
                   openCustomManageMode();
                 }}
+                title={desktopManageButtonTitle}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   showManageSearchPauseHint
                     ? "bg-[rgba(160,90,10,0.14)] text-[#9a5a0a] hover:bg-[rgba(160,90,10,0.18)]"
