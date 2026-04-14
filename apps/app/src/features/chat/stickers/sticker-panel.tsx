@@ -2704,7 +2704,9 @@ export function StickerPanel({
                           ? "也可以直接继续添加图片或 GIF，或者先回到删除管理再清理。"
                           : "也可以先继续删除当前自定义表情，之后再回来搜。"
                         : showSearchResumeUploadAction
-                          ? "也可以直接继续添加图片或 GIF，之后再回来搜。"
+                          ? showSearchManageAction
+                            ? "也可以直接继续添加图片或 GIF，或者先去清理不常用表情，再回来搜。"
+                            : "也可以直接继续添加图片或 GIF，之后再回来搜。"
                           : showSearchManageAction
                             ? customStickerLibraryFull
                               ? "也可以先去管理里删掉几张，再回来继续搜。"
