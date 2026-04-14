@@ -27,7 +27,7 @@
 
 ## 主 App 结构（`apps/app/src/`）
 
-`routes/` · `features/desktop/` · `features/mobile/` · `features/games/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
+`routes/` · `features/desktop/` · `features/mobile/` · `features/moments/` · `features/games/` · `features/shell/` · `runtime/` · `lib/` · `components/` · `store/`
 
 ## 主 App 页面（`apps/app/src/routes/`）
 
