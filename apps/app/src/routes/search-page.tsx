@@ -43,6 +43,7 @@ export function SearchPage() {
     hasKeyword,
     loading,
     matchedCounts,
+    messageGroups,
     recentFavorites,
     recentMiniPrograms,
     scopeCounts,
@@ -180,6 +181,7 @@ export function SearchPage() {
         history={history}
         loading={loading}
         matchedCounts={matchedCounts}
+        messageGroups={messageGroups}
         onApplyHistory={handleApplyHistory}
         onClearHistory={handleClearHistory}
         onClearKeyword={() => setSearchText("")}

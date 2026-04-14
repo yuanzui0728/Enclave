@@ -26,6 +26,7 @@ import {
   type SearchCategory,
   type SearchHistoryItem,
   type SearchMatchCounts,
+  type SearchMessageGroup,
   type SearchResultItem,
   type SearchResultSection,
   type SearchScopeCounts,
@@ -39,6 +40,7 @@ type DesktopSearchWorkspaceProps = {
   history: SearchHistoryItem[];
   loading: boolean;
   matchedCounts: SearchMatchCounts;
+  messageGroups: SearchMessageGroup[];
   onApplyHistory: (keyword: string) => void;
   onClearHistory: () => void;
   onClearKeyword: () => void;
@@ -109,6 +111,7 @@ export function DesktopSearchWorkspace({
   history,
   loading,
   matchedCounts,
+  messageGroups,
   onApplyHistory,
   onClearHistory,
   onClearKeyword,
@@ -127,6 +130,20 @@ export function DesktopSearchWorkspace({
 }: DesktopSearchWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const normalizedKeyword = searchText.trim().toLowerCase();
+  const groupedMessageHeaderIds = useMemo(
+    () => new Set(messageGroups.map((item) => item.header.id)),
+    [messageGroups],
+  );
+  const messageConversationOnlyResults = useMemo(
+    () =>
+      visibleResults.filter(
+        (item) =>
+          item.category === "messages" &&
+          item.id.startsWith("conversation-") &&
+          !groupedMessageHeaderIds.has(item.id),
+      ),
+    [groupedMessageHeaderIds, visibleResults],
+  );
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -374,9 +391,24 @@ export function DesktopSearchWorkspace({
             activeCategory === "all" ? (
               <div className="space-y-6">
                 {groupedResults.map((section) => {
+                  const previewMessageGroups =
+                    section.category === "messages"
+                      ? messageGroups.slice(0, 3)
+                      : [];
+                  const previewMessageConversations =
+                    section.category === "messages"
+                      ? messageConversationOnlyResults.slice(
+                          0,
+                          Math.max(0, 5 - previewMessageGroups.length),
+                        )
+                      : [];
                   const previewResults = section.results.slice(0, 6);
                   const hasMore =
-                    section.results.length > previewResults.length;
+                    section.category === "messages"
+                      ? messageGroups.length > previewMessageGroups.length ||
+                        messageConversationOnlyResults.length >
+                          previewMessageConversations.length
+                      : section.results.length > previewResults.length;
 
                   return (
                     <section
@@ -403,16 +435,25 @@ export function DesktopSearchWorkspace({
                         ) : null}
                       </div>
 
-                      <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
-                        {previewResults.map((item) => (
-                          <DesktopSearchResultRow
-                            key={item.id}
-                            item={item}
-                            keyword={normalizedKeyword}
-                            onOpen={onOpenResult}
-                          />
-                        ))}
-                      </div>
+                      {section.category === "messages" ? (
+                        <DesktopSearchMessageResults
+                          conversationResults={previewMessageConversations}
+                          keyword={normalizedKeyword}
+                          messageGroups={previewMessageGroups}
+                          onOpen={onOpenResult}
+                        />
+                      ) : (
+                        <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                          {previewResults.map((item) => (
+                            <DesktopSearchResultRow
+                              key={item.id}
+                              item={item}
+                              keyword={normalizedKeyword}
+                              onOpen={onOpenResult}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </section>
                   );
                 })}
@@ -430,16 +471,25 @@ export function DesktopSearchWorkspace({
                   </div>
                 </div>
 
-                <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
-                  {visibleResults.map((item) => (
-                    <DesktopSearchResultRow
-                      key={item.id}
-                      item={item}
-                      keyword={normalizedKeyword}
-                      onOpen={onOpenResult}
-                    />
-                  ))}
-                </div>
+                {activeCategory === "messages" ? (
+                  <DesktopSearchMessageResults
+                    conversationResults={messageConversationOnlyResults}
+                    keyword={normalizedKeyword}
+                    messageGroups={messageGroups}
+                    onOpen={onOpenResult}
+                  />
+                ) : (
+                  <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                    {visibleResults.map((item) => (
+                      <DesktopSearchResultRow
+                        key={item.id}
+                        item={item}
+                        keyword={normalizedKeyword}
+                        onOpen={onOpenResult}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )
           ) : null}
@@ -490,6 +540,53 @@ function DesktopQuickLinksPanel({
   );
 }
 
+function DesktopSearchMessageResults({
+  conversationResults,
+  keyword,
+  messageGroups,
+  onOpen,
+}: {
+  conversationResults: SearchResultItem[];
+  keyword: string;
+  messageGroups: SearchMessageGroup[];
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  if (!messageGroups.length && !conversationResults.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {messageGroups.map((group) => (
+        <DesktopSearchMessageGroupCard
+          key={group.id}
+          group={group}
+          keyword={keyword}
+          onOpen={onOpen}
+        />
+      ))}
+
+      {conversationResults.length ? (
+        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
+          <div className="text-xs font-medium text-[color:var(--text-muted)]">
+            会话命中
+          </div>
+          <div className="mt-3 divide-y divide-[color:var(--border-faint)]">
+            {conversationResults.map((item) => (
+              <DesktopSearchResultRow
+                key={item.id}
+                item={item}
+                keyword={keyword}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DesktopQuickLinkRow({
   item,
   onOpen,
@@ -525,6 +622,73 @@ function DesktopQuickLinkRow({
         </div>
       </div>
     </button>
+  );
+}
+
+function DesktopSearchMessageGroupCard({
+  group,
+  keyword,
+  onOpen,
+}: {
+  group: SearchMessageGroup;
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  return (
+    <section className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]">
+      <button
+        type="button"
+        onClick={() => onOpen(group.header)}
+        className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white"
+      >
+        <AvatarChip
+          name={group.header.avatarName ?? group.header.title}
+          src={group.header.avatarSrc}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {renderHighlightedText(group.header.title, keyword)}
+            </div>
+            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              {group.header.badge}
+            </span>
+          </div>
+          <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
+            {renderHighlightedText(group.header.meta, keyword)}
+          </div>
+        </div>
+        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+          {group.messages.length} 条相关记录
+        </div>
+      </button>
+
+      <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
+        <div className="space-y-2">
+          {group.messages.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onOpen(item)}
+              className="flex w-full items-start gap-3 rounded-[14px] bg-white px-3 py-2.5 text-left transition hover:bg-[rgba(7,193,96,0.06)]"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+                <MessageSquareText size={15} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+                  {renderHighlightedText(item.description, keyword)}
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  {renderHighlightedText(item.meta, keyword)}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 

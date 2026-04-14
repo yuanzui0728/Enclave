@@ -464,17 +464,12 @@ export function useSearchIndex(
       return [] as SearchMessageGroup[];
     }
 
-    const matchedConversationResults = filterSearchResults(
-      indexedResults.filter(
-        (item) =>
-          item.category === "messages" &&
-          item.id.startsWith("conversation-"),
-      ),
-      normalizedSearchText,
-      "messages",
+    const conversationResults = indexedResults.filter(
+      (item) =>
+        item.category === "messages" && item.id.startsWith("conversation-"),
     );
     const conversationResultById = new Map(
-      matchedConversationResults.map((item) => [
+      conversationResults.map((item) => [
         item.id.replace(/^conversation-/, ""),
         item,
       ]),
