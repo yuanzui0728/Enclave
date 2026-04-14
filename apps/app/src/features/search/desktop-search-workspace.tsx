@@ -339,6 +339,94 @@ export function DesktopSearchWorkspace({
     officialAccountOnlyResults,
     visibleResults,
   ]);
+  const preferredAutoSelectedResultId = useMemo(() => {
+    if (!hasKeyword) {
+      return null;
+    }
+
+    const resolveEntryPreferredResultId = (
+      entry: (typeof allResultPreviewSections)[number] | undefined,
+    ) => {
+      if (!entry) {
+        return null;
+      }
+
+      const { section } = entry;
+      if (section.category === "messages") {
+        return (
+          entry.previewMessageGroups[0]?.header.id ??
+          entry.previewMessageConversations[0]?.id ??
+          null
+        );
+      }
+
+      if (section.category === "officialAccounts") {
+        return (
+          entry.previewOfficialAccountGroups[0]?.header.id ??
+          entry.previewOfficialAccounts[0]?.id ??
+          null
+        );
+      }
+
+      if (isDesktopFeatureCardCategory(section.category)) {
+        return entry.previewFeatureResults[0]?.id ?? null;
+      }
+
+      if (isDesktopContentCategory(section.category)) {
+        return entry.previewContentResults[0]?.id ?? null;
+      }
+
+      return entry.previewResults[0]?.id ?? null;
+    };
+
+    if (activeCategory === "all") {
+      const preferredSectionCategory =
+        activeAllResultsSection ?? groupedResults[0]?.category ?? null;
+      const preferredEntry = preferredSectionCategory
+        ? allResultPreviewSections.find(
+            (entry) => entry.section.category === preferredSectionCategory,
+          )
+        : allResultPreviewSections[0];
+
+      return (
+        resolveEntryPreferredResultId(preferredEntry) ??
+        keyboardNavigableResults[0]?.id ??
+        null
+      );
+    }
+
+    if (activeCategory === "messages") {
+      return (
+        messageGroups[0]?.header.id ??
+        messageConversationOnlyResults[0]?.id ??
+        keyboardNavigableResults[0]?.id ??
+        null
+      );
+    }
+
+    if (activeCategory === "officialAccounts") {
+      return (
+        officialAccountGroups[0]?.header.id ??
+        officialAccountOnlyResults[0]?.id ??
+        keyboardNavigableResults[0]?.id ??
+        null
+      );
+    }
+
+    return visibleResults[0]?.id ?? keyboardNavigableResults[0]?.id ?? null;
+  }, [
+    activeAllResultsSection,
+    activeCategory,
+    allResultPreviewSections,
+    groupedResults,
+    hasKeyword,
+    keyboardNavigableResults,
+    messageConversationOnlyResults,
+    messageGroups,
+    officialAccountGroups,
+    officialAccountOnlyResults,
+    visibleResults,
+  ]);
   const selectedResultIndex = useMemo(
     () =>
       selectedResultId
@@ -506,6 +594,8 @@ export function DesktopSearchWorkspace({
   };
   const handleJumpToAllResultsSection = useEffectEvent(
     (category: SearchResultCategory) => {
+      autoSelectResultRef.current = true;
+      setSelectedResultId(null);
       scrollAllResultsSectionIntoView(category, "smooth");
       setActiveAllResultsSection(category);
       showPanelSpotlight(category);
@@ -858,7 +948,7 @@ export function DesktopSearchWorkspace({
   }, [keyboardNavigableResults, selectedResultId]);
 
   useEffect(() => {
-    if (!hasKeyword || !keyboardNavigableResults.length) {
+    if (!hasKeyword || !preferredAutoSelectedResultId) {
       return;
     }
 
@@ -866,13 +956,8 @@ export function DesktopSearchWorkspace({
       return;
     }
 
-    const firstResult = keyboardNavigableResults[0];
-    if (!firstResult) {
-      return;
-    }
-
-    setSelectedResultId(firstResult.id);
-  }, [hasKeyword, keyboardNavigableResults, selectedResultId]);
+    setSelectedResultId(preferredAutoSelectedResultId);
+  }, [hasKeyword, preferredAutoSelectedResultId, selectedResultId]);
 
   return (
     <div
