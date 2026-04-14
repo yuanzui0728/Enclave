@@ -1263,6 +1263,11 @@ export function StickerPanel({
 
       if (trimmedKeyword.length > 0) {
         event.preventDefault();
+        if (showManageSearchPauseHint) {
+          clearSearchAndResumeManage();
+          return;
+        }
+
         clearSearch();
         return;
       }
@@ -1286,6 +1291,7 @@ export function StickerPanel({
     customManageMode,
     isMobile,
     onClose,
+    showManageSearchPauseHint,
     trimmedKeyword.length,
   ]);
 
@@ -1568,7 +1574,11 @@ export function StickerPanel({
             {trimmedKeyword.length > 0 ? (
               <button
                 type="button"
-                onClick={clearSearch}
+                onClick={
+                  showManageSearchPauseHint
+                    ? clearSearchAndResumeManage
+                    : clearSearch
+                }
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)]"
                 aria-label="清空表情搜索"
               >
