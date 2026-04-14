@@ -967,7 +967,7 @@ function GroupChatDetailsPanel({
           queryKey: ["app-group", baseUrl, conversation.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -986,7 +986,7 @@ function GroupChatDetailsPanel({
           queryKey: ["app-group", baseUrl, conversation.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -1032,7 +1032,7 @@ function GroupChatDetailsPanel({
           queryKey: ["app-group", baseUrl, conversation.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],
@@ -1148,7 +1148,7 @@ function GroupChatDetailsPanel({
           queryKey: ["app-group-messages", baseUrl, conversation.id],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],

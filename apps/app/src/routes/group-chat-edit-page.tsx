@@ -82,7 +82,7 @@ function GroupChatEditPage({
           queryKey: ["app-group", baseUrl, groupId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-saved-groups", baseUrl],
+          queryKey: ["app-contact-groups", baseUrl],
         }),
         queryClient.invalidateQueries({
           queryKey: ["app-conversations", baseUrl],

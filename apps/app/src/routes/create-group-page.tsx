@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ArrowLeft, Check, Search, X } from "lucide-react";
 import {
@@ -27,6 +27,7 @@ export function CreateGroupPage() {
   const isDesktopLayout = useDesktopLayout();
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = useMemo(() => parseCreateGroupRouteHash(hash), [hash]);
+  const queryClient = useQueryClient();
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [name, setName] = useState("");
@@ -79,7 +80,15 @@ export function CreateGroupPage() {
         },
         baseUrl,
       ),
-    onSuccess: (group) => {
+    onSuccess: async (group) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-contact-groups", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
       void navigate({
         to: "/group/$groupId",
         params: { groupId: group.id },

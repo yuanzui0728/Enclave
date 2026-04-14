@@ -734,7 +734,7 @@ export function DesktopChatWorkspace({
         }),
         isGroupConversation
           ? queryClient.invalidateQueries({
-              queryKey: ["app-saved-groups", baseUrl],
+              queryKey: ["app-contact-groups", baseUrl],
             })
           : Promise.resolve(),
         isGroupConversation

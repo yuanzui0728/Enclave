@@ -32,8 +32,8 @@ import {
   getConversations,
   getFriendRequests,
   getFriends,
+  getGroups,
   getOrCreateConversation,
-  getSavedGroups,
   listCharacters,
   setConversationMuted,
   setConversationPinned,
@@ -264,9 +264,9 @@ export function ContactsPage() {
     queryFn: () => getFriendRequests(baseUrl),
   });
 
-  const savedGroupsQuery = useQuery({
-    queryKey: ["app-saved-groups", baseUrl],
-    queryFn: () => getSavedGroups(baseUrl),
+  const contactGroupsQuery = useQuery({
+    queryKey: ["app-contact-groups", baseUrl],
+    queryFn: () => getGroups(baseUrl),
   });
 
   const blockedCharactersQuery = useQuery({
@@ -366,7 +366,7 @@ export function ContactsPage() {
       ).length,
     [friendRequestsQuery.data],
   );
-  const savedGroupCount = savedGroupsQuery.data?.length ?? 0;
+  const groupCount = contactGroupsQuery.data?.length ?? 0;
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -981,10 +981,7 @@ export function ContactsPage() {
     {
       key: "group-chat",
       label: "群聊",
-      subtitle:
-        savedGroupCount > 0
-          ? `${savedGroupCount} 个已保存群聊`
-          : "查看已保存群聊",
+      subtitle: groupCount > 0 ? `${groupCount} 个群聊` : "查看全部群聊",
       active: desktopSelection?.kind === "groups",
       icon: Users,
       iconClassName: "bg-[linear-gradient(135deg,#60a5fa,#2563eb)]",
@@ -996,8 +993,8 @@ export function ContactsPage() {
 
         const nextSelection = {
           kind: "groups",
-          ...(savedGroupsQuery.data?.[0]?.id
-            ? { id: savedGroupsQuery.data[0].id }
+          ...(contactGroupsQuery.data?.[0]?.id
+            ? { id: contactGroupsQuery.data[0].id }
             : {}),
         } satisfies DesktopSelection;
         setDesktopSelection(nextSelection);
@@ -1074,12 +1071,12 @@ export function ContactsPage() {
           },
         }
       : null,
-    savedGroupsQuery.isError && savedGroupsQuery.error instanceof Error
+    contactGroupsQuery.isError && contactGroupsQuery.error instanceof Error
       ? {
-          key: "saved-groups",
+          key: "contact-groups",
           message: "群聊入口暂时没有刷新成功。",
           onRetry: () => {
-            void savedGroupsQuery.refetch();
+            void contactGroupsQuery.refetch();
           },
         }
       : null,
@@ -1108,7 +1105,7 @@ export function ContactsPage() {
     friendsQuery.error,
     charactersQuery.error,
     friendRequestsQuery.error,
-    savedGroupsQuery.error,
+    contactGroupsQuery.error,
     blockedCharactersQuery.error,
     conversationsQuery.error,
     startChatMutation.error,
@@ -1271,12 +1268,12 @@ export function ContactsPage() {
             />
           ) : desktopSelection?.kind === "groups" ? (
             <DesktopContactsGroupsPane
-              groups={savedGroupsQuery.data ?? []}
+              groups={contactGroupsQuery.data ?? []}
               selectedGroupId={desktopSelection.id ?? null}
-              loading={savedGroupsQuery.isLoading}
+              loading={contactGroupsQuery.isLoading}
               error={
-                savedGroupsQuery.error instanceof Error
-                  ? savedGroupsQuery.error.message
+                contactGroupsQuery.error instanceof Error
+                  ? contactGroupsQuery.error.message
                   : null
               }
               onSelectGroup={(groupId) => {

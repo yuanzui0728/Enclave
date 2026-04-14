@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, MessageSquarePlus, Search } from "lucide-react";
-import { getSavedGroups, type Group } from "@yinjie/contracts";
+import { getGroups, type Group } from "@yinjie/contracts";
 import { AppPage, Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { EmptyState } from "../components/empty-state";
 import { GroupAvatarChip } from "../components/group-avatar-chip";
@@ -44,8 +44,8 @@ function MobileGroupContactsPage() {
   const [searchText, setSearchText] = useState("");
 
   const groupsQuery = useQuery({
-    queryKey: ["app-saved-groups", baseUrl],
-    queryFn: () => getSavedGroups(baseUrl),
+    queryKey: ["app-contact-groups", baseUrl],
+    queryFn: () => getGroups(baseUrl),
   });
 
   const filteredGroups = useFilteredGroups(groupsQuery.data ?? [], searchText);
@@ -111,7 +111,7 @@ function MobileGroupContactsPage() {
             <MobileGroupContactsStatusCard
               badge="读取中"
               title="正在读取群聊"
-              description="稍等一下，正在同步已保存到通讯录的群聊。"
+              description="稍等一下，正在同步当前世界里的群聊列表。"
               tone="loading"
             />
           </div>
@@ -146,12 +146,12 @@ function MobileGroupContactsPage() {
               title={
                 hasSearchText
                   ? "没有找到匹配的群聊"
-                  : "还没有保存到通讯录的群聊"
+                  : "还没有群聊"
               }
               description={
                 hasSearchText
                   ? "换个群名称或公告关键词试试。"
-                  : "先在群聊信息页打开“保存到通讯录”，或者直接发起一个新的群聊。"
+                  : "先发起一个新的群聊，建好后就会出现在这里。"
               }
               action={
                 <Button
@@ -223,8 +223,8 @@ function DesktopGroupContactsPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const groupsQuery = useQuery({
-    queryKey: ["app-saved-groups", baseUrl],
-    queryFn: () => getSavedGroups(baseUrl),
+    queryKey: ["app-contact-groups", baseUrl],
+    queryFn: () => getGroups(baseUrl),
   });
 
   const filteredGroups = useFilteredGroups(groupsQuery.data ?? [], searchText);
@@ -259,7 +259,7 @@ function DesktopGroupContactsPage() {
                   群聊
                 </div>
                 <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                  {(groupsQuery.data ?? []).length} 个已保存群聊
+                  {(groupsQuery.data ?? []).length} 个群聊
                 </div>
               </div>
               <Button
@@ -312,12 +312,12 @@ function DesktopGroupContactsPage() {
                   title={
                     hasSearchText
                       ? "没有找到匹配的群聊"
-                      : "还没有保存到通讯录的群聊"
+                      : "还没有群聊"
                   }
                   description={
                     hasSearchText
                       ? "换个关键词试试。"
-                      : "先在群聊信息页打开“保存到通讯录”，或者直接创建新的群聊。"
+                      : "先创建新的群聊，建好后就会出现在这里。"
                   }
                   action={
                     <Button
@@ -395,7 +395,7 @@ function DesktopGroupContactsPage() {
                       {selectedGroup.name}
                     </div>
                     <div className="mt-1 text-sm text-[color:var(--text-muted)]">
-                      保存时间
+                      最近活跃
                       {formatConversationTimestamp(
                         selectedGroup.savedToContactsAt ??
                           selectedGroup.lastActivityAt,
@@ -440,7 +440,7 @@ function DesktopGroupContactsPage() {
               <div className="max-w-sm">
                 <EmptyState
                   title="选择一个群聊"
-                  description="左侧展示的是已经保存到通讯录的群聊，选中后可以直接进入会话或查看群信息。"
+                  description="左侧展示的是当前世界里的群聊，选中后可以直接进入会话或查看群信息。"
                 />
               </div>
             )}
@@ -524,5 +524,6 @@ function getGroupDescription(group: Group) {
     return announcement;
   }
 
-  return group.isMuted ? "已保存到通讯录 · 已开启消息免打扰" : "已保存到通讯录";
+  const statusLabel = group.savedToContacts ? "已保存到通讯录" : "未保存到通讯录";
+  return group.isMuted ? `${statusLabel} · 已开启消息免打扰` : statusLabel;
 }

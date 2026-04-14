@@ -214,9 +214,14 @@ export function DesktopCreateGroupDialog({
         baseUrl,
       ),
     onSuccess: async (group) => {
-      await queryClient.invalidateQueries({
-        queryKey: ["app-conversations", baseUrl],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-contact-groups", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
       if (onCreated) {
         onCreated(group.id);
         return;
