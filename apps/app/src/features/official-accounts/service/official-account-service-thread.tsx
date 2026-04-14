@@ -256,8 +256,8 @@ export function OfficialAccountServiceThread({
       <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
         <section className="flex w-[440px] min-w-0 shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
           <header className="border-b border-[color:var(--border-faint)] bg-white/88 px-5 py-4 backdrop-blur-xl">
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
+            <div className="space-y-3">
+              <div className="min-w-0">
                 <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
                   {accountQuery.data?.name ?? "服务号消息"}
                 </div>
@@ -279,11 +279,11 @@ export function OfficialAccountServiceThread({
                     <span>@{accountQuery.data.handle}</span>
                   ) : null}
                 </div>
-                <div className="mt-1.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                <div className="mt-1.5 pr-1 text-[12px] leading-5 text-[color:var(--text-secondary)]">
                   {accountQuery.data?.description ?? "服务通知和文章入口会集中在这里。"}
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant="secondary"
