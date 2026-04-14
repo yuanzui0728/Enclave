@@ -991,11 +991,13 @@ export function ContactsPage() {
           return;
         }
 
-        const nextSelection = {
-          kind: "new-friends",
-        } satisfies DesktopSelection;
-        setDesktopSelection(nextSelection);
-        commitDesktopRouteState(nextSelection, showWorldCharacters);
+        setNotice(null);
+        commitDesktopRouteState(
+          {
+            kind: "new-friends",
+          },
+          showWorldCharacters,
+        );
       },
     },
     {
