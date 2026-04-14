@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -31,6 +31,7 @@ export function OfficialAccountServiceThread({
   selectedArticleId,
   onOpenAccount,
   onOpenArticle,
+  onCloseArticle,
 }: {
   accountId: string;
   variant?: "mobile" | "desktop";
@@ -38,6 +39,7 @@ export function OfficialAccountServiceThread({
   selectedArticleId?: string;
   onOpenAccount?: (accountId: string, articleId?: string) => void;
   onOpenArticle?: (articleId: string, accountId: string) => void;
+  onCloseArticle?: (accountId: string) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -45,10 +47,9 @@ export function OfficialAccountServiceThread({
   const baseUrl = runtimeConfig.apiBaseUrl;
   const lastAutoReadMessageRef = useRef<string | null>(null);
   const lastMarkedArticleIdRef = useRef<string | null>(null);
+  const desktopThreadScrollTopRef = useRef(0);
+  const desktopThreadScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isDesktop = variant === "desktop";
-  const [activeDesktopArticleId, setActiveDesktopArticleId] = useState<
-    string | null
-  >(null);
 
   const accountQuery = useQuery({
     queryKey: ["app-official-account", baseUrl, accountId],
@@ -59,63 +60,10 @@ export function OfficialAccountServiceThread({
     queryFn: () => getOfficialAccountServiceMessages(accountId, baseUrl),
   });
 
-  const articleCardIds = useMemo(
-    () =>
-      (messagesQuery.data ?? [])
-        .map((message) =>
-          message.attachment?.kind === "article_card"
-            ? message.attachment.articleId
-            : null,
-        )
-        .flatMap((articleId) => (articleId ? [articleId] : [])),
-    [messagesQuery.data],
-  );
-  const defaultDesktopArticleId =
-    articleCardIds[articleCardIds.length - 1] ?? null;
-
-  useEffect(() => {
-    if (!isDesktop) {
-      return;
-    }
-
-    if (
-      selectedArticleId !== undefined &&
-      selectedArticleId !== activeDesktopArticleId
-    ) {
-      setActiveDesktopArticleId(selectedArticleId);
-    }
-  }, [activeDesktopArticleId, isDesktop, selectedArticleId]);
-
-  useEffect(() => {
-    if (!isDesktop || selectedArticleId) {
-      return;
-    }
-
-    if (!defaultDesktopArticleId) {
-      setActiveDesktopArticleId(null);
-      return;
-    }
-
-    if (
-      activeDesktopArticleId &&
-      articleCardIds.includes(activeDesktopArticleId)
-    ) {
-      return;
-    }
-
-    setActiveDesktopArticleId(defaultDesktopArticleId);
-  }, [
-    activeDesktopArticleId,
-    articleCardIds,
-    defaultDesktopArticleId,
-    isDesktop,
-    selectedArticleId,
-  ]);
-
   const articleQuery = useQuery({
-    queryKey: ["app-official-account-article", baseUrl, activeDesktopArticleId],
-    queryFn: () => getOfficialAccountArticle(activeDesktopArticleId!, baseUrl),
-    enabled: isDesktop && Boolean(activeDesktopArticleId),
+    queryKey: ["app-official-account-article", baseUrl, selectedArticleId],
+    queryFn: () => getOfficialAccountArticle(selectedArticleId!, baseUrl),
+    enabled: isDesktop && Boolean(selectedArticleId),
   });
 
   const markReadMutation = useMutation({
@@ -178,6 +126,19 @@ export function OfficialAccountServiceThread({
   });
 
   useEffect(() => {
+    if (!isDesktop || selectedArticleId) {
+      return;
+    }
+
+    const scrollContainer = desktopThreadScrollContainerRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    scrollContainer.scrollTop = desktopThreadScrollTopRef.current;
+  }, [isDesktop, selectedArticleId]);
+
+  useEffect(() => {
     const latestUnread = [...(messagesQuery.data ?? [])]
       .reverse()
       .find((message) => !message.readAt);
@@ -233,8 +194,15 @@ export function OfficialAccountServiceThread({
   }
 
   function handleOpenDesktopArticle(articleId: string) {
-    setActiveDesktopArticleId(articleId);
+    if (isDesktop) {
+      desktopThreadScrollTopRef.current =
+        desktopThreadScrollContainerRef.current?.scrollTop ?? 0;
+    }
     onOpenArticle?.(articleId, accountId);
+  }
+
+  function handleCloseDesktopArticle() {
+    onCloseArticle?.(accountId);
   }
 
   function handleOpenMobileHandoff() {
@@ -243,7 +211,7 @@ export function OfficialAccountServiceThread({
       hash: buildDesktopMobileOfficialHandoffHash({
         surface: "service",
         accountId,
-        articleId: activeDesktopArticleId ?? undefined,
+        articleId: selectedArticleId ?? undefined,
         accountName: accountQuery.data?.name,
         articleTitle: articleQuery.data?.title,
         accountType: "service",
@@ -253,152 +221,160 @@ export function OfficialAccountServiceThread({
 
   if (isDesktop) {
     return (
-      <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
-        <section className="flex w-[clamp(300px,44%,440px)] min-w-0 shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
-          <header className="border-b border-[color:var(--border-faint)] bg-white/88 px-5 py-4 backdrop-blur-xl">
-            <div className="space-y-3">
-              <div className="min-w-0">
-                <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
-                  {accountQuery.data?.name ?? "服务号消息"}
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                  <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[color:var(--brand-primary)]">
-                    服务号
+      <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+        <header className="border-b border-[color:var(--border-faint)] bg-white/92 px-5 py-4 backdrop-blur-xl">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              {selectedArticleId ? (
+                <button
+                  type="button"
+                  onClick={handleCloseDesktopArticle}
+                  className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                >
+                  <ArrowLeft size={12} />
+                  返回消息
+                </button>
+              ) : null}
+              <div className={cn("truncate text-[16px] font-medium text-[color:var(--text-primary)]", selectedArticleId ? "mt-2" : "")}>
+                {accountQuery.data?.name ?? "服务号消息"}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2 py-0.5 text-[color:var(--brand-primary)]">
+                  服务号
+                </span>
+                {accountQuery.data?.isVerified ? (
+                  <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2 py-0.5 text-[#315b9a]">
+                    已认证
                   </span>
-                  {accountQuery.data?.isVerified ? (
-                    <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2 py-0.5 text-[#315b9a]">
-                      已认证
-                    </span>
-                  ) : null}
-                  {accountQuery.data?.isMuted ? (
-                    <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-0.5 text-[color:var(--text-secondary)]">
-                      已免打扰
-                    </span>
-                  ) : null}
-                  {accountQuery.data?.handle ? (
-                    <span>@{accountQuery.data.handle}</span>
-                  ) : null}
-                </div>
-                <div className="mt-1.5 pr-1 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                ) : null}
+                {accountQuery.data?.isMuted ? (
+                  <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2 py-0.5 text-[color:var(--text-secondary)]">
+                    已免打扰
+                  </span>
+                ) : null}
+                {accountQuery.data?.handle ? (
+                  <span>@{accountQuery.data.handle}</span>
+                ) : null}
+              </div>
+              {!selectedArticleId ? (
+                <div className="mt-1.5 max-w-[34rem] text-[12px] leading-5 text-[color:var(--text-secondary)]">
                   {accountQuery.data?.description ?? "服务通知和文章入口会集中在这里。"}
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={() =>
-                    handleOpenAccount(accountId, activeDesktopArticleId ?? undefined)
-                  }
-                >
-                  <BookOpenText size={14} />
-                  公众号主页
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-xl"
-                  onClick={handleOpenMobileHandoff}
-                >
-                  <Smartphone size={14} />
-                  到手机继续
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-xl"
-                  disabled={!accountQuery.data?.isFollowing || muteMutation.isPending}
-                  onClick={() => {
-                    if (!accountQuery.data?.isFollowing) {
-                      return;
-                    }
-
-                    muteMutation.mutate(!accountQuery.data.isMuted);
-                  }}
-                >
-                  {accountQuery.data?.isMuted ? (
-                    <BellRing size={14} />
-                  ) : (
-                    <BellOff size={14} />
-                  )}
-                  {muteMutation.isPending
-                    ? "处理中..."
-                    : accountQuery.data?.isMuted
-                      ? "关闭免打扰"
-                      : "消息免打扰"}
-                </Button>
-              </div>
+              ) : null}
             </div>
-          </header>
-
-          <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
-            {accountQuery.isLoading || messagesQuery.isLoading ? (
-              <LoadingBlock label="正在读取服务号消息..." />
-            ) : null}
-            {pageErrorMessage ? <ErrorBlock message={pageErrorMessage} /> : null}
-            {actionErrorMessage ? <ErrorBlock message={actionErrorMessage} /> : null}
-
-            {messagesQuery.data?.length ? (
-              <div className="space-y-4">
-                {messagesQuery.data.map((message) => (
-                  <OfficialServiceMessageBubble
-                    key={message.id}
-                    message={message}
-                    variant="desktop"
-                    activeArticleId={activeDesktopArticleId}
-                    onOpenArticle={handleOpenDesktopArticle}
-                  />
-                ))}
-              </div>
-            ) : !messagesQuery.isLoading ? (
-              <EmptyState
-                title="还没有服务消息"
-                description="关注服务号后，通知和文章卡片会出现在这里。"
-              />
-            ) : null}
-          </div>
-        </section>
-
-        <section className="min-w-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] p-6">
-          {articleQuery.isLoading ? <LoadingBlock label="正在读取文章..." /> : null}
-          {articleQuery.isError && articleQuery.error instanceof Error ? (
-            <ErrorBlock message={articleQuery.error.message} />
-          ) : null}
-
-          {articleQuery.data ? (
-            <OfficialArticleViewer
-              article={articleQuery.data}
-              onOpenAccount={(nextAccountId) =>
-                handleOpenAccount(nextAccountId, articleQuery.data.id)
-              }
-              onOpenArticle={handleOpenDesktopArticle}
-            />
-          ) : (
-            <DesktopServiceThreadOverview
-              accountName={accountQuery.data?.name}
-              description={accountQuery.data?.description}
-              handle={accountQuery.data?.handle}
-              isMuted={accountQuery.data?.isMuted ?? false}
-              articleCount={articleCardIds.length}
-              canToggleMute={Boolean(accountQuery.data?.isFollowing)}
-              onOpenAccount={() =>
-                handleOpenAccount(accountId, activeDesktopArticleId ?? undefined)
-              }
-              onToggleMute={() => {
-                if (!accountQuery.data?.isFollowing) {
-                  return;
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="rounded-xl"
+                onClick={() =>
+                  handleOpenAccount(accountId, selectedArticleId ?? undefined)
                 }
+              >
+                <BookOpenText size={14} />
+                公众号主页
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="rounded-xl"
+                onClick={handleOpenMobileHandoff}
+              >
+                <Smartphone size={14} />
+                到手机继续
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="rounded-xl"
+                disabled={!accountQuery.data?.isFollowing || muteMutation.isPending}
+                onClick={() => {
+                  if (!accountQuery.data?.isFollowing) {
+                    return;
+                  }
 
-                muteMutation.mutate(!accountQuery.data.isMuted);
-              }}
-              togglePending={muteMutation.isPending}
-            />
+                  muteMutation.mutate(!accountQuery.data.isMuted);
+                }}
+              >
+                {accountQuery.data?.isMuted ? (
+                  <BellRing size={14} />
+                ) : (
+                  <BellOff size={14} />
+                )}
+                {muteMutation.isPending
+                  ? "处理中..."
+                  : accountQuery.data?.isMuted
+                    ? "关闭免打扰"
+                    : "消息免打扰"}
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        <div
+          ref={selectedArticleId ? undefined : desktopThreadScrollContainerRef}
+          className="min-h-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)]"
+        >
+          {selectedArticleId ? (
+            <div className="px-6 py-6">
+              {articleQuery.isLoading ? (
+                <LoadingBlock label="正在读取文章..." />
+              ) : null}
+              {articleQuery.isError && articleQuery.error instanceof Error ? (
+                <ErrorBlock message={articleQuery.error.message} />
+              ) : null}
+              {actionErrorMessage ? <ErrorBlock message={actionErrorMessage} /> : null}
+              {articleQuery.data ? (
+                <OfficialArticleViewer
+                  article={articleQuery.data}
+                  onOpenAccount={(nextAccountId) =>
+                    handleOpenAccount(nextAccountId, articleQuery.data.id)
+                  }
+                  onOpenArticle={handleOpenDesktopArticle}
+                />
+              ) : !articleQuery.isLoading && !articleQuery.isError ? (
+                <div className="mx-auto max-w-[760px] rounded-[28px] border border-[color:var(--border-faint)] bg-white px-8 py-10 shadow-[var(--shadow-section)]">
+                  <EmptyState
+                    title="这篇文章暂时不可用"
+                    description="可以先返回服务号消息，稍后再试。"
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mx-auto flex min-h-full w-full max-w-[920px] flex-col px-6 py-6">
+              {accountQuery.isLoading || messagesQuery.isLoading ? (
+                <LoadingBlock label="正在读取服务号消息..." />
+              ) : null}
+              {pageErrorMessage ? <ErrorBlock message={pageErrorMessage} /> : null}
+              {actionErrorMessage ? <ErrorBlock message={actionErrorMessage} /> : null}
+
+              {messagesQuery.data?.length ? (
+                <div className="space-y-4">
+                  {messagesQuery.data.map((message) => (
+                    <OfficialServiceMessageBubble
+                      key={message.id}
+                      message={message}
+                      variant="desktop"
+                      activeArticleId={selectedArticleId ?? null}
+                      onOpenArticle={handleOpenDesktopArticle}
+                    />
+                  ))}
+                </div>
+              ) : !messagesQuery.isLoading ? (
+                <div className="flex min-h-[28rem] items-center justify-center">
+                  <EmptyState
+                    title="还没有服务消息"
+                    description="关注服务号后，通知和文章卡片会出现在这里。"
+                  />
+                </div>
+              ) : null}
+            </div>
           )}
-        </section>
+        </div>
       </div>
     );
   }
@@ -498,87 +474,6 @@ export function OfficialAccountServiceThread({
           />
         ) : null}
       </div>
-    </div>
-  );
-}
-
-function DesktopServiceThreadOverview({
-  accountName,
-  description,
-  handle,
-  isMuted,
-  articleCount,
-  canToggleMute,
-  onOpenAccount,
-  onToggleMute,
-  togglePending,
-}: {
-  accountName?: string;
-  description?: string;
-  handle?: string;
-  isMuted: boolean;
-  articleCount: number;
-  canToggleMute: boolean;
-  onOpenAccount: () => void;
-  onToggleMute: () => void;
-  togglePending: boolean;
-}) {
-  return (
-    <div className="mx-auto flex h-full max-w-[720px] items-center">
-      <section className="w-full rounded-[28px] border border-[color:var(--border-faint)] bg-white px-8 py-8 shadow-[var(--shadow-section)]">
-        <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-          服务号工作区
-        </div>
-        <div className="mt-3 text-[30px] font-semibold leading-[1.25] text-[color:var(--text-primary)]">
-          {accountName ?? "服务号消息"}
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-muted)]">
-          <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[color:var(--brand-primary)]">
-            服务号
-          </span>
-          {handle ? (
-            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-              @{handle}
-            </span>
-          ) : null}
-          <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-            {articleCount} 篇文章入口
-          </span>
-          {isMuted ? (
-            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1">
-              当前已免打扰
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-4 text-sm leading-7 text-[color:var(--text-secondary)]">
-          {description ?? "服务消息会在左侧消息流里持续更新。点击带文章卡片的消息，右侧会直接打开阅读器，不再离开当前工作区。"}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-xl"
-            onClick={onOpenAccount}
-          >
-            <BookOpenText size={15} />
-            打开公众号主页
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="rounded-xl"
-            disabled={!canToggleMute || togglePending}
-            onClick={onToggleMute}
-          >
-            {isMuted ? <BellRing size={15} /> : <BellOff size={15} />}
-            {togglePending
-              ? "处理中..."
-              : isMuted
-                ? "关闭免打扰"
-                : "开启免打扰"}
-          </Button>
-        </div>
-      </section>
     </div>
   );
 }

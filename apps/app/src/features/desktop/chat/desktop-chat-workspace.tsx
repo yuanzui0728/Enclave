@@ -1545,6 +1545,16 @@ export function DesktopChatWorkspace({
             accountId={selectedServiceAccountId}
             variant="desktop"
             selectedArticleId={selectedOfficialArticleId}
+            onCloseArticle={(accountId) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "service-account",
+                  accountId,
+                }),
+                replace: true,
+              });
+            }}
             onOpenArticle={(articleId, accountId) => {
               void navigate({
                 to: "/tabs/chat",
