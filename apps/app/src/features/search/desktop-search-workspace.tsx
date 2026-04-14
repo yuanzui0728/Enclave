@@ -140,6 +140,7 @@ export function DesktopSearchWorkspace({
   const allResultSectionRefs = useRef<
     Partial<Record<SearchResultCategory, HTMLElement | null>>
   >({});
+  const pendingAllResultsJumpRef = useRef<SearchResultCategory | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const categoryTabRefs = useRef<
     Partial<Record<SearchCategory, HTMLButtonElement | null>>
@@ -209,15 +210,6 @@ export function DesktopSearchWorkspace({
     };
   }, []);
 
-  useEffect(() => {
-    if (!hasKeyword || activeCategory !== "all") {
-      setActiveAllResultsSection(null);
-      return;
-    }
-
-    setActiveAllResultsSection(groupedResults[0]?.category ?? null);
-  }, [activeCategory, groupedResults, hasKeyword]);
-
   const focusSearchInput = useEffectEvent((moveCaretToEnd = false) => {
     window.requestAnimationFrame(() => {
       const input = inputRef.current;
@@ -277,6 +269,23 @@ export function DesktopSearchWorkspace({
       spotlightPanelTimeoutRef.current = null;
     }, 2200);
   });
+  const scrollAllResultsSectionIntoView = useEffectEvent(
+    (category: SearchResultCategory, behavior: ScrollBehavior = "smooth") => {
+      const viewport = scrollViewportRef.current;
+      const panel = allResultSectionRefs.current[category];
+      if (!viewport || !panel) {
+        return;
+      }
+
+      const viewportRect = viewport.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const nextTop = panelRect.top - viewportRect.top + viewport.scrollTop - 16;
+      viewport.scrollTo({
+        top: Math.max(0, nextTop),
+        behavior,
+      });
+    },
+  );
   const syncActiveAllResultsSection = useEffectEvent(() => {
     if (!hasKeyword || activeCategory !== "all") {
       return;
@@ -327,19 +336,19 @@ export function DesktopSearchWorkspace({
   };
   const handleJumpToAllResultsSection = useEffectEvent(
     (category: SearchResultCategory) => {
-      const panel = allResultSectionRefs.current[category];
-      if (!panel) {
-        return;
-      }
-
-      panel.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-        inline: "nearest",
-      });
+      scrollAllResultsSectionIntoView(category, "smooth");
       setActiveAllResultsSection(category);
       showPanelSpotlight(category);
       showTransitionHint(`已定位到${searchCategoryTitles[category]}分区。`);
+    },
+  );
+  const handleExpandAllResultsSection = useEffectEvent(
+    (category: SearchResultCategory) => {
+      setActiveCategory(category);
+      scrollResultsToTop("smooth");
+      focusSearchInput(Boolean(searchText.trim()));
+      showPanelSpotlight(category);
+      showTransitionHint(`已展开${searchCategoryTitles[category]}全部结果。`);
     },
   );
   const handleSelectCategory = useEffectEvent(
@@ -401,6 +410,41 @@ export function DesktopSearchWorkspace({
     showPanelSpotlight(resolveSpotlightPanelId(activeCategory));
     showTransitionHint("已回到顶部，可继续调整关键词或切换分类。");
   });
+  const handleBackToAllResults = useEffectEvent(
+    (category: SearchResultCategory) => {
+      pendingAllResultsJumpRef.current = category;
+      setActiveAllResultsSection(category);
+      setActiveCategory("all");
+      focusSearchInput(Boolean(searchText.trim()));
+      showTransitionHint(`已回到全部结果，并定位到${searchCategoryTitles[category]}分区。`);
+    },
+  );
+
+  useEffect(() => {
+    if (!hasKeyword || activeCategory !== "all") {
+      setActiveAllResultsSection(null);
+      return;
+    }
+
+    const pendingSection = pendingAllResultsJumpRef.current;
+    if (pendingSection) {
+      setActiveAllResultsSection(pendingSection);
+      window.requestAnimationFrame(() => {
+        scrollAllResultsSectionIntoView(pendingSection, "smooth");
+        showPanelSpotlight(pendingSection);
+        pendingAllResultsJumpRef.current = null;
+      });
+      return;
+    }
+
+    setActiveAllResultsSection(groupedResults[0]?.category ?? null);
+  }, [
+    activeCategory,
+    groupedResults,
+    hasKeyword,
+    scrollAllResultsSectionIntoView,
+    showPanelSpotlight,
+  ]);
 
   useEffect(() => {
     if (!hasKeyword || activeCategory !== "all") {
@@ -560,7 +604,7 @@ export function DesktopSearchWorkspace({
               onBackToAll={
                 activeCategory === "all"
                   ? undefined
-                  : () => handleSelectCategory("all", { focusInput: true })
+                  : () => handleBackToAllResults(activeCategory)
               }
               onClearKeyword={handleClearKeyword}
               onScrollToTop={handleScrollToTopContext}
@@ -751,9 +795,7 @@ export function DesktopSearchWorkspace({
                         hasMore ? (
                           <DesktopSearchActionButton
                             onClick={() =>
-                              handleSelectCategory(section.category, {
-                                focusInput: true,
-                              })
+                              handleExpandAllResultsSection(section.category)
                             }
                             tone="brand"
                           >
@@ -1191,7 +1233,7 @@ function DesktopSearchContextBar({
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {onBackToAll ? (
               <DesktopSearchActionButton onClick={onBackToAll} tone="brand">
-                查看全部结果
+                回到全部结果
               </DesktopSearchActionButton>
             ) : null}
             <DesktopSearchActionButton onClick={onScrollToTop} tone="neutral">
