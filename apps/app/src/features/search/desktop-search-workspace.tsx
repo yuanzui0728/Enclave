@@ -1292,7 +1292,7 @@ export function DesktopSearchWorkspace({
                         onClick={onClearHistory}
                         tone="neutral"
                       >
-                        清空
+                        清空记录
                       </DesktopSearchActionButton>
                     ) : null
                   }
@@ -1303,31 +1303,12 @@ export function DesktopSearchWorkspace({
                   {history.length ? (
                     <div className="space-y-2">
                       {history.map((item) => (
-                        <div
+                        <DesktopSearchHistoryRow
                           key={item.keyword}
-                          className="flex items-center gap-2 rounded-[14px] bg-white px-3 py-2.5"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => handleApplyHistory(item.keyword)}
-                            className="inline-flex min-w-0 flex-1 items-center gap-2 text-left"
-                          >
-                            <Clock3
-                              size={14}
-                              className="shrink-0 text-[color:var(--text-dim)]"
-                            />
-                            <span className="truncate text-sm text-[color:var(--text-secondary)]">
-                              {item.keyword}
-                            </span>
-                          </button>
-                          <DesktopSearchActionButton
-                            onClick={() => onRemoveHistory(item.keyword)}
-                            className="shrink-0"
-                            tone="danger"
-                          >
-                            删除
-                          </DesktopSearchActionButton>
-                        </div>
+                          keyword={item.keyword}
+                          onApply={() => handleApplyHistory(item.keyword)}
+                          onRemove={() => onRemoveHistory(item.keyword)}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -2508,6 +2489,9 @@ function DesktopQuickLinkRow({
   item: DesktopSearchQuickLink;
   onOpen: (item: DesktopSearchQuickLink) => void;
 }) {
+  const openLabel = getDesktopQuickLinkActionLabel(item);
+  const openTone = getDesktopQuickLinkActionTone(item);
+
   return (
     <button
       type="button"
@@ -2538,9 +2522,78 @@ function DesktopQuickLinkRow({
           {item.description}
         </div>
       </div>
-      <DesktopSearchOpenCue compact label="直达" tone="brand" />
+      <DesktopSearchOpenCue compact label={openLabel} tone={openTone} />
     </button>
   );
+}
+
+function DesktopSearchHistoryRow({
+  keyword,
+  onApply,
+  onRemove,
+}: {
+  keyword: string;
+  onApply: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 rounded-[14px] bg-white px-3 py-3">
+      <button
+        type="button"
+        onClick={onApply}
+        className={cn(
+          "group inline-flex min-w-0 flex-1 items-center gap-3 text-left",
+          desktopSearchFocusRingClassName,
+        )}
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]">
+          <Clock3 size={15} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {keyword}
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-secondary)]">
+            重新执行这条搜索，继续查看完整结果。
+          </div>
+        </div>
+        <DesktopSearchOpenCue compact label="重新搜索" tone="brand" />
+      </button>
+      <DesktopSearchActionButton
+        onClick={onRemove}
+        className="shrink-0"
+        tone="danger"
+      >
+        移除
+      </DesktopSearchActionButton>
+    </div>
+  );
+}
+
+function getDesktopQuickLinkActionLabel(item: DesktopSearchQuickLink) {
+  if (item.id.startsWith("favorite-")) {
+    return "打开收藏";
+  }
+
+  if (item.id.startsWith("mini-program-")) {
+    return "打开小程序";
+  }
+
+  return "立即打开";
+}
+
+function getDesktopQuickLinkActionTone(
+  item: DesktopSearchQuickLink,
+): "brand" | "gold" | "olive" | "teal" {
+  if (item.id.startsWith("favorite-")) {
+    return "gold";
+  }
+
+  if (item.id.startsWith("mini-program-")) {
+    return "teal";
+  }
+
+  return "brand";
 }
 
 function DesktopSearchMessageGroupCard({
