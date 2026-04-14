@@ -32,6 +32,8 @@ import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ChannelAuthorCollectionTab = "all" | "videos" | "updates" | "live";
+const CHANNEL_AUTHOR_COLLECTION_STORAGE_KEY =
+  "yinjie:channels:author-collections";
 
 export function ChannelAuthorPage() {
   const { authorId } = useParams({ from: "/channels/authors/$authorId" });
@@ -74,8 +76,12 @@ export function ChannelAuthorPage() {
 
   useEffect(() => {
     setNotice(null);
-    setActiveCollection("all");
+    setActiveCollection(readStoredChannelAuthorCollection(authorId));
   }, [authorId, baseUrl]);
+
+  useEffect(() => {
+    writeStoredChannelAuthorCollection(authorId, activeCollection);
+  }, [activeCollection, authorId]);
 
   function navigateBackToChannels() {
     navigateBackOrFallback(() => {
@@ -503,4 +509,55 @@ function matchesChannelAuthorCollection(
   }
 
   return post.mediaType !== "video";
+}
+
+function readStoredChannelAuthorCollection(authorId: string) {
+  if (typeof window === "undefined") {
+    return "all" as ChannelAuthorCollectionTab;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(
+      CHANNEL_AUTHOR_COLLECTION_STORAGE_KEY,
+    );
+    if (!rawValue) {
+      return "all";
+    }
+
+    const parsed = JSON.parse(rawValue) as Record<string, string>;
+    const storedValue = parsed[authorId];
+    if (storedValue === "videos" || storedValue === "updates" || storedValue === "live") {
+      return storedValue;
+    }
+  } catch {
+    return "all";
+  }
+
+  return "all";
+}
+
+function writeStoredChannelAuthorCollection(
+  authorId: string,
+  tab: ChannelAuthorCollectionTab,
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(
+      CHANNEL_AUTHOR_COLLECTION_STORAGE_KEY,
+    );
+    const currentMap = rawValue
+      ? (JSON.parse(rawValue) as Record<string, string>)
+      : {};
+
+    currentMap[authorId] = tab;
+    window.localStorage.setItem(
+      CHANNEL_AUTHOR_COLLECTION_STORAGE_KEY,
+      JSON.stringify(currentMap),
+    );
+  } catch {
+    return;
+  }
 }
