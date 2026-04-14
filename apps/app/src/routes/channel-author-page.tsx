@@ -6,6 +6,7 @@ import {
   Clapperboard,
   MessageCircleMore,
   PlaySquare,
+  RadioTower,
   Users,
 } from "lucide-react";
 import {
@@ -138,6 +139,12 @@ export function ChannelAuthorPage() {
   );
   const activeCollectionLabel =
     collectionTabs.find((tab) => tab.key === activeCollection)?.label ?? "全部";
+  const featuredLivePost = useMemo(
+    () =>
+      (profile?.recentPosts ?? []).find((post) => post.sourceKind === "live_clip") ??
+      null,
+    [profile?.recentPosts],
+  );
 
   return (
     <AppPage
@@ -226,6 +233,55 @@ export function ChannelAuthorPage() {
                   label="最近内容"
                   value={String(profile.recentPosts.length)}
                 />
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-[22px] border border-[rgba(31,65,50,0.12)] bg-[linear-gradient(180deg,rgba(22,48,38,0.98),rgba(17,34,28,0.98))] text-white shadow-[0_18px_34px_rgba(15,23,42,0.08)]">
+                <div className="flex items-center justify-between px-4 pt-4">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/84">
+                    <RadioTower size={13} />
+                    直播入口
+                  </div>
+                  <div className="text-[11px] text-white/58">
+                    {featuredLivePost ? "最近直播" : "等待开播"}
+                  </div>
+                </div>
+                <div className="px-4 pb-4 pt-3">
+                  <div className="text-[16px] font-semibold">
+                    {featuredLivePost?.title?.trim() || "作者暂时还没有直播回放"}
+                  </div>
+                  <div className="mt-2 text-[12px] leading-6 text-white/70">
+                    {featuredLivePost
+                      ? `${formatTimestamp(featuredLivePost.createdAt)} · ${featuredLivePost.viewCount} 播放 · 从作者主页直接回到直播内容`
+                      : "先把直播入口卡片放进作者主页，后续接真实直播状态和开播中入口。"}
+                  </div>
+                  <div className="mt-3 rounded-[16px] bg-white/8 px-3.5 py-3 text-[12px] leading-6 text-white/82">
+                    {featuredLivePost?.text ||
+                      "当前还没有直播回放内容，等作者下一次开播后，这里会优先展示最新回放。"}
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!featuredLivePost}
+                      onClick={() => {
+                        if (featuredLivePost) {
+                          openChannelPost(featuredLivePost);
+                        }
+                      }}
+                      className="h-9 rounded-full bg-white px-4 text-[12px] text-[#163026] shadow-none hover:bg-white/92 disabled:bg-white/16 disabled:text-white/45"
+                    >
+                      {featuredLivePost ? "查看回放" : "暂无回放"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setActiveCollection("live")}
+                      className="h-9 rounded-full border border-white/14 bg-white/8 px-4 text-[12px] text-white shadow-none hover:bg-white/12"
+                    >
+                      浏览直播分栏
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <Button
