@@ -61,6 +61,7 @@ import {
   createFriendDirectoryItems,
   createWorldCharacterDirectoryItems,
   matchesCharacterSearch,
+  matchesFriendSearch,
   type FriendDirectoryItem,
   type WorldCharacterDirectoryItem,
 } from "../features/contacts/contact-utils";
@@ -236,7 +237,7 @@ export function ContactsPage() {
     }
 
     return friendDirectoryItems.filter((item) =>
-      matchesCharacterSearch(item.character, normalizedSearchText),
+      matchesFriendSearch(item, normalizedSearchText),
     );
   }, [friendDirectoryItems, normalizedSearchText]);
 
@@ -627,7 +628,9 @@ export function ContactsPage() {
     desktopSearchLauncher.openSearch();
   }
 
-  function handleMobileQuickActionNavigate(to: "/group/new" | "/friend-requests") {
+  function handleMobileQuickActionNavigate(
+    to: "/group/new" | "/friend-requests",
+  ) {
     setIsQuickMenuOpen(false);
     setNotice(null);
     void navigate({ to });
@@ -942,7 +945,9 @@ export function ContactsPage() {
                       keyword={searchText}
                       onClose={desktopSearchLauncher.close}
                       onOpenSearch={desktopSearchLauncher.openSearch}
-                      speechDisplayText={desktopSearchLauncher.speechDisplayText}
+                      speechDisplayText={
+                        desktopSearchLauncher.speechDisplayText
+                      }
                       speechError={desktopSearchLauncher.speechError}
                       speechStatus={desktopSearchLauncher.speechStatus}
                     />
@@ -1169,7 +1174,9 @@ export function ContactsPage() {
                   void navigate({ to: "/group/$groupId", params: { groupId } });
                 }}
                 onOpenMoments={
-                  selectedFriendItem ? handleOpenSelectedFriendMoments : undefined
+                  selectedFriendItem
+                    ? handleOpenSelectedFriendMoments
+                    : undefined
                 }
                 onStartChat={
                   selectedFriendItem
@@ -1373,12 +1380,12 @@ export function ContactsPage() {
           {notice || mobileErrorItems.length ? (
             <div className="space-y-1.5 px-3 pt-2">
               {notice ? (
-              <InlineNotice
-                tone="info"
-                className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
-              >
-                {notice}
-              </InlineNotice>
+                <InlineNotice
+                  tone="info"
+                  className="rounded-[11px] border-[rgba(96,165,250,0.16)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                >
+                  {notice}
+                </InlineNotice>
               ) : null}
               {mobileErrorItems.map((item) => (
                 <InlineNotice
@@ -1533,19 +1540,21 @@ function FriendListRow({
             desktop ? "text-[16px]" : "text-[14px]",
           )}
         >
-          {item.character.name}
+          {item.displayName}
         </div>
         {desktop ? (
           <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
             {pendingCharacterId === item.character.id
               ? "正在打开会话..."
-              : item.character.currentStatus?.trim() ||
-                item.character.relationship ||
-                "保持联系"}
+              : item.displayName !== item.character.name
+                ? `昵称：${item.character.name}`
+                : item.character.currentStatus?.trim() ||
+                  item.character.relationship ||
+                  "保持联系"}
           </div>
         ) : null}
       </div>
-      {desktop && item.friendship.isStarred ? (
+      {item.friendship.isStarred ? (
         <Star
           size={15}
           className="shrink-0 text-[#f3a311]"
