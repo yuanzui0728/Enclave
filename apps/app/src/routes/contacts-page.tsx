@@ -19,7 +19,6 @@ import {
   Search,
   Square,
   Star,
-  Tag,
   UserPlus,
   Users,
   WalletCards,
@@ -61,7 +60,6 @@ import {
 import { DesktopContactsWorkspace } from "../features/desktop/contacts/desktop-contacts-workspace";
 import { DesktopContactsFriendRequestsPane } from "../features/desktop/contacts/desktop-contacts-friend-requests-pane";
 import { DesktopContactsGroupsPane } from "../features/desktop/contacts/desktop-contacts-groups-pane";
-import { DesktopContactsTagsPane } from "../features/desktop/contacts/desktop-contacts-tags-pane";
 import { DesktopOfficialAccountsWorkspace } from "../features/desktop/official-accounts/desktop-official-accounts-workspace";
 import {
   buildDesktopContactsRouteHash,
@@ -90,7 +88,6 @@ import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type ShortcutRoute =
   | "/contacts/groups"
-  | "/contacts/tags"
   | "/friend-requests"
   | "/contacts/starred"
   | "/contacts/world-characters"
@@ -115,9 +112,6 @@ type DesktopSelection =
   | {
       kind: "groups";
       id?: string;
-    }
-  | {
-      kind: "tags";
     }
   | {
       kind: "official-accounts";
@@ -164,12 +158,6 @@ function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
     return {
       kind: "groups",
       ...(routeState.characterId ? { id: routeState.characterId } : {}),
-    };
-  }
-
-  if (routeState.pane === "tags") {
-    return {
-      kind: "tags",
     };
   }
 
@@ -379,15 +367,6 @@ export function ContactsPage() {
     [friendRequestsQuery.data],
   );
   const savedGroupCount = savedGroupsQuery.data?.length ?? 0;
-  const tagCount = useMemo(
-    () =>
-      new Set(
-        (friendsQuery.data ?? []).flatMap((item) =>
-          (item.friendship.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
-        ),
-      ).size,
-    [friendsQuery.data],
-  );
 
   const selectedFriendItem = useMemo(() => {
     if (desktopSelection?.kind !== "friend") {
@@ -799,7 +778,6 @@ export function ContactsPage() {
     if (
       desktopSelection?.kind === "new-friends" ||
       desktopSelection?.kind === "groups" ||
-      desktopSelection?.kind === "tags" ||
       desktopSelection?.kind === "official-accounts"
     ) {
       return;
@@ -1027,26 +1005,6 @@ export function ContactsPage() {
       },
     },
     {
-      key: "tags",
-      label: "标签",
-      subtitle: tagCount > 0 ? `${tagCount} 个联系人标签` : "查看联系人标签",
-      active: desktopSelection?.kind === "tags",
-      icon: Tag,
-      iconClassName: "bg-[linear-gradient(135deg,#34d399,#07c160)]",
-      onClick: () => {
-        if (!isDesktopLayout) {
-          handleShortcutNavigate("/contacts/tags");
-          return;
-        }
-
-        const nextSelection = {
-          kind: "tags",
-        } satisfies DesktopSelection;
-        setDesktopSelection(nextSelection);
-        commitDesktopRouteState(nextSelection, showWorldCharacters);
-      },
-    },
-    {
       key: "official-accounts",
       label: "公众号",
       subtitle: "查看已上线的内容账号",
@@ -1086,9 +1044,7 @@ export function ContactsPage() {
       onClick: handleOpenWorldCharacters,
     },
   ];
-  const desktopShortcutItems = shortcutItems.filter(
-    (item) => item.key !== "starred-friends",
-  );
+  const desktopShortcutItems = shortcutItems;
   const mobileShortcutItems = shortcutItems;
   const mobileErrorItems = [
     friendsQuery.isError && friendsQuery.error instanceof Error
@@ -1356,8 +1312,6 @@ export function ContactsPage() {
                 });
               }}
             />
-          ) : desktopSelection?.kind === "tags" ? (
-            <DesktopContactsTagsPane />
           ) : desktopSelection?.kind === "official-accounts" ? (
             <DesktopOfficialAccountsWorkspace
               selectedAccountId={desktopSelection.accountId}

@@ -8,7 +8,6 @@ import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildContactTagGroups } from "../features/contacts/contact-tag-groups";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
-import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -24,7 +23,6 @@ export function TagsPage() {
 
     void navigate({
       to: "/tabs/contacts",
-      hash: buildDesktopContactsRouteHash({ pane: "tags" }),
       replace: true,
     });
   }, [isDesktopLayout, navigate]);
