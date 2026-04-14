@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -34,6 +35,7 @@ import {
   updateGroupOwnerProfile,
   updateGroupPreferences,
   type ConversationListItem,
+  type FriendListItem,
   type GroupMember,
   type UpdateFriendProfileRequest,
 } from "@yinjie/contracts";
@@ -56,6 +58,7 @@ import {
   DesktopContactProfileSection,
   DesktopContactProfileToggleRow,
 } from "../../contacts/desktop-contact-profile-blocks";
+import { getFriendDisplayName } from "../../contacts/contact-utils";
 import { buildDesktopFriendMomentsRouteHash } from "../moments/desktop-friend-moments-route-state";
 import {
   useConversationBackground,
@@ -944,6 +947,10 @@ function GroupChatDetailsPanel({
     queryKey: ["app-group-members", baseUrl, conversation.id],
     queryFn: () => getGroupMembers(conversation.id, baseUrl),
   });
+  const friendsQuery = useQuery({
+    queryKey: ["app-friends", baseUrl],
+    queryFn: () => getFriends(baseUrl),
+  });
 
   const backgroundLabel = getChatBackgroundLabel(
     backgroundQuery.data?.effectiveBackground ?? null,
@@ -1158,6 +1165,28 @@ function GroupChatDetailsPanel({
       ),
     [membersQuery.data],
   );
+  const friendMap = useMemo<Map<string, FriendListItem>>(
+    () =>
+      new Map(
+        (friendsQuery.data ?? []).map((item) => [item.character.id, item] as const),
+      ),
+    [friendsQuery.data],
+  );
+  const resolveGroupMemberDisplayName = useCallback(
+    (member: GroupMember) => {
+      if (member.memberType !== "character") {
+        return member.memberName?.trim() || member.memberId;
+      }
+
+      const friend = friendMap.get(member.memberId);
+      if (friend) {
+        return getFriendDisplayName(friend);
+      }
+
+      return member.memberName?.trim() || member.memberId;
+    },
+    [friendMap],
+  );
 
   const removableMembers = useMemo(
     () =>
@@ -1165,11 +1194,19 @@ function GroupChatDetailsPanel({
         .filter((item) => item.memberType === "character")
         .map((item) => ({
           id: item.memberId,
-          name: item.memberName ?? item.memberId,
-          subtitle: item.role === "admin" ? "管理员" : "群成员",
+          name: resolveGroupMemberDisplayName(item),
+          subtitle:
+            resolveGroupMemberDisplayName(item) !==
+            (item.memberName?.trim() || item.memberId)
+              ? `昵称：${item.memberName?.trim() || item.memberId} · ${
+                  item.role === "admin" ? "管理员" : "群成员"
+                }`
+              : item.role === "admin"
+                ? "管理员"
+                : "群成员",
           avatar: item.memberAvatar,
         })),
-    [membersQuery.data],
+    [membersQuery.data, resolveGroupMemberDisplayName],
   );
   const groupMembers = membersQuery.data ?? [];
   const ownerDisplayName = ownerMember?.memberName?.trim() || "我";
@@ -1179,7 +1216,7 @@ function GroupChatDetailsPanel({
       .slice(0, DESKTOP_GROUP_MEMBER_PREVIEW_COUNT)
       .map((member) => ({
         key: member.id,
-        label: member.memberName ?? member.memberId,
+        label: resolveGroupMemberDisplayName(member),
         src: member.memberAvatar,
         onClick: (event: ReactMouseEvent<HTMLButtonElement>) => {
           if (member.memberType === "character") {
@@ -1187,7 +1224,7 @@ function GroupChatDetailsPanel({
               anchorElement: event.currentTarget,
               kind: "character",
               characterId: member.memberId,
-              fallbackName: member.memberName ?? member.memberId,
+              fallbackName: resolveGroupMemberDisplayName(member),
               fallbackAvatar: member.memberAvatar,
               threadContext: {
                 id: conversation.id,
@@ -1543,6 +1580,7 @@ function GroupChatDetailsPanel({
         autoFocusSearch={memberBrowserAutoFocusSearch}
         groupName={groupQuery.data?.name ?? conversation.title}
         members={groupMembers}
+        resolveDisplayName={resolveGroupMemberDisplayName}
         pending={busy}
         onClose={() => {
           setMemberBrowserOpen(false);
@@ -1817,6 +1855,7 @@ function DesktopGroupMemberBrowserDialog({
   autoFocusSearch = false,
   groupName,
   members,
+  resolveDisplayName,
   pending = false,
   onClose,
   onAddMembers,
@@ -1828,6 +1867,7 @@ function DesktopGroupMemberBrowserDialog({
   autoFocusSearch?: boolean;
   groupName: string;
   members: GroupMember[];
+  resolveDisplayName?: (member: GroupMember) => string;
   pending?: boolean;
   onClose: () => void;
   onAddMembers: () => void;
@@ -1909,7 +1949,10 @@ function DesktopGroupMemberBrowserDialog({
         return true;
       }
 
-      const name = (member.memberName ?? member.memberId).toLowerCase();
+      const displayName = resolveDisplayName
+        ? resolveDisplayName(member)
+        : member.memberName ?? member.memberId;
+      const rawName = member.memberName ?? member.memberId;
       const roleLabel =
         member.role === "owner"
           ? "群主"
@@ -1918,12 +1961,13 @@ function DesktopGroupMemberBrowserDialog({
             : "群成员";
 
       return (
-        name.includes(keyword) ||
+        displayName.toLowerCase().includes(keyword) ||
+        rawName.toLowerCase().includes(keyword) ||
         roleLabel.includes(keyword) ||
         member.memberId.toLowerCase().includes(keyword)
       );
     });
-  }, [activeFilter, members, searchTerm]);
+  }, [activeFilter, members, resolveDisplayName, searchTerm]);
 
   const activeFilterLabel =
     filterTabs.find((tab) => tab.id === activeFilter)?.label ?? "全部";
@@ -2150,6 +2194,10 @@ function DesktopGroupMemberBrowserDialog({
           {filteredMembers.length ? (
             <div className="space-y-2">
               {filteredMembers.map((member) => {
+                const displayName = resolveDisplayName
+                  ? resolveDisplayName(member)
+                  : member.memberName ?? member.memberId;
+                const rawName = member.memberName?.trim() || member.memberId;
                 const roleLabel =
                   member.role === "owner"
                     ? "群主"
@@ -2199,14 +2247,14 @@ function DesktopGroupMemberBrowserDialog({
                     )}
                   >
                     <AvatarChip
-                      name={member.memberName ?? member.memberId}
+                      name={displayName}
                       src={member.memberAvatar}
                       size="wechat"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-                          {member.memberName ?? member.memberId}
+                          {displayName}
                         </div>
                         <span
                           className={cn(
@@ -2232,6 +2280,12 @@ function DesktopGroupMemberBrowserDialog({
                         </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
+                        {displayName !== rawName ? (
+                          <>
+                            <span>{`昵称：${rawName}`}</span>
+                            <span className="text-black/10">·</span>
+                          </>
+                        ) : null}
                         <span>
                           {member.memberType === "user"
                             ? "Enter 或点击查看我的资料"

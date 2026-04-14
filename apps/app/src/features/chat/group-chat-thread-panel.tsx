@@ -12,9 +12,11 @@ import { useNavigate } from "@tanstack/react-router";
 import { Phone, Video } from "lucide-react";
 import {
   getConversations,
+  getFriends,
   getGroup,
   getGroupMembers,
   getGroupMessages,
+  type FriendListItem,
   type GroupMessage,
   markGroupRead,
   sendGroupMessage,
@@ -52,6 +54,7 @@ import { MobileChatScrollBottomButton } from "./mobile-chat-scroll-bottom-button
 import { MobileChatThreadHeader } from "./mobile-chat-thread-header";
 import { useGroupBackground } from "./backgrounds/use-conversation-background";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
+import { getFriendDisplayName } from "../contacts/contact-utils";
 import { formatTimestamp, parseTimestamp } from "../../lib/format";
 import { isPersistedGroupConversation } from "../../lib/conversation-route";
 import {
@@ -141,6 +144,10 @@ export function GroupChatThreadPanel({
   const membersQuery = useQuery({
     queryKey: ["app-group-members", baseUrl, groupId],
     queryFn: () => getGroupMembers(groupId, baseUrl),
+  });
+  const friendsQuery = useQuery({
+    queryKey: ["app-friends", baseUrl],
+    queryFn: () => getFriends(baseUrl),
   });
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
@@ -349,6 +356,41 @@ export function GroupChatThreadPanel({
           (parseTimestamp(right.createdAt) ?? 0),
       ),
     [messages],
+  );
+  const friendMap = useMemo<Map<string, FriendListItem>>(
+    () =>
+      new Map(
+        (friendsQuery.data ?? []).map((item) => [item.character.id, item] as const),
+      ),
+    [friendsQuery.data],
+  );
+  const resolveCharacterDisplayName = useCallback(
+    (characterId?: string | null, fallbackName?: string | null) => {
+      if (characterId) {
+        const friend = friendMap.get(characterId);
+        if (friend) {
+          return getFriendDisplayName(friend);
+        }
+      }
+
+      return fallbackName?.trim() || "群成员";
+    },
+    [friendMap],
+  );
+  const renderableMessages = useMemo(
+    () =>
+      orderedMessages.map((message) =>
+        message.senderType === "character"
+          ? {
+              ...message,
+              senderName: resolveCharacterDisplayName(
+                message.senderId,
+                message.senderName,
+              ),
+            }
+          : message,
+      ),
+    [orderedMessages, resolveCharacterDisplayName],
   );
   const hasHighlightedMessage = orderedMessages.some(
     (message) => message.id === highlightedMessageId,
@@ -670,16 +712,20 @@ export function GroupChatThreadPanel({
       }
 
       seenIds.add(member.memberId);
+      const rawName = member.memberName?.trim() || member.memberId;
+      const displayName = resolveCharacterDisplayName(member.memberId, rawName);
+      const roleLabel = member.role === "admin" ? "管理员" : "群成员";
       candidates.push({
         id: member.memberId,
-        name: member.memberName?.trim() || member.memberId,
-        subtitle: member.role === "admin" ? "管理员" : "群成员",
+        name: displayName,
+        subtitle:
+          displayName !== rawName ? `昵称：${rawName} · ${roleLabel}` : roleLabel,
         avatar: member.memberAvatar,
       });
     }
 
     return candidates;
-  }, [membersQuery.data]);
+  }, [membersQuery.data, resolveCharacterDisplayName]);
 
   const handleReplyMessage = (
     message: ChatRenderableMessage,
@@ -1072,7 +1118,7 @@ export function GroupChatThreadPanel({
             ) : null}
 
             <ChatMessageList
-              messages={orderedMessages}
+              messages={renderableMessages}
               threadContext={{
                 id: groupId,
                 type: "group",

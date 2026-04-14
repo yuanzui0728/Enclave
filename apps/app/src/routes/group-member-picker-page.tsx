@@ -76,7 +76,7 @@ function GroupMemberPickerPage({
   const friendsQuery = useQuery({
     queryKey: ["app-friends", baseUrl],
     queryFn: () => getFriends(baseUrl),
-    enabled: mode === "add",
+    enabled: Boolean(groupId),
   });
 
   useEffect(() => {
@@ -93,6 +93,11 @@ function GroupMemberPickerPage({
   const memberIds = useMemo(
     () => new Set((membersQuery.data ?? []).map((item) => item.memberId)),
     [membersQuery.data],
+  );
+  const friendMap = useMemo(
+    () =>
+      new Map((friendsQuery.data ?? []).map((item) => [item.character.id, item])),
+    [friendsQuery.data],
   );
 
   const allCandidateItems = useMemo(() => {
@@ -115,15 +120,25 @@ function GroupMemberPickerPage({
 
     return [...(membersQuery.data ?? [])]
       .filter((item) => item.memberType === "character")
-      .map((item) => ({
-        id: item.memberId,
-        name: item.memberName ?? item.memberId,
-        subtitle: item.role === "admin" ? "管理员" : "群成员",
-        avatar: item.memberAvatar ?? undefined,
-        indexLabel: "群成员",
-      }))
+      .map((item) => {
+        const rawName = item.memberName?.trim() || item.memberId;
+        const friend = friendMap.get(item.memberId);
+        const displayName = friend ? getFriendDisplayName(friend) : rawName;
+        const roleLabel = item.role === "admin" ? "管理员" : "群成员";
+
+        return {
+          id: item.memberId,
+          name: displayName,
+          subtitle:
+            displayName !== rawName
+              ? `昵称：${rawName} · ${roleLabel}`
+              : roleLabel,
+          avatar: item.memberAvatar ?? undefined,
+          indexLabel: "群成员",
+        };
+      })
       .sort((left, right) => left.name.localeCompare(right.name, "zh-CN"));
-  }, [friendsQuery.data, memberIds, membersQuery.data, mode]);
+  }, [friendMap, friendsQuery.data, memberIds, membersQuery.data, mode]);
 
   const filteredCandidateItems = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
@@ -358,9 +373,11 @@ function GroupMemberPickerPage({
                   </div>
                 ) : null}
                 {friendsQuery.isError && friendsQuery.error instanceof Error ? (
+                  mode === "add" ? (
                   <div className="px-2 py-2">
                     <ErrorBlock message={friendsQuery.error.message} />
                   </div>
+                  ) : null
                 ) : null}
 
                 {!groupQuery.isLoading &&
