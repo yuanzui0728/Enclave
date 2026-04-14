@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { BookOpenText, MessageSquareText } from "lucide-react";
 import {
   followOfficialAccount,
   getOfficialAccount,
@@ -10,6 +11,7 @@ import {
   unfollowOfficialAccount,
 } from "@yinjie/contracts";
 import { Button, ErrorBlock, LoadingBlock, TextField } from "@yinjie/ui";
+import { AvatarChip } from "../../../components/avatar-chip";
 import { OfficialAccountListItem } from "../../../components/official-account-list-item";
 import { OfficialArticleCard } from "../../../components/official-article-card";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
@@ -44,6 +46,7 @@ export function DesktopOfficialAccountsWorkspace({
   const [accountFilter, setAccountFilter] = useState<"all" | "following">(
     "all",
   );
+  const [detailTab, setDetailTab] = useState<"updates" | "profile">("updates");
   const [favoriteSourceIds, setFavoriteSourceIds] = useState<string[]>(() =>
     readDesktopFavorites().map((item) => item.sourceId),
   );
@@ -180,6 +183,10 @@ export function DesktopOfficialAccountsWorkspace({
     queryFn: () => getOfficialAccount(effectiveAccountId!, baseUrl),
     enabled: Boolean(effectiveAccountId),
   });
+
+  useEffect(() => {
+    setDetailTab("updates");
+  }, [effectiveAccountId]);
 
   const activeArticleId = useMemo(() => {
     if (!effectiveAccountId) {
@@ -335,26 +342,19 @@ export function DesktopOfficialAccountsWorkspace({
 
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(242,246,245,0.78)]">
+      <section className="flex w-[300px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
           <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
             公众号
           </div>
-          <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
-            从通讯录进入，按微信式阅读路径浏览账号与文章。
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <WorkspaceStatCard label="已关注" value={`${followingCount} 个`} />
-            <WorkspaceStatCard
-              label="内容分布"
-              value={`${subscriptionCount} 订阅 / ${serviceCount} 服务`}
-            />
+          <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+            已关注 {followingCount} · 订阅 {subscriptionCount} · 服务 {serviceCount}
           </div>
           <TextField
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="搜索公众号"
-            className="mt-4 rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+            className="mt-3 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 py-2.5 text-[13px] shadow-none hover:bg-[color:var(--surface-console)] focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
           />
           <div className="mt-3 flex gap-2">
             <Button
@@ -386,7 +386,7 @@ export function DesktopOfficialAccountsWorkspace({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-3 py-3">
+        <div className="min-h-0 flex-1 overflow-auto px-2 py-2.5">
           {accountsQuery.isLoading ? (
             <LoadingBlock label="正在读取公众号..." />
           ) : null}
@@ -394,13 +394,13 @@ export function DesktopOfficialAccountsWorkspace({
             <ErrorBlock message={accountsQuery.error.message} />
           ) : null}
 
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white">
             {filteredAccounts.map((entry) => (
               <OfficialAccountListItem
                 key={entry.id}
                 account={entry}
                 active={entry.id === effectiveAccountId}
-                compact
+                dense
                 onClick={() => {
                   void navigate({
                     to: "/official-accounts/$accountId",
@@ -428,65 +428,150 @@ export function DesktopOfficialAccountsWorkspace({
 
       <section className="flex w-[420px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white/88">
         <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-5 py-5 backdrop-blur-xl">
-          <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-            账号主页
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-            {account?.name ?? "公众号"}
-          </div>
-          <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
-            {account?.description ?? "这里会展示账号资料、最近文章和历史推送。"}
-          </div>
           {account ? (
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[color:var(--brand-primary)]">
-                {account.accountType === "service" ? "服务号" : "订阅号"}
-              </span>
-              <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[color:var(--text-muted)]">
-                @{account.handle}
-              </span>
-              {account.isFollowing ? (
-                <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
-                  已关注
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-          {account ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant={account.isFollowing ? "secondary" : "primary"}
-                onClick={() => followMutation.mutate()}
-                disabled={followMutation.isPending}
-                className={
-                  account.isFollowing
-                    ? "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                    : "rounded-full bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                }
-              >
-                {followMutation.isPending
-                  ? "处理中..."
-                  : account.isFollowing
-                    ? "取消关注"
-                    : "关注公众号"}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={toggleAccountFavorite}
-                className="rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-              >
-                {accountFavoriteSourceId &&
-                favoriteSourceIds.includes(accountFavoriteSourceId)
-                  ? "取消收藏"
-                  : "收藏主页"}
-              </Button>
-            </div>
-          ) : null}
+            <>
+              <div className="flex items-start gap-4">
+                <AvatarChip
+                  name={account.name}
+                  src={account.avatar}
+                  size="lg"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[23px] font-semibold text-[color:var(--text-primary)]">
+                    {account.name}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1 text-[color:var(--brand-primary)]">
+                      {account.accountType === "service" ? "服务号" : "订阅号"}
+                    </span>
+                    <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[color:var(--text-muted)]">
+                      @{account.handle}
+                    </span>
+                    {account.isVerified ? (
+                      <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-3 py-1 text-[#315b9a]">
+                        已认证
+                      </span>
+                    ) : null}
+                    {account.isFollowing ? (
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
+                        已关注
+                      </span>
+                    ) : null}
+                    {account.accountType === "service" && account.isMuted ? (
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-[color:var(--text-secondary)]">
+                        已免打扰
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    {account.description}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {account.accountType === "service" && account.isFollowing ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    className="rounded-xl bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                    onClick={() => {
+                      void navigate({
+                        to: "/official-accounts/service/$accountId",
+                        params: { accountId: account.id },
+                      });
+                    }}
+                  >
+                    <MessageSquareText size={15} />
+                    发消息
+                  </Button>
+                ) : null}
+                {account.accountType === "subscription" && account.isFollowing ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    onClick={() => {
+                      void navigate({ to: "/chat/subscription-inbox" });
+                    }}
+                  >
+                    <BookOpenText size={15} />
+                    订阅号消息
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant={account.isFollowing ? "secondary" : "primary"}
+                  onClick={() => followMutation.mutate()}
+                  disabled={followMutation.isPending}
+                  className={
+                    account.isFollowing
+                      ? "rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                      : "rounded-xl bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                  }
+                >
+                  {followMutation.isPending
+                    ? "处理中..."
+                    : account.isFollowing
+                      ? "取消关注"
+                      : "关注公众号"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={toggleAccountFavorite}
+                  className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                >
+                  {accountFavoriteSourceId &&
+                  favoriteSourceIds.includes(accountFavoriteSourceId)
+                    ? "取消收藏"
+                    : "收藏主页"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                账号主页
+              </div>
+              <div className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
+                公众号
+              </div>
+              <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+                这里会展示账号资料、最近文章和消息入口。
+              </div>
+            </>
+          )}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.66)] px-4 py-4">
+        <div className="border-b border-[color:var(--border-faint)] bg-white px-5 py-3">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDetailTab("updates")}
+              className={
+                detailTab === "updates"
+                  ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
+                  : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+              }
+            >
+              消息
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetailTab("profile")}
+              className={
+                detailTab === "profile"
+                  ? "rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
+                  : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+              }
+            >
+              资料
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(247,250,250,0.72)] px-4 py-4">
           {accountDetailQuery.isLoading ? (
             <LoadingBlock label="正在读取公众号主页..." />
           ) : null}
@@ -499,14 +584,99 @@ export function DesktopOfficialAccountsWorkspace({
           ) : null}
 
           {account ? (
-            <div className="space-y-4">
-              <div className="grid gap-2 sm:grid-cols-3">
-                <WorkspaceStatCard
-                  label="最近文章"
-                  value={`${account.articles.length} 篇`}
+            detailTab === "updates" ? (
+              <div className="space-y-4">
+                <DesktopOfficialEntryCard
+                  title={
+                    account.accountType === "service"
+                      ? "服务号消息"
+                      : "订阅号消息"
+                  }
+                  description={
+                    account.accountType === "service"
+                      ? account.isFollowing
+                        ? "这个服务号的通知、文章卡片和服务入口会出现在消息页。"
+                        : "先关注后，服务消息和文章卡片才会进入消息页。"
+                      : account.isFollowing
+                        ? "这个订阅号的新推送会进入“订阅号消息”聚合流。"
+                        : "先关注后，这个订阅号的推送才会进入聚合流。"
+                  }
+                  actionLabel={
+                    account.accountType === "service"
+                      ? "打开消息"
+                      : "打开订阅号消息"
+                  }
+                  actionDisabled={!account.isFollowing}
+                  onAction={() => {
+                    if (account.accountType === "service") {
+                      void navigate({
+                        to: "/official-accounts/service/$accountId",
+                        params: { accountId: account.id },
+                      });
+                      return;
+                    }
+
+                    void navigate({ to: "/chat/subscription-inbox" });
+                  }}
                 />
-                <WorkspaceStatCard
-                  label="最新发布时间"
+
+                <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+                  <div className="border-b border-[color:var(--border-faint)] px-4 py-3 text-sm font-medium text-[color:var(--text-primary)]">
+                    最近文章
+                  </div>
+                  {account.articles.length ? (
+                    account.articles.map((article) => (
+                      <OfficialArticleCard
+                        key={article.id}
+                        article={article}
+                        dense
+                        active={article.id === activeArticleId}
+                        favorite={favoriteSourceIds.includes(
+                          `official-article-${article.id}`,
+                        )}
+                        onClick={() => {
+                          void navigate({
+                            to: "/official-accounts/articles/$articleId",
+                            params: { articleId: article.id },
+                          });
+                        }}
+                        onToggleFavorite={() =>
+                          toggleArticleSummaryFavorite(article.id)
+                        }
+                      />
+                    ))
+                  ) : (
+                    <div className="px-4 py-6">
+                      <EmptyState
+                        title="这个公众号还没有公开文章"
+                        description="后续更新会直接出现在这里。"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <DesktopOfficialProfileRow
+                  label="账号类型"
+                  value={account.accountType === "service" ? "服务号" : "订阅号"}
+                />
+                <DesktopOfficialProfileRow
+                  label="账号状态"
+                  value={account.isFollowing ? "已关注" : "未关注"}
+                />
+                <DesktopOfficialProfileRow
+                  label="消息状态"
+                  value={
+                    account.accountType === "service"
+                      ? account.isMuted
+                        ? "已开启消息免打扰"
+                        : "正常接收消息"
+                      : "通过订阅号消息聚合浏览"
+                  }
+                />
+                <DesktopOfficialProfileRow
+                  label="最近更新"
                   value={
                     account.articles[0]?.publishedAt
                       ? new Date(account.articles[0].publishedAt).toLocaleDateString(
@@ -519,35 +689,20 @@ export function DesktopOfficialAccountsWorkspace({
                       : "暂无更新"
                   }
                 />
-                <WorkspaceStatCard
-                  label="账号状态"
-                  value={account.isFollowing ? "已加入阅读列表" : "可关注"}
+                <DesktopOfficialProfileRow
+                  label="文章数量"
+                  value={`${account.articles.length} 篇`}
                 />
+                <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+                  <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                    账号简介
+                  </div>
+                  <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+                    {account.description}
+                  </div>
+                </section>
               </div>
-
-              <div className="space-y-2">
-                {account.articles.map((article) => (
-                  <OfficialArticleCard
-                    key={article.id}
-                    article={article}
-                    active={article.id === activeArticleId}
-                    compact
-                    favorite={favoriteSourceIds.includes(
-                      `official-article-${article.id}`,
-                    )}
-                    onClick={() => {
-                      void navigate({
-                        to: "/official-accounts/articles/$articleId",
-                        params: { articleId: article.id },
-                      });
-                    }}
-                    onToggleFavorite={() =>
-                      toggleArticleSummaryFavorite(article.id)
-                    }
-                  />
-                ))}
-              </div>
-            </div>
+            )
           ) : null}
         </div>
       </section>
@@ -599,7 +754,42 @@ export function DesktopOfficialAccountsWorkspace({
   );
 }
 
-function WorkspaceStatCard({
+function DesktopOfficialEntryCard({
+  title,
+  description,
+  actionLabel,
+  actionDisabled = false,
+  onAction,
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  actionDisabled?: boolean;
+  onAction: () => void;
+}) {
+  return (
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+      <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        disabled={actionDisabled}
+        className="mt-4 rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+        onClick={onAction}
+      >
+        {actionLabel}
+      </Button>
+    </section>
+  );
+}
+
+function DesktopOfficialProfileRow({
   label,
   value,
 }: {
@@ -607,11 +797,11 @@ function WorkspaceStatCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-3 shadow-[var(--shadow-section)]">
-      <div className="text-[11px] text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
+    <section className="flex items-center justify-between gap-3 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-3 shadow-[var(--shadow-section)]">
+      <div className="text-sm text-[color:var(--text-muted)]">{label}</div>
+      <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {value}
       </div>
-    </div>
+    </section>
   );
 }
