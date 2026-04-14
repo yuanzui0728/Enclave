@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('user_feed_interactions')
 export class UserFeedInteractionEntity {
@@ -12,8 +12,14 @@ export class UserFeedInteractionEntity {
   postId: string;
 
   @Column()
-  type: string; // 'like' | 'comment' | 'view'
+  type: string; // 'like' | 'favorite' | 'share' | 'view' | 'not_interested' | 'comment_like'
+
+  @Column('simple-json', { nullable: true })
+  payload?: Record<string, unknown> | null;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

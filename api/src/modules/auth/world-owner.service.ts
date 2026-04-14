@@ -17,6 +17,7 @@ import { MomentCommentEntity } from '../moments/moment-comment.entity';
 import { MomentLikeEntity } from '../moments/moment-like.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
 import { FeedCommentEntity } from '../feed/feed-comment.entity';
+import { VideoChannelFollowEntity } from '../feed/video-channel-follow.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import type { ChatBackgroundAsset } from '../chat/chat-background.types';
 import {
@@ -82,6 +83,7 @@ export class WorldOwnerService {
       await manager.getRepository(FriendshipEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(FriendRequestEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(NarrativeArcEntity).delete({ ownerId: In(removedOwnerIds) });
+      await manager.getRepository(VideoChannelFollowEntity).delete({ ownerId: In(removedOwnerIds) });
       await manager.getRepository(UserFeedInteractionEntity).delete({ ownerId: In(removedOwnerIds) });
 
       await manager
