@@ -25,7 +25,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import {
+  acceptFriendRequest,
   blockCharacter,
+  declineFriendRequest,
   deleteFriend,
   getBlockedCharacters,
   getConversations,
@@ -57,6 +59,7 @@ import {
   type ContactShortcutListItem,
 } from "../features/contacts/contact-shortcut-list";
 import { DesktopContactsWorkspace } from "../features/desktop/contacts/desktop-contacts-workspace";
+import { DesktopContactsFriendRequestsPane } from "../features/desktop/contacts/desktop-contacts-friend-requests-pane";
 import {
   buildDesktopContactsRouteHash,
   parseDesktopContactsRouteState,
@@ -97,6 +100,9 @@ type DesktopSelection =
       kind: "world-character";
       id: string;
     }
+  | {
+      kind: "new-friends";
+    }
   | null;
 
 function areDesktopSelectionsEqual(
@@ -107,17 +113,34 @@ function areDesktopSelectionsEqual(
     return left === right;
   }
 
-  return left.kind === right.kind && left.id === right.id;
+  return (
+    left.kind === right.kind &&
+    ("id" in left ? left.id : undefined) ===
+      ("id" in right ? right.id : undefined)
+  );
 }
 
 function buildDesktopSelectionFromRouteState(hash: string): DesktopSelection {
   const routeState = parseDesktopContactsRouteState(hash);
+  if (routeState.pane === "new-friends") {
+    return {
+      kind: "new-friends",
+    };
+  }
+
   if (!routeState.characterId) {
     return null;
   }
 
+  if (routeState.pane === "friend") {
+    return {
+      kind: "friend",
+      id: routeState.characterId,
+    };
+  }
+
   return {
-    kind: routeState.pane,
+    kind: "world-character",
     id: routeState.characterId,
   };
 }
@@ -410,7 +433,8 @@ export function ContactsPage() {
   ) {
     const nextHash = buildDesktopContactsRouteHash({
       pane: nextSelection?.kind ?? "friend",
-      characterId: nextSelection?.id,
+      characterId:
+        nextSelection && "id" in nextSelection ? nextSelection.id : undefined,
       showWorldCharacters: nextShowWorldCharacters,
     });
     const normalizedHash = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -487,6 +511,50 @@ export function ContactsPage() {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+    },
+  });
+  const acceptFriendRequestMutation = useMutation({
+    mutationFn: (requestId: string) => acceptFriendRequest(requestId, baseUrl),
+    onSuccess: async (_, requestId) => {
+      const acceptedRequest =
+        (friendRequestsQuery.data ?? []).find(
+          (request) => request.id === requestId,
+        ) ?? null;
+
+      setNotice("已通过好友申请。");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-friend-requests", baseUrl],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-friends-quick-start", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-friends", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
+      ]);
+
+      if (acceptedRequest?.characterId) {
+        const nextSelection = {
+          kind: "friend",
+          id: acceptedRequest.characterId,
+        } satisfies DesktopSelection;
+        setDesktopSelection(nextSelection);
+        commitDesktopRouteState(nextSelection, showWorldCharacters);
+      }
+    },
+  });
+  const declineFriendRequestMutation = useMutation({
+    mutationFn: (requestId: string) => declineFriendRequest(requestId, baseUrl),
+    onSuccess: async () => {
+      setNotice("好友请求已处理。");
+      await queryClient.invalidateQueries({
+        queryKey: ["app-friend-requests", baseUrl],
+      });
     },
   });
   const setStarredMutation = useMutation({
@@ -641,6 +709,10 @@ export function ContactsPage() {
 
   useEffect(() => {
     if (!isDesktopLayout) {
+      return;
+    }
+
+    if (desktopSelection?.kind === "new-friends") {
       return;
     }
 
@@ -826,7 +898,18 @@ export function ContactsPage() {
       badgeCount: pendingRequestCount,
       icon: UserPlus,
       iconClassName: "bg-[linear-gradient(135deg,#34d399,#16a34a)]",
-      onClick: () => handleShortcutNavigate("/friend-requests"),
+      onClick: () => {
+        if (!isDesktopLayout) {
+          handleShortcutNavigate("/friend-requests");
+          return;
+        }
+
+        const nextSelection = {
+          kind: "new-friends",
+        } satisfies DesktopSelection;
+        setDesktopSelection(nextSelection);
+        commitDesktopRouteState(nextSelection, showWorldCharacters);
+      },
     },
     {
       key: "starred-friends",
@@ -961,6 +1044,8 @@ export function ContactsPage() {
     blockedCharactersQuery.error,
     conversationsQuery.error,
     startChatMutation.error,
+    acceptFriendRequestMutation.error,
+    declineFriendRequestMutation.error,
     setStarredMutation.error,
     blockMutation.error,
     pinMutation.error,
@@ -1080,97 +1165,137 @@ export function ContactsPage() {
           commitDesktopRouteState(nextSelection, true);
         }}
         detailContent={
-          <ContactDetailPane
-            character={
-              selectedFriendItem?.character ??
-              selectedWorldCharacterItem?.character ??
-              null
-            }
-            friendship={selectedFriendItem?.friendship ?? null}
-            commonGroups={commonGroups}
-            onOpenGroup={(groupId) => {
-              void navigate({ to: "/group/$groupId", params: { groupId } });
-            }}
-            onOpenMoments={
-              selectedFriendItem ? handleOpenSelectedFriendMoments : undefined
-            }
-            onStartChat={
-              selectedFriendItem
-                ? () => handleStartChat(selectedFriendItem.character.id)
-                : undefined
-            }
-            chatPending={
-              selectedFriendItem?.character.id === pendingCharacterId
-            }
-            isPinned={selectedConversation?.isPinned ?? false}
-            pinPending={
-              pinMutation.isPending &&
-              pinMutation.variables?.characterId === selectedCharacterId
-            }
-            onTogglePinned={
-              selectedFriendItem
-                ? () =>
-                    pinMutation.mutate({
-                      characterId: selectedFriendItem.character.id,
-                      pinned: !(selectedConversation?.isPinned ?? false),
-                    })
-                : undefined
-            }
-            isMuted={selectedConversation?.isMuted ?? false}
-            mutePending={
-              muteMutation.isPending &&
-              muteMutation.variables?.characterId === selectedCharacterId
-            }
-            onToggleMuted={
-              selectedFriendItem
-                ? () =>
-                    muteMutation.mutate({
-                      characterId: selectedFriendItem.character.id,
-                      muted: !(selectedConversation?.isMuted ?? false),
-                    })
-                : undefined
-            }
-            isStarred={selectedFriendItem?.friendship.isStarred ?? false}
-            starPending={
-              setStarredMutation.isPending &&
-              setStarredMutation.variables?.characterId === selectedCharacterId
-            }
-            onToggleStarred={
-              selectedFriendItem
-                ? () =>
-                    setStarredMutation.mutate({
-                      characterId: selectedFriendItem.character.id,
-                      starred: !selectedFriendItem.friendship.isStarred,
-                    })
-                : undefined
-            }
-            isBlocked={selectedFriendBlocked}
-            blockPending={
-              blockMutation.isPending &&
-              blockMutation.variables?.characterId === selectedCharacterId
-            }
-            onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}
-            deletePending={
-              deleteFriendMutation.isPending &&
-              deleteFriendMutation.variables === selectedCharacterId
-            }
-            onDeleteFriend={
-              selectedFriendItem
-                ? () =>
-                    deleteFriendMutation.mutate(selectedFriendItem.character.id)
-                : undefined
-            }
-            onOpenProfile={() => {
-              const characterId =
-                selectedFriendItem?.character.id ??
-                selectedWorldCharacterItem?.character.id;
-              if (!characterId) {
-                return;
+          desktopSelection?.kind === "new-friends" ? (
+            <DesktopContactsFriendRequestsPane
+              requests={friendRequestsQuery.data ?? []}
+              loading={friendRequestsQuery.isLoading}
+              error={
+                friendRequestsQuery.error instanceof Error
+                  ? friendRequestsQuery.error.message
+                  : null
               }
+              actionError={
+                acceptFriendRequestMutation.error instanceof Error
+                  ? acceptFriendRequestMutation.error.message
+                  : declineFriendRequestMutation.error instanceof Error
+                    ? declineFriendRequestMutation.error.message
+                    : null
+              }
+              notice={notice}
+              acceptPendingId={
+                acceptFriendRequestMutation.isPending
+                  ? (acceptFriendRequestMutation.variables ?? null)
+                  : null
+              }
+              declinePendingId={
+                declineFriendRequestMutation.isPending
+                  ? (declineFriendRequestMutation.variables ?? null)
+                  : null
+              }
+              onAccept={(requestId) =>
+                acceptFriendRequestMutation.mutate(requestId)
+              }
+              onDecline={(requestId) =>
+                declineFriendRequestMutation.mutate(requestId)
+              }
+              onOpenAddFriend={handleOpenDesktopAddFriend}
+            />
+          ) : (
+            <ContactDetailPane
+              character={
+                selectedFriendItem?.character ??
+                selectedWorldCharacterItem?.character ??
+                null
+              }
+              friendship={selectedFriendItem?.friendship ?? null}
+              commonGroups={commonGroups}
+              onOpenGroup={(groupId) => {
+                void navigate({ to: "/group/$groupId", params: { groupId } });
+              }}
+              onOpenMoments={
+                selectedFriendItem ? handleOpenSelectedFriendMoments : undefined
+              }
+              onStartChat={
+                selectedFriendItem
+                  ? () => handleStartChat(selectedFriendItem.character.id)
+                  : undefined
+              }
+              chatPending={
+                selectedFriendItem?.character.id === pendingCharacterId
+              }
+              isPinned={selectedConversation?.isPinned ?? false}
+              pinPending={
+                pinMutation.isPending &&
+                pinMutation.variables?.characterId === selectedCharacterId
+              }
+              onTogglePinned={
+                selectedFriendItem
+                  ? () =>
+                      pinMutation.mutate({
+                        characterId: selectedFriendItem.character.id,
+                        pinned: !(selectedConversation?.isPinned ?? false),
+                      })
+                  : undefined
+              }
+              isMuted={selectedConversation?.isMuted ?? false}
+              mutePending={
+                muteMutation.isPending &&
+                muteMutation.variables?.characterId === selectedCharacterId
+              }
+              onToggleMuted={
+                selectedFriendItem
+                  ? () =>
+                      muteMutation.mutate({
+                        characterId: selectedFriendItem.character.id,
+                        muted: !(selectedConversation?.isMuted ?? false),
+                      })
+                  : undefined
+              }
+              isStarred={selectedFriendItem?.friendship.isStarred ?? false}
+              starPending={
+                setStarredMutation.isPending &&
+                setStarredMutation.variables?.characterId ===
+                  selectedCharacterId
+              }
+              onToggleStarred={
+                selectedFriendItem
+                  ? () =>
+                      setStarredMutation.mutate({
+                        characterId: selectedFriendItem.character.id,
+                        starred: !selectedFriendItem.friendship.isStarred,
+                      })
+                  : undefined
+              }
+              isBlocked={selectedFriendBlocked}
+              blockPending={
+                blockMutation.isPending &&
+                blockMutation.variables?.characterId === selectedCharacterId
+              }
+              onToggleBlock={selectedFriendItem ? handleToggleBlock : undefined}
+              deletePending={
+                deleteFriendMutation.isPending &&
+                deleteFriendMutation.variables === selectedCharacterId
+              }
+              onDeleteFriend={
+                selectedFriendItem
+                  ? () =>
+                      deleteFriendMutation.mutate(
+                        selectedFriendItem.character.id,
+                      )
+                  : undefined
+              }
+              onOpenProfile={() => {
+                const characterId =
+                  selectedFriendItem?.character.id ??
+                  selectedWorldCharacterItem?.character.id;
+                if (!characterId) {
+                  return;
+                }
 
-              handleOpenProfile(characterId);
-            }}
-          />
+                handleOpenProfile(characterId);
+              }}
+            />
+          )
         }
       />
     );

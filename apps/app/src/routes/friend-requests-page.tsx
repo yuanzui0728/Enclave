@@ -2,11 +2,15 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookUser } from "lucide-react";
-import { acceptFriendRequest, declineFriendRequest, getFriendRequests } from "@yinjie/contracts";
+import {
+  acceptFriendRequest,
+  declineFriendRequest,
+  getFriendRequests,
+} from "@yinjie/contracts";
 import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { DesktopFriendRequestsWorkspace } from "../features/desktop/contacts/desktop-friend-requests-workspace";
+import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
@@ -29,11 +33,19 @@ export function FriendRequestsPage() {
     onSuccess: async () => {
       setSuccessNotice("已通过好友申请。");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-friend-requests", baseUrl],
+        }),
         queryClient.invalidateQueries({ queryKey: ["app-friends", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-friends-quick-start", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-group-friends", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["app-conversations", baseUrl] }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-friends-quick-start", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-group-friends", baseUrl],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["app-conversations", baseUrl],
+        }),
       ]);
     },
   });
@@ -42,7 +54,9 @@ export function FriendRequestsPage() {
     mutationFn: (requestId: string) => declineFriendRequest(requestId, baseUrl),
     onSuccess: async () => {
       setSuccessNotice("好友请求已处理。");
-      await queryClient.invalidateQueries({ queryKey: ["app-friend-requests", baseUrl] });
+      await queryClient.invalidateQueries({
+        queryKey: ["app-friend-requests", baseUrl],
+      });
     },
   });
 
@@ -59,28 +73,20 @@ export function FriendRequestsPage() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  useEffect(() => {
+    if (!isDesktopLayout) {
+      return;
+    }
+
+    void navigate({
+      to: "/tabs/contacts",
+      hash: buildDesktopContactsRouteHash({ pane: "new-friends" }),
+      replace: true,
+    });
+  }, [isDesktopLayout, navigate]);
+
   if (isDesktopLayout) {
-    return (
-      <DesktopFriendRequestsWorkspace
-        loading={requestsQuery.isLoading}
-        error={
-          requestsQuery.error instanceof Error ? requestsQuery.error.message : null
-        }
-        notice={successNotice}
-        requests={requestsQuery.data ?? []}
-        acceptPendingId={
-          acceptMutation.isPending ? (acceptMutation.variables ?? null) : null
-        }
-        declinePendingId={
-          declineMutation.isPending ? (declineMutation.variables ?? null) : null
-        }
-        onAccept={(requestId) => acceptMutation.mutate(requestId)}
-        onDecline={(requestId) => declineMutation.mutate(requestId)}
-        onOpenAddFriend={() => {
-          void navigate({ to: "/desktop/add-friend" });
-        }}
-      />
-    );
+    return null;
   }
 
   return (
@@ -158,7 +164,9 @@ export function FriendRequestsPage() {
                 key={request.id}
                 className={cn(
                   "px-4 py-3",
-                  index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
+                  index > 0
+                    ? "border-t border-[color:var(--border-faint)]"
+                    : undefined,
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -188,24 +196,30 @@ export function FriendRequestsPage() {
 
                     <div className="mt-2.5 flex items-center justify-end gap-2">
                       <Button
-                        disabled={acceptMutation.isPending || declineMutation.isPending}
+                        disabled={
+                          acceptMutation.isPending || declineMutation.isPending
+                        }
                         onClick={() => declineMutation.mutate(request.id)}
                         variant="secondary"
                         size="sm"
                         className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
                       >
-                        {declineMutation.isPending && declineMutation.variables === request.id
+                        {declineMutation.isPending &&
+                        declineMutation.variables === request.id
                           ? "处理中..."
                           : "拒绝"}
                       </Button>
                       <Button
-                        disabled={acceptMutation.isPending || declineMutation.isPending}
+                        disabled={
+                          acceptMutation.isPending || declineMutation.isPending
+                        }
                         onClick={() => acceptMutation.mutate(request.id)}
                         variant="primary"
                         size="sm"
                         className="h-8 rounded-[10px] bg-[#07c160] px-3 text-[12px] text-white shadow-none hover:bg-[#06ad56]"
                       >
-                        {acceptMutation.isPending && acceptMutation.variables === request.id
+                        {acceptMutation.isPending &&
+                        acceptMutation.variables === request.id
                           ? "接受中..."
                           : "接受"}
                       </Button>
@@ -238,7 +252,9 @@ export function FriendRequestsPage() {
           </div>
         ) : null}
 
-        {!requestsQuery.isLoading && !requestsQuery.isError && !requestsQuery.data?.length ? (
+        {!requestsQuery.isLoading &&
+        !requestsQuery.isError &&
+        !requestsQuery.data?.length ? (
           <div className="px-4 pt-4">
             <MobileFriendRequestsStatusCard
               badge="新的朋友"
