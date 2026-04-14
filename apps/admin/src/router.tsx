@@ -37,10 +37,6 @@ const ReplyLogicPage = lazy(async () => {
   return { default: mod.ReplyLogicPage };
 });
 
-const SetupPage = lazy(async () => {
-  const mod = await import("./routes/setup-page");
-  return { default: mod.SetupPage };
-});
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -88,12 +84,6 @@ const replyLogicRoute = createRoute({
   component: ReplyLogicPage,
 });
 
-const setupRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/setup",
-  component: SetupPage,
-});
-
 const routeTree = rootRoute.addChildren([
   indexRoute,
   charactersRoute,
@@ -102,7 +92,6 @@ const routeTree = rootRoute.addChildren([
   characterRuntimeRoute,
   evalsRoute,
   replyLogicRoute,
-  setupRoute,
 ]);
 
 export const router = createRouter({

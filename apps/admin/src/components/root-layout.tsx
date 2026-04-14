@@ -121,8 +121,7 @@ export function RootLayout() {
 }
 
 const NAV_ITEMS = [
-  { to: "/", label: "运行总览", hint: "先看实例健康、异常和下一步。" },
-  { to: "/setup", label: "实例设置", hint: "处理接口、模型和运行时准备。" },
+  { to: "/", label: "运行总览", hint: "实例健康、配置和运维操作。" },
   { to: "/characters", label: "角色中心", hint: "查看角色名册、工厂和运行逻辑。" },
   { to: "/reply-logic", label: "回复逻辑", hint: "排查真实回复链路和全局规则。" },
   { to: "/evals", label: "评测分析", hint: "集中看 runs、对比和 trace。" },
@@ -131,17 +130,9 @@ const NAV_ITEMS = [
 function resolveRouteMeta(pathname: string) {
   if (pathname === "/") {
     return {
-      eyebrow: "运行总览",
-      title: "实例运营首页",
-      description: "从这里判断实例健康度、异常优先级以及下一步进入哪个工作区。",
-    };
-  }
-
-  if (pathname === "/setup") {
-    return {
-      eyebrow: "实例设置",
-      title: "运行准备与模型配置",
-      description: "先确认远程 API 和世界实例状态，再补齐推理服务配置。",
+      eyebrow: "运营控制台",
+      title: "实例状态与配置",
+      description: "接入检查、推理配置、数字人设置和运维操作统一入口。",
     };
   }
 
