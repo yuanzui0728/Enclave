@@ -292,54 +292,143 @@ export function DesktopSubscriptionWorkspace({
       </section>
 
       <section
-        className={cn(
-          "min-w-0 flex-1 overflow-auto",
-          hasReaderSurface ? "bg-white" : "bg-[rgba(255,255,255,0.62)] p-6",
-        )}
+        className="min-w-0 flex-1 overflow-auto bg-white"
       >
-        {articleQuery.isLoading ? (
-          <div className="mx-auto max-w-[780px] px-8 py-10">
-            <LoadingBlock label="正在读取文章..." />
-          </div>
-        ) : null}
-        {articleQuery.isError && articleQuery.error instanceof Error ? (
-          <div className="mx-auto max-w-[780px] px-8 py-10">
-            <ErrorBlock message={articleQuery.error.message} />
-          </div>
-        ) : null}
-        {markArticleReadMutation.isError &&
-        markArticleReadMutation.error instanceof Error ? (
-          <div className="mx-auto max-w-[780px] px-8 pt-8">
-            <ErrorBlock message={markArticleReadMutation.error.message} />
-          </div>
-        ) : null}
-
         {articleQuery.data ? (
-          <OfficialArticleViewer
-            article={articleQuery.data}
-            desktopSurface="reader"
-            onOpenAccount={(accountId) => {
-              if (onOpenAccount) {
-                onOpenAccount(accountId, articleQuery.data.id);
-                return;
-              }
+          <>
+            {markArticleReadMutation.isError &&
+            markArticleReadMutation.error instanceof Error ? (
+              <div className="mx-auto max-w-[780px] px-8 pt-6">
+                <ReaderInlineStatus
+                  message={markArticleReadMutation.error.message}
+                  tone="danger"
+                />
+              </div>
+            ) : null}
+            <OfficialArticleViewer
+              article={articleQuery.data}
+              desktopSurface="reader"
+              onOpenAccount={(accountId) => {
+                if (onOpenAccount) {
+                  onOpenAccount(accountId, articleQuery.data.id);
+                  return;
+                }
 
-              void navigate({
-                to: "/official-accounts/$accountId",
-                params: { accountId },
-              });
-            }}
-            onOpenArticle={handleSelectArticle}
+                void navigate({
+                  to: "/official-accounts/$accountId",
+                  params: { accountId },
+                });
+              }}
+              onOpenArticle={handleSelectArticle}
+            />
+          </>
+        ) : articleQuery.isLoading ? (
+          <ReaderStatusPane
+            badge="读取中"
+            title="正在读取文章"
+            description="稍等一下，正在准备这篇订阅号文章。"
+            tone="loading"
+          />
+        ) : articleQuery.isError && articleQuery.error instanceof Error ? (
+          <ReaderStatusPane
+            badge="读取失败"
+            title="文章暂时不可用"
+            description={articleQuery.error.message}
+            tone="danger"
+          />
+        ) : inboxQuery.isLoading ? (
+          <ReaderStatusPane
+            badge="准备中"
+            title="正在准备阅读区"
+            description="订阅号消息同步后，会在这里直接进入阅读。"
+            tone="loading"
+          />
+        ) : inboxQuery.isError && inboxQuery.error instanceof Error ? (
+          <ReaderStatusPane
+            badge="读取失败"
+            title="订阅号消息暂时不可用"
+            description={inboxQuery.error.message}
+            tone="danger"
+          />
+        ) : !feedItems.length ? (
+          <ReaderStatusPane
+            badge="订阅号"
+            title="还没有订阅号消息"
+            description="先关注一个订阅号，后续推送会直接在这里阅读。"
           />
         ) : (
-          <div className="mx-auto max-w-[560px] py-10">
-            <EmptyState
-              title="选择一篇推送开始阅读"
-              description="左侧会按订阅号分组展示最近投递的文章。"
-            />
-          </div>
+          <ReaderStatusPane
+            badge="阅读区"
+            title="选择一篇推送开始阅读"
+            description="左侧列表会按微信式订阅号消息节奏展示最近投递的文章。"
+          />
         )}
       </section>
+    </div>
+  );
+}
+
+function ReaderStatusPane({
+  badge,
+  title,
+  description,
+  tone = "default",
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+}) {
+  return (
+    <div className="mx-auto flex min-h-full max-w-[780px] items-center px-8 py-14">
+      <div
+        className={cn(
+          "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
+          tone === "danger"
+            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px]",
+            tone === "danger"
+              ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+              : tone === "loading"
+                ? "bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]"
+                : "bg-[rgba(7,193,96,0.1)] text-[#07c160]",
+          )}
+        >
+          {badge}
+        </div>
+        <div className="mt-4 text-[18px] font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        <p className="mx-auto mt-3 max-w-[28rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ReaderInlineStatus({
+  message,
+  tone = "default",
+}: {
+  message: string;
+  tone?: "default" | "danger";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[16px] border px-4 py-3 text-[13px] leading-6",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[rgba(254,242,242,0.9)] text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+      )}
+    >
+      {message}
     </div>
   );
 }
