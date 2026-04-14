@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -30,6 +30,8 @@ import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
+type ChannelAuthorCollectionTab = "all" | "videos" | "updates" | "live";
+
 export function ChannelAuthorPage() {
   const { authorId } = useParams({ from: "/channels/authors/$authorId" });
   const navigate = useNavigate();
@@ -41,6 +43,8 @@ export function ChannelAuthorPage() {
     message: string;
     tone: "success" | "info";
   } | null>(null);
+  const [activeCollection, setActiveCollection] =
+    useState<ChannelAuthorCollectionTab>("all");
 
   const profileQuery = useQuery({
     queryKey: ["app-channel-author", baseUrl, authorId],
@@ -69,6 +73,7 @@ export function ChannelAuthorPage() {
 
   useEffect(() => {
     setNotice(null);
+    setActiveCollection("all");
   }, [authorId, baseUrl]);
 
   function navigateBackToChannels() {
@@ -104,6 +109,35 @@ export function ChannelAuthorPage() {
     profile?.authorType === "character"
       ? "这位居民暂时还没有填写视频号简介。"
       : "这个视频号作者暂时还没有填写简介。";
+  const collectionTabs = useMemo(
+    () =>
+      (
+        [
+          { key: "all", label: "全部" },
+          { key: "videos", label: "视频" },
+          { key: "updates", label: "动态" },
+          { key: "live", label: "直播回放" },
+        ] satisfies Array<{
+          key: ChannelAuthorCollectionTab;
+          label: string;
+        }>
+      ).map((tab) => ({
+        ...tab,
+        count: (profile?.recentPosts ?? []).filter((post) =>
+          matchesChannelAuthorCollection(post, tab.key),
+        ).length,
+      })),
+    [profile?.recentPosts],
+  );
+  const visiblePosts = useMemo(
+    () =>
+      (profile?.recentPosts ?? []).filter((post) =>
+        matchesChannelAuthorCollection(post, activeCollection),
+      ),
+    [activeCollection, profile?.recentPosts],
+  );
+  const activeCollectionLabel =
+    collectionTabs.find((tab) => tab.key === activeCollection)?.label ?? "全部";
 
   return (
     <AppPage
@@ -229,21 +263,44 @@ export function ChannelAuthorPage() {
                   Recent Posts
                 </div>
                 <div className="mt-2 text-[20px] font-semibold text-[color:var(--text-primary)]">
-                  最近内容
+                  作品合集
                 </div>
                 <div className="mt-1 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                  对齐微信作者主页，先承接作者资料、关注状态和内容回跳，后续再补作者合集与直播入口。
+                  对齐微信作者主页，先把作者最近内容按作品类型拆成分栏，方便从作者页继续下钻。
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {collectionTabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setActiveCollection(tab.key)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-[12px] transition",
+                        activeCollection === tab.key
+                          ? "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.1)] font-medium text-[color:var(--brand-primary)]"
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:bg-white",
+                      )}
+                    >
+                      {tab.label}
+                      <span className="ml-1 text-[11px] opacity-70">
+                        {tab.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] text-[color:var(--text-secondary)]">
+                  当前分栏：{activeCollectionLabel}，共 {visiblePosts.length} 条内容。
                 </div>
               </div>
 
-              {profile.recentPosts.length ? (
+              {visiblePosts.length ? (
                 <div
                   className={cn(
                     "grid gap-3",
                     isDesktopLayout ? "grid-cols-2" : "grid-cols-1",
                   )}
                 >
-                  {profile.recentPosts.map((post) => (
+                  {visiblePosts.map((post) => (
                     <button
                       key={post.id}
                       type="button"
@@ -296,8 +353,8 @@ export function ChannelAuthorPage() {
               ) : (
                 <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-section)]">
                   <EmptyState
-                    title="作者还没有公开视频"
-                    description="等下一条内容发布后，这里会展示最新视频列表。"
+                    title={`${activeCollectionLabel}分栏暂时没有内容`}
+                    description="切换其他分栏看看，或者等作者发布新的内容后再回来。"
                   />
                 </div>
               )}
@@ -371,4 +428,23 @@ function buildChannelsRouteHash(postId?: string | null) {
   const params = new URLSearchParams();
   params.set("post", postId);
   return params.toString();
+}
+
+function matchesChannelAuthorCollection(
+  post: FeedPostListItem,
+  tab: ChannelAuthorCollectionTab,
+) {
+  if (tab === "all") {
+    return true;
+  }
+
+  if (tab === "live") {
+    return post.sourceKind === "live_clip";
+  }
+
+  if (tab === "videos") {
+    return post.mediaType === "video" && post.sourceKind !== "live_clip";
+  }
+
+  return post.mediaType !== "video";
 }
