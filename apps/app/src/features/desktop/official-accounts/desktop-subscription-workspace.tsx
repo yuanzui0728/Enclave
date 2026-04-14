@@ -288,6 +288,7 @@ export function DesktopSubscriptionWorkspace({
         {articleQuery.data ? (
           <OfficialArticleViewer
             article={articleQuery.data}
+            desktopSurface="reader"
             onOpenAccount={(accountId) => {
               if (onOpenAccount) {
                 onOpenAccount(accountId, articleQuery.data.id);

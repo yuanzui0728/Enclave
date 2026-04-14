@@ -328,6 +328,7 @@ export function DesktopOfficialArticleWindowPage() {
         {article ? (
           <OfficialArticleViewer
             article={article}
+            desktopSurface="reader"
             favorite={
               articleSourceId
                 ? favoriteSourceIds.includes(articleSourceId)
