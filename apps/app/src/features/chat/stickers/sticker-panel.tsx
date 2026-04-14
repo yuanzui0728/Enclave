@@ -880,9 +880,9 @@ export function StickerPanel({
   const headerUploadButtonTitle = headerUsesManageShortcut
     ? "自定义表情已满，先去管理里删掉几张再继续添加。"
     : headerUsesResumeUploadShortcut
-      ? "已经腾出空位，退出管理后可继续添加图片或 GIF。"
+      ? `已经腾出 ${customUploadResumedSlots} 个空位，点这里直接继续添加图片或 GIF。`
       : showPausedManageResumeUploadShortcut
-        ? "搜索中也可以直接继续添加图片或 GIF。"
+        ? `搜索中也可以直接继续添加图片或 GIF，当前已腾出 ${customUploadResumedSlots} 个空位。`
         : customStickerLibraryFull
           ? "自定义表情已满，请先删除几个再继续添加"
           : undefined;
@@ -893,7 +893,9 @@ export function StickerPanel({
           ? "搜索表情，Esc 继续管理或直接继续添加"
           : "搜索表情，Esc 继续管理"
         : customManageMode && trimmedKeyword.length === 0
-          ? "搜索表情，输入后会暂停删除管理"
+          ? customUploadResumed
+            ? "搜索表情，输入后会暂停管理，也可直接继续添加"
+            : "搜索表情，输入后会暂停删除管理"
           : "搜索表情"
       : "搜索表情";
   const searchInputTitle =
@@ -903,7 +905,9 @@ export function StickerPanel({
           ? "当前搜索已暂停删除管理，并且已经腾出空位，可按 Esc 继续管理或直接继续添加。"
           : "当前搜索已暂停删除管理，可按 Esc 或清空搜索恢复。"
         : customManageMode && trimmedKeyword.length === 0
-          ? "输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。"
+          ? customUploadResumed
+            ? `当前已腾出 ${customUploadResumedSlots} 个空位，可直接点顶部继续添加；输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。`
+            : "输入关键词后会暂时暂停删除管理，清空搜索后会回到当前删除位置。"
           : customStickerLibraryFull
             ? "自定义表情已满，可先搜索已有表情，也可以切到管理删除后继续添加。"
             : undefined
