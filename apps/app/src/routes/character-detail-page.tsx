@@ -1266,17 +1266,19 @@ export function CharacterDetailPage() {
               flatOnMobile={!isDesktopLayout}
               compact={!isDesktopLayout}
             >
-              <ProfileRow
-                label="最近互动"
-                value={
-                  isFriend
-                    ? formatTimestamp(
-                        friendship?.lastInteractedAt ?? character.lastActiveAt,
-                      )
-                    : formatTimestamp(character.lastActiveAt)
-                }
-                compact={!isDesktopLayout}
-              />
+              {isDesktopLayout ? (
+                <ProfileRow
+                  label="最近互动"
+                  value={
+                    isFriend
+                      ? formatTimestamp(
+                          friendship?.lastInteractedAt ?? character.lastActiveAt,
+                        )
+                      : formatTimestamp(character.lastActiveAt)
+                  }
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
               {commonGroups.length ? (
                 <ProfileRow
                   label="共同群聊"
@@ -1295,22 +1297,28 @@ export function CharacterDetailPage() {
                   compact={!isDesktopLayout}
                 />
               ) : null}
-              <ProfileRow
-                label="当前状态"
-                value={activitySummary}
-                compact={!isDesktopLayout}
-              />
-              <ProfileRow
-                label="擅长领域"
-                value={expertiseSummary}
-                multiline
-                compact={!isDesktopLayout}
-              />
-              <ProfileRow
-                label="语气风格"
-                value={toneSummary}
-                compact={!isDesktopLayout}
-              />
+              {isDesktopLayout ? (
+                <ProfileRow
+                  label="当前状态"
+                  value={activitySummary}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
+              {isDesktopLayout ? (
+                <ProfileRow
+                  label="擅长领域"
+                  value={expertiseSummary}
+                  multiline
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
+              {isDesktopLayout ? (
+                <ProfileRow
+                  label="语气风格"
+                  value={toneSummary}
+                  compact={!isDesktopLayout}
+                />
+              ) : null}
               <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
                 <div
                   className={cn(
