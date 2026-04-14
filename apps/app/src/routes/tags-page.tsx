@@ -28,7 +28,10 @@ import { AvatarChip } from "../components/avatar-chip";
 import { EmptyState } from "../components/empty-state";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { ContactDetailPane } from "../features/contacts/contact-detail-pane";
-import { matchesCharacterSearch } from "../features/contacts/contact-utils";
+import {
+  getFriendDisplayName,
+  matchesFriendSearch,
+} from "../features/contacts/contact-utils";
 import { buildDesktopFriendMomentsRouteHash } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
@@ -608,9 +611,12 @@ function DesktopTagsPage() {
                           <div className="truncate text-sm text-[color:var(--text-primary)]">
                             {getFriendDisplayName(item)}
                           </div>
-                          <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
-                            {item.character.name}
-                          </div>
+                          {getFriendDisplayName(item) !==
+                          item.character.name ? (
+                            <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                              {item.character.name}
+                            </div>
+                          ) : null}
                         </div>
                       </button>
                     ))}
@@ -774,19 +780,11 @@ function buildContactTagGroups(
         return true;
       }
 
-      return group.items.some((item) => {
-        const displayName = getFriendDisplayName(item).toLowerCase();
-        return (
-          displayName.includes(normalizedSearchText) ||
-          matchesCharacterSearch(item.character, normalizedSearchText)
-        );
-      });
+      return group.items.some((item) =>
+        matchesFriendSearch(item, normalizedSearchText),
+      );
     })
     .sort((left, right) => left.tag.localeCompare(right.tag, "zh-CN"));
-}
-
-function getFriendDisplayName(item: FriendListItem) {
-  return item.friendship.remarkName?.trim() || item.character.name;
 }
 
 function MobileTagStatusCard({
