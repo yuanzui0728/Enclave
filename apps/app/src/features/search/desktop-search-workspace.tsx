@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
 import { EmptyState } from "../../components/empty-state";
-import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
 import { type DesktopSearchQuickLink } from "./desktop-search-quick-links";
 import { renderHighlightedText } from "./search-utils";
 import {
@@ -170,87 +170,124 @@ export function DesktopSearchWorkspace({
 
   const categorySummary = useMemo(() => {
     if (!hasKeyword) {
-      return "优先直达联系人、会话、收藏和最近使用的小程序。";
+      return "从聊天、联系人、公众号、收藏和小程序里继续找。";
     }
 
     if (activeCategory === "all") {
-      return `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条内容结果。`;
+      return `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条结果，可继续按分类收窄。`;
     }
 
     return `当前查看 ${searchCategoryTitles[activeCategory]}，共 ${visibleResults.length} 条结果。`;
   }, [activeCategory, hasKeyword, searchText, visibleResults.length]);
+  const headerTitle = hasKeyword
+    ? `搜索“${searchText.trim()}”`
+    : "搜索聊天、联系人与内容";
+  const headerBadge = !hasKeyword
+    ? "桌面全局搜索"
+    : activeCategory === "all"
+      ? `${visibleResults.length} 条结果`
+      : `${searchCategoryTitles[activeCategory]} · ${visibleResults.length}`;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1160px] px-6 py-5">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
-            搜一搜
-          </div>
+          <div className="overflow-hidden rounded-[24px] border border-[#dce9dd] bg-[linear-gradient(135deg,rgba(7,193,96,0.14),rgba(7,193,96,0.05)_40%,white)]">
+            <div className="px-5 py-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-white text-[color:var(--brand-primary)] shadow-[0_10px_24px_rgba(7,193,96,0.10)]">
+                  <Search size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+                        搜一搜
+                      </div>
+                      <div className="mt-2 truncate text-lg font-medium text-[color:var(--text-primary)]">
+                        {headerTitle}
+                      </div>
+                      <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                        {categorySummary}
+                      </div>
+                    </div>
+                    <div className="shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-[11px] text-[color:var(--text-muted)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                      {headerBadge}
+                    </div>
+                  </div>
 
-          <form
-            className="relative mt-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              onCommitSearch(searchText);
-            }}
-          >
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
-            />
-            <input
-              ref={inputRef}
-              type="search"
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="搜索聊天记录、联系人、公众号、收藏和小程序"
-              className="h-12 w-full rounded-[15px] border border-[color:var(--border-faint)] bg-white pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:shadow-[0_0_0_4px_rgba(7,193,96,0.08)]"
-            />
-            {searchText ? (
-              <button
-                type="button"
-                onClick={onClearKeyword}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
-              >
-                清空
-              </button>
-            ) : null}
-          </form>
+                  <form
+                    className="relative mt-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      onCommitSearch(searchText);
+                    }}
+                  >
+                    <Search
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
+                    />
+                    <input
+                      ref={inputRef}
+                      type="search"
+                      value={searchText}
+                      onChange={(event) => setSearchText(event.target.value)}
+                      placeholder="搜索聊天记录、联系人、公众号、收藏和小程序"
+                      className="h-12 w-full rounded-[16px] border border-white/80 bg-white/96 pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:shadow-[0_0_0_4px_rgba(7,193,96,0.08)]"
+                    />
+                    {searchText ? (
+                      <button
+                        type="button"
+                        onClick={onClearKeyword}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
+                      >
+                        清空
+                      </button>
+                    ) : null}
+                  </form>
+                </div>
+              </div>
+            </div>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            {searchCategoryLabels.map((item) => {
-              const countLabel = !hasKeyword
-                ? null
-                : item.id === "all"
-                  ? `${visibleResults.length}`
-                  : `${matchedCounts[item.id]}`;
+            <div className="border-t border-white/80 px-5 py-3">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {searchCategoryLabels.map((item) => {
+                  const countLabel = !hasKeyword
+                    ? null
+                    : item.id === "all"
+                      ? `${visibleResults.length}`
+                      : `${matchedCounts[item.id]}`;
 
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setActiveCategory(item.id)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
-                    activeCategory === item.id
-                      ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
-                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
-                  )}
-                >
-                  <span>{item.label}</span>
-                  {countLabel ? (
-                    <span className="rounded-full bg-[color:var(--surface-console)] px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]">
-                      {countLabel}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-3 text-xs text-[color:var(--text-muted)]">
-            {categorySummary}
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setActiveCategory(item.id)}
+                      className={cn(
+                        "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
+                        activeCategory === item.id
+                          ? "border-[rgba(7,193,96,0.16)] bg-white text-[color:var(--text-primary)] shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
+                          : "border-white/70 bg-white/70 text-[color:var(--text-secondary)] hover:bg-white hover:text-[color:var(--text-primary)]",
+                      )}
+                    >
+                      <span>{item.label}</span>
+                      {countLabel ? (
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[11px]",
+                            activeCategory === item.id
+                              ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
+                              : "bg-white text-[color:var(--text-muted)]",
+                          )}
+                        >
+                          {countLabel}
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -261,11 +298,11 @@ export function DesktopSearchWorkspace({
           {error ? <ErrorBlock message={error} /> : null}
 
           {!loading && !error && hasKeyword && searchingMessages ? (
-            <div className="mb-4">
-              <InlineNotice tone="info">
-                聊天记录结果还在继续补全，稍后会自动刷新更多命中。
-              </InlineNotice>
-            </div>
+            <DesktopSearchStatusCard
+              description="聊天记录结果还在继续补全，稍后会自动刷新更多命中。"
+              status="pending"
+              title="搜索状态"
+            />
           ) : null}
 
           {!loading && !error && !hasKeyword ? (
@@ -626,6 +663,45 @@ function DesktopQuickLinksPanel({
           {emptyText}
         </div>
       ) : null}
+    </section>
+  );
+}
+
+function DesktopSearchStatusCard({
+  description,
+  status,
+  title,
+}: {
+  description: string;
+  status: "done" | "error" | "pending";
+  title: string;
+}) {
+  const toneClassName =
+    status === "error"
+      ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
+      : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]";
+  const badgeClassName =
+    status === "error"
+      ? "bg-white text-[#be123c]"
+      : status === "pending"
+        ? "bg-white text-[color:var(--brand-primary)]"
+        : "bg-white text-[color:var(--text-muted)]";
+  const statusLabel =
+    status === "error" ? "异常" : status === "pending" ? "补全中" : "已完成";
+
+  return (
+    <section className={cn("mb-4 rounded-[18px] border p-4", toneClassName)}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        <div className={cn("rounded-full px-2.5 py-1 text-[10px]", badgeClassName)}>
+          {statusLabel}
+        </div>
+      </div>
+      <div className="mt-2 rounded-[12px] bg-white px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]">
+        {description}
+      </div>
     </section>
   );
 }
