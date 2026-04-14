@@ -1,15 +1,15 @@
 import { useDeferredValue, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  getConversationMessages,
   getConversations,
   getFeed,
   getFriends,
-  getGroupMessages,
   getMoments,
   getOfficialAccountArticles,
   listCharacters,
   listOfficialAccounts,
+  searchConversationMessages,
+  searchGroupMessages,
 } from "@yinjie/contracts";
 import { sanitizeDisplayedChatText } from "../../lib/chat-text";
 import {
@@ -118,27 +118,43 @@ export function useSearchIndex(
   );
 
   const messageSearchIndexQuery = useQuery({
-    queryKey: ["app-search-message-index", baseUrl, conversationsSearchKey],
+    queryKey: [
+      "app-search-message-index",
+      baseUrl,
+      conversationsSearchKey,
+      normalizedSearchText,
+    ],
     enabled: Boolean(normalizedSearchText) && conversations.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
       const settledResults = await Promise.allSettled(
         conversations.map(async (conversation) => {
-          const messages = isPersistedGroupConversation(conversation)
-            ? await getGroupMessages(conversation.id, baseUrl)
-            : await getConversationMessages(conversation.id, baseUrl);
+          const response = isPersistedGroupConversation(conversation)
+            ? await searchGroupMessages(
+                conversation.id,
+                {
+                  keyword: normalizedSearchText,
+                  limit: 8,
+                },
+                baseUrl,
+              )
+            : await searchConversationMessages(
+                conversation.id,
+                {
+                  keyword: normalizedSearchText,
+                  limit: 8,
+                },
+                baseUrl,
+              );
 
-          return messages.map((message) => ({
+          return response.items.map((message) => ({
             conversationId: conversation.id,
             conversationTitle: conversation.title,
             conversationType: getConversationThreadType(conversation),
             conversationSource: conversation.source,
-            messageId: message.id,
+            messageId: message.messageId,
             senderName: message.senderName,
-            text:
-              message.senderType === "user"
-                ? message.text
-                : sanitizeDisplayedChatText(message.text),
+            text: message.previewText || "这条消息没有可展示文本。",
             createdAt: message.createdAt,
           }));
         }),
@@ -225,17 +241,6 @@ export function useSearchIndex(
             localMessageActionState,
           ),
       )
-      .filter((message) => {
-        if (!normalizedSearchText) {
-          return false;
-        }
-
-        return [message.text, message.senderName]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearchText);
-      })
       .map((message) => ({
         id: `message-${message.messageId}`,
         category: "messages",
