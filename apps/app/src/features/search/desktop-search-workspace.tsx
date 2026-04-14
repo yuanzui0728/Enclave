@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { AvatarChip } from "../../components/avatar-chip";
 import { EmptyState } from "../../components/empty-state";
-import { ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
+import { cn } from "@yinjie/ui";
 import { type DesktopSearchQuickLink } from "./desktop-search-quick-links";
 import { renderHighlightedText } from "./search-utils";
 import {
@@ -1199,8 +1199,21 @@ export function DesktopSearchWorkspace({
 
       <div ref={scrollViewportRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto flex w-full max-w-[1160px] min-h-full flex-col px-6 py-6">
-          {loading ? <LoadingBlock label="正在准备桌面搜索索引..." /> : null}
-          {error ? <ErrorBlock message={error} /> : null}
+          {loading ? (
+            <DesktopSearchStatusCard
+              badgeLabel="准备中"
+              description="正在准备桌面搜索索引，马上就能继续查看完整结果。"
+              status="pending"
+              title="搜索准备"
+            />
+          ) : null}
+          {error ? (
+            <DesktopSearchStatusCard
+              description={error}
+              status="error"
+              title="搜索异常"
+            />
+          ) : null}
           {!loading && !error && transitionHint ? (
             <DesktopSearchStatusCard
               description={transitionHint}
@@ -1349,12 +1362,19 @@ export function DesktopSearchWorkspace({
           ) : null}
 
           {!loading && !error && hasKeyword && !visibleResults.length ? (
-            <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-white/92 px-6 py-10">
-              <EmptyState
-                title="没有找到匹配结果"
-                description="换个关键词试试，或者切换到更具体的分类后继续找。"
-              />
-            </div>
+            <DesktopSearchStatusCard
+              action={
+                <DesktopSearchActionButton
+                  onClick={handleClearKeyword}
+                  tone="neutral"
+                >
+                  清空关键词
+                </DesktopSearchActionButton>
+              }
+              description="没有找到匹配内容，换个关键词试试，或者切到更具体的分类后继续找。"
+              status="empty"
+              title="搜索结果"
+            />
           ) : null}
 
           {!loading && !error && hasKeyword ? (
@@ -1708,26 +1728,40 @@ function DesktopSearchFooterAffordance({
 }
 
 function DesktopSearchStatusCard({
+  action,
+  badgeLabel,
   description,
   status,
   title,
 }: {
+  action?: ReactNode;
+  badgeLabel?: string;
   description: string;
-  status: "done" | "error" | "pending";
+  status: "done" | "empty" | "error" | "pending";
   title: string;
 }) {
   const toneClassName =
     status === "error"
       ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
-      : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]";
+      : status === "empty"
+        ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+        : "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.05)]";
   const badgeClassName =
     status === "error"
       ? "bg-white text-[#be123c]"
+      : status === "empty"
+        ? "bg-white text-[color:var(--text-muted)]"
       : status === "pending"
         ? "bg-white text-[color:var(--brand-primary)]"
         : "bg-white text-[color:var(--text-muted)]";
   const statusLabel =
-    status === "error" ? "异常" : status === "pending" ? "补全中" : "已完成";
+    status === "error"
+      ? "异常"
+      : status === "pending"
+        ? "补全中"
+        : status === "empty"
+          ? "无结果"
+          : "已完成";
 
   return (
     <section className={cn("mb-4 rounded-[18px] border p-4", toneClassName)}>
@@ -1736,12 +1770,13 @@ function DesktopSearchStatusCard({
           {title}
         </div>
         <div className={cn("rounded-full px-2.5 py-1 text-[10px]", badgeClassName)}>
-          {statusLabel}
+          {badgeLabel ?? statusLabel}
         </div>
       </div>
       <div className="mt-2 rounded-[12px] bg-white px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]">
         {description}
       </div>
+      {action ? <div className="mt-3 flex items-center justify-end">{action}</div> : null}
     </section>
   );
 }
