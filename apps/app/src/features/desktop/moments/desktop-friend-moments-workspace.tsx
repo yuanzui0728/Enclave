@@ -21,6 +21,7 @@ import {
   type MomentImageDraft,
   type MomentVideoDraft,
 } from "../../moments/moment-compose-media";
+import { getMomentSummaryText } from "../../moments/moment-content";
 
 type DesktopFriendMomentsWorkspaceProps = {
   character: Character;
@@ -442,7 +443,7 @@ export function DesktopFriendMomentsWorkspace({
                         )}
                       >
                         <div className="line-clamp-2 text-[13px] leading-6 text-[color:var(--text-primary)]">
-                          {moment.text}
+                          {getMomentSummaryText(moment)}
                         </div>
                         <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
                           {formatTimestamp(moment.postedAt)} · {moment.likeCount} 赞

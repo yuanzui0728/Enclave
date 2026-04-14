@@ -91,6 +91,7 @@ export function MomentComposeMediaPreview({
       : imageDrafts.length === 2 || imageDrafts.length === 4
         ? "grid-cols-2"
         : "grid-cols-3";
+  const remainingCount = Math.max(9 - imageDrafts.length, 0);
 
   return (
     <div className="space-y-2">
@@ -122,7 +123,8 @@ export function MomentComposeMediaPreview({
         ))}
       </div>
       <div className="text-[12px] text-[color:var(--text-muted)]">
-        已选择 {imageDrafts.length} 张图片，可继续补到 9 张。
+        已选择 {imageDrafts.length} 张图片
+        {remainingCount > 0 ? `，还可以继续添加 ${remainingCount} 张。` : "。"}
       </div>
     </div>
   );

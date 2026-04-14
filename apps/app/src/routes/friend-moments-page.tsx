@@ -27,6 +27,7 @@ import {
 } from "../features/desktop/moments/desktop-friend-moments-route-state";
 import { DesktopFriendMomentsWorkspace } from "../features/desktop/moments/desktop-friend-moments-workspace";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
+import { getMomentSummaryText } from "../features/moments/moment-content";
 import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
@@ -469,7 +470,7 @@ export function FriendMomentsPage() {
               sourceId,
               category: "moments",
               title: moment.authorName,
-              description: moment.text,
+              description: getMomentSummaryText(moment),
               meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
               to: buildDesktopFriendMomentsPath(characterId, {
                 momentId: moment.id,

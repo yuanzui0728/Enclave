@@ -21,6 +21,7 @@ import {
 } from "@yinjie/ui";
 import { ArrowLeft, Heart, MapPin, MessageCircle } from "lucide-react";
 import { AvatarChip } from "../components/avatar-chip";
+import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { getFriendDisplayName } from "../features/contacts/contact-utils";
 import { formatTimestamp } from "../lib/format";
@@ -495,6 +496,7 @@ function MobileFriendMomentCard({
   onLike: () => void;
 }) {
   const dateLabel = formatTimelineDate(moment.postedAt);
+  const hasText = Boolean(moment.text.trim());
 
   return (
     <article className="flex items-start gap-3">
@@ -507,9 +509,20 @@ function MobileFriendMomentCard({
         </div>
       </div>
       <div className="min-w-0 flex-1 overflow-hidden rounded-[22px] border border-[rgba(0,0,0,0.05)] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
-        <div className="text-[15px] leading-7 text-[color:var(--text-primary)]">
-          {moment.text}
-        </div>
+        {hasText ? (
+          <div className="text-[15px] leading-7 text-[color:var(--text-primary)]">
+            {moment.text}
+          </div>
+        ) : null}
+        {moment.media.length > 0 ? (
+          <div className={hasText ? "mt-3" : ""}>
+            <MomentMediaGallery
+              contentType={moment.contentType}
+              media={moment.media}
+              variant="mobile"
+            />
+          </div>
+        ) : null}
         {moment.location ? (
           <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-[rgba(15,23,42,0.04)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
             <MapPin size={12} />

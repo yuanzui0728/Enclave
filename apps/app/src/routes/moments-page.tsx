@@ -16,6 +16,7 @@ import {
 } from "@yinjie/ui";
 import { MobileSocialComposerCard } from "../components/mobile-social-composer-card";
 import { MomentComposeMediaPreview } from "../components/moment-compose-media-preview";
+import { MomentMediaGallery } from "../components/moment-media-gallery";
 import { SocialPostCard } from "../components/social-post-card";
 import {
   hydrateDesktopFavoritesFromNative,
@@ -37,6 +38,7 @@ import {
   publishMomentComposeDraft,
   useMomentComposeDraft,
 } from "../features/moments/moment-compose-media";
+import { getMomentSummaryText } from "../features/moments/moment-content";
 import { formatTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import {
@@ -303,6 +305,7 @@ export function MomentsPage() {
   }, [isDesktopLayout, routeSelectedMomentId, visibleMoments.length]);
 
   async function handleShareMoment(moment: (typeof visibleMoments)[number]) {
+    const summaryBody = getMomentSummaryText(moment);
     const shareHash = buildDesktopMomentsRouteHash({
       momentId: moment.id,
     });
@@ -311,14 +314,14 @@ export function MomentsPage() {
       typeof window === "undefined"
         ? sharePath
         : `${window.location.origin}${sharePath}`;
-    const summaryText = `${moment.authorName}：${moment.text}${
+    const summaryText = `${moment.authorName}：${summaryBody}${
       moment.location ? `\n位置：${moment.location}` : ""
     }\n${shareUrl}`;
 
     if (nativeMobileShareSupported) {
       const shared = await shareWithNativeShell({
         title: `${moment.authorName} 的朋友圈`,
-        text: `${moment.authorName}：${moment.text}${
+        text: `${moment.authorName}：${summaryBody}${
           moment.location ? `\n位置：${moment.location}` : ""
         }`,
         url: shareUrl,
@@ -456,7 +459,7 @@ export function MomentsPage() {
                 sourceId,
                 category: "moments",
                 title: moment.authorName,
-                description: moment.text,
+                description: getMomentSummaryText(moment),
                 meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
                 to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
                 badge: "朋友圈",
@@ -715,7 +718,16 @@ export function MomentsPage() {
                         好友可见
                       </div>
                     ) : null}
-                    <div>{moment.text}</div>
+                    {moment.text.trim() ? <div>{moment.text}</div> : null}
+                    {moment.media.length > 0 ? (
+                      <div className={moment.text.trim() ? "mt-3" : ""}>
+                        <MomentMediaGallery
+                          contentType={moment.contentType}
+                          media={moment.media}
+                          variant="mobile"
+                        />
+                      </div>
+                    ) : null}
                   </>
                 }
                 summary={`${moment.likeCount} 赞 · ${moment.commentCount} 评论`}
@@ -740,7 +752,7 @@ export function MomentsPage() {
                               sourceId,
                               category: "moments",
                               title: moment.authorName,
-                              description: moment.text,
+                              description: getMomentSummaryText(moment),
                               meta: `朋友圈 · ${formatTimestamp(moment.postedAt)}`,
                               to: `/tabs/moments${routeHash ? `#${routeHash}` : ""}`,
                               badge: "朋友圈",
