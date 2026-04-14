@@ -967,17 +967,25 @@ export function DesktopSearchDropdownPanel({
                       />
                     ))}
 
-                    {conversationOnlyMatches.map((item) => (
-                      <SearchLauncherQuickLinkRow
-                        key={item.id}
-                        active={activeActionId === item.id}
-                        item={item}
-                        keyword={trimmedKeyword}
-                        variant="conversations"
-                        onMouseEnter={() => setActiveActionId(item.id)}
-                        onClick={() => handleOpenQuickLink(item)}
-                      />
-                    ))}
+                    {conversationOnlyMatches.length ? (
+                      <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3.5 py-3">
+                        <div className="px-0.5 text-[11px] font-medium text-[color:var(--text-muted)]">
+                          会话命中
+                        </div>
+                        <div className="mt-2.5 space-y-2">
+                          {conversationOnlyMatches.map((item) => (
+                            <SearchLauncherConversationThreadCard
+                              key={item.id}
+                              active={activeActionId === item.id}
+                              item={item}
+                              keyword={trimmedKeyword}
+                              onMouseEnter={() => setActiveActionId(item.id)}
+                              onClick={() => handleOpenQuickLink(item)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -1161,14 +1169,13 @@ export function DesktopSearchDropdownPanel({
                 <div className="px-1 text-[11px] font-medium text-[color:var(--text-muted)]">
                   最近聊天
                 </div>
-                <div className="mt-1.5 space-y-1.5">
+                <div className="mt-1.5 space-y-2">
                   {recentConversations.map((item) => (
-                    <SearchLauncherQuickLinkRow
+                    <SearchLauncherConversationThreadCard
                       key={item.id}
                       active={activeActionId === item.id}
                       item={item}
                       keyword=""
-                      variant="conversations"
                       onMouseEnter={() => setActiveActionId(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
@@ -1404,6 +1411,66 @@ function SearchLauncherConversationGroupCard({
   );
 }
 
+function SearchLauncherConversationThreadCard({
+  active = false,
+  item,
+  keyword,
+  onMouseEnter,
+  onClick,
+}: {
+  active?: boolean;
+  item: DesktopSearchQuickLink;
+  keyword: string;
+  onMouseEnter?: () => void;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      className={cn(
+        "w-full overflow-hidden rounded-[16px] border text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        active
+          ? "border-[#d6e7d6] bg-[linear-gradient(180deg,#f6fbf6,white)]"
+          : "border-[#e3ece3] bg-[linear-gradient(180deg,#fbfdfb,white)] hover:border-[#d6e7d6] hover:bg-[linear-gradient(180deg,#f6fbf6,white)]",
+      )}
+    >
+      <div className="flex items-start gap-3 px-3.5 py-3">
+        <AvatarChip
+          name={item.avatarName ?? item.title}
+          src={item.avatarSrc}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {renderHighlightedText(item.title, keyword)}
+            </span>
+            <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+              {item.badge}
+            </span>
+          </div>
+          <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+            {renderHighlightedText(item.meta, keyword)}
+          </div>
+        </div>
+        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+          <MessageSquareText size={15} />
+        </div>
+      </div>
+
+      <div className="border-t border-[color:var(--border-faint)] px-3.5 py-2.5">
+        <div className="rounded-[12px] bg-white px-3 py-2.5">
+          <div className="line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+            {renderHighlightedText(item.description, keyword)}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function SearchLauncherOfficialGroupCard({
   activeArticleId,
   activeHeaderId,
@@ -1424,7 +1491,9 @@ function SearchLauncherOfficialGroupCard({
   onSelectHeader: (item: DesktopSearchQuickLink) => void;
 }) {
   const headerActive = activeHeaderId === group.header.id;
-  const articleActive = group.article ? activeArticleId === group.article.id : false;
+  const articleActive = group.article
+    ? activeArticleId === group.article.id
+    : false;
 
   return (
     <section className="overflow-hidden rounded-[16px] border border-[#dfe7dd] bg-[linear-gradient(180deg,#fbfdfb,white)]">
@@ -1492,92 +1561,6 @@ function SearchLauncherOfficialGroupCard({
         </div>
       ) : null}
     </section>
-  );
-}
-
-function SearchLauncherQuickLinkRow({
-  active = false,
-  item,
-  keyword,
-  onMouseEnter,
-  onClick,
-  variant,
-}: {
-  active?: boolean;
-  item: DesktopSearchQuickLink;
-  keyword: string;
-  onMouseEnter?: () => void;
-  onClick: () => void;
-  variant: "conversations" | "officialAccounts";
-}) {
-  const toneClassName =
-    variant === "conversations"
-      ? active
-        ? "border-[#d6e7d6] bg-[linear-gradient(180deg,#f6fbf6,white)]"
-        : "border-[#e3ece3] bg-[linear-gradient(180deg,#fbfdfb,white)] hover:border-[#d6e7d6] hover:bg-[linear-gradient(180deg,#f6fbf6,white)]"
-      : active
-        ? "border-[#dae2d8] bg-[linear-gradient(180deg,#f6faf7,white)]"
-        : "border-[#e4ebe2] bg-[linear-gradient(180deg,#fbfdfb,white)] hover:border-[#dae2d8] hover:bg-[linear-gradient(180deg,#f6faf7,white)]";
-  const badgeClassName =
-    variant === "conversations"
-      ? "bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)]"
-      : item.badge === "公众号文章"
-        ? "bg-[rgba(7,193,96,0.10)] text-[#1d6a37]"
-        : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-secondary)]";
-  const iconClassName =
-    variant === "conversations"
-      ? "bg-[rgba(7,193,96,0.10)] text-[#15803d]"
-      : "bg-[rgba(7,193,96,0.10)] text-[#1d6a37]";
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      className={cn(
-        "flex w-full items-start gap-3 rounded-[14px] border px-3.5 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
-        toneClassName,
-      )}
-    >
-      <AvatarChip
-        name={item.avatarName ?? item.title}
-        src={item.avatarSrc}
-        size="wechat"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
-            {renderHighlightedText(item.title, keyword)}
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-0.5 text-[10px]",
-              badgeClassName,
-            )}
-          >
-            {item.badge}
-          </span>
-        </div>
-        <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
-          {renderHighlightedText(item.meta, keyword)}
-        </div>
-        <div className="mt-2 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
-          {renderHighlightedText(item.description, keyword)}
-        </div>
-      </div>
-      <div
-        className={cn(
-          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-          iconClassName,
-        )}
-      >
-        {variant === "conversations" ? (
-          <MessageSquareText size={15} />
-        ) : (
-          <Newspaper size={15} />
-        )}
-      </div>
-    </button>
   );
 }
 
