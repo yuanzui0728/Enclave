@@ -992,6 +992,7 @@ function isStandaloneDesktopRoute(pathname: string) {
   return (
     pathname === "/desktop/chat-image-viewer" ||
     pathname === "/desktop/chat-window" ||
+    pathname === "/desktop/official-article-window" ||
     pathname === "/desktop/note-window"
   );
 }

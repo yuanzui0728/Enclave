@@ -183,6 +183,11 @@ const DesktopChatWindowPage = lazy(async () => {
   return { default: mod.DesktopChatWindowPage };
 });
 
+const DesktopOfficialArticleWindowPage = lazy(async () => {
+  const mod = await import("./routes/desktop-official-article-window-page");
+  return { default: mod.DesktopOfficialArticleWindowPage };
+});
+
 const DesktopNoteWindowPage = lazy(async () => {
   const mod = await import("./routes/desktop-note-window-page");
   return { default: mod.DesktopNoteWindowPage };
@@ -772,6 +777,13 @@ const desktopChatWindowRoute = createRoute({
   component: DesktopChatWindowPage,
 });
 
+const desktopOfficialArticleWindowRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/desktop/official-article-window",
+  beforeLoad: requireWorldReady,
+  component: DesktopOfficialArticleWindowPage,
+});
+
 const desktopNoteWindowRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/desktop/note-window",
@@ -890,6 +902,7 @@ const routeTree = rootRoute.addChildren([
   desktopChatHistoryRoute,
   desktopChatImageViewerRoute,
   desktopChatWindowRoute,
+  desktopOfficialArticleWindowRoute,
   desktopNoteWindowRoute,
   desktopFeedbackRoute,
   desktopAddFriendRoute,

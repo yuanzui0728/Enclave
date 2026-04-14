@@ -6,12 +6,7 @@ import {
   getOfficialAccountArticle,
   markOfficialAccountArticleRead,
 } from "@yinjie/contracts";
-import {
-  AppPage,
-  Button,
-  InlineNotice,
-  cn,
-} from "@yinjie/ui";
+import { AppPage, Button, InlineNotice, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
 import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
@@ -21,11 +16,10 @@ import {
   upsertDesktopFavorite,
 } from "../features/desktop/favorites/desktop-favorites-storage";
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
+import { buildDesktopOfficialArticleWindowRouteHash } from "../features/desktop/official-accounts/desktop-official-article-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { navigateBackOrFallback } from "../lib/history-back";
-import {
-  shareWithNativeShell,
-} from "../runtime/mobile-bridge";
+import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -42,10 +36,20 @@ export function OfficialAccountArticlePage() {
     }
 
     void navigate({
-      to: "/tabs/contacts",
-      hash: buildDesktopContactsRouteHash({
-        pane: "official-accounts",
+      to: "/desktop/official-article-window",
+      hash: buildDesktopOfficialArticleWindowRouteHash({
         articleId,
+        returnTo: `/tabs/contacts${
+          buildDesktopContactsRouteHash({
+            pane: "official-accounts",
+            articleId,
+          })
+            ? `#${buildDesktopContactsRouteHash({
+                pane: "official-accounts",
+                articleId,
+              })}`
+            : ""
+        }`,
       }),
       replace: true,
     });
@@ -238,7 +242,9 @@ function MobileOfficialAccountArticlePage({
               size="icon"
               className="h-9 w-9 rounded-full text-[color:var(--text-primary)] active:bg-black/[0.05]"
               onClick={() => void handleShareArticle()}
-              aria-label={nativeMobileShareSupported ? "分享文章" : "复制文章链接"}
+              aria-label={
+                nativeMobileShareSupported ? "分享文章" : "复制文章链接"
+              }
             >
               {nativeMobileShareSupported ? (
                 <Share2 size={17} />

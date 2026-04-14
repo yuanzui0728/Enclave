@@ -51,7 +51,7 @@
 - `tags-page.tsx`：联系人标签页，移动端承载通讯录内“标签”入口，桌面端承载标签分组与联系人详情工作区
 - `official-accounts-page.tsx`：公众号列表页，移动端承载通讯录内“公众号”入口，桌面端承载公众号工作区路由入口
 - `official-account-detail-page.tsx`：公众号主页，承载账号资料、关注状态与最近文章列表
-- `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端复用工作区阅读面板
+- `official-account-article-page.tsx`：公众号文章详情页，移动端承载独立阅读页，桌面端兼容跳转至文章独立窗口
 - `official-account-service-page.tsx`：服务号消息页，移动端承载服务号独立消息线程，桌面端复用消息工作区右侧服务号面板
 - `subscription-inbox-page.tsx`：订阅号消息页，移动端承载“消息 -> 订阅号消息”聚合流，桌面端承载消息工作区内的订阅号阅读面板
 - `profile/settings`：我的二级设置页，集中承载资料编辑与专属 API Key 配置
@@ -62,6 +62,7 @@
 - `desktop/chat-history`：桌面端“聊天记录管理”页，承接会话记录查看与管理
 - `desktop/chat-image-viewer`：桌面端图片独立窗口路由，承接聊天图片的新窗口预览、打印与回跳原消息
 - `desktop/chat-window`：桌面端独立聊天窗口路由，承接会话右键“在独立窗口打开”
+- `desktop/official-article-window`：桌面端公众号文章独立窗口路由，承接公众号文章新窗口阅读、浏览器打开与回跳来源工作区
 - `desktop/note-window`：桌面端独立笔记窗口路由，承接“收藏 -> 新建笔记”和已保存笔记的独立编辑窗口
 - `desktop/feedback`：桌面端“意见反馈”页
 - `desktop/add-friend`：桌面端“添加朋友”独立工作区，承接微信电脑版式搜索、资料预览与发送好友申请
