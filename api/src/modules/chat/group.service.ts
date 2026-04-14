@@ -226,6 +226,34 @@ export class GroupService {
     return group ? this.toGroup(group) : null;
   }
 
+  async listGroups(): Promise<Group[]> {
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    const memberships = await this.memberRepo.find({
+      where: {
+        memberId: owner.id,
+        memberType: 'user',
+      },
+    });
+    const groupIds = dedupeIds(memberships.map((membership) => membership.groupId));
+    if (!groupIds.length) {
+      return [];
+    }
+
+    const groups = await this.groupRepo.find({
+      where: {
+        id: In(groupIds),
+      },
+      order: {
+        savedToContacts: 'DESC',
+        savedToContactsAt: 'DESC',
+        lastActivityAt: 'DESC',
+        updatedAt: 'DESC',
+      },
+    });
+
+    return groups.map((group) => this.toGroup(group));
+  }
+
   async listSavedGroups(): Promise<Group[]> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const groups = await this.groupRepo.find({
