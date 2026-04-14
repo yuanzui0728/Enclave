@@ -757,6 +757,19 @@ export function StickerPanel({
     !isMobile &&
     activeSectionId === "custom" &&
     (trimmedKeyword.length === 0 || showManageSearchPauseHint);
+  const desktopManageButtonLabel = showManageSearchPauseHint
+    ? "继续管理"
+    : customManageMode
+      ? customUploadResumed
+        ? "完成清理"
+        : "完成"
+      : "管理";
+  const desktopManageAfterFinishLabel =
+    !isMobile && activeSectionId === "custom" && customManageMode
+      ? customUploadResumed
+        ? "完成后：顶部可继续添加"
+        : "完成后：回自定义列表"
+      : null;
   const customManageKeyboardActive =
     !isMobile && activeSectionId === "custom" && customManageMode && !searching;
   const desktopCustomHeaderContext =
@@ -1532,11 +1545,7 @@ export function StickerPanel({
                       : "text-[color:var(--text-secondary)] hover:bg-white/80"
                 }`}
               >
-                {showManageSearchPauseHint
-                  ? "继续管理"
-                  : customManageMode
-                    ? "完成"
-                    : "管理"}
+                {desktopManageButtonLabel}
               </button>
             ) : null}
             <button
@@ -2088,6 +2097,11 @@ export function StickerPanel({
                       {nextManageDeleteOutcomeLabel ? (
                         <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
                           {nextManageDeleteOutcomeLabel}
+                        </span>
+                      ) : null}
+                      {desktopManageAfterFinishLabel ? (
+                        <span className="rounded-full bg-white/88 px-2 py-1">
+                          {desktopManageAfterFinishLabel}
                         </span>
                       ) : null}
                     </div>
