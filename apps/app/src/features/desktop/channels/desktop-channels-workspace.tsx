@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import type { FeedPostListItem } from "@yinjie/contracts";
+import type { FeedComment, FeedPostListItem } from "@yinjie/contracts";
 import {
   Button,
   ErrorBlock,
@@ -30,8 +30,18 @@ import {
 import { formatTimestamp } from "../../../lib/format";
 
 type DesktopChannelsWorkspaceProps = {
+  comments: FeedComment[];
+  commentsErrorMessage?: string | null;
+  commentsLoading: boolean;
   commentDrafts: Record<string, string>;
+  commentLikePendingId: string | null;
   commentPendingPostId: string | null;
+  commentReplyTarget: {
+    authorId: string;
+    authorName: string;
+    commentId: string;
+    postId: string;
+  } | null;
   errorMessage?: string | null;
   isLoading: boolean;
   likePendingPostId: string | null;
@@ -39,18 +49,27 @@ type DesktopChannelsWorkspaceProps = {
   routeSelectedPostId?: string | null;
   successNotice?: string;
   isPostFavorite: (postId: string) => boolean;
+  onCancelCommentReply: () => void;
   onCommentChange: (postId: string, value: string) => void;
   onCommentSubmit: (postId: string) => void;
   onLike: (postId: string) => void;
+  onLikeComment: (comment: FeedComment) => void;
   onRefresh: () => void;
+  onReplyToComment: (comment: FeedComment) => void;
+  onSelectedPostChange: (postId: string | null) => void;
   onToggleFollowAuthor: (post: FeedPostListItem) => void;
   onToggleFavorite: (post: FeedPostListItem) => void;
   onViewPost: (postId: string) => void;
 };
 
 export function DesktopChannelsWorkspace({
+  comments,
+  commentsErrorMessage,
+  commentsLoading,
   commentDrafts,
+  commentLikePendingId,
   commentPendingPostId,
+  commentReplyTarget,
   errorMessage,
   isLoading,
   likePendingPostId,
@@ -58,10 +77,14 @@ export function DesktopChannelsWorkspace({
   routeSelectedPostId = null,
   successNotice,
   isPostFavorite,
+  onCancelCommentReply,
   onCommentChange,
   onCommentSubmit,
   onLike,
+  onLikeComment,
   onRefresh,
+  onReplyToComment,
+  onSelectedPostChange,
   onToggleFollowAuthor,
   onToggleFavorite,
   onViewPost,
@@ -182,12 +205,14 @@ export function DesktopChannelsWorkspace({
   }, [posts]);
 
   useEffect(() => {
+    onSelectedPostChange(selectedPost?.id ?? null);
+
     if (!selectedPost?.id) {
       return;
     }
 
     onViewPost(selectedPost.id);
-  }, [onViewPost, selectedPost?.id]);
+  }, [onSelectedPostChange, onViewPost, selectedPost?.id]);
 
   return (
     <div className="flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
@@ -540,34 +565,13 @@ export function DesktopChannelsWorkspace({
 
                   <div className="border-t border-[color:var(--border-faint)] px-6 py-4">
                     <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
-                      <span>评论会直接留在当前内容上下文里。</span>
+                      <span>完整评论面板已收进右侧，可以直接回复、点赞和发送。</span>
                       <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px]">
                         {selectedPost.commentCount} 条评论
                       </span>
                     </div>
-                    <div className="mt-3 flex items-center gap-2 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
-                      <TextField
-                        value={commentDrafts[selectedPost.id] ?? ""}
-                        onChange={(event) =>
-                          onCommentChange(selectedPost.id, event.target.value)
-                        }
-                        placeholder="写下你对这条视频号内容的评论..."
-                        className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
-                      />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={
-                          !(commentDrafts[selectedPost.id] ?? "").trim() ||
-                          commentPendingPostId === selectedPost.id
-                        }
-                        onClick={() => onCommentSubmit(selectedPost.id)}
-                        className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
-                      >
-                        {commentPendingPostId === selectedPost.id
-                          ? "发送中..."
-                          : "发送"}
-                      </Button>
+                    <div className="mt-3 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                      右侧评论面板会展示完整评论链路，并持续接住当前内容的回复与互动。
                     </div>
                   </div>
                 </div>
@@ -617,49 +621,49 @@ export function DesktopChannelsWorkspace({
 
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                最近评论
+              <div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  评论面板
+                </div>
+                <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                  当前内容下的完整评论列表与回复输入区
+                </div>
               </div>
               <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
-                {selectedPost?.commentsPreview.length ?? 0} 条
+                {selectedPost?.commentCount ?? 0} 条
               </span>
             </div>
-            <div className="mt-3 space-y-3">
-              {selectedPost?.commentsPreview.length ? (
-                selectedPost.commentsPreview.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
-                  >
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="font-medium text-[color:var(--text-primary)]">
-                        {comment.authorName}
-                      </span>
-                      <span
-                        className={cn(
-                          "rounded-md border px-2 py-0.5 text-[10px] font-medium",
-                          comment.authorType === "character"
-                            ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
-                            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
-                        )}
-                      >
-                        {comment.authorType === "character" ? "居民" : "世界主人"}
-                      </span>
-                      <span className="text-[color:var(--text-dim)]">
-                        {formatTimestamp(comment.createdAt)}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
-                      {comment.text}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
-                  这条内容还没有评论，你可以先开口。
-                </div>
-              )}
-            </div>
+            {commentsErrorMessage ? (
+              <div className="mt-3">
+                <ErrorBlock message={commentsErrorMessage} />
+              </div>
+            ) : null}
+            <DesktopChannelCommentsPanel
+              comments={comments}
+              commentsLoading={commentsLoading}
+              draft={selectedPost ? commentDrafts[selectedPost.id] ?? "" : ""}
+              likePendingCommentId={commentLikePendingId}
+              replyTarget={commentReplyTarget}
+              selectedPost={selectedPost}
+              submitPending={commentPendingPostId === selectedPost?.id}
+              onCancelReply={onCancelCommentReply}
+              onDraftChange={(value) => {
+                if (!selectedPost) {
+                  return;
+                }
+
+                onCommentChange(selectedPost.id, value);
+              }}
+              onLikeComment={onLikeComment}
+              onReplyToComment={onReplyToComment}
+              onSubmit={() => {
+                if (!selectedPost) {
+                  return;
+                }
+
+                onCommentSubmit(selectedPost.id);
+              }}
+            />
           </div>
 
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
@@ -735,4 +739,184 @@ function formatChannelMeta(post: FeedPostListItem) {
   }
 
   return pieces.join(" · ");
+}
+
+function DesktopChannelCommentsPanel({
+  comments,
+  commentsLoading,
+  draft,
+  likePendingCommentId,
+  replyTarget,
+  selectedPost,
+  submitPending,
+  onCancelReply,
+  onDraftChange,
+  onLikeComment,
+  onReplyToComment,
+  onSubmit,
+}: {
+  comments: FeedComment[];
+  commentsLoading: boolean;
+  draft: string;
+  likePendingCommentId: string | null;
+  replyTarget: {
+    authorId: string;
+    authorName: string;
+    commentId: string;
+    postId: string;
+  } | null;
+  selectedPost: FeedPostListItem | null;
+  submitPending: boolean;
+  onCancelReply: () => void;
+  onDraftChange: (value: string) => void;
+  onLikeComment: (comment: FeedComment) => void;
+  onReplyToComment: (comment: FeedComment) => void;
+  onSubmit: () => void;
+}) {
+  const commentAuthorNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    comments.forEach((comment) => {
+      map.set(comment.id, comment.authorName);
+    });
+    return map;
+  }, [comments]);
+
+  return (
+    <div className="mt-3 space-y-3">
+      {commentsLoading && !comments.length ? (
+        <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+          正在读取评论...
+        </div>
+      ) : null}
+      {!commentsLoading && !comments.length ? (
+        <div className="rounded-[14px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+          这条内容还没有评论，你可以先开口。
+        </div>
+      ) : null}
+      {comments.length ? (
+        <div className="max-h-[320px] space-y-3 overflow-auto pr-1">
+          {comments.map((comment) => {
+            const replyTargetName = comment.replyToCommentId
+              ? commentAuthorNameMap.get(comment.replyToCommentId) ?? null
+              : null;
+
+            return (
+              <div
+                key={comment.id}
+                className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
+              >
+                <div className="flex items-start gap-3">
+                  <AvatarChip
+                    name={comment.authorName}
+                    src={comment.authorAvatar}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="font-medium text-[color:var(--text-primary)]">
+                        {comment.authorName}
+                      </span>
+                      <span
+                        className={cn(
+                          "rounded-md border px-2 py-0.5 text-[10px] font-medium",
+                          comment.authorType === "character"
+                            ? "border-[rgba(7,193,96,0.12)] bg-[rgba(7,193,96,0.06)] text-[color:var(--brand-primary)]"
+                            : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+                        )}
+                      >
+                        {comment.authorType === "character" ? "居民" : "世界主人"}
+                      </span>
+                      <span className="text-[color:var(--text-dim)]">
+                        {formatTimestamp(comment.createdAt)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs leading-6 text-[color:var(--text-secondary)]">
+                      {replyTargetName ? (
+                        <span className="text-[color:var(--text-muted)]">
+                          回复 {replyTargetName}
+                          {"："}
+                        </span>
+                      ) : null}
+                      {comment.text}
+                    </div>
+                    <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
+                      <button
+                        type="button"
+                        onClick={() => onReplyToComment(comment)}
+                        className="transition hover:text-[color:var(--text-primary)]"
+                      >
+                        回复
+                      </button>
+                      <button
+                        type="button"
+                        disabled={
+                          comment.likedByOwner ||
+                          likePendingCommentId === comment.id
+                        }
+                        onClick={() => onLikeComment(comment)}
+                        className={cn(
+                          "inline-flex items-center gap-1 transition",
+                          comment.likedByOwner
+                            ? "text-[color:var(--brand-primary)]"
+                            : "hover:text-[color:var(--text-primary)]",
+                        )}
+                      >
+                        <ThumbsUp size={12} />
+                        {likePendingCommentId === comment.id
+                          ? "处理中"
+                          : comment.likedByOwner
+                            ? `已赞 ${comment.likeCount}`
+                            : `赞 ${comment.likeCount}`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
+        {replyTarget ? (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[rgba(7,193,96,0.08)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
+            <div className="truncate">
+              正在回复 {replyTarget.authorName}
+            </div>
+            <button
+              type="button"
+              onClick={onCancelReply}
+              className="transition hover:opacity-75"
+            >
+              取消
+            </button>
+          </div>
+        ) : null}
+        <div className="flex items-center gap-2">
+          <TextField
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            placeholder={
+              replyTarget
+                ? `回复 ${replyTarget.authorName}...`
+                : selectedPost
+                  ? "写下你对这条视频号内容的评论..."
+                  : "先选择一条内容"
+            }
+            disabled={!selectedPost}
+            className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[rgba(7,193,96,0.14)] focus:shadow-none"
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!selectedPost || !draft.trim() || submitPending}
+            onClick={onSubmit}
+            className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+          >
+            {submitPending ? "发送中..." : "发送"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

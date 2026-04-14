@@ -56,6 +56,12 @@ import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 const EMPTY_CHANNEL_POSTS: FeedPostListItem[] = [];
+type FeedCommentReplyTarget = {
+  authorId: string;
+  authorName: string;
+  commentId: string;
+  postId: string;
+};
 
 export function ChannelsPage() {
   const isDesktopLayout = useDesktopLayout();
@@ -72,23 +78,24 @@ export function ChannelsPage() {
   const nativeMobileShareSupported = isNativeMobileShareSurface({
     isDesktopLayout,
   });
+  const routeSelectedPostId = parseDesktopChannelsRouteHash(hash);
   const [activeSection, setActiveSection] =
     useState<FeedChannelHomeSection>("recommended");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
     {},
   );
+  const [desktopSelectedPostId, setDesktopSelectedPostId] = useState<
+    string | null
+  >(routeSelectedPostId);
   const [mobileCommentSheetPostId, setMobileCommentSheetPostId] = useState<
     string | null
   >(null);
-  const [mobileReplyTarget, setMobileReplyTarget] = useState<{
-    authorId: string;
-    authorName: string;
-    commentId: string;
-    postId: string;
-  } | null>(null);
+  const [mobileReplyTarget, setMobileReplyTarget] =
+    useState<FeedCommentReplyTarget | null>(null);
+  const [desktopReplyTarget, setDesktopReplyTarget] =
+    useState<FeedCommentReplyTarget | null>(null);
   const [notice, setNotice] = useState("");
   const [noticeTone, setNoticeTone] = useState<"success" | "info">("success");
-  const routeSelectedPostId = parseDesktopChannelsRouteHash(hash);
 
   const channelsQuery = useQuery({
     queryKey: ["app-channels-home", baseUrl, activeSection],
@@ -147,6 +154,9 @@ export function ChannelsPage() {
       setMobileReplyTarget((current) =>
         current?.postId === input.postId ? null : current,
       );
+      setDesktopReplyTarget((current) =>
+        current?.postId === input.postId ? null : current,
+      );
       setNoticeTone("success");
       setNotice(input.replyTarget ? "视频号回复已发送。" : "视频号评论已发送。");
       await Promise.all([
@@ -198,8 +208,9 @@ export function ChannelsPage() {
     },
   });
   const likeCommentMutation = useMutation({
-    mutationFn: (commentId: string) => likeFeedComment(commentId, baseUrl),
-    onSuccess: async () => {
+    mutationFn: (input: { commentId: string; postId: string }) =>
+      likeFeedComment(input.commentId, baseUrl),
+    onSuccess: async (_, input) => {
       setNoticeTone("success");
       setNotice("评论互动已更新。");
       await Promise.all([
@@ -207,13 +218,17 @@ export function ChannelsPage() {
           queryKey: ["app-channels-home", baseUrl],
         }),
         queryClient.invalidateQueries({
-          queryKey: ["app-feed-comments", baseUrl, mobileCommentSheetPostId],
+          queryKey: ["app-feed-comments", baseUrl, input.postId],
         }),
       ]);
     },
   });
 
   const visiblePosts = channelsQuery.data?.posts ?? EMPTY_CHANNEL_POSTS;
+  const desktopSelectedPost = useMemo(
+    () => visiblePosts.find((post) => post.id === desktopSelectedPostId) ?? null,
+    [desktopSelectedPostId, visiblePosts],
+  );
   const mobileCommentSheetPost = useMemo(
     () =>
       visiblePosts.find((post) => post.id === mobileCommentSheetPostId) ?? null,
@@ -224,6 +239,12 @@ export function ChannelsPage() {
     queryFn: () => listFeedComments(mobileCommentSheetPostId!, baseUrl),
     enabled: Boolean(mobileCommentSheetPostId),
     placeholderData: mobileCommentSheetPost?.commentsPreview ?? [],
+  });
+  const desktopCommentsQuery = useQuery({
+    queryKey: ["app-feed-comments", baseUrl, desktopSelectedPostId],
+    queryFn: () => listFeedComments(desktopSelectedPostId!, baseUrl),
+    enabled: Boolean(isDesktopLayout && desktopSelectedPostId),
+    placeholderData: desktopSelectedPost?.commentsPreview ?? [],
   });
   const channelSections = useMemo<
     Array<{ key: FeedChannelHomeSection; label: string; count: number }>
@@ -263,12 +284,28 @@ export function ChannelsPage() {
     (mobileCommentsQuery.isError && mobileCommentsQuery.error instanceof Error
       ? mobileCommentsQuery.error.message
       : null) ??
-    (likeCommentMutation.isError && likeCommentMutation.error instanceof Error
+    (likeCommentMutation.isError &&
+    likeCommentMutation.error instanceof Error &&
+    likeCommentMutation.variables?.postId === mobileCommentSheetPostId
       ? likeCommentMutation.error.message
       : null) ??
     (commentMutation.isError &&
     commentMutation.error instanceof Error &&
     commentMutation.variables?.postId === mobileCommentSheetPostId
+      ? commentMutation.error.message
+      : null);
+  const desktopCommentPanelErrorMessage =
+    (desktopCommentsQuery.isError && desktopCommentsQuery.error instanceof Error
+      ? desktopCommentsQuery.error.message
+      : null) ??
+    (likeCommentMutation.isError &&
+    likeCommentMutation.error instanceof Error &&
+    likeCommentMutation.variables?.postId === desktopSelectedPostId
+      ? likeCommentMutation.error.message
+      : null) ??
+    (commentMutation.isError &&
+    commentMutation.error instanceof Error &&
+    commentMutation.variables?.postId === desktopSelectedPostId
       ? commentMutation.error.message
       : null);
   const pendingLikePostId = likeMutation.isPending
@@ -278,15 +315,28 @@ export function ChannelsPage() {
     ? commentMutation.variables?.postId ?? null
     : null;
   const pendingLikeCommentId = likeCommentMutation.isPending
-    ? likeCommentMutation.variables
+    ? likeCommentMutation.variables?.commentId ?? null
     : null;
 
   useEffect(() => {
     setCommentDrafts({});
+    setDesktopSelectedPostId(routeSelectedPostId);
+    setDesktopReplyTarget(null);
     setMobileCommentSheetPostId(null);
     setMobileReplyTarget(null);
     setNotice("");
-  }, [baseUrl]);
+  }, [baseUrl, routeSelectedPostId]);
+
+  useEffect(() => {
+    if (!desktopSelectedPostId) {
+      return;
+    }
+
+    if (!visiblePosts.some((post) => post.id === desktopSelectedPostId)) {
+      setDesktopSelectedPostId(null);
+      setDesktopReplyTarget(null);
+    }
+  }, [desktopSelectedPostId, visiblePosts]);
 
   useEffect(() => {
     if (!mobileCommentSheetPostId) {
@@ -308,6 +358,16 @@ export function ChannelsPage() {
       setMobileReplyTarget(null);
     }
   }, [mobileCommentSheetPostId, mobileReplyTarget]);
+
+  useEffect(() => {
+    if (!desktopReplyTarget) {
+      return;
+    }
+
+    if (desktopReplyTarget.postId !== desktopSelectedPostId) {
+      setDesktopReplyTarget(null);
+    }
+  }, [desktopReplyTarget, desktopSelectedPostId]);
 
   useEffect(() => {
     if (!notice) {
@@ -461,13 +521,36 @@ export function ChannelsPage() {
             ?.hasFavorited ?? false
         }
         onCommentChange={updateCommentDraft}
-        onCommentSubmit={(postId) => submitComment(postId)}
+        onCommentSubmit={(postId) =>
+          submitComment(postId, { replyTarget: desktopReplyTarget })
+        }
         onLike={(postId) => likeMutation.mutate(postId)}
         onRefresh={() =>
           generateMutation.mutate()
         }
+        comments={desktopCommentsQuery.data ?? []}
+        commentsErrorMessage={desktopCommentPanelErrorMessage}
+        commentsLoading={desktopCommentsQuery.isLoading}
+        commentReplyTarget={desktopReplyTarget}
+        commentLikePendingId={pendingLikeCommentId}
+        onCancelCommentReply={() => setDesktopReplyTarget(null)}
         onToggleFollowAuthor={toggleFollowAuthor}
         onToggleFavorite={toggleFavorite}
+        onLikeComment={(comment) =>
+          likeCommentMutation.mutate({
+            commentId: comment.id,
+            postId: comment.postId,
+          })
+        }
+        onReplyToComment={(comment) =>
+          setDesktopReplyTarget({
+            authorId: comment.authorId,
+            authorName: comment.authorName,
+            commentId: comment.id,
+            postId: comment.postId,
+          })
+        }
+        onSelectedPostChange={setDesktopSelectedPostId}
         onViewPost={(postId) => {
           void viewFeedPost(postId, { progressSeconds: 3 }, baseUrl);
         }}
@@ -637,7 +720,12 @@ export function ChannelsPage() {
 
           updateCommentDraft(mobileCommentSheetPost.id, value);
         }}
-        onLikeComment={(commentId) => likeCommentMutation.mutate(commentId)}
+        onLikeComment={(comment) =>
+          likeCommentMutation.mutate({
+            commentId: comment.id,
+            postId: comment.postId,
+          })
+        }
         onReply={(comment) =>
           setMobileReplyTarget({
             authorId: comment.authorId,
@@ -1166,7 +1254,7 @@ function MobileChannelCommentsSheet({
   onCancelReply: () => void;
   onClose: () => void;
   onDraftChange: (value: string) => void;
-  onLikeComment: (commentId: string) => void;
+  onLikeComment: (comment: FeedComment) => void;
   onReply: (comment: FeedComment) => void;
   onSubmit: () => void;
 }) {
@@ -1309,7 +1397,7 @@ function MobileChannelCommentsSheet({
                               comment.likedByOwner ||
                               likePendingCommentId === comment.id
                             }
-                            onClick={() => onLikeComment(comment.id)}
+                            onClick={() => onLikeComment(comment)}
                             className={cn(
                               "inline-flex items-center gap-1 transition",
                               comment.likedByOwner
