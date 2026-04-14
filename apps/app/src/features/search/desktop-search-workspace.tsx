@@ -1156,6 +1156,9 @@ function DesktopSearchContextBar({
     activeCategory === "all"
       ? "当前正在查看聚合结果，继续滚动时这条上下文会一直保留。"
       : `当前结果已收窄到${categoryTitle}，需要扩展范围时可随时回到全部结果。`;
+  const activeSectionTitle = activeSection
+    ? searchCategoryTitles[activeSection]
+    : null;
 
   return (
     <div className="sticky top-0 z-10 mb-4 pt-1">
@@ -1172,6 +1175,11 @@ function DesktopSearchContextBar({
               <span className="rounded-full bg-[color:var(--surface-console)] px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
                 {count} 条命中
               </span>
+              {activeCategory === "all" && activeSectionTitle ? (
+                <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+                  当前位于 {activeSectionTitle}
+                </span>
+              ) : null}
             </div>
             <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
               关键词“{keyword}”
