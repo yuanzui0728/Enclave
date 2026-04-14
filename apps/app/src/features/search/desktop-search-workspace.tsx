@@ -28,6 +28,7 @@ import {
   type SearchMatchCounts,
   type SearchMessageGroup,
   type SearchOfficialAccountGroup,
+  type SearchResultCategory,
   type SearchResultItem,
   type SearchResultSection,
   type SearchScopeCounts,
@@ -409,6 +410,10 @@ export function DesktopSearchWorkspace({
             activeCategory === "all" ? (
               <div className="space-y-6">
                 {groupedResults.map((section) => {
+                  const previewContentResults =
+                    isDesktopContentCategory(section.category)
+                      ? section.results.slice(0, 4)
+                      : [];
                   const previewMessageGroups =
                     section.category === "messages"
                       ? messageGroups.slice(0, 3)
@@ -442,6 +447,8 @@ export function DesktopSearchWorkspace({
                             previewOfficialAccountGroups.length ||
                           officialAccountOnlyResults.length >
                             previewOfficialAccounts.length
+                      : isDesktopContentCategory(section.category)
+                        ? section.results.length > previewContentResults.length
                       : section.results.length > previewResults.length;
 
                   return (
@@ -481,6 +488,12 @@ export function DesktopSearchWorkspace({
                           accountResults={previewOfficialAccounts}
                           keyword={normalizedKeyword}
                           officialAccountGroups={previewOfficialAccountGroups}
+                          onOpen={onOpenResult}
+                        />
+                      ) : isDesktopContentCategory(section.category) ? (
+                        <DesktopSearchContentResults
+                          items={previewContentResults}
+                          keyword={normalizedKeyword}
                           onOpen={onOpenResult}
                         />
                       ) : (
@@ -524,6 +537,12 @@ export function DesktopSearchWorkspace({
                     accountResults={officialAccountOnlyResults}
                     keyword={normalizedKeyword}
                     officialAccountGroups={officialAccountGroups}
+                    onOpen={onOpenResult}
+                  />
+                ) : isDesktopContentCategory(activeCategory) ? (
+                  <DesktopSearchContentResults
+                    items={visibleResults}
+                    keyword={normalizedKeyword}
                     onOpen={onOpenResult}
                   />
                 ) : (
@@ -678,6 +697,29 @@ function DesktopSearchOfficialAccountResults({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function DesktopSearchContentResults({
+  items,
+  keyword,
+  onOpen,
+}: {
+  items: SearchResultItem[];
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  return (
+    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+      {items.map((item) => (
+        <DesktopSearchContentCard
+          key={item.id}
+          item={item}
+          keyword={keyword}
+          onOpen={onOpen}
+        />
+      ))}
     </div>
   );
 }
@@ -858,6 +900,81 @@ function DesktopSearchOfficialAccountGroupCard({
       </div>
     </section>
   );
+}
+
+function DesktopSearchContentCard({
+  item,
+  keyword,
+  onOpen,
+}: {
+  item: SearchResultItem;
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  const toneClassName =
+    item.category === "moments"
+      ? "border-[#dce8d7] bg-[linear-gradient(180deg,#f9fcf7,white)]"
+      : "border-[#dce5de] bg-[linear-gradient(180deg,#f6faf8,white)]";
+  const badgeClassName =
+    item.category === "moments"
+      ? "bg-[rgba(134,181,96,0.12)] text-[#587d38]"
+      : "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]";
+  const actionLabel =
+    item.category === "moments" ? "打开朋友圈动态" : "打开广场动态";
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      className={cn(
+        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
+        toneClassName,
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <AvatarChip
+          name={item.avatarName ?? item.title}
+          src={item.avatarSrc}
+          size="wechat"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+              {renderHighlightedText(item.title, keyword)}
+            </div>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[10px] font-medium",
+                badgeClassName,
+              )}
+            >
+              {item.badge}
+            </span>
+          </div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {renderHighlightedText(item.meta, keyword)}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[16px] bg-[color:var(--surface-console)] px-4 py-4">
+        <div className="line-clamp-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+          {renderHighlightedText(item.description, keyword)}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
+        <span>{actionLabel}</span>
+        <span>查看原内容</span>
+      </div>
+    </button>
+  );
+}
+
+function isDesktopContentCategory(
+  category: SearchCategory | SearchResultCategory,
+) {
+  return category === "moments" || category === "feed";
 }
 
 function DesktopSearchResultRow({
