@@ -90,7 +90,7 @@ export function DesktopMomentComposePanel({
           </button>
         </div>
 
-        <div className="flex-1 bg-[rgba(242,246,245,0.76)] px-5 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[rgba(242,246,245,0.76)] px-5 py-5">
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="flex items-center gap-3">
               <AvatarChip name={ownerUsername} src={ownerAvatar} />

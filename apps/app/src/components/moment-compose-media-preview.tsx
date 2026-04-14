@@ -92,6 +92,8 @@ export function MomentComposeMediaPreview({
         ? "grid-cols-2"
         : "grid-cols-3";
   const remainingCount = Math.max(9 - imageDrafts.length, 0);
+  const singlePreviewHeightClassName =
+    variant === "mobile" ? "max-h-[240px]" : "max-h-[280px]";
 
   return (
     <div className="space-y-2">
@@ -100,17 +102,22 @@ export function MomentComposeMediaPreview({
           <div
             key={draft.id}
             className="group relative overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
-            style={{
-              aspectRatio:
-                imageDrafts.length === 1 && draft.width > 0 && draft.height > 0
-                  ? `${draft.width} / ${draft.height}`
-                  : "1 / 1",
-            }}
+            style={
+              imageDrafts.length === 1
+                ? undefined
+                : {
+                    aspectRatio: "1 / 1",
+                  }
+            }
           >
             <img
               src={draft.previewUrl}
               alt={draft.file.name || "朋友圈图片预览"}
-              className="h-full w-full object-cover"
+              className={cn(
+                imageDrafts.length === 1
+                  ? `mx-auto w-auto max-w-full object-contain ${singlePreviewHeightClassName}`
+                  : "h-full w-full object-cover",
+              )}
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.46))] px-3 py-2 text-[10px] text-white/88">
               {draft.width} × {draft.height}
