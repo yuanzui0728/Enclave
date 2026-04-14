@@ -412,6 +412,10 @@ export function StickerPanel({
     () => new Set(collapsingStickerKeys),
     [collapsingStickerKeys],
   );
+  const manageableCustomItems = useMemo(
+    () => activeItems.filter((item) => item.canDelete),
+    [activeItems],
+  );
   const focusedManageSticker = useMemo(() => {
     if (!focusedManageDeleteKey) {
       return null;
@@ -423,6 +427,31 @@ export function StickerPanel({
       )?.sticker ?? null
     );
   }, [activeItems, focusedManageDeleteKey]);
+  const focusedManageStickerPosition = useMemo(() => {
+    if (!focusedManageDeleteKey) {
+      return null;
+    }
+
+    const index = manageableCustomItems.findIndex(
+      (item) => getStickerIdentity(item.sticker) === focusedManageDeleteKey,
+    );
+    return index >= 0 ? index + 1 : null;
+  }, [focusedManageDeleteKey, manageableCustomItems]);
+  const nextManageSticker = useMemo(() => {
+    if (!focusedManageDeleteKey) {
+      return null;
+    }
+
+    const nextKey = resolveAdjacentStickerKey(
+      manageableCustomItems,
+      focusedManageDeleteKey,
+    );
+    return (
+      manageableCustomItems.find(
+        (item) => getStickerIdentity(item.sticker) === nextKey,
+      )?.sticker ?? null
+    );
+  }, [focusedManageDeleteKey, manageableCustomItems]);
   const highlightedSearchItem = useMemo(() => {
     if (!searching || searchPending || activeItems.length === 0) {
       return null;
@@ -1883,8 +1912,8 @@ export function StickerPanel({
                 {customDeleteFeedback
                   ? `已删除 ${customDeleteFeedback.deletedCount} 张，现在还能再加 ${customDeleteFeedback.slotsRemaining} 张。`
                   : customStickerLibraryFull
-                    ? "表情已满：先删 1 张，完成后就能继续添加。"
-                    : "管理中：点击表情右上角删除，按 Esc 可直接完成。"}
+                    ? "表情已满：先删 1 张，删完会自动顺到下一张。"
+                    : "管理中：点击表情右上角删除，删完会自动顺到下一张，按 Esc 可直接完成。"}
               </span>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
@@ -1913,6 +1942,18 @@ export function StickerPanel({
                     当前：
                     {focusedManageSticker.label ??
                       focusedManageSticker.stickerId}
+                  </span>
+                ) : null}
+                {focusedManageStickerPosition ? (
+                  <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    当前 {focusedManageStickerPosition}/
+                    {manageableCustomItems.length}
+                  </span>
+                ) : null}
+                {nextManageSticker && manageableCustomItems.length > 1 ? (
+                  <span className="max-w-[150px] truncate rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    删后跳到：
+                    {nextManageSticker.label ?? nextManageSticker.stickerId}
                   </span>
                 ) : null}
                 {customDeleteFeedback?.lastDeletedLabel ? (
