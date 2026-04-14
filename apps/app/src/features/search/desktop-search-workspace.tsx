@@ -9,6 +9,7 @@ import {
   type SetStateAction,
 } from "react";
 import {
+  ArrowUpRight,
   Blocks,
   Bookmark,
   ChevronRight,
@@ -1027,6 +1028,58 @@ function DesktopSearchActionButton({
   );
 }
 
+function DesktopSearchOpenCue({
+  className,
+  compact = false,
+  label,
+  tone,
+}: {
+  className?: string;
+  compact?: boolean;
+  label: string;
+  tone: "brand" | "gold" | "olive" | "teal";
+}) {
+  const toneClassName =
+    tone === "gold"
+      ? "border-[rgba(180,132,23,0.14)] bg-[rgba(180,132,23,0.08)] text-[#9a6b12] group-hover:bg-[rgba(180,132,23,0.12)]"
+      : tone === "teal"
+        ? "border-[rgba(15,118,110,0.16)] bg-[rgba(15,118,110,0.08)] text-[#226448] group-hover:bg-[rgba(15,118,110,0.12)]"
+        : tone === "olive"
+          ? "border-[rgba(134,181,96,0.18)] bg-[rgba(134,181,96,0.10)] text-[#587d38] group-hover:bg-[rgba(134,181,96,0.14)]"
+          : "border-[rgba(7,193,96,0.16)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)] group-hover:bg-[rgba(7,193,96,0.12)]";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border transition-[transform,background-color,border-color,color] group-hover:translate-x-0.5",
+        compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-[11px]",
+        toneClassName,
+        className,
+      )}
+    >
+      <span>{label}</span>
+      <ArrowUpRight size={compact ? 11 : 12} />
+    </span>
+  );
+}
+
+function DesktopSearchFooterAffordance({
+  ctaLabel,
+  label,
+  tone,
+}: {
+  ctaLabel: string;
+  label: string;
+  tone: "brand" | "gold" | "olive" | "teal";
+}) {
+  return (
+    <div className="mt-4 flex items-center justify-between gap-3 text-xs">
+      <span className="text-[color:var(--text-muted)]">{label}</span>
+      <DesktopSearchOpenCue label={ctaLabel} tone={tone} />
+    </div>
+  );
+}
+
 function DesktopSearchStatusCard({
   description,
   status,
@@ -1135,7 +1188,7 @@ function DesktopSearchScopeCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
+        "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
         toneClassName,
       )}
     >
@@ -1168,10 +1221,19 @@ function DesktopSearchScopeCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
-        <span>{actionLabel}</span>
-        <span>查看该分类</span>
-      </div>
+      <DesktopSearchFooterAffordance
+        ctaLabel="查看该分类"
+        label={actionLabel}
+        tone={
+          category === "favorites"
+            ? "gold"
+            : category === "miniPrograms"
+              ? "teal"
+              : category === "moments"
+                ? "olive"
+                : "brand"
+        }
+      />
     </button>
   );
 }
@@ -1578,18 +1640,6 @@ function DesktopSearchFeatureCard({
       : category === "favorites"
         ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
         : "bg-[rgba(15,118,110,0.10)] text-[#226448]";
-  const iconToneClassName =
-    category === "contacts"
-      ? "bg-[rgba(7,193,96,0.10)] text-[#15803d]"
-      : category === "favorites"
-        ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
-        : "bg-[rgba(15,118,110,0.12)] text-[#0f766e]";
-  const ActionIcon =
-    category === "contacts"
-      ? UsersRound
-      : category === "favorites"
-        ? Bookmark
-        : Blocks;
   const actionLabel =
     category === "contacts"
       ? "查看资料与聊天入口"
@@ -1602,7 +1652,7 @@ function DesktopSearchFeatureCard({
       type="button"
       onClick={() => onOpen(item)}
       className={cn(
-        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
+        "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
         toneClassName,
       )}
     >
@@ -1652,17 +1702,23 @@ function DesktopSearchFeatureCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
-        <span>{actionLabel}</span>
-        <div
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full",
-            iconToneClassName,
-          )}
-        >
-          <ActionIcon size={15} />
-        </div>
-      </div>
+      <DesktopSearchFooterAffordance
+        ctaLabel={
+          category === "contacts"
+            ? "进入资料"
+            : category === "favorites"
+              ? "立即打开"
+              : "打开小程序"
+        }
+        label={actionLabel}
+        tone={
+          category === "favorites"
+            ? "gold"
+            : category === "miniPrograms"
+              ? "teal"
+              : "brand"
+        }
+      />
     </button>
   );
 }
@@ -1678,7 +1734,7 @@ function DesktopQuickLinkRow({
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className="flex w-full items-center gap-3 rounded-[14px] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)]"
+      className="group flex w-full items-center gap-3 rounded-[14px] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)]"
     >
       <AvatarChip
         name={item.avatarName ?? item.title}
@@ -1701,6 +1757,7 @@ function DesktopQuickLinkRow({
           {item.description}
         </div>
       </div>
+      <DesktopSearchOpenCue compact label="直达" tone="brand" />
     </button>
   );
 }
@@ -1719,7 +1776,7 @@ function DesktopSearchMessageGroupCard({
       <button
         type="button"
         onClick={() => onOpen(group.header)}
-        className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white"
+        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white"
       >
         <AvatarChip
           name={group.header.avatarName ?? group.header.title}
@@ -1739,8 +1796,11 @@ function DesktopSearchMessageGroupCard({
             {renderHighlightedText(group.header.meta, keyword)}
           </div>
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
-          {group.totalHits} 条相关记录
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+            {group.totalHits} 条相关记录
+          </div>
+          <DesktopSearchOpenCue compact label="进入会话" tone="brand" />
         </div>
       </button>
 
@@ -1751,7 +1811,7 @@ function DesktopSearchMessageGroupCard({
               key={item.id}
               type="button"
               onClick={() => onOpen(item)}
-              className="flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+              className="group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
                 <MessageSquareText size={15} />
@@ -1764,6 +1824,7 @@ function DesktopSearchMessageGroupCard({
                   {renderHighlightedText(item.meta, keyword)}
                 </div>
               </div>
+              <DesktopSearchOpenCue compact label="直达消息" tone="brand" />
             </button>
           ))}
         </div>
@@ -1786,7 +1847,7 @@ function DesktopSearchOfficialAccountGroupCard({
       <button
         type="button"
         onClick={() => onOpen(group.header)}
-        className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white"
+        className="group flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white"
       >
         <AvatarChip
           name={group.header.avatarName ?? group.header.title}
@@ -1809,8 +1870,11 @@ function DesktopSearchOfficialAccountGroupCard({
             {renderHighlightedText(group.header.description, keyword)}
           </div>
         </div>
-        <div className="shrink-0 rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
-          {group.totalHits} 篇相关文章
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="rounded-full bg-[rgba(7,193,96,0.10)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+            {group.totalHits} 篇相关文章
+          </div>
+          <DesktopSearchOpenCue compact label="进入账号" tone="brand" />
         </div>
       </button>
 
@@ -1821,7 +1885,7 @@ function DesktopSearchOfficialAccountGroupCard({
               key={item.id}
               type="button"
               onClick={() => onOpen(item)}
-              className="flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+              className="group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
             >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
                 <Newspaper size={15} />
@@ -1837,6 +1901,7 @@ function DesktopSearchOfficialAccountGroupCard({
                   {renderHighlightedText(item.meta, keyword)}
                 </div>
               </div>
+              <DesktopSearchOpenCue compact label="读文章" tone="brand" />
             </button>
           ))}
         </div>
@@ -1870,7 +1935,7 @@ function DesktopSearchContentCard({
       type="button"
       onClick={() => onOpen(item)}
       className={cn(
-        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
+        "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
         toneClassName,
       )}
     >
@@ -1906,10 +1971,11 @@ function DesktopSearchContentCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
-        <span>{actionLabel}</span>
-        <span>查看原内容</span>
-      </div>
+      <DesktopSearchFooterAffordance
+        ctaLabel="查看原内容"
+        label={actionLabel}
+        tone={item.category === "moments" ? "olive" : "brand"}
+      />
     </button>
   );
 }
@@ -1943,7 +2009,7 @@ function DesktopSearchResultRow({
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className="flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+      className="group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
     >
       <AvatarChip
         name={item.avatarName ?? item.title}
@@ -1966,6 +2032,7 @@ function DesktopSearchResultRow({
           {renderHighlightedText(item.description, keyword)}
         </div>
       </div>
+      <DesktopSearchOpenCue compact label="打开结果" tone="brand" />
     </button>
   );
 }
