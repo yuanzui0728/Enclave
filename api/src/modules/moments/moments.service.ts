@@ -1,4 +1,13 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { mkdir, writeFile } from 'fs/promises';
+import path from 'path';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
@@ -9,6 +18,22 @@ import { MomentCommentEntity } from './moment-comment.entity';
 import { MomentLikeEntity } from './moment-like.entity';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SocialService } from '../social/social.service';
+import {
+  normalizeMomentMediaDisplayName,
+  normalizeOptionalPositiveNumber,
+  sanitizeMomentMediaFileName,
+} from './moment-media.utils';
+import {
+  resolvePrimaryMomentMediaStorageDir,
+  resolveReadableMomentMediaPath,
+} from './moment-media.storage';
+import {
+  type CreateMomentInput,
+  type MomentContentType,
+  type MomentImageAsset,
+  type MomentMediaAsset,
+  type MomentVideoAsset,
+} from './moment-media.types';
 
 export interface MomentInteraction {
   characterId: string;
@@ -26,6 +51,8 @@ export interface Moment {
   authorType: string;
   text: string;
   location?: string;
+  contentType: MomentContentType;
+  media: MomentMediaAsset[];
   postedAt: Date;
   likeCount: number;
   commentCount: number;
@@ -54,15 +81,19 @@ export class MomentsService {
     private likeRepo: Repository<MomentLikeEntity>,
   ) {}
 
-  async createUserMoment(text: string): Promise<Moment> {
+  async createUserMoment(input: CreateMomentInput): Promise<Moment> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
     const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
+    const normalizedInput = this.normalizeCreateMomentInput(input);
     const post = this.postRepo.create({
       authorId: owner.id,
       authorName: owner.username?.trim() || 'You',
       authorAvatar: owner.avatar ?? '',
       authorType: 'user',
-      text,
+      text: normalizedInput.text,
+      location: normalizedInput.location,
+      contentType: normalizedInput.contentType,
+      mediaPayload: this.serializeMomentMedia(normalizedInput.media),
     });
     await this.postRepo.save(post);
     // Schedule AI reactions to user's moment
@@ -154,6 +185,8 @@ export class MomentsService {
         authorAvatar: char.avatar,
         authorType: 'character',
         text,
+        contentType: 'text',
+        mediaPayload: this.serializeMomentMedia([]),
       });
       await this.postRepo.save(post);
 
@@ -175,6 +208,78 @@ export class MomentsService {
       if (moment) results.push(moment);
     }
     return results;
+  }
+
+  async saveUploadedMedia(
+    file: {
+      buffer: Buffer;
+      mimetype: string;
+      originalname?: string;
+      size: number;
+    },
+    metadata: { width?: number; height?: number; durationMs?: number },
+  ): Promise<MomentMediaAsset> {
+    const isImage = file.mimetype.startsWith('image/');
+    const isVideo = file.mimetype.startsWith('video/');
+
+    if (!isImage && !isVideo) {
+      throw new BadRequestException('朋友圈当前仅支持图片或视频。');
+    }
+
+    const displayName = normalizeMomentMediaDisplayName(
+      file.originalname,
+      isImage ? 'moment-image' : 'moment-video',
+      file.mimetype,
+    );
+    const extension = path.extname(displayName) || '.bin';
+    const baseName = path.basename(displayName, extension) || 'moment-media';
+    const storedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${sanitizeMomentMediaFileName(baseName)}${extension}`;
+    const storageDir = this.resolveMomentMediaStorageDir();
+    const normalizedMimeType = file.mimetype || 'application/octet-stream';
+
+    await mkdir(storageDir, { recursive: true });
+    await writeFile(path.join(storageDir, storedFileName), file.buffer);
+
+    if (isImage) {
+      const asset: MomentImageAsset = {
+        id: storedFileName,
+        kind: 'image',
+        url: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
+        thumbnailUrl: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
+        mimeType: normalizedMimeType,
+        fileName: displayName,
+        size: file.size,
+        width: normalizeOptionalPositiveNumber(metadata.width),
+        height: normalizeOptionalPositiveNumber(metadata.height),
+      };
+      return asset;
+    }
+
+    const asset: MomentVideoAsset = {
+      id: storedFileName,
+      kind: 'video',
+      url: `${this.resolvePublicApiBaseUrl()}/api/moments/media/${storedFileName}`,
+      mimeType: normalizedMimeType,
+      fileName: displayName,
+      size: file.size,
+      width: normalizeOptionalPositiveNumber(metadata.width),
+      height: normalizeOptionalPositiveNumber(metadata.height),
+      durationMs: normalizeOptionalPositiveNumber(metadata.durationMs),
+    };
+    return asset;
+  }
+
+  resolveMomentMediaFilePath(fileName: string): string {
+    return resolveReadableMomentMediaPath(fileName);
+  }
+
+  normalizeMomentMediaFileName(fileName: string): string {
+    const normalized = path.basename(fileName).trim();
+    if (!normalized) {
+      throw new NotFoundException('Moment media not found');
+    }
+
+    return normalized;
   }
 
   private async scheduleCharacterInteractions(post: MomentPostEntity) {
@@ -218,7 +323,7 @@ export class MomentsService {
               const reply = await this.ai.generateReply({
                 profile,
                 conversationHistory: [],
-                userMessage: `你的朋友${post.authorName}发了一条朋友圈："${post.text}"，用一句话自然地评论一下，不超过20字。`,
+                userMessage: `你的朋友${post.authorName}发了一条朋友圈：${this.buildMomentPromptSummary(post)}。用一句话自然地评论一下，不超过20字。`,
               });
               await this.addComment(post.id, char.id, char.name, char.avatar, reply.text, 'character');
               return;
@@ -255,7 +360,7 @@ export class MomentsService {
           const reply = await this.ai.generateReply({
             profile,
             conversationHistory: [],
-            userMessage: `${commenterName}在你的朋友圈评论了："${commentText}"，你的朋友圈内容是："${post.text}"，回复一下，不超过20字。`,
+            userMessage: `${commenterName}在你的朋友圈评论了："${commentText}"，你的朋友圈内容是：${this.buildMomentPromptSummary(post)}，回复一下，不超过20字。`,
           });
           await this.addComment(postId, char.id, char.name, char.avatar, reply.text, 'character');
         } catch {
@@ -306,6 +411,8 @@ export class MomentsService {
       authorType: post.authorType,
       text: post.text,
       location: post.location,
+      contentType: this.normalizeMomentContentType(post.contentType),
+      media: this.parseMomentMediaPayload(post.mediaPayload),
       postedAt: post.postedAt,
       likeCount: visibleLikes.length,
       commentCount: visibleComments.length,
@@ -327,5 +434,220 @@ export class MomentsService {
         })),
       ],
     };
+  }
+
+  private normalizeCreateMomentInput(input: CreateMomentInput) {
+    const text = input.text?.trim() ?? '';
+    const location = input.location?.trim() || undefined;
+    const media = this.normalizeMomentMediaInput(input.media);
+    const inferredContentType = this.inferMomentContentType(media);
+    const contentType = this.normalizeMomentContentType(
+      input.contentType ?? inferredContentType,
+    );
+
+    if (!text && media.length === 0) {
+      throw new BadRequestException('朋友圈内容和媒体不能同时为空。');
+    }
+
+    this.assertMomentMediaMatchesContentType(contentType, media);
+
+    return {
+      text,
+      location,
+      contentType,
+      media,
+    };
+  }
+
+  private normalizeMomentMediaInput(input: MomentMediaAsset[] | undefined) {
+    if (!Array.isArray(input) || input.length === 0) {
+      return [];
+    }
+
+    return input.map((asset, index) => this.normalizeMomentMediaAsset(asset, index));
+  }
+
+  private normalizeMomentMediaAsset(
+    asset: MomentMediaAsset,
+    index: number,
+  ): MomentMediaAsset {
+    if (asset.kind === 'video') {
+      return {
+        id: asset.id?.trim() || `moment-video-${index + 1}`,
+        kind: 'video',
+        url: asset.url?.trim() || '',
+        posterUrl: asset.posterUrl?.trim() || undefined,
+        mimeType: asset.mimeType?.trim() || 'video/mp4',
+        fileName: asset.fileName?.trim() || `video-${index + 1}`,
+        size: Math.max(0, Math.round(asset.size ?? 0)),
+        width: normalizeOptionalPositiveNumber(asset.width),
+        height: normalizeOptionalPositiveNumber(asset.height),
+        durationMs: normalizeOptionalPositiveNumber(asset.durationMs),
+      };
+    }
+
+    return {
+      id: asset.id?.trim() || `moment-image-${index + 1}`,
+      kind: 'image',
+      url: asset.url?.trim() || '',
+      thumbnailUrl: asset.thumbnailUrl?.trim() || asset.url?.trim() || undefined,
+      mimeType: asset.mimeType?.trim() || 'image/jpeg',
+      fileName: asset.fileName?.trim() || `image-${index + 1}`,
+      size: Math.max(0, Math.round(asset.size ?? 0)),
+      width: normalizeOptionalPositiveNumber(asset.width),
+      height: normalizeOptionalPositiveNumber(asset.height),
+      livePhoto:
+        asset.livePhoto?.enabled
+          ? {
+              enabled: true,
+              motionUrl: asset.livePhoto.motionUrl?.trim() || undefined,
+            }
+          : undefined,
+    };
+  }
+
+  private inferMomentContentType(media: MomentMediaAsset[]): MomentContentType {
+    if (media.length === 0) {
+      return 'text';
+    }
+
+    if (media.some((asset) => asset.kind === 'video')) {
+      return 'video';
+    }
+
+    if (
+      media.some(
+        (asset) => asset.kind === 'image' && asset.livePhoto?.enabled,
+      )
+    ) {
+      return 'live_photo';
+    }
+
+    return 'image_album';
+  }
+
+  private normalizeMomentContentType(value?: string): MomentContentType {
+    return value === 'image_album' ||
+      value === 'video' ||
+      value === 'live_photo'
+      ? value
+      : 'text';
+  }
+
+  private assertMomentMediaMatchesContentType(
+    contentType: MomentContentType,
+    media: MomentMediaAsset[],
+  ) {
+    if (contentType === 'text') {
+      if (media.length > 0) {
+        throw new BadRequestException('纯文本朋友圈不能附带图片或视频。');
+      }
+      return;
+    }
+
+    if (contentType === 'video') {
+      if (media.length !== 1 || media[0]?.kind !== 'video') {
+        throw new BadRequestException('视频朋友圈必须且只能包含 1 条视频。');
+      }
+
+      if ((media[0] as MomentVideoAsset).durationMs && (media[0] as MomentVideoAsset).durationMs! > 300000) {
+        throw new BadRequestException('朋友圈视频时长不能超过 5 分钟。');
+      }
+      return;
+    }
+
+    if (media.length < 1 || media.length > 9) {
+      throw new BadRequestException('图片朋友圈最多支持 9 张图片。');
+    }
+
+    if (media.some((asset) => asset.kind !== 'image')) {
+      throw new BadRequestException('图片朋友圈当前只支持图片资源。');
+    }
+  }
+
+  private serializeMomentMedia(media: MomentMediaAsset[]) {
+    return media.length ? JSON.stringify(media) : undefined;
+  }
+
+  private parseMomentMediaPayload(payload?: string | null): MomentMediaAsset[] {
+    if (!payload?.trim()) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(payload);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+
+      return parsed
+        .map((asset, index) =>
+          this.normalizeMomentMediaAsset(asset as MomentMediaAsset, index),
+        )
+        .filter((asset) => asset.url);
+    } catch {
+      return [];
+    }
+  }
+
+  private buildMomentPromptSummary(post: MomentPostEntity) {
+    const media = this.parseMomentMediaPayload(post.mediaPayload);
+    const text = post.text?.trim();
+    const mediaSummary = this.describeMomentMedia(
+      this.normalizeMomentContentType(post.contentType),
+      media,
+    );
+
+    if (text && mediaSummary) {
+      return `“${text}”，并配有${mediaSummary}`;
+    }
+
+    if (text) {
+      return `“${text}”`;
+    }
+
+    if (mediaSummary) {
+      return `一条配有${mediaSummary}的朋友圈`;
+    }
+
+    return '一条朋友圈';
+  }
+
+  private describeMomentMedia(
+    contentType: MomentContentType,
+    media: MomentMediaAsset[],
+  ) {
+    if (!media.length) {
+      return '';
+    }
+
+    if (contentType === 'video') {
+      const video = media[0] as MomentVideoAsset | undefined;
+      if (!video) {
+        return '1 条视频';
+      }
+
+      return video.durationMs
+        ? `1 条时长约 ${Math.round(video.durationMs / 1000)} 秒的视频`
+        : '1 条视频';
+    }
+
+    const imageCount = media.filter((asset) => asset.kind === 'image').length;
+    if (contentType === 'live_photo') {
+      return `${imageCount} 张图片（含实况照片）`;
+    }
+
+    return `${imageCount} 张图片`;
+  }
+
+  private resolveMomentMediaStorageDir(): string {
+    return resolvePrimaryMomentMediaStorageDir();
+  }
+
+  private resolvePublicApiBaseUrl(): string {
+    return (
+      process.env.PUBLIC_API_BASE_URL?.trim() ||
+      `http://localhost:${process.env.PORT ?? 3000}`
+    ).replace(/\/+$/, '');
   }
 }

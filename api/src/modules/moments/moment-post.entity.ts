@@ -23,6 +23,12 @@ export class MomentPostEntity {
   @Column({ nullable: true })
   location?: string;
 
+  @Column({ default: 'text' })
+  contentType: string;
+
+  @Column('text', { nullable: true })
+  mediaPayload?: string;
+
   @Column({ default: 0 })
   likeCount: number;
 

@@ -71,7 +71,9 @@ import type {
   CreateUserMomentRequest,
   Moment,
   MomentComment,
+  MomentMediaAsset,
   ToggleMomentLikeResult,
+  UploadMomentMediaResponse,
 } from "./moments";
 import type {
   OfficialAccountArticleDetail,
@@ -443,6 +445,47 @@ function rebaseAttachmentUrl(assetUrl: URL, targetUrl: URL) {
   }
 
   return `${targetUrl.toString().replace(/\/+$/, "")}${assetPath}`;
+}
+
+function normalizeMomentMediaAsset(
+  asset: MomentMediaAsset,
+  baseUrl?: string,
+): MomentMediaAsset {
+  if (asset.kind === "video") {
+    return {
+      ...asset,
+      url: normalizeAttachmentAssetUrl(asset.url, baseUrl),
+      posterUrl: asset.posterUrl
+        ? normalizeAttachmentAssetUrl(asset.posterUrl, baseUrl)
+        : asset.posterUrl,
+    };
+  }
+
+  return {
+    ...asset,
+    url: normalizeAttachmentAssetUrl(asset.url, baseUrl),
+    thumbnailUrl: asset.thumbnailUrl
+      ? normalizeAttachmentAssetUrl(asset.thumbnailUrl, baseUrl)
+      : asset.thumbnailUrl,
+    livePhoto: asset.livePhoto
+      ? {
+          ...asset.livePhoto,
+          motionUrl: asset.livePhoto.motionUrl
+            ? normalizeAttachmentAssetUrl(asset.livePhoto.motionUrl, baseUrl)
+            : asset.livePhoto.motionUrl,
+        }
+      : asset.livePhoto,
+  };
+}
+
+function normalizeMoment(moment: Moment, baseUrl?: string): Moment {
+  return {
+    ...moment,
+    media: Array.isArray(moment.media)
+      ? moment.media.map((asset) => normalizeMomentMediaAsset(asset, baseUrl))
+      : [],
+    contentType: moment.contentType ?? "text",
+  };
 }
 
 function isPrivateHostname(hostname: string) {
@@ -2042,17 +2085,30 @@ export function createModerationReport(
 }
 
 export function getMoments(baseUrl?: string) {
-  return requestLegacyApi<Moment[]>("/moments", undefined, baseUrl);
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  return requestLegacyApi<Moment[]>("/moments", undefined, baseUrl).then(
+    (moments) => moments.map((moment) => normalizeMoment(moment, resolvedBaseUrl)),
+  );
 }
 
 export function getMoment(id: string, baseUrl?: string) {
-  return requestLegacyApi<Moment>(`/moments/${id}`, undefined, baseUrl);
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  return requestLegacyApi<Moment>(`/moments/${id}`, undefined, baseUrl).then(
+    (moment) => normalizeMoment(moment, resolvedBaseUrl),
+  );
 }
 
 export function createUserMoment(
   payload: CreateUserMomentRequest,
   baseUrl?: string,
 ) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
   return requestLegacyApi<Moment>(
     "/moments/user-post",
     {
@@ -2060,7 +2116,23 @@ export function createUserMoment(
       body: JSON.stringify(payload),
     },
     baseUrl,
-  );
+  ).then((moment) => normalizeMoment(moment, resolvedBaseUrl));
+}
+
+export function uploadMomentMedia(payload: FormData, baseUrl?: string) {
+  const resolvedBaseUrl = resolveCoreApiBaseUrl(baseUrl, {
+    allowDefault: false,
+  });
+  return requestLegacyApi<UploadMomentMediaResponse>(
+    "/moments/media",
+    {
+      method: "POST",
+      body: payload,
+    },
+    baseUrl,
+  ).then((response) => ({
+    media: normalizeMomentMediaAsset(response.media, resolvedBaseUrl),
+  }));
 }
 
 export function addMomentComment(

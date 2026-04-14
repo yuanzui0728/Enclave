@@ -95,7 +95,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（29个，物理表保持兼容）
+## 数据库实体（30个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -109,7 +109,7 @@
 
 **群聊**：Group · GroupMember · GroupMessage · GroupReplyTask
 
-**视频号**：FeedPost · FeedComment · UserFeedInteraction
+**视频号**：FeedPost · FeedComment · UserFeedInteraction · VideoChannelFollow
 
 **公众号**：OfficialAccount · OfficialAccountArticle · OfficialAccountFollow · OfficialAccountDelivery · OfficialAccountServiceMessage
 
@@ -150,6 +150,12 @@
 
 ## 会话管理结构（2026-04-08）
 
+- `MomentPost` 表现已扩展字段：`contentType`、`mediaPayload`，用于承载朋友圈文本 / 图集 / 视频 / 实况照片元数据，物理表保持兼容扩展
+- 朋友圈媒体路由：
+  - `POST /api/moments/media`
+  - `GET /api/moments/media/:fileName`
+- 朋友圈发布路由：
+  - `POST /api/moments/user-post` 现已规划支持文本、图片图集、视频与实况照片负载
 - `Conversation` 表保留字段：`isPinned`、`pinnedAt`、`isHidden`、`hiddenAt`、`strongReminderUntil`、`lastClearedAt`、`lastActivityAt`
 - `Conversation` 表现已扩展背景字段：`chatBackgroundMode`、`chatBackgroundPayload`，用于承载会话专属聊天背景配置
 - `Message` 表现已扩展附件字段：`attachmentKind`、`attachmentPayload`，用于承载 `sticker` 表情包消息元数据
@@ -354,8 +360,24 @@
 
 - `GET /api/moments` no longer accepts `authorId`; it always returns the current world's feed.
 - `FeedPost` 表现已扩展字段：`surface`，用于区分 `feed`（广场动态）与 `channels`（视频号），物理表仍保持兼容扩展
+- `FeedPost` 表现已扩展字段：`title`、`coverUrl`、`durationMs`、`aspectRatio`、`topicTags`、`publishStatus`、`shareCount`、`favoriteCount`、`viewCount`、`watchCount`、`completeCount`、`sourceKind`、`recommendationScore`、`statsPayload`，用于承载视频号内容元数据、状态与统计
+- `FeedComment` 表现已扩展字段：`parentCommentId`、`replyToCommentId`、`replyToAuthorId`、`likeCount`、`status`，用于承载视频号评论回复链路
+- `UserFeedInteraction` 表现已扩展字段：`payload`、`updatedAt`，用于承载视频号浏览进度、分享来源与评论点赞等互动元数据
+- `VideoChannelFollow`：用于持久化世界主人对视频号作者的关注关系
 - `GET /api/feed` 现已支持 `surface=feed|channels`
+- `GET /api/feed/channels/home` 现已提供，用于返回视频号首页分栏、作者摘要、直播卡与推荐流聚合结果
+- `GET /api/feed/channels/authors/:authorId` 现已提供，用于返回视频号作者主页摘要与最近内容
+- `POST /api/feed/channels/authors/:authorId/follow`
+- `DELETE /api/feed/channels/authors/:authorId/follow`
 - `POST /api/feed/channels/generate` 现已提供，用于生成一条新的视频号 AI 内容
+- `GET /api/feed/:id/comments`
+- `POST /api/feed/:id/favorite`
+- `DELETE /api/feed/:id/favorite`
+- `POST /api/feed/:id/share`
+- `POST /api/feed/:id/view`
+- `POST /api/feed/:id/not-interested`
+- `POST /api/feed/comments/:id/like`
+- `POST /api/feed/comments/:id/reply`
 - 聊天消息契约现已支持 `sticker` 类型；消息附件元数据由共享表情包目录解析并写入 `Message.attachment`
 - 聊天附件消息现已扩展支持 `image`、`file`、`contact_card`、`location_card`、`note_card`；群聊消息同步支持附件元数据
 - `POST /api/groups/:id/messages` 现已支持图片、文件、名片、位置卡片附件负载
