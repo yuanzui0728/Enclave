@@ -14,7 +14,7 @@ import {
   getMoments,
   toggleMomentLike,
 } from "@yinjie/contracts";
-import { AppPage, ErrorBlock, LoadingBlock } from "@yinjie/ui";
+import { AppPage, Button, ErrorBlock, LoadingBlock } from "@yinjie/ui";
 import {
   hydrateDesktopFavoritesFromNative,
   readDesktopFavorites,
