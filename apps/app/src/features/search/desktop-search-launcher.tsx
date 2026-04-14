@@ -120,6 +120,8 @@ type SearchLauncherFocusRegion =
   | "quickAccess"
   | "history";
 
+type SearchLauncherNavigationLayer = "input" | "panel";
+
 type SearchLauncherFocusPanelId =
   | "chatSuggestions"
   | "officialSuggestions"
@@ -662,6 +664,8 @@ export function DesktopSearchDropdownPanel({
     miniProgramMatches.length > 0;
   const [activeActionId, setActiveActionId] =
     useState<string>("launcher-search");
+  const [navigationLayer, setNavigationLayer] =
+    useState<SearchLauncherNavigationLayer>("input");
 
   const handleOpenQuickLink = useCallback(
     (item: DesktopSearchQuickLink) => {
@@ -825,8 +829,34 @@ export function DesktopSearchDropdownPanel({
     trimmedKeyword,
     worldCharacterMatches,
   ]);
+  const panelActionItems = useMemo(
+    () => actionItems.filter((item) => item.id !== "launcher-search"),
+    [actionItems],
+  );
+  const panelActionIndex = useMemo(
+    () => panelActionItems.findIndex((item) => item.id === activeActionId),
+    [activeActionId, panelActionItems],
+  );
+  const preferredPanelActionId = useMemo(() => {
+    if (
+      activeActionId !== "launcher-search" &&
+      panelActionItems.some((item) => item.id === activeActionId)
+    ) {
+      return activeActionId;
+    }
+
+    return panelActionItems[0]?.id ?? null;
+  }, [activeActionId, panelActionItems]);
+  const activateLauncherSearch = useCallback(() => {
+    setNavigationLayer("input");
+    setActiveActionId("launcher-search");
+  }, []);
+  const activatePanelAction = useCallback((actionId: string) => {
+    setNavigationLayer("panel");
+    setActiveActionId(actionId);
+  }, []);
   const activeFocusContext = useMemo(() => {
-    if (activeActionId === "launcher-search") {
+    if (navigationLayer === "input") {
       return {
         panelId: null as SearchLauncherFocusPanelId,
         panelTitle: "搜一搜主入口",
@@ -989,6 +1019,7 @@ export function DesktopSearchDropdownPanel({
     recentMiniPrograms,
     trimmedKeyword,
     worldCharacterMatches,
+    navigationLayer,
   ]);
 
   useEffect(() => {
@@ -997,9 +1028,26 @@ export function DesktopSearchDropdownPanel({
         return current;
       }
 
+      if (navigationLayer === "panel" && panelActionItems[0]) {
+        return panelActionItems[0].id;
+      }
+
       return actionItems[0]?.id ?? "launcher-search";
     });
-  }, [actionItems]);
+  }, [actionItems, navigationLayer, panelActionItems]);
+
+  useEffect(() => {
+    setNavigationLayer("input");
+  }, [trimmedKeyword]);
+
+  useEffect(() => {
+    if (panelActionItems.length) {
+      return;
+    }
+
+    setNavigationLayer("input");
+    setActiveActionId("launcher-search");
+  }, [panelActionItems.length]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1008,6 +1056,40 @@ export function DesktopSearchDropdownPanel({
       }
 
       if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      if (event.key === "Tab" && !event.shiftKey) {
+        if (!panelActionItems.length) {
+          return;
+        }
+
+        event.preventDefault();
+        if (navigationLayer === "input") {
+          activatePanelAction(preferredPanelActionId ?? panelActionItems[0]!.id);
+          return;
+        }
+
+        const nextIndex =
+          panelActionIndex >= 0
+            ? (panelActionIndex + 1) % panelActionItems.length
+            : 0;
+        activatePanelAction(panelActionItems[nextIndex]?.id ?? panelActionItems[0]!.id);
+        return;
+      }
+
+      if (event.key === "Tab" && event.shiftKey) {
+        if (navigationLayer === "input") {
+          return;
+        }
+
+        event.preventDefault();
+        if (panelActionIndex <= 0) {
+          activateLauncherSearch();
+          return;
+        }
+
+        activatePanelAction(panelActionItems[panelActionIndex - 1]!.id);
         return;
       }
 
@@ -1025,32 +1107,48 @@ export function DesktopSearchDropdownPanel({
         return;
       }
 
-      const currentIndex = actionItems.findIndex(
-        (item) => item.id === activeActionId,
-      );
-
       if (event.key === "ArrowDown") {
         event.preventDefault();
+        if (!panelActionItems.length) {
+          setNavigationLayer("input");
+          setActiveActionId("launcher-search");
+          return;
+        }
+
         const nextIndex =
-          currentIndex >= 0 ? (currentIndex + 1) % actionItems.length : 0;
-        setActiveActionId(actionItems[nextIndex]?.id ?? "launcher-search");
+          navigationLayer === "panel" && panelActionIndex >= 0
+            ? (panelActionIndex + 1) % panelActionItems.length
+            : 0;
+        activatePanelAction(panelActionItems[nextIndex]?.id ?? panelActionItems[0]!.id);
         return;
       }
 
       if (event.key === "ArrowUp") {
         event.preventDefault();
+        if (!panelActionItems.length) {
+          setNavigationLayer("input");
+          setActiveActionId("launcher-search");
+          return;
+        }
+
         const nextIndex =
-          currentIndex >= 0
-            ? (currentIndex - 1 + actionItems.length) % actionItems.length
-            : actionItems.length - 1;
-        setActiveActionId(actionItems[nextIndex]?.id ?? "launcher-search");
+          navigationLayer === "panel" && panelActionIndex >= 0
+            ? (panelActionIndex - 1 + panelActionItems.length) %
+              panelActionItems.length
+            : panelActionItems.length - 1;
+        activatePanelAction(panelActionItems[nextIndex]?.id ?? panelActionItems[0]!.id);
         return;
       }
 
       if (event.key === "Enter") {
         event.preventDefault();
+        if (navigationLayer === "input") {
+          onOpenSearch(keyword);
+          return;
+        }
+
         const activeItem =
-          actionItems[currentIndex >= 0 ? currentIndex : 0] ?? null;
+          panelActionItems[panelActionIndex >= 0 ? panelActionIndex : 0] ?? null;
         if (activeItem) {
           activeItem.onSelect();
           return;
@@ -1064,7 +1162,19 @@ export function DesktopSearchDropdownPanel({
     return () => {
       window.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [actionItems, activeActionId, keyword, onClose, onOpenSearch]);
+  }, [
+    actionItems,
+    activateLauncherSearch,
+    activatePanelAction,
+    activeActionId,
+    keyword,
+    navigationLayer,
+    onClose,
+    onOpenSearch,
+    panelActionIndex,
+    panelActionItems,
+    preferredPanelActionId,
+  ]);
 
   return (
     <div
@@ -1074,10 +1184,10 @@ export function DesktopSearchDropdownPanel({
       )}
     >
       <SearchLauncherHeroCard
-        active={activeActionId === "launcher-search"}
+        active={navigationLayer === "input"}
         keyword={trimmedKeyword}
         onClick={() => onOpenSearch(keyword)}
-        onMouseEnter={() => setActiveActionId("launcher-search")}
+        onMouseEnter={activateLauncherSearch}
       />
 
       {speechStatus !== "idle" || speechError ? (
@@ -1111,6 +1221,7 @@ export function DesktopSearchDropdownPanel({
 
       <SearchLauncherFocusStrip
         keyword={trimmedKeyword}
+        layer={navigationLayer}
         panelTitle={activeFocusContext.panelTitle}
         region={activeFocusContext.region}
       />
@@ -1157,8 +1268,8 @@ export function DesktopSearchDropdownPanel({
                         keyword={trimmedKeyword}
                         onOpenHeader={(item) => handleOpenQuickLink(item)}
                         onOpenMessage={(item) => handleOpenQuickLink(item)}
-                        onSelectHeader={(item) => setActiveActionId(item.id)}
-                        onSelectMessage={(item) => setActiveActionId(item.id)}
+                        onSelectHeader={(item) => activatePanelAction(item.id)}
+                        onSelectMessage={(item) => activatePanelAction(item.id)}
                       />
                     ))}
 
@@ -1174,7 +1285,7 @@ export function DesktopSearchDropdownPanel({
                               active={activeActionId === item.id}
                               item={item}
                               keyword={trimmedKeyword}
-                              onMouseEnter={() => setActiveActionId(item.id)}
+                              onMouseEnter={() => activatePanelAction(item.id)}
                               onClick={() => handleOpenQuickLink(item)}
                             />
                           ))}
@@ -1203,8 +1314,8 @@ export function DesktopSearchDropdownPanel({
                         keyword={trimmedKeyword}
                         onOpenArticle={(item) => handleOpenQuickLink(item)}
                         onOpenHeader={(item) => handleOpenQuickLink(item)}
-                        onSelectArticle={(item) => setActiveActionId(item.id)}
-                        onSelectHeader={(item) => setActiveActionId(item.id)}
+                        onSelectArticle={(item) => activatePanelAction(item.id)}
+                        onSelectHeader={(item) => activatePanelAction(item.id)}
                       />
                     ))}
                   </div>
@@ -1234,7 +1345,7 @@ export function DesktopSearchDropdownPanel({
                         title={getFriendDisplayName(item)}
                         variant="contact"
                         onMouseEnter={() =>
-                          setActiveActionId(`friend-${item.character.id}`)
+                          activatePanelAction(`friend-${item.character.id}`)
                         }
                         onClick={() => {
                           onClose?.();
@@ -1277,7 +1388,7 @@ export function DesktopSearchDropdownPanel({
                         title={item.character.name}
                         variant="worldCharacter"
                         onMouseEnter={() =>
-                          setActiveActionId(
+                          activatePanelAction(
                             `world-character-${item.character.id}`,
                           )
                         }
@@ -1310,7 +1421,7 @@ export function DesktopSearchDropdownPanel({
                         item={item}
                         keyword={trimmedKeyword}
                         variant="favorites"
-                        onMouseEnter={() => setActiveActionId(item.id)}
+                        onMouseEnter={() => activatePanelAction(item.id)}
                         onClick={() => handleOpenQuickLink(item)}
                       />
                     ))}
@@ -1334,7 +1445,7 @@ export function DesktopSearchDropdownPanel({
                         item={item}
                         keyword={trimmedKeyword}
                         variant="miniPrograms"
-                        onMouseEnter={() => setActiveActionId(item.id)}
+                        onMouseEnter={() => activatePanelAction(item.id)}
                         onClick={() => handleOpenQuickLink(item)}
                       />
                     ))}
@@ -1391,7 +1502,7 @@ export function DesktopSearchDropdownPanel({
                       active={activeActionId === item.id}
                       item={item}
                       keyword=""
-                      onMouseEnter={() => setActiveActionId(item.id)}
+                      onMouseEnter={() => activatePanelAction(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
                   ))}
@@ -1415,8 +1526,8 @@ export function DesktopSearchDropdownPanel({
                       keyword=""
                       onOpenArticle={(item) => handleOpenQuickLink(item)}
                       onOpenHeader={(item) => handleOpenQuickLink(item)}
-                      onSelectArticle={(item) => setActiveActionId(item.id)}
-                      onSelectHeader={(item) => setActiveActionId(item.id)}
+                      onSelectArticle={(item) => activatePanelAction(item.id)}
+                      onSelectHeader={(item) => activatePanelAction(item.id)}
                     />
                   ))}
                 </div>
@@ -1437,7 +1548,7 @@ export function DesktopSearchDropdownPanel({
                       item={item}
                       keyword=""
                       variant="miniPrograms"
-                      onMouseEnter={() => setActiveActionId(item.id)}
+                      onMouseEnter={() => activatePanelAction(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
                   ))}
@@ -1470,7 +1581,7 @@ export function DesktopSearchDropdownPanel({
                       item={item}
                       keyword=""
                       variant="favorites"
-                      onMouseEnter={() => setActiveActionId(item.id)}
+                      onMouseEnter={() => activatePanelAction(item.id)}
                       onClick={() => handleOpenQuickLink(item)}
                     />
                   ))}
@@ -1499,7 +1610,7 @@ export function DesktopSearchDropdownPanel({
                   type="button"
                   onClick={() => onOpenSearch(item.keyword)}
                   onMouseEnter={() =>
-                    setActiveActionId(
+                    activatePanelAction(
                       buildSearchLauncherHistoryActionId(item.keyword),
                     )
                   }
@@ -1568,10 +1679,12 @@ function SearchLauncherSection({
 
 function SearchLauncherFocusStrip({
   keyword,
+  layer,
   panelTitle,
   region,
 }: {
   keyword: string;
+  layer: SearchLauncherNavigationLayer;
   panelTitle: string;
   region: SearchLauncherFocusRegion;
 }) {
@@ -1585,13 +1698,13 @@ function SearchLauncherFocusStrip({
           ? "bg-[rgba(15,118,110,0.10)] text-[#226448]"
           : "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]";
   const description =
-    region === "input"
+    layer === "input"
       ? keyword
-        ? `当前仍在搜索框里输入，按 Enter 可直接搜索“${keyword}”。`
-        : "当前仍在搜索框里输入，继续键入关键词或按 Enter 打开搜一搜。"
+        ? `当前仍在搜索框里输入，按 Tab 进入当前结果层，按 Enter 可直接搜索“${keyword}”。`
+        : "当前仍在搜索框里输入，继续键入关键词，或按 Tab / Enter 进入下一步。"
       : region === "history"
-        ? "当前正在浏览最近搜索，按 Enter 可直接复用这条关键词。"
-        : `当前定位在${panelTitle}，按 ↑ ↓ 继续切换，按 Enter 直接打开当前项。`;
+        ? "当前正在浏览最近搜索，按 Tab 继续切换，按 Shift+Tab 回搜索框。"
+        : `当前定位在${panelTitle}，按 Tab / ↑ ↓ 继续切换，按 Shift+Tab 回搜索框。`;
 
   return (
     <section className="mt-2 rounded-[16px] border border-[rgba(7,193,96,0.14)] bg-[rgba(247,250,250,0.94)] px-3.5 py-3">
@@ -1615,7 +1728,7 @@ function SearchLauncherFocusStrip({
         {description}
       </div>
       <div className="mt-2 inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
-        ↑ ↓ 切换 · Enter 打开 · Esc 关闭
+        Tab 进面板 · Shift+Tab 回搜索框 · ↑ ↓ 切换 · Enter 打开 · Esc 关闭
       </div>
     </section>
   );
