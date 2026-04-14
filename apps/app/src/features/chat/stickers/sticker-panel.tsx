@@ -733,6 +733,9 @@ export function StickerPanel({
   const pausedManageUploadLabel = customDeleteFeedback?.slotsRemaining
     ? `已腾出 ${customDeleteFeedback.slotsRemaining} 个空位，可直接添加`
     : null;
+  const pausedManagePrimaryHint = customUploadResumed
+    ? "搜索中已暂停删除管理，清空搜索后可继续删除，也可直接继续添加。"
+    : "搜索中已暂停删除管理，清空搜索后可继续删除。";
   const bottomEnterSearchHint =
     highlightedSearchPosition === 1 ? "Enter 发首推" : "Enter 发当前";
   const bottomHomeSearchHint =
@@ -1772,7 +1775,7 @@ export function StickerPanel({
             <div className="px-1 pt-2">
               <div className="flex items-start justify-between gap-3 rounded-[14px] border border-[rgba(160,90,10,0.18)] bg-[rgba(255,251,235,0.94)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
                 <div className="min-w-0 flex-1">
-                  <div>搜索中已暂停删除管理，清空搜索后可继续删除。</div>
+                  <div>{pausedManagePrimaryHint}</div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
                     <span className="rounded-full bg-white/88 px-2 py-1 text-[#9a5a0a]">
                       {pausedManageResumeLabel}
