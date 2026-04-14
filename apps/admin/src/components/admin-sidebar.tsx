@@ -5,20 +5,14 @@ import type { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-s
 
 type SidebarLink = {
   label: string;
-  to: "/" | "/characters" | "/setup" | "/evals" | "/reply-logic";
+  to: "/" | "/characters" | "/evals" | "/reply-logic";
   hint: string;
-};
-
-type ContextLink = {
-  label: string;
-  href: string;
-  active: boolean;
 };
 
 type SidebarIssue = {
   label: string;
   detail: string;
-  to: "/" | "/characters" | "/setup" | "/evals" | "/reply-logic";
+  to: "/" | "/characters" | "/evals" | "/reply-logic";
 };
 
 type AdminSidebarProps = {
@@ -33,8 +27,6 @@ type AdminSidebarProps = {
   digitalHumanSummary: ReturnType<typeof buildDigitalHumanAdminSummary>;
   ownerCount: number | null;
   navLinks: readonly SidebarLink[];
-  contextTitle?: string;
-  contextLinks?: ContextLink[];
 };
 
 const NAV_LINK =
@@ -68,29 +60,27 @@ export function AdminSidebar({
   digitalHumanSummary,
   ownerCount,
   navLinks,
-  contextTitle,
-  contextLinks,
 }: AdminSidebarProps) {
   const issues: SidebarIssue[] = [];
   if (!coreApiHealthy) {
     issues.push({
       label: "远程 API 离线",
       detail: "先恢复世界实例连接，再继续后台操作。",
-      to: "/setup",
+      to: "/",
     });
   }
   if (!providerReady) {
     issues.push({
       label: "推理服务未配置",
       detail: "补齐模型、接口和 API Key，否则无法跑真实生成。",
-      to: "/setup",
+      to: "/",
     });
   }
   if (!digitalHumanSummary.ready) {
     issues.push({
       label: `数字人 ${digitalHumanSummary.statusLabel}`,
       detail: digitalHumanSummary.nextStep,
-      to: "/setup",
+      to: "/",
     });
   }
   if (ownerCount !== null && ownerCount !== 1) {
@@ -175,26 +165,6 @@ export function AdminSidebar({
           </div>
         </section>
 
-        {contextLinks?.length ? (
-          <section>
-            <AdminEyebrow className="px-1">{contextTitle ?? "当前上下文"}</AdminEyebrow>
-            <div className="mt-2 space-y-1 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] p-2">
-              {contextLinks.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={
-                    item.active
-                      ? "block rounded-[14px] border border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] px-3 py-2 text-sm font-medium text-[color:var(--brand-primary)]"
-                      : "block rounded-[14px] border border-transparent px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
-                  }
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </section>
-        ) : null}
       </nav>
 
       {/* Secret — compact when configured */}
