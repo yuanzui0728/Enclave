@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   type Dispatch,
+  type ReactNode,
   type SetStateAction,
 } from "react";
 import {
@@ -353,17 +354,9 @@ export function DesktopSearchWorkspace({
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                        最近搜索
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        空态先展示你最近真正用过的关键词。
-                      </div>
-                    </div>
-                    {history.length ? (
+                <DesktopSearchLandingPanel
+                  action={
+                    history.length ? (
                       <button
                         type="button"
                         onClick={onClearHistory}
@@ -371,15 +364,18 @@ export function DesktopSearchWorkspace({
                       >
                         清空
                       </button>
-                    ) : null}
-                  </div>
-
+                    ) : null
+                  }
+                  countLabel={history.length ? `${history.length} 条记录` : undefined}
+                  description="空态先展示你最近真正用过的关键词。"
+                  title="最近搜索"
+                >
                   {history.length ? (
-                    <div className="mt-4 space-y-2">
+                    <div className="space-y-2">
                       {history.map((item) => (
                         <div
                           key={item.keyword}
-                          className="flex items-center gap-2 rounded-[14px] bg-[color:var(--surface-console)] px-3 py-2.5"
+                          className="flex items-center gap-2 rounded-[14px] bg-white px-3 py-2.5"
                         >
                           <button
                             type="button"
@@ -405,14 +401,14 @@ export function DesktopSearchWorkspace({
                       ))}
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-6">
+                    <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-6">
                       <EmptyState
                         title="还没有最近搜索"
                         description="从聊天、通讯录或左侧导航进入搜一搜后，这里会开始积累关键词。"
                       />
                     </div>
                   )}
-                </section>
+                </DesktopSearchLandingPanel>
 
                 <div className="space-y-4">
                   <DesktopQuickLinksPanel
@@ -640,29 +636,62 @@ function DesktopQuickLinksPanel({
   title: string;
 }) {
   return (
-    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
-      <div>
-        <div className="text-sm font-medium text-[color:var(--text-primary)]">
-          {title}
-        </div>
-        {description ? (
-          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-            {description}
-          </div>
-        ) : null}
-      </div>
-
+    <DesktopSearchLandingPanel
+      countLabel={items.length ? `${items.length} 个入口` : undefined}
+      description={description}
+      title={title}
+    >
       {items.length ? (
-        <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+        <div className="space-y-2">
           {items.map((item) => (
             <DesktopQuickLinkRow key={item.id} item={item} onOpen={onOpen} />
           ))}
         </div>
       ) : emptyText ? (
-        <div className="mt-4 rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-6 text-xs leading-6 text-[color:var(--text-muted)]">
+        <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-6 text-xs leading-6 text-[color:var(--text-muted)]">
           {emptyText}
         </div>
       ) : null}
+    </DesktopSearchLandingPanel>
+  );
+}
+
+function DesktopSearchLandingPanel({
+  action,
+  children,
+  countLabel,
+  description,
+  title,
+}: {
+  action?: ReactNode;
+  children: ReactNode;
+  countLabel?: string;
+  description: string;
+  title: string;
+}) {
+  return (
+    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+            {title}
+          </div>
+          {description ? (
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              {description}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2">
+          {countLabel ? (
+            <div className="rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
+              {countLabel}
+            </div>
+          ) : null}
+          {action}
+        </div>
+      </div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
@@ -983,7 +1012,7 @@ function DesktopQuickLinkRow({
     <button
       type="button"
       onClick={() => onOpen(item)}
-      className="flex w-full items-center gap-3 px-0 py-3 text-left transition first:pt-0 last:pb-0 hover:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[14px] bg-white px-3 py-3 text-left transition hover:bg-[rgba(7,193,96,0.04)]"
     >
       <AvatarChip
         name={item.avatarName ?? item.title}
