@@ -11,6 +11,15 @@ import {
   type StickerAttachment,
 } from "@yinjie/contracts";
 import { type ChatComposerAttachmentPayload } from "./chat-plus-types";
+import {
+  buildDirectRetryPayload,
+  buildOptimisticDirectMessage,
+  type DirectThreadMessage,
+  markThreadMessageSending,
+  markThreadMessagesFailed,
+  mergeDirectMessageWindow,
+  upsertIncomingDirectMessage,
+} from "./chat-message-delivery";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import {
   emitChatMessage,
@@ -21,8 +30,6 @@ import {
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
-import { sanitizeDisplayedChatText } from "../../lib/chat-text";
-import { parseTimestamp } from "../../lib/format";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
 
@@ -33,7 +40,7 @@ export function useConversationThread(conversationId: string) {
   const runtimeConfig = useAppRuntimeConfig();
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [text, setText] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<DirectThreadMessage[]>([]);
   const [typingCharacterId, setTypingCharacterId] = useState<string | null>(
     null,
   );
@@ -120,7 +127,9 @@ export function useConversationThread(conversationId: string) {
   );
 
   useEffect(() => {
-    setMessages(messagesQuery.data ?? []);
+    setMessages((current) =>
+      mergeDirectMessageWindow(current, messagesQuery.data ?? []),
+    );
   }, [messagesQuery.data]);
 
   useEffect(() => {
@@ -190,23 +199,7 @@ export function useConversationThread(conversationId: string) {
       }
 
       setSocketError(null);
-      setMessages((current) => {
-        const withoutPendingEcho =
-          payload.senderType === "user" && payload.senderId === ownerId
-            ? removePendingUserEcho(current, payload)
-            : current;
-
-        const existingIndex = withoutPendingEcho.findIndex(
-          (item) => item.id === payload.id,
-        );
-        if (existingIndex >= 0) {
-          const nextMessages = [...withoutPendingEcho];
-          nextMessages[existingIndex] = payload;
-          return nextMessages;
-        }
-
-        return [...withoutPendingEcho, payload];
-      });
+      setMessages((current) => upsertIncomingDirectMessage(current, payload));
       syncActiveConversationMessage(payload);
 
       if (payload.senderType === "character") {
@@ -244,9 +237,7 @@ export function useConversationThread(conversationId: string) {
     });
 
     const offError = onChatError((message) => {
-      setMessages((current) =>
-        current.filter((item) => !item.id.startsWith("local_")),
-      );
+      setMessages((current) => markThreadMessagesFailed(current));
       setSocketError(message);
     });
 
@@ -306,30 +297,29 @@ export function useConversationThread(conversationId: string) {
   ]);
 
   const sendMutation = useMutation({
-    mutationFn: async (payload: SendMessagePayload) => {
+    mutationFn: async (input: {
+      payload: SendMessagePayload;
+      retryMessageId?: string;
+    }) => {
       if (!ownerId) {
         return;
       }
 
-      const targetCharacterId = resolveTargetCharacterId({
-        conversationId,
-        ownerId,
-        messages,
-        participants,
-      });
-
-      if (!targetCharacterId) {
-        throw new Error("The target character is not ready yet.");
-      }
-
-      emitChatMessage(payload);
-
       setSocketError(null);
-      setMessages((current) => [
-        ...current,
-        buildOptimisticMessage(payload, ownerId, username ?? "You"),
-      ]);
-      if (payload.type !== "sticker") {
+      emitChatMessage(input.payload);
+      setMessages((current) =>
+        input.retryMessageId
+          ? markThreadMessageSending(current, input.retryMessageId)
+          : [
+              ...current,
+              buildOptimisticDirectMessage({
+                payload: input.payload,
+                ownerId,
+                senderName: username ?? "You",
+              }),
+            ],
+      );
+      if (!input.retryMessageId && input.payload.type !== "sticker") {
         setText("");
       }
     },
@@ -353,9 +343,11 @@ export function useConversationThread(conversationId: string) {
     }
 
     await sendMutation.mutateAsync({
-      conversationId,
-      characterId: targetCharacterId,
-      text: trimmed,
+      payload: {
+        conversationId,
+        characterId: targetCharacterId,
+        text: trimmed,
+      },
     });
   };
 
@@ -379,16 +371,18 @@ export function useConversationThread(conversationId: string) {
     }
 
     await sendMutation.mutateAsync({
-      conversationId,
-      characterId: targetCharacterId,
-      type: "sticker",
-      text: overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
-      sticker: {
-        sourceType: sticker.sourceType,
-        packId: sticker.packId,
-        stickerId: sticker.stickerId,
+      payload: {
+        conversationId,
+        characterId: targetCharacterId,
+        type: "sticker",
+        text: overrideText ?? `[表情包] ${sticker.label ?? sticker.stickerId}`,
+        sticker: {
+          sourceType: sticker.sourceType,
+          packId: sticker.packId,
+          stickerId: sticker.stickerId,
+        },
+        attachment: sticker,
       },
-      attachment: sticker,
     });
   };
 
@@ -423,11 +417,13 @@ export function useConversationThread(conversationId: string) {
       }
 
       await sendMutation.mutateAsync({
-        conversationId,
-        characterId: targetCharacterId,
-        type: "image",
-        text: overrideText,
-        attachment: result.attachment,
+        payload: {
+          conversationId,
+          characterId: targetCharacterId,
+          type: "image",
+          text: overrideText,
+          attachment: result.attachment,
+        },
       });
       return;
     }
@@ -442,11 +438,13 @@ export function useConversationThread(conversationId: string) {
       }
 
       await sendMutation.mutateAsync({
-        conversationId,
-        characterId: targetCharacterId,
-        type: "file",
-        text: overrideText,
-        attachment: result.attachment,
+        payload: {
+          conversationId,
+          characterId: targetCharacterId,
+          type: "file",
+          text: overrideText,
+          attachment: result.attachment,
+        },
       });
       return;
     }
@@ -464,46 +462,79 @@ export function useConversationThread(conversationId: string) {
       }
 
       await sendMutation.mutateAsync({
-        conversationId,
-        characterId: targetCharacterId,
-        type: "voice",
-        text: overrideText,
-        attachment: result.attachment,
+        payload: {
+          conversationId,
+          characterId: targetCharacterId,
+          type: "voice",
+          text: overrideText,
+          attachment: result.attachment,
+        },
       });
       return;
     }
 
     if (payload.type === "contact_card") {
       await sendMutation.mutateAsync({
-        conversationId,
-        characterId: targetCharacterId,
-        type: "contact_card",
-        text: overrideText,
-        attachment: payload.attachment,
+        payload: {
+          conversationId,
+          characterId: targetCharacterId,
+          type: "contact_card",
+          text: overrideText,
+          attachment: payload.attachment,
+        },
       });
       return;
     }
 
     await sendMutation.mutateAsync({
-      conversationId,
-      characterId: targetCharacterId,
-      type: "location_card",
-      text: overrideText,
-      attachment: payload.attachment,
+      payload: {
+        conversationId,
+        characterId: targetCharacterId,
+        type: "location_card",
+        text: overrideText,
+        attachment: payload.attachment,
+      },
     });
   };
 
-  const renderedMessages = useMemo(() => {
-    const deduped = new Map<string, Message>();
-    for (const item of messages) {
-      deduped.set(item.id, item);
-    }
-    return [...deduped.values()].sort(
-      (left, right) =>
-        (parseTimestamp(left.createdAt) ?? 0) -
-        (parseTimestamp(right.createdAt) ?? 0),
-    );
-  }, [messages]);
+  const retryMessage = useCallback(
+    async (messageId: string) => {
+      if (!ownerId) {
+        return;
+      }
+
+      const failedMessage = messages.find(
+        (message) =>
+          message.id === messageId && message.localStatus === "failed",
+      );
+      if (!failedMessage) {
+        return;
+      }
+
+      const targetCharacterId = resolveTargetCharacterId({
+        conversationId,
+        ownerId,
+        messages,
+        participants,
+      });
+      const payload = buildDirectRetryPayload({
+        message: failedMessage,
+        characterId: targetCharacterId,
+      });
+
+      if (!payload) {
+        throw new Error("这条消息暂时无法重试发送。");
+      }
+
+      await sendMutation.mutateAsync({
+        payload,
+        retryMessageId: messageId,
+      });
+    },
+    [conversationId, messages, ownerId, participants, sendMutation],
+  );
+
+  const renderedMessages = useMemo(() => messages, [messages]);
 
   const loadOlderMessages = useCallback(async () => {
     if (messagesQuery.isFetching || !hasOlderMessages) {
@@ -549,7 +580,9 @@ export function useConversationThread(conversationId: string) {
         }
 
         suppressNextPendingCount();
-        setMessages((current) => mergeMessageWindow(current, windowMessages));
+        setMessages((current) =>
+          mergeDirectMessageWindow(current, windowMessages),
+        );
         return windowMessages.some(
           (message) => message.id === normalizedMessageId,
         );
@@ -583,6 +616,7 @@ export function useConversationThread(conversationId: string) {
     sendStickerMessage,
     sendAttachmentMessage,
     sendTextMessage,
+    retryMessage,
     setSocketError,
     setText,
     socketError,
@@ -593,164 +627,6 @@ export function useConversationThread(conversationId: string) {
 
 const INITIAL_MESSAGE_LIMIT = 60;
 const HISTORY_PAGE_SIZE = 40;
-
-function removePendingUserEcho(current: Message[], incoming: Message) {
-  const pendingIndex = current.findIndex(
-    (item) =>
-      item.id.startsWith("local_") &&
-      item.senderType === "user" &&
-      item.senderId === incoming.senderId &&
-      item.text === incoming.text &&
-      attachmentsEqual(item.attachment, incoming.attachment),
-  );
-
-  if (pendingIndex === -1) {
-    return current;
-  }
-
-  return current.filter((_, index) => index !== pendingIndex);
-}
-
-function attachmentsEqual(
-  left?: Message["attachment"],
-  right?: Message["attachment"],
-) {
-  if (!left && !right) {
-    return true;
-  }
-
-  if (!left || !right) {
-    return false;
-  }
-
-  if (left.kind !== right.kind) {
-    return false;
-  }
-
-  if (left.kind === "sticker" && right.kind === "sticker") {
-    return (
-      (left.sourceType ?? "builtin") === (right.sourceType ?? "builtin") &&
-      (left.packId ?? "") === (right.packId ?? "") &&
-      left.stickerId === right.stickerId
-    );
-  }
-
-  if (left.kind === "image" && right.kind === "image") {
-    return left.url === right.url && left.fileName === right.fileName;
-  }
-
-  if (left.kind === "file" && right.kind === "file") {
-    return left.url === right.url && left.fileName === right.fileName;
-  }
-
-  if (left.kind === "voice" && right.kind === "voice") {
-    return left.url === right.url && left.fileName === right.fileName;
-  }
-
-  if (left.kind === "contact_card" && right.kind === "contact_card") {
-    return left.characterId === right.characterId;
-  }
-
-  if (left.kind === "location_card" && right.kind === "location_card") {
-    return left.sceneId === right.sceneId && left.title === right.title;
-  }
-
-  if (left.kind === "note_card" && right.kind === "note_card") {
-    return left.noteId === right.noteId && left.updatedAt === right.updatedAt;
-  }
-
-  return false;
-}
-
-function buildOptimisticMessage(
-  payload: SendMessagePayload,
-  ownerId: string,
-  senderName: string,
-): Message {
-  const createdAt = String(Date.now());
-
-  if (payload.type === "sticker") {
-    const stickerLabel = sanitizeDisplayedChatText(payload.text ?? "").replace(
-      /^\[表情包\]\s*/,
-      "",
-    );
-    const optimisticAttachment = payload.attachment;
-
-    return {
-      id: `local_${createdAt}`,
-      conversationId: payload.conversationId,
-      senderType: "user",
-      senderId: ownerId,
-      senderName,
-      type: "sticker",
-      text: payload.text ?? "[表情包]",
-      attachment: optimisticAttachment
-        ? {
-            ...optimisticAttachment,
-            label:
-              stickerLabel || optimisticAttachment.label || payload.sticker.stickerId,
-          }
-        : {
-            kind: "sticker",
-            sourceType: payload.sticker.sourceType ?? "builtin",
-            packId: payload.sticker.packId,
-            stickerId: payload.sticker.stickerId,
-            url:
-              payload.sticker.packId
-                ? `/stickers/${payload.sticker.packId}/${payload.sticker.stickerId}.svg`
-                : "",
-            width: 160,
-            height: 160,
-            label: stickerLabel || payload.sticker.stickerId,
-          },
-      createdAt,
-    };
-  }
-
-  if (
-    payload.type === "image" ||
-    payload.type === "file" ||
-    payload.type === "voice" ||
-    payload.type === "contact_card" ||
-    payload.type === "location_card" ||
-    payload.type === "note_card"
-  ) {
-    return {
-      id: `local_${createdAt}`,
-      conversationId: payload.conversationId,
-      senderType: "user",
-      senderId: ownerId,
-      senderName,
-      type: payload.type,
-      text:
-        payload.text ??
-        (payload.type === "contact_card"
-          ? `[名片] ${payload.attachment.name}`
-          : payload.type === "location_card"
-            ? `[位置] ${payload.attachment.title}`
-            : payload.type === "note_card"
-              ? `[笔记] ${payload.attachment.title}`
-              : payload.type === "voice"
-                ? "[语音]"
-                : payload.type === "file"
-                  ? `[文件] ${payload.attachment.fileName}`
-                  : `[图片] ${payload.attachment.fileName}`),
-      attachment: payload.attachment,
-      createdAt,
-    };
-  }
-
-  return {
-    id: `local_${createdAt}`,
-    conversationId: payload.conversationId,
-    senderType: "user",
-    senderId: ownerId,
-    senderName,
-    type: "text",
-    text: payload.text,
-    createdAt,
-  };
-}
 
 function resolveTargetCharacterId(input: {
   conversationId: string;
@@ -779,18 +655,4 @@ function resolveTargetCharacterId(input: {
   }
 
   return "";
-}
-
-function mergeMessageWindow(current: Message[], incoming: Message[]) {
-  const merged = new Map<string, Message>();
-
-  for (const message of [...current, ...incoming]) {
-    merged.set(message.id, message);
-  }
-
-  return [...merged.values()].sort(
-    (left, right) =>
-      (parseTimestamp(left.createdAt) ?? 0) -
-      (parseTimestamp(right.createdAt) ?? 0),
-  );
 }

@@ -142,6 +142,7 @@ import {
   resolveGroupRelayPublishStageBadge,
 } from "../features/mini-programs/group-relay-card";
 import { parseGroupRelaySummaryMessage } from "../features/mini-programs/group-relay-message";
+import { type ChatLocalMessageStatus } from "../features/chat/chat-message-delivery";
 
 export type ChatRenderableMessage = {
   id: string;
@@ -153,6 +154,7 @@ export type ChatRenderableMessage = {
   text: string;
   attachment?: MessageAttachment;
   createdAt: string;
+  localStatus?: ChatLocalMessageStatus;
 };
 
 type OpenableAttachment =
@@ -192,6 +194,7 @@ type ChatMessageListProps = {
       quotedText?: string;
     },
   ) => void;
+  onRetryMessage?: (message: ChatRenderableMessage) => Promise<void> | void;
   onOpenDirectCallInvite?: (input: {
     kind: "voice" | "video";
     source: CallInviteSource | null;
@@ -252,6 +255,7 @@ export function ChatMessageList({
   unreadMarkerCount = 0,
   unreadMarkerLabel,
   onReplyMessage,
+  onRetryMessage,
   onOpenDirectCallInvite,
   onOpenGroupCallInvite,
   onSelectionModeChange,
@@ -1587,6 +1591,16 @@ export function ChatMessageList({
   };
 
   const handleDeleteMessage = (message: ChatRenderableMessage) => {
+    if (isLocalOnlyMessage(message)) {
+      const nextState = hideLocalChatMessage(message.id);
+      applyLocalMessageActionState(nextState, message.id);
+      setActionNotice({
+        message: "已从当前设备删除这条消息。",
+        tone: "success",
+      });
+      return;
+    }
+
     if (threadContext) {
       deleteMutation.mutate(message);
       return;
@@ -1598,6 +1612,26 @@ export function ChatMessageList({
       message: "已从当前设备删除这条消息。",
       tone: "success",
     });
+  };
+
+  const handleRetryMessage = async (message: ChatRenderableMessage) => {
+    if (!onRetryMessage || message.localStatus !== "failed") {
+      return;
+    }
+
+    try {
+      await onRetryMessage(message);
+      setActionNotice({
+        message: "已重新尝试发送。",
+        tone: "success",
+      });
+    } catch (error) {
+      setActionNotice({
+        message:
+          error instanceof Error ? error.message : "重试发送失败，请稍后再试。",
+        tone: "danger",
+      });
+    }
   };
 
   const reminderOptions = buildReminderOptions(new Date());
@@ -1909,14 +1943,21 @@ export function ChatMessageList({
       return;
     }
 
-    const deletedMessageIdSet = new Set(
-      messagesToDelete.map((message) => message.id),
-    );
+    const deletedMessageIdSet = new Set<string>();
     setSelectionActionPending("delete");
 
     try {
       if (threadContext) {
+        let nextLocalState: ReturnType<typeof readLocalChatMessageActionState> | null =
+          null;
+
         for (const message of messagesToDelete) {
+          if (isLocalOnlyMessage(message)) {
+            nextLocalState = hideLocalChatMessage(message.id);
+            clearTransientMessageState(message.id);
+            continue;
+          }
+
           if (threadContext.type === "group") {
             await deleteGroupMessage(threadContext.id, message.id, baseUrl);
           } else {
@@ -1926,10 +1967,16 @@ export function ChatMessageList({
               baseUrl,
             );
           }
+          deletedMessageIdSet.add(message.id);
           clearTransientMessageState(message.id);
         }
 
-        if (threadContext.type === "group") {
+        if (nextLocalState) {
+          setHiddenMessageIds(nextLocalState.hiddenMessageIds);
+          setRecalledMessageIds(nextLocalState.recalledMessageIds);
+        }
+
+        if (deletedMessageIdSet.size > 0 && threadContext.type === "group") {
           updateGroupMessageQueries(
             threadContext.id,
             (current) =>
@@ -1939,7 +1986,7 @@ export function ChatMessageList({
           await queryClient.invalidateQueries({
             queryKey: ["app-group-messages", baseUrl, threadContext.id],
           });
-        } else {
+        } else if (deletedMessageIdSet.size > 0) {
           updateConversationMessageQueries(
             threadContext.id,
             (current) =>
@@ -1951,20 +1998,21 @@ export function ChatMessageList({
           });
         }
 
-        await queryClient.invalidateQueries({
-          queryKey: ["app-conversations", baseUrl],
-        });
+        if (deletedMessageIdSet.size > 0) {
+          await queryClient.invalidateQueries({
+            queryKey: ["app-conversations", baseUrl],
+          });
+        }
       } else {
         let nextState = readLocalChatMessageActionState();
         for (const message of messagesToDelete) {
           nextState = hideLocalChatMessage(message.id);
+          clearTransientMessageState(message.id);
+          deletedMessageIdSet.add(message.id);
         }
 
         setHiddenMessageIds(nextState.hiddenMessageIds);
         setRecalledMessageIds(nextState.recalledMessageIds);
-        setViewerMessageId((current) =>
-          current && deletedMessageIdSet.has(current) ? null : current,
-        );
       }
 
       resetSelectionMode();
@@ -2650,6 +2698,35 @@ export function ChatMessageList({
                     >
                       已设提醒 ·{" "}
                       {formatReminderSummary(reminderRecord.remindAt)}
+                    </div>
+                  ) : null}
+                  {isUser && !selectionMode && message.localStatus ? (
+                    <div
+                      className={cn(
+                        "flex items-center gap-1.5 px-1",
+                        isDesktop ? "mt-1 text-[11px]" : "mt-px px-0.5 text-[10px]",
+                        message.localStatus === "failed"
+                          ? "text-[#d74b45]"
+                          : "text-[#8c8c8c]",
+                      )}
+                    >
+                      <span>
+                        {message.localStatus === "failed"
+                          ? "发送失败"
+                          : "发送中..."}
+                      </span>
+                      {message.localStatus === "failed" && onRetryMessage ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleRetryMessage(message);
+                          }}
+                          className="rounded-full px-1.5 font-medium text-[#d74b45] transition hover:bg-[#fdeceb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(215,75,69,0.22)]"
+                        >
+                          重试
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -3815,6 +3892,10 @@ function canRecallMessage(
     message.senderType === "user" &&
     !message.id.startsWith("local_"),
   );
+}
+
+function isLocalOnlyMessage(message: ChatRenderableMessage) {
+  return message.id.startsWith("local_");
 }
 
 async function forwardMessageToConversation(input: {
