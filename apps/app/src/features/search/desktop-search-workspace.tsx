@@ -239,13 +239,13 @@ export function DesktopSearchWorkspace({
                       className="h-12 w-full rounded-[16px] border border-white/80 bg-white/96 pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:shadow-[0_0_0_4px_rgba(7,193,96,0.08)]"
                     />
                     {searchText ? (
-                      <button
-                        type="button"
+                      <DesktopSearchActionButton
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
                         onClick={onClearKeyword}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
+                        tone="neutral"
                       >
                         清空
-                      </button>
+                      </DesktopSearchActionButton>
                     ) : null}
                   </form>
                 </div>
@@ -336,13 +336,12 @@ export function DesktopSearchWorkspace({
                 <DesktopSearchLandingPanel
                   action={
                     history.length ? (
-                      <button
-                        type="button"
+                      <DesktopSearchActionButton
                         onClick={onClearHistory}
-                        className="text-xs text-[color:var(--text-muted)]"
+                        tone="neutral"
                       >
                         清空
-                      </button>
+                      </DesktopSearchActionButton>
                     ) : null
                   }
                   countLabel={history.length ? `${history.length} 条记录` : undefined}
@@ -369,13 +368,13 @@ export function DesktopSearchWorkspace({
                               {item.keyword}
                             </span>
                           </button>
-                          <button
-                            type="button"
+                          <DesktopSearchActionButton
                             onClick={() => onRemoveHistory(item.keyword)}
-                            className="text-[11px] text-[color:var(--text-dim)]"
+                            className="shrink-0"
+                            tone="danger"
                           >
                             删除
-                          </button>
+                          </DesktopSearchActionButton>
                         </div>
                       ))}
                     </div>
@@ -477,13 +476,12 @@ export function DesktopSearchWorkspace({
                       key={section.category}
                       action={
                         hasMore ? (
-                          <button
-                            type="button"
+                          <DesktopSearchActionButton
                             onClick={() => setActiveCategory(section.category)}
-                            className="text-xs text-[color:var(--brand-primary)]"
+                            tone="brand"
                           >
                             查看全部
-                          </button>
+                          </DesktopSearchActionButton>
                         ) : null
                       }
                       countLabel={`${section.results.length} 条命中`}
@@ -660,6 +658,39 @@ function DesktopSearchLandingPanel({
       </div>
       <div className="mt-4">{children}</div>
     </section>
+  );
+}
+
+function DesktopSearchActionButton({
+  children,
+  className,
+  onClick,
+  tone,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick: () => void;
+  tone: "brand" | "danger" | "neutral";
+}) {
+  const toneClassName =
+    tone === "brand"
+      ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.08)] text-[color:var(--brand-primary)] hover:bg-[rgba(7,193,96,0.12)]"
+      : tone === "danger"
+        ? "border-[rgba(225,29,72,0.10)] bg-[rgba(225,29,72,0.06)] text-[#be123c] hover:bg-[rgba(225,29,72,0.10)]"
+        : "border-[rgba(15,23,42,0.06)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] transition",
+        toneClassName,
+        className,
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
