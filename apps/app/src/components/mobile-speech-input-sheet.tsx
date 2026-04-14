@@ -106,32 +106,32 @@ export function MobileSpeechInputSheet({
   const hint = resolveStatusHint(mode, status, holding, cancelIntent);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(15,23,42,0.18)] backdrop-blur-[1.5px]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+88px)] pointer-events-none">
       <button
         type="button"
-        className="absolute inset-0"
+        className="pointer-events-auto absolute inset-0 bg-transparent"
         aria-label="关闭语音输入面板"
         onClick={onClose}
         disabled={holding}
       />
-      <div className="relative w-full max-w-sm px-5 pb-[calc(env(safe-area-inset-bottom,0px)+18px)]">
-        <div className="rounded-[28px] border border-white/8 bg-[rgba(22,24,28,0.94)] px-5 pb-5 pt-2.5 text-white shadow-[0_24px_60px_rgba(15,23,42,0.28)]">
-          <div className="flex justify-center pb-3">
-            <div className="h-1 w-10 rounded-full bg-white/18" />
+      <div className="pointer-events-auto relative w-full max-w-[19.5rem]">
+        <div className="rounded-[24px] border border-black/8 bg-[rgba(247,247,247,0.96)] px-4 pb-4 pt-3 text-[#111827] shadow-[0_20px_48px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+          <div className="flex justify-center pb-2.5">
+            <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-[16px] font-medium tracking-[0.01em]">
+              <div className="text-[15px] font-medium tracking-[0.01em] text-[#111827]">
                 {title}
               </div>
-              <div className="mt-1 text-[11px] leading-5 text-white/62">
+              <div className="mt-1 text-[11px] leading-5 text-[#7a7a7a]">
                 {hint}
               </div>
             </div>
             <button
               type="button"
               className={cn(
-                "flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/7 text-white/72 transition active:bg-white/12",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white text-[#7a7a7a] transition active:bg-[#f1f1f1]",
                 holding ? "pointer-events-none opacity-0" : "opacity-100",
               )}
               onClick={onClose}
@@ -145,38 +145,38 @@ export function MobileSpeechInputSheet({
           <div className="mt-5 flex items-center justify-center">
             <div
               className={cn(
-                "flex h-22 w-22 items-center justify-center rounded-full border text-white transition",
+                "flex h-[76px] w-[76px] items-center justify-center rounded-full border text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32)] transition",
                 holding && cancelIntent
                   ? "border-[#ff7875]/36 bg-[#ef4444]"
                   : listening || holding
-                    ? "border-[#07c160]/28 bg-[#07c160]"
+                    ? "border-[#07c160]/30 bg-[#07c160]"
                     : processing
-                      ? "border-white/12 bg-white/12"
-                      : "border-white/10 bg-white/8",
+                      ? "border-black/6 bg-[#f0f1f3] text-[#606266]"
+                      : "border-black/6 bg-white text-[#07c160]",
               )}
             >
               {processing ? (
-                <WandSparkles size={30} />
+                <WandSparkles size={28} />
               ) : listening || holding ? (
                 cancelIntent ? (
-                  <X size={32} />
+                  <X size={30} />
                 ) : (
-                  <Mic size={32} />
+                  <Mic size={30} />
                 )
               ) : status === "ready" ? (
-                <Square size={26} fill="currentColor" />
+                <Square size={24} fill="currentColor" />
               ) : (
-                <Mic size={32} />
+                <Mic size={30} />
               )}
             </div>
           </div>
 
           <div
             className={cn(
-              "mt-5 min-h-[104px] rounded-[20px] border px-4 py-3 text-[14px] leading-6",
+              "mt-4 min-h-[76px] rounded-[18px] border px-4 py-3 text-[13px] leading-6",
               text
-                ? "border-white/12 bg-white/10 text-white/92"
-                : "border-white/8 bg-white/[0.05] text-white/42",
+                ? "border-black/6 bg-white text-[#111827]"
+                : "border-black/6 bg-[rgba(255,255,255,0.72)] text-[#a3a3a3]",
             )}
           >
             {text ||
@@ -186,7 +186,7 @@ export function MobileSpeechInputSheet({
           </div>
 
           {error ? (
-            <div className="mt-3 rounded-[14px] border border-[#ff7875]/22 bg-[#ff4d4f]/10 px-3 py-2 text-[11px] leading-5 text-[#ffd7d5]">
+            <div className="mt-3 rounded-[14px] border border-[#ffb4b2] bg-[#fff3f3] px-3 py-2 text-[11px] leading-5 text-[#d74b45]">
               {error}
             </div>
           ) : null}
@@ -196,7 +196,7 @@ export function MobileSpeechInputSheet({
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex h-10.5 items-center justify-center rounded-[15px] border border-white/10 bg-white/7 text-[14px] font-medium text-white/78 transition active:bg-white/12"
+                className="flex h-10 items-center justify-center rounded-[14px] border border-black/6 bg-white text-[14px] font-medium text-[#606266] transition active:bg-[#f1f1f1]"
               >
                 取消
               </button>
@@ -204,7 +204,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10.5 items-center justify-center rounded-[15px] bg-[#07c160] text-[14px] font-medium text-white transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-[14px] bg-[#07c160] text-[14px] font-medium text-white shadow-[0_6px_16px_rgba(7,193,96,0.18)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />
