@@ -2101,6 +2101,22 @@ export function StickerPanel({
                 </div>
                 {!searching && activeSectionId === "custom" ? (
                   <div className="flex flex-col items-center gap-2">
+                    {customDeleteFeedback?.deletedCount ? (
+                      <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
+                        <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
+                          已清空 · 释放 {customDeleteFeedback.deletedCount}{" "}
+                          个位置
+                        </span>
+                        <span className="rounded-full bg-white/88 px-2 py-1">
+                          现在可继续添加图片或 GIF
+                        </span>
+                        {customDeleteFeedback.lastDeletedLabel ? (
+                          <span className="rounded-full bg-white/88 px-2 py-1">
+                            最近删除：{customDeleteFeedback.lastDeletedLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <button
                         ref={customEmptyActionButtonRef}
@@ -2115,7 +2131,7 @@ export function StickerPanel({
                           ? "继续添加表情"
                           : "添加第一张表情"}
                       </button>
-                      {!customDeleteFeedback?.deletedCount ? (
+                      {isMobile || !customDeleteFeedback?.deletedCount ? (
                         <button
                           type="button"
                           onClick={switchToFeatured}
@@ -2128,6 +2144,10 @@ export function StickerPanel({
                     {!customDeleteFeedback?.deletedCount ? (
                       <div className="text-[11px] text-[color:var(--text-muted)]">
                         聊天里的图片 / GIF 也能添加为表情
+                      </div>
+                    ) : isMobile ? (
+                      <div className="text-[11px] text-[color:var(--text-muted)]">
+                        也可以先去精选看看，再回来继续补自己的表情
                       </div>
                     ) : null}
                   </div>
