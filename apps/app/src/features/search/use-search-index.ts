@@ -29,6 +29,7 @@ import {
   shouldHideSearchableChatMessage,
   useLocalChatMessageActionState,
 } from "../chat/local-chat-message-actions";
+import { getFriendDisplayName } from "../contacts/contact-utils";
 import {
   emptySearchScopeCounts,
   type SearchCategory,
@@ -233,23 +234,27 @@ export function useSearchIndex(
       (character) => {
         const friend = friendMap.get(character.id);
         const remarkName = friend?.friendship.remarkName?.trim() ?? "";
+        const displayName = friend
+          ? getFriendDisplayName(friend)
+          : character.name;
         const tagText = friend?.friendship.tags?.join(" ") ?? "";
-        const title = remarkName || character.name;
 
         return {
           id: `contact-${character.id}`,
           category: "contacts",
-          title,
+          title: displayName,
           description:
-            character.bio ||
-            character.currentActivity ||
-            character.relationship ||
-            "查看联系人资料与聊天入口。",
+            displayName !== character.name
+              ? `昵称：${character.name}`
+              : character.bio ||
+                character.currentActivity ||
+                character.relationship ||
+                "查看联系人资料与聊天入口。",
           meta: friend
             ? `通讯录联系人 · ${character.relationship}`
             : `世界角色 · ${character.relationship}`,
           keywords: [
-            title,
+            displayName,
             character.name,
             remarkName,
             character.relationship,
@@ -265,7 +270,7 @@ export function useSearchIndex(
             .toLowerCase(),
           to: `/character/${character.id}`,
           badge: friend ? "联系人" : "角色",
-          avatarName: title,
+          avatarName: displayName,
           avatarSrc: character.avatar,
           sortTime: friend ? 2 : 1,
         };
