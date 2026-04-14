@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
-import { type FeedPostListItem, type FeedPostWithComments } from "@yinjie/contracts";
+import {
+  type FeedPostListItem,
+  type FeedPostWithComments,
+} from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
 import { Bot, PenSquare, UserRound } from "lucide-react";
 import { AvatarChip } from "../../../components/avatar-chip";
@@ -28,8 +31,7 @@ type DesktopFeedSidebarProps = {
   authorSummaries: DesktopFeedAuthorSummary[];
   commentDrafts: Record<string, string>;
   commentPendingPostId: string | null;
-  currentFilterLabel: string;
-  currentSortLabel: string;
+  currentFeedLabel: string;
   detailErrorMessage?: string | null;
   detailLoading: boolean;
   likePendingPostId: string | null;
@@ -64,8 +66,7 @@ export function DesktopFeedSidebar({
   authorSummaries,
   commentDrafts,
   commentPendingPostId,
-  currentFilterLabel,
-  currentSortLabel,
+  currentFeedLabel,
   detailErrorMessage,
   detailLoading,
   likePendingPostId,
@@ -177,26 +178,46 @@ export function DesktopFeedSidebar({
                       ) : (
                         <UserRound size={11} />
                       )}
-                      {activeAuthorSummary.authorType === "character" ? "居民" : "世界主人"}
+                      {activeAuthorSummary.authorType === "character"
+                        ? "居民"
+                        : "世界主人"}
                     </span>
                   </div>
                   <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                    最近发言于 {formatTimestamp(activeAuthorSummary.latestCreatedAt)}
+                    最近发言于{" "}
+                    {formatTimestamp(activeAuthorSummary.latestCreatedAt)}
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <SidebarMetric label="动态" value={String(activeAuthorSummary.count)} />
-                <SidebarMetric label="评论" value={String(activeAuthorSummary.commentCount)} />
-                <SidebarMetric label="AI 参与" value={String(activeAuthorSummary.aiReactionCount)} />
+                <SidebarMetric
+                  label="动态"
+                  value={String(activeAuthorSummary.count)}
+                />
+                <SidebarMetric
+                  label="评论"
+                  value={String(activeAuthorSummary.commentCount)}
+                />
+                <SidebarMetric
+                  label="AI 参与"
+                  value={String(activeAuthorSummary.aiReactionCount)}
+                />
               </div>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="secondary" className="flex-1" onClick={onClearAuthor}>
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={onClearAuthor}
+                >
                   查看全部
                 </Button>
-                <Button variant="primary" className="flex-1" onClick={onOpenCompose}>
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={onOpenCompose}
+                >
                   <PenSquare size={15} />
                   发动态
                 </Button>
@@ -224,7 +245,8 @@ export function DesktopFeedSidebar({
                       {post.text}
                     </div>
                     <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
-                      {formatTimestamp(post.createdAt)} · {post.likeCount} 赞 · {post.commentCount} 评论
+                      {formatTimestamp(post.createdAt)} · {post.likeCount} 赞 ·{" "}
+                      {post.commentCount} 评论
                     </div>
                   </button>
                 ))}
@@ -262,7 +284,11 @@ export function DesktopFeedSidebar({
               </div>
             </div>
 
-            <Button variant="primary" className="mt-4 w-full" onClick={onOpenCompose}>
+            <Button
+              variant="primary"
+              className="mt-4 w-full"
+              onClick={onOpenCompose}
+            >
               <PenSquare size={15} />
               发一条广场动态
             </Button>
@@ -271,31 +297,32 @@ export function DesktopFeedSidebar({
           <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="grid grid-cols-2 gap-3">
               <SidebarMetric label="公开流" value={String(totalPostsCount)} />
-              <SidebarMetric label="居民动态" value={String(residentPostsCount)} />
+              <SidebarMetric
+                label="居民动态"
+                value={String(residentPostsCount)}
+              />
               <SidebarMetric label="我的发言" value={String(ownerPostsCount)} />
-              <SidebarMetric label="当前可见" value={String(visiblePostsCount)} />
+              <SidebarMetric
+                label="当前可见"
+                value={String(visiblePostsCount)}
+              />
             </div>
             <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
               <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
                 当前流向
               </div>
               <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                {currentFilterLabel}
-              </div>
-            </div>
-            <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
-              <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
-                当前排序
-              </div>
-              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
-                {currentSortLabel}
+                {currentFeedLabel}
               </div>
             </div>
           </div>
 
           <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <div className="grid grid-cols-2 gap-3">
-              <SidebarMetric label="AI 在场" value={String(aiReactedPostsCount)} />
+              <SidebarMetric
+                label="AI 在场"
+                value={String(aiReactedPostsCount)}
+              />
               <SidebarMetric label="24h 内" value={String(recentPostsCount)} />
             </div>
 
@@ -323,7 +350,8 @@ export function DesktopFeedSidebar({
                     {activeResidentSummary.authorName}
                   </div>
                   <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
-                    {activeResidentSummary.count} 条动态 · {activeResidentSummary.commentCount} 条评论
+                    {activeResidentSummary.count} 条动态 ·{" "}
+                    {activeResidentSummary.commentCount} 条评论
                   </div>
                 </div>
                 <Bot size={15} className="shrink-0 text-sky-600" />
@@ -359,7 +387,11 @@ export function DesktopFeedSidebar({
                         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
                     )}
                   >
-                    <AvatarChip name={author.authorName} src={author.authorAvatar} size="sm" />
+                    <AvatarChip
+                      name={author.authorName}
+                      src={author.authorAvatar}
+                      size="sm"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
                         {author.authorName}

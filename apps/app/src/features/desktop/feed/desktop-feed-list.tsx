@@ -10,7 +10,6 @@ type DesktopFeedListProps = {
   likePendingPostId: string | null;
   posts: FeedPostListItem[];
   selectedPostId: string | null;
-  totalPostsCount: number;
   isPostFavorite: (postId: string) => boolean;
   onCommentChange: (postId: string, value: string) => void;
   onCommentSubmit: (postId: string) => void;
@@ -28,7 +27,6 @@ export function DesktopFeedList({
   likePendingPostId,
   posts,
   selectedPostId,
-  totalPostsCount,
   isPostFavorite,
   onCommentChange,
   onCommentSubmit,
@@ -72,12 +70,8 @@ export function DesktopFeedList({
       {!isLoading && !posts.length ? (
         <div className="mx-auto max-w-[560px] py-10">
           <EmptyState
-            title={totalPostsCount ? "当前筛选下没有动态" : "广场还没有新动态"}
-            description={
-              totalPostsCount
-                ? "换个筛选条件试试，或者直接发一条新的公开动态。"
-                : "你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
-            }
+            title="广场还没有新动态"
+            description="你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
             action={
               <Button variant="primary" onClick={onOpenCompose}>
                 发广场动态
