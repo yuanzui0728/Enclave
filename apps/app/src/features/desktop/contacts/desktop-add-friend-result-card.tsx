@@ -7,6 +7,7 @@ import {
 import type { Character, FriendListItem, FriendRequest } from "@yinjie/contracts";
 import { Button, cn } from "@yinjie/ui";
 import { AvatarChip } from "../../../components/avatar-chip";
+import { getFriendDisplayName } from "../../contacts/contact-utils";
 
 export type DesktopAddFriendRelationshipState =
   | "available"
@@ -37,13 +38,17 @@ export function DesktopAddFriendResultCard({
   onOpenProfile,
   onPrimaryAction,
 }: DesktopAddFriendResultCardProps) {
-  const displayName = friendship?.remarkName?.trim() || character.name;
+  const displayName = friendship
+    ? getFriendDisplayName({ character, friendship })
+    : character.name;
   const signature =
     character.currentStatus?.trim() ||
     character.bio?.trim() ||
     "这个角色还没有签名。";
   const relationshipSummary =
-    friendship?.remarkName?.trim() || character.relationship?.trim() || "世界角色";
+    displayName !== character.name
+      ? `昵称：${character.name}`
+      : character.relationship?.trim() || "世界角色";
   const expertDomains = character.expertDomains.slice(0, 4);
   const statusMeta =
     status === "friend"
@@ -93,7 +98,7 @@ export function DesktopAddFriendResultCard({
     <section className="overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white shadow-none">
       <div className="border-b border-[rgba(15,23,42,0.06)] px-8 py-8">
         <div className="flex items-start gap-5">
-          <AvatarChip name={character.name} src={character.avatar} size="xl" />
+          <AvatarChip name={displayName} src={character.avatar} size="xl" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
               <h2 className="truncate text-[30px] font-medium tracking-[-0.02em] text-[color:var(--text-primary)]">
