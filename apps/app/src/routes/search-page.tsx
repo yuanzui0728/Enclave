@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { DesktopSearchWorkspace } from "../features/search/desktop-search-workspace";
+import { useDesktopSearchQuickLinks } from "../features/search/desktop-search-quick-links";
 import {
   clearSearchHistory,
   hydrateSearchHistoryFromNative,
@@ -26,7 +27,9 @@ export function SearchPage() {
   const isDesktopLayout = useDesktopLayout();
   const runtimeConfig = useAppRuntimeConfig();
   const nativeDesktopSearchHistory = runtimeConfig.appPlatform === "desktop";
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
   const hash = useRouterState({ select: (state) => state.location.hash });
   const routeState = parseSearchRouteState(hash);
   const [searchText, setSearchText] = useState(routeState.keyword);
@@ -34,6 +37,12 @@ export function SearchPage() {
     routeState.category,
   );
   const [history, setHistory] = useState(() => loadSearchHistory());
+  const {
+    favoriteMatches,
+    miniProgramMatches,
+    recentFavorites,
+    recentMiniPrograms,
+  } = useDesktopSearchQuickLinks(searchText);
   const {
     error,
     filteredResults,
@@ -147,6 +156,13 @@ export function SearchPage() {
     });
   }
 
+  function handleOpenQuickLink(item: { to: string; search?: string }) {
+    void navigate({
+      to: item.to as never,
+      search: item.search as never,
+    });
+  }
+
   function handleBack() {
     if (typeof window !== "undefined" && window.history.length > 1) {
       window.history.back();
@@ -163,17 +179,22 @@ export function SearchPage() {
       <DesktopSearchWorkspace
         activeCategory={activeCategory}
         error={error}
+        favoriteMatches={favoriteMatches}
         groupedResults={groupedResults}
         hasKeyword={hasKeyword}
         history={history}
         loading={loading}
         matchedCounts={matchedCounts}
+        miniProgramMatches={miniProgramMatches}
         onApplyHistory={handleApplyHistory}
         onClearHistory={handleClearHistory}
         onClearKeyword={() => setSearchText("")}
         onCommitSearch={handleCommitSearch}
+        onOpenQuickLink={handleOpenQuickLink}
         onOpenResult={handleOpenResult}
         onRemoveHistory={handleRemoveHistory}
+        recentFavorites={recentFavorites}
+        recentMiniPrograms={recentMiniPrograms}
         scopeCounts={scopeCounts}
         searchText={searchText}
         searchingMessages={searchingMessages}

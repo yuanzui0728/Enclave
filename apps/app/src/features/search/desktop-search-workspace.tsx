@@ -1,16 +1,24 @@
-import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import {
+  useEffect,
+  useMemo,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import {
+  Blocks,
   Clock3,
   MessageSquareText,
   Newspaper,
   Search,
-  Sparkles,
+  Star,
   UsersRound,
 } from "lucide-react";
-import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import { AvatarChip } from "../../components/avatar-chip";
 import { EmptyState } from "../../components/empty-state";
-import { DesktopUtilityShell } from "../desktop/desktop-utility-shell";
-import { SearchResultCard } from "./search-result-card";
+import { ErrorBlock, InlineNotice, LoadingBlock, cn } from "@yinjie/ui";
+import { type DesktopSearchQuickLink } from "./desktop-search-quick-links";
+import { renderHighlightedText } from "./search-utils";
 import {
   searchCategoryLabels,
   searchCategoryTitles,
@@ -25,17 +33,22 @@ import {
 type DesktopSearchWorkspaceProps = {
   activeCategory: SearchCategory;
   error: string | null;
+  favoriteMatches: DesktopSearchQuickLink[];
   groupedResults: SearchResultSection[];
   hasKeyword: boolean;
   history: SearchHistoryItem[];
   loading: boolean;
   matchedCounts: SearchMatchCounts;
+  miniProgramMatches: DesktopSearchQuickLink[];
   onApplyHistory: (keyword: string) => void;
   onClearHistory: () => void;
   onClearKeyword: () => void;
   onCommitSearch: (keyword: string) => void;
+  onOpenQuickLink: (item: DesktopSearchQuickLink) => void;
   onOpenResult: (item: SearchResultItem) => void;
   onRemoveHistory: (keyword: string) => void;
+  recentFavorites: DesktopSearchQuickLink[];
+  recentMiniPrograms: DesktopSearchQuickLink[];
   scopeCounts: SearchScopeCounts;
   searchText: string;
   searchingMessages: boolean;
@@ -44,26 +57,58 @@ type DesktopSearchWorkspaceProps = {
   visibleResults: SearchResultItem[];
 };
 
-const searchTips = [
-  "聊天记录结果会随着索引补全继续刷新。",
-  "联系人优先匹配备注名、角色名和标签。",
-  "内容流结果按现有公开内容聚合展示。",
+const landingScopeCards = [
+  {
+    id: "messages" as const,
+    icon: MessageSquareText,
+    title: "聊天记录",
+    description: "优先定位会话和消息片段。",
+  },
+  {
+    id: "contacts" as const,
+    icon: UsersRound,
+    title: "联系人",
+    description: "支持备注名、角色名和标签。",
+  },
+  {
+    id: "officialAccounts" as const,
+    icon: Newspaper,
+    title: "公众号",
+    description: "先找账号，再落到阅读入口。",
+  },
+  {
+    id: "moments" as const,
+    icon: Star,
+    title: "朋友圈",
+    description: "支持好友动态和评论命中。",
+  },
+  {
+    id: "feed" as const,
+    icon: Blocks,
+    title: "内容流",
+    description: "继续承接广场动态结果。",
+  },
 ];
 
 export function DesktopSearchWorkspace({
   activeCategory,
   error,
+  favoriteMatches,
   groupedResults,
   hasKeyword,
   history,
   loading,
   matchedCounts,
+  miniProgramMatches,
   onApplyHistory,
   onClearHistory,
   onClearKeyword,
   onCommitSearch,
+  onOpenQuickLink,
   onOpenResult,
   onRemoveHistory,
+  recentFavorites,
+  recentMiniPrograms,
   scopeCounts,
   searchText,
   searchingMessages,
@@ -72,327 +117,488 @@ export function DesktopSearchWorkspace({
   visibleResults,
 }: DesktopSearchWorkspaceProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const normalizedKeyword = searchText.trim().toLowerCase();
+  const hasQuickMatches =
+    favoriteMatches.length > 0 || miniProgramMatches.length > 0;
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  const categorySummary = useMemo(() => {
+    if (!hasKeyword) {
+      return "优先直达联系人、会话、收藏和最近使用的小程序。";
+    }
+
+    if (activeCategory === "all") {
+      const quickCount = favoriteMatches.length + miniProgramMatches.length;
+      return quickCount
+        ? `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条内容结果，另有 ${quickCount} 项快捷命中。`
+        : `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条内容结果。`;
+    }
+
+    return `当前查看 ${searchCategoryTitles[activeCategory]}，共 ${visibleResults.length} 条结果。`;
+  }, [
+    activeCategory,
+    favoriteMatches.length,
+    hasKeyword,
+    miniProgramMatches.length,
+    searchText,
+    visibleResults.length,
+  ]);
+
   return (
-    <DesktopUtilityShell
-      title="搜一搜"
-      subtitle={
-        hasKeyword
-          ? `关键词“${searchText.trim()}”命中 ${visibleResults.length} 条结果`
-          : "搜索聊天记录、联系人、公众号和内容流"
-      }
-      sidebar={
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
-            <div className="text-sm font-medium text-[color:var(--text-primary)]">
-              搜索范围
-            </div>
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              左侧切换分类，结果会在中间工作区立即收敛。
-            </div>
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
+      <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-[1160px] px-6 py-5">
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--text-dim)]">
+            搜一搜
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto p-3">
-            <div className="space-y-1">
-              {searchCategoryLabels.map((item) => (
+          <form
+            className="relative mt-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onCommitSearch(searchText);
+            }}
+          >
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
+            />
+            <input
+              ref={inputRef}
+              type="search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="搜索聊天记录、联系人、公众号、收藏和小程序"
+              className="h-12 w-full rounded-[15px] border border-[color:var(--border-faint)] bg-white pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[rgba(7,193,96,0.4)] focus:shadow-[0_0_0_4px_rgba(7,193,96,0.08)]"
+            />
+            {searchText ? (
+              <button
+                type="button"
+                onClick={onClearKeyword}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
+              >
+                清空
+              </button>
+            ) : null}
+          </form>
+
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {searchCategoryLabels.map((item) => {
+              const countLabel = !hasKeyword
+                ? null
+                : item.id === "all"
+                  ? `${visibleResults.length}`
+                  : `${matchedCounts[item.id]}`;
+
+              return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setActiveCategory(item.id)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
+                    "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition",
                     activeCategory === item.id
-                      ? "bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
-                      : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
+                      ? "border-[rgba(7,193,96,0.20)] bg-[rgba(7,193,96,0.10)] text-[color:var(--text-primary)]"
+                      : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                   )}
                 >
                   <span>{item.label}</span>
-                  <span className="rounded-full bg-white/88 px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]">
-                    {item.id === "all" || !hasKeyword
-                      ? "全部"
-                      : matchedCounts[item.id]}
-                  </span>
+                  {countLabel ? (
+                    <span className="rounded-full bg-[color:var(--surface-console)] px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]">
+                      {countLabel}
+                    </span>
+                  ) : null}
                 </button>
-              ))}
-            </div>
+              );
+            })}
+          </div>
 
-            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs font-medium text-[color:var(--text-primary)]">
-                  最近搜索
-                </div>
-                {history.length ? (
-                  <button
-                    type="button"
-                    onClick={onClearHistory}
-                    className="text-xs text-[color:var(--text-muted)]"
-                  >
-                    清空
-                  </button>
-                ) : null}
-              </div>
-
-              {history.length ? (
-                <div className="mt-3 space-y-2">
-                  {history.map((item) => (
-                    <div
-                      key={item.keyword}
-                      className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => onApplyHistory(item.keyword)}
-                        className="inline-flex min-w-0 flex-1 items-center gap-2 text-left text-xs text-[color:var(--text-secondary)]"
-                      >
-                        <Clock3
-                          size={13}
-                          className="shrink-0 text-[color:var(--text-dim)]"
-                        />
-                        <span className="truncate">{item.keyword}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onRemoveHistory(item.keyword)}
-                        className="text-[10px] text-[color:var(--text-dim)]"
-                      >
-                        删除
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-3 rounded-[10px] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-6 text-[color:var(--text-muted)]">
-                  还没有最近搜索，桌面端会在你真正使用后记录关键词。
-                </div>
-              )}
-            </div>
+          <div className="mt-3 text-xs text-[color:var(--text-muted)]">
+            {categorySummary}
           </div>
         </div>
-      }
-      aside={
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] px-5 py-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
-              <Sparkles size={16} className="text-[#15803d]" />
-              <span>搜索概览</span>
-            </div>
-            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-              右侧汇总当前索引覆盖范围和搜索提示。
-            </div>
-          </div>
+      </header>
 
-          <div className="min-h-0 flex-1 overflow-auto p-5">
-            <div className="grid gap-3">
-              <ScopeCard label="会话" value={`${scopeCounts.conversations}`} />
-              <ScopeCard label="联系人" value={`${scopeCounts.contacts}`} />
-              <ScopeCard
-                label="公众号"
-                value={`${scopeCounts.officialAccounts}`}
-              />
-              <ScopeCard label="朋友圈" value={`${scopeCounts.moments}`} />
-              <ScopeCard label="广场动态" value={`${scopeCounts.feed}`} />
-            </div>
-
-            <div className="mt-5 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
-              <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                搜索提示
-              </div>
-              <div className="mt-3 space-y-2">
-                {searchTips.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[10px] bg-[color:var(--surface-console)] px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-    >
-      <div className="p-5">
-        <form
-          className="relative rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onCommitSearch(searchText);
-          }}
-        >
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-8 top-1/2 size-4 -translate-y-1/2 text-[color:var(--text-dim)]"
-          />
-          <input
-            ref={inputRef}
-            type="search"
-            value={searchText}
-            onChange={(event) => setSearchText(event.target.value)}
-            placeholder="搜索聊天记录、联系人、公众号、朋友圈和广场动态"
-            className="h-12 w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-11 pr-20 text-sm text-[color:var(--text-primary)] outline-none transition-[border-color,background-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)] focus:bg-white"
-          />
-          {searchText ? (
-            <button
-              type="button"
-              onClick={onClearKeyword}
-              className="absolute right-8 top-1/2 -translate-y-1/2 text-xs text-[color:var(--text-muted)]"
-            >
-              清空
-            </button>
-          ) : null}
-        </form>
-
-        <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[1160px] min-h-full flex-col px-6 py-6">
           {loading ? <LoadingBlock label="正在准备桌面搜索索引..." /> : null}
           {error ? <ErrorBlock message={error} /> : null}
 
           {!loading && !error && hasKeyword && searchingMessages ? (
             <div className="mb-4">
               <InlineNotice tone="info">
-                正在补全所有会话的聊天记录索引，消息结果会继续刷新。
+                聊天记录结果还在继续补全，稍后会自动刷新更多命中。
               </InlineNotice>
             </div>
           ) : null}
 
           {!loading && !error && !hasKeyword ? (
-            <div className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-3">
-                <QuickScopeTile
-                  icon={MessageSquareText}
-                  title="聊天记录"
-                  description="支持搜历史消息正文。"
-                />
-                <QuickScopeTile
-                  icon={UsersRound}
-                  title="联系人"
-                  description="支持搜备注名和标签。"
-                />
-                <QuickScopeTile
-                  icon={Newspaper}
-                  title="内容流"
-                  description="支持搜朋友圈和广场动态。"
-                />
+            <div className="space-y-6">
+              <div className="grid gap-3 lg:grid-cols-5">
+                {landingScopeCards.map((item) => {
+                  const Icon = item.icon;
+                  const count =
+                    item.id === "messages"
+                      ? scopeCounts.conversations
+                      : item.id === "contacts"
+                        ? scopeCounts.contacts
+                        : item.id === "officialAccounts"
+                          ? scopeCounts.officialAccounts
+                          : item.id === "moments"
+                            ? scopeCounts.moments
+                            : scopeCounts.feed;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(item.id);
+                        inputRef.current?.focus();
+                      }}
+                      className="rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
+                        <Icon size={18} />
+                      </div>
+                      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
+                        {item.title}
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        当前覆盖 {count} 项
+                      </div>
+                      <div className="mt-3 text-xs leading-6 text-[color:var(--text-secondary)]">
+                        {item.description}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
-                <EmptyState
-                  title="输入关键词开始搜索"
-                  description="桌面搜一搜会同时检索消息、联系人、公众号和内容流。"
-                />
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                        最近搜索
+                      </div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        空态先展示你最近真正用过的关键词。
+                      </div>
+                    </div>
+                    {history.length ? (
+                      <button
+                        type="button"
+                        onClick={onClearHistory}
+                        className="text-xs text-[color:var(--text-muted)]"
+                      >
+                        清空
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {history.length ? (
+                    <div className="mt-4 space-y-2">
+                      {history.map((item) => (
+                        <div
+                          key={item.keyword}
+                          className="flex items-center gap-2 rounded-[14px] bg-[color:var(--surface-console)] px-3 py-2.5"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => onApplyHistory(item.keyword)}
+                            className="inline-flex min-w-0 flex-1 items-center gap-2 text-left"
+                          >
+                            <Clock3
+                              size={14}
+                              className="shrink-0 text-[color:var(--text-dim)]"
+                            />
+                            <span className="truncate text-sm text-[color:var(--text-secondary)]">
+                              {item.keyword}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveHistory(item.keyword)}
+                            className="text-[11px] text-[color:var(--text-dim)]"
+                          >
+                            删除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-6">
+                      <EmptyState
+                        title="还没有最近搜索"
+                        description="从聊天、通讯录或左侧导航进入搜一搜后，这里会开始积累关键词。"
+                      />
+                    </div>
+                  )}
+                </section>
+
+                <div className="space-y-4">
+                  <DesktopQuickLinksPanel
+                    title="最近使用的小程序"
+                    description="桌面端先把最近打开的小程序放进搜一搜首页，方便从主搜索框直达。"
+                    emptyText="打开过的小程序会先沉淀到这里。"
+                    items={recentMiniPrograms}
+                    onOpen={onOpenQuickLink}
+                  />
+                  <DesktopQuickLinksPanel
+                    title="最近收藏"
+                    description="高频回看的收藏会优先出现在桌面搜一搜首页。"
+                    emptyText="收藏过内容后，这里会出现最近回访入口。"
+                    items={recentFavorites}
+                    onOpen={onOpenQuickLink}
+                  />
+                </div>
               </div>
             </div>
           ) : null}
 
-          {!loading && !error && hasKeyword && !visibleResults.length ? (
-            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+          {!loading &&
+          !error &&
+          hasKeyword &&
+          activeCategory === "all" &&
+          hasQuickMatches ? (
+            <div className="space-y-4">
+              {favoriteMatches.length ? (
+                <DesktopQuickLinksPanel
+                  title="收藏快捷命中"
+                  description="这部分结果优先直达收藏对象。"
+                  emptyText=""
+                  items={favoriteMatches}
+                  onOpen={onOpenQuickLink}
+                />
+              ) : null}
+              {miniProgramMatches.length ? (
+                <DesktopQuickLinksPanel
+                  title="小程序快捷命中"
+                  description="最近使用和目录匹配到的小程序会先收口在这里。"
+                  emptyText=""
+                  items={miniProgramMatches}
+                  onOpen={onOpenQuickLink}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {!loading &&
+          !error &&
+          hasKeyword &&
+          !visibleResults.length &&
+          !hasQuickMatches ? (
+            <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-white/92 px-6 py-10">
               <EmptyState
                 title="没有找到匹配结果"
-                description="换个关键词，或者切换左侧分类后再试。"
+                description="换个关键词试试，或者切换到更具体的分类后继续找。"
               />
             </div>
           ) : null}
 
           {!loading && !error && hasKeyword ? (
             activeCategory === "all" ? (
-              <div className="space-y-6">
-                {groupedResults.map((section) => (
-                  <section key={section.category} className="space-y-3">
-                    <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
-                      <div>
-                        <div className="text-[11px] text-[color:var(--text-muted)]">
-                          搜索结果
+              <div
+                className={cn(
+                  "space-y-6",
+                  hasQuickMatches ? "mt-6" : undefined,
+                )}
+              >
+                {groupedResults.map((section) => {
+                  const previewResults = section.results.slice(0, 6);
+                  const hasMore =
+                    section.results.length > previewResults.length;
+
+                  return (
+                    <section
+                      key={section.category}
+                      className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                            {section.label}
+                          </div>
+                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                            共 {section.results.length} 条命中
+                          </div>
                         </div>
-                        <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
-                          {section.label}
-                        </div>
+                        {hasMore ? (
+                          <button
+                            type="button"
+                            onClick={() => setActiveCategory(section.category)}
+                            className="text-xs text-[color:var(--brand-primary)]"
+                          >
+                            查看全部
+                          </button>
+                        ) : null}
                       </div>
-                      <div className="rounded-md bg-[color:var(--surface-console)] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
-                        {section.results.length} 条
+
+                      <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                        {previewResults.map((item) => (
+                          <DesktopSearchResultRow
+                            key={item.id}
+                            item={item}
+                            keyword={normalizedKeyword}
+                            onOpen={onOpenResult}
+                          />
+                        ))}
                       </div>
-                    </div>
-                    <div className="space-y-3">
-                      {section.results.map((item) => (
-                        <SearchResultCard
-                          key={item.id}
-                          item={item}
-                          keyword={searchText.trim().toLowerCase()}
-                          layout="desktop"
-                          onOpen={onOpenResult}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                    </section>
+                  );
+                })}
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3">
+              <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[11px] text-[color:var(--text-muted)]">
-                      搜索结果
-                    </div>
-                    <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
+                    <div className="text-sm font-medium text-[color:var(--text-primary)]">
                       {searchCategoryTitles[activeCategory]}
                     </div>
-                  </div>
-                  <div className="rounded-md bg-[color:var(--surface-console)] px-2.5 py-1 text-xs text-[color:var(--text-muted)]">
-                    {visibleResults.length} 条
+                    <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      共 {visibleResults.length} 条命中
+                    </div>
                   </div>
                 </div>
-                {visibleResults.map((item) => (
-                  <SearchResultCard
-                    key={item.id}
-                    item={item}
-                    keyword={searchText.trim().toLowerCase()}
-                    layout="desktop"
-                    onOpen={onOpenResult}
-                  />
-                ))}
-              </div>
+
+                <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+                  {visibleResults.map((item) => (
+                    <DesktopSearchResultRow
+                      key={item.id}
+                      item={item}
+                      keyword={normalizedKeyword}
+                      onOpen={onOpenResult}
+                    />
+                  ))}
+                </div>
+              </section>
             )
           ) : null}
         </div>
       </div>
-    </DesktopUtilityShell>
-  );
-}
-
-function ScopeCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
-      <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
-      <div className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
-        {value}
-      </div>
     </div>
   );
 }
 
-function QuickScopeTile({
+function DesktopQuickLinksPanel({
   description,
-  icon: Icon,
+  emptyText,
+  items,
+  onOpen,
   title,
 }: {
   description: string;
-  icon: typeof Search;
+  emptyText: string;
+  items: DesktopSearchQuickLink[];
+  onOpen: (item: DesktopSearchQuickLink) => void;
   title: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
-        <Icon size={18} />
+    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5">
+      <div>
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">
+          {title}
+        </div>
+        {description ? (
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            {description}
+          </div>
+        ) : null}
       </div>
-      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
-        {title}
+
+      {items.length ? (
+        <div className="mt-4 divide-y divide-[color:var(--border-faint)]">
+          {items.map((item) => (
+            <DesktopQuickLinkRow key={item.id} item={item} onOpen={onOpen} />
+          ))}
+        </div>
+      ) : emptyText ? (
+        <div className="mt-4 rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-6 text-xs leading-6 text-[color:var(--text-muted)]">
+          {emptyText}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function DesktopQuickLinkRow({
+  item,
+  onOpen,
+}: {
+  item: DesktopSearchQuickLink;
+  onOpen: (item: DesktopSearchQuickLink) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      className="flex w-full items-center gap-3 px-0 py-3 text-left transition first:pt-0 last:pb-0 hover:bg-[color:var(--surface-console)]"
+    >
+      <AvatarChip
+        name={item.avatarName ?? item.title}
+        src={item.avatarSrc}
+        size="sm"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {item.title}
+          </div>
+          <span className="rounded-full bg-[rgba(7,193,96,0.08)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+            {item.badge}
+          </span>
+        </div>
+        <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
+          {item.meta}
+        </div>
+        <div className="mt-1 truncate text-xs text-[color:var(--text-secondary)]">
+          {item.description}
+        </div>
       </div>
-      <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-        {description}
+    </button>
+  );
+}
+
+function DesktopSearchResultRow({
+  item,
+  keyword,
+  onOpen,
+}: {
+  item: SearchResultItem;
+  keyword: string;
+  onOpen: (item: SearchResultItem) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(item)}
+      className="flex w-full items-center gap-3 px-0 py-3 text-left transition first:pt-0 last:pb-0 hover:bg-[color:var(--surface-console)]"
+    >
+      <AvatarChip
+        name={item.avatarName ?? item.title}
+        src={item.avatarSrc}
+        size="wechat"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
+            {renderHighlightedText(item.title, keyword)}
+          </div>
+          <span className="rounded-full bg-[color:var(--surface-console)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+            {item.badge}
+          </span>
+        </div>
+        <div className="mt-1 truncate text-xs text-[color:var(--text-muted)]">
+          {renderHighlightedText(item.meta, keyword)}
+        </div>
+        <div className="mt-1 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]">
+          {renderHighlightedText(item.description, keyword)}
+        </div>
       </div>
-    </div>
+    </button>
   );
 }

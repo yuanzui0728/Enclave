@@ -17,7 +17,10 @@ import {
 import { useSpeechInput } from "../chat/use-speech-input";
 import type { SpeechInputStatus } from "../chat/speech-input-types";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
-import { buildSearchRouteHash, type SearchRouteSource } from "./search-route-state";
+import {
+  buildSearchRouteHash,
+  type SearchRouteSource,
+} from "./search-route-state";
 import { buildDesktopAddFriendRouteHash } from "../desktop/contacts/desktop-add-friend-route-state";
 import {
   hydrateSearchHistoryFromNative,
@@ -258,17 +261,23 @@ export function DesktopSearchDropdownPanel({
     );
 
     return createWorldCharacterDirectoryItems(
-      (charactersQuery.data ?? []).filter((character) => !friendIds.has(character.id)),
+      (charactersQuery.data ?? []).filter(
+        (character) => !friendIds.has(character.id),
+      ),
     )
-      .filter((item) => matchesCharacterSearch(item.character, normalizedKeyword))
+      .filter((item) =>
+        matchesCharacterSearch(item.character, normalizedKeyword),
+      )
       .slice(0, 4);
   }, [charactersQuery.data, friendsQuery.data, normalizedKeyword]);
 
   const suggestionsLoading =
-    shouldLoadSuggestions && (friendsQuery.isLoading || charactersQuery.isLoading);
+    shouldLoadSuggestions &&
+    (friendsQuery.isLoading || charactersQuery.isLoading);
   const suggestionsError =
     shouldLoadSuggestions &&
-    (friendsQuery.error instanceof Error || charactersQuery.error instanceof Error);
+    (friendsQuery.error instanceof Error ||
+      charactersQuery.error instanceof Error);
   const hasSuggestionResults =
     friendMatches.length > 0 ||
     worldCharacterMatches.length > 0 ||
@@ -586,7 +595,11 @@ function SearchLauncherQuickLinkRow({
       onClick={onClick}
       className="flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
     >
-      <AvatarChip name={item.avatarName ?? item.title} src={item.avatarSrc} size="sm" />
+      <AvatarChip
+        name={item.avatarName ?? item.title}
+        src={item.avatarSrc}
+        size="sm"
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium text-[color:var(--text-primary)]">
@@ -603,7 +616,10 @@ function SearchLauncherQuickLinkRow({
           {item.description}
         </div>
       </div>
-      <ChevronRight size={14} className="shrink-0 text-[color:var(--text-dim)]" />
+      <ChevronRight
+        size={14}
+        className="shrink-0 text-[color:var(--text-dim)]"
+      />
     </button>
   );
 }
@@ -643,7 +659,10 @@ function SearchLauncherCharacterRow({
           {description}
         </div>
       </div>
-      <ChevronRight size={14} className="shrink-0 text-[color:var(--text-dim)]" />
+      <ChevronRight
+        size={14}
+        className="shrink-0 text-[color:var(--text-dim)]"
+      />
     </button>
   );
 }

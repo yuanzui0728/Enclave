@@ -193,7 +193,9 @@ export function useDesktopSearchQuickLinks(keyword: string) {
   return {
     favoriteMatches,
     favoritesError:
-      favoritesQuery.error instanceof Error ? favoritesQuery.error.message : null,
+      favoritesQuery.error instanceof Error
+        ? favoritesQuery.error.message
+        : null,
     favoritesLoading: favoritesQuery.isLoading,
     mergedFavorites,
     miniProgramMatches,
