@@ -1587,7 +1587,17 @@ export function StickerPanel({
             <div
               className={
                 isMobile
-                  ? "mb-2 rounded-[14px] border border-[color:var(--border-subtle)] bg-white px-3 py-2.5"
+                  ? `mb-2 rounded-[14px] border px-3 py-2.5 transition ${
+                      customStorageTone === "danger"
+                        ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
+                        : customStorageTone === "warning"
+                          ? "border-[rgba(245,158,11,0.24)] bg-[rgba(255,251,235,0.96)]"
+                          : "border-[color:var(--border-subtle)] bg-white"
+                    } ${
+                      customDeleteFeedbackFlashActive
+                        ? "shadow-[0_10px_24px_rgba(160,90,10,0.12)] ring-1 ring-[rgba(160,90,10,0.16)]"
+                        : ""
+                    }`
                   : `mb-3 rounded-[18px] border px-3 py-3 transition ${
                       customStorageTone === "danger"
                         ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
@@ -1664,6 +1674,24 @@ export function StickerPanel({
                       <span>{Math.round(customStorageRatio * 100)}%</span>
                     </div>
                   </div>
+                  {customDeleteFeedback ? (
+                    <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
+                      {customDeleteFeedback.lastDeletedLabel ? (
+                        <span
+                          className={`rounded-full bg-white/88 px-2 py-1 ${
+                            customDeleteFeedbackFlashActive
+                              ? "text-[#9a5a0a]"
+                              : ""
+                          }`}
+                        >
+                          最近删除：{customDeleteFeedback.lastDeletedLabel}
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-white/88 px-2 py-1">
+                        剩余 {customDeleteFeedback.remainingCount}
+                      </span>
+                    </div>
+                  ) : null}
                   {mobileShowsCustomAddFirstAction ||
                   mobileShowsCustomResumeUploadAction ||
                   mobileShowsCustomAddedShortcut ||
