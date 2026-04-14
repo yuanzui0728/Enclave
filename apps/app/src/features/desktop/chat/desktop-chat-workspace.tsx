@@ -1427,6 +1427,17 @@ export function DesktopChatWorkspace({
                   conversationContextMenuId={
                     conversationContextMenu?.conversation.id
                   }
+                  officialMessageContextMenu={
+                    officialMessageContextMenu?.kind === "subscription"
+                      ? { kind: "subscription" }
+                      : officialMessageContextMenu?.kind === "service"
+                        ? {
+                            kind: "service",
+                            accountId:
+                              officialMessageContextMenu.conversation.accountId,
+                          }
+                        : null
+                  }
                   onConversationContextMenu={handleConversationContextMenu}
                   onSubscriptionContextMenu={handleSubscriptionContextMenu}
                   onServiceConversationContextMenu={
@@ -2017,6 +2028,7 @@ function DesktopMessageEntryCard({
   subscriptionInboxActive,
   localMessageActionState,
   conversationContextMenuId,
+  officialMessageContextMenu,
   onConversationContextMenu,
   onSubscriptionContextMenu,
   onServiceConversationContextMenu,
@@ -2031,6 +2043,15 @@ function DesktopMessageEntryCard({
   subscriptionInboxActive: boolean;
   localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
   conversationContextMenuId?: string;
+  officialMessageContextMenu:
+    | {
+        kind: "subscription";
+      }
+    | {
+        kind: "service";
+        accountId: string;
+      }
+    | null;
   onConversationContextMenu: (
     event: MouseEvent<HTMLElement>,
     conversation: ConversationListItem,
@@ -2087,6 +2108,7 @@ function DesktopMessageEntryCard({
         summary={entry.summary}
         variant="desktop"
         active={subscriptionInboxActive}
+        contextMenuOpen={officialMessageContextMenu?.kind === "subscription"}
         onClick={() => {
           void navigate({
             to: "/tabs/chat",
@@ -2112,6 +2134,10 @@ function DesktopMessageEntryCard({
         conversation={entry.conversation}
         variant="desktop"
         active={entry.conversation.accountId === selectedServiceAccountId}
+        contextMenuOpen={
+          officialMessageContextMenu?.kind === "service" &&
+          officialMessageContextMenu.accountId === entry.conversation.accountId
+        }
         onClick={() => {
           void navigate({
             to: "/tabs/chat",

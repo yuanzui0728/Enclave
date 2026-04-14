@@ -871,10 +871,15 @@ function MobileChatListPage() {
                 />
               ) : null}
 
-              {serviceConversations.map((conversation) => (
+              {serviceConversations.map((conversation, index) => (
                 <OfficialServiceConversationCard
                   key={conversation.accountId}
                   conversation={conversation}
+                  className={
+                    showSubscriptionInboxItem || index > 0
+                      ? "border-t border-[color:var(--border-faint)]"
+                      : undefined
+                  }
                   onClick={() => {
                     void navigate({
                       to: "/official-accounts/service/$accountId",
