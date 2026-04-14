@@ -721,6 +721,16 @@ export function DesktopSearchWorkspace({
       }
     },
   );
+  const handleFocusSelectedResult = useEffectEvent(() => {
+    const targetResultId = selectedResultId ?? preferredAutoSelectedResultId;
+    if (!targetResultId) {
+      return;
+    }
+
+    setSelectedResultId(targetResultId);
+    scrollSelectedResultIntoView(targetResultId, "auto");
+    focusResultButton(targetResultId);
+  });
   const handleOpenSelectedResult = useEffectEvent((resultId: string) => {
     const result =
       keyboardNavigableResults.find((item) => item.id === resultId) ?? null;
@@ -763,6 +773,12 @@ export function DesktopSearchWorkspace({
       if (resultButton) {
         const resultId = resultButton.dataset.searchResultId;
         if (!resultId) {
+          return;
+        }
+
+        if (event.key === "Tab" && event.shiftKey) {
+          event.preventDefault();
+          focusSearchInput(true);
           return;
         }
 
@@ -864,6 +880,17 @@ export function DesktopSearchWorkspace({
 
         event.preventDefault();
         handleMoveSelectedResult(-1);
+        return;
+      }
+
+      if (event.key === "Tab" && !event.shiftKey) {
+        const targetResultId = selectedResultId ?? preferredAutoSelectedResultId;
+        if (!targetResultId) {
+          return;
+        }
+
+        event.preventDefault();
+        handleFocusSelectedResult();
         return;
       }
 
@@ -1101,7 +1128,7 @@ export function DesktopSearchWorkspace({
               keyword={keywordLabel}
               keyboardHint={
                 keyboardNavigableResults.length
-                  ? "↑ ↓ 选择结果 · ← → 切分类 · Enter 打开 · Esc 返回输入"
+                  ? "Tab 进入预选结果 · Shift+Tab 回搜索框 · ↑ ↓ 选择结果 · ← → 切分类"
                   : undefined
               }
               onBackToAll={
