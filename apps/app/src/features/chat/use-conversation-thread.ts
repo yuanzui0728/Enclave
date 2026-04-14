@@ -568,6 +568,7 @@ export function useConversationThread(conversationId: string) {
     conversationType: "direct" as "direct" | "group",
     initialUnreadCount,
     initialUnreadCutoff,
+    unreadSnapshotReady,
     hasOlderMessages,
     loadingOlderMessages:
       messagesQuery.isFetching && loadMoreRequestRef.current !== null,

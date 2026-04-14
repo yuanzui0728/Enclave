@@ -60,6 +60,7 @@ import {
   onConversationUpdated,
 } from "../../lib/socket";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
 
 type GroupChatThreadPanelProps = {
   groupId: string;
@@ -372,6 +373,16 @@ export function GroupChatThreadPanel({
     : groupQuery.data?.isMuted
       ? "群聊 · 免打扰"
       : undefined;
+
+  useThreadEntryScrollToBottom({
+    threadKey: groupId,
+    ready:
+      !messagesQuery.isLoading &&
+      !groupQuery.isLoading &&
+      unreadSnapshotReady,
+    disabled: Boolean(highlightedMessageId),
+    scrollToBottom,
+  });
 
   useEffect(() => {
     const loadedCount = messagesQuery.data?.length ?? 0;

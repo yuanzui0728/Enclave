@@ -41,6 +41,7 @@ import { useConversationBackground } from "./backgrounds/use-conversation-backgr
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 import { useDigitalHumanEntryGuard } from "./use-digital-human-entry-guard";
+import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
 
 type ConversationThreadPanelProps = {
   conversationId: string;
@@ -97,6 +98,7 @@ export function ConversationThreadPanel({
     conversationType,
     initialUnreadCount,
     initialUnreadCutoff,
+    unreadSnapshotReady,
     hasOlderMessages,
     loadingAnchorWindow,
     loadingOlderMessages,
@@ -158,6 +160,13 @@ export function ConversationThreadPanel({
         modeLabel: replyDraft.quotedText ? "部分引用" : undefined,
       }
     : null;
+
+  useThreadEntryScrollToBottom({
+    threadKey: conversationId,
+    ready: !messagesQuery.isLoading && unreadSnapshotReady,
+    disabled: Boolean(highlightedMessageId),
+    scrollToBottom,
+  });
 
   useEffect(() => {
     if (!highlightedMessageId || !hasHighlightedMessage) {
