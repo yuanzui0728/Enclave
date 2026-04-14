@@ -560,17 +560,33 @@ export function DesktopOfficialAccountsWorkspace({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <DesktopOfficialModeButton
-              active={displayMode === "feed"}
-              label="常看与文章"
-              onClick={() => handleDisplayModeChange("feed")}
-            />
-            <DesktopOfficialModeButton
-              active={displayMode === "accounts"}
-              label="按号查看"
-              onClick={() => handleDisplayModeChange("accounts")}
-            />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex items-center gap-2 rounded-[18px] border border-[color:var(--border-faint)] bg-white px-2 py-2 shadow-[0_8px_22px_rgba(15,23,42,0.05)]">
+              <div className="px-2">
+                <div className="text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                  展示方式
+                </div>
+                <div className="mt-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                  {displayMode === "feed"
+                    ? "常看的号在上，文章在下"
+                    : "按公众号主页浏览"}
+                </div>
+              </div>
+              <DesktopOfficialModeButton
+                active={displayMode === "feed"}
+                icon={BookOpenText}
+                label="常看与文章"
+                description="上面常看的号"
+                onClick={() => handleDisplayModeChange("feed")}
+              />
+              <DesktopOfficialModeButton
+                active={displayMode === "accounts"}
+                icon={MessageSquareText}
+                label="按号查看"
+                description="逐个公众号主页"
+                onClick={() => handleDisplayModeChange("accounts")}
+              />
+            </div>
             <Button
               type="button"
               variant="secondary"
@@ -1100,25 +1116,54 @@ function DesktopOfficialFeedMode({
 
 function DesktopOfficialModeButton({
   active,
+  icon: Icon,
   label,
+  description,
   onClick,
 }: {
   active: boolean;
+  icon: typeof BookOpenText;
   label: string;
+  description: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-sm transition",
+        "flex min-w-[132px] items-center gap-2 rounded-[14px] border px-3 py-2 text-left transition",
         active
-          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] font-medium text-[color:var(--brand-primary)]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
+          ? "border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] text-[color:var(--brand-primary)]"
+          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.78)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
       )}
     >
-      {label}
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+          active
+            ? "bg-[rgba(7,193,96,0.12)]"
+            : "bg-[rgba(15,23,42,0.05)] text-[color:var(--text-muted)]",
+        )}
+      >
+        <Icon size={15} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-medium leading-none">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "mt-1 block truncate text-[10px] leading-none",
+            active
+              ? "text-[color:var(--brand-primary)]/80"
+              : "text-[color:var(--text-muted)]",
+          )}
+        >
+          {description}
+        </span>
+      </span>
     </button>
   );
 }
