@@ -32,6 +32,7 @@ import {
 import { AvatarChip } from "../../../components/avatar-chip";
 import { useAppRuntimeConfig } from "../../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../../store/world-owner-store";
+import { getFriendDisplayName } from "../../contacts/contact-utils";
 import { useDesktopLayout } from "../../shell/use-desktop-layout";
 import { DesktopUtilityShell } from "../desktop-utility-shell";
 import {
@@ -405,7 +406,7 @@ export function DesktopAddFriendWorkspace() {
                 />
                 <DesktopAddFriendGuideRow
                   label="资料关键词"
-                  value="可按签名、简介和关系描述搜索"
+                  value="支持备注、标签、签名和关系描述"
                 />
               </div>
             </div>
@@ -860,6 +861,12 @@ function DesktopAddFriendResultRow({
   selected: boolean;
   onClick: () => void;
 }) {
+  const displayName = getSearchResultDisplayName(item);
+  const detailText =
+    displayName !== item.character.name
+      ? `昵称：${item.character.name} · ${item.matchReason}`
+      : item.matchReason;
+
   return (
     <button
       type="button"
@@ -872,19 +879,19 @@ function DesktopAddFriendResultRow({
       )}
     >
       <AvatarChip
-        name={item.character.name}
+        name={displayName}
         src={item.character.avatar}
         size="wechat"
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
-          {item.friendship?.remarkName?.trim() || item.character.name}
+          {displayName}
         </div>
         <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
           {item.identifier}
         </div>
         <div className="mt-1 truncate text-[11px] text-[color:var(--text-dim)]">
-          {item.matchReason}
+          {detailText}
         </div>
       </div>
       <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
@@ -929,17 +936,17 @@ function buildSearchResults(
       continue;
     }
 
+    const friendship = friendshipMap.get(character.id) ?? null;
     const identifier = buildCharacterIdentifier(character.id);
     const directRouteTarget =
       Boolean(routeCharacterId) && character.id === routeCharacterId;
     const match = normalizedKeyword
-      ? matchCharacter(character, identifier, normalizedKeyword)
+      ? matchCharacter(character, identifier, normalizedKeyword, friendship)
       : null;
     if (!match && !directRouteTarget) {
       continue;
     }
 
-    const friendship = friendshipMap.get(character.id) ?? null;
     const pendingRequest = pendingRequestMap.get(character.id) ?? null;
     const status: DesktopAddFriendRelationshipState = blockedCharacterIds.has(
       character.id,
@@ -970,7 +977,10 @@ function buildSearchResults(
         return left.score - right.score;
       }
 
-      return left.character.name.localeCompare(right.character.name, "zh-CN");
+      return getSearchResultDisplayName(left).localeCompare(
+        getSearchResultDisplayName(right),
+        "zh-CN",
+      );
     })
     .slice(0, 8);
 }
@@ -979,10 +989,13 @@ function matchCharacter(
   character: Character,
   identifier: string,
   normalizedKeyword: string,
+  friendship?: FriendListItem["friendship"] | null,
 ) {
   const normalizedName = character.name.trim().toLowerCase();
   const normalizedIdentifier = identifier.toLowerCase();
   const normalizedId = character.id.toLowerCase();
+  const normalizedRemarkName =
+    friendship?.remarkName?.trim()?.toLowerCase() ?? "";
 
   if (
     normalizedIdentifier === normalizedKeyword ||
@@ -992,6 +1005,29 @@ function matchCharacter(
       score: 0,
       reason: "隐界号精确匹配",
     };
+  }
+
+  if (normalizedRemarkName) {
+    if (normalizedRemarkName === normalizedKeyword) {
+      return {
+        score: 5,
+        reason: "备注名精确匹配",
+      };
+    }
+
+    if (normalizedRemarkName.startsWith(normalizedKeyword)) {
+      return {
+        score: 15,
+        reason: "备注名前缀匹配",
+      };
+    }
+
+    if (normalizedRemarkName.includes(normalizedKeyword)) {
+      return {
+        score: 25,
+        reason: "备注名匹配",
+      };
+    }
   }
 
   if (normalizedName === normalizedKeyword) {
@@ -1032,7 +1068,34 @@ function matchCharacter(
     }
   }
 
+  const contactMatchFields = [
+    friendship?.region?.trim() ?? "",
+    friendship?.source?.trim() ?? "",
+    friendship?.tags?.filter(Boolean).join(" ") ?? "",
+  ];
+
+  for (const [index, field] of contactMatchFields.entries()) {
+    if (field.toLowerCase().includes(normalizedKeyword)) {
+      return {
+        score: 50 + index,
+        reason:
+          index === 0 ? "地区匹配" : index === 1 ? "来源匹配" : "标签匹配",
+      };
+    }
+  }
+
   return null;
+}
+
+function getSearchResultDisplayName(
+  item: Pick<SearchResultItem, "character" | "friendship">,
+) {
+  return item.friendship
+    ? getFriendDisplayName({
+        character: item.character,
+        friendship: item.friendship,
+      })
+    : item.character.name;
 }
 
 function FakeQrPanel() {
