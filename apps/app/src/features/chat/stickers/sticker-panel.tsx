@@ -673,6 +673,13 @@ export function StickerPanel({
   const highlightedSearchSectionState = highlightedSearchSection
     ? (searchSectionStateMap.get(highlightedSearchSection.id) ?? null)
     : null;
+  const searchItemOffsetWithinSectionLabel =
+    highlightedSearchSectionState?.highlightedPosition &&
+    highlightedSearchSectionState.highlightedPosition > 1
+      ? `当前比本组首项晚 ${
+          highlightedSearchSectionState.highlightedPosition - 1
+        } 项`
+      : null;
   const showSearchSectionJumpHint =
     !isMobile &&
     searching &&
@@ -1567,24 +1574,31 @@ export function StickerPanel({
                       getStickerIdentity(
                         highlightedSearchSectionLeadSticker,
                       ) !== firstSearchResultKey ? (
-                        <div className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-                          <img
-                            src={highlightedSearchSectionLeadSticker.url}
-                            alt={
-                              highlightedSearchSectionLeadSticker.label ??
-                              highlightedSearchSectionLeadSticker.stickerId
-                            }
-                            className="h-4 w-4 rounded-[6px] object-contain"
-                            loading="lazy"
-                          />
-                          <span className="truncate">
-                            本组首项：
-                            {highlightedSearchSectionLeadSticker.label ??
-                              highlightedSearchSectionLeadSticker.stickerId}
-                          </span>
-                          {highlightedSearchSection ? (
-                            <span className="rounded-full bg-white px-1.5 py-0.5 text-[9px] text-[color:var(--text-secondary)]">
-                              {highlightedSearchSection.label}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <div className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                            <img
+                              src={highlightedSearchSectionLeadSticker.url}
+                              alt={
+                                highlightedSearchSectionLeadSticker.label ??
+                                highlightedSearchSectionLeadSticker.stickerId
+                              }
+                              className="h-4 w-4 rounded-[6px] object-contain"
+                              loading="lazy"
+                            />
+                            <span className="truncate">
+                              本组首项：
+                              {highlightedSearchSectionLeadSticker.label ??
+                                highlightedSearchSectionLeadSticker.stickerId}
+                            </span>
+                            {highlightedSearchSection ? (
+                              <span className="rounded-full bg-white px-1.5 py-0.5 text-[9px] text-[color:var(--text-secondary)]">
+                                {highlightedSearchSection.label}
+                              </span>
+                            ) : null}
+                          </div>
+                          {searchItemOffsetWithinSectionLabel ? (
+                            <span className="rounded-full bg-white/92 px-1.5 py-1 text-[10px] text-[color:var(--text-secondary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
+                              {searchItemOffsetWithinSectionLabel}
                             </span>
                           ) : null}
                         </div>
