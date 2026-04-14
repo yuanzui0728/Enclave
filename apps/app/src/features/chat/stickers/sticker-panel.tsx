@@ -758,6 +758,11 @@ export function StickerPanel({
   const bottomPageDownSearchHint = nextSearchSectionLabel
     ? `PgDn ${nextSearchSectionLabel}`
     : "PgDn 下组";
+  const showManageSearchPauseHint =
+    !isMobile &&
+    activeSectionId === "custom" &&
+    searching &&
+    manageSearchPauseHintVisible;
   const bottomEscSearchHint = showManageSearchPauseHint
     ? "Esc 继续管理"
     : "Esc 清空";
@@ -783,11 +788,6 @@ export function StickerPanel({
     activeSectionId === "custom" &&
     trimmedKeyword.length === 0 &&
     customManageMode;
-  const showManageSearchPauseHint =
-    !isMobile &&
-    activeSectionId === "custom" &&
-    searching &&
-    manageSearchPauseHintVisible;
   const showDesktopManageStoragePreview =
     !isMobile &&
     activeSectionId === "custom" &&
@@ -804,6 +804,20 @@ export function StickerPanel({
     showManageSearchPauseHint &&
     customUploadResumed &&
     !uploadMutation.isPending;
+  const showSearchResumeUploadAction =
+    activeSectionId === "custom" &&
+    searching &&
+    customUploadResumed &&
+    !customStickerLibraryFull &&
+    !uploadMutation.isPending;
+  const searchResumeUploadButtonLabel = showManageSearchPauseHint
+    ? "现在去添加"
+    : catalog.customStickerCount === 0
+      ? "继续添加表情"
+      : "继续添加";
+  const searchResumeUploadHintLabel = showSearchResumeUploadAction
+    ? `已腾出 ${customUploadResumedSlots} 个空位，可直接添加`
+    : null;
   const desktopManageButtonLabel = showManageSearchPauseHint
     ? "继续管理"
     : customManageMode
@@ -2583,17 +2597,28 @@ export function StickerPanel({
                 </div>
                 {searching ? (
                   <div className="flex flex-col items-center gap-2">
-                    {showManageSearchPauseHint ? (
+                    {showManageSearchPauseHint ||
+                    searchResumeUploadHintLabel ? (
                       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
-                        <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
-                          {pausedManageResumeLabel}
-                        </span>
-                        <span className="rounded-full bg-white/88 px-2 py-1">
-                          {pausedManageCapacityLabel}
-                        </span>
-                        {pausedManageUploadLabel ? (
-                          <span className="rounded-full bg-white/88 px-2 py-1 text-[#9a5a0a]">
-                            {pausedManageUploadLabel}
+                        {showManageSearchPauseHint ? (
+                          <>
+                            <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
+                              {pausedManageResumeLabel}
+                            </span>
+                            <span className="rounded-full bg-white/88 px-2 py-1">
+                              {pausedManageCapacityLabel}
+                            </span>
+                            {pausedManageUploadLabel ? (
+                              <span className="rounded-full bg-white/88 px-2 py-1 text-[#9a5a0a]">
+                                {pausedManageUploadLabel}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null}
+                        {!showManageSearchPauseHint &&
+                        searchResumeUploadHintLabel ? (
+                          <span className="rounded-full bg-[rgba(160,90,10,0.12)] px-2 py-1 text-[#9a5a0a]">
+                            {searchResumeUploadHintLabel}
                           </span>
                         ) : null}
                       </div>
@@ -2612,13 +2637,13 @@ export function StickerPanel({
                           ? "清空并继续管理"
                           : "清空重试"}
                       </button>
-                      {showPausedManageResumeUploadShortcut ? (
+                      {showSearchResumeUploadAction ? (
                         <button
                           type="button"
                           onClick={clearSearchAndOpenUpload}
                           className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#9a5a0a] transition hover:bg-[color:var(--surface-console)]"
                         >
-                          现在去添加
+                          {searchResumeUploadButtonLabel}
                         </button>
                       ) : null}
                       {activeSectionId !== "featured" ? (
@@ -2657,7 +2682,9 @@ export function StickerPanel({
                         ? showPausedManageResumeUploadShortcut
                           ? "也可以直接继续添加图片或 GIF，或者先回到删除管理再清理。"
                           : "也可以先继续删除当前自定义表情，之后再回来搜。"
-                        : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
+                        : showSearchResumeUploadAction
+                          ? "也可以直接继续添加图片或 GIF，之后再回来搜。"
+                          : "试试换个关键词，或者先看看精选 / 自定义里的常用表情"}
                     </div>
                   </div>
                 ) : null}
