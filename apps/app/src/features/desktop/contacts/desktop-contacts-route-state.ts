@@ -12,6 +12,7 @@ export type DesktopContactsRouteState = {
   characterId?: string;
   accountId?: string;
   articleId?: string;
+  officialMode?: "feed" | "accounts";
   showWorldCharacters: boolean;
 };
 
@@ -44,6 +45,7 @@ export function parseDesktopContactsRouteState(
   const characterId = params.get("characterId")?.trim() || undefined;
   const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim() || undefined;
+  const officialMode = params.get("officialMode")?.trim();
 
   return {
     pane:
@@ -53,6 +55,10 @@ export function parseDesktopContactsRouteState(
     characterId,
     accountId,
     articleId,
+    officialMode:
+      officialMode === "feed" || officialMode === "accounts"
+        ? officialMode
+        : undefined,
     showWorldCharacters: params.get("world") === "1",
   };
 }
@@ -80,6 +86,13 @@ export function buildDesktopContactsRouteHash(
 
   if (state.articleId?.trim()) {
     params.set("articleId", state.articleId.trim());
+  }
+
+  if (
+    state.officialMode === "feed" ||
+    state.officialMode === "accounts"
+  ) {
+    params.set("officialMode", state.officialMode);
   }
 
   if (state.showWorldCharacters) {

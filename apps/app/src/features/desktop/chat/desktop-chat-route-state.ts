@@ -5,6 +5,7 @@ export type DesktopChatOfficialView =
 
 export type DesktopChatRouteState = {
   officialView?: DesktopChatOfficialView;
+  officialMode?: "feed" | "accounts";
   accountId?: string;
   articleId?: string;
 };
@@ -17,6 +18,7 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
 
   const params = new URLSearchParams(normalizedHash);
   const officialView = params.get("officialView")?.trim();
+  const officialMode = params.get("officialMode")?.trim();
   const accountId = params.get("accountId")?.trim() || undefined;
   const articleId = params.get("articleId")?.trim() || undefined;
 
@@ -30,6 +32,10 @@ export function parseDesktopChatRouteHash(hash: string): DesktopChatRouteState {
 
   return {
     officialView,
+    officialMode:
+      officialMode === "feed" || officialMode === "accounts"
+        ? officialMode
+        : undefined,
     accountId,
     articleId,
   };
@@ -42,6 +48,13 @@ export function buildDesktopChatRouteHash(state: DesktopChatRouteState) {
 
   const params = new URLSearchParams();
   params.set("officialView", state.officialView);
+
+  if (
+    state.officialMode === "feed" ||
+    state.officialMode === "accounts"
+  ) {
+    params.set("officialMode", state.officialMode);
+  }
 
   if (state.accountId?.trim()) {
     params.set("accountId", state.accountId.trim());

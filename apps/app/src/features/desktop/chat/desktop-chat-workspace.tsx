@@ -144,6 +144,7 @@ type DesktopChatWorkspaceProps = {
   selectedServiceAccountId?: string;
   selectedOfficialAccountId?: string;
   selectedOfficialArticleId?: string;
+  selectedOfficialDisplayMode?: "feed" | "accounts";
   highlightedMessageId?: string;
   routeContextNotice?: ChatRouteContextNotice;
   selectedSpecialView?: "subscription-inbox" | "official-accounts";
@@ -181,6 +182,7 @@ export function DesktopChatWorkspace({
   selectedServiceAccountId,
   selectedOfficialAccountId,
   selectedOfficialArticleId,
+  selectedOfficialDisplayMode,
   highlightedMessageId,
   routeContextNotice,
   selectedSpecialView,
@@ -1413,6 +1415,7 @@ export function DesktopChatWorkspace({
                   selectedOfficialAccountId={selectedOfficialAccountId}
                   selectedServiceAccountId={selectedServiceAccountId}
                   selectedOfficialArticleId={selectedOfficialArticleId}
+                  selectedOfficialDisplayMode={selectedOfficialDisplayMode}
                   subscriptionInboxActive={subscriptionInboxActive}
                   localMessageActionState={localMessageActionState}
                   conversationContextMenuId={
@@ -1447,11 +1450,13 @@ export function DesktopChatWorkspace({
           <DesktopOfficialAccountsWorkspace
             selectedAccountId={selectedOfficialAccountId}
             selectedArticleId={selectedOfficialArticleId}
+            selectedMode={selectedOfficialDisplayMode}
             onOpenAccount={(accountId) => {
               void navigate({
                 to: "/tabs/chat",
                 hash: buildDesktopChatRouteHash({
                   officialView: "official-accounts",
+                  officialMode: "accounts",
                   accountId,
                 }),
                 replace: true,
@@ -1462,8 +1467,21 @@ export function DesktopChatWorkspace({
                 to: "/tabs/chat",
                 hash: buildDesktopChatRouteHash({
                   officialView: "official-accounts",
+                  officialMode: "accounts",
                   accountId,
                   articleId,
+                }),
+                replace: true,
+              });
+            }}
+            onModeChange={(officialMode) => {
+              void navigate({
+                to: "/tabs/chat",
+                hash: buildDesktopChatRouteHash({
+                  officialView: "official-accounts",
+                  officialMode,
+                  accountId: selectedOfficialAccountId,
+                  articleId: selectedOfficialArticleId,
                 }),
                 replace: true,
               });
@@ -1508,6 +1526,7 @@ export function DesktopChatWorkspace({
                 to: "/tabs/chat",
                 hash: buildDesktopChatRouteHash({
                   officialView: "official-accounts",
+                  officialMode: "accounts",
                   accountId,
                   articleId,
                 }),
@@ -1536,6 +1555,7 @@ export function DesktopChatWorkspace({
                 to: "/tabs/chat",
                 hash: buildDesktopChatRouteHash({
                   officialView: "official-accounts",
+                  officialMode: "accounts",
                   accountId,
                   articleId,
                 }),
@@ -1828,6 +1848,7 @@ export function DesktopChatWorkspace({
                           to: "/tabs/chat",
                           hash: buildDesktopChatRouteHash({
                             officialView: "official-accounts",
+                            officialMode: "accounts",
                             articleId: selectedOfficialArticleId,
                           }),
                         });
@@ -1838,6 +1859,7 @@ export function DesktopChatWorkspace({
                         to: "/tabs/chat",
                         hash: buildDesktopChatRouteHash({
                           officialView: "official-accounts",
+                          officialMode: "feed",
                         }),
                       });
                     },
@@ -1891,6 +1913,7 @@ export function DesktopChatWorkspace({
                         to: "/tabs/chat",
                         hash: buildDesktopChatRouteHash({
                           officialView: "official-accounts",
+                          officialMode: "accounts",
                           accountId:
                             officialMessageContextMenu.conversation.accountId,
                           articleId:
@@ -1974,6 +1997,7 @@ function DesktopMessageEntryCard({
   selectedOfficialAccountId,
   selectedServiceAccountId,
   selectedOfficialArticleId,
+  selectedOfficialDisplayMode,
   subscriptionInboxActive,
   localMessageActionState,
   conversationContextMenuId,
@@ -1987,6 +2011,7 @@ function DesktopMessageEntryCard({
   selectedOfficialAccountId?: string;
   selectedServiceAccountId?: string;
   selectedOfficialArticleId?: string;
+  selectedOfficialDisplayMode?: "feed" | "accounts";
   subscriptionInboxActive: boolean;
   localMessageActionState: ReturnType<typeof useLocalChatMessageActionState>;
   conversationContextMenuId?: string;
@@ -2027,6 +2052,10 @@ function DesktopMessageEntryCard({
             to: "/tabs/chat",
             hash: buildDesktopChatRouteHash({
               officialView: "official-accounts",
+              officialMode:
+                selectedOfficialDisplayMode === "accounts"
+                  ? "accounts"
+                  : "feed",
               accountId,
               articleId,
             }),

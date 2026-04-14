@@ -145,6 +145,7 @@ export function ChatListPage() {
             : undefined
         }
         selectedOfficialArticleId={desktopRouteState.articleId}
+        selectedOfficialDisplayMode={desktopRouteState.officialMode}
         selectedSpecialView={
           desktopRouteState.officialView === "subscription-inbox"
             ? "subscription-inbox"
