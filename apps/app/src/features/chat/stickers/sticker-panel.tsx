@@ -2310,9 +2310,14 @@ export function StickerPanel({
                           <button
                             type="button"
                             onClick={openCustomManageMode}
+                            title={
+                              customStickerLibraryFull
+                                ? "表情库已满，进入管理删除后再继续添加。"
+                                : "空间不多了，先去清理不常用表情。"
+                            }
                             className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                           >
-                            去清理
+                            {customStickerLibraryFull ? "去管理" : "去清理"}
                           </button>
                         ) : null}
                         {catalog.customStickerCount > 1 &&
