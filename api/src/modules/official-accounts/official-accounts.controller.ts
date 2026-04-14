@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { OfficialAccountsService } from './official-accounts.service';
 
 @Controller('official-accounts')
@@ -60,6 +60,14 @@ export class OfficialAccountsController {
   @Post(':id/service-messages/read')
   markServiceMessagesRead(@Param('id') id: string) {
     return this.officialAccountsService.markServiceMessagesRead(id);
+  }
+
+  @Patch(':id/preferences')
+  updatePreferences(
+    @Param('id') id: string,
+    @Body() body: { isMuted?: boolean },
+  ) {
+    return this.officialAccountsService.updatePreferences(id, body);
   }
 
   @Get(':id')

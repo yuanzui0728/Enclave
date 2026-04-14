@@ -82,6 +82,7 @@ import type {
   OfficialAccountDetail,
   OfficialAccountSubscriptionInbox,
   OfficialAccountSummary,
+  UpdateOfficialAccountPreferencesRequest,
 } from "./official-accounts";
 import type {
   CreateModerationReportRequest,
@@ -2277,6 +2278,21 @@ export function markOfficialAccountServiceMessagesRead(
     `/official-accounts/${accountId}/service-messages/read`,
     {
       method: "POST",
+    },
+    baseUrl,
+  );
+}
+
+export function updateOfficialAccountPreferences(
+  accountId: string,
+  payload: UpdateOfficialAccountPreferencesRequest,
+  baseUrl?: string,
+) {
+  return requestLegacyApi<OfficialAccountDetail>(
+    `/official-accounts/${accountId}/preferences`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload),
     },
     baseUrl,
   );

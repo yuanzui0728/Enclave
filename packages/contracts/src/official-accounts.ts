@@ -4,6 +4,10 @@ export type OfficialAccountDeliveryKind =
   | "service_notice";
 export type OfficialAccountServiceMessageType = "text" | "article_card";
 
+export interface UpdateOfficialAccountPreferencesRequest {
+  isMuted?: boolean;
+}
+
 export interface OfficialAccountArticleSummary {
   id: string;
   accountId: string;

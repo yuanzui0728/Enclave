@@ -325,6 +325,32 @@ export class OfficialAccountsService {
     return this.getServiceMessages(accountId);
   }
 
+  async updatePreferences(
+    accountId: string,
+    payload: { isMuted?: boolean },
+  ) {
+    await this.ensureSeedData();
+    const owner = await this.worldOwnerService.getOwnerOrThrow();
+    await this.getServiceAccountEntityOrThrow(accountId);
+
+    const follow = await this.followRepo.findOneBy({
+      ownerId: owner.id,
+      accountId,
+    });
+
+    if (!follow) {
+      throw new NotFoundException('公众号关注关系不存在。');
+    }
+
+    if (payload.isMuted !== undefined) {
+      follow.isMuted = payload.isMuted;
+      follow.mutedAt = payload.isMuted ? new Date() : null;
+      await this.followRepo.save(follow);
+    }
+
+    return this.getAccount(accountId);
+  }
+
   async markDeliveryRead(deliveryId: string) {
     await this.ensureSeedData();
     const owner = await this.worldOwnerService.getOwnerOrThrow();
