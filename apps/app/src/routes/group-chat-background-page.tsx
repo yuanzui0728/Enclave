@@ -32,6 +32,7 @@ import { compressChatBackgroundImage } from "../features/chat/backgrounds/compre
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useGroupBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -509,9 +510,11 @@ export function GroupChatBackgroundPage() {
       title={groupQuery.data?.name ?? "群聊背景"}
       subtitle="默认背景和群聊专属背景"
       onBack={() => {
-        void navigate({
-          to: "/group/$groupId/details",
-          params: { groupId },
+        navigateBackOrFallback(() => {
+          void navigate({
+            to: "/group/$groupId/details",
+            params: { groupId },
+          });
         });
       }}
     >

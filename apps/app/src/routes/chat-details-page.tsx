@@ -38,6 +38,7 @@ import { MobileDetailsActionSheet } from "../features/chat-details/mobile-detail
 import { buildDesktopAddFriendRouteHash } from "../features/desktop/contacts/desktop-add-friend-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { buildCreateGroupRouteHash } from "../lib/create-group-route-state";
+import { navigateBackOrFallback } from "../lib/history-back";
 import {
   openAppSettings,
   requestNotificationPermission,
@@ -612,9 +613,11 @@ export function ChatDetailsPage() {
     <ChatDetailsShell
       title={conversation?.title ?? "聊天信息"}
       onBack={() => {
-        void navigate({
-          to: "/chat/$conversationId",
-          params: { conversationId },
+        navigateBackOrFallback(() => {
+          void navigate({
+            to: "/chat/$conversationId",
+            params: { conversationId },
+          });
         });
       }}
     >

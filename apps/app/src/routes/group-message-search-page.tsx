@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getGroup, getGroupMessages } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -48,7 +49,9 @@ export function GroupMessageSearchPage() {
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        void navigate({ to: "/group/$groupId/details", params: { groupId } });
+        navigateBackOrFallback(() => {
+          void navigate({ to: "/group/$groupId/details", params: { groupId } });
+        });
       }}
       onOpenMessage={(messageId) => {
         void navigate({
