@@ -1297,7 +1297,8 @@ export function DesktopSearchWorkspace({
                     ) : null
                   }
                   countLabel={history.length ? `${history.length} 条记录` : undefined}
-                  description="空态先展示你最近真正用过的关键词。"
+                  contextLabel="搜索记录"
+                  description="优先展示最近真正用过的关键词。"
                   title="最近搜索"
                 >
                   {history.length ? (
@@ -1325,14 +1326,14 @@ export function DesktopSearchWorkspace({
                 <div className="space-y-4">
                   <DesktopQuickLinksPanel
                     title="最近使用的小程序"
-                    description="桌面端先把最近打开的小程序放进搜一搜首页，方便从主搜索框直达。"
+                    description="优先展示最近打开的小程序入口。"
                     emptyText="打开过的小程序会先沉淀到这里。"
                     items={recentMiniPrograms}
                     onOpen={onOpenQuickLink}
                   />
                   <DesktopQuickLinksPanel
                     title="最近收藏"
-                    description="高频回看的收藏会优先出现在桌面搜一搜首页。"
+                    description="优先展示高频回看的收藏入口。"
                     emptyText="收藏过内容后，这里会出现最近回访入口。"
                     items={recentFavorites}
                     onOpen={onOpenQuickLink}
@@ -1546,12 +1547,14 @@ export function DesktopSearchWorkspace({
 }
 
 function DesktopQuickLinksPanel({
+  contextLabel = "快捷入口",
   description,
   emptyText,
   items,
   onOpen,
   title,
 }: {
+  contextLabel?: string;
   description: string;
   emptyText: string;
   items: DesktopSearchQuickLink[];
@@ -1561,6 +1564,7 @@ function DesktopQuickLinksPanel({
   return (
     <DesktopSearchLandingPanel
       countLabel={items.length ? `${items.length} 个入口` : undefined}
+      contextLabel={contextLabel}
       description={description}
       title={title}
     >
@@ -1587,12 +1591,14 @@ function DesktopSearchLandingPanel({
   action,
   children,
   countLabel,
+  contextLabel = "首页入口",
   description,
   title,
 }: {
   action?: ReactNode;
   children: ReactNode;
   countLabel?: string;
+  contextLabel?: string;
   description: string;
   title: string;
 }) {
@@ -1610,6 +1616,11 @@ function DesktopSearchLandingPanel({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
+          {contextLabel ? (
+            <div className="rounded-full bg-[rgba(7,193,96,0.08)] px-2.5 py-1 text-[10px] text-[color:var(--brand-primary)]">
+              {contextLabel}
+            </div>
+          ) : null}
           {countLabel ? (
             <div className="rounded-full bg-white px-2.5 py-1 text-[10px] text-[color:var(--text-muted)]">
               {countLabel}
