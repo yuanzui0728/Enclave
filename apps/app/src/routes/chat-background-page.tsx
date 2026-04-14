@@ -33,6 +33,7 @@ import { compressChatBackgroundImage } from "../features/chat/backgrounds/compre
 import { getChatBackgroundLabel } from "../features/chat/backgrounds/chat-background-helpers";
 import { useConversationBackground } from "../features/chat/backgrounds/use-conversation-background";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 type UploadTarget = "default" | "conversation";
@@ -525,9 +526,11 @@ export function ChatBackgroundPage() {
       title={conversation?.title ?? "聊天背景"}
       subtitle="默认背景和好友专属背景"
       onBack={() => {
-        void navigate({
-          to: "/chat/$conversationId/details",
-          params: { conversationId },
+        navigateBackOrFallback(() => {
+          void navigate({
+            to: "/chat/$conversationId/details",
+            params: { conversationId },
+          });
         });
       }}
     >

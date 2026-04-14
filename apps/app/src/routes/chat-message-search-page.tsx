@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { getConversationMessages, getConversations } from "@yinjie/contracts";
 import { ChatMessageSearchPanel } from "../features/chat/chat-message-search-panel";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
 export function ChatMessageSearchPage() {
@@ -57,9 +58,11 @@ export function ChatMessageSearchPage() {
         void messagesQuery.refetch();
       }}
       onBack={() => {
-        void navigate({
-          to: "/chat/$conversationId/details",
-          params: { conversationId },
+        navigateBackOrFallback(() => {
+          void navigate({
+            to: "/chat/$conversationId/details",
+            params: { conversationId },
+          });
         });
       }}
       onOpenMessage={(messageId) => {

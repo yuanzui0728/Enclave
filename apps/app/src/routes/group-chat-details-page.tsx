@@ -20,6 +20,7 @@ import { ChatDetailsSection } from "../features/chat-details/chat-details-sectio
 import { ChatMemberGrid } from "../features/chat-details/chat-member-grid";
 import { ChatSettingRow } from "../features/chat-details/chat-setting-row";
 import { MobileDetailsActionSheet } from "../features/chat-details/mobile-details-action-sheet";
+import { navigateBackOrFallback } from "../lib/history-back";
 import { isMissingGroupError } from "../lib/group-route-fallback";
 import {
   shareWithNativeShell,
@@ -340,7 +341,9 @@ export function GroupChatDetailsPage() {
         membersQuery.data ? `${membersQuery.data.length} 人群聊` : "群聊信息"
       }
       onBack={() => {
-        void navigate({ to: "/group/$groupId", params: { groupId } });
+        navigateBackOrFallback(() => {
+          void navigate({ to: "/group/$groupId", params: { groupId } });
+        });
       }}
       rightActions={
         groupSummary ? (
