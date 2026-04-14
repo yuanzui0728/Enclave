@@ -107,6 +107,8 @@ const landingScopeCards = [
   },
 ];
 
+type DesktopSearchScopeCardCategory = (typeof landingScopeCards)[number]["id"];
+
 export function DesktopSearchWorkspace({
   activeCategory,
   error,
@@ -308,47 +310,24 @@ export function DesktopSearchWorkspace({
 
           {!loading && !error && !hasKeyword ? (
             <div className="space-y-6">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {landingScopeCards.map((item) => {
                   const Icon = item.icon;
-                  const count =
-                    item.id === "messages"
-                      ? scopeCounts.conversations
-                      : item.id === "contacts"
-                        ? scopeCounts.contacts
-                        : item.id === "favorites"
-                          ? scopeCounts.favorites
-                        : item.id === "officialAccounts"
-                          ? scopeCounts.officialAccounts
-                          : item.id === "miniPrograms"
-                            ? scopeCounts.miniPrograms
-                          : item.id === "moments"
-                            ? scopeCounts.moments
-                            : scopeCounts.feed;
+                  const count = getDesktopSearchScopeCount(scopeCounts, item.id);
 
                   return (
-                    <button
+                    <DesktopSearchScopeCard
                       key={item.id}
-                      type="button"
+                      category={item.id}
+                      count={count}
+                      description={item.description}
+                      icon={Icon}
                       onClick={() => {
                         setActiveCategory(item.id);
                         inputRef.current?.focus();
                       }}
-                      className="rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4 text-left transition hover:border-[rgba(7,193,96,0.16)] hover:bg-[color:var(--surface-console)]"
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[rgba(7,193,96,0.10)] text-[#15803d]">
-                        <Icon size={18} />
-                      </div>
-                      <div className="mt-3 text-sm font-medium text-[color:var(--text-primary)]">
-                        {item.title}
-                      </div>
-                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
-                        当前覆盖 {count} 项
-                      </div>
-                      <div className="mt-3 text-xs leading-6 text-[color:var(--text-secondary)]">
-                        {item.description}
-                      </div>
-                    </button>
+                      title={item.title}
+                    />
                   );
                 })}
               </div>
@@ -720,6 +699,116 @@ function DesktopSearchStatusCard({
         {description}
       </div>
     </section>
+  );
+}
+
+function DesktopSearchScopeCard({
+  category,
+  count,
+  description,
+  icon: Icon,
+  onClick,
+  title,
+}: {
+  category: DesktopSearchScopeCardCategory;
+  count: number;
+  description: string;
+  icon: typeof MessageSquareText;
+  onClick: () => void;
+  title: string;
+}) {
+  const toneClassName =
+    category === "messages"
+      ? "border-[#dce9dd] bg-[linear-gradient(180deg,#f8fcf8,white)]"
+      : category === "contacts"
+        ? "border-[#d9e7d9] bg-[linear-gradient(180deg,#f9fcfa,white)]"
+        : category === "favorites"
+          ? "border-[#efe2bf] bg-[linear-gradient(180deg,#fffdf7,white)]"
+          : category === "officialAccounts"
+            ? "border-[#dfe7dd] bg-[linear-gradient(180deg,#fbfdfb,white)]"
+            : category === "miniPrograms"
+              ? "border-[#d8e7df] bg-[linear-gradient(180deg,#f7fbf9,white)]"
+              : category === "moments"
+                ? "border-[#dce8d7] bg-[linear-gradient(180deg,#f9fcf7,white)]"
+                : "border-[#dce5de] bg-[linear-gradient(180deg,#f6faf8,white)]";
+  const badgeClassName =
+    category === "favorites"
+      ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
+      : category === "miniPrograms"
+        ? "bg-[rgba(15,118,110,0.10)] text-[#226448]"
+        : category === "moments"
+          ? "bg-[rgba(134,181,96,0.12)] text-[#587d38]"
+          : category === "feed"
+            ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
+            : "bg-[rgba(7,193,96,0.10)] text-[#1d6a37]";
+  const iconToneClassName =
+    category === "favorites"
+      ? "bg-[rgba(180,132,23,0.12)] text-[#a16207]"
+      : category === "miniPrograms"
+        ? "bg-[rgba(15,118,110,0.12)] text-[#0f766e]"
+        : category === "moments"
+          ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
+          : category === "feed"
+            ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
+            : "bg-[rgba(7,193,96,0.10)] text-[#15803d]";
+  const actionLabel =
+    category === "messages"
+      ? "进入聊天记录"
+      : category === "contacts"
+        ? "进入联系人结果"
+        : category === "favorites"
+          ? "进入收藏结果"
+          : category === "officialAccounts"
+            ? "进入公众号结果"
+            : category === "miniPrograms"
+              ? "进入小程序结果"
+              : category === "moments"
+                ? "进入朋友圈结果"
+                : "进入内容流结果";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
+        toneClassName,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-[12px]",
+            iconToneClassName,
+          )}
+        >
+          <Icon size={18} />
+        </div>
+        <div
+          className={cn(
+            "rounded-full px-2.5 py-1 text-[10px] font-medium",
+            badgeClassName,
+          )}
+        >
+          当前覆盖 {count} 项
+        </div>
+      </div>
+
+      <div className="mt-4 text-sm font-medium text-[color:var(--text-primary)]">
+        {title}
+      </div>
+
+      <div className="mt-3 rounded-[16px] bg-[rgba(255,255,255,0.76)] px-4 py-4">
+        <div className="text-xs leading-6 text-[color:var(--text-secondary)]">
+          {description}
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 text-xs text-[color:var(--text-muted)]">
+        <span>{actionLabel}</span>
+        <span>查看该分类</span>
+      </div>
+    </button>
   );
 }
 
@@ -1379,4 +1468,35 @@ function getDesktopSearchSectionDescription(
   }
 
   return "按当前分类集中查看最相关的结果。";
+}
+
+function getDesktopSearchScopeCount(
+  scopeCounts: SearchScopeCounts,
+  category: DesktopSearchScopeCardCategory,
+) {
+  if (category === "messages") {
+    return scopeCounts.conversations;
+  }
+
+  if (category === "contacts") {
+    return scopeCounts.contacts;
+  }
+
+  if (category === "favorites") {
+    return scopeCounts.favorites;
+  }
+
+  if (category === "officialAccounts") {
+    return scopeCounts.officialAccounts;
+  }
+
+  if (category === "miniPrograms") {
+    return scopeCounts.miniPrograms;
+  }
+
+  if (category === "moments") {
+    return scopeCounts.moments;
+  }
+
+  return scopeCounts.feed;
 }
