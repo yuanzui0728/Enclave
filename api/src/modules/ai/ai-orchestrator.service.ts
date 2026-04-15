@@ -1,6 +1,8 @@
 import {
   BadGatewayException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -465,6 +467,45 @@ export class AiOrchestratorService {
     });
   }
 
+  private async assertBudgetAvailable(
+    provider: ResolvedProviderConfig,
+    billingSource: AiUsageBillingSource,
+    usageContext: AiUsageContext,
+  ) {
+    const blocked = await this.usageLedger.getBudgetBlockDecision({
+      characterId: usageContext.characterId,
+      characterName:
+        usageContext.characterName ??
+        usageContext.scopeLabel ??
+        undefined,
+    });
+    if (!blocked) {
+      return;
+    }
+
+    await this.safeRecordUsage({
+      status: 'failed',
+      surface: usageContext.surface,
+      scene: usageContext.scene,
+      scopeType: usageContext.scopeType,
+      scopeId: usageContext.scopeId,
+      scopeLabel: usageContext.scopeLabel,
+      ownerId: usageContext.ownerId,
+      characterId: usageContext.characterId,
+      characterName: usageContext.characterName,
+      conversationId: usageContext.conversationId,
+      groupId: usageContext.groupId,
+      providerKey: this.buildProviderKey(provider),
+      providerMode: provider.mode,
+      model: provider.model,
+      apiStyle: provider.apiStyle,
+      billingSource,
+      errorCode: 'BUDGET_BLOCKED',
+      errorMessage: blocked.message,
+    });
+    throw new HttpException(blocked.message, HttpStatus.TOO_MANY_REQUESTS);
+  }
+
   private async requestReplyFromProvider(
     provider: ResolvedProviderConfig,
     request: PreparedReplyRequest,
@@ -791,12 +832,13 @@ export class AiOrchestratorService {
       currentUserMessage,
       isGroupChat,
     };
+    const billingSource: AiUsageBillingSource = aiKeyOverride
+      ? 'owner_custom'
+      : 'instance_default';
+    await this.assertBudgetAvailable(provider, billingSource, usageContext);
 
     try {
       const result = await this.requestReplyFromProvider(provider, request);
-      const billingSource: AiUsageBillingSource = aiKeyOverride
-        ? 'owner_custom'
-        : 'instance_default';
       await this.recordSuccessfulUsage(
         provider,
         billingSource,
@@ -896,6 +938,11 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
+    await this.assertBudgetAvailable(
+      provider,
+      'instance_default',
+      resolvedUsageContext,
+    );
 
     try {
       const response = await client.chat.completions.create({
@@ -952,6 +999,11 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
+    await this.assertBudgetAvailable(
+      provider,
+      'instance_default',
+      resolvedUsageContext,
+    );
 
     try {
       const response = await client.chat.completions.create({
@@ -1026,6 +1078,11 @@ export class AiOrchestratorService {
       scopeType: 'admin_task',
       scopeLabel: description.slice(0, 48) || 'quick-character',
     };
+    await this.assertBudgetAvailable(
+      provider,
+      'instance_default',
+      usageContext,
+    );
 
     try {
       const response = await client.chat.completions.create({
@@ -1095,6 +1152,11 @@ export class AiOrchestratorService {
         conversationId: usageContext?.conversationId,
         groupId: usageContext?.groupId,
       };
+      await this.assertBudgetAvailable(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+      );
       const response = await client.chat.completions.create({
         model: provider.model,
         messages: [{ role: 'user', content: prompt }],
@@ -1158,8 +1220,25 @@ export class AiOrchestratorService {
       characterName,
       characterDomains,
     );
+    const resolvedUsageContext: AiUsageContext = {
+      surface: usageContext?.surface ?? 'system',
+      scene: usageContext?.scene ?? 'intent_classify',
+      scopeType: usageContext?.scopeType ?? 'character',
+      scopeId: usageContext?.scopeId,
+      scopeLabel: usageContext?.scopeLabel ?? characterName,
+      ownerId: usageContext?.ownerId,
+      characterId: usageContext?.characterId,
+      characterName: usageContext?.characterName ?? characterName,
+      conversationId: usageContext?.conversationId,
+      groupId: usageContext?.groupId,
+    };
 
     try {
+      await this.assertBudgetAvailable(
+        provider,
+        'instance_default',
+        resolvedUsageContext,
+      );
       const client = this.createProviderClient(provider);
       const response = await client.chat.completions.create({
         model: provider.model,
@@ -1173,18 +1252,7 @@ export class AiOrchestratorService {
       await this.recordSuccessfulUsage(
         provider,
         'instance_default',
-        {
-          surface: usageContext?.surface ?? 'system',
-          scene: usageContext?.scene ?? 'intent_classify',
-          scopeType: usageContext?.scopeType ?? 'character',
-          scopeId: usageContext?.scopeId,
-          scopeLabel: usageContext?.scopeLabel ?? characterName,
-          ownerId: usageContext?.ownerId,
-          characterId: usageContext?.characterId,
-          characterName: usageContext?.characterName ?? characterName,
-          conversationId: usageContext?.conversationId,
-          groupId: usageContext?.groupId,
-        },
+        resolvedUsageContext,
         {
           usage,
           model: response.model ?? provider.model,
@@ -1201,18 +1269,7 @@ export class AiOrchestratorService {
       await this.recordFailedUsage(
         provider,
         'instance_default',
-        {
-          surface: usageContext?.surface ?? 'system',
-          scene: usageContext?.scene ?? 'intent_classify',
-          scopeType: usageContext?.scopeType ?? 'character',
-          scopeId: usageContext?.scopeId,
-          scopeLabel: usageContext?.scopeLabel ?? characterName,
-          ownerId: usageContext?.ownerId,
-          characterId: usageContext?.characterId,
-          characterName: usageContext?.characterName ?? characterName,
-          conversationId: usageContext?.conversationId,
-          groupId: usageContext?.groupId,
-        },
+        resolvedUsageContext,
         error,
       );
       return { needsGroupChat: false, reason: '', requiredDomains: [] };

@@ -21,6 +21,7 @@ type LedgerGrain = 'day' | 'week' | 'month';
 type BudgetMetric = 'tokens' | 'cost';
 type BudgetState = 'inactive' | 'normal' | 'warning' | 'exceeded';
 type BudgetPeriod = 'daily' | 'monthly';
+type BudgetEnforcement = 'monitor' | 'block';
 
 type TokenPricingCatalogItem = {
   model: string;
@@ -38,6 +39,7 @@ type TokenPricingCatalog = {
 type TokenUsageBudgetRule = {
   enabled: boolean;
   metric: BudgetMetric;
+  enforcement: BudgetEnforcement;
   dailyLimit: number | null;
   monthlyLimit: number | null;
   warningRatio: number;
@@ -65,6 +67,7 @@ type TokenUsageBudgetPeriodSummary = {
 type TokenUsageBudgetStatus = {
   enabled: boolean;
   metric: BudgetMetric;
+  enforcement: BudgetEnforcement;
   warningRatio: number;
   daily: TokenUsageBudgetPeriodSummary;
   monthly: TokenUsageBudgetPeriodSummary;
@@ -186,6 +189,17 @@ type BudgetUsageAggregate = {
 type BudgetUsageAccumulator = {
   daily: BudgetUsageAggregate;
   monthly: BudgetUsageAggregate;
+};
+
+type BudgetBlockDecision = {
+  scope: 'overall' | 'character';
+  period: BudgetPeriod;
+  metric: BudgetMetric;
+  used: number;
+  limit: number;
+  characterId?: string;
+  characterName?: string;
+  message: string;
 };
 
 const PRICING_CONFIG_KEY = 'token_pricing_catalog';
@@ -346,6 +360,79 @@ export class AiUsageLedgerService {
       config,
       summary: await this.buildBudgetSummary(config),
     };
+  }
+
+  async getBudgetBlockDecision(input: {
+    characterId?: string | null;
+    characterName?: string | null;
+  }): Promise<BudgetBlockDecision | null> {
+    const config = await this.getBudgetConfig();
+    const overallRule = this.isBlockingBudgetRule(config.overall)
+      ? config.overall
+      : null;
+    const characterRule =
+      input.characterId &&
+      (config.characters.find(
+        (item) =>
+          item.characterId === input.characterId &&
+          this.isBlockingBudgetRule(item),
+      ) ??
+        null);
+
+    if (!overallRule && !characterRule) {
+      return null;
+    }
+
+    const now = new Date();
+    const dayStart = this.getPeriodStart(now, 'daily');
+    const monthStart = this.getPeriodStart(now, 'monthly');
+    const [
+      overallDailyUsage,
+      overallMonthlyUsage,
+      characterDailyUsage,
+      characterMonthlyUsage,
+    ] = await Promise.all([
+      overallRule ? this.getBudgetUsageAggregate(dayStart, now) : null,
+      overallRule ? this.getBudgetUsageAggregate(monthStart, now) : null,
+      characterRule && input.characterId
+        ? this.getBudgetUsageAggregate(dayStart, now, input.characterId)
+        : null,
+      characterRule && input.characterId
+        ? this.getBudgetUsageAggregate(monthStart, now, input.characterId)
+        : null,
+    ]);
+
+    if (overallRule && overallDailyUsage && overallMonthlyUsage) {
+      const overallStatus = this.buildBudgetStatus(overallRule, {
+        daily: overallDailyUsage,
+        monthly: overallMonthlyUsage,
+      });
+      const overallDecision = this.pickBudgetBlockDecision(
+        overallStatus,
+        'overall',
+      );
+      if (overallDecision) {
+        return overallDecision;
+      }
+    }
+
+    if (
+      characterRule &&
+      input.characterId &&
+      characterDailyUsage &&
+      characterMonthlyUsage
+    ) {
+      const characterStatus = this.buildBudgetStatus(characterRule, {
+        daily: characterDailyUsage,
+        monthly: characterMonthlyUsage,
+      });
+      return this.pickBudgetBlockDecision(characterStatus, 'character', {
+        characterId: input.characterId,
+        characterName: input.characterName?.trim() || input.characterId,
+      });
+    }
+
+    return null;
   }
 
   async getOverview(query: TokenUsageQuery) {
@@ -577,6 +664,100 @@ export class AiUsageLedgerService {
     };
   }
 
+  private isBlockingBudgetRule(rule?: TokenUsageBudgetRule | null) {
+    return Boolean(
+      rule &&
+        rule.enabled &&
+        rule.enforcement === 'block' &&
+        (rule.dailyLimit != null || rule.monthlyLimit != null),
+    );
+  }
+
+  private async getBudgetUsageAggregate(
+    from: Date,
+    to: Date,
+    characterId?: string,
+  ): Promise<BudgetUsageAggregate> {
+    const qb = this.repo
+      .createQueryBuilder('ledger')
+      .select('COALESCE(SUM(ledger.totalTokens), 0)', 'tokens')
+      .addSelect('COALESCE(SUM(ledger.estimatedCost), 0)', 'cost')
+      .where('ledger.occurredAt BETWEEN :from AND :to', {
+        from: from.toISOString(),
+        to: to.toISOString(),
+      });
+
+    if (characterId) {
+      qb.andWhere('ledger.characterId = :characterId', { characterId });
+    }
+
+    const raw = await qb.getRawOne<{
+      tokens?: string | number | null;
+      cost?: string | number | null;
+    }>();
+
+    return {
+      tokens: this.normalizeAggregateNumber(raw?.tokens),
+      cost: this.normalizeAggregateNumber(raw?.cost),
+    };
+  }
+
+  private normalizeAggregateNumber(value: string | number | null | undefined) {
+    const parsed = Number(value ?? 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private pickBudgetBlockDecision(
+    status: TokenUsageBudgetStatus,
+    scope: 'overall' | 'character',
+    character?: {
+      characterId: string;
+      characterName: string;
+    },
+  ): BudgetBlockDecision | null {
+    if (status.enforcement !== 'block') {
+      return null;
+    }
+
+    const exceededSummary =
+      status.daily.state === 'exceeded'
+        ? status.daily
+        : status.monthly.state === 'exceeded'
+          ? status.monthly
+          : null;
+    if (!exceededSummary || exceededSummary.limit == null) {
+      return null;
+    }
+
+    return {
+      scope,
+      period: exceededSummary.period,
+      metric: status.metric,
+      used: exceededSummary.used,
+      limit: exceededSummary.limit,
+      characterId: character?.characterId,
+      characterName: character?.characterName,
+      message: this.buildBudgetBlockMessage(
+        scope,
+        exceededSummary.period,
+        character?.characterName,
+      ),
+    };
+  }
+
+  private buildBudgetBlockMessage(
+    scope: 'overall' | 'character',
+    period: BudgetPeriod,
+    characterName?: string,
+  ) {
+    const scopeLabel =
+      scope === 'overall'
+        ? '当前实例'
+        : `角色「${characterName ?? '未命名角色'}」`;
+    const periodLabel = period === 'daily' ? '今日' : '本月';
+    return `${scopeLabel}${periodLabel} AI 预算已用完，请稍后再试。`;
+  }
+
   private normalizeQuery(query: TokenUsageQuery): NormalizedTokenUsageQuery {
     const now = new Date();
     const defaultFrom = new Date(now.getTime() - 6 * DAY_MS);
@@ -697,6 +878,7 @@ export class AiUsageLedgerService {
     return {
       enabled: payload?.enabled === true,
       metric: payload?.metric === 'cost' ? 'cost' : 'tokens',
+      enforcement: this.normalizeBudgetEnforcement(payload?.enforcement),
       dailyLimit: this.normalizeBudgetLimit(payload?.dailyLimit),
       monthlyLimit: this.normalizeBudgetLimit(payload?.monthlyLimit),
       warningRatio: this.normalizeWarningRatio(payload?.warningRatio),
@@ -835,6 +1017,10 @@ export class AiUsageLedgerService {
       return 0.8;
     }
     return Math.min(0.99, Math.max(0.1, Number(value)));
+  }
+
+  private normalizeBudgetEnforcement(value?: string | null): BudgetEnforcement {
+    return value === 'block' ? 'block' : 'monitor';
   }
 
   private normalizeString(value?: string | null) {
@@ -1009,6 +1195,7 @@ export class AiUsageLedgerService {
     return {
       enabled: rule.enabled,
       metric: rule.metric,
+      enforcement: rule.enforcement,
       warningRatio: rule.warningRatio,
       daily: this.buildBudgetPeriodSummary('daily', rule, usage.daily),
       monthly: this.buildBudgetPeriodSummary('monthly', rule, usage.monthly),

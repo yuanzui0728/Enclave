@@ -7,6 +7,7 @@ import type {
   TokenPricingCatalogItem,
   TokenUsageBillingSource,
   TokenUsageBudgetConfig,
+  TokenUsageBudgetEnforcement,
   TokenUsageBudgetMetric,
   TokenUsageBudgetPeriodSummary,
   TokenUsageBudgetState,
@@ -95,6 +96,7 @@ function emptyBudgetConfig(): TokenUsageBudgetConfig {
     overall: {
       enabled: false,
       metric: "tokens",
+      enforcement: "monitor",
       dailyLimit: null,
       monthlyLimit: null,
       warningRatio: 0.8,
@@ -108,6 +110,7 @@ function emptyCharacterBudgetRule(characterId = ""): TokenUsageCharacterBudgetRu
     characterId,
     enabled: true,
     metric: "tokens",
+    enforcement: "monitor",
     dailyLimit: null,
     monthlyLimit: null,
     warningRatio: 0.8,
@@ -536,6 +539,29 @@ export function TokenUsagePage() {
                   >
                     <option value="tokens">按 Token</option>
                     <option value="cost">按费用</option>
+                    </select>
+                </FilterField>
+                <FilterField label="执行方式">
+                  <select
+                    value={budgetDraft?.overall.enforcement ?? "monitor"}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                enforcement:
+                                  event.target.value === "block" ? "block" : "monitor",
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    className={INPUT_CLASS_NAME}
+                  >
+                    <option value="monitor">监控预警</option>
+                    <option value="block">超限阻断</option>
                   </select>
                 </FilterField>
                 <FilterField label="预警阈值">
@@ -894,6 +920,9 @@ function BudgetStatusPanel({
         <div>
           <div className="font-medium text-[color:var(--text-primary)]">{title}</div>
           <div className="text-xs text-[color:var(--text-muted)]">{description}</div>
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            当前模式：{formatBudgetEnforcement(status.enforcement)}
+          </div>
         </div>
         <BudgetStateBadge state={resolveBudgetState(status)} />
       </div>
@@ -918,6 +947,9 @@ function CharacterBudgetPanel({
         <div>
           <div className="font-medium text-[color:var(--text-primary)]">{item.characterName}</div>
           {item.note ? <div className="text-xs text-[color:var(--text-muted)]">{item.note}</div> : null}
+          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+            当前模式：{formatBudgetEnforcement(item.budget.enforcement)}
+          </div>
         </div>
         <BudgetStateBadge state={resolveBudgetState(item.budget)} />
       </div>
@@ -1022,6 +1054,20 @@ function CharacterBudgetEditor({
             <option value="0.7">70%</option>
             <option value="0.8">80%</option>
             <option value="0.9">90%</option>
+          </select>
+        </FilterField>
+        <FilterField label="执行方式">
+          <select
+            value={item.enforcement ?? "monitor"}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                enforcement: event.target.value === "block" ? "block" : "monitor",
+              })
+            }
+            className={INPUT_CLASS_NAME}
+          >
+            <option value="monitor">监控预警</option>
+            <option value="block">超限阻断</option>
           </select>
         </FilterField>
         <FilterField label="预算维度">
@@ -1207,6 +1253,10 @@ function formatBudgetState(state: TokenUsageBudgetState) {
   return "未启用";
 }
 
+function formatBudgetEnforcement(value: TokenUsageBudgetEnforcement) {
+  return value === "block" ? "超限阻断" : "监控预警";
+}
+
 function resolveBudgetState(status: TokenUsageBudgetStatus): TokenUsageBudgetState {
   const states = [status.daily.state, status.monthly.state];
   if (states.includes("exceeded")) {
@@ -1225,6 +1275,7 @@ function createInactiveBudgetStatus(): TokenUsageBudgetStatus {
   return {
     enabled: false,
     metric: "tokens",
+    enforcement: "monitor",
     warningRatio: 0.8,
     daily: {
       period: "daily",
