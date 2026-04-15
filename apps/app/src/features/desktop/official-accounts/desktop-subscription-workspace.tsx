@@ -8,8 +8,7 @@ import {
   markOfficialAccountDeliveryRead,
 } from "@yinjie/contracts";
 import { Smartphone } from "lucide-react";
-import { Button, ErrorBlock, LoadingBlock, cn } from "@yinjie/ui";
-import { EmptyState } from "../../../components/empty-state";
+import { Button, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../../../components/official-article-viewer";
 import {
   formatConversationTimestamp,
@@ -183,7 +182,7 @@ export function DesktopSubscriptionWorkspace({
 
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
-      <section className="flex w-[332px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[#ededed]">
+      <section className="flex w-[332px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
         <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
@@ -207,22 +206,30 @@ export function DesktopSubscriptionWorkspace({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[#ededed]">
+        <div className="min-h-0 flex-1 overflow-auto bg-white">
           {inboxQuery.isLoading ? (
-            <div className="px-3 py-3">
-              <LoadingBlock label="正在读取订阅号消息..." />
-            </div>
+            <SidebarStatusPane
+              title="正在读取订阅号消息"
+              description="稍等一下，正在同步最近的订阅推送。"
+              tone="loading"
+              className="m-3"
+            />
           ) : null}
           {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-            <div className="px-3 pt-3">
-              <ErrorBlock message={inboxQuery.error.message} />
-            </div>
+            <SidebarStatusPane
+              title="订阅号消息暂时不可用"
+              description={inboxQuery.error.message}
+              tone="danger"
+              className="m-3"
+            />
           ) : null}
           {markDeliveryReadMutation.isError &&
           markDeliveryReadMutation.error instanceof Error ? (
-            <div className="px-3 pt-3">
-              <ErrorBlock message={markDeliveryReadMutation.error.message} />
-            </div>
+            <SidebarInlineStatus
+              message={markDeliveryReadMutation.error.message}
+              tone="danger"
+              className="mx-3 mt-3"
+            />
           ) : null}
 
           {feedItems.length ? (
@@ -237,7 +244,7 @@ export function DesktopSubscriptionWorkspace({
                     index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                     activeArticleId === delivery.articleId
                       ? "bg-[rgba(7,193,96,0.05)]"
-                      : "bg-white hover:bg-[rgba(15,23,42,0.02)]",
+                      : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
                   )}
                 >
                   <div className="min-w-0 flex-1">
@@ -272,21 +279,22 @@ export function DesktopSubscriptionWorkspace({
                       alt={delivery.article.title}
                       className="h-14 w-14 shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
                     />
-                  ) : null}
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
+                      文章
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
           ) : null}
 
           {!inboxQuery.isLoading && !feedItems.length ? (
-            <div className="px-3 py-3">
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
-                <EmptyState
-                  title="还没有订阅号消息"
-                  description="先关注一个订阅号，后续推送会汇总到这里。"
-                />
-              </div>
-            </div>
+            <SidebarStatusPane
+              title="还没有订阅号消息"
+              description="先关注一个订阅号，后续推送会汇总到这里。"
+              className="m-3"
+            />
           ) : null}
         </div>
       </section>
@@ -426,6 +434,73 @@ function ReaderInlineStatus({
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[rgba(254,242,242,0.9)] text-[color:var(--state-danger-text)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+      )}
+    >
+      {message}
+    </div>
+  );
+}
+
+function SidebarStatusPane({
+  title,
+  description,
+  tone = "default",
+  className,
+}: {
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[18px] border px-4 py-5 text-center shadow-none",
+        tone === "danger"
+          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+        className,
+      )}
+    >
+      {tone === "loading" ? (
+        <div className="flex items-center justify-center gap-1.5">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+        </div>
+      ) : null}
+      <div
+        className={cn(
+          "font-medium text-[13px] text-[color:var(--text-primary)]",
+          tone === "loading" ? "mt-3" : undefined,
+        )}
+      >
+        {title}
+      </div>
+      <p className="mx-auto mt-1.5 max-w-[15rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function SidebarInlineStatus({
+  message,
+  tone = "default",
+  className,
+}: {
+  message: string;
+  tone?: "default" | "danger";
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[14px] border px-3 py-2 text-[12px] leading-6 shadow-none",
+        tone === "danger"
+          ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+        className,
       )}
     >
       {message}
