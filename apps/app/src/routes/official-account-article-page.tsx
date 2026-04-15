@@ -18,6 +18,7 @@ import {
 import { buildDesktopContactsRouteHash } from "../features/desktop/contacts/desktop-contacts-route-state";
 import { buildDesktopOfficialArticleWindowRouteHash } from "../features/desktop/official-accounts/desktop-official-article-window-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatConversationTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { shareWithNativeShell } from "../runtime/mobile-bridge";
 import { isNativeMobileShareSurface } from "../runtime/mobile-share-surface";
@@ -207,11 +208,16 @@ function MobileOfficialAccountArticlePage({
   }
 
   return (
-    <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
+    <AppPage className="space-y-0 bg-white px-0 py-0">
       <TabPageTopBar
         title={article?.account.name ?? "公众号文章"}
+        subtitle={
+          article
+            ? `${article.authorName} · ${formatConversationTimestamp(article.publishedAt)}`
+            : undefined
+        }
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() => {
@@ -258,7 +264,7 @@ function MobileOfficialAccountArticlePage({
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {articleQuery.isLoading ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <MobileOfficialArticleStatusCard
               badge="读取中"
               title="正在读取文章"
@@ -268,7 +274,7 @@ function MobileOfficialAccountArticlePage({
           </div>
         ) : null}
         {articleQuery.isError && articleQuery.error instanceof Error ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <MobileOfficialArticleStatusCard
               badge="读取失败"
               title="文章暂时不可用"
@@ -278,7 +284,7 @@ function MobileOfficialAccountArticlePage({
           </div>
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <MobileOfficialArticleStatusCard
               badge="同步失败"
               title="阅读状态暂未同步"
@@ -288,7 +294,7 @@ function MobileOfficialAccountArticlePage({
           </div>
         ) : null}
         {shareNotice ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <InlineNotice
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={shareNotice.tone}
