@@ -194,6 +194,7 @@ export function OfficialAccountServiceThread({
     accountQuery.data?.handle ? `@${accountQuery.data.handle}` : null,
   ].filter(Boolean);
   const mobileHeaderMeta = [
+    "服务号",
     accountQuery.data?.isVerified ? "已认证" : null,
     accountQuery.data?.isMuted ? "已免打扰" : null,
   ].filter(Boolean);
@@ -433,8 +434,8 @@ export function OfficialAccountServiceThread({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-canvas)]">
-      <header className="border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 backdrop-blur-xl">
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <header className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <Button
             onClick={() => {
@@ -456,7 +457,7 @@ export function OfficialAccountServiceThread({
               {accountQuery.data?.name ?? "服务号消息"}
             </div>
             {mobileHeaderMeta.length ? (
-              <div className="mt-0.5 truncate text-[9px] leading-[1rem] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 truncate text-[10px] leading-[1rem] text-[color:var(--text-muted)]">
                 {mobileHeaderMeta.join(" · ")}
               </div>
             ) : null}
@@ -465,7 +466,7 @@ export function OfficialAccountServiceThread({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
+            className="h-9 w-9 rounded-full text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             onClick={() => {
               void navigate({
                 to: "/official-accounts/$accountId",
@@ -479,34 +480,40 @@ export function OfficialAccountServiceThread({
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto bg-[#ededed] px-3.5 py-4">
+      <div className="flex-1 overflow-auto bg-[color:var(--bg-canvas)] py-4">
         {accountQuery.isLoading || messagesQuery.isLoading ? (
-          <MobileOfficialStatusCard
-            badge="读取中"
-            title="正在读取服务号消息"
-            description="稍等一下，正在同步服务通知和文章入口。"
-            tone="loading"
-          />
+          <div className="mx-auto max-w-[24rem] px-3.5">
+            <MobileOfficialStatusCard
+              badge="读取中"
+              title="正在读取服务号消息"
+              description="稍等一下，正在同步服务通知和文章入口。"
+              tone="loading"
+            />
+          </div>
         ) : null}
         {pageErrorMessage ? (
-          <MobileOfficialStatusCard
-            badge="读取失败"
-            title="服务号消息暂时不可用"
-            description={pageErrorMessage}
-            tone="danger"
-          />
+          <div className="mx-auto max-w-[24rem] px-3.5">
+            <MobileOfficialStatusCard
+              badge="读取失败"
+              title="服务号消息暂时不可用"
+              description={pageErrorMessage}
+              tone="danger"
+            />
+          </div>
         ) : null}
         {actionErrorMessage ? (
-          <MobileOfficialStatusCard
-            badge="同步失败"
-            title="消息状态暂未同步"
-            description={actionErrorMessage}
-            tone="danger"
-          />
+          <div className="mx-auto max-w-[24rem] px-3.5">
+            <MobileOfficialStatusCard
+              badge="同步失败"
+              title="消息状态暂未同步"
+              description={actionErrorMessage}
+              tone="danger"
+            />
+          </div>
         ) : null}
 
         {messagesQuery.data?.length ? (
-          <div className="space-y-4">
+          <div className="space-y-4 px-3.5">
             {messagesQuery.data.map((message) => (
               <OfficialServiceMessageBubble
                 key={message.id}
@@ -522,11 +529,13 @@ export function OfficialAccountServiceThread({
             ))}
           </div>
         ) : !messagesQuery.isLoading ? (
-          <MobileOfficialStatusCard
-            badge="服务号"
-            title="还没有服务消息"
-            description="关注服务号后，通知和文章卡片会出现在这里。"
-          />
+          <div className="mx-auto max-w-[24rem] px-3.5">
+            <MobileOfficialStatusCard
+              badge="服务号"
+              title="还没有服务消息"
+              description="关注服务号后，通知和文章卡片会出现在这里。"
+            />
+          </div>
         ) : null}
       </div>
     </div>
