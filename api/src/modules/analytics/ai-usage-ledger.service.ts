@@ -18,6 +18,9 @@ type LedgerScopeType =
   | 'world'
   | 'admin_task';
 type LedgerGrain = 'day' | 'week' | 'month';
+type BudgetMetric = 'tokens' | 'cost';
+type BudgetState = 'inactive' | 'normal' | 'warning' | 'exceeded';
+type BudgetPeriod = 'daily' | 'monthly';
 
 type TokenPricingCatalogItem = {
   model: string;
@@ -30,6 +33,74 @@ type TokenPricingCatalogItem = {
 type TokenPricingCatalog = {
   currency: PricingCurrency;
   items: TokenPricingCatalogItem[];
+};
+
+type TokenUsageBudgetRule = {
+  enabled: boolean;
+  metric: BudgetMetric;
+  dailyLimit: number | null;
+  monthlyLimit: number | null;
+  warningRatio: number;
+};
+
+type TokenUsageCharacterBudgetRule = TokenUsageBudgetRule & {
+  characterId: string;
+  note?: string;
+};
+
+type TokenUsageBudgetConfig = {
+  overall: TokenUsageBudgetRule;
+  characters: TokenUsageCharacterBudgetRule[];
+};
+
+type TokenUsageBudgetPeriodSummary = {
+  period: BudgetPeriod;
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  ratio: number | null;
+  state: BudgetState;
+};
+
+type TokenUsageBudgetStatus = {
+  enabled: boolean;
+  metric: BudgetMetric;
+  warningRatio: number;
+  daily: TokenUsageBudgetPeriodSummary;
+  monthly: TokenUsageBudgetPeriodSummary;
+};
+
+type TokenUsageBudgetAlert = {
+  level: 'warning' | 'exceeded';
+  scope: 'overall' | 'character';
+  characterId?: string | null;
+  characterName?: string | null;
+  period: BudgetPeriod;
+  metric: BudgetMetric;
+  used: number;
+  limit: number;
+  ratio: number;
+  message: string;
+};
+
+type TokenUsageCharacterBudgetStatus = {
+  characterId: string;
+  characterName: string;
+  note?: string;
+  budget: TokenUsageBudgetStatus;
+};
+
+type TokenUsageBudgetSummary = {
+  currency: PricingCurrency;
+  generatedAt: string;
+  overall: TokenUsageBudgetStatus;
+  characters: TokenUsageCharacterBudgetStatus[];
+  alerts: TokenUsageBudgetAlert[];
+};
+
+type TokenUsageBudgetSnapshot = {
+  config: TokenUsageBudgetConfig;
+  summary: TokenUsageBudgetSummary;
 };
 
 type UsageMetrics = {
@@ -107,7 +178,18 @@ type AggregateBucket = {
   failedCount: number;
 };
 
+type BudgetUsageAggregate = {
+  tokens: number;
+  cost: number;
+};
+
+type BudgetUsageAccumulator = {
+  daily: BudgetUsageAggregate;
+  monthly: BudgetUsageAggregate;
+};
+
 const PRICING_CONFIG_KEY = 'token_pricing_catalog';
+const BUDGET_CONFIG_KEY = 'token_budget_config';
 const PRICING_CACHE_TTL_MS = 10_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -117,6 +199,12 @@ export class AiUsageLedgerService {
     | {
         expiresAt: number;
         value: TokenPricingCatalog;
+      }
+    | null = null;
+  private budgetCache:
+    | {
+        expiresAt: number;
+        value: TokenUsageBudgetConfig;
       }
     | null = null;
 
@@ -214,6 +302,50 @@ export class AiUsageLedgerService {
       value: normalized,
     };
     return normalized;
+  }
+
+  async getBudgetConfig(): Promise<TokenUsageBudgetConfig> {
+    if (
+      this.budgetCache &&
+      this.budgetCache.expiresAt > Date.now()
+    ) {
+      return this.budgetCache.value;
+    }
+
+    const raw = await this.systemConfig.getConfig(BUDGET_CONFIG_KEY);
+    const parsed = this.parseBudgetConfig(raw);
+    this.budgetCache = {
+      expiresAt: Date.now() + PRICING_CACHE_TTL_MS,
+      value: parsed,
+    };
+    return parsed;
+  }
+
+  async setBudgetConfig(
+    payload: Partial<TokenUsageBudgetConfig> | null | undefined,
+  ): Promise<TokenUsageBudgetSnapshot> {
+    const normalized = this.normalizeBudgetConfig(payload);
+    await this.systemConfig.setConfig(
+      BUDGET_CONFIG_KEY,
+      JSON.stringify(normalized),
+    );
+    this.budgetCache = {
+      expiresAt: Date.now() + PRICING_CACHE_TTL_MS,
+      value: normalized,
+    };
+
+    return {
+      config: normalized,
+      summary: await this.buildBudgetSummary(normalized),
+    };
+  }
+
+  async getBudgetSnapshot(): Promise<TokenUsageBudgetSnapshot> {
+    const config = await this.getBudgetConfig();
+    return {
+      config,
+      summary: await this.buildBudgetSummary(config),
+    };
   }
 
   async getOverview(query: TokenUsageQuery) {
@@ -375,6 +507,76 @@ export class AiUsageLedgerService {
     };
   }
 
+  private async buildBudgetSummary(
+    config: TokenUsageBudgetConfig,
+  ): Promise<TokenUsageBudgetSummary> {
+    const now = new Date();
+    const dayStart = this.getPeriodStart(now, 'daily');
+    const monthStart = this.getPeriodStart(now, 'monthly');
+    const configuredCharacterIds = Array.from(
+      new Set(config.characters.map((item) => item.characterId)),
+    );
+
+    const [catalog, records, characters] = await Promise.all([
+      this.getPricingCatalog(),
+      this.repo.find({
+        where: {
+          occurredAt: Between(monthStart, now),
+        },
+        order: { occurredAt: 'DESC' },
+      }),
+      configuredCharacterIds.length
+        ? this.characterRepo.find({
+            where: { id: In(configuredCharacterIds) },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const overallUsage = this.createBudgetAccumulator();
+    const characterUsageMap = new Map<string, BudgetUsageAccumulator>();
+
+    records.forEach((record) => {
+      const isDaily = record.occurredAt >= dayStart;
+      this.accumulateBudgetUsage(overallUsage, record, isDaily);
+      if (!record.characterId) {
+        return;
+      }
+      const current =
+        characterUsageMap.get(record.characterId) ??
+        this.createBudgetAccumulator();
+      this.accumulateBudgetUsage(current, record, isDaily);
+      characterUsageMap.set(record.characterId, current);
+    });
+
+    const characterNameMap = new Map(
+      characters.map((character) => [character.id, character.name]),
+    );
+    const overall = this.buildBudgetStatus(config.overall, overallUsage);
+    const characterStatuses = config.characters
+      .map((rule) => ({
+        characterId: rule.characterId,
+        characterName:
+          characterNameMap.get(rule.characterId) ?? rule.characterId,
+        note: rule.note,
+        budget: this.buildBudgetStatus(
+          rule,
+          characterUsageMap.get(rule.characterId) ??
+            this.createBudgetAccumulator(),
+        ),
+      }))
+      .sort((left, right) =>
+        this.compareBudgetStatuses(left.budget, right.budget),
+      );
+
+    return {
+      currency: catalog.currency,
+      generatedAt: now.toISOString(),
+      overall,
+      characters: characterStatuses,
+      alerts: this.collectBudgetAlerts(overall, characterStatuses),
+    };
+  }
+
   private normalizeQuery(query: TokenUsageQuery): NormalizedTokenUsageQuery {
     const now = new Date();
     const defaultFrom = new Date(now.getTime() - 6 * DAY_MS);
@@ -453,6 +655,67 @@ export class AiUsageLedgerService {
     }
 
     return where;
+  }
+
+  private parseBudgetConfig(raw: string | null): TokenUsageBudgetConfig {
+    if (!raw?.trim()) {
+      return this.normalizeBudgetConfig(undefined);
+    }
+
+    try {
+      return this.normalizeBudgetConfig(
+        JSON.parse(raw) as Partial<TokenUsageBudgetConfig>,
+      );
+    } catch {
+      return this.normalizeBudgetConfig(undefined);
+    }
+  }
+
+  private normalizeBudgetConfig(
+    payload?: Partial<TokenUsageBudgetConfig> | null,
+  ): TokenUsageBudgetConfig {
+    const characters = Array.isArray(payload?.characters)
+      ? payload.characters
+          .map((item) => this.normalizeCharacterBudgetRule(item))
+          .filter(
+            (item): item is TokenUsageCharacterBudgetRule => item !== null,
+          )
+      : [];
+    const dedupedCharacters = Array.from(
+      new Map(characters.map((item) => [item.characterId, item])).values(),
+    );
+
+    return {
+      overall: this.normalizeBudgetRule(payload?.overall),
+      characters: dedupedCharacters,
+    };
+  }
+
+  private normalizeBudgetRule(
+    payload?: Partial<TokenUsageBudgetRule> | null,
+  ): TokenUsageBudgetRule {
+    return {
+      enabled: payload?.enabled === true,
+      metric: payload?.metric === 'cost' ? 'cost' : 'tokens',
+      dailyLimit: this.normalizeBudgetLimit(payload?.dailyLimit),
+      monthlyLimit: this.normalizeBudgetLimit(payload?.monthlyLimit),
+      warningRatio: this.normalizeWarningRatio(payload?.warningRatio),
+    };
+  }
+
+  private normalizeCharacterBudgetRule(
+    payload?: Partial<TokenUsageCharacterBudgetRule> | null,
+  ): TokenUsageCharacterBudgetRule | null {
+    const characterId = payload?.characterId?.trim();
+    if (!characterId) {
+      return null;
+    }
+
+    return {
+      characterId,
+      note: payload?.note?.trim() || undefined,
+      ...this.normalizeBudgetRule(payload),
+    };
   }
 
   private parsePricingCatalog(raw: string | null): TokenPricingCatalog {
@@ -558,6 +821,20 @@ export class AiUsageLedgerService {
       return 0;
     }
     return Math.max(0, Number(value));
+  }
+
+  private normalizeBudgetLimit(value: number | null | undefined) {
+    if (value == null || !Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+    return Number(value);
+  }
+
+  private normalizeWarningRatio(value: number | null | undefined) {
+    if (value == null || !Number.isFinite(value)) {
+      return 0.8;
+    }
+    return Math.min(0.99, Math.max(0.1, Number(value)));
   }
 
   private normalizeString(value?: string | null) {
@@ -692,6 +969,213 @@ export class AiUsageLedgerService {
 
   private roundCost(value: number) {
     return Math.round((value + Number.EPSILON) * 10000) / 10000;
+  }
+
+  private getPeriodStart(date: Date, period: BudgetPeriod) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    if (period === 'monthly') {
+      start.setDate(1);
+    }
+    return start;
+  }
+
+  private createBudgetAccumulator(): BudgetUsageAccumulator {
+    return {
+      daily: { tokens: 0, cost: 0 },
+      monthly: { tokens: 0, cost: 0 },
+    };
+  }
+
+  private accumulateBudgetUsage(
+    usage: BudgetUsageAccumulator,
+    record: AiUsageLedgerEntity,
+    includeDaily: boolean,
+  ) {
+    const tokens = record.totalTokens ?? 0;
+    const cost = record.estimatedCost ?? 0;
+    usage.monthly.tokens += tokens;
+    usage.monthly.cost += cost;
+    if (includeDaily) {
+      usage.daily.tokens += tokens;
+      usage.daily.cost += cost;
+    }
+  }
+
+  private buildBudgetStatus(
+    rule: TokenUsageBudgetRule,
+    usage: BudgetUsageAccumulator,
+  ): TokenUsageBudgetStatus {
+    return {
+      enabled: rule.enabled,
+      metric: rule.metric,
+      warningRatio: rule.warningRatio,
+      daily: this.buildBudgetPeriodSummary('daily', rule, usage.daily),
+      monthly: this.buildBudgetPeriodSummary('monthly', rule, usage.monthly),
+    };
+  }
+
+  private buildBudgetPeriodSummary(
+    period: BudgetPeriod,
+    rule: TokenUsageBudgetRule,
+    usage: BudgetUsageAggregate,
+  ): TokenUsageBudgetPeriodSummary {
+    const limit = period === 'daily' ? rule.dailyLimit : rule.monthlyLimit;
+    const used = this.normalizeBudgetValue(
+      rule.metric,
+      this.pickBudgetMetricValue(rule.metric, usage),
+    );
+    if (!rule.enabled || limit == null) {
+      return {
+        period,
+        limit,
+        used,
+        remaining: null,
+        ratio: null,
+        state: 'inactive',
+      };
+    }
+
+    const ratio = limit > 0 ? used / limit : null;
+    const remaining = this.normalizeBudgetValue(
+      rule.metric,
+      Math.max(0, limit - used),
+    );
+
+    return {
+      period,
+      limit: this.normalizeBudgetValue(rule.metric, limit),
+      used,
+      remaining,
+      ratio: ratio == null ? null : this.roundRatio(ratio),
+      state:
+        ratio != null && ratio >= 1
+          ? 'exceeded'
+          : ratio != null && ratio >= rule.warningRatio
+            ? 'warning'
+            : 'normal',
+    };
+  }
+
+  private pickBudgetMetricValue(
+    metric: BudgetMetric,
+    usage: BudgetUsageAggregate,
+  ) {
+    return metric === 'cost' ? usage.cost : usage.tokens;
+  }
+
+  private normalizeBudgetValue(metric: BudgetMetric, value: number) {
+    return metric === 'cost' ? this.roundCost(value) : Math.round(value);
+  }
+
+  private roundRatio(value: number) {
+    return Math.round((value + Number.EPSILON) * 1000) / 1000;
+  }
+
+  private compareBudgetStatuses(
+    left: TokenUsageBudgetStatus,
+    right: TokenUsageBudgetStatus,
+  ) {
+    const leftWeight = this.getBudgetStatusWeight(left);
+    const rightWeight = this.getBudgetStatusWeight(right);
+    if (rightWeight !== leftWeight) {
+      return rightWeight - leftWeight;
+    }
+
+    const leftRatio = Math.max(left.daily.ratio ?? 0, left.monthly.ratio ?? 0);
+    const rightRatio = Math.max(
+      right.daily.ratio ?? 0,
+      right.monthly.ratio ?? 0,
+    );
+    return rightRatio - leftRatio;
+  }
+
+  private getBudgetStatusWeight(status: TokenUsageBudgetStatus) {
+    const states = [status.daily.state, status.monthly.state];
+    if (states.includes('exceeded')) {
+      return 3;
+    }
+    if (states.includes('warning')) {
+      return 2;
+    }
+    if (states.includes('normal')) {
+      return 1;
+    }
+    return 0;
+  }
+
+  private collectBudgetAlerts(
+    overall: TokenUsageBudgetStatus,
+    characters: TokenUsageCharacterBudgetStatus[],
+  ): TokenUsageBudgetAlert[] {
+    const alerts: TokenUsageBudgetAlert[] = [];
+    const appendAlert = (
+      status: TokenUsageBudgetStatus,
+      scope: 'overall' | 'character',
+      period: BudgetPeriod,
+      character?: { id: string; name: string },
+    ) => {
+      const summary = period === 'daily' ? status.daily : status.monthly;
+      if (
+        summary.state !== 'warning' &&
+        summary.state !== 'exceeded'
+      ) {
+        return;
+      }
+      if (summary.limit == null || summary.ratio == null) {
+        return;
+      }
+      alerts.push({
+        level: summary.state,
+        scope,
+        characterId: character?.id ?? null,
+        characterName: character?.name ?? null,
+        period,
+        metric: status.metric,
+        used: summary.used,
+        limit: summary.limit,
+        ratio: summary.ratio,
+        message: this.formatBudgetAlertMessage(
+          scope,
+          period,
+          summary.state,
+          character?.name,
+        ),
+      });
+    };
+
+    appendAlert(overall, 'overall', 'daily');
+    appendAlert(overall, 'overall', 'monthly');
+    characters.forEach((item) => {
+      appendAlert(item.budget, 'character', 'daily', {
+        id: item.characterId,
+        name: item.characterName,
+      });
+      appendAlert(item.budget, 'character', 'monthly', {
+        id: item.characterId,
+        name: item.characterName,
+      });
+    });
+
+    return alerts.sort((left, right) => {
+      if (left.level !== right.level) {
+        return left.level === 'exceeded' ? -1 : 1;
+      }
+      return right.ratio - left.ratio;
+    });
+  }
+
+  private formatBudgetAlertMessage(
+    scope: 'overall' | 'character',
+    period: BudgetPeriod,
+    state: 'warning' | 'exceeded',
+    characterName?: string,
+  ) {
+    const scopeLabel =
+      scope === 'overall' ? '整体' : `${characterName ?? '角色'}`;
+    const periodLabel = period === 'daily' ? '日' : '月';
+    const actionLabel = state === 'exceeded' ? '已超出' : '已接近';
+    return `${scopeLabel}${periodLabel}预算${actionLabel}阈值`;
   }
 
   private formatSceneLabel(scene: string) {

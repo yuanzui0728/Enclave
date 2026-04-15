@@ -153,6 +153,55 @@ export class AdminController {
     });
   }
 
+  @Get('token-usage/budgets')
+  getTokenUsageBudgets() {
+    return this.usageLedger.getBudgetSnapshot();
+  }
+
+  @Patch('token-usage/budgets')
+  setTokenUsageBudgets(
+    @Body()
+    body: {
+      overall?: {
+        enabled?: boolean;
+        metric?: 'tokens' | 'cost';
+        dailyLimit?: number | null;
+        monthlyLimit?: number | null;
+        warningRatio?: number;
+      };
+      characters?: Array<{
+        characterId?: string;
+        enabled?: boolean;
+        metric?: 'tokens' | 'cost';
+        dailyLimit?: number | null;
+        monthlyLimit?: number | null;
+        warningRatio?: number;
+        note?: string;
+      }>;
+    },
+  ) {
+    return this.usageLedger.setBudgetConfig({
+      overall: body.overall
+        ? {
+            enabled: body.overall.enabled === true,
+            metric: body.overall.metric === 'cost' ? 'cost' : 'tokens',
+            dailyLimit: body.overall.dailyLimit ?? null,
+            monthlyLimit: body.overall.monthlyLimit ?? null,
+            warningRatio: body.overall.warningRatio ?? 0.8,
+          }
+        : undefined,
+      characters: (body.characters ?? []).map((item) => ({
+        characterId: item.characterId ?? '',
+        enabled: item.enabled === true,
+        metric: item.metric === 'cost' ? 'cost' : 'tokens',
+        dailyLimit: item.dailyLimit ?? null,
+        monthlyLimit: item.monthlyLimit ?? null,
+        warningRatio: item.warningRatio ?? 0.8,
+        note: item.note,
+      })),
+    });
+  }
+
   @Get('characters/presets')
   listCharacterPresets() {
     return this.adminService.listCharacterPresets();

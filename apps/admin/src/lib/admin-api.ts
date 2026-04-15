@@ -13,6 +13,7 @@ import type {
   ReplyLogicOverview,
   ReplyLogicPreviewRequest,
   ReplyLogicPreviewResult,
+  TokenUsageBudgetSnapshot,
   TokenPricingCatalog,
   TokenUsageBreakdownResponse,
   TokenUsageOverview,
@@ -237,6 +238,13 @@ export const adminApi = {
     adminFetch<TokenPricingCatalog>("/token-usage/pricing"),
   setTokenUsagePricing: (payload: TokenPricingCatalog) =>
     adminFetch<TokenPricingCatalog>("/token-usage/pricing", {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  getTokenUsageBudgets: () =>
+    adminFetch<TokenUsageBudgetSnapshot>("/token-usage/budgets"),
+  setTokenUsageBudgets: (payload: TokenUsageBudgetSnapshot["config"]) =>
+    adminFetch<TokenUsageBudgetSnapshot>("/token-usage/budgets", {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),

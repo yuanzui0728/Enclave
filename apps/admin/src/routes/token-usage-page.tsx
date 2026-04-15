@@ -2,15 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
-  TokenUsageBillingSource,
+  Character,
   TokenPricingCatalog,
   TokenPricingCatalogItem,
+  TokenUsageBillingSource,
+  TokenUsageBudgetConfig,
+  TokenUsageBudgetMetric,
+  TokenUsageBudgetPeriodSummary,
+  TokenUsageBudgetState,
+  TokenUsageBudgetStatus,
   TokenUsageBreakdownItem,
+  TokenUsageCharacterBudgetRule,
+  TokenUsageCharacterBudgetStatus,
   TokenUsageQuery,
   TokenUsageStatus,
 } from "@yinjie/contracts";
 import { Button, Card, ErrorBlock, InlineNotice, LoadingBlock } from "@yinjie/ui";
-import { AdminPageHero, AdminSectionHeader, AdminMetaText } from "../components/admin-workbench";
+import { AdminMetaText, AdminPageHero, AdminSectionHeader } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 
 function formatDateInput(value: Date) {
@@ -55,12 +63,55 @@ function formatDateTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatBudgetValue(
+  value: number | null,
+  metric: TokenUsageBudgetMetric,
+  currency: "CNY" | "USD",
+) {
+  if (value == null) {
+    return "未设置";
+  }
+  return metric === "cost" ? formatCost(value, currency) : `${formatInteger(value)} token`;
+}
+
+function formatRatio(value: number | null) {
+  if (value == null) {
+    return "未启用";
+  }
+  return `${Math.round(value * 100)}%`;
+}
+
 function emptyPricingItem(): TokenPricingCatalogItem {
   return {
     model: "",
     inputPer1kTokens: 0,
     outputPer1kTokens: 0,
     enabled: true,
+  };
+}
+
+function emptyBudgetConfig(): TokenUsageBudgetConfig {
+  return {
+    overall: {
+      enabled: false,
+      metric: "tokens",
+      dailyLimit: null,
+      monthlyLimit: null,
+      warningRatio: 0.8,
+    },
+    characters: [],
+  };
+}
+
+function emptyCharacterBudgetRule(characterId = ""): TokenUsageCharacterBudgetRule {
+  return {
+    characterId,
+    enabled: true,
+    metric: "tokens",
+    dailyLimit: null,
+    monthlyLimit: null,
+    warningRatio: 0.8,
+    note: "",
   };
 }
 
@@ -73,6 +124,7 @@ export function TokenUsagePage() {
   const [status, setStatus] = useState<"" | TokenUsageStatus>("");
   const [billingSource, setBillingSource] = useState<"" | TokenUsageBillingSource>("");
   const [pricingDraft, setPricingDraft] = useState<TokenPricingCatalog | null>(null);
+  const [budgetDraft, setBudgetDraft] = useState<TokenUsageBudgetConfig | null>(null);
 
   const listQuery = useMemo<TokenUsageQuery>(
     () => ({
@@ -126,11 +178,22 @@ export function TokenUsagePage() {
     queryFn: () => adminApi.getTokenUsagePricing(),
   });
 
+  const budgetQuery = useQuery({
+    queryKey: ["admin-token-usage-budgets"],
+    queryFn: () => adminApi.getTokenUsageBudgets(),
+  });
+
   useEffect(() => {
     if (pricingQuery.data) {
       setPricingDraft(pricingQuery.data);
     }
   }, [pricingQuery.data]);
+
+  useEffect(() => {
+    if (budgetQuery.data) {
+      setBudgetDraft(budgetQuery.data.config);
+    }
+  }, [budgetQuery.data]);
 
   const savePricingMutation = useMutation({
     mutationFn: async () => {
@@ -165,12 +228,41 @@ export function TokenUsagePage() {
     },
   });
 
+  const saveBudgetMutation = useMutation({
+    mutationFn: async () => {
+      if (!budgetDraft) {
+        throw new Error("预算配置暂不可用。");
+      }
+      return adminApi.setTokenUsageBudgets({
+        overall: {
+          ...budgetDraft.overall,
+          dailyLimit: normalizeNullableNumber(budgetDraft.overall.dailyLimit),
+          monthlyLimit: normalizeNullableNumber(budgetDraft.overall.monthlyLimit),
+        },
+        characters: budgetDraft.characters
+          .map((item) => ({
+            ...item,
+            characterId: item.characterId.trim(),
+            dailyLimit: normalizeNullableNumber(item.dailyLimit),
+            monthlyLimit: normalizeNullableNumber(item.monthlyLimit),
+            note: item.note?.trim() || undefined,
+          }))
+          .filter((item) => item.characterId),
+      });
+    },
+    onSuccess: async (result) => {
+      setBudgetDraft(result.config);
+      await queryClient.invalidateQueries({ queryKey: ["admin-token-usage-budgets"] });
+    },
+  });
+
   const loading =
     overviewQuery.isLoading ||
     trendQuery.isLoading ||
     breakdownQuery.isLoading ||
     recordsQuery.isLoading ||
-    pricingQuery.isLoading;
+    pricingQuery.isLoading ||
+    budgetQuery.isLoading;
 
   const fatalError =
     (overviewQuery.error instanceof Error && overviewQuery.error) ||
@@ -178,13 +270,16 @@ export function TokenUsagePage() {
     (breakdownQuery.error instanceof Error && breakdownQuery.error) ||
     (recordsQuery.error instanceof Error && recordsQuery.error) ||
     (pricingQuery.error instanceof Error && pricingQuery.error) ||
+    (budgetQuery.error instanceof Error && budgetQuery.error) ||
     null;
 
   const overview = overviewQuery.data;
   const trend = trendQuery.data ?? [];
   const breakdown = breakdownQuery.data;
   const records = recordsQuery.data;
-  const currency = overview?.currency ?? pricingDraft?.currency ?? "CNY";
+  const budgetSummary = budgetQuery.data?.summary;
+  const characters = charactersQuery.data ?? [];
+  const currency = overview?.currency ?? pricingDraft?.currency ?? budgetSummary?.currency ?? "CNY";
   const hasConfiguredPricing = Boolean(
     pricingDraft?.items.some((item) => item.enabled && (item.inputPer1kTokens > 0 || item.outputPer1kTokens > 0)),
   );
@@ -194,7 +289,12 @@ export function TokenUsagePage() {
     [trend],
   );
 
-  if (loading && !overview && !breakdown && !records) {
+  const availableCharacters = useMemo(() => {
+    const used = new Set((budgetDraft?.characters ?? []).map((item) => item.characterId));
+    return characters.filter((item) => !used.has(item.id));
+  }, [budgetDraft?.characters, characters]);
+
+  if (loading && !overview && !breakdown && !records && !budgetSummary) {
     return <LoadingBlock label="正在加载 Token 用量中心..." />;
   }
 
@@ -202,12 +302,14 @@ export function TokenUsagePage() {
     return <ErrorBlock message={fatalError.message} />;
   }
 
+  const overallBudgetStatus = budgetSummary?.overall ?? createInactiveBudgetStatus();
+
   return (
     <div className="space-y-6">
       <AdminPageHero
         eyebrow="AI 用量"
-        title="Token 用量与成本账本"
-        description="这里会把实例里每次主要 AI 请求记成账本，再按时间、角色、模型和计费来源做聚合，方便你看清哪里最耗 token、哪里成本正在上升。"
+        title="Token 用量与预算中心"
+        description="这里会把实例里的 AI 请求沉淀成账本，支持看时间趋势、角色排行、费用估算，以及整体和单角色预算预警。"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => applyPreset("7d", setFrom, setTo)}>
@@ -235,28 +337,28 @@ export function TokenUsagePage() {
         </InlineNotice>
       ) : null}
 
+      {budgetSummary?.alerts.length ? (
+        <InlineNotice tone="warning">
+          当前有 {budgetSummary.alerts.length} 条预算预警，请优先关注整体预算和角色预算里标红的对象。
+        </InlineNotice>
+      ) : null}
+
       {savePricingMutation.isError && savePricingMutation.error instanceof Error ? (
         <ErrorBlock message={savePricingMutation.error.message} />
+      ) : null}
+
+      {saveBudgetMutation.isError && saveBudgetMutation.error instanceof Error ? (
+        <ErrorBlock message={saveBudgetMutation.error.message} />
       ) : null}
 
       <Card className="space-y-5 bg-[color:var(--surface-console)]">
         <AdminSectionHeader title="筛选条件" />
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <FilterField label="开始日期">
-            <input
-              type="date"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-              className={INPUT_CLASS_NAME}
-            />
+            <input type="date" value={from} onChange={(event) => setFrom(event.target.value)} className={INPUT_CLASS_NAME} />
           </FilterField>
           <FilterField label="结束日期">
-            <input
-              type="date"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-              className={INPUT_CLASS_NAME}
-            />
+            <input type="date" value={to} onChange={(event) => setTo(event.target.value)} className={INPUT_CLASS_NAME} />
           </FilterField>
           <FilterField label="聚合粒度">
             <select value={grain} onChange={(event) => setGrain(event.target.value as "day" | "week" | "month")} className={INPUT_CLASS_NAME}>
@@ -268,7 +370,7 @@ export function TokenUsagePage() {
           <FilterField label="角色">
             <select value={characterId} onChange={(event) => setCharacterId(event.target.value)} className={INPUT_CLASS_NAME}>
               <option value="">全部角色</option>
-              {(charactersQuery.data ?? []).map((character) => (
+              {characters.map((character) => (
                 <option key={character.id} value={character.id}>
                   {character.name}
                 </option>
@@ -300,6 +402,246 @@ export function TokenUsagePage() {
         </div>
       </Card>
 
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
+        <Card className="bg-[color:var(--surface-console)]">
+          <AdminSectionHeader
+            title="预算与预警"
+            actions={
+              budgetSummary ? (
+                <span className="text-xs text-[color:var(--text-muted)]">
+                  更新于 {formatDateTime(budgetSummary.generatedAt)}
+                </span>
+              ) : null
+            }
+          />
+
+          <div className="mt-5 space-y-5">
+            <BudgetStatusPanel
+              title="整体预算"
+              description="按今天和本月累计的真实账本用量来判断是否逼近阈值。"
+              status={overallBudgetStatus}
+              currency={currency}
+            />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <AdminMetaText>预警列表</AdminMetaText>
+                <span className="text-xs text-[color:var(--text-muted)]">
+                  {budgetSummary?.alerts.length ?? 0} 条
+                </span>
+              </div>
+              {budgetSummary?.alerts.length ? (
+                <div className="grid gap-3">
+                  {budgetSummary.alerts.map((alert, index) => (
+                    <div
+                      key={`${alert.scope}-${alert.period}-${alert.characterId ?? "overall"}-${index}`}
+                      className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-medium text-[color:var(--text-primary)]">{alert.message}</div>
+                          <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                            已使用 {formatBudgetValue(alert.used, alert.metric, currency)} / 上限{" "}
+                            {formatBudgetValue(alert.limit, alert.metric, currency)}
+                          </div>
+                        </div>
+                        <BudgetStateBadge state={alert.level} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState text="当前没有触发预算预警。" />
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <AdminMetaText>按角色预算</AdminMetaText>
+                <span className="text-xs text-[color:var(--text-muted)]">
+                  {(budgetSummary?.characters ?? []).length} 个角色
+                </span>
+              </div>
+              {(budgetSummary?.characters ?? []).length ? (
+                <div className="grid gap-3">
+                  {(budgetSummary?.characters ?? []).map((item) => (
+                    <CharacterBudgetPanel key={item.characterId} item={item} currency={currency} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState text="还没有配置任何角色预算。" />
+              )}
+            </div>
+          </div>
+        </Card>
+        <Card className="bg-[color:var(--surface-console)]">
+          <AdminSectionHeader
+            title="预算配置"
+            actions={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => addCharacterBudgetRule(setBudgetDraft, characters)}
+                disabled={!availableCharacters.length}
+              >
+                新增角色预算
+              </Button>
+            }
+          />
+
+          <div className="mt-5 space-y-5">
+            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-medium text-[color:var(--text-primary)]">整体预算</div>
+                  <div className="text-xs text-[color:var(--text-muted)]">支持按 token 或费用设置日预算、月预算和预警阈值。</div>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+                  <input
+                    type="checkbox"
+                    checked={budgetDraft?.overall.enabled === true}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: { ...current.overall, enabled: event.target.checked },
+                            }
+                          : current,
+                      )
+                    }
+                  />
+                  启用
+                </label>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <FilterField label="预算维度">
+                  <select
+                    value={budgetDraft?.overall.metric ?? "tokens"}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                metric: event.target.value === "cost" ? "cost" : "tokens",
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    className={INPUT_CLASS_NAME}
+                  >
+                    <option value="tokens">按 Token</option>
+                    <option value="cost">按费用</option>
+                  </select>
+                </FilterField>
+                <FilterField label="预警阈值">
+                  <select
+                    value={String(budgetDraft?.overall.warningRatio ?? 0.8)}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                warningRatio: Number(event.target.value) || 0.8,
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    className={INPUT_CLASS_NAME}
+                  >
+                    <option value="0.7">70%</option>
+                    <option value="0.8">80%</option>
+                    <option value="0.9">90%</option>
+                  </select>
+                </FilterField>
+                <FilterField label="日预算上限">
+                  <input
+                    type="number"
+                    min="0"
+                    step={budgetDraft?.overall.metric === "cost" ? "0.01" : "1000"}
+                    value={budgetDraft?.overall.dailyLimit ?? ""}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                dailyLimit: event.target.value ? Number(event.target.value) : null,
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    placeholder={budgetDraft?.overall.metric === "cost" ? "例如 30" : "例如 500000"}
+                    className={INPUT_CLASS_NAME}
+                  />
+                </FilterField>
+                <FilterField label="月预算上限">
+                  <input
+                    type="number"
+                    min="0"
+                    step={budgetDraft?.overall.metric === "cost" ? "0.01" : "1000"}
+                    value={budgetDraft?.overall.monthlyLimit ?? ""}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                monthlyLimit: event.target.value ? Number(event.target.value) : null,
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    placeholder={budgetDraft?.overall.metric === "cost" ? "例如 500" : "例如 5000000"}
+                    className={INPUT_CLASS_NAME}
+                  />
+                </FilterField>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <AdminMetaText>角色预算</AdminMetaText>
+                <span className="text-xs text-[color:var(--text-muted)]">
+                  {(budgetDraft?.characters ?? []).length} 条
+                </span>
+              </div>
+
+              {(budgetDraft?.characters ?? []).length ? (
+                (budgetDraft?.characters ?? []).map((item, index) => (
+                  <CharacterBudgetEditor
+                    key={`${item.characterId || "character"}-${index}`}
+                    characters={characters}
+                    item={item}
+                    index={index}
+                    setBudgetDraft={setBudgetDraft}
+                  />
+                ))
+              ) : (
+                <EmptyState text="还没有角色预算配置，点击右上角可以新增。" />
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button variant="primary" onClick={() => saveBudgetMutation.mutate()} disabled={saveBudgetMutation.isPending}>
+                {saveBudgetMutation.isPending ? "保存中..." : "保存预算配置"}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <Card className="bg-[color:var(--surface-console)]">
           <AdminSectionHeader
@@ -317,7 +659,7 @@ export function TokenUsagePage() {
                   <div className="flex items-center justify-between gap-3 text-xs text-[color:var(--text-secondary)]">
                     <span>{point.label}</span>
                     <span>
-                      {formatInteger(point.totalTokens)} token · {formatCost(point.estimatedCost, currency)}
+                      {formatInteger(point.totalTokens)} token / {formatCost(point.estimatedCost, currency)}
                     </span>
                   </div>
                   <div className="h-3 rounded-full bg-[color:var(--surface-primary)]">
@@ -340,30 +682,18 @@ export function TokenUsagePage() {
             <SummaryTile label="成功请求" value={formatInteger(overview?.successCount ?? 0)} />
             <SummaryTile label="失败请求" value={formatInteger(overview?.failedCount ?? 0)} />
             <SummaryTile label="活跃角色" value={formatInteger(overview?.activeCharacterCount ?? 0)} />
-            <SummaryTile label="平均单次 Token" value={formatInteger(calculateAverageTokens(overview?.totalTokens ?? 0, overview?.requestCount ?? 0))} />
+            <SummaryTile
+              label="平均单次 Token"
+              value={formatInteger(calculateAverageTokens(overview?.totalTokens ?? 0, overview?.requestCount ?? 0))}
+            />
           </div>
         </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <BreakdownCard
-          title="角色排行"
-          items={breakdown?.byCharacter ?? []}
-          currency={currency}
-          emptyText="当前还没有角色维度的账本。"
-        />
-        <BreakdownCard
-          title="场景排行"
-          items={breakdown?.byScene ?? []}
-          currency={currency}
-          emptyText="当前还没有场景维度的账本。"
-        />
-        <BreakdownCard
-          title="模型排行"
-          items={breakdown?.byModel ?? []}
-          currency={currency}
-          emptyText="当前还没有模型维度的账本。"
-        />
+        <BreakdownCard title="角色排行" items={breakdown?.byCharacter ?? []} currency={currency} emptyText="当前还没有角色维度的账本。" />
+        <BreakdownCard title="场景排行" items={breakdown?.byScene ?? []} currency={currency} emptyText="当前还没有场景维度的账本。" />
+        <BreakdownCard title="模型排行" items={breakdown?.byModel ?? []} currency={currency} emptyText="当前还没有模型维度的账本。" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
@@ -466,9 +796,7 @@ export function TokenUsagePage() {
                   <div className="grid gap-3">
                     <input
                       value={item.model}
-                      onChange={(event) =>
-                        updatePricingItem(setPricingDraft, index, { model: event.target.value })
-                      }
+                      onChange={(event) => updatePricingItem(setPricingDraft, index, { model: event.target.value })}
                       placeholder="模型名，例如 deepseek-chat"
                       className={INPUT_CLASS_NAME}
                     />
@@ -549,6 +877,219 @@ export function TokenUsagePage() {
   );
 }
 
+function BudgetStatusPanel({
+  title,
+  description,
+  status,
+  currency,
+}: {
+  title: string;
+  description: string;
+  status: TokenUsageBudgetStatus;
+  currency: "CNY" | "USD";
+}) {
+  return (
+    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-medium text-[color:var(--text-primary)]">{title}</div>
+          <div className="text-xs text-[color:var(--text-muted)]">{description}</div>
+        </div>
+        <BudgetStateBadge state={resolveBudgetState(status)} />
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <BudgetPeriodCard label="今日" summary={status.daily} metric={status.metric} currency={currency} />
+        <BudgetPeriodCard label="本月" summary={status.monthly} metric={status.metric} currency={currency} />
+      </div>
+    </div>
+  );
+}
+
+function CharacterBudgetPanel({
+  item,
+  currency,
+}: {
+  item: TokenUsageCharacterBudgetStatus;
+  currency: "CNY" | "USD";
+}) {
+  return (
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-medium text-[color:var(--text-primary)]">{item.characterName}</div>
+          {item.note ? <div className="text-xs text-[color:var(--text-muted)]">{item.note}</div> : null}
+        </div>
+        <BudgetStateBadge state={resolveBudgetState(item.budget)} />
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <BudgetPeriodCard label="今日" summary={item.budget.daily} metric={item.budget.metric} currency={currency} compact />
+        <BudgetPeriodCard label="本月" summary={item.budget.monthly} metric={item.budget.metric} currency={currency} compact />
+      </div>
+    </div>
+  );
+}
+
+function BudgetPeriodCard({
+  label,
+  summary,
+  metric,
+  currency,
+  compact = false,
+}: {
+  label: string;
+  summary: TokenUsageBudgetPeriodSummary;
+  metric: TokenUsageBudgetMetric;
+  currency: "CNY" | "USD";
+  compact?: boolean;
+}) {
+  return (
+    <div className="rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-primary)] px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-medium text-[color:var(--text-primary)]">{label}</div>
+        <BudgetStateBadge state={summary.state} compact />
+      </div>
+      <div className={compact ? "mt-2 space-y-1.5" : "mt-3 space-y-2"}>
+        <div className="text-xs text-[color:var(--text-muted)]">已使用 {formatBudgetValue(summary.used, metric, currency)}</div>
+        <div className="text-xs text-[color:var(--text-muted)]">预算上限 {formatBudgetValue(summary.limit, metric, currency)}</div>
+        <div className="text-xs text-[color:var(--text-muted)]">剩余额度 {formatBudgetValue(summary.remaining, metric, currency)}</div>
+        <div className="text-xs text-[color:var(--text-muted)]">预算占比 {formatRatio(summary.ratio)}</div>
+      </div>
+    </div>
+  );
+}
+
+function CharacterBudgetEditor({
+  characters,
+  item,
+  index,
+  setBudgetDraft,
+}: {
+  characters: Character[];
+  item: TokenUsageCharacterBudgetRule;
+  index: number;
+  setBudgetDraft: Dispatch<SetStateAction<TokenUsageBudgetConfig | null>>;
+}) {
+  return (
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="font-medium text-[color:var(--text-primary)]">角色预算 #{index + 1}</div>
+          <div className="text-xs text-[color:var(--text-muted)]">可按 token 或费用给单个角色设置今天、本月预算上限。</div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            setBudgetDraft((current) =>
+              current
+                ? {
+                    ...current,
+                    characters: current.characters.filter((_, currentIndex) => currentIndex !== index),
+                  }
+                : current,
+            )
+          }
+        >
+          删除
+        </Button>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <FilterField label="角色">
+          <select
+            value={item.characterId}
+            onChange={(event) => updateBudgetCharacter(setBudgetDraft, index, { characterId: event.target.value })}
+            className={INPUT_CLASS_NAME}
+          >
+            <option value="">选择角色</option>
+            {characters.map((character) => (
+              <option key={character.id} value={character.id}>
+                {character.name}
+              </option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField label="预警阈值">
+          <select
+            value={String(item.warningRatio ?? 0.8)}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                warningRatio: Number(event.target.value) || 0.8,
+              })
+            }
+            className={INPUT_CLASS_NAME}
+          >
+            <option value="0.7">70%</option>
+            <option value="0.8">80%</option>
+            <option value="0.9">90%</option>
+          </select>
+        </FilterField>
+        <FilterField label="预算维度">
+          <select
+            value={item.metric}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                metric: event.target.value === "cost" ? "cost" : "tokens",
+              })
+            }
+            className={INPUT_CLASS_NAME}
+          >
+            <option value="tokens">按 Token</option>
+            <option value="cost">按费用</option>
+          </select>
+        </FilterField>
+        <FilterField label="备注">
+          <input
+            value={item.note ?? ""}
+            onChange={(event) => updateBudgetCharacter(setBudgetDraft, index, { note: event.target.value })}
+            placeholder="例如高频聊天角色"
+            className={INPUT_CLASS_NAME}
+          />
+        </FilterField>
+        <FilterField label="日预算上限">
+          <input
+            type="number"
+            min="0"
+            step={item.metric === "cost" ? "0.01" : "1000"}
+            value={item.dailyLimit ?? ""}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                dailyLimit: event.target.value ? Number(event.target.value) : null,
+              })
+            }
+            placeholder={item.metric === "cost" ? "例如 10" : "例如 100000"}
+            className={INPUT_CLASS_NAME}
+          />
+        </FilterField>
+        <FilterField label="月预算上限">
+          <input
+            type="number"
+            min="0"
+            step={item.metric === "cost" ? "0.01" : "1000"}
+            value={item.monthlyLimit ?? ""}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                monthlyLimit: event.target.value ? Number(event.target.value) : null,
+              })
+            }
+            placeholder={item.metric === "cost" ? "例如 200" : "例如 1000000"}
+            className={INPUT_CLASS_NAME}
+          />
+        </FilterField>
+      </div>
+
+      <label className="mt-4 flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+        <input
+          type="checkbox"
+          checked={item.enabled !== false}
+          onChange={(event) => updateBudgetCharacter(setBudgetDraft, index, { enabled: event.target.checked })}
+        />
+        启用该角色预算
+      </label>
+    </div>
+  );
+}
+
 function BreakdownCard({
   title,
   items,
@@ -573,12 +1114,10 @@ function BreakdownCard({
                 <div>
                   <div className="font-medium text-[color:var(--text-primary)]">{item.label}</div>
                   <div className="text-xs text-[color:var(--text-muted)]">
-                    {formatInteger(item.requestCount)} 次请求 · {formatCost(item.estimatedCost, currency)}
+                    {formatInteger(item.requestCount)} 次请求 / {formatCost(item.estimatedCost, currency)}
                   </div>
                 </div>
-                <div className="text-sm font-medium text-[color:var(--text-primary)]">
-                  {formatInteger(item.totalTokens)}
-                </div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">{formatInteger(item.totalTokens)}</div>
               </div>
               <div className="h-2 rounded-full bg-[color:var(--surface-primary)]">
                 <div
@@ -621,7 +1160,31 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <div className="mt-5 text-sm text-[color:var(--text-muted)]">{text}</div>;
+  return <div className="text-sm text-[color:var(--text-muted)]">{text}</div>;
+}
+
+function BudgetStateBadge({
+  state,
+}: {
+  state: TokenUsageBudgetState | "warning" | "exceeded";
+  compact?: boolean;
+}) {
+  const normalizedState: TokenUsageBudgetState =
+    state === "warning" || state === "exceeded" ? state : state;
+  const className =
+    normalizedState === "exceeded"
+      ? "border-rose-200 bg-rose-50 text-rose-700"
+      : normalizedState === "warning"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : normalizedState === "normal"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-slate-200 bg-slate-50 text-slate-600";
+
+  return (
+    <span className={`rounded-full border px-2 py-1 text-xs font-medium ${className}`}>
+      {formatBudgetState(normalizedState)}
+    </span>
+  );
 }
 
 function calculateAverageTokens(totalTokens: number, requestCount: number) {
@@ -631,6 +1194,57 @@ function calculateAverageTokens(totalTokens: number, requestCount: number) {
   return Math.round(totalTokens / requestCount);
 }
 
+function formatBudgetState(state: TokenUsageBudgetState) {
+  if (state === "exceeded") {
+    return "超限";
+  }
+  if (state === "warning") {
+    return "预警";
+  }
+  if (state === "normal") {
+    return "正常";
+  }
+  return "未启用";
+}
+
+function resolveBudgetState(status: TokenUsageBudgetStatus): TokenUsageBudgetState {
+  const states = [status.daily.state, status.monthly.state];
+  if (states.includes("exceeded")) {
+    return "exceeded";
+  }
+  if (states.includes("warning")) {
+    return "warning";
+  }
+  if (states.includes("normal")) {
+    return "normal";
+  }
+  return "inactive";
+}
+
+function createInactiveBudgetStatus(): TokenUsageBudgetStatus {
+  return {
+    enabled: false,
+    metric: "tokens",
+    warningRatio: 0.8,
+    daily: {
+      period: "daily",
+      limit: null,
+      used: 0,
+      remaining: null,
+      ratio: null,
+      state: "inactive",
+    },
+    monthly: {
+      period: "monthly",
+      limit: null,
+      used: 0,
+      remaining: null,
+      ratio: null,
+      state: "inactive",
+    },
+  };
+}
+
 function formatScene(scene: string) {
   const sceneMap: Record<string, string> = {
     chat_reply: "单聊回复",
@@ -638,12 +1252,12 @@ function formatScene(scene: string) {
     moment_post_generate: "朋友圈生成",
     moment_comment_generate: "朋友圈评论",
     feed_post_generate: "广场动态生成",
-    feed_comment_generate: "动态评论生成",
+    feed_comment_generate: "广场评论生成",
     channel_post_generate: "视频号生成",
     social_greeting_generate: "社交问候",
     memory_compress: "记忆压缩",
     character_factory_extract: "角色工厂抽取",
-    quick_character_generate: "快速生成人设",
+    quick_character_generate: "快速生成角色",
     intent_classify: "意图分类",
   };
 
@@ -663,6 +1277,13 @@ function applyPreset(
   setFrom(preset === "30d" ? shiftDate(-29) : shiftDate(-6));
 }
 
+function normalizeNullableNumber(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return Number(value);
+}
+
 function updatePricingItem(
   setPricingDraft: Dispatch<SetStateAction<TokenPricingCatalog | null>>,
   index: number,
@@ -676,6 +1297,43 @@ function updatePricingItem(
     return {
       ...current,
       items: current.items.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    };
+  });
+}
+
+function addCharacterBudgetRule(
+  setBudgetDraft: Dispatch<SetStateAction<TokenUsageBudgetConfig | null>>,
+  characters: Character[],
+) {
+  setBudgetDraft((current) => {
+    const next = current ?? emptyBudgetConfig();
+    const used = new Set(next.characters.map((item) => item.characterId));
+    const candidate = characters.find((item) => !used.has(item.id));
+    if (!candidate) {
+      return next;
+    }
+    return {
+      ...next,
+      characters: [...next.characters, emptyCharacterBudgetRule(candidate.id)],
+    };
+  });
+}
+
+function updateBudgetCharacter(
+  setBudgetDraft: Dispatch<SetStateAction<TokenUsageBudgetConfig | null>>,
+  index: number,
+  patch: Partial<TokenUsageCharacterBudgetRule>,
+) {
+  setBudgetDraft((current) => {
+    if (!current) {
+      return current;
+    }
+
+    return {
+      ...current,
+      characters: current.characters.map((item, itemIndex) =>
         itemIndex === index ? { ...item, ...patch } : item,
       ),
     };
