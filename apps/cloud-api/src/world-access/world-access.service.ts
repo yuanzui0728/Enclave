@@ -56,6 +56,7 @@ export class WorldAccessService {
           healthStatus: "queued",
           healthMessage: "世界已进入创建队列。",
           lastAccessedAt: now,
+          lastInteractiveAt: null,
           lastBootedAt: null,
           lastHeartbeatAt: null,
           lastSuspendedAt: null,

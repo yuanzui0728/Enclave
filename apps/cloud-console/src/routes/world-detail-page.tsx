@@ -281,6 +281,7 @@ export function WorldDetailPage() {
               <div>API: {formatOptional(world.apiBaseUrl)}</div>
               <div>Admin: {formatOptional(world.adminUrl)}</div>
               <div>Last accessed: {formatDateTime(world.lastAccessedAt)}</div>
+              <div>Last interactive: {formatDateTime(world.lastInteractiveAt)}</div>
               <div>Last booted: {formatDateTime(world.lastBootedAt)}</div>
               <div>Last heartbeat: {formatDateTime(world.lastHeartbeatAt)}</div>
               <div>Last suspended: {formatDateTime(world.lastSuspendedAt)}</div>

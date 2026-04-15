@@ -474,3 +474,21 @@
   - `POST /admin/cloud/worlds/:id/retry`
 - New cloud env var:
   - `CLOUD_MOCK_WORLD_API_BASE_URL`
+- Runtime callback routes added in `apps/cloud-api`:
+  - `POST /internal/worlds/:worldId/bootstrap`
+  - `POST /internal/worlds/:worldId/heartbeat`
+  - `POST /internal/worlds/:worldId/activity`
+  - `POST /internal/worlds/:worldId/health`
+  - `POST /internal/worlds/:worldId/fail`
+- Core API now includes backend module `cloud-runtime` in `api/src/modules/cloud-runtime/`:
+  - the world instance reports bootstrap, heartbeat, and latest interaction time back to the cloud platform
+  - latest activity comes from runtime `Conversation.lastActivityAt` / `Group.lastActivityAt`
+- `CloudWorld` now tracks `lastInteractiveAt` as the runtime activity signal used by orchestration and ops views.
+- New core API env vars:
+  - `CLOUD_PLATFORM_BASE_URL`
+  - `CLOUD_WORLD_ID`
+  - `CLOUD_WORLD_CALLBACK_TOKEN`
+  - `CLOUD_WORLD_HEARTBEAT_INTERVAL_MS`
+- New cloud platform env var:
+  - `CLOUD_WORLD_IDLE_SUSPEND_SECONDS`
+- Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.

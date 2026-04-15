@@ -17,6 +17,7 @@ import { WorldModule } from './modules/world/world.module';
 import { SchedulerModule } from './modules/scheduler/scheduler.module';
 import { NarrativeModule } from './modules/narrative/narrative.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { CloudRuntimeModule } from './modules/cloud-runtime/cloud-runtime.module';
 import { SystemModule } from './modules/system/system.module';
 
 // Entities
@@ -96,6 +97,7 @@ import { prepareDatabasePath, resolveApiPath, resolveRepoPath } from './database
     SchedulerModule,
     NarrativeModule,
     AdminModule,
+    CloudRuntimeModule,
     SystemModule,
   ],
 })

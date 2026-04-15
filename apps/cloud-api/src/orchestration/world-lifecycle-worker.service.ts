@@ -1,17 +1,21 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
+import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
-import { MockComputeProviderService } from "./mock-compute-provider.service";
 import { WorldAccessService } from "../world-access/world-access.service";
+import { MockComputeProviderService } from "./mock-compute-provider.service";
 
 @Injectable()
 export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WorldLifecycleWorkerService.name);
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
+  private lastMaintenanceAt = 0;
+  private readonly idleSuspendSeconds: number;
 
   constructor(
     @InjectRepository(CloudWorldEntity)
@@ -20,15 +24,23 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     private readonly instanceRepo: Repository<CloudInstanceEntity>,
     @InjectRepository(WorldLifecycleJobEntity)
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
+    @InjectRepository(WorldAccessSessionEntity)
+    private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
+    private readonly configService: ConfigService,
     private readonly mockComputeProvider: MockComputeProviderService,
     private readonly worldAccessService: WorldAccessService,
-  ) {}
+  ) {
+    this.idleSuspendSeconds = this.parsePositiveInteger(
+      this.configService.get<string>("CLOUD_WORLD_IDLE_SUSPEND_SECONDS"),
+    );
+  }
 
   onModuleInit() {
     this.timer = setInterval(() => {
       void this.tick();
     }, 1500);
     this.timer.unref?.();
+    void this.tick();
   }
 
   onModuleDestroy() {
@@ -53,11 +65,14 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         .addOrderBy("job.createdAt", "ASC")
         .getOne();
 
-      if (!job) {
-        return;
+      if (job) {
+        await this.runJob(job);
       }
 
-      await this.runJob(job);
+      if (Date.now() - this.lastMaintenanceAt >= 5_000) {
+        this.lastMaintenanceAt = Date.now();
+        await this.autoSuspendIdleWorlds();
+      }
     } finally {
       this.ticking = false;
     }
@@ -70,7 +85,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     if (!world) {
       job.status = "cancelled";
       job.failureCode = "world_missing";
-      job.failureMessage = "目标世界不存在，任务已取消。";
+      job.failureMessage = "Target world no longer exists, so the job was cancelled.";
       job.finishedAt = new Date();
       await this.jobRepo.save(job);
       return;
@@ -106,7 +121,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       };
       await this.jobRepo.save(job);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "未知编排错误。";
+      const message = error instanceof Error ? error.message : "Unknown orchestration error.";
       this.logger.error(`World lifecycle job failed: ${job.id} ${message}`);
 
       const canRetry = job.attempt < job.maxAttempts;
@@ -114,7 +129,6 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       job.failureMessage = message;
 
       if (canRetry) {
-        // Exponential backoff: attempt * 10s
         job.status = "pending";
         job.finishedAt = null;
         job.availableAt = new Date(Date.now() + job.attempt * 10_000);
@@ -149,7 +163,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.status = "creating";
     world.desiredState = "running";
     world.healthStatus = "creating";
-    world.healthMessage = "正在创建世界实例。";
+    world.healthMessage = "Provisioning a new world instance.";
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
@@ -161,6 +175,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     let instance = await this.instanceRepo.findOne({
       where: { worldId: world.id },
     });
+
     if (!instance) {
       instance = this.instanceRepo.create({
         worldId: world.id,
@@ -196,7 +211,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
 
     world.status = "bootstrapping";
     world.healthStatus = "bootstrapping";
-    world.healthMessage = "世界实例已启动，正在准备世界服务。";
+    world.healthMessage = "Instance is online and bootstrap is running.";
     await this.worldRepo.save(world);
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
 
@@ -212,7 +227,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.apiBaseUrl = provisioned.apiBaseUrl;
     world.adminUrl = provisioned.adminUrl;
     world.healthStatus = "healthy";
-    world.healthMessage = "世界已准备好。";
+    world.healthMessage = "World is ready.";
     world.lastBootedAt = now;
     world.lastHeartbeatAt = now;
     world.failureCode = null;
@@ -233,7 +248,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.status = "starting";
     world.desiredState = "running";
     world.healthStatus = "starting";
-    world.healthMessage = "正在唤起你之前的世界。";
+    world.healthMessage = "Waking the existing world.";
     world.failureCode = null;
     world.failureMessage = null;
     await this.worldRepo.save(world);
@@ -252,7 +267,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.status = "ready";
     world.apiBaseUrl = world.apiBaseUrl ?? this.mockComputeProvider.resolveApiBaseUrl();
     world.healthStatus = "healthy";
-    world.healthMessage = "世界已重新唤起。";
+    world.healthMessage = "World has resumed.";
     world.lastBootedAt = now;
     world.lastHeartbeatAt = now;
     world.failureCode = null;
@@ -265,7 +280,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.status = "stopping";
     world.desiredState = "sleeping";
     world.healthStatus = "stopping";
-    world.healthMessage = "正在让世界休眠。";
+    world.healthMessage = "Suspending the world.";
     await this.worldRepo.save(world);
 
     const instance = await this.instanceRepo.findOne({
@@ -280,10 +295,121 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
 
     world.status = "sleeping";
     world.healthStatus = "sleeping";
-    world.healthMessage = "世界已休眠。";
+    world.healthMessage = "World is sleeping.";
     world.lastSuspendedAt = new Date();
     await this.worldRepo.save(world);
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+  }
+
+  private async autoSuspendIdleWorlds() {
+    if (this.idleSuspendSeconds <= 0) {
+      return;
+    }
+
+    const cutoff = Date.now() - this.idleSuspendSeconds * 1000;
+    const worlds = await this.worldRepo.find({
+      where: {
+        status: "ready",
+        desiredState: "running",
+      },
+      order: {
+        updatedAt: "ASC",
+      },
+    });
+
+    for (const world of worlds) {
+      const lastInteractiveAt = world.lastInteractiveAt ?? world.lastAccessedAt ?? world.lastHeartbeatAt;
+      if (!lastInteractiveAt || lastInteractiveAt.getTime() > cutoff) {
+        continue;
+      }
+
+      const [activeJobCount, pendingSessionCount] = await Promise.all([
+        this.jobRepo.count({
+          where: {
+            worldId: world.id,
+            status: In(["pending", "running"]),
+          },
+        }),
+        this.accessSessionRepo.count({
+          where: {
+            worldId: world.id,
+            status: In(["pending", "resolving", "waiting"]),
+          },
+        }),
+      ]);
+
+      if (activeJobCount > 0 || pendingSessionCount > 0) {
+        continue;
+      }
+
+      world.status = "stopping";
+      world.desiredState = "sleeping";
+      world.healthStatus = "stopping";
+      world.healthMessage = `World idle for ${this.idleSuspendSeconds}s, preparing suspend.`;
+      world.failureCode = null;
+      world.failureMessage = null;
+      await this.worldRepo.save(world);
+
+      await this.ensureLifecycleJob(world.id, "suspend", {
+        source: "idle-suspend",
+        idleSeconds: this.idleSuspendSeconds,
+        lastInteractiveAt: lastInteractiveAt.toISOString(),
+      });
+      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+
+      this.logger.log(
+        `Queued idle suspend for world ${world.id} after ${this.idleSuspendSeconds}s of inactivity.`,
+      );
+    }
+  }
+
+  private async ensureLifecycleJob(
+    worldId: string,
+    jobType: "provision" | "resume" | "suspend",
+    payload: Record<string, unknown>,
+  ) {
+    const existing = await this.jobRepo.findOne({
+      where: {
+        worldId,
+        jobType,
+        status: In(["pending", "running"]),
+      },
+      order: {
+        createdAt: "DESC",
+      },
+    });
+    if (existing) {
+      return existing;
+    }
+
+    return this.jobRepo.save(
+      this.jobRepo.create({
+        worldId,
+        jobType,
+        status: "pending",
+        priority: jobType === "resume" ? 50 : jobType === "suspend" ? 120 : 100,
+        payload,
+        attempt: 0,
+        maxAttempts: jobType === "resume" ? 5 : 3,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+        availableAt: new Date(),
+        startedAt: null,
+        finishedAt: null,
+        failureCode: null,
+        failureMessage: null,
+        resultPayload: null,
+      }),
+    );
+  }
+
+  private parsePositiveInteger(rawValue: string | undefined) {
+    const parsed = Number(rawValue ?? "0");
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 0;
+    }
+
+    return Math.floor(parsed);
   }
 
   private sleep(ms: number) {

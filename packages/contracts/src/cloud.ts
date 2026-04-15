@@ -104,6 +104,7 @@ export interface CloudWorldSummary {
   failureCode?: string | null;
   failureMessage?: string | null;
   lastAccessedAt?: string | null;
+  lastInteractiveAt?: string | null;
   lastBootedAt?: string | null;
   lastHeartbeatAt?: string | null;
   lastSuspendedAt?: string | null;

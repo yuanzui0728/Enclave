@@ -71,6 +71,7 @@ export function WorldsPage() {
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Health</th>
               <th className="px-4 py-3">API</th>
+              <th className="px-4 py-3">Last interactive</th>
               <th className="px-4 py-3">Updated</th>
             </tr>
           </thead>
@@ -90,6 +91,7 @@ export function WorldsPage() {
                 <td className="px-4 py-3 uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{item.status}</td>
                 <td className="px-4 py-3 text-[color:var(--text-secondary)]">{item.healthStatus ?? "unknown"}</td>
                 <td className="max-w-[18rem] truncate px-4 py-3 text-[color:var(--text-secondary)]">{item.apiBaseUrl ?? "Not set"}</td>
+                <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(item.lastInteractiveAt)}</td>
                 <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(item.updatedAt)}</td>
               </tr>
             ))}

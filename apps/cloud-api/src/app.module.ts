@@ -18,6 +18,8 @@ import { WorldAccessSessionEntity } from "./entities/world-access-session.entity
 import { WorldLifecycleJobEntity } from "./entities/world-lifecycle-job.entity";
 import { MockComputeProviderService } from "./orchestration/mock-compute-provider.service";
 import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
+import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.controller";
+import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
 import { WorldAccessController } from "./world-access/world-access.controller";
 import { WorldAccessService } from "./world-access/world-access.service";
 
@@ -53,7 +55,13 @@ import { WorldAccessService } from "./world-access/world-access.service";
       WorldLifecycleJobEntity,
     ]),
   ],
-  controllers: [CloudAuthController, CloudController, AdminCloudController, WorldAccessController],
+  controllers: [
+    CloudAuthController,
+    CloudController,
+    AdminCloudController,
+    WorldAccessController,
+    WorldRuntimeController,
+  ],
   providers: [
     PhoneAuthService,
     MockSmsProviderService,
@@ -63,6 +71,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
     WorldAccessService,
     MockComputeProviderService,
     WorldLifecycleWorkerService,
+    WorldRuntimeService,
   ],
 })
 export class AppModule {}
