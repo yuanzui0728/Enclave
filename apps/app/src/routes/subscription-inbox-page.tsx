@@ -91,13 +91,19 @@ function MobileSubscriptionInboxPage() {
   const lastDeliveredLabel = inboxQuery.data?.summary?.lastDeliveredAt
     ? formatConversationTimestamp(inboxQuery.data.summary.lastDeliveredAt)
     : "暂无更新";
+  const headerSubtitle = groupCount
+    ? `${groupCount}个号 · ${lastDeliveredLabel}${
+        unreadCount ? ` · ${unreadCount}条未读` : ""
+      }`
+    : undefined;
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title="订阅号消息"
+        subtitle={headerSubtitle}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -130,7 +136,7 @@ function MobileSubscriptionInboxPage() {
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {inboxQuery.isLoading ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <MobileSubscriptionInboxStatusCard
               badge="读取中"
               title="正在读取订阅号消息"
@@ -140,7 +146,7 @@ function MobileSubscriptionInboxPage() {
           </div>
         ) : null}
         {inboxQuery.isError && inboxQuery.error instanceof Error ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <MobileSubscriptionInboxStatusCard
               badge="读取失败"
               title="订阅号消息暂时不可用"
@@ -150,7 +156,7 @@ function MobileSubscriptionInboxPage() {
           </div>
         ) : null}
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone="danger"
@@ -161,60 +167,42 @@ function MobileSubscriptionInboxPage() {
         ) : null}
 
         {inboxQuery.data?.groups.length ? (
-          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-white px-4 py-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
-                  最近订阅更新
-                </div>
-                <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
-                  {unreadCount} 条未读 · {groupCount} 个号 · {lastDeliveredLabel}
-                </div>
-              </div>
-              <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
-                订阅号
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        {inboxQuery.data?.groups.length ? (
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white"
+              className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white shadow-none"
             >
-              <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigate({
-                      to: "/official-accounts/$accountId",
-                      params: { accountId: group.account.id },
-                    });
-                  }}
-                  className="flex w-full items-center gap-3 text-left"
-                >
-                  <AvatarChip
-                    name={group.account.name}
-                    src={group.account.avatar}
-                    size="wechat"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
-                      {group.account.name}
-                    </div>
-                    <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
-                      {group.unreadCount > 0
-                        ? `${group.unreadCount} 条新推送`
-                        : "最近推送"}
-                      {group.lastDeliveredAt
-                        ? ` · ${formatConversationTimestamp(group.lastDeliveredAt)}`
-                        : ""}
-                    </div>
+              <button
+                type="button"
+                onClick={() => {
+                  void navigate({
+                    to: "/official-accounts/$accountId",
+                    params: { accountId: group.account.id },
+                  });
+                }}
+                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(15,23,42,0.02)]"
+              >
+                <AvatarChip
+                  name={group.account.name}
+                  src={group.account.avatar}
+                  size="wechat"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                    {group.account.name}
                   </div>
-                </button>
-              </div>
+                  <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+                    {group.lastDeliveredAt
+                      ? formatConversationTimestamp(group.lastDeliveredAt)
+                      : "最近推送"}
+                  </div>
+                </div>
+                {group.unreadCount > 0 ? (
+                  <span className="rounded-full bg-[#fa5151] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                    {group.unreadCount}
+                  </span>
+                ) : null}
+              </button>
 
               {group.deliveries.map((delivery) => (
                 <MobileSubscriptionArticleRow
@@ -231,7 +219,7 @@ function MobileSubscriptionInboxPage() {
             </section>
           ))
         ) : !inboxQuery.isLoading ? (
-          <div className="px-4 pt-4">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-4">
             <MobileSubscriptionInboxStatusCard
               badge="暂时空白"
               title="还没有订阅号消息"
