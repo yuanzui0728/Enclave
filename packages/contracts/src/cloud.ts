@@ -140,6 +140,31 @@ export interface CloudInstanceSummary {
   updatedAt: string;
 }
 
+export interface CloudWorldCallbackEndpoints {
+  bootstrap: string;
+  heartbeat: string;
+  activity: string;
+  health: string;
+  fail: string;
+}
+
+export interface CloudWorldBootstrapConfig {
+  worldId: string;
+  worldName: string;
+  phone: string;
+  slug?: string | null;
+  providerKey?: string | null;
+  cloudPlatformBaseUrl: string;
+  suggestedApiBaseUrl?: string | null;
+  suggestedAdminUrl?: string | null;
+  callbackToken: string;
+  callbackEndpoints: CloudWorldCallbackEndpoints;
+  env: Record<string, string>;
+  envFileContent: string;
+  dockerComposeSnippet: string;
+  notes: string[];
+}
+
 export interface WorldLifecycleJobSummary {
   id: string;
   worldId: string;

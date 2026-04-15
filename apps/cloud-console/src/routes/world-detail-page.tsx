@@ -42,6 +42,10 @@ export function WorldDetailPage() {
     queryKey: ["cloud-console", "world-instance", worldId],
     queryFn: () => cloudAdminApi.getWorldInstance(worldId),
   });
+  const bootstrapConfigQuery = useQuery({
+    queryKey: ["cloud-console", "world-bootstrap-config", worldId],
+    queryFn: () => cloudAdminApi.getWorldBootstrapConfig(worldId),
+  });
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "jobs", "world", worldId],
     queryFn: () => cloudAdminApi.listJobs({ worldId }),
@@ -59,6 +63,7 @@ export function WorldDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "worlds"] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-instance", worldId] }),
+      queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-bootstrap-config", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "jobs"] }),
     ]);
   }
@@ -87,9 +92,14 @@ export function WorldDetailPage() {
     mutationFn: () => cloudAdminApi.retryWorld(worldId),
     onSuccess: invalidateWorldQueries,
   });
+  const rotateCallbackTokenMutation = useMutation({
+    mutationFn: () => cloudAdminApi.rotateWorldCallbackToken(worldId),
+    onSuccess: invalidateWorldQueries,
+  });
 
   const world = worldQuery.data;
   const instance = instanceQuery.data;
+  const bootstrapConfig = bootstrapConfigQuery.data;
   const jobs = jobsQuery.data ?? [];
   const worldError = worldQuery.error instanceof Error ? worldQuery.error.message : null;
 
@@ -118,7 +128,11 @@ export function WorldDetailPage() {
     );
   }
 
-  const actionPending = resumeMutation.isPending || suspendMutation.isPending || retryMutation.isPending;
+  const actionPending =
+    resumeMutation.isPending ||
+    suspendMutation.isPending ||
+    retryMutation.isPending ||
+    rotateCallbackTokenMutation.isPending;
 
   return (
     <section className="grid gap-6">
@@ -159,7 +173,12 @@ export function WorldDetailPage() {
             </div>
           </div>
 
-          {(resumeMutation.error instanceof Error || suspendMutation.error instanceof Error || retryMutation.error instanceof Error) && (
+          {(
+            resumeMutation.error instanceof Error ||
+            suspendMutation.error instanceof Error ||
+            retryMutation.error instanceof Error ||
+            rotateCallbackTokenMutation.error instanceof Error
+          ) && (
             <div className="mt-4">
               <ErrorBlock
                 message={
@@ -169,7 +188,9 @@ export function WorldDetailPage() {
                       ? suspendMutation.error.message
                       : retryMutation.error instanceof Error
                         ? retryMutation.error.message
-                        : "Unknown action error."
+                        : rotateCallbackTokenMutation.error instanceof Error
+                          ? rotateCallbackTokenMutation.error.message
+                          : "Unknown action error."
                 }
               />
             </div>
@@ -313,6 +334,84 @@ export function WorldDetailPage() {
                 No instance record exists yet. Provisioning will create one automatically.
               </div>
             )}
+          </div>
+
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">Bootstrap package</div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                  Use this env overlay when deploying the user's dedicated world runtime.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={actionPending}
+                onClick={() => rotateCallbackTokenMutation.mutate()}
+                className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)] disabled:opacity-60"
+              >
+                {rotateCallbackTokenMutation.isPending ? "Rotating..." : "Rotate callback token"}
+              </button>
+            </div>
+
+            {bootstrapConfigQuery.isError && bootstrapConfigQuery.error instanceof Error ? (
+              <div className="mt-4">
+                <ErrorBlock message={bootstrapConfigQuery.error.message} />
+              </div>
+            ) : null}
+
+            {bootstrapConfig ? (
+              <div className="mt-4 grid gap-4">
+                <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                  <div>Cloud platform: {bootstrapConfig.cloudPlatformBaseUrl}</div>
+                  <div>Suggested API: {formatOptional(bootstrapConfig.suggestedApiBaseUrl)}</div>
+                  <div>Suggested admin: {formatOptional(bootstrapConfig.suggestedAdminUrl)}</div>
+                  <div>Callback token: {bootstrapConfig.callbackToken || "Not set"}</div>
+                </div>
+
+                <div className="grid gap-3 text-sm text-[color:var(--text-secondary)]">
+                  <div>Bootstrap endpoint: {bootstrapConfig.callbackEndpoints.bootstrap}</div>
+                  <div>Heartbeat endpoint: {bootstrapConfig.callbackEndpoints.heartbeat}</div>
+                  <div>Activity endpoint: {bootstrapConfig.callbackEndpoints.activity}</div>
+                  <div>Health endpoint: {bootstrapConfig.callbackEndpoints.health}</div>
+                  <div>Fail endpoint: {bootstrapConfig.callbackEndpoints.fail}</div>
+                </div>
+
+                <label className="grid gap-2 text-sm">
+                  <span className="text-[color:var(--text-primary)]">Runtime env overlay</span>
+                  <textarea
+                    readOnly
+                    value={bootstrapConfig.envFileContent}
+                    rows={6}
+                    className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 font-mono text-xs text-[color:var(--text-primary)]"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm">
+                  <span className="text-[color:var(--text-primary)]">Docker compose snippet</span>
+                  <textarea
+                    readOnly
+                    value={bootstrapConfig.dockerComposeSnippet}
+                    rows={8}
+                    className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 font-mono text-xs text-[color:var(--text-primary)]"
+                  />
+                </label>
+
+                {bootstrapConfig.notes.length ? (
+                  <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">Ops notes</div>
+                    <div className="mt-2 space-y-2 text-sm text-[color:var(--text-secondary)]">
+                      {bootstrapConfig.notes.map((note) => (
+                        <div key={note}>{note}</div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : bootstrapConfigQuery.isLoading ? (
+              <div className="mt-4 text-sm text-[color:var(--text-muted)]">Loading bootstrap package...</div>
+            ) : null}
           </div>
         </div>
       </div>

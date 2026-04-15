@@ -1,4 +1,5 @@
 import type {
+  CloudWorldBootstrapConfig,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
   CloudWorldRequestRecord,
@@ -132,9 +133,15 @@ export const cloudAdminApi = {
 
   getWorldInstance: (worldId: string) => adminFetch<CloudInstanceSummary | null>(`/worlds/${worldId}/instance`),
 
+  getWorldBootstrapConfig: (worldId: string) =>
+    adminFetch<CloudWorldBootstrapConfig>(`/worlds/${worldId}/bootstrap-config`),
+
   resumeWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/resume`, { method: "POST" }),
 
   suspendWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/suspend`, { method: "POST" }),
 
   retryWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/retry`, { method: "POST" }),
+
+  rotateWorldCallbackToken: (worldId: string) =>
+    adminFetch<CloudWorldBootstrapConfig>(`/worlds/${worldId}/rotate-callback-token`, { method: "POST" }),
 };

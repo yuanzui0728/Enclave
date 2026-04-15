@@ -265,7 +265,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     await this.instanceRepo.save(instance);
 
     world.status = "ready";
-    world.apiBaseUrl = world.apiBaseUrl ?? this.mockComputeProvider.resolveApiBaseUrl();
+    world.apiBaseUrl = world.apiBaseUrl ?? this.mockComputeProvider.resolveApiBaseUrl(world);
     world.healthStatus = "healthy";
     world.healthMessage = "World has resumed.";
     world.lastBootedAt = now;

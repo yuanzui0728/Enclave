@@ -469,9 +469,11 @@
   - `GET /admin/cloud/jobs`
   - `GET /admin/cloud/jobs/:id`
   - `GET /admin/cloud/worlds/:id/instance`
+  - `GET /admin/cloud/worlds/:id/bootstrap-config`
   - `POST /admin/cloud/worlds/:id/resume`
   - `POST /admin/cloud/worlds/:id/suspend`
   - `POST /admin/cloud/worlds/:id/retry`
+  - `POST /admin/cloud/worlds/:id/rotate-callback-token`
 - New cloud env var:
   - `CLOUD_MOCK_WORLD_API_BASE_URL`
 - Runtime callback routes added in `apps/cloud-api`:
@@ -491,4 +493,13 @@
   - `CLOUD_WORLD_HEARTBEAT_INTERVAL_MS`
 - New cloud platform env var:
   - `CLOUD_WORLD_IDLE_SUSPEND_SECONDS`
+- Additional cloud platform env vars for bootstrap config generation:
+  - `CLOUD_PLATFORM_PUBLIC_BASE_URL`
+  - `CLOUD_WORLD_API_BASE_URL_TEMPLATE`
+  - `CLOUD_WORLD_ADMIN_URL_TEMPLATE`
+  - `CLOUD_DEFAULT_WORLD_HEARTBEAT_INTERVAL_MS`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
+- Cloud console world detail now exposes a bootstrap package:
+  - generated runtime env overlay for `api`
+  - docker compose environment snippet
+  - callback endpoints and callback token rotation for redeploying a world instance safely

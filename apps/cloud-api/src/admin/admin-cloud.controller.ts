@@ -88,6 +88,11 @@ export class AdminCloudController {
     return this.cloudService.getWorldInstance(id);
   }
 
+  @Get("worlds/:id/bootstrap-config")
+  getWorldBootstrapConfig(@Param("id") id: string) {
+    return this.cloudService.getWorldBootstrapConfig(id);
+  }
+
   @Post("worlds/:id/resume")
   resumeWorld(@Param("id") id: string) {
     return this.cloudService.resumeWorld(id);
@@ -101,5 +106,10 @@ export class AdminCloudController {
   @Post("worlds/:id/retry")
   retryWorld(@Param("id") id: string) {
     return this.cloudService.retryWorld(id);
+  }
+
+  @Post("worlds/:id/rotate-callback-token")
+  rotateWorldCallbackToken(@Param("id") id: string) {
+    return this.cloudService.rotateWorldCallbackToken(id);
   }
 }
