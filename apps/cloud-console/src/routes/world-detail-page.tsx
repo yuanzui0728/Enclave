@@ -54,6 +54,10 @@ export function WorldDetailPage() {
   const [draftStatus, setDraftStatus] = useState<CloudWorldLifecycleStatus>("queued");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [provisionStrategy, setProvisionStrategy] = useState("");
+  const [providerKey, setProviderKey] = useState("");
+  const [providerRegion, setProviderRegion] = useState("");
+  const [providerZone, setProviderZone] = useState("");
   const [apiBaseUrl, setApiBaseUrl] = useState("");
   const [adminUrl, setAdminUrl] = useState("");
   const [note, setNote] = useState("");
@@ -74,6 +78,10 @@ export function WorldDetailPage() {
         phone,
         name,
         status: draftStatus,
+        provisionStrategy,
+        providerKey,
+        providerRegion,
+        providerZone,
         apiBaseUrl,
         adminUrl,
         note,
@@ -111,6 +119,10 @@ export function WorldDetailPage() {
     setDraftStatus(world.status);
     setPhone(world.phone);
     setName(world.name);
+    setProvisionStrategy(world.provisionStrategy ?? "");
+    setProviderKey(world.providerKey ?? "");
+    setProviderRegion(world.providerRegion ?? "");
+    setProviderZone(world.providerZone ?? "");
     setApiBaseUrl(world.apiBaseUrl ?? "");
     setAdminUrl(world.adminUrl ?? "");
     setNote(world.note ?? "");
@@ -227,8 +239,50 @@ export function WorldDetailPage() {
                     {status}
                   </option>
                 ))}
-              </select>
+                </select>
+              </label>
+
+            <label className="grid gap-2 text-sm">
+              <span>Provision strategy</span>
+              <input
+                value={provisionStrategy}
+                onChange={(event) => setProvisionStrategy(event.target.value)}
+                placeholder="mock"
+                className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+              />
             </label>
+
+            <label className="grid gap-2 text-sm">
+              <span>Provider key</span>
+              <input
+                value={providerKey}
+                onChange={(event) => setProviderKey(event.target.value)}
+                placeholder="mock"
+                className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+              />
+            </label>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm">
+                <span>Provider region</span>
+                <input
+                  value={providerRegion}
+                  onChange={(event) => setProviderRegion(event.target.value)}
+                  placeholder="mock-local"
+                  className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm">
+                <span>Provider zone</span>
+                <input
+                  value={providerZone}
+                  onChange={(event) => setProviderZone(event.target.value)}
+                  placeholder="mock-a"
+                  className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
+                />
+              </label>
+            </div>
 
             <label className="grid gap-2 text-sm">
               <span>World API base URL</span>
@@ -281,6 +335,7 @@ export function WorldDetailPage() {
               {[
                 { label: "Desired state", value: world.desiredState ?? "running" },
                 { label: "Health", value: world.healthStatus ?? "unknown" },
+                { label: "Strategy", value: world.provisionStrategy ?? "unknown" },
                 { label: "Provider", value: world.providerKey ?? "unknown" },
                 { label: "Region", value: world.providerRegion ?? "unknown" },
                 { label: "Zone", value: world.providerZone ?? "unknown" },
@@ -322,10 +377,18 @@ export function WorldDetailPage() {
                 <div>Name: {instance.name}</div>
                 <div>Power state: {instance.powerState}</div>
                 <div>Provider instance: {formatOptional(instance.providerInstanceId)}</div>
+                <div>Provider volume: {formatOptional(instance.providerVolumeId)}</div>
+                <div>Provider snapshot: {formatOptional(instance.providerSnapshotId)}</div>
                 <div>Private IP: {formatOptional(instance.privateIp)}</div>
                 <div>Public IP: {formatOptional(instance.publicIp)}</div>
                 <div>Region: {formatOptional(instance.region)}</div>
                 <div>Zone: {formatOptional(instance.zone)}</div>
+                <div>Image: {formatOptional(instance.imageId)}</div>
+                <div>Flavor: {formatOptional(instance.flavor)}</div>
+                <div>Disk: {instance.diskSizeGb ?? "Not set"} GB</div>
+                <div>Bootstrapped: {formatDateTime(instance.bootstrappedAt)}</div>
+                <div>Last heartbeat: {formatDateTime(instance.lastHeartbeatAt)}</div>
+                <div>Last operation: {formatDateTime(instance.lastOperationAt)}</div>
                 <div>Created: {formatDateTime(instance.createdAt)}</div>
                 <div>Updated: {formatDateTime(instance.updatedAt)}</div>
               </div>
@@ -333,6 +396,22 @@ export function WorldDetailPage() {
               <div className="mt-4 text-sm text-[color:var(--text-muted)]">
                 No instance record exists yet. Provisioning will create one automatically.
               </div>
+            )}
+
+            {instance?.launchConfig ? (
+              <label className="mt-4 grid gap-2 text-sm">
+                <span className="text-[color:var(--text-primary)]">Launch config snapshot</span>
+                <textarea
+                  readOnly
+                  value={Object.entries(instance.launchConfig)
+                    .map(([key, value]) => `${key}=${value}`)
+                    .join("\n")}
+                  rows={6}
+                  className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 font-mono text-xs text-[color:var(--text-primary)]"
+                />
+              </label>
+            ) : (
+              null
             )}
           </div>
 

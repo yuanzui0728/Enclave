@@ -6,8 +6,9 @@ import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
+import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import { WorldAccessService } from "../world-access/world-access.service";
-import { MockComputeProviderService } from "./mock-compute-provider.service";
+import { resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "./world-bootstrap-config";
 
 @Injectable()
 export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestroy {
@@ -27,7 +28,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     @InjectRepository(WorldAccessSessionEntity)
     private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
     private readonly configService: ConfigService,
-    private readonly mockComputeProvider: MockComputeProviderService,
+    private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly worldAccessService: WorldAccessService,
   ) {
     this.idleSuspendSeconds = this.parsePositiveInteger(
@@ -160,18 +161,20 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
   }
 
   private async handleProvision(world: CloudWorldEntity) {
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey);
     world.status = "creating";
     world.desiredState = "running";
     world.healthStatus = "creating";
     world.healthMessage = "Provisioning a new world instance.";
     world.failureCode = null;
     world.failureMessage = null;
+    world.providerKey = provider.key;
     await this.worldRepo.save(world);
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
 
     await this.sleep(600);
 
-    const provisioned = this.mockComputeProvider.createInstance(world);
+    const provisioned = provider.createInstance(world);
     let instance = await this.instanceRepo.findOne({
       where: { worldId: world.id },
     });
@@ -181,26 +184,37 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         worldId: world.id,
         providerKey: provisioned.providerKey,
         providerInstanceId: provisioned.providerInstanceId,
+        providerVolumeId: provisioned.providerVolumeId ?? null,
+        providerSnapshotId: provisioned.providerSnapshotId ?? null,
         name: `${world.slug ?? world.id}-vm`,
         region: provisioned.region,
         zone: provisioned.zone,
         privateIp: provisioned.privateIp,
         publicIp: provisioned.publicIp,
         powerState: "provisioning",
-        imageId: "mock-image-v1",
-        flavor: "mock.small",
-        diskSizeGb: 20,
+        imageId: provisioned.imageId ?? null,
+        flavor: provisioned.flavor ?? null,
+        diskSizeGb: provisioned.diskSizeGb ?? 20,
+        launchConfig: provisioned.launchConfig ?? null,
         bootstrappedAt: null,
         lastHeartbeatAt: null,
+        lastOperationAt: new Date(),
       });
     } else {
       instance.providerKey = provisioned.providerKey;
       instance.providerInstanceId = provisioned.providerInstanceId;
+      instance.providerVolumeId = provisioned.providerVolumeId ?? instance.providerVolumeId;
+      instance.providerSnapshotId = provisioned.providerSnapshotId ?? instance.providerSnapshotId;
       instance.region = provisioned.region;
       instance.zone = provisioned.zone;
       instance.privateIp = provisioned.privateIp;
       instance.publicIp = provisioned.publicIp;
       instance.powerState = "provisioning";
+      instance.imageId = provisioned.imageId ?? instance.imageId;
+      instance.flavor = provisioned.flavor ?? instance.flavor;
+      instance.diskSizeGb = provisioned.diskSizeGb ?? instance.diskSizeGb;
+      instance.launchConfig = provisioned.launchConfig ?? instance.launchConfig;
+      instance.lastOperationAt = new Date();
     }
 
     world.providerKey = provisioned.providerKey;
@@ -221,6 +235,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     instance.powerState = "running";
     instance.bootstrappedAt = now;
     instance.lastHeartbeatAt = now;
+    instance.lastOperationAt = now;
     await this.instanceRepo.save(instance);
 
     world.status = "ready";
@@ -237,6 +252,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
   }
 
   private async handleResume(world: CloudWorldEntity) {
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey);
     let instance = await this.instanceRepo.findOne({
       where: { worldId: world.id },
     });
@@ -255,17 +271,22 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
 
     instance.powerState = "starting";
+    instance.lastOperationAt = new Date();
     await this.instanceRepo.save(instance);
 
     await this.sleep(600);
 
-    instance.powerState = this.mockComputeProvider.startInstance(instance).powerState;
+    const resumeResult = provider.startInstance(instance, world);
+    instance.powerState = resumeResult.powerState;
+    instance.providerSnapshotId = resumeResult.providerSnapshotId ?? instance.providerSnapshotId;
     const now = new Date();
     instance.lastHeartbeatAt = now;
+    instance.lastOperationAt = now;
     await this.instanceRepo.save(instance);
 
     world.status = "ready";
-    world.apiBaseUrl = world.apiBaseUrl ?? this.mockComputeProvider.resolveApiBaseUrl(world);
+    world.apiBaseUrl = world.apiBaseUrl ?? resolveSuggestedWorldApiBaseUrl(world, this.configService);
+    world.adminUrl = world.adminUrl ?? resolveSuggestedWorldAdminUrl(world, this.configService);
     world.healthStatus = "healthy";
     world.healthMessage = "World has resumed.";
     world.lastBootedAt = now;
@@ -277,6 +298,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
   }
 
   private async handleSuspend(world: CloudWorldEntity) {
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey);
     world.status = "stopping";
     world.desiredState = "sleeping";
     world.healthStatus = "stopping";
@@ -287,7 +309,10 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       where: { worldId: world.id },
     });
     if (instance) {
-      instance.powerState = this.mockComputeProvider.stopInstance(instance).powerState;
+      const suspendResult = provider.stopInstance(instance, world);
+      instance.powerState = suspendResult.powerState;
+      instance.providerSnapshotId = suspendResult.providerSnapshotId ?? instance.providerSnapshotId;
+      instance.lastOperationAt = new Date();
       await this.instanceRepo.save(instance);
     }
 

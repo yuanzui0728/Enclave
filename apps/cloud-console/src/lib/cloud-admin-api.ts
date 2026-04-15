@@ -114,6 +114,10 @@ export const cloudAdminApi = {
       phone?: string;
       name?: string;
       status?: CloudWorldLifecycleStatus;
+      provisionStrategy?: string;
+      providerKey?: string | null;
+      providerRegion?: string | null;
+      providerZone?: string | null;
       note?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
