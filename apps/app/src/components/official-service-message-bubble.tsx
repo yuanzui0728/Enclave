@@ -27,7 +27,7 @@ export function OfficialServiceMessageBubble({
         className={
           isDesktop
             ? "w-full max-w-[33rem]"
-            : "w-full max-w-[24rem]"
+            : "w-full max-w-[23.5rem]"
         }
       >
         <div
@@ -51,7 +51,7 @@ export function OfficialServiceMessageBubble({
             "overflow-hidden border bg-white text-left",
             isDesktop
               ? "rounded-[20px] shadow-[0_10px_28px_rgba(15,23,42,0.05)]"
-              : "rounded-[16px] shadow-[0_6px_18px_rgba(15,23,42,0.04)]",
+              : "rounded-[15px] shadow-[0_4px_12px_rgba(15,23,42,0.035)]",
             articleCardActive
               ? "border-[rgba(7,193,96,0.18)]"
               : "border-black/6",
