@@ -494,6 +494,7 @@ export class ReplyLogicAdminService {
       character: selectedCharacter,
       isGroupChat: true,
       visibleMessages: messages,
+      lastChatAt: this.findLastUserMessageAt(messages),
       includeStateGate: false,
       previewUserMessage: userMessage,
     });

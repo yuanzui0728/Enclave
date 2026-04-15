@@ -304,13 +304,15 @@ export class ChatRecordsAdminService {
     const activeMessages = includeClearedHistory ? storedMessages : visibleMessages;
     const character = await this.loadConversationCharacter(conversation);
 
+    const conversationItems = await this.buildConversationListItems([conversation], {
+      preloadedMessages: new Map([[conversation.id, storedMessages]]),
+      preloadedCharacters: character ? [character] : [],
+    });
+    if (!conversationItems[0]) {
+      throw new NotFoundException(`Conversation ${conversationId} could not be built`);
+    }
     return {
-      conversation: (
-        await this.buildConversationListItems([conversation], {
-          preloadedMessages: new Map([[conversation.id, storedMessages]]),
-          preloadedCharacters: character ? [character] : [],
-        })
-      )[0],
+      conversation: conversationItems[0],
       character: character ? this.toCharacterSummary(character) : null,
       stats: this.buildConversationStats(
         activeMessages,

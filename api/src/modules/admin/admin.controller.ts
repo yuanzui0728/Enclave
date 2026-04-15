@@ -317,7 +317,7 @@ export class AdminController {
   @Post('reply-logic/characters/:id/preview')
   previewReplyLogicCharacter(
     @Param('id') id: string,
-    @Body() body: { userMessage?: string | null },
+    @Body() body: { userMessage?: string | null; actorCharacterId?: string | null },
   ) {
     return this.replyLogicAdminService.previewCharacterReply(
       id,

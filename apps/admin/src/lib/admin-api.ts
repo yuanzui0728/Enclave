@@ -84,12 +84,16 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
   let res = await requestWithSecret(path, secret, options);
   let rawBody = await res.text();
+  const isNotConfigured = (body: string) => {
+    try { return ((JSON.parse(body)?.message as string) ?? body).includes("not configured"); } catch { return body.includes("not configured"); }
+  };
+
   if (
     res.status === 401 &&
     storedSecret &&
     DEV_ADMIN_SECRET &&
     storedSecret !== DEV_ADMIN_SECRET &&
-    !rawBody.includes("not configured")
+    !isNotConfigured(rawBody)
   ) {
     res = await requestWithSecret(path, DEV_ADMIN_SECRET, options);
     rawBody = await res.text();
@@ -98,7 +102,7 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
   if (res.status === 401) {
-    if (rawBody.includes("not configured")) {
+    if (isNotConfigured(rawBody)) {
       throw new Error("服务端尚未配置 ADMIN_SECRET。");
     }
     throw new Error("ADMIN_SECRET 不正确。");
@@ -106,7 +110,11 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
   if (!res.ok) {
     throw new Error(rawBody || `管理接口请求失败 ${res.status}：${path}`);
   }
-  return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  try {
+    return (rawBody ? JSON.parse(rawBody) : undefined) as T;
+  } catch {
+    throw new Error(`管理接口响应解析失败 (${path})：${rawBody.slice(0, 200)}`);
+  }
 }
 
 function buildQueryString(query?: TokenUsageQuery) {
