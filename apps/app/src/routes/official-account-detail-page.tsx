@@ -105,6 +105,11 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
   const account = accountQuery.data;
   const accountFavoriteSourceId = account ? `official-${account.id}` : null;
+  const headerSubtitle = account
+    ? `${account.accountType === "service" ? "服务号" : "订阅号"} · @${
+        account.handle
+      }${account.isVerified ? " · 已认证" : ""}`
+    : undefined;
 
   async function handleShareAccount() {
     if (!account) {
@@ -210,8 +215,9 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
         title={account?.name ?? "公众号主页"}
+        subtitle={headerSubtitle}
         titleAlign="center"
-        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
+        className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.96)] px-4 pb-2 pt-2 text-[color:var(--text-primary)] shadow-none"
         leftActions={
           <Button
             onClick={() =>
@@ -244,7 +250,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
       <div className="pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]">
         {accountQuery.isLoading ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <MobileOfficialStatusCard
               badge="读取中"
               title="正在读取公众号"
@@ -254,7 +260,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
           </div>
         ) : null}
         {accountQuery.isError && accountQuery.error instanceof Error ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <MobileOfficialStatusCard
               badge="读取失败"
               title="公众号主页暂时不可用"
@@ -264,7 +270,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
           </div>
         ) : null}
         {actionNotice ? (
-          <div className="px-4 pt-2">
+          <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
               className="rounded-[11px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
               tone={actionNotice.tone}
@@ -276,7 +282,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
         {account ? (
           <>
-            <section className="overflow-hidden border-b border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 pb-4 pt-5">
               <div className="flex flex-col items-center text-center">
                 <AvatarChip name={account.name} src={account.avatar} size="xl" />
                 <div className="mt-3 truncate text-[19px] font-semibold text-[color:var(--text-primary)]">
@@ -311,7 +317,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   onClick={() => followMutation.mutate()}
                   disabled={followMutation.isPending}
                   variant={account.isFollowing ? "secondary" : "primary"}
-                  className="h-9 w-full rounded-full text-[12px]"
+                  className="h-9 w-full rounded-[12px] text-[12px]"
                 >
                   {followMutation.isPending
                     ? "处理中..."
@@ -323,7 +329,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   type="button"
                   variant="secondary"
                   onClick={toggleAccountFavorite}
-                  className="h-9 w-full rounded-full text-[12px]"
+                  className="h-9 w-full rounded-[12px] text-[12px]"
                 >
                   {accountFavoriteSourceId &&
                   favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -344,7 +350,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               ) : null}
             </section>
 
-            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white">
               <button
                 type="button"
                 disabled={!account.isFollowing}
@@ -384,7 +390,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               </button>
             </section>
 
-            <section className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white">
               <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
                 <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
                   最近文章
