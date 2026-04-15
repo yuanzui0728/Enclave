@@ -8,7 +8,6 @@ import {
 } from "@yinjie/contracts";
 import { Button, InlineNotice, cn } from "@yinjie/ui";
 import { OfficialArticleViewer } from "../components/official-article-viewer";
-import { EmptyState } from "../components/empty-state";
 import { buildOfficialArticleFavoriteRecord } from "../features/desktop/favorites/official-account-favorite-records";
 import {
   readDesktopFavorites,
@@ -236,50 +235,47 @@ export function DesktopOfficialArticleWindowPage() {
 
   if (!routeState) {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
-        <div className="w-full max-w-lg rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
-          <EmptyState
-            title="文章窗口缺少上下文"
-            description="这篇公众号文章的窗口参数已经失效，请回到公众号页重新打开。"
-          />
-          <div className="mt-6 flex justify-center">
+      <div className="flex h-full min-h-0 items-center justify-center bg-white p-6">
+        <DesktopArticleWindowStatusPane
+          title="文章窗口缺少上下文"
+          description="这篇公众号文章的窗口参数已经失效，请回到公众号页重新打开。"
+          action={
             <Button
               type="button"
               onClick={() => {
                 void focusMainDesktopWindow("/tabs/chat");
               }}
-              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
             >
               回到消息页
             </Button>
-          </div>
-        </div>
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[color:var(--bg-app)]">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-4 py-3 backdrop-blur-xl">
-        <div className="min-w-0">
-          <div className="inline-flex rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-2.5 py-1 text-[11px] tracking-[0.08em] text-[color:var(--brand-primary)]">
-            公众号文章
-          </div>
-          <div className="mt-2 truncate text-[15px] font-medium text-[color:var(--text-primary)]">
-            {article?.title ?? routeState.title ?? "正在读取文章"}
-          </div>
-          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
-            {article?.account.name ?? "在独立窗口中阅读公众号内容"}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-4 py-2.5 backdrop-blur-xl">
+        <div className="flex min-w-0 items-center gap-3">
           <StandaloneActionButton
             label="回到来源"
             onClick={() => closeStandaloneWindow(fallbackPath)}
           >
             <ArrowLeft size={16} />
           </StandaloneActionButton>
+          <div className="min-w-0">
+            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+              {article?.account.name ?? "公众号文章"}
+            </div>
+            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+              {article?.title ?? routeState.title ?? "正在读取文章"}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
           <StandaloneActionButton
             label="默认浏览器打开"
             onClick={() => {
@@ -299,29 +295,23 @@ export function DesktopOfficialArticleWindowPage() {
 
       <div className={cn("min-h-0 flex-1 overflow-auto bg-white")}>
         {notice ? (
-          <div className="mx-auto max-w-[780px] px-8 pt-6">
-            <InlineNotice className="text-sm" tone="info">
-              {notice}
-            </InlineNotice>
-          </div>
+          <DesktopArticleWindowInlineStatus message={notice} />
         ) : null}
 
         {articleQuery.isLoading ? (
-          <div className="mx-auto max-w-[780px] px-8 py-10">
-            <EmptyState
-              title="正在读取文章"
-              description="稍等一下，正在同步正文内容。"
-            />
-          </div>
+          <DesktopArticleWindowStatusPane
+            title="正在读取文章"
+            description="稍等一下，正在同步正文内容。"
+            tone="loading"
+          />
         ) : null}
 
         {articleQuery.isError && articleQuery.error instanceof Error ? (
-          <div className="mx-auto max-w-[780px] px-8 py-10">
-            <EmptyState
-              title="文章暂时不可用"
-              description={articleQuery.error.message}
-            />
-          </div>
+          <DesktopArticleWindowStatusPane
+            title="文章暂时不可用"
+            description={articleQuery.error.message}
+            tone="danger"
+          />
         ) : null}
 
         {article ? (
@@ -358,10 +348,72 @@ function StandaloneActionButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >
       {children}
     </button>
+  );
+}
+
+function DesktopArticleWindowStatusPane({
+  title,
+  description,
+  tone = "default",
+  action,
+}: {
+  title: string;
+  description: string;
+  tone?: "default" | "danger" | "loading";
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="mx-auto flex min-h-full max-w-[720px] items-center px-8 py-14">
+      <div
+        className={cn(
+          "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
+          tone === "danger"
+            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+        )}
+      >
+        {tone === "loading" ? (
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          </div>
+        ) : null}
+        <div
+          className={cn(
+            "font-medium text-[16px] text-[color:var(--text-primary)]",
+            tone === "loading" ? "mt-4" : undefined,
+          )}
+        >
+          {title}
+        </div>
+        <p className="mx-auto mt-2 max-w-[26rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+          {description}
+        </p>
+        {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function DesktopArticleWindowInlineStatus({
+  message,
+}: {
+  message: string;
+}) {
+  return (
+    <div className="mx-auto max-w-[720px] px-8 pt-6">
+      <InlineNotice
+        className="rounded-[16px] border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[13px] leading-6"
+        tone="info"
+      >
+        {message}
+      </InlineNotice>
+    </div>
   );
 }
 
