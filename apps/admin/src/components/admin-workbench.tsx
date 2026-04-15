@@ -56,9 +56,9 @@ export function AdminPageHero({
     >
       <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-2xl">
-          <div className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">{eyebrow}</div>
-          <h2 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)]">{title}</h2>
-          <p className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]">{description}</p>
+          <div className="text-[10px] uppercase tracking-[0.28em] text-[color:var(--text-muted)]">{eyebrow}</div>
+          <h2 className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">{title}</h2>
+          <p className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</p>
         </div>
         {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
       </div>
@@ -465,11 +465,11 @@ export function AdminDangerZone({
   return (
     <div
       className={cn(
-        "rounded-[20px] border border-amber-200 bg-[linear-gradient(160deg,rgba(255,251,235,0.98),rgba(255,243,219,0.92))] p-4 shadow-[var(--shadow-soft)]",
+        "rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]",
         className,
       )}
     >
-      <div className="text-xs uppercase tracking-[0.18em] text-amber-700">{title}</div>
+      <div className="text-xs uppercase tracking-[0.18em] text-[color:var(--text-muted)]">{title}</div>
       <div className="mt-2 text-sm leading-6 text-[color:var(--text-secondary)]">{description}</div>
       <div className="mt-4">{children}</div>
     </div>
