@@ -12,11 +12,12 @@ import {
   InlineNotice,
   cn,
 } from "@yinjie/ui";
+import { AvatarChip } from "../components/avatar-chip";
 import { TabPageTopBar } from "../components/tab-page-top-bar";
-import { OfficialArticleCard } from "../components/official-article-card";
 import { DesktopChatWorkspace } from "../features/desktop/chat/desktop-chat-workspace";
 import { parseDesktopOfficialMessageRouteHash } from "../features/desktop/chat/desktop-official-message-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import { formatConversationTimestamp } from "../lib/format";
 import { navigateBackOrFallback } from "../lib/history-back";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 
@@ -84,6 +85,12 @@ function MobileSubscriptionInboxPage() {
     inboxQuery.data?.summary?.unreadCount,
     markReadMutation,
   ]);
+
+  const unreadCount = inboxQuery.data?.summary?.unreadCount ?? 0;
+  const groupCount = inboxQuery.data?.groups.length ?? 0;
+  const lastDeliveredLabel = inboxQuery.data?.summary?.lastDeliveredAt
+    ? formatConversationTimestamp(inboxQuery.data.summary.lastDeliveredAt)
+    : "暂无更新";
 
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
@@ -154,12 +161,30 @@ function MobileSubscriptionInboxPage() {
         ) : null}
 
         {inboxQuery.data?.groups.length ? (
+          <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-white px-4 py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                  最近订阅更新
+                </div>
+                <div className="mt-0.5 text-[10px] text-[color:var(--text-muted)]">
+                  {unreadCount} 条未读 · {groupCount} 个号 · {lastDeliveredLabel}
+                </div>
+              </div>
+              <div className="rounded-full bg-[rgba(7,193,96,0.1)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)]">
+                订阅号
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {inboxQuery.data?.groups.length ? (
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+              className="mt-2 overflow-hidden border-y border-[color:var(--border-faint)] bg-white"
             >
-              <div className="border-b border-[color:var(--border-faint)] px-4 py-2">
+              <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -168,24 +193,33 @@ function MobileSubscriptionInboxPage() {
                       params: { accountId: group.account.id },
                     });
                   }}
-                  className="text-left"
+                  className="flex w-full items-center gap-3 text-left"
                 >
-                  <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
-                    {group.account.name}
-                  </div>
-                  <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
-                    {group.unreadCount > 0
-                      ? `${group.unreadCount} 条新推送`
-                      : "最近推送"}
+                  <AvatarChip
+                    name={group.account.name}
+                    src={group.account.avatar}
+                    size="wechat"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                      {group.account.name}
+                    </div>
+                    <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
+                      {group.unreadCount > 0
+                        ? `${group.unreadCount} 条新推送`
+                        : "最近推送"}
+                      {group.lastDeliveredAt
+                        ? ` · ${formatConversationTimestamp(group.lastDeliveredAt)}`
+                        : ""}
+                    </div>
                   </div>
                 </button>
               </div>
 
               {group.deliveries.map((delivery) => (
-                <OfficialArticleCard
+                <MobileSubscriptionArticleRow
                   key={delivery.id}
-                  article={delivery.article}
-                  dense
+                  delivery={delivery}
                   onClick={() => {
                     void navigate({
                       to: "/official-accounts/articles/$articleId",
@@ -207,6 +241,56 @@ function MobileSubscriptionInboxPage() {
         ) : null}
       </div>
     </AppPage>
+  );
+}
+
+function MobileSubscriptionArticleRow({
+  delivery,
+  onClick,
+}: {
+  delivery: NonNullable<
+    Awaited<ReturnType<typeof getOfficialAccountSubscriptionInbox>>
+  >["groups"][number]["deliveries"][number];
+  onClick: () => void;
+}) {
+  const publishedLabel = formatConversationTimestamp(
+    delivery.deliveredAt ?? delivery.article.publishedAt,
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(15,23,42,0.03)]"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
+          {delivery.article.isPinned ? (
+            <span className="rounded-full border border-[rgba(7,193,96,0.14)] bg-[rgba(7,193,96,0.07)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
+              置顶
+            </span>
+          ) : null}
+          <span>{publishedLabel}</span>
+        </div>
+        <div className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-5 text-[color:var(--text-primary)]">
+          {delivery.article.title}
+        </div>
+        <div className="mt-1.5 line-clamp-2 text-[11px] leading-[1.2rem] text-[color:var(--text-secondary)]">
+          {delivery.article.summary}
+        </div>
+      </div>
+      {delivery.article.coverImage ? (
+        <img
+          src={delivery.article.coverImage}
+          alt={delivery.article.title}
+          className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
+        />
+      ) : (
+        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
+          文章
+        </div>
+      )}
+    </button>
   );
 }
 
