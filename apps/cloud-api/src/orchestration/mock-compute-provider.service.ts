@@ -1,7 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
+import { resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "./world-bootstrap-config";
 
 type ProvisionedInstance = {
   providerKey: string;
@@ -16,6 +18,8 @@ type ProvisionedInstance = {
 
 @Injectable()
 export class MockComputeProviderService {
+  constructor(private readonly configService: ConfigService) {}
+
   createInstance(world: CloudWorldEntity): ProvisionedInstance {
     return {
       providerKey: "mock",
@@ -24,8 +28,8 @@ export class MockComputeProviderService {
       zone: world.providerZone ?? "mock-a",
       privateIp: "127.0.0.1",
       publicIp: null,
-      apiBaseUrl: this.resolveApiBaseUrl(),
-      adminUrl: null,
+      apiBaseUrl: this.resolveApiBaseUrl(world),
+      adminUrl: this.resolveAdminUrl(world),
     };
   }
 
@@ -43,12 +47,11 @@ export class MockComputeProviderService {
     };
   }
 
-  resolveApiBaseUrl() {
-    const configured = process.env.CLOUD_MOCK_WORLD_API_BASE_URL?.trim();
-    if (configured) {
-      return configured.replace(/\/+$/, "");
-    }
+  resolveApiBaseUrl(world: CloudWorldEntity) {
+    return resolveSuggestedWorldApiBaseUrl(world, this.configService) ?? "http://localhost:3000";
+  }
 
-    return "http://localhost:3000";
+  resolveAdminUrl(world: CloudWorldEntity) {
+    return resolveSuggestedWorldAdminUrl(world, this.configService);
   }
 }

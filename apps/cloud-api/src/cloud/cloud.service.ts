@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
+  CloudWorldBootstrapConfig,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
   CloudWorldLookupResponse,
@@ -18,6 +20,7 @@ import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
+import { buildWorldBootstrapConfig, resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "../orchestration/world-bootstrap-config";
 import { WorldAccessService } from "../world-access/world-access.service";
 
 @Injectable()
@@ -31,6 +34,7 @@ export class CloudService {
     private readonly requestRepo: Repository<CloudWorldRequestEntity>,
     @InjectRepository(WorldLifecycleJobEntity)
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
+    private readonly configService: ConfigService,
     private readonly phoneAuthService: PhoneAuthService,
     private readonly worldAccessService: WorldAccessService,
   ) {}
@@ -275,6 +279,22 @@ export class CloudService {
       where: { worldId },
     });
     return instance ? this.serializeInstance(instance) : null;
+  }
+
+  async getWorldBootstrapConfig(worldId: string): Promise<CloudWorldBootstrapConfig> {
+    const world = await this.requireWorld(worldId);
+    const preparedWorld = await this.ensureWorldBootstrapCredentials(world);
+    return buildWorldBootstrapConfig(preparedWorld, this.configService);
+  }
+
+  async rotateWorldCallbackToken(worldId: string): Promise<CloudWorldBootstrapConfig> {
+    const world = await this.requireWorld(worldId);
+    world.callbackToken = randomUUID();
+    if (!world.slug) {
+      world.slug = this.createWorldSlug(world.phone);
+    }
+    const savedWorld = await this.worldRepo.save(world);
+    return buildWorldBootstrapConfig(savedWorld, this.configService);
   }
 
   async resumeWorld(id: string) {
@@ -661,6 +681,39 @@ export class CloudService {
       default:
         return "absent";
     }
+  }
+
+  private async ensureWorldBootstrapCredentials(world: CloudWorldEntity) {
+    let dirty = false;
+
+    if (!world.slug) {
+      world.slug = this.createWorldSlug(world.phone);
+      dirty = true;
+    }
+    if (!world.callbackToken) {
+      world.callbackToken = randomUUID();
+      dirty = true;
+    }
+    if (!world.apiBaseUrl) {
+      const suggestedApiBaseUrl = resolveSuggestedWorldApiBaseUrl(world, this.configService);
+      if (suggestedApiBaseUrl) {
+        world.apiBaseUrl = suggestedApiBaseUrl;
+        dirty = true;
+      }
+    }
+    if (!world.adminUrl) {
+      const suggestedAdminUrl = resolveSuggestedWorldAdminUrl(world, this.configService);
+      if (suggestedAdminUrl) {
+        world.adminUrl = suggestedAdminUrl;
+        dirty = true;
+      }
+    }
+
+    if (!dirty) {
+      return world;
+    }
+
+    return this.worldRepo.save(world);
   }
 
   private normalizeUrl(value?: string | null) {
