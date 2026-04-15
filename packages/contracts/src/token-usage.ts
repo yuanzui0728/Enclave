@@ -13,6 +13,10 @@ export type TokenUsageScopeType =
 
 export type TokenUsageGrain = "day" | "week" | "month";
 
+export type TokenUsageBudgetMetric = "tokens" | "cost";
+
+export type TokenUsageBudgetState = "inactive" | "normal" | "warning" | "exceeded";
+
 export interface TokenPricingCatalogItem {
   model: string;
   inputPer1kTokens: number;
@@ -24,6 +28,74 @@ export interface TokenPricingCatalogItem {
 export interface TokenPricingCatalog {
   currency: "CNY" | "USD";
   items: TokenPricingCatalogItem[];
+}
+
+export interface TokenUsageBudgetRule {
+  enabled: boolean;
+  metric: TokenUsageBudgetMetric;
+  dailyLimit?: number | null;
+  monthlyLimit?: number | null;
+  warningRatio?: number;
+}
+
+export interface TokenUsageCharacterBudgetRule extends TokenUsageBudgetRule {
+  characterId: string;
+  note?: string;
+}
+
+export interface TokenUsageBudgetConfig {
+  overall: TokenUsageBudgetRule;
+  characters: TokenUsageCharacterBudgetRule[];
+}
+
+export interface TokenUsageBudgetPeriodSummary {
+  period: "daily" | "monthly";
+  limit: number | null;
+  used: number;
+  remaining: number | null;
+  ratio: number | null;
+  state: TokenUsageBudgetState;
+}
+
+export interface TokenUsageBudgetStatus {
+  enabled: boolean;
+  metric: TokenUsageBudgetMetric;
+  warningRatio: number;
+  daily: TokenUsageBudgetPeriodSummary;
+  monthly: TokenUsageBudgetPeriodSummary;
+}
+
+export interface TokenUsageBudgetAlert {
+  level: "warning" | "exceeded";
+  scope: "overall" | "character";
+  characterId?: string | null;
+  characterName?: string | null;
+  period: "daily" | "monthly";
+  metric: TokenUsageBudgetMetric;
+  used: number;
+  limit: number;
+  ratio: number;
+  message: string;
+}
+
+export interface TokenUsageCharacterBudgetStatus {
+  characterId: string;
+  characterName: string;
+  note?: string;
+  budget: TokenUsageBudgetStatus;
+}
+
+export interface TokenUsageBudgetSummary {
+  currency: "CNY" | "USD";
+  generatedAt: string;
+  overall: TokenUsageBudgetStatus;
+  characters: TokenUsageCharacterBudgetStatus[];
+  alerts: TokenUsageBudgetAlert[];
+}
+
+export interface TokenUsageBudgetSnapshot {
+  config: TokenUsageBudgetConfig;
+  summary: TokenUsageBudgetSummary;
 }
 
 export interface TokenUsageOverview {

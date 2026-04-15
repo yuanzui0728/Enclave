@@ -275,7 +275,8 @@
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
 - `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、字段来源、发布映射 diff、已发布版本与版本记录
 - `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、scheduler 最近执行结果、生活状态、记忆摘要、叙事进度与生活逻辑可观测性，并直接修改运行时字段
-- `token-usage-page.tsx`：AI 用量中心页，查看 token / 费用总览、时间趋势、角色 / 场景 / 模型分布、价格配置与请求明细
+- `chat-records-page.tsx`：聊天记录管理页，集中查看世界主人与各角色的单聊档案、消息搜索、上下文定位与会话级 Token 成本
+- `token-usage-page.tsx`：AI 用量中心页，查看 token / 费用总览、时间趋势、角色 / 场景 / 模型分布、预算预警、角色预算与价格配置
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
 - `reply-logic-page.tsx`：AI 回复逻辑总览页，查看实际链路、effective prompt、上下文窗口、记忆与硬编码常量
@@ -293,6 +294,15 @@
 - `POST /api/admin/reply-logic/group-reply-turns/:turnId/retry`
 - `POST /api/admin/reply-logic/conversations/:id/preview`
 
+## 管理后台聊天记录路由
+
+- `GET /api/admin/chat-records/overview`
+- `GET /api/admin/chat-records/conversations`
+- `GET /api/admin/chat-records/conversations/:id`
+- `GET /api/admin/chat-records/conversations/:id/messages`
+- `GET /api/admin/chat-records/conversations/:id/search`
+- `GET /api/admin/chat-records/conversations/:id/token-usage`
+
 ## 管理后台 Token 用量路由
 
 - `GET /api/admin/token-usage/overview`
@@ -301,6 +311,8 @@
 - `GET /api/admin/token-usage/records`
 - `GET /api/admin/token-usage/pricing`
 - `PATCH /api/admin/token-usage/pricing`
+- `GET /api/admin/token-usage/budgets`
+- `PATCH /api/admin/token-usage/budgets`
 
 ## 管理后台角色工厂路由
 
