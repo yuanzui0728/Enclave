@@ -967,7 +967,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
       return;
     }
 
-    if (action === "open-chat-history" || action === "load-history") {
+    if (action === "open-chat-history") {
       void navigate({ to: "/desktop/chat-history" });
       return;
     }

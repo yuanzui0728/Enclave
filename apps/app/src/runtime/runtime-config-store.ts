@@ -287,8 +287,8 @@ export async function hydrateNativeRuntimeConfig() {
         runtimeConfig.apiBaseUrl,
       socketBaseUrl:
         nativeConfig?.socketBaseUrl ??
-        nativeConfig?.apiBaseUrl ??
         desktopConfig?.socketBaseUrl ??
+        nativeConfig?.apiBaseUrl ??
         desktopConfig?.apiBaseUrl ??
         runtimeConfig.socketBaseUrl,
       cloudApiBaseUrl:

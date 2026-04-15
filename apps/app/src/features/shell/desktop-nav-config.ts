@@ -38,7 +38,6 @@ export type DesktopNavActionItem = {
     | "open-live-companion"
     | "open-chat-files"
     | "open-chat-history"
-    | "load-history"
     | "lock"
     | "open-feedback"
     | "open-settings";
@@ -179,13 +178,6 @@ export const desktopMoreMenuItems: DesktopNavActionItem[] = [
     label: "聊天记录管理",
     shortLabel: "聊天记录",
     action: "open-chat-history",
-  },
-  {
-    kind: "action",
-    icon: History,
-    label: "加载历史聊天记录",
-    shortLabel: "加载历史",
-    action: "load-history",
   },
   {
     kind: "action",
