@@ -16,6 +16,12 @@ export class CloudInstanceEntity {
   @Column({ type: "text", nullable: true })
   providerInstanceId: string | null;
 
+  @Column({ type: "text", nullable: true })
+  providerVolumeId: string | null;
+
+  @Column({ type: "text", nullable: true })
+  providerSnapshotId: string | null;
+
   @Column()
   name: string;
 
@@ -43,11 +49,17 @@ export class CloudInstanceEntity {
   @Column({ default: 20 })
   diskSizeGb: number;
 
+  @Column({ type: "simple-json", nullable: true })
+  launchConfig: Record<string, string> | null;
+
   @Column({ type: "datetime", nullable: true })
   bootstrappedAt: Date | null;
 
   @Column({ type: "datetime", nullable: true })
   lastHeartbeatAt: Date | null;
+
+  @Column({ type: "datetime", nullable: true })
+  lastOperationAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

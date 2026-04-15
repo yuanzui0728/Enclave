@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
   ResolveWorldAccessRequest,
@@ -13,6 +14,7 @@ import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { WorldAccessSessionEntity } from "../entities/world-access-session.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
+import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import { buildWorldAccessSnapshot } from "./world-access-state";
 
 @Injectable()
@@ -26,6 +28,8 @@ export class WorldAccessService {
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
     @InjectRepository(WorldAccessSessionEntity)
     private readonly accessSessionRepo: Repository<WorldAccessSessionEntity>,
+    private readonly configService: ConfigService,
+    private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly phoneAuthService: PhoneAuthService,
   ) {}
 
@@ -38,6 +42,7 @@ export class WorldAccessService {
     });
 
     if (!world) {
+      const defaultProviderKey = this.resolveDefaultProviderKey();
       world = await this.worldRepo.save(
         this.worldRepo.create({
           phone: normalizedPhone,
@@ -46,7 +51,7 @@ export class WorldAccessService {
           status: "queued",
           desiredState: "running",
           provisionStrategy: "mock",
-          providerKey: "mock",
+          providerKey: defaultProviderKey,
           providerRegion: payload.preferredRegion?.trim() || "mock-local",
           providerZone: "mock-a",
           apiBaseUrl: null,
@@ -230,7 +235,7 @@ export class WorldAccessService {
       dirty = true;
     }
     if (world.providerKey === null) {
-      world.providerKey = "mock";
+      world.providerKey = this.resolveDefaultProviderKey();
       dirty = true;
     }
 
@@ -332,6 +337,10 @@ export class WorldAccessService {
     const digits = phone.replace(/\D+/g, "");
     const suffix = createHash("sha1").update(phone).digest("hex").slice(0, 8);
     return `world-${digits.slice(-4)}-${suffix}`;
+  }
+
+  private resolveDefaultProviderKey() {
+    return this.configService.get<string>("CLOUD_DEFAULT_PROVIDER_KEY")?.trim() || this.computeProviderRegistry.getDefaultProviderKey();
   }
 
   private isFinalSessionStatus(status: string) {

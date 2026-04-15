@@ -196,6 +196,10 @@ export class CloudService {
       phone?: string;
       name?: string;
       status?: CloudWorldLifecycleStatus;
+      provisionStrategy?: string;
+      providerKey?: string | null;
+      providerRegion?: string | null;
+      providerZone?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
       note?: string | null;
@@ -216,6 +220,12 @@ export class CloudService {
     world.phone = nextPhone;
     world.name = payload.name?.trim() || world.name;
     world.status = nextStatus;
+    world.provisionStrategy = payload.provisionStrategy?.trim() || world.provisionStrategy;
+    world.providerKey = payload.providerKey?.trim() || world.providerKey || this.resolveDefaultProviderKey();
+    world.providerRegion =
+      payload.providerRegion !== undefined ? payload.providerRegion?.trim() || null : world.providerRegion;
+    world.providerZone =
+      payload.providerZone !== undefined ? payload.providerZone?.trim() || null : world.providerZone;
     world.apiBaseUrl = nextApiBaseUrl;
     world.adminUrl = payload.adminUrl !== undefined ? this.normalizeUrl(payload.adminUrl) : world.adminUrl;
     world.note = payload.note?.trim() || null;
@@ -460,6 +470,7 @@ export class CloudService {
       adminUrl: world.adminUrl,
       healthStatus: world.healthStatus,
       healthMessage: world.healthMessage,
+      provisionStrategy: world.provisionStrategy,
       providerKey: world.providerKey,
       providerRegion: world.providerRegion,
       providerZone: world.providerZone,
@@ -513,12 +524,21 @@ export class CloudService {
       worldId: instance.worldId,
       providerKey: instance.providerKey,
       providerInstanceId: instance.providerInstanceId,
+      providerVolumeId: instance.providerVolumeId,
+      providerSnapshotId: instance.providerSnapshotId,
       name: instance.name,
       region: instance.region,
       zone: instance.zone,
       privateIp: instance.privateIp,
       publicIp: instance.publicIp,
       powerState: this.toPowerState(instance.powerState),
+      imageId: instance.imageId,
+      flavor: instance.flavor,
+      diskSizeGb: instance.diskSizeGb,
+      launchConfig: instance.launchConfig,
+      bootstrappedAt: instance.bootstrappedAt?.toISOString() ?? null,
+      lastHeartbeatAt: instance.lastHeartbeatAt?.toISOString() ?? null,
+      lastOperationAt: instance.lastOperationAt?.toISOString() ?? null,
       createdAt: instance.createdAt.toISOString(),
       updatedAt: instance.updatedAt.toISOString(),
     };
@@ -686,6 +706,10 @@ export class CloudService {
   private async ensureWorldBootstrapCredentials(world: CloudWorldEntity) {
     let dirty = false;
 
+    if (!world.providerKey) {
+      world.providerKey = this.resolveDefaultProviderKey();
+      dirty = true;
+    }
     if (!world.slug) {
       world.slug = this.createWorldSlug(world.phone);
       dirty = true;
@@ -722,6 +746,10 @@ export class CloudService {
       return null;
     }
     return normalized.replace(/\/+$/, "");
+  }
+
+  private resolveDefaultProviderKey() {
+    return this.configService.get<string>("CLOUD_DEFAULT_PROVIDER_KEY")?.trim() || "mock";
   }
 
   private createWorldSlug(phone: string) {

@@ -498,8 +498,18 @@
   - `CLOUD_WORLD_API_BASE_URL_TEMPLATE`
   - `CLOUD_WORLD_ADMIN_URL_TEMPLATE`
   - `CLOUD_DEFAULT_WORLD_HEARTBEAT_INTERVAL_MS`
+  - `CLOUD_DEFAULT_PROVIDER_KEY`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
 - Cloud console world detail now exposes a bootstrap package:
   - generated runtime env overlay for `api`
   - docker compose environment snippet
   - callback endpoints and callback token rotation for redeploying a world instance safely
+- Cloud platform now has a provider abstraction layer in `apps/cloud-api/src/providers/`:
+  - `ComputeProviderRegistryService` selects the active compute provider by `providerKey`
+  - current built-in provider remains `mock`, but worker logic no longer depends on mock-only APIs
+- `CloudInstance` now also tracks provider resource metadata:
+  - `providerVolumeId`
+  - `providerSnapshotId`
+  - `launchConfig`
+  - `lastOperationAt`
+- Cloud console world detail now supports editing `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.

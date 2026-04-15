@@ -98,6 +98,7 @@ export interface CloudWorldSummary {
   adminUrl?: string | null;
   healthStatus?: string | null;
   healthMessage?: string | null;
+  provisionStrategy?: string | null;
   providerKey?: string | null;
   providerRegion?: string | null;
   providerZone?: string | null;
@@ -130,12 +131,21 @@ export interface CloudInstanceSummary {
   worldId: string;
   providerKey?: string | null;
   providerInstanceId?: string | null;
+  providerVolumeId?: string | null;
+  providerSnapshotId?: string | null;
   name: string;
   region?: string | null;
   zone?: string | null;
   privateIp?: string | null;
   publicIp?: string | null;
   powerState: CloudInstancePowerState;
+  imageId?: string | null;
+  flavor?: string | null;
+  diskSizeGb?: number | null;
+  launchConfig?: Record<string, string> | null;
+  bootstrappedAt?: string | null;
+  lastHeartbeatAt?: string | null;
+  lastOperationAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
