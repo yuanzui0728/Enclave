@@ -108,29 +108,40 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     } catch (error) {
       const message = error instanceof Error ? error.message : "未知编排错误。";
       this.logger.error(`World lifecycle job failed: ${job.id} ${message}`);
-      job.status = "failed";
+
+      const canRetry = job.attempt < job.maxAttempts;
       job.failureCode = "job_failed";
       job.failureMessage = message;
-      job.finishedAt = new Date();
-      await this.jobRepo.save(job);
 
-      world.status = "failed";
-      world.healthStatus = "failed";
-      world.healthMessage = message;
-      world.failureCode = "job_failed";
-      world.failureMessage = message;
-      world.retryCount += 1;
-      await this.worldRepo.save(world);
+      if (canRetry) {
+        // Exponential backoff: attempt * 10s
+        job.status = "pending";
+        job.finishedAt = null;
+        job.availableAt = new Date(Date.now() + job.attempt * 10_000);
+        await this.jobRepo.save(job);
+      } else {
+        job.status = "failed";
+        job.finishedAt = new Date();
+        await this.jobRepo.save(job);
 
-      const instance = await this.instanceRepo.findOne({
-        where: { worldId: world.id },
-      });
-      if (instance) {
-        instance.powerState = "error";
-        await this.instanceRepo.save(instance);
+        world.status = "failed";
+        world.healthStatus = "failed";
+        world.healthMessage = message;
+        world.failureCode = "job_failed";
+        world.failureMessage = message;
+        world.retryCount += 1;
+        await this.worldRepo.save(world);
+
+        const instance = await this.instanceRepo.findOne({
+          where: { worldId: world.id },
+        });
+        if (instance) {
+          instance.powerState = "error";
+          await this.instanceRepo.save(instance);
+        }
+
+        await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
       }
-
-      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
     }
   }
 
@@ -272,6 +283,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.healthMessage = "世界已休眠。";
     world.lastSuspendedAt = new Date();
     await this.worldRepo.save(world);
+    await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
   }
 
   private sleep(ms: number) {

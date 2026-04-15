@@ -1,9 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
-import { type CloudWorldStatus } from "@yinjie/contracts";
+import { type CloudWorldLifecycleStatus, type CloudWorldRequestStatus } from "@yinjie/contracts";
 import { AdminGuard } from "../auth/admin.guard";
 import { CloudService } from "../cloud/cloud.service";
-
-type EditableStatus = Exclude<CloudWorldStatus, "none">;
 
 @Controller("admin/cloud")
 @UseGuards(AdminGuard)
@@ -11,7 +9,7 @@ export class AdminCloudController {
   constructor(private readonly cloudService: CloudService) {}
 
   @Get("world-requests")
-  listWorldRequests(@Query("status") status?: EditableStatus) {
+  listWorldRequests(@Query("status") status?: CloudWorldRequestStatus) {
     return this.cloudService.listRequests(status);
   }
 
@@ -27,7 +25,7 @@ export class AdminCloudController {
     body: {
       phone?: string;
       worldName?: string;
-      status?: EditableStatus;
+      status?: CloudWorldRequestStatus;
       note?: string | null;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
@@ -37,7 +35,7 @@ export class AdminCloudController {
   }
 
   @Get("worlds")
-  listWorlds(@Query("status") status?: EditableStatus) {
+  listWorlds(@Query("status") status?: CloudWorldLifecycleStatus) {
     return this.cloudService.listWorlds(status);
   }
 
@@ -53,7 +51,7 @@ export class AdminCloudController {
     body: {
       phone?: string;
       name?: string;
-      status?: EditableStatus;
+      status?: CloudWorldLifecycleStatus;
       apiBaseUrl?: string | null;
       adminUrl?: string | null;
       note?: string | null;
