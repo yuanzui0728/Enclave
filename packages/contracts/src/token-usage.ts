@@ -190,6 +190,7 @@ export interface TokenUsageQuery {
   model?: string;
   billingSource?: TokenUsageBillingSource;
   status?: TokenUsageStatus;
+  errorCode?: string;
   page?: number;
   pageSize?: number;
   limit?: number;

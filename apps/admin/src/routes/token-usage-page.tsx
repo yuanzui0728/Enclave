@@ -151,6 +151,43 @@ export function TokenUsagePage() {
     [listQuery],
   );
 
+  const blockedBaseQuery = useMemo<TokenUsageQuery>(
+    () => ({
+      from,
+      to,
+      characterId: characterId || undefined,
+      billingSource: billingSource || undefined,
+      status: "failed",
+      errorCode: "BUDGET_BLOCKED",
+    }),
+    [billingSource, characterId, from, to],
+  );
+
+  const blockedTrendQueryInput = useMemo<TokenUsageQuery>(
+    () => ({
+      ...blockedBaseQuery,
+      grain,
+    }),
+    [blockedBaseQuery, grain],
+  );
+
+  const blockedBreakdownQueryInput = useMemo<TokenUsageQuery>(
+    () => ({
+      ...blockedBaseQuery,
+      limit: 5,
+    }),
+    [blockedBaseQuery],
+  );
+
+  const blockedRecordsQueryInput = useMemo<TokenUsageQuery>(
+    () => ({
+      ...blockedBaseQuery,
+      page: 1,
+      pageSize: 8,
+    }),
+    [blockedBaseQuery],
+  );
+
   const charactersQuery = useQuery({
     queryKey: ["admin-token-usage-characters"],
     queryFn: () => adminApi.getCharacters(),
@@ -174,6 +211,26 @@ export function TokenUsagePage() {
   const recordsQuery = useQuery({
     queryKey: ["admin-token-usage-records", recordsQueryInput],
     queryFn: () => adminApi.getTokenUsageRecords(recordsQueryInput),
+  });
+
+  const blockedOverviewQuery = useQuery({
+    queryKey: ["admin-token-usage-blocked-overview", blockedBaseQuery],
+    queryFn: () => adminApi.getTokenUsageOverview(blockedBaseQuery),
+  });
+
+  const blockedTrendQuery = useQuery({
+    queryKey: ["admin-token-usage-blocked-trend", blockedTrendQueryInput],
+    queryFn: () => adminApi.getTokenUsageTrend(blockedTrendQueryInput),
+  });
+
+  const blockedBreakdownQuery = useQuery({
+    queryKey: ["admin-token-usage-blocked-breakdown", blockedBreakdownQueryInput],
+    queryFn: () => adminApi.getTokenUsageBreakdown(blockedBreakdownQueryInput),
+  });
+
+  const blockedRecordsQuery = useQuery({
+    queryKey: ["admin-token-usage-blocked-records", blockedRecordsQueryInput],
+    queryFn: () => adminApi.getTokenUsageRecords(blockedRecordsQueryInput),
   });
 
   const pricingQuery = useQuery({
@@ -264,6 +321,10 @@ export function TokenUsagePage() {
     trendQuery.isLoading ||
     breakdownQuery.isLoading ||
     recordsQuery.isLoading ||
+    blockedOverviewQuery.isLoading ||
+    blockedTrendQuery.isLoading ||
+    blockedBreakdownQuery.isLoading ||
+    blockedRecordsQuery.isLoading ||
     pricingQuery.isLoading ||
     budgetQuery.isLoading;
 
@@ -272,6 +333,10 @@ export function TokenUsagePage() {
     (trendQuery.error instanceof Error && trendQuery.error) ||
     (breakdownQuery.error instanceof Error && breakdownQuery.error) ||
     (recordsQuery.error instanceof Error && recordsQuery.error) ||
+    (blockedOverviewQuery.error instanceof Error && blockedOverviewQuery.error) ||
+    (blockedTrendQuery.error instanceof Error && blockedTrendQuery.error) ||
+    (blockedBreakdownQuery.error instanceof Error && blockedBreakdownQuery.error) ||
+    (blockedRecordsQuery.error instanceof Error && blockedRecordsQuery.error) ||
     (pricingQuery.error instanceof Error && pricingQuery.error) ||
     (budgetQuery.error instanceof Error && budgetQuery.error) ||
     null;
@@ -280,6 +345,10 @@ export function TokenUsagePage() {
   const trend = trendQuery.data ?? [];
   const breakdown = breakdownQuery.data;
   const records = recordsQuery.data;
+  const blockedOverview = blockedOverviewQuery.data;
+  const blockedTrend = blockedTrendQuery.data ?? [];
+  const blockedBreakdown = blockedBreakdownQuery.data;
+  const blockedRecords = blockedRecordsQuery.data;
   const budgetSummary = budgetQuery.data?.summary;
   const characters = charactersQuery.data ?? [];
   const currency = overview?.currency ?? pricingDraft?.currency ?? budgetSummary?.currency ?? "CNY";
@@ -292,12 +361,17 @@ export function TokenUsagePage() {
     [trend],
   );
 
+  const maxBlockedRequestCount = useMemo(
+    () => Math.max(...blockedTrend.map((item) => item.requestCount), 1),
+    [blockedTrend],
+  );
+
   const availableCharacters = useMemo(() => {
     const used = new Set((budgetDraft?.characters ?? []).map((item) => item.characterId));
     return characters.filter((item) => !used.has(item.id));
   }, [budgetDraft?.characters, characters]);
 
-  if (loading && !overview && !breakdown && !records && !budgetSummary) {
+  if (loading && !overview && !breakdown && !records && !budgetSummary && !blockedOverview) {
     return <LoadingBlock label="正在加载 Token 用量中心..." />;
   }
 
@@ -306,6 +380,9 @@ export function TokenUsagePage() {
   }
 
   const overallBudgetStatus = budgetSummary?.overall ?? createInactiveBudgetStatus();
+  const blockedRequestCount = blockedOverview?.requestCount ?? 0;
+  const blockedLastRecord = blockedRecords?.items[0] ?? null;
+  const blockedFailureShare = calculateRatio(blockedRequestCount, overview?.failedCount ?? 0);
 
   return (
     <div className="space-y-6">
@@ -343,6 +420,12 @@ export function TokenUsagePage() {
       {budgetSummary?.alerts.length ? (
         <InlineNotice tone="warning">
           当前有 {budgetSummary.alerts.length} 条预算预警，请优先关注整体预算和角色预算里标红的对象。
+        </InlineNotice>
+      ) : null}
+
+      {blockedRequestCount > 0 ? (
+        <InlineNotice tone="warning">
+          褰撳墠绛涢€夋椂闂村唴宸叉湁 {formatInteger(blockedRequestCount)} 娆?AI 璇锋眰鍥犻绠楄秴闄愯闃绘柇锛屽彲鍦ㄤ笅鏂圭殑鈥滈绠楅樆鏂棩蹇椻€濋噷鐩存帴鏌ョ湅鍛戒腑瑙掕壊銆佸満鏅拰杩戞湡璁板綍銆?
         </InlineNotice>
       ) : null}
 
@@ -667,6 +750,120 @@ export function TokenUsagePage() {
           </div>
         </Card>
       </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.85fr]">
+        <Card className="bg-[color:var(--surface-console)]">
+          <AdminSectionHeader
+            title="Budget Block Log"
+            actions={
+              <span className="text-xs text-[color:var(--text-muted)]">
+                {formatInteger(blockedRequestCount)} hits
+              </span>
+            }
+          />
+
+          {blockedRequestCount ? (
+            <div className="mt-5 space-y-5">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <SummaryTile label="Blocked Requests" value={formatInteger(blockedRequestCount)} />
+                <SummaryTile label="Affected Characters" value={formatInteger(blockedOverview?.activeCharacterCount ?? 0)} />
+                <SummaryTile label="Share Of Failed" value={formatPercent(blockedFailureShare)} />
+                <SummaryTile
+                  label="Last Hit"
+                  value={blockedLastRecord ? formatDateTime(blockedLastRecord.occurredAt) : "--"}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <AdminMetaText>Block Trend</AdminMetaText>
+                  <span className="text-xs text-[color:var(--text-muted)]">
+                    Grouped by {grain === "month" ? "month" : grain === "week" ? "week" : "day"}
+                  </span>
+                </div>
+
+                {blockedTrend.length ? (
+                  <div className="space-y-3">
+                    {blockedTrend.map((point) => (
+                      <div key={point.bucketStart} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-3 text-xs text-[color:var(--text-secondary)]">
+                          <span>{point.label}</span>
+                          <span>{formatInteger(point.requestCount)} blocked</span>
+                        </div>
+                        <div className="h-3 rounded-full bg-[color:var(--surface-primary)]">
+                          <div
+                            className="h-3 rounded-full bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(249,115,22,0.92))]"
+                            style={{ width: `${Math.max(8, (point.requestCount / maxBlockedRequestCount) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState text="No budget block trend data in the current range." />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5">
+              <EmptyState text="No budget block records in the current range." />
+            </div>
+          )}
+        </Card>
+
+        <div className="grid gap-6">
+          <RequestBreakdownCard
+            title="Blocked Characters"
+            items={blockedBreakdown?.byCharacter ?? []}
+            emptyText="No character-level block records yet."
+          />
+          <RequestBreakdownCard
+            title="Blocked Scenes"
+            items={blockedBreakdown?.byScene ?? []}
+            emptyText="No scene-level block records yet."
+          />
+        </div>
+      </div>
+
+      <Card className="bg-[color:var(--surface-console)]">
+        <AdminSectionHeader title="Recent Budget Blocks" />
+        {blockedRecords?.items.length ? (
+          <div className="mt-5 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                <tr>
+                  <th className="pb-3 pr-4 font-medium">Time</th>
+                  <th className="pb-3 pr-4 font-medium">Target</th>
+                  <th className="pb-3 pr-4 font-medium">Scene</th>
+                  <th className="pb-3 font-medium">Reason</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[color:var(--border-faint)] text-[color:var(--text-secondary)]">
+                {blockedRecords.items.map((record) => (
+                  <tr key={`blocked-${record.id}`}>
+                    <td className="py-3 pr-4">{formatDateTime(record.occurredAt)}</td>
+                    <td className="py-3 pr-4">
+                      <div className="font-medium text-[color:var(--text-primary)]">{record.targetLabel}</div>
+                      <div className="text-xs text-[color:var(--text-muted)]">{record.characterName || record.scopeType}</div>
+                    </td>
+                    <td className="py-3 pr-4">{formatScene(record.scene)}</td>
+                    <td className="py-3">
+                      <div className="font-medium text-[color:var(--text-primary)]">{formatErrorCode(record.errorCode)}</div>
+                      <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+                        {record.errorMessage || "Budget blocked"}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="mt-5">
+            <EmptyState text="No recent budget block records yet." />
+          </div>
+        )}
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
         <Card className="bg-[color:var(--surface-console)]">
@@ -1181,6 +1378,51 @@ function BreakdownCard({
   );
 }
 
+function RequestBreakdownCard({
+  title,
+  items,
+  emptyText,
+}: {
+  title: string;
+  items: TokenUsageBreakdownItem[];
+  emptyText: string;
+}) {
+  const maxRequests = Math.max(...items.map((item) => item.requestCount), 1);
+
+  return (
+    <Card className="bg-[color:var(--surface-console)]">
+      <AdminSectionHeader title={title} />
+      {items.length ? (
+        <div className="mt-5 space-y-3">
+          {items.map((item) => (
+            <div key={`${title}-${item.key}`} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-medium text-[color:var(--text-primary)]">{item.label}</div>
+                  <div className="text-xs text-[color:var(--text-muted)]">
+                    {formatInteger(item.requestCount)} requests
+                  </div>
+                </div>
+                <div className="text-sm font-medium text-[color:var(--text-primary)]">
+                  {formatInteger(item.requestCount)}
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-[color:var(--surface-primary)]">
+                <div
+                  className="h-2 rounded-full bg-[linear-gradient(90deg,rgba(244,63,94,0.92),rgba(249,115,22,0.92))]"
+                  style={{ width: `${Math.max(8, (item.requestCount / maxRequests) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState text={emptyText} />
+      )}
+    </Card>
+  );
+}
+
 function FilterField({
   label,
   children,
@@ -1238,6 +1480,27 @@ function calculateAverageTokens(totalTokens: number, requestCount: number) {
     return 0;
   }
   return Math.round(totalTokens / requestCount);
+}
+
+function calculateRatio(value: number, total: number) {
+  if (!total) {
+    return 0;
+  }
+  return value / total;
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function formatErrorCode(value?: string | null) {
+  if (value === "BUDGET_BLOCKED") {
+    return "Budget blocked";
+  }
+  if (!value) {
+    return "Unknown";
+  }
+  return value;
 }
 
 function formatBudgetState(state: TokenUsageBudgetState) {

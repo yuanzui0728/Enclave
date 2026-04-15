@@ -59,6 +59,7 @@ export class AdminController {
       model?: string;
       billingSource?: string;
       status?: string;
+      errorCode?: string;
     },
   ) {
     return this.usageLedger.getOverview(query);
@@ -78,6 +79,7 @@ export class AdminController {
       model?: string;
       billingSource?: string;
       status?: string;
+      errorCode?: string;
     },
   ) {
     return this.usageLedger.getTrend(query);
@@ -96,6 +98,7 @@ export class AdminController {
       model?: string;
       billingSource?: string;
       status?: string;
+      errorCode?: string;
       limit?: number | string;
     },
   ) {
@@ -115,6 +118,7 @@ export class AdminController {
       model?: string;
       billingSource?: string;
       status?: string;
+      errorCode?: string;
       page?: number | string;
       pageSize?: number | string;
     },

@@ -148,6 +148,7 @@ type TokenUsageQuery = {
   model?: string;
   billingSource?: string;
   status?: string;
+  errorCode?: string;
   page?: number | string;
   pageSize?: number | string;
   limit?: number | string;
@@ -164,6 +165,7 @@ type NormalizedTokenUsageQuery = {
   model?: string;
   billingSource?: LedgerBillingSource;
   status?: LedgerStatus;
+  errorCode?: string;
   page: number;
   pageSize: number;
   limit: number;
@@ -800,6 +802,7 @@ export class AiUsageLedgerService {
       model: this.normalizeString(query.model),
       billingSource: this.normalizeBillingSource(query.billingSource),
       status: this.normalizeStatus(query.status),
+      errorCode: this.normalizeString(query.errorCode),
       page,
       pageSize,
       limit,
@@ -833,6 +836,9 @@ export class AiUsageLedgerService {
     }
     if (query.status) {
       where.status = query.status;
+    }
+    if (query.errorCode) {
+      where.errorCode = query.errorCode;
     }
 
     return where;
