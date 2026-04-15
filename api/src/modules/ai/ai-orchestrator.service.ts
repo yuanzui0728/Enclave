@@ -729,6 +729,51 @@ export class AiOrchestratorService {
     }
   }
 
+  async generateQuickCharacter(description: string): Promise<Record<string, unknown>> {
+    const prompt = `你是一个角色设计师。根据以下描述，生成一个完整的虚拟角色 JSON 草稿，严格输出合法 JSON，不要输出任何其他内容。
+
+描述：${description}
+
+输出格式（全部字段用中文填写，avatar 用一个合适的 emoji）：
+{
+  "name": "角色姓名",
+  "avatar": "😊",
+  "relationship": "与用户的关系描述（一句话，例如：温柔的心理咨询师）",
+  "relationshipType": "friend|family|expert|mentor|custom",
+  "bio": "角色简介（2-3句话）",
+  "occupation": "职业",
+  "background": "背景故事（2-3句话）",
+  "motivation": "核心动机（一句话）",
+  "worldview": "世界观（一句话）",
+  "expertDomains": ["领域1", "领域2"],
+  "speechPatterns": ["说话习惯1", "说话习惯2"],
+  "catchphrases": ["口头禅1"],
+  "topicsOfInterest": ["兴趣话题1", "兴趣话题2"],
+  "emotionalTone": "grounded|warm|energetic|melancholic|playful|serious",
+  "responseLength": "short|medium|long",
+  "emojiUsage": "none|occasional|frequent",
+  "memorySummary": "初始记忆摘要（一句话）",
+  "basePrompt": "角色扮演基础提示词（2-4句话，描述角色的说话风格和行为方式）"
+}`;
+
+    const model = await this.configService.getAiModel();
+    const response = await this.client.chat.completions.create({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 800,
+      temperature: 0.8,
+      response_format: { type: 'json_object' },
+    });
+
+    const raw = response.choices[0]?.message?.content ?? '{}';
+    try {
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      this.logger.error('Failed to parse quick character JSON', raw);
+      return {};
+    }
+  }
+
   async compressMemory(
     history: ChatMessage[],
     profile: PersonalityProfile,

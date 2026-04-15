@@ -123,6 +123,11 @@ export const adminApi = {
   getConfig: () => adminFetch<Record<string, string>>("/config"),
   setConfig: (key: string, value: string) =>
     adminFetch<{ success: boolean }>("/config", { method: "PATCH", body: JSON.stringify({ key, value }) }),
+  generateQuickCharacter: (description: string) =>
+    adminFetch<Record<string, unknown>>("/characters/generate-quick", {
+      method: "POST",
+      body: JSON.stringify({ description }),
+    }),
   listCharacterPresets: () =>
     adminFetch<CharacterPresetSummary[]>("/characters/presets"),
   installCharacterPreset: (presetKey: string) =>

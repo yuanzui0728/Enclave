@@ -36,6 +36,7 @@ import {
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
 import { buildDigitalHumanAdminSummary } from "../lib/digital-human-admin-summary";
+import { CharacterWorkspaceNav } from "../components/character-workspace-nav";
 
 const ACTIVITY_OPTIONS = [
   { value: "", label: "未设置" },
@@ -175,6 +176,8 @@ export function CharacterFactoryPage() {
 
   return (
     <div className="space-y-6">
+      <CharacterWorkspaceNav characterId={characterId} />
+
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <AdminPageHero
           eyebrow="角色工厂"

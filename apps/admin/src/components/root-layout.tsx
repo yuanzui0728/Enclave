@@ -25,7 +25,6 @@ export function RootLayout() {
   });
 
   const routeMeta = useMemo(() => resolveRouteMeta(location.pathname), [location.pathname]);
-  const characterContext = useMemo(() => resolveCharacterContext(location.pathname), [location.pathname]);
   const digitalHumanSummary = useMemo(
     () => buildDigitalHumanAdminSummary(statusQuery.data?.digitalHumanGateway),
     [statusQuery.data?.digitalHumanGateway],
@@ -100,8 +99,6 @@ export function RootLayout() {
             digitalHumanSummary={digitalHumanSummary}
             ownerCount={statusQuery.data?.worldSurface.ownerCount ?? null}
             navLinks={NAV_ITEMS}
-            contextTitle={characterContext ? "角色工作区" : undefined}
-            contextLinks={characterContext?.links}
           />
         }
         topbar={
@@ -191,36 +188,3 @@ function resolveRouteMeta(pathname: string) {
   };
 }
 
-function resolveCharacterContext(pathname: string) {
-  const matched = pathname.match(/^\/characters\/([^/]+)(?:\/(factory|runtime))?$/);
-  if (!matched) {
-    return null;
-  }
-
-  const characterId = matched[1];
-  if (characterId === "new") {
-    return null;
-  }
-
-  const activeSegment = matched[2] ?? "profile";
-
-  return {
-    links: [
-      {
-        label: "基础资料",
-        href: `/characters/${characterId}`,
-        active: activeSegment === "profile",
-      },
-      {
-        label: "角色工厂",
-        href: `/characters/${characterId}/factory`,
-        active: activeSegment === "factory",
-      },
-      {
-        label: "运行逻辑台",
-        href: `/characters/${characterId}/runtime`,
-        active: activeSegment === "runtime",
-      },
-    ],
-  };
-}
