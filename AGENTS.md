@@ -438,3 +438,27 @@
 - `FriendshipEntity`, `FriendRequestEntity`, and `NarrativeArcEntity` now use runtime field `ownerId`, while their physical columns remain `userId`.
 - `UserFeedInteractionEntity` now uses runtime field `ownerId`, while the physical database column remains `userId`.
 - Backend runtime code no longer uses `userId` as a world-owner semantic field; remaining `userId` usage is only for physical database column compatibility.
+
+## Cloud World Orchestration Update (2026-04-15)
+
+- New cloud platform entities in `apps/cloud-api/src/entities/`:
+  - `CloudInstance`
+  - `WorldLifecycleJob`
+  - `WorldAccessSession`
+- Cloud platform responsibility update:
+  - phone login now resolves world access directly
+  - first-time users automatically get a dedicated world instance
+  - returning users wake their existing world instead of creating a new request
+  - in-process mock orchestration is available in `apps/cloud-api` until the real VM provider is wired in
+- New cloud client routes:
+  - `POST /cloud/me/world-access/resolve`
+  - `GET /cloud/me/world-access/sessions/:sessionId`
+- New cloud admin routes:
+  - `GET /admin/cloud/jobs`
+  - `GET /admin/cloud/jobs/:id`
+  - `GET /admin/cloud/worlds/:id/instance`
+  - `POST /admin/cloud/worlds/:id/resume`
+  - `POST /admin/cloud/worlds/:id/suspend`
+  - `POST /admin/cloud/worlds/:id/retry`
+- New cloud env var:
+  - `CLOUD_MOCK_WORLD_API_BASE_URL`

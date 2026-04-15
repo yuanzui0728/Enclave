@@ -1,5 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Query, UseGuards } from "@nestjs/common";
-import { type CloudWorldLifecycleStatus, type CloudWorldRequestStatus } from "@yinjie/contracts";
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import type {
+  CloudWorldLifecycleStatus,
+  CloudWorldRequestStatus,
+  WorldLifecycleJobStatus,
+  WorldLifecycleJobType,
+} from "@yinjie/contracts";
 import { AdminGuard } from "../auth/admin.guard";
 import { CloudService } from "../cloud/cloud.service";
 
@@ -58,5 +63,43 @@ export class AdminCloudController {
     },
   ) {
     return this.cloudService.updateWorld(id, body);
+  }
+
+  @Get("jobs")
+  listJobs(
+    @Query("worldId") worldId?: string,
+    @Query("status") status?: WorldLifecycleJobStatus,
+    @Query("jobType") jobType?: WorldLifecycleJobType,
+  ) {
+    return this.cloudService.listJobs({
+      worldId,
+      status,
+      jobType,
+    });
+  }
+
+  @Get("jobs/:id")
+  getJob(@Param("id") id: string) {
+    return this.cloudService.getJobById(id);
+  }
+
+  @Get("worlds/:id/instance")
+  getWorldInstance(@Param("id") id: string) {
+    return this.cloudService.getWorldInstance(id);
+  }
+
+  @Post("worlds/:id/resume")
+  resumeWorld(@Param("id") id: string) {
+    return this.cloudService.resumeWorld(id);
+  }
+
+  @Post("worlds/:id/suspend")
+  suspendWorld(@Param("id") id: string) {
+    return this.cloudService.suspendWorld(id);
+  }
+
+  @Post("worlds/:id/retry")
+  retryWorld(@Param("id") id: string) {
+    return this.cloudService.retryWorld(id);
   }
 }
