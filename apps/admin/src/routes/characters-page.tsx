@@ -1,7 +1,6 @@
 import { useDeferredValue, useEffect, useEffectEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { listCharacters, type Character } from "@yinjie/contracts";
 import {
   Button,
@@ -273,7 +272,9 @@ export function CharactersPage() {
             className="flex w-full items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]"
             onClick={() => setPresetsExpanded((v) => !v)}
           >
-            {presetsExpanded ? <ChevronDown size={15} className="shrink-0 text-[color:var(--text-muted)]" /> : <ChevronRight size={15} className="shrink-0 text-[color:var(--text-muted)]" />}
+            {presetsExpanded
+              ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m6 9 6 6 6-6"/></svg>
+              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m9 18 6-6-6-6"/></svg>}
             <AdminEyebrow className="flex-1">待激活的世界角色</AdminEyebrow>
             <span className="rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-xs text-[color:var(--text-muted)]">
               {uninstalledPresets.length} 个未激活
