@@ -15,11 +15,14 @@ export type AdminChatRecordConversationSort =
   | "recentMessageCount30d"
   | "storedMessageCount";
 
+export type AdminChatRecordActivityWindow = "all" | "7d" | "30d";
+
 export interface AdminChatRecordConversationListQuery {
   characterId?: string;
   includeHidden?: boolean;
   dateFrom?: string;
   dateTo?: string;
+  activityWindow?: AdminChatRecordActivityWindow;
   sortBy?: AdminChatRecordConversationSort;
   page?: number;
   pageSize?: number;
@@ -94,10 +97,40 @@ export interface AdminChatRecordConversationStats {
   firstResponseMedianMs: number | null;
 }
 
+export interface AdminChatRecordConversationTrendPoint {
+  date: string;
+  totalMessages: number;
+  userMessages: number;
+  characterMessages: number;
+  proactiveMessages: number;
+  attachmentMessages: number;
+}
+
+export interface AdminChatRecordConversationMix {
+  userShare: number;
+  characterShare: number;
+  proactiveShare: number;
+  attachmentShare: number;
+  systemShare: number;
+}
+
+export interface AdminChatRecordConversationInsight {
+  activeDays7d: number;
+  activeDays30d: number;
+  averageMessagesPerActiveDay30d: number | null;
+  lastUserMessageAt: string | null;
+  lastCharacterMessageAt: string | null;
+  mostActiveWeekday: string | null;
+  mix: AdminChatRecordConversationMix;
+  trend7d: AdminChatRecordConversationTrendPoint[];
+  trend30d: AdminChatRecordConversationTrendPoint[];
+}
+
 export interface AdminChatRecordConversationDetail {
   conversation: AdminChatRecordConversationListItem;
   character: AdminChatRecordCharacterSummary | null;
   stats: AdminChatRecordConversationStats;
+  insight: AdminChatRecordConversationInsight;
 }
 
 export interface AdminChatRecordMessagesQuery {

@@ -23,6 +23,7 @@ type ChatRecordConversationListQuery = {
   includeHidden?: boolean | string;
   dateFrom?: string;
   dateTo?: string;
+  activityWindow?: string;
   sortBy?: string;
   page?: number | string;
   pageSize?: number | string;
@@ -93,6 +94,35 @@ type ChatRecordConversationStats = {
   recentMessageCount30d: number;
   firstResponseAverageMs: number | null;
   firstResponseMedianMs: number | null;
+};
+
+type ChatRecordConversationTrendPoint = {
+  date: string;
+  totalMessages: number;
+  userMessages: number;
+  characterMessages: number;
+  proactiveMessages: number;
+  attachmentMessages: number;
+};
+
+type ChatRecordConversationMix = {
+  userShare: number;
+  characterShare: number;
+  proactiveShare: number;
+  attachmentShare: number;
+  systemShare: number;
+};
+
+type ChatRecordConversationInsight = {
+  activeDays7d: number;
+  activeDays30d: number;
+  averageMessagesPerActiveDay30d: number | null;
+  lastUserMessageAt: string | null;
+  lastCharacterMessageAt: string | null;
+  mostActiveWeekday: string | null;
+  mix: ChatRecordConversationMix;
+  trend7d: ChatRecordConversationTrendPoint[];
+  trend30d: ChatRecordConversationTrendPoint[];
 };
 
 type ChatRecordConversationMessagesPage = {
@@ -229,6 +259,7 @@ export class ChatRecordsAdminService {
       MAX_LIST_PAGE_SIZE,
     );
     const sortBy = this.normalizeConversationSort(query.sortBy);
+    const activityWindow = this.normalizeActivityWindow(query.activityWindow);
     const dateFrom = this.normalizeDate(query.dateFrom);
     const dateTo = this.normalizeDate(query.dateTo);
     const conversations = await this.conversationRepo.find({
@@ -259,7 +290,9 @@ export class ChatRecordsAdminService {
       return true;
     });
 
-    const listItems = await this.buildConversationListItems(directConversations);
+    const listItems = (await this.buildConversationListItems(directConversations)).filter(
+      (item) => this.matchesActivityWindow(item, activityWindow),
+    );
     listItems.sort((left, right) => {
       if (sortBy === 'recentMessageCount30d') {
         return (
@@ -320,6 +353,7 @@ export class ChatRecordsAdminService {
         storedMessages.length,
         includeClearedHistory,
       ),
+      insight: this.buildConversationInsight(activeMessages),
     };
   }
 
@@ -695,6 +729,58 @@ export class ChatRecordsAdminService {
     };
   }
 
+  private buildConversationInsight(
+    messages: MessageEntity[],
+  ): ChatRecordConversationInsight {
+    const trend7d = this.buildTrendPoints(messages, 7);
+    const trend30d = this.buildTrendPoints(messages, 30);
+    const totalMessages = messages.length;
+    const userMessages = messages.filter((message) => message.senderType === 'user').length;
+    const characterMessages = messages.filter(
+      (message) => message.senderType === 'character',
+    ).length;
+    const proactiveMessages = messages.filter(
+      (message) => message.type === 'proactive',
+    ).length;
+    const attachmentMessages = messages.filter((message) =>
+      this.isAttachmentLikeMessage(message),
+    ).length;
+    const systemMessages = messages.filter((message) => message.type === 'system').length;
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find((message) => message.senderType === 'user');
+    const lastCharacterMessage = [...messages]
+      .reverse()
+      .find((message) => message.senderType === 'character');
+    const activeDays7d = trend7d.filter((item) => item.totalMessages > 0).length;
+    const activeDays30d = trend30d.filter((item) => item.totalMessages > 0).length;
+    const weekdayLabel = this.resolveMostActiveWeekday(messages);
+
+    return {
+      activeDays7d,
+      activeDays30d,
+      averageMessagesPerActiveDay30d: activeDays30d
+        ? Math.round(
+            (trend30d.reduce((sum, item) => sum + item.totalMessages, 0) /
+              activeDays30d) *
+              10,
+          ) / 10
+        : null,
+      lastUserMessageAt: lastUserMessage?.createdAt.toISOString() ?? null,
+      lastCharacterMessageAt: lastCharacterMessage?.createdAt.toISOString() ?? null,
+      mostActiveWeekday: weekdayLabel,
+      mix: {
+        userShare: this.calculateShare(userMessages, totalMessages),
+        characterShare: this.calculateShare(characterMessages, totalMessages),
+        proactiveShare: this.calculateShare(proactiveMessages, totalMessages),
+        attachmentShare: this.calculateShare(attachmentMessages, totalMessages),
+        systemShare: this.calculateShare(systemMessages, totalMessages),
+      },
+      trend7d,
+      trend30d,
+    };
+  }
+
   private isAttachmentLikeMessage(message: Pick<MessageEntity, 'type'>) {
     return (
       message.type !== 'text' &&
@@ -803,6 +889,14 @@ export class ChatRecordsAdminService {
     return 'lastActivityAt';
   }
 
+  private normalizeActivityWindow(value: string | undefined) {
+    if (value === '7d' || value === '30d') {
+      return value;
+    }
+
+    return 'all';
+  }
+
   private normalizeBoolean(value: boolean | string | undefined) {
     return value === true || value === 'true' || value === '1';
   }
@@ -841,6 +935,116 @@ export class ChatRecordsAdminService {
 
   private compareIsoDate(left: string | null, right: string | null) {
     return (Date.parse(left ?? '') || 0) - (Date.parse(right ?? '') || 0);
+  }
+
+  private matchesActivityWindow(
+    item: Pick<
+      ChatRecordConversationListItem,
+      'recentMessageCount7d' | 'recentMessageCount30d'
+    >,
+    activityWindow: 'all' | '7d' | '30d',
+  ) {
+    if (activityWindow === '7d') {
+      return item.recentMessageCount7d > 0;
+    }
+
+    if (activityWindow === '30d') {
+      return item.recentMessageCount30d > 0;
+    }
+
+    return true;
+  }
+
+  private buildTrendPoints(
+    messages: MessageEntity[],
+    days: number,
+  ): ChatRecordConversationTrendPoint[] {
+    const startDate = this.startOfLocalDay(this.daysAgo(days - 1));
+    const buckets = new Map<string, ChatRecordConversationTrendPoint>();
+
+    for (let offset = 0; offset < days; offset += 1) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + offset);
+      const key = this.formatLocalDayKey(currentDate);
+      buckets.set(key, {
+        date: key,
+        totalMessages: 0,
+        userMessages: 0,
+        characterMessages: 0,
+        proactiveMessages: 0,
+        attachmentMessages: 0,
+      });
+    }
+
+    for (const message of messages) {
+      const key = this.formatLocalDayKey(message.createdAt);
+      const bucket = buckets.get(key);
+      if (!bucket) {
+        continue;
+      }
+
+      bucket.totalMessages += 1;
+      if (message.senderType === 'user') {
+        bucket.userMessages += 1;
+      }
+      if (message.senderType === 'character') {
+        bucket.characterMessages += 1;
+      }
+      if (message.type === 'proactive') {
+        bucket.proactiveMessages += 1;
+      }
+      if (this.isAttachmentLikeMessage(message)) {
+        bucket.attachmentMessages += 1;
+      }
+    }
+
+    return Array.from(buckets.values());
+  }
+
+  private resolveMostActiveWeekday(messages: MessageEntity[]) {
+    if (!messages.length) {
+      return null;
+    }
+
+    const weekdayCounts = new Map<number, number>();
+    const lastThirtyDays = this.daysAgo(30).getTime();
+
+    for (const message of messages) {
+      if (message.createdAt.getTime() < lastThirtyDays) {
+        continue;
+      }
+      const weekday = message.createdAt.getDay();
+      weekdayCounts.set(weekday, (weekdayCounts.get(weekday) ?? 0) + 1);
+    }
+
+    if (!weekdayCounts.size) {
+      return null;
+    }
+
+    const [weekdayIndex] = [...weekdayCounts.entries()].sort((left, right) => {
+      return right[1] - left[1] || left[0] - right[0];
+    })[0];
+
+    return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][weekdayIndex] ?? null;
+  }
+
+  private calculateShare(count: number, total: number) {
+    if (!total) {
+      return 0;
+    }
+
+    return Math.round((count / total) * 1000) / 1000;
+  }
+
+  private startOfLocalDay(value: Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  private formatLocalDayKey(value: Date) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private roundCost(value: number) {

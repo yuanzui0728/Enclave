@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import type {
+  AdminChatRecordActivityWindow,
   AdminChatRecordConversationListQuery,
   AdminChatRecordConversationSearchQuery,
   Character,
@@ -40,16 +41,29 @@ const TYPE_OPTIONS = [
   { value: "system", label: "系统" },
 ] as const;
 
+const ACTIVITY_WINDOW_OPTIONS: Array<{
+  value: AdminChatRecordActivityWindow;
+  label: string;
+}> = [
+  { value: "all", label: "全部会话" },
+  { value: "7d", label: "近 7 天活跃" },
+  { value: "30d", label: "近 30 天活跃" },
+];
+
 export function ChatRecordsPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const [characterId, setCharacterId] = useState("");
   const [includeHidden, setIncludeHidden] = useState(false);
   const [includeClearedHistory, setIncludeClearedHistory] = useState(false);
+  const [activityWindow, setActivityWindow] =
+    useState<AdminChatRecordActivityWindow>("all");
   const [sortBy, setSortBy] =
     useState<AdminChatRecordConversationListQuery["sortBy"]>("lastActivityAt");
   const [page, setPage] = useState(1);
   const [selectedConversationId, setSelectedConversationId] = useState("");
   const [focusedMessageId, setFocusedMessageId] = useState("");
+  const [timelineMessageType, setTimelineMessageType] =
+    useState<AdminChatRecordConversationSearchQuery["messageType"] | "all">("all");
   const [search, setSearch] = useState<{
     keyword: string;
     messageType: AdminChatRecordConversationSearchQuery["messageType"] | "all";
@@ -66,11 +80,12 @@ export function ChatRecordsPage() {
     () => ({
       characterId: characterId || undefined,
       includeHidden,
+      activityWindow,
       sortBy,
       page,
       pageSize: 24,
     }),
-    [characterId, includeHidden, page, sortBy],
+    [activityWindow, characterId, includeHidden, page, sortBy],
   );
 
   const overviewQuery = useQuery({
@@ -147,6 +162,10 @@ export function ChatRecordsPage() {
     return focusedMessageId ? pages[0].items : [...pages].reverse().flatMap((page) => page.items);
   }, [focusedMessageId, messagesQuery.data?.pages]);
 
+  const visibleMessages = useMemo(() => {
+    return messages.filter((message) => matchesMessageType(message, timelineMessageType));
+  }, [messages, timelineMessageType]);
+
   function runSearch() {
     if (!activeConversationId) {
       return;
@@ -204,6 +223,25 @@ export function ChatRecordsPage() {
             <ToggleChip label="显示隐藏会话" checked={includeHidden} onChange={(event) => { setIncludeHidden(event.target.checked); setPage(1); }} />
             <ToggleChip label="包含清空前历史" checked={includeClearedHistory} onChange={(event) => setIncludeClearedHistory(event.target.checked)} />
           </div>
+          <div className="flex flex-wrap gap-2">
+            {ACTIVITY_WINDOW_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  setActivityWindow(option.value);
+                  setPage(1);
+                }}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  activityWindow === option.value
+                    ? "border-[color:var(--border-brand)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] text-[color:var(--text-muted)]"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <div className="space-y-3">
             {conversations.length ? conversations.map((item) => (
               <button key={item.id} type="button" onClick={() => { setSelectedConversationId(item.id); searchMutation.reset(); }} className={`w-full rounded-[20px] border px-4 py-3 text-left transition ${item.id === activeConversationId ? "border-[color:var(--border-brand)] bg-[color:var(--surface-card)]" : "border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] hover:border-[color:var(--border-subtle)]"}`}>
@@ -219,6 +257,8 @@ export function ChatRecordsPage() {
                   <span>可见 {item.visibleMessageCount}</span>
                   <span>留存 {item.storedMessageCount}</span>
                   <span>30 天 {item.recentMessageCount30d}</span>
+                  {item.isHidden ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">已隐藏</span> : null}
+                  {item.hasClearedHistory ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">含清空前历史</span> : null}
                 </div>
               </button>
             )) : <AdminEmptyState title="没有符合条件的会话" description="可以切回全部角色或包含隐藏会话后再查看。" />}
@@ -245,6 +285,25 @@ export function ChatRecordsPage() {
             <Button variant="primary" size="sm" onClick={runSearch} disabled={!activeConversationId || searchMutation.isPending}>搜索会话</Button>
             {focusedMessageId ? <Button variant="secondary" size="sm" onClick={() => setFocusedMessageId("")}>返回最新消息</Button> : null}
           </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-[color:var(--text-muted)]">时间线筛选</span>
+            <select
+              value={timelineMessageType}
+              onChange={(event) =>
+                setTimelineMessageType(
+                  event.target.value as AdminChatRecordConversationSearchQuery["messageType"] | "all",
+                )
+              }
+              className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-sm"
+            >
+              {TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            {timelineMessageType !== "all" ? (
+              <span className="text-xs text-[color:var(--text-muted)]">
+                当前只显示 {TYPE_OPTIONS.find((item) => item.value === timelineMessageType)?.label || timelineMessageType}
+              </span>
+            ) : null}
+          </div>
           {includeClearedHistory ? <InlineNotice title="当前正在查看清空前历史">这里会展示数据库仍保留的完整会话样本，可能包含用户在前台已清空的聊天。</InlineNotice> : null}
           {searchMutation.data?.items.length ? (
             <div className="space-y-2 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-3">
@@ -266,7 +325,7 @@ export function ChatRecordsPage() {
             </div>
           ) : null}
           <div className="space-y-3">
-            {messagesQuery.isLoading ? <LoadingBlock label="正在读取时间线..." /> : messagesQuery.error instanceof Error ? <ErrorBlock message={messagesQuery.error.message} /> : messages.length ? messages.map((message) => <MessageCard key={message.id} message={message} highlighted={focusedMessageId === message.id} />) : <AdminEmptyState title="当前会话还没有消息" description="这个角色的单聊档案还没有积累可回看的历史。" />}
+            {messagesQuery.isLoading ? <LoadingBlock label="正在读取时间线..." /> : messagesQuery.error instanceof Error ? <ErrorBlock message={messagesQuery.error.message} /> : visibleMessages.length ? visibleMessages.map((message) => <MessageCard key={message.id} message={message} highlighted={focusedMessageId === message.id} />) : messages.length ? <AdminEmptyState title="当前筛选条件下没有消息" description="可以切回全部类型，或者尝试通过搜索定位具体消息。" /> : <AdminEmptyState title="当前会话还没有消息" description="这个角色的单聊档案还没有积累可回看的历史。" />}
           </div>
         </Card>
 
@@ -295,6 +354,39 @@ export function ChatRecordsPage() {
                 { label: "中位首响", value: formatDuration(detail.stats.firstResponseMedianMs) },
               ]} />
 
+              <Card className="space-y-4 bg-[color:var(--surface-console)]">
+                <SectionHeading>产品洞察</SectionHeading>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <MetricCard label="近 7 天活跃天数" value={detail.insight.activeDays7d} />
+                  <MetricCard label="近 30 天活跃天数" value={detail.insight.activeDays30d} />
+                  <MetricCard label="活跃日均消息" value={detail.insight.averageMessagesPerActiveDay30d ?? "暂无"} />
+                  <MetricCard label="高峰工作日" value={detail.insight.mostActiveWeekday || "暂无"} />
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">近 7 天消息趋势</div>
+                    <TrendBars items={detail.insight.trend7d} />
+                  </div>
+                  <div>
+                    <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">消息结构占比</div>
+                    <div className="space-y-2">
+                      <RatioBar label="用户消息" value={detail.insight.mix.userShare} tone="slate" />
+                      <RatioBar label="角色回复" value={detail.insight.mix.characterShare} tone="emerald" />
+                      <RatioBar label="主动消息" value={detail.insight.mix.proactiveShare} tone="amber" />
+                      <RatioBar label="附件消息" value={detail.insight.mix.attachmentShare} tone="sky" />
+                      <RatioBar label="系统消息" value={detail.insight.mix.systemShare} tone="violet" />
+                    </div>
+                  </div>
+                </div>
+                <AdminInfoRows
+                  title="最近发言"
+                  rows={[
+                    { label: "最近一次用户消息", value: formatDateTime(detail.insight.lastUserMessageAt) },
+                    { label: "最近一次角色回复", value: formatDateTime(detail.insight.lastCharacterMessageAt) },
+                  ]}
+                />
+              </Card>
+
               {detail.character ? (
                 <Card className="space-y-4 bg-[color:var(--surface-console)]">
                   <div className="flex items-center justify-between gap-3">
@@ -313,8 +405,8 @@ export function ChatRecordsPage() {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <Link to="/characters/$characterId/runtime" params={{ characterId: detail.character.id }} className="inline-flex items-center justify-center rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-2 text-sm font-medium text-[color:var(--text-primary)]">打开运行逻辑台</Link>
-                    <Link to="/reply-logic" className="inline-flex items-center justify-center rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-2 text-sm font-medium text-[color:var(--text-primary)]">查看回复逻辑</Link>
-                    <Link to="/token-usage" className="inline-flex items-center justify-center rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-2 text-sm font-medium text-[color:var(--text-primary)]">查看 Token 用量</Link>
+                    <a href={buildReplyLogicHref(detail.conversation.id, detail.character.id)} className="inline-flex items-center justify-center rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-2 text-sm font-medium text-[color:var(--text-primary)]">查看回复逻辑</a>
+                    <a href={buildTokenUsageHref(detail.conversation.id, detail.character.id)} className="inline-flex items-center justify-center rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 py-2 text-sm font-medium text-[color:var(--text-primary)]">查看 Token 用量</a>
                   </div>
                 </Card>
               ) : null}
@@ -329,6 +421,12 @@ export function ChatRecordsPage() {
                       <MetricCard label="累计成本" value={formatCurrency(tokenUsageQuery.data.allTimeOverview.estimatedCost, tokenUsageQuery.data.allTimeOverview.currency)} />
                       <MetricCard label="近 30 天成本" value={formatCurrency(tokenUsageQuery.data.recent30dOverview.estimatedCost, tokenUsageQuery.data.recent30dOverview.currency)} />
                     </div>
+                    {tokenUsageQuery.data.recent30dTrend.length ? (
+                      <div>
+                        <div className="mb-2 text-xs font-medium text-[color:var(--text-muted)]">近 30 天 Token 趋势</div>
+                        <TokenTrendBars items={tokenUsageQuery.data.recent30dTrend.slice(-10)} />
+                      </div>
+                    ) : null}
                     <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
                       {(tokenUsageQuery.data.recent30dBreakdown.byModel.slice(0, 3)).map((item) => <div key={item.key} className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2.5">{item.label} · 请求 {item.requestCount} · Token {item.totalTokens}</div>)}
                       {tokenUsageQuery.data.recentRecords.items.map((record) => <div key={record.id} className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-2.5">{formatDateTime(record.occurredAt)} · {record.model || "未记录模型"} · Token {record.totalTokens}</div>)}
@@ -356,6 +454,104 @@ function MessageCard({ message, highlighted }: { message: Message; highlighted: 
       </div>
       <div className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[color:var(--text-secondary)]">{message.text?.trim() || "空消息"}</div>
       {message.attachment ? <div className="mt-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-sm text-[color:var(--text-secondary)]">{attachmentLabel(message)}</div> : null}
+    </div>
+  );
+}
+
+function TrendBars({
+  items,
+}: {
+  items: Array<{
+    date: string;
+    totalMessages: number;
+    userMessages: number;
+    characterMessages: number;
+  }>;
+}) {
+  const maxValue = Math.max(...items.map((item) => item.totalMessages), 1);
+
+  return (
+    <div className="flex items-end gap-2 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-4">
+      {items.map((item) => (
+        <div key={item.date} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          <div className="flex h-24 w-full items-end justify-center">
+            <div
+              className="w-full max-w-7 rounded-t-[10px] bg-[linear-gradient(180deg,#0f766e_0%,#34d399_100%)]"
+              style={{ height: `${Math.max(8, Math.round((item.totalMessages / maxValue) * 96))}px` }}
+              title={`${item.date} · 总 ${item.totalMessages} · 用户 ${item.userMessages} · 角色 ${item.characterMessages}`}
+            />
+          </div>
+          <div className="text-[11px] text-[color:var(--text-muted)]">{item.date.slice(5).replace("-", "/")}</div>
+          <div className="text-[11px] font-medium text-[color:var(--text-primary)]">{item.totalMessages}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RatioBar({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "slate" | "emerald" | "amber" | "sky" | "violet";
+}) {
+  const toneClass =
+    tone === "emerald"
+      ? "bg-emerald-500"
+      : tone === "amber"
+        ? "bg-amber-400"
+        : tone === "sky"
+          ? "bg-sky-500"
+          : tone === "violet"
+            ? "bg-violet-500"
+            : "bg-slate-500";
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-3 text-xs">
+        <span className="text-[color:var(--text-secondary)]">{label}</span>
+        <span className="font-medium text-[color:var(--text-primary)]">{formatPercent(value)}</span>
+      </div>
+      <div className="h-2 rounded-full bg-[color:var(--surface-soft)]">
+        <div
+          className={`h-2 rounded-full ${toneClass}`}
+          style={{ width: `${Math.max(value * 100, value > 0 ? 4 : 0)}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TokenTrendBars({
+  items,
+}: {
+  items: Array<{
+    bucketStart: string;
+    label: string;
+    totalTokens: number;
+    requestCount: number;
+  }>;
+}) {
+  const maxValue = Math.max(...items.map((item) => item.totalTokens), 1);
+
+  return (
+    <div className="flex items-end gap-2 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] px-3 py-4">
+      {items.map((item) => (
+        <div key={item.bucketStart} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          <div className="flex h-20 w-full items-end justify-center">
+            <div
+              className="w-full max-w-7 rounded-t-[10px] bg-[linear-gradient(180deg,#2563eb_0%,#60a5fa_100%)]"
+              style={{ height: `${Math.max(8, Math.round((item.totalTokens / maxValue) * 80))}px` }}
+              title={`${item.label} · Token ${item.totalTokens} · 请求 ${item.requestCount}`}
+            />
+          </div>
+          <div className="text-[11px] text-[color:var(--text-muted)]">{item.label}</div>
+          <div className="text-[11px] font-medium text-[color:var(--text-primary)]">{compactInteger(item.totalTokens)}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -391,6 +587,19 @@ function formatMessageType(type: Message["type"]) {
   return TYPE_OPTIONS.find((item) => item.value === type)?.label || type;
 }
 
+function matchesMessageType(
+  message: Message,
+  filter: AdminChatRecordConversationSearchQuery["messageType"] | "all",
+) {
+  if (filter === "all" || !filter) {
+    return true;
+  }
+  if (filter === "text") {
+    return message.type === "text" || message.type === "proactive";
+  }
+  return message.type === filter;
+}
+
 function formatCompactDate(value?: string | null) {
   if (!value) {
     return "暂无";
@@ -407,6 +616,20 @@ function formatDateTime(value?: string | null) {
 
 function formatCurrency(value: number, currency: "CNY" | "USD") {
   return new Intl.NumberFormat("zh-CN", { style: "currency", currency, maximumFractionDigits: currency === "USD" ? 4 : 2 }).format(value);
+}
+
+function formatPercent(value: number) {
+  return new Intl.NumberFormat("zh-CN", {
+    style: "percent",
+    maximumFractionDigits: value > 0 && value < 0.1 ? 1 : 0,
+  }).format(value);
+}
+
+function compactInteger(value: number) {
+  if (value >= 10000) {
+    return `${Math.round((value / 10000) * 10) / 10}w`;
+  }
+  return String(value);
 }
 
 function formatDuration(value: number | null) {
@@ -432,4 +655,35 @@ function formatActivity(value?: string | null) {
   if (value === "sleeping") return "睡觉中";
   if (value === "free") return "空闲";
   return value || "未标注";
+}
+
+function buildReplyLogicHref(conversationId: string, characterId?: string | null) {
+  const params = new URLSearchParams();
+  params.set("scope", "conversation");
+  params.set("conversationId", conversationId);
+  if (characterId) {
+    params.set("characterId", characterId);
+  }
+  return `/reply-logic?${params.toString()}`;
+}
+
+function buildTokenUsageHref(conversationId: string, characterId?: string | null) {
+  const params = new URLSearchParams();
+  params.set("conversationId", conversationId);
+  params.set("from", shiftDate(-29));
+  params.set("to", formatDateInput(new Date()));
+  if (characterId) {
+    params.set("characterId", characterId);
+  }
+  return `/token-usage?${params.toString()}`;
+}
+
+function formatDateInput(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftDate(days: number) {
+  const next = new Date();
+  next.setDate(next.getDate() + days);
+  return formatDateInput(next);
 }

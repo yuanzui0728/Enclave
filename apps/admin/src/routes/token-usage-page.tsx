@@ -41,6 +41,38 @@ function monthStartInput() {
   return formatDateInput(date);
 }
 
+function readInitialTokenUsageFocus(): {
+  from: string;
+  to: string;
+  grain: "day" | "week" | "month";
+  characterId: string;
+  conversationId: string;
+} {
+  if (typeof window === "undefined") {
+    return {
+      from: shiftDate(-6),
+      to: formatDateInput(new Date()),
+      grain: "day" as const,
+      characterId: "",
+      conversationId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const grain = params.get("grain");
+
+  return {
+    from: params.get("from")?.trim() || shiftDate(-6),
+    to: params.get("to")?.trim() || formatDateInput(new Date()),
+    grain:
+      grain === "week" || grain === "month"
+        ? grain
+        : ("day" as const),
+    characterId: params.get("characterId")?.trim() || "",
+    conversationId: params.get("conversationId")?.trim() || "",
+  };
+}
+
 function formatInteger(value: number) {
   return new Intl.NumberFormat("zh-CN", {
     maximumFractionDigits: 0,
@@ -97,6 +129,7 @@ function emptyBudgetConfig(): TokenUsageBudgetConfig {
       enabled: false,
       metric: "tokens",
       enforcement: "monitor",
+      downgradeModel: null,
       dailyLimit: null,
       monthlyLimit: null,
       warningRatio: 0.8,
@@ -111,6 +144,7 @@ function emptyCharacterBudgetRule(characterId = ""): TokenUsageCharacterBudgetRu
     enabled: true,
     metric: "tokens",
     enforcement: "monitor",
+    downgradeModel: null,
     dailyLimit: null,
     monthlyLimit: null,
     warningRatio: 0.8,
@@ -120,10 +154,14 @@ function emptyCharacterBudgetRule(characterId = ""): TokenUsageCharacterBudgetRu
 
 export function TokenUsagePage() {
   const queryClient = useQueryClient();
-  const [from, setFrom] = useState(() => shiftDate(-6));
-  const [to, setTo] = useState(() => formatDateInput(new Date()));
-  const [grain, setGrain] = useState<"day" | "week" | "month">("day");
-  const [characterId, setCharacterId] = useState("");
+  const initialFocus = useMemo(() => readInitialTokenUsageFocus(), []);
+  const [from, setFrom] = useState(() => initialFocus.from);
+  const [to, setTo] = useState(() => initialFocus.to);
+  const [grain, setGrain] = useState<"day" | "week" | "month">(
+    initialFocus.grain,
+  );
+  const [characterId, setCharacterId] = useState(initialFocus.characterId);
+  const [conversationId, setConversationId] = useState(initialFocus.conversationId);
   const [status, setStatus] = useState<"" | TokenUsageStatus>("");
   const [billingSource, setBillingSource] = useState<"" | TokenUsageBillingSource>("");
   const [pricingDraft, setPricingDraft] = useState<TokenPricingCatalog | null>(null);
@@ -135,11 +173,12 @@ export function TokenUsagePage() {
       to,
       grain,
       characterId: characterId || undefined,
+      conversationId: conversationId || undefined,
       status: status || undefined,
       billingSource: billingSource || undefined,
       limit: 8,
     }),
-    [billingSource, characterId, from, grain, status, to],
+    [billingSource, characterId, conversationId, from, grain, status, to],
   );
 
   const recordsQueryInput = useMemo<TokenUsageQuery>(
@@ -156,11 +195,12 @@ export function TokenUsagePage() {
       from,
       to,
       characterId: characterId || undefined,
+      conversationId: conversationId || undefined,
       billingSource: billingSource || undefined,
       status: "failed",
       errorCode: "BUDGET_BLOCKED",
     }),
-    [billingSource, characterId, from, to],
+    [billingSource, characterId, conversationId, from, to],
   );
 
   const blockedTrendQueryInput = useMemo<TokenUsageQuery>(
@@ -296,6 +336,7 @@ export function TokenUsagePage() {
       return adminApi.setTokenUsageBudgets({
         overall: {
           ...budgetDraft.overall,
+          downgradeModel: budgetDraft.overall.downgradeModel?.trim() || null,
           dailyLimit: normalizeNullableNumber(budgetDraft.overall.dailyLimit),
           monthlyLimit: normalizeNullableNumber(budgetDraft.overall.monthlyLimit),
         },
@@ -303,6 +344,7 @@ export function TokenUsagePage() {
           .map((item) => ({
             ...item,
             characterId: item.characterId.trim(),
+            downgradeModel: item.downgradeModel?.trim() || null,
             dailyLimit: normalizeNullableNumber(item.dailyLimit),
             monthlyLimit: normalizeNullableNumber(item.monthlyLimit),
             note: item.note?.trim() || undefined,
@@ -420,6 +462,19 @@ export function TokenUsagePage() {
       {budgetSummary?.alerts.length ? (
         <InlineNotice tone="warning">
           当前有 {budgetSummary.alerts.length} 条预算预警，请优先关注整体预算和角色预算里标红的对象。
+        </InlineNotice>
+      ) : null}
+
+      {conversationId ? (
+        <InlineNotice>
+          当前按会话聚焦查看账本：{conversationId}
+          <button
+            type="button"
+            className="ml-2 font-medium text-[color:var(--brand-primary)]"
+            onClick={() => setConversationId("")}
+          >
+            清除会话聚焦
+          </button>
         </InlineNotice>
       ) : null}
 
@@ -635,7 +690,11 @@ export function TokenUsagePage() {
                               overall: {
                                 ...current.overall,
                                 enforcement:
-                                  event.target.value === "block" ? "block" : "monitor",
+                                  event.target.value === "block"
+                                    ? "block"
+                                    : event.target.value === "downgrade"
+                                      ? "downgrade"
+                                      : "monitor",
                               },
                             }
                           : current,
@@ -644,8 +703,29 @@ export function TokenUsagePage() {
                     className={INPUT_CLASS_NAME}
                   >
                     <option value="monitor">监控预警</option>
+                    <option value="downgrade">超限降级</option>
                     <option value="block">超限阻断</option>
                   </select>
+                </FilterField>
+                <FilterField label="降级模型">
+                  <input
+                    value={budgetDraft?.overall.downgradeModel ?? ""}
+                    onChange={(event) =>
+                      setBudgetDraft((current) =>
+                        current
+                          ? {
+                              ...current,
+                              overall: {
+                                ...current.overall,
+                                downgradeModel: event.target.value,
+                              },
+                            }
+                          : current,
+                      )
+                    }
+                    placeholder="例如 gpt-4o-mini"
+                    className={INPUT_CLASS_NAME}
+                  />
                 </FilterField>
                 <FilterField label="预警阈值">
                   <select
@@ -954,15 +1034,22 @@ export function TokenUsagePage() {
                       </td>
                       <td className="py-3 pr-4">{formatCost(record.estimatedCost, record.currency)}</td>
                       <td className="py-3">
-                        <span
-                          className={
-                            record.status === "success"
-                              ? "rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700"
-                              : "rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700"
-                          }
-                        >
-                          {record.status === "success" ? "成功" : "失败"}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={
+                              record.status === "success"
+                                ? "rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700"
+                                : "rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700"
+                            }
+                          >
+                            {record.status === "success" ? "成功" : "失败"}
+                          </span>
+                          {record.errorCode ? (
+                            <div className="text-xs text-[color:var(--text-muted)]">
+                              {formatErrorCode(record.errorCode)}
+                            </div>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1120,6 +1207,11 @@ function BudgetStatusPanel({
           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
             当前模式：{formatBudgetEnforcement(status.enforcement)}
           </div>
+          {status.enforcement === "downgrade" ? (
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              降级模型：{status.downgradeModel?.trim() || "未配置，超限后将阻断"}
+            </div>
+          ) : null}
         </div>
         <BudgetStateBadge state={resolveBudgetState(status)} />
       </div>
@@ -1147,6 +1239,11 @@ function CharacterBudgetPanel({
           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
             当前模式：{formatBudgetEnforcement(item.budget.enforcement)}
           </div>
+          {item.budget.enforcement === "downgrade" ? (
+            <div className="mt-1 text-xs text-[color:var(--text-muted)]">
+              降级模型：{item.budget.downgradeModel?.trim() || "未配置，超限后将阻断"}
+            </div>
+          ) : null}
         </div>
         <BudgetStateBadge state={resolveBudgetState(item.budget)} />
       </div>
@@ -1258,14 +1355,32 @@ function CharacterBudgetEditor({
             value={item.enforcement ?? "monitor"}
             onChange={(event) =>
               updateBudgetCharacter(setBudgetDraft, index, {
-                enforcement: event.target.value === "block" ? "block" : "monitor",
+                enforcement:
+                  event.target.value === "block"
+                    ? "block"
+                    : event.target.value === "downgrade"
+                      ? "downgrade"
+                      : "monitor",
               })
             }
             className={INPUT_CLASS_NAME}
           >
             <option value="monitor">监控预警</option>
+            <option value="downgrade">超限降级</option>
             <option value="block">超限阻断</option>
           </select>
+        </FilterField>
+        <FilterField label="降级模型">
+          <input
+            value={item.downgradeModel ?? ""}
+            onChange={(event) =>
+              updateBudgetCharacter(setBudgetDraft, index, {
+                downgradeModel: event.target.value,
+              })
+            }
+            placeholder="例如 gpt-4o-mini"
+            className={INPUT_CLASS_NAME}
+          />
         </FilterField>
         <FilterField label="预算维度">
           <select
@@ -1497,6 +1612,9 @@ function formatErrorCode(value?: string | null) {
   if (value === "BUDGET_BLOCKED") {
     return "Budget blocked";
   }
+  if (value === "BUDGET_DOWNGRADED") {
+    return "Budget downgraded";
+  }
   if (!value) {
     return "Unknown";
   }
@@ -1517,7 +1635,13 @@ function formatBudgetState(state: TokenUsageBudgetState) {
 }
 
 function formatBudgetEnforcement(value: TokenUsageBudgetEnforcement) {
-  return value === "block" ? "超限阻断" : "监控预警";
+  if (value === "block") {
+    return "超限阻断";
+  }
+  if (value === "downgrade") {
+    return "超限降级";
+  }
+  return "监控预警";
 }
 
 function resolveBudgetState(status: TokenUsageBudgetStatus): TokenUsageBudgetState {
@@ -1539,6 +1663,7 @@ function createInactiveBudgetStatus(): TokenUsageBudgetStatus {
     enabled: false,
     metric: "tokens",
     enforcement: "monitor",
+    downgradeModel: null,
     warningRatio: 0.8,
     daily: {
       period: "daily",
