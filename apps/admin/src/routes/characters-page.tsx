@@ -15,7 +15,6 @@ import {
   AdminCallout,
   AdminDangerZone,
   AdminEmptyState,
-  AdminEyebrow,
 } from "../components/admin-workbench";
 import { adminApi } from "../lib/admin-api";
 import { resolveAdminCoreApiBaseUrl } from "../lib/core-api-base";
@@ -27,16 +26,11 @@ export function CharactersPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
   const [relationshipFilter, setRelationshipFilter] = useState<Character["relationshipType"] | "all">("all");
   const [friendFilter, setFriendFilter] = useState<"all" | "friend" | "world">("all");
-  const [presetsExpanded, setPresetsExpanded] = useState(false);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
 
   const charactersQuery = useQuery({
     queryKey: ["admin-characters-crud", baseUrl],
     queryFn: () => listCharacters(baseUrl),
-  });
-  const presetsQuery = useQuery({
-    queryKey: ["admin-character-presets", baseUrl],
-    queryFn: () => adminApi.listCharacterPresets(),
   });
   const friendIdsQuery = useQuery({
     queryKey: ["admin-character-friend-ids", baseUrl],
@@ -50,39 +44,12 @@ export function CharactersPage() {
         queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-character-presets", baseUrl] }),
         queryClient.invalidateQueries({ queryKey: ["admin-character-friend-ids", baseUrl] }),
       ]);
     },
   });
 
-  const installPresetMutation = useMutation({
-    mutationFn: (presetKey: string) => adminApi.installCharacterPreset(presetKey),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-character-presets", baseUrl] }),
-      ]);
-    },
-  });
-
-  const installPresetBatchMutation = useMutation({
-    mutationFn: (presetKeys: string[]) => adminApi.installCharacterPresetBatch(presetKeys),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin-characters-crud", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-characters", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-system-status", baseUrl] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-character-presets", baseUrl] }),
-      ]);
-    },
-  });
-
   const deletingCharacterId = deleteMutation.isPending ? deleteMutation.variables : null;
-  const installingPresetKey = installPresetMutation.isPending ? installPresetMutation.variables : null;
-  const isInstallingAnyPreset = installPresetMutation.isPending || installPresetBatchMutation.isPending;
 
   const resetDeleteMutation = useEffectEvent(() => { deleteMutation.reset(); });
   useEffect(() => { resetDeleteMutation(); }, [baseUrl, resetDeleteMutation]);
@@ -112,24 +79,11 @@ export function CharactersPage() {
     });
   }, [charactersQuery.data, deferredSearch, friendFilter, friendIds, relationshipFilter, statusFilter]);
 
-  const uninstalledPresets = useMemo(
-    () => (presetsQuery.data ?? []).filter((p) => !p.installed),
-    [presetsQuery.data],
-  );
-
-  const remainingPresetKeys = useMemo(
-    () => uninstalledPresets.map((p) => p.presetKey),
-    [uninstalledPresets],
-  );
-
   return (
     <div className="space-y-6">
       {charactersQuery.isLoading ? <LoadingBlock label="正在加载世界角色..." /> : null}
       {charactersQuery.isError && charactersQuery.error instanceof Error ? <ErrorBlock message={charactersQuery.error.message} /> : null}
-      {presetsQuery.isError && presetsQuery.error instanceof Error ? <ErrorBlock message={presetsQuery.error.message} /> : null}
       {deleteMutation.isError && deleteMutation.error instanceof Error ? <ErrorBlock message={deleteMutation.error.message} /> : null}
-      {installPresetMutation.isError && installPresetMutation.error instanceof Error ? <ErrorBlock message={installPresetMutation.error.message} /> : null}
-      {installPresetBatchMutation.isError && installPresetBatchMutation.error instanceof Error ? <ErrorBlock message={installPresetBatchMutation.error.message} /> : null}
 
       {!charactersQuery.isLoading && !charactersQuery.isError && (charactersQuery.data?.length ?? 0) === 0 ? (
         <AdminCallout
@@ -197,20 +151,16 @@ export function CharactersPage() {
               <div className="flex items-start gap-4">
                 <CharacterAvatar name={character.name} src={character.avatar} size="md" />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="truncate font-semibold text-[color:var(--text-primary)]">{character.name}</span>
-                        <StatusPill tone={isFriend ? "healthy" : "muted"}>
-                          {isFriend ? "好友" : "世界角色"}
-                        </StatusPill>
-                        <StatusPill tone={character.isOnline ? "healthy" : "muted"}>
-                          {character.isOnline ? "在线" : "离线"}
-                        </StatusPill>
-                      </div>
-                      <div className="mt-0.5 text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
-                    </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="truncate font-semibold text-[color:var(--text-primary)]">{character.name}</span>
+                    <StatusPill tone={isFriend ? "healthy" : "muted"}>
+                      {isFriend ? "好友" : "世界角色"}
+                    </StatusPill>
+                    <StatusPill tone={character.isOnline ? "healthy" : "muted"}>
+                      {character.isOnline ? "在线" : "离线"}
+                    </StatusPill>
                   </div>
+                  <div className="mt-0.5 text-sm text-[color:var(--text-secondary)]">{character.relationship}</div>
 
                   {character.expertDomains.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -263,61 +213,6 @@ export function CharactersPage() {
           />
         ) : null}
       </div>
-
-      {/* 待激活的世界角色（未安装预设） */}
-      {!presetsQuery.isLoading && uninstalledPresets.length > 0 ? (
-        <div>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-left transition-colors hover:bg-[color:var(--surface-card-hover)]"
-            onClick={() => setPresetsExpanded((v) => !v)}
-          >
-            {presetsExpanded
-              ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m6 9 6 6 6-6"/></svg>
-              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m9 18 6-6-6-6"/></svg>}
-            <AdminEyebrow className="flex-1">预置角色库</AdminEyebrow>
-            <span className="rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-xs text-[color:var(--text-muted)]">
-              {uninstalledPresets.length} 个未安装
-            </span>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                installPresetBatchMutation.mutate(remainingPresetKeys);
-              }}
-              disabled={isInstallingAnyPreset}
-            >
-              {installPresetBatchMutation.isPending ? "安装中..." : "全部安装"}
-            </Button>
-          </button>
-
-          {presetsExpanded ? (
-            <div className="mt-2 space-y-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
-              {uninstalledPresets.map((preset) => (
-                <div
-                  key={preset.presetKey}
-                  className="flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5"
-                >
-                  <CharacterAvatar name={preset.name} src={preset.avatar} size="sm" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-[color:var(--text-primary)]">{preset.name}</div>
-                    <div className="truncate text-xs text-[color:var(--text-secondary)]">{preset.relationship}</div>
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => installPresetMutation.mutate(preset.presetKey)}
-                    disabled={isInstallingAnyPreset}
-                  >
-                    {installingPresetKey === preset.presetKey ? "安装中..." : "安装"}
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
