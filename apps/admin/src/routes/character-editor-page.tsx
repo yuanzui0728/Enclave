@@ -99,6 +99,7 @@ function listToCsv(items?: string[] | null) {
 const TABS = [
   { key: "basics", label: "基础信息" },
   { key: "core_logic", label: "底层逻辑" },
+  { key: "chat", label: "聊天回复" },
   { key: "scenes", label: "场景提示词" },
   { key: "memory", label: "记忆" },
   { key: "life", label: "生活策略" },
@@ -348,6 +349,24 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
+      {/* Tab: 聊天回复 */}
+      {activeTab === "chat" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>聊天回复</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
+            控制角色在私聊和群聊中的回复行为。系统会自动注入当前时间、角色活动状态、距上次聊天时长等实时上下文。
+          </p>
+          <div className="mt-4">
+            <TextAreaField
+              label="聊天场景提示词"
+              value={profile.scenePrompts?.chat ?? ""}
+              description="触发：用户发消息时。系统会自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, chat: value } } }))}
+            />
+          </div>
+        </Card>
+      ) : null}
+
       {/* Tab: 场景提示词 */}
       {activeTab === "scenes" ? (
         <Card className="bg-[color:var(--surface-console)]">
@@ -382,12 +401,6 @@ export function CharacterEditorPage() {
             <div>
               <p className="mb-3 text-xs font-medium uppercase tracking-widest text-[color:var(--text-muted)]">互动响应</p>
               <div className="space-y-4">
-                <TextAreaField
-                  label="聊天回复"
-                  value={profile.scenePrompts?.chat ?? ""}
-                  description="触发：用户发消息时。系统会自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
-                  onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, scenePrompts: { ...profile.scenePrompts, chat: value } } }))}
-                />
                 <TextAreaField
                   label="朋友圈评论 / 回复"
                   value={profile.scenePrompts?.moments_comment ?? ""}
