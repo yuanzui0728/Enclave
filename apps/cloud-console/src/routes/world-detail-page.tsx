@@ -534,12 +534,15 @@ export function WorldDetailPage() {
                 <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
                   <div>Provider: {formatOptional(bootstrapConfig.providerLabel ?? bootstrapConfig.providerKey)}</div>
                   <div>Deployment: {formatOptional(bootstrapConfig.deploymentMode)}</div>
+                  <div>Executor: {formatOptional(bootstrapConfig.executorMode)}</div>
                   <div>Cloud platform: {bootstrapConfig.cloudPlatformBaseUrl}</div>
                   <div>Suggested API: {formatOptional(bootstrapConfig.suggestedApiBaseUrl)}</div>
                   <div>Suggested admin: {formatOptional(bootstrapConfig.suggestedAdminUrl)}</div>
                   <div>Image: {formatOptional(bootstrapConfig.image)}</div>
                   <div>Container: {formatOptional(bootstrapConfig.containerName)}</div>
                   <div>Volume: {formatOptional(bootstrapConfig.volumeName)}</div>
+                  <div>Project: {formatOptional(bootstrapConfig.projectName)}</div>
+                  <div>Remote path: {formatOptional(bootstrapConfig.remoteDeployPath)}</div>
                   <div>Callback token: {bootstrapConfig.callbackToken || "Not set"}</div>
                 </div>
 

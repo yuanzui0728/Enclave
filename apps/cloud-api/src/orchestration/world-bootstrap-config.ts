@@ -20,13 +20,16 @@ export function buildWorldBootstrapConfig(
   const cloudPlatformBaseUrl = resolveCloudPlatformBaseUrl(config);
   const suggestedApiBaseUrl = resolveSuggestedWorldApiBaseUrl(world, config);
   const suggestedAdminUrl = resolveSuggestedWorldAdminUrl(world, config);
-  const providerLabel = resolveProviderLabel(world.providerKey);
-  const deploymentMode = resolveDeploymentMode(world.providerKey);
+  const providerLabel = resolveProviderLabel(world.providerKey, config);
+  const deploymentMode = resolveDeploymentMode(world.providerKey, config);
+  const executorMode = resolveManualDockerExecutorMode(config);
   const callbackToken = world.callbackToken?.trim() ?? "";
   const callbackEndpoints = buildWorldCallbackEndpoints(world, config);
   const image = resolveRuntimeImage(world.providerKey, config);
   const containerName = resolveWorldContainerName(world);
   const volumeName = resolveWorldDataVolumeName(world);
+  const projectName = resolveWorldComposeProjectName(world);
+  const remoteDeployPath = resolveWorldRemoteDeployPath(world, config);
   const env = {
     PUBLIC_API_BASE_URL: suggestedApiBaseUrl ?? DEFAULT_WORLD_API_BASE_URL_PLACEHOLDER,
     CLOUD_PLATFORM_BASE_URL: cloudPlatformBaseUrl,
@@ -63,8 +66,12 @@ export function buildWorldBootstrapConfig(
   if (!callbackToken) {
     notes.push("Callback token is empty. Rotate the token before deploying this world runtime.");
   }
-  if (deploymentMode === "manual-docker") {
-    notes.push("This provider becomes ready only after the deployed runtime reports bootstrap or heartbeat back to the cloud platform.");
+  if (resolveDeploymentMode(world.providerKey) === "manual-docker") {
+    notes.push(
+      deploymentMode === "manual-docker-ssh"
+        ? "Cloud platform can push compose/env files to the Docker host over SSH, but the world still becomes ready only after runtime bootstrap or heartbeat callbacks arrive."
+        : "This provider becomes ready only after the deployed runtime reports bootstrap or heartbeat back to the cloud platform.",
+    );
   }
   notes.push("After rotating the callback token, redeploy the world instance so heartbeat and activity callbacks keep working.");
 
@@ -76,12 +83,15 @@ export function buildWorldBootstrapConfig(
     providerKey: world.providerKey,
     providerLabel,
     deploymentMode,
+    executorMode,
     cloudPlatformBaseUrl,
     suggestedApiBaseUrl,
     suggestedAdminUrl,
     image,
     containerName,
     volumeName,
+    projectName,
+    remoteDeployPath,
     callbackToken,
     callbackEndpoints,
     env,
@@ -91,9 +101,10 @@ export function buildWorldBootstrapConfig(
   };
 }
 
-export function resolveProviderLabel(providerKey?: string | null) {
-  switch (providerKey?.trim()) {
-    case "manual":
+export function resolveProviderLabel(providerKey?: string | null, config?: ConfigReader) {
+  switch (resolveDeploymentMode(providerKey, config)) {
+    case "manual-docker-ssh":
+      return "Docker SSH Host";
     case "manual-docker":
       return "Manual Docker Host";
     case "mock":
@@ -102,19 +113,24 @@ export function resolveProviderLabel(providerKey?: string | null) {
   }
 }
 
-export function resolveDeploymentMode(providerKey?: string | null) {
+export function resolveDeploymentMode(providerKey?: string | null, config?: ConfigReader) {
   switch (providerKey?.trim()) {
     case "manual":
     case "manual-docker":
-      return "manual-docker";
+      return resolveManualDockerExecutorMode(config) === "ssh" ? "manual-docker-ssh" : "manual-docker";
     case "mock":
     default:
       return "mock";
   }
 }
 
+export function resolveManualDockerExecutorMode(config?: ConfigReader) {
+  const configuredValue = trimToNull(config?.get<string>("CLOUD_MANUAL_DOCKER_EXECUTOR_MODE"));
+  return configuredValue === "ssh" ? "ssh" : "package";
+}
+
 export function resolveRuntimeImage(providerKey: string | null | undefined, config: ConfigReader) {
-  if (resolveDeploymentMode(providerKey) !== "manual-docker") {
+  if (resolveDeploymentMode(providerKey) === "mock") {
     return null;
   }
 
@@ -127,6 +143,22 @@ export function resolveWorldContainerName(world: Pick<BootstrapWorld, "id" | "sl
 
 export function resolveWorldDataVolumeName(world: Pick<BootstrapWorld, "id" | "slug">) {
   return `${resolveWorldContainerName(world)}-data`;
+}
+
+export function resolveWorldComposeProjectName(world: Pick<BootstrapWorld, "id" | "slug">) {
+  return resolveWorldContainerName(world);
+}
+
+export function resolveWorldRemoteDeployPath(
+  world: Pick<BootstrapWorld, "id" | "slug">,
+  config: ConfigReader,
+) {
+  if (resolveManualDockerExecutorMode(config) !== "ssh") {
+    return null;
+  }
+
+  const remoteRoot = trimToNull(config.get<string>("CLOUD_MANUAL_DOCKER_REMOTE_ROOT")) ?? "/srv/yinjie/worlds";
+  return `${remoteRoot.replace(/\/+$/, "")}/${resolveWorldComposeProjectName(world)}`;
 }
 
 export function resolveSuggestedWorldApiBaseUrl(

@@ -10,26 +10,36 @@ import type {
 } from "./compute-provider.types";
 import {
   buildWorldBootstrapConfig,
+  resolveDeploymentMode,
+  resolveProviderLabel,
   resolveRuntimeImage,
   resolveSuggestedWorldAdminUrl,
   resolveSuggestedWorldApiBaseUrl,
+  resolveWorldComposeProjectName,
   resolveWorldContainerName,
   resolveWorldDataVolumeName,
+  resolveWorldRemoteDeployPath,
 } from "../orchestration/world-bootstrap-config";
+import { ManualDockerRemoteExecutorService } from "./manual-docker-remote-executor.service";
 
 @Injectable()
 export class ManualDockerComputeProviderService implements WorldComputeProvider {
   readonly key = "manual-docker";
-  readonly summary: CloudComputeProviderSummary;
 
-  constructor(private readonly configService: ConfigService) {
-    this.summary = {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly remoteExecutor: ManualDockerRemoteExecutorService,
+  ) {}
+
+  get summary(): CloudComputeProviderSummary {
+    return {
       key: this.key,
-      label: "Manual Docker Host",
-      description:
-        "Creates a per-world deployment package for a managed Docker host and waits for the runtime to call back before the world is marked ready.",
+      label: resolveProviderLabel(this.key, this.configService),
+      description: this.remoteExecutor.isEnabled()
+        ? "Pushes each world's compose/env package to a Docker host over SSH, then waits for runtime bootstrap and heartbeat callbacks before marking the world ready."
+        : "Creates a per-world deployment package for a managed Docker host and waits for the runtime to call back before the world is marked ready.",
       provisionStrategy: "manual-docker",
-      deploymentMode: "manual-docker",
+      deploymentMode: resolveDeploymentMode(this.key, this.configService),
       defaultRegion: this.resolveDefaultRegion(),
       defaultZone: this.resolveDefaultZone(),
       capabilities: {
@@ -41,11 +51,15 @@ export class ManualDockerComputeProviderService implements WorldComputeProvider 
     };
   }
 
-  createInstance(world: CloudWorldEntity): ProvisionWorldInstanceResult {
+  async createInstance(world: CloudWorldEntity): Promise<ProvisionWorldInstanceResult> {
     const bootstrapConfig = buildWorldBootstrapConfig(world, this.configService);
     const containerName = resolveWorldContainerName(world);
     const volumeName = resolveWorldDataVolumeName(world);
     const image = resolveRuntimeImage(world.providerKey, this.configService);
+    const projectName = resolveWorldComposeProjectName(world);
+    const remoteDeployPath = resolveWorldRemoteDeployPath(world, this.configService);
+
+    await this.remoteExecutor.deployWorld(world, bootstrapConfig);
 
     return {
       providerKey: this.key,
@@ -63,27 +77,32 @@ export class ManualDockerComputeProviderService implements WorldComputeProvider 
       diskSizeGb: this.resolveDiskSizeGb(),
       launchConfig: {
         ...bootstrapConfig.env,
+        MANUAL_DOCKER_EXECUTOR_MODE: this.remoteExecutor.resolveExecutorMode(),
         DOCKER_IMAGE: image ?? "",
         DOCKER_CONTAINER_NAME: containerName,
         DOCKER_VOLUME_NAME: volumeName,
+        DOCKER_PROJECT_NAME: projectName,
+        DOCKER_REMOTE_DEPLOY_PATH: remoteDeployPath ?? "",
       },
     };
   }
 
-  startInstance(
+  async startInstance(
     instance: CloudInstanceEntity,
-    _world: CloudWorldEntity,
-  ): WorldInstancePowerTransitionResult {
+    world: CloudWorldEntity,
+  ): Promise<WorldInstancePowerTransitionResult> {
+    await this.remoteExecutor.startWorld(world);
     return {
       powerState: "running",
       providerSnapshotId: instance.providerSnapshotId,
     };
   }
 
-  stopInstance(
+  async stopInstance(
     instance: CloudInstanceEntity,
-    _world: CloudWorldEntity,
-  ): WorldInstancePowerTransitionResult {
+    world: CloudWorldEntity,
+  ): Promise<WorldInstancePowerTransitionResult> {
+    await this.remoteExecutor.stopWorld(world);
     return {
       powerState: "stopped",
       providerSnapshotId: instance.providerSnapshotId,

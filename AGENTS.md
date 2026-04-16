@@ -505,6 +505,13 @@
   - `CLOUD_MANUAL_DOCKER_DEFAULT_REGION`
   - `CLOUD_MANUAL_DOCKER_DEFAULT_ZONE`
   - `CLOUD_MANUAL_DOCKER_DISK_SIZE_GB`
+  - `CLOUD_MANUAL_DOCKER_EXECUTOR_MODE`
+  - `CLOUD_MANUAL_DOCKER_REMOTE_ROOT`
+  - `CLOUD_MANUAL_DOCKER_SSH_HOST`
+  - `CLOUD_MANUAL_DOCKER_SSH_PORT`
+  - `CLOUD_MANUAL_DOCKER_SSH_USER`
+  - `CLOUD_MANUAL_DOCKER_SSH_PRIVATE_KEY_PATH`
+  - `CLOUD_MANUAL_DOCKER_SSH_STRICT_HOST_KEY_CHECKING`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
 - Cloud console world detail now exposes a bootstrap package:
   - generated runtime env overlay for `api`
@@ -514,6 +521,7 @@
   - `ComputeProviderRegistryService` selects the active compute provider by `providerKey`
   - built-in providers now include `mock` and `manual-docker` (legacy `manual` keys normalize to `manual-docker`)
   - `manual-docker` prepares a per-world docker deployment package and waits for runtime bootstrap / heartbeat callbacks before promoting the world to `ready`
+  - when `CLOUD_MANUAL_DOCKER_EXECUTOR_MODE=ssh`, the cloud platform can upload compose/env files to a remote Docker host and execute `docker compose up/stop` over SSH, while still relying on runtime callbacks for final readiness
 - `CloudInstance` now also tracks provider resource metadata:
   - `providerVolumeId`
   - `providerSnapshotId`
@@ -521,3 +529,4 @@
   - `lastOperationAt`
 - Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
 - Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.
+- Bootstrap packages for `manual-docker` now also expose `executorMode`, `projectName`, and `remoteDeployPath` so ops can see the exact remote deployment location used by the SSH executor.

@@ -20,6 +20,7 @@ import { MockComputeProviderService } from "./orchestration/mock-compute-provide
 import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "./providers/compute-provider-registry.service";
 import { ManualDockerComputeProviderService } from "./providers/manual-docker-compute-provider.service";
+import { ManualDockerRemoteExecutorService } from "./providers/manual-docker-remote-executor.service";
 import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.controller";
 import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
 import { WorldAccessController } from "./world-access/world-access.controller";
@@ -73,6 +74,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
     WorldAccessService,
     MockComputeProviderService,
     ManualDockerComputeProviderService,
+    ManualDockerRemoteExecutorService,
     ComputeProviderRegistryService,
     WorldLifecycleWorkerService,
     WorldRuntimeService,

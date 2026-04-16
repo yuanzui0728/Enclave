@@ -174,7 +174,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
 
     await this.sleep(600);
 
-    const provisioned = provider.createInstance(world);
+    const provisioned = await provider.createInstance(world);
     let instance = await this.instanceRepo.findOne({
       where: { worldId: world.id },
     });
@@ -229,7 +229,9 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.healthStatus = "bootstrapping";
     world.healthMessage = provider.summary.capabilities.managedProvisioning
       ? "Instance is online and bootstrap is running."
-      : "Bootstrap package is ready. Waiting for the world runtime to report bootstrap.";
+      : provider.summary.deploymentMode === "manual-docker-ssh"
+        ? "Compose stack was pushed to the Docker host. Waiting for the world runtime to report bootstrap."
+        : "Bootstrap package is ready. Waiting for the world runtime to report bootstrap.";
     await this.worldRepo.save(world);
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
 
@@ -287,19 +289,25 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
 
     await this.sleep(600);
 
+    const resumeResult = await provider.startInstance(instance, world);
+    instance.powerState = resumeResult.powerState;
+    instance.providerSnapshotId = resumeResult.providerSnapshotId ?? instance.providerSnapshotId;
+    instance.lastOperationAt = new Date();
+    await this.instanceRepo.save(instance);
+
     if (!provider.summary.capabilities.managedLifecycle) {
       world.apiBaseUrl = world.apiBaseUrl ?? resolveSuggestedWorldApiBaseUrl(world, this.configService);
       world.adminUrl = world.adminUrl ?? resolveSuggestedWorldAdminUrl(world, this.configService);
       world.healthStatus = "starting";
-      world.healthMessage = "Resume requested. Waiting for the world runtime heartbeat.";
+      world.healthMessage =
+        provider.summary.deploymentMode === "manual-docker-ssh"
+          ? "Resume command sent to the Docker host. Waiting for the world runtime heartbeat."
+          : "Resume requested. Waiting for the world runtime heartbeat.";
       await this.worldRepo.save(world);
       await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
       return;
     }
 
-    const resumeResult = provider.startInstance(instance, world);
-    instance.powerState = resumeResult.powerState;
-    instance.providerSnapshotId = resumeResult.providerSnapshotId ?? instance.providerSnapshotId;
     const now = new Date();
     instance.lastHeartbeatAt = now;
     instance.lastOperationAt = now;
@@ -330,7 +338,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       where: { worldId: world.id },
     });
     if (instance) {
-      const suspendResult = provider.stopInstance(instance, world);
+      const suspendResult = await provider.stopInstance(instance, world);
       instance.powerState = suspendResult.powerState;
       instance.providerSnapshotId = suspendResult.providerSnapshotId ?? instance.providerSnapshotId;
       instance.lastOperationAt = new Date();

@@ -2,6 +2,8 @@ import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import type { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import type { CloudWorldEntity } from "../entities/cloud-world.entity";
 
+export type Awaitable<T> = T | Promise<T>;
+
 export type ProvisionWorldInstanceResult = {
   providerKey: string;
   providerInstanceId: string;
@@ -27,13 +29,13 @@ export type WorldInstancePowerTransitionResult = {
 export interface WorldComputeProvider {
   readonly key: string;
   readonly summary: CloudComputeProviderSummary;
-  createInstance(world: CloudWorldEntity): ProvisionWorldInstanceResult;
+  createInstance(world: CloudWorldEntity): Awaitable<ProvisionWorldInstanceResult>;
   startInstance(
     instance: CloudInstanceEntity,
     world: CloudWorldEntity,
-  ): WorldInstancePowerTransitionResult;
+  ): Awaitable<WorldInstancePowerTransitionResult>;
   stopInstance(
     instance: CloudInstanceEntity,
     world: CloudWorldEntity,
-  ): WorldInstancePowerTransitionResult;
+  ): Awaitable<WorldInstancePowerTransitionResult>;
 }

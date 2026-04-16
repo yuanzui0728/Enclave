@@ -184,12 +184,15 @@ export interface CloudWorldBootstrapConfig {
   providerKey?: string | null;
   providerLabel?: string | null;
   deploymentMode?: string | null;
+  executorMode?: string | null;
   cloudPlatformBaseUrl: string;
   suggestedApiBaseUrl?: string | null;
   suggestedAdminUrl?: string | null;
   image?: string | null;
   containerName?: string | null;
   volumeName?: string | null;
+  projectName?: string | null;
+  remoteDeployPath?: string | null;
   callbackToken: string;
   callbackEndpoints: CloudWorldCallbackEndpoints;
   env: Record<string, string>;
