@@ -13,8 +13,7 @@ export function CharacterWorkspaceNav({ characterId }: Props) {
   const isEditor = !isFactory && !isRuntime;
 
   const tabs = [
-    { label: "基础资料", to: `/characters/${characterId}`, active: isEditor },
-    { label: "角色工厂", to: `/characters/${characterId}/factory`, active: isFactory },
+    { label: "行为管理", to: `/characters/${characterId}`, active: isEditor },
     { label: "运行台", to: `/characters/${characterId}/runtime`, active: isRuntime },
   ];
 

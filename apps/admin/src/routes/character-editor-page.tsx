@@ -43,13 +43,18 @@ const emptyCharacterDraft: CharacterDraft = {
   relationshipType: "expert",
   bio: "",
   isOnline: false,
+  onlineMode: "auto",
+  activityMode: "auto",
+  currentActivity: "free",
   sourceType: "manual_admin",
   deletionPolicy: "archive_allowed",
   isTemplate: false,
   expertDomains: [],
-  activityFrequency: "medium",
+  activityFrequency: "normal",
   momentsFrequency: 1,
   feedFrequency: 1,
+  activeHoursStart: 8,
+  activeHoursEnd: 23,
   intimacyLevel: 0,
   triggerScenes: [],
   profile: {
@@ -116,6 +121,7 @@ const TABS = [
   { key: "personality", label: "个性语气" },
   { key: "prompts", label: "提示词" },
   { key: "boundaries", label: "能力边界" },
+  { key: "life", label: "生活策略" },
   { key: "memory", label: "记忆" },
   { key: "reasoning", label: "推理" },
 ];
@@ -237,9 +243,9 @@ export function CharacterEditorPage() {
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <AdminPageHero
-          eyebrow={isNew ? "新建角色" : "基础资料"}
-          title={isNew ? "新建角色资料" : draft.name || "编辑角色资料"}
-          description="按 Tab 分区配置基础信息、身份背景和回复逻辑，减少长表单迷路感。"
+          eyebrow={isNew ? "新建角色" : "行为管理"}
+          title={isNew ? "新建角色" : draft.name || "行为管理"}
+          description="统一管理角色的身份、个性、提示词、能力边界、生活策略、记忆与推理配置。"
           actions={
             <>
               <Link to="/characters">
@@ -361,11 +367,6 @@ export function CharacterEditorPage() {
               label="擅长领域"
               value={listToCsv(draft.expertDomains)}
               onChange={(value) => setDraft((current) => ({ ...current, expertDomains: csvToList(value) }))}
-            />
-            <Field
-              label="触发场景"
-              value={listToCsv(draft.triggerScenes)}
-              onChange={(value) => setDraft((current) => ({ ...current, triggerScenes: csvToList(value) }))}
             />
           </div>
           <TextAreaField
@@ -623,6 +624,83 @@ export function CharacterEditorPage() {
         </Card>
       ) : null}
 
+      {/* Tab: 生活策略 */}
+      {activeTab === "life" ? (
+        <Card className="bg-[color:var(--surface-console)]">
+          <SectionHeading>生活策略</SectionHeading>
+          <p className="mt-2 text-xs text-[color:var(--text-secondary)]">控制角色在系统中的活跃节奏、内容发布频率和触发场景。</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <SelectField
+              label="在线模式"
+              value={draft.onlineMode ?? "auto"}
+              onChange={(value) => setDraft((current) => ({ ...current, onlineMode: value as "auto" | "manual" }))}
+              options={[
+                { value: "auto", label: "自动" },
+                { value: "manual", label: "手动" },
+              ]}
+            />
+            <SelectField
+              label="活动模式"
+              value={draft.activityMode ?? "auto"}
+              onChange={(value) => setDraft((current) => ({ ...current, activityMode: value as "auto" | "manual" }))}
+              options={[
+                { value: "auto", label: "自动" },
+                { value: "manual", label: "手动" },
+              ]}
+            />
+            <SelectField
+              label="活动频率"
+              value={draft.activityFrequency ?? "normal"}
+              onChange={(value) => setDraft((current) => ({ ...current, activityFrequency: value }))}
+              options={[
+                { value: "high", label: "高频" },
+                { value: "normal", label: "中频" },
+                { value: "low", label: "低频" },
+              ]}
+            />
+            <SelectField
+              label="当前活动"
+              value={draft.currentActivity ?? "free"}
+              onChange={(value) => setDraft((current) => ({ ...current, currentActivity: value }))}
+              options={[
+                { value: "free", label: "空闲" },
+                { value: "working", label: "工作中" },
+                { value: "eating", label: "吃饭中" },
+                { value: "resting", label: "休息中" },
+                { value: "commuting", label: "通勤中" },
+                { value: "sleeping", label: "睡觉中" },
+              ]}
+            />
+            <Field
+              label="朋友圈频率（次/天）"
+              value={String(draft.momentsFrequency ?? 1)}
+              onChange={(value) => setDraft((current) => ({ ...current, momentsFrequency: Number(value) || 0 }))}
+            />
+            <Field
+              label="视频号频率（次/周）"
+              value={String(draft.feedFrequency ?? 1)}
+              onChange={(value) => setDraft((current) => ({ ...current, feedFrequency: Number(value) || 0 }))}
+            />
+            <Field
+              label="活跃开始小时（0-23）"
+              value={String(draft.activeHoursStart ?? 8)}
+              onChange={(value) => setDraft((current) => ({ ...current, activeHoursStart: Number(value) || 0 }))}
+            />
+            <Field
+              label="活跃结束小时（0-23）"
+              value={String(draft.activeHoursEnd ?? 23)}
+              onChange={(value) => setDraft((current) => ({ ...current, activeHoursEnd: Number(value) || 0 }))}
+            />
+          </div>
+          <Field
+            className="mt-4"
+            label="触发场景"
+            value={listToCsv(draft.triggerScenes)}
+            onChange={(value) => setDraft((current) => ({ ...current, triggerScenes: csvToList(value) }))}
+          />
+        </Card>
+      ) : null}
+
       {/* Tab: 记忆 */}
       {activeTab === "memory" ? (
         <Card className="bg-[color:var(--surface-console)]">
@@ -707,7 +785,6 @@ export function CharacterEditorPage() {
         title="保存提示"
         rows={[
           { label: "必填字段", value: canSave ? "已满足" : "名称和关系描述未齐" },
-          { label: "建议流程", value: "先补基础信息，再完善身份背景和回复逻辑" },
           { label: "当前入口", value: isNew ? "新建角色" : "编辑现有角色" },
         ]}
       />
@@ -729,6 +806,14 @@ function normalizeDraft(draft: CharacterDraft, characterId: string, isNew: boole
     bio: draft.bio?.trim(),
     expertDomains,
     triggerScenes: draft.triggerScenes?.filter(Boolean) ?? [],
+    onlineMode: draft.onlineMode ?? "auto",
+    activityMode: draft.activityMode ?? "auto",
+    currentActivity: draft.currentActivity ?? "free",
+    activityFrequency: draft.activityFrequency ?? "normal",
+    momentsFrequency: draft.momentsFrequency ?? 1,
+    feedFrequency: draft.feedFrequency ?? 1,
+    activeHoursStart: draft.activeHoursStart ?? 8,
+    activeHoursEnd: draft.activeHoursEnd ?? 23,
     profile: {
       ...profile,
       characterId: normalizedId,
