@@ -51,6 +51,7 @@ export interface PersonalityProfile {
   name: string;
   relationship: string;
   expertDomains: string[];
+  coreDirective?: string; // 行动纲领（始终注入的行为准则，最高优先级）
   basePrompt?: string;
   traits: PersonalityTraits;
   memorySummary: string;

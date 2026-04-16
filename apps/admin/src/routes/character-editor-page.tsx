@@ -57,6 +57,7 @@ const emptyCharacterDraft: CharacterDraft = {
     name: "",
     relationship: "",
     expertDomains: [],
+    coreDirective: "",
     basePrompt: "",
     systemPrompt: "",
     memorySummary: "",
@@ -338,7 +339,7 @@ export function CharacterEditorPage() {
           <AdminSectionNav
             items={[
               { label: "基础信息", detail: "名称、关系、触发场景", onClick: () => jumpToSection("character-editor-basics") },
-              { label: "提示词与特征", detail: "basePrompt、systemPrompt、说话风格", onClick: () => jumpToSection("character-editor-prompt") },
+              { label: "提示词与特征", detail: "行动纲领、basePrompt、说话风格", onClick: () => jumpToSection("character-editor-prompt") },
               { label: "推理与记忆", detail: "记忆摘要、核心记忆、推理开关", onClick: () => jumpToSection("character-editor-memory") },
               { label: "身份与边界", detail: "职业、背景、边界说明", onClick: () => jumpToSection("character-editor-identity") },
               { label: "预览", detail: "查看当前角色摘要", onClick: () => jumpToSection("character-editor-preview") },
@@ -412,6 +413,13 @@ export function CharacterEditorPage() {
 
           <Card id="character-editor-prompt" className="bg-[color:var(--surface-console)]">
             <SectionHeading>提示词与特征</SectionHeading>
+            <p className="mt-2 text-xs text-[color:var(--text-secondary)]">行动纲领是最高优先级准则，会在聊天、发朋友圈等所有场景中强制注入。</p>
+            <TextAreaField
+              className="mt-4"
+              label="行动纲领（底层逻辑）"
+              value={profile.coreDirective ?? ""}
+              onChange={(value) => setDraft((current) => ({ ...current, profile: { ...profile, coreDirective: value } }))}
+            />
             <TextAreaField
               className="mt-4"
               label="基础提示词"

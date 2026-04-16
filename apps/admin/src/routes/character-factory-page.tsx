@@ -262,7 +262,7 @@ export function CharacterFactoryPage() {
               { label: "AI 辅助制造", detail: "从聊天样本生成草稿", onClick: () => jumpToSection("character-factory-ai") },
               { label: "身份与关系", detail: "名字、关系、背景和动机", onClick: () => jumpToSection("character-factory-identity") },
               { label: "能力与边界", detail: "擅长领域、知识边界、拒绝方式", onClick: () => jumpToSection("character-factory-expertise") },
-              { label: "语气与行为", detail: "口头禅、风格、提示词", onClick: () => jumpToSection("character-factory-tone") },
+              { label: "语气与行为", detail: "行动纲领、口头禅、风格、提示词", onClick: () => jumpToSection("character-factory-tone") },
               { label: "记忆与生活策略", detail: "频率、活跃时段、触发场景", onClick: () => jumpToSection("character-factory-memory") },
               { label: "推理与发布映射", detail: "默认开关和发布目标", onClick: () => jumpToSection("character-factory-publish") },
               { label: "版本与 Diff", detail: "发布差异、字段来源、版本记录", onClick: () => jumpToSection("character-factory-diff") },
@@ -598,6 +598,16 @@ export function CharacterFactoryPage() {
                   patchDraft((current) => ({
                     ...current,
                     tone: { ...current.tone, quirks: csvToList(value) },
+                  }))
+                }
+              />
+              <TextAreaBlock
+                label="行动纲领（底层逻辑）"
+                value={draft.tone.coreDirective ?? ""}
+                onChange={(value) =>
+                  patchDraft((current) => ({
+                    ...current,
+                    tone: { ...current.tone, coreDirective: value },
                   }))
                 }
               />

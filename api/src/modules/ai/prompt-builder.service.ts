@@ -13,6 +13,7 @@ export interface ChatContext {
 
 export interface ChatSystemPromptSection {
   key:
+    | 'core_directive'
     | 'identity'
     | 'personality_and_tone'
     | 'behavioral_patterns'
@@ -125,7 +126,7 @@ export class PromptBuilderService {
         ? `\n最近你聊过的话题：${recentTopics.join('、')}，可以适当延续或换个话题。`
         : '';
 
-    return renderTemplate(templates.momentPrompt, {
+    const momentBody = renderTemplate(templates.momentPrompt, {
       name: profile.name,
       relationship: profile.relationship,
       emotionalTone: profile.traits.emotionalTone || '自然真实',
@@ -137,6 +138,11 @@ export class PromptBuilderService {
       }),
       topicsHint,
     });
+
+    if (profile.coreDirective?.trim()) {
+      return `[行动纲领]\n${profile.coreDirective.trim()}\n\n${momentBody}`;
+    }
+    return momentBody;
   }
 
   async buildPersonalityExtractionPrompt(
@@ -365,6 +371,12 @@ ${templates.behavioralGuideline}
     const rulesSection = `<rules>\n${rulesBody}\n</rules>`;
 
     return [
+      {
+        key: 'core_directive',
+        label: 'Core Directive',
+        content: `<core_directive>\n${profile.coreDirective}\n</core_directive>`,
+        active: Boolean(profile.coreDirective?.trim()),
+      },
       {
         key: 'identity',
         label: 'Identity',

@@ -4,6 +4,7 @@ export interface PersonalityProfile {
   name: string;
   relationship: string;
   expertDomains: string[];
+  coreDirective?: string; // 行动纲领（始终注入，最高优先级行为准则）
   basePrompt?: string; // 角色身份定义（固定，不含性格描述）
   traits: {
     speechPatterns: string[]; // 说话习惯

@@ -58,6 +58,7 @@ export interface CharacterBlueprintRecipeValue {
     socialStyle: string;
     taboos: string[];
     quirks: string[];
+    coreDirective: string;
     basePrompt: string;
     systemPrompt: string;
   };

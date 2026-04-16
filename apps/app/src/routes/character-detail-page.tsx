@@ -162,6 +162,7 @@ export function CharacterDetailPage() {
     "暂无状态";
   const toneSummary =
     character?.profile?.traits?.emotionalTone?.trim() || "未设置";
+  const coreDirective = character?.profile?.coreDirective?.trim() || "";
   const tagSummary = friendship?.tags?.length
     ? friendship.tags.join("、")
     : "未设置";
@@ -1318,6 +1319,30 @@ export function CharacterDetailPage() {
                   value={toneSummary}
                   compact={!isDesktopLayout}
                 />
+              ) : null}
+              {coreDirective ? (
+                <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
+                  <div
+                    className={cn(
+                      "text-[color:var(--text-muted)]",
+                      isDesktopLayout
+                        ? "text-xs uppercase tracking-[0.16em]"
+                        : "text-[11px]",
+                    )}
+                  >
+                    核心理念
+                  </div>
+                  <div
+                    className={cn(
+                      "mt-2 text-[color:var(--text-secondary)]",
+                      isDesktopLayout
+                        ? "text-sm leading-7"
+                        : "text-[13px] leading-6",
+                    )}
+                  >
+                    {coreDirective}
+                  </div>
+                </div>
               ) : null}
               <div className="border-t border-[color:var(--border-faint)] px-4 py-3">
                 <div
