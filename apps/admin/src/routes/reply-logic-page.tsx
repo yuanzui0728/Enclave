@@ -841,7 +841,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="底层逻辑"
                           value={characterDraft.profile.coreLogic ?? ""}
-                          placeholder="所有场景强制注入。描述角色的核心人格、价值观、思维方式。这里写的内容在聊天、发帖、评论等每个场景都会生效。"
+                          description="所有场景强制注入。描述角色的核心人格、价值观、思维方式。这里写的内容在聊天、发帖、评论等每个场景都会生效。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -855,7 +855,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="发朋友圈"
                           value={characterDraft.profile.scenePrompts?.moments_post ?? ""}
-                          placeholder="触发：定时发朋友圈（由发圈频率控制）。无实时上下文。写发圈内容偏好、常见话题、风格规范，以及是否偏好配图/纯文字等倾向。"
+                          description="触发：定时发朋友圈（由发圈频率控制）。无实时上下文。写发圈内容偏好、常见话题、风格规范，以及是否偏好配图/纯文字等倾向。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -869,7 +869,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="发 Feed 贴文"
                           value={characterDraft.profile.scenePrompts?.feed_post ?? ""}
-                          placeholder="触发：定时在广场发贴（由 Feed 频率控制）。无实时上下文。写公开发帖的风格、内容方向、是否引导讨论等。"
+                          description="触发：定时在广场发贴（由 Feed 频率控制）。无实时上下文。写公开发帖的风格、内容方向、是否引导讨论等。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -883,7 +883,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="发视频号"
                           value={characterDraft.profile.scenePrompts?.channel_post ?? ""}
-                          placeholder="触发：定时发视频号内容。无实时上下文。写视频号文案风格、内容结构要求（标题/正文/话题标签等）。"
+                          description="触发：定时发视频号内容。无实时上下文。写视频号文案风格、内容结构要求（标题/正文/话题标签等）。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -900,7 +900,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="聊天回复"
                           value={characterDraft.profile.scenePrompts?.chat ?? ""}
-                          placeholder="触发：用户发消息时。系统自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
+                          description="触发：用户发消息时。系统自动注入：当前时间、角色活动状态、距上次聊天时长。写聊天风格、话题偏好、对话节奏，可引导 AI 调整回复长短和语气。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -914,7 +914,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="朋友圈评论/回复"
                           value={characterDraft.profile.scenePrompts?.moments_comment ?? ""}
-                          placeholder="触发：角色浏览到用户朋友圈时自动评论。写评论语气、常用开场方式、喜欢哪类内容多互动，不喜欢哪类则少评甚至不评。"
+                          description="触发：角色浏览到用户朋友圈时自动评论。写评论语气、常用开场方式、喜欢哪类内容多互动，不喜欢哪类则少评甚至不评。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -928,7 +928,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="Feed 评论"
                           value={characterDraft.profile.scenePrompts?.feed_comment ?? ""}
-                          placeholder="触发：角色看到用户 Feed 贴文时自动评论。写评论偏好，例如犀利点评 / 鼓励互动 / 专业补充，以及对哪类帖子积极评论。"
+                          description="触发：角色看到用户 Feed 贴文时自动评论。写评论偏好，例如犀利点评 / 鼓励互动 / 专业补充，以及对哪类帖子积极评论。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -942,7 +942,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="好友请求/摇一摇问候"
                           value={characterDraft.profile.scenePrompts?.greeting ?? ""}
-                          placeholder="触发：角色发起好友申请或摇一摇。只生成一句打招呼的话，建议写简短有特点的开场方式，20 字以内效果最佳。"
+                          description="触发：角色发起好友申请或摇一摇。只生成一句打招呼的话，建议写简短有特点的开场方式，20 字以内效果最佳。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,
@@ -956,7 +956,7 @@ export function ReplyLogicPage() {
                         <TextAreaBlock
                           label="主动提醒"
                           value={characterDraft.profile.scenePrompts?.proactive ?? ""}
-                          placeholder="触发：定时任务检测角色记忆，决定是否主动给用户发消息。写什么情况下应该主动发（如记得某事想分享），什么情况下保持沉默。不填则由底层逻辑判断。"
+                          description="触发：定时任务检测角色记忆，决定是否主动给用户发消息。写什么情况下应该主动发（如记得某事想分享），什么情况下保持沉默。不填则由底层逻辑判断。"
                           onChange={(value) =>
                             patchCharacterDraft((current) => ({
                               ...current,

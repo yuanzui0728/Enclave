@@ -911,6 +911,7 @@ export function AdminTextArea({
   value,
   onChange,
   placeholder,
+  description,
   className,
   textareaClassName,
 }: {
@@ -918,21 +919,27 @@ export function AdminTextArea({
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  description?: string;
   className?: string;
   textareaClassName?: string;
 }) {
   return (
-    <label className={className ?? "block"}>
-      <div className="mb-2 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
-        {label}
-      </div>
-      <TextAreaField
-        className={textareaClassName ?? "min-h-28"}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-      />
-    </label>
+    <div className={className ?? "block"}>
+      <label>
+        <div className="mb-1 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+          {label}
+        </div>
+        {description ? (
+          <div className="mb-2 text-xs leading-5 text-[color:var(--text-secondary)]">{description}</div>
+        ) : null}
+        <TextAreaField
+          className={textareaClassName ?? "min-h-28"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+        />
+      </label>
+    </div>
   );
 }
 
