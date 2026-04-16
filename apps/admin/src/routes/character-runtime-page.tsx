@@ -61,7 +61,6 @@ export function CharacterRuntimePage() {
 
   const snapshot = snapshotQuery.data;
   const character = snapshot.character;
-  const latestRun = snapshot.observability.recentRuns[0] ?? null;
   const digitalHumanSummary = buildDigitalHumanAdminSummary(
     systemStatusQuery.data?.digitalHumanGateway,
   );
@@ -70,44 +69,24 @@ export function CharacterRuntimePage() {
     <div className="space-y-6">
       <CharacterWorkspaceNav characterId={characterId} />
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <AdminPageHero
-          eyebrow="角色运行台"
-          title={character.name}
-          description="查看这个角色当前的运行状态、生活信息与调度记录。"
-          actions={
-            <>
-              <Link to="/characters">
-                <Button variant="secondary" size="lg">返回角色中心</Button>
-              </Link>
-              <Link to="/characters/$characterId/factory" params={{ characterId }}>
-                <Button variant="secondary" size="lg">前往工厂</Button>
-              </Link>
-              <Link to="/reply-logic">
-                <Button variant="secondary" size="lg">世界级调试台</Button>
-              </Link>
-            </>
-          }
-          metrics={[
-            { label: "在线状态", value: character.isOnline ? "在线" : "离线" },
-            { label: "在线模式", value: formatMode(character.onlineMode) },
-            { label: "当前活动", value: formatActivity(character.currentActivity) },
-            { label: "最近调度", value: latestRun ? formatSchedulerRunStatus(latestRun.status) : "暂无" },
-          ]}
-        />
-
-        <Card className="bg-[color:var(--surface-console)]">
-          <SectionHeading>当前状态</SectionHeading>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <MetricCard label="活动模式" value={formatMode(character.activityMode)} />
-            <MetricCard label="活跃时间窗" value={snapshot.observability.activeWindow.label} />
-            <MetricCard label="记忆摘要" value={character.profile.memorySummary ? "已填写" : "未填写"} />
-            <MetricCard label="叙事弧线" value={snapshot.narrativeArc ? "有" : "无"} />
-            <MetricCard label="角色来源" value={formatCharacterSourceType(character.sourceType)} />
-            <MetricCard label="删除策略" value={formatDeletionPolicy(character.deletionPolicy)} />
-          </div>
-        </Card>
-      </div>
+      <AdminPageHero
+        eyebrow="角色运行台"
+        title={character.name}
+        description="查看这个角色当前的运行状态、生活信息与调度记录。"
+        actions={
+          <>
+            <Link to="/characters">
+              <Button variant="secondary" size="lg">返回角色中心</Button>
+            </Link>
+            <Link to="/characters/$characterId/factory" params={{ characterId }}>
+              <Button variant="secondary" size="lg">前往工厂</Button>
+            </Link>
+            <Link to="/reply-logic">
+              <Button variant="secondary" size="lg">世界级调试台</Button>
+            </Link>
+          </>
+        }
+      />
 
       <AdminCallout
         tone={digitalHumanSummary.ready ? "success" : "warning"}
