@@ -53,7 +53,7 @@ function resolveLocalWorldApiBaseUrl(value?: string) {
 
   try {
     const url = new URL(value);
-    if (isLoopbackBaseUrl(value) && url.port === LOCAL_APP_DEV_PORT) {
+    if (url.port === LOCAL_APP_DEV_PORT) {
       url.port = LOCAL_CORE_API_PORT;
       return url.toString().replace(/\/+$/, "");
     }
