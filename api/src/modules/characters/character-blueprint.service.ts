@@ -220,6 +220,76 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     readCharacter: (character) => character.profile?.systemPrompt ?? '',
   },
   {
+    label: '底层逻辑',
+    recipeField: 'prompting.coreLogic',
+    targetField: 'profile.coreLogic',
+    readRecipe: (recipe) => recipe.prompting.coreLogic,
+    readCharacter: (character) => character.profile?.coreLogic ?? '',
+  },
+  {
+    label: '聊天场景提示词',
+    recipeField: 'prompting.scenePrompts.chat',
+    targetField: 'profile.scenePrompts.chat',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.chat,
+    readCharacter: (character) => character.profile?.scenePrompts?.chat ?? '',
+  },
+  {
+    label: '朋友圈发帖提示词',
+    recipeField: 'prompting.scenePrompts.moments_post',
+    targetField: 'profile.scenePrompts.moments_post',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.moments_post,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.moments_post ?? '',
+  },
+  {
+    label: '朋友圈评论提示词',
+    recipeField: 'prompting.scenePrompts.moments_comment',
+    targetField: 'profile.scenePrompts.moments_comment',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.moments_comment,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.moments_comment ?? '',
+  },
+  {
+    label: 'Feed 发帖提示词',
+    recipeField: 'prompting.scenePrompts.feed_post',
+    targetField: 'profile.scenePrompts.feed_post',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.feed_post,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.feed_post ?? '',
+  },
+  {
+    label: '视频号提示词',
+    recipeField: 'prompting.scenePrompts.channel_post',
+    targetField: 'profile.scenePrompts.channel_post',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.channel_post,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.channel_post ?? '',
+  },
+  {
+    label: 'Feed 评论提示词',
+    recipeField: 'prompting.scenePrompts.feed_comment',
+    targetField: 'profile.scenePrompts.feed_comment',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.feed_comment,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.feed_comment ?? '',
+  },
+  {
+    label: '问候提示词',
+    recipeField: 'prompting.scenePrompts.greeting',
+    targetField: 'profile.scenePrompts.greeting',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.greeting,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.greeting ?? '',
+  },
+  {
+    label: '主动提醒提示词',
+    recipeField: 'prompting.scenePrompts.proactive',
+    targetField: 'profile.scenePrompts.proactive',
+    readRecipe: (recipe) => recipe.prompting.scenePrompts.proactive,
+    readCharacter: (character) =>
+      character.profile?.scenePrompts?.proactive ?? '',
+  },
+  {
     label: '记忆摘要',
     recipeField: 'memorySeed.memorySummary',
     targetField: 'profile.memorySummary',
@@ -246,6 +316,22 @@ const CHARACTER_FIELD_MAPPINGS: CharacterFieldMapping[] = [
     targetField: 'profile.memory.forgettingCurve',
     readRecipe: (recipe) => recipe.memorySeed.forgettingCurve,
     readCharacter: (character) => character.profile?.memory?.forgettingCurve ?? 70,
+  },
+  {
+    label: '近期摘要提取提示词',
+    recipeField: 'memorySeed.recentSummaryPrompt',
+    targetField: 'profile.memory.recentSummaryPrompt',
+    readRecipe: (recipe) => recipe.memorySeed.recentSummaryPrompt,
+    readCharacter: (character) =>
+      character.profile?.memory?.recentSummaryPrompt ?? '',
+  },
+  {
+    label: '核心记忆提取提示词',
+    recipeField: 'memorySeed.coreMemoryPrompt',
+    targetField: 'profile.memory.coreMemoryPrompt',
+    readRecipe: (recipe) => recipe.memorySeed.coreMemoryPrompt,
+    readCharacter: (character) =>
+      character.profile?.memory?.coreMemoryPrompt ?? '',
   },
   {
     label: '启用链路推理',
@@ -380,12 +466,37 @@ function normalizeOptionalString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function createEmptyScenePrompts(): CharacterBlueprintRecipeValue['prompting']['scenePrompts'] {
+  return {
+    chat: '',
+    moments_post: '',
+    moments_comment: '',
+    feed_post: '',
+    channel_post: '',
+    feed_comment: '',
+    greeting: '',
+    proactive: '',
+  };
+}
+
 function cloneRecipe(
   recipe: CharacterBlueprintRecipeValue,
 ): CharacterBlueprintRecipeValue {
   const cloned = JSON.parse(JSON.stringify(recipe)) as CharacterBlueprintRecipeValue;
   return {
     ...cloned,
+    prompting: {
+      coreLogic: cloned.prompting?.coreLogic ?? '',
+      scenePrompts: {
+        ...createEmptyScenePrompts(),
+        ...(cloned.prompting?.scenePrompts ?? {}),
+      },
+    },
+    memorySeed: {
+      ...cloned.memorySeed,
+      recentSummaryPrompt: cloned.memorySeed?.recentSummaryPrompt ?? '',
+      coreMemoryPrompt: cloned.memorySeed?.coreMemoryPrompt ?? '',
+    },
     reasoning: {
       enableCoT: cloned.reasoning?.enableCoT ?? true,
       enableReflection: cloned.reasoning?.enableReflection ?? true,
@@ -750,6 +861,26 @@ export class CharacterBlueprintService {
   private async ensureBlueprint(characterId: string) {
     const existing = await this.blueprintRepo.findOneBy({ characterId });
     if (existing) {
+      const character = await this.getCharacterOrThrow(characterId);
+      const nextDraftRecipe = this.hydrateRecipeFromCharacter(
+        existing.draftRecipe,
+        character,
+      );
+      const nextPublishedRecipe = existing.publishedRecipe
+        ? this.hydrateRecipeFromCharacter(existing.publishedRecipe, character)
+        : existing.publishedRecipe ?? null;
+      const draftChanged =
+        JSON.stringify(existing.draftRecipe) !== JSON.stringify(nextDraftRecipe);
+      const publishedChanged =
+        JSON.stringify(existing.publishedRecipe ?? null) !==
+        JSON.stringify(nextPublishedRecipe ?? null);
+
+      if (draftChanged || publishedChanged) {
+        existing.draftRecipe = nextDraftRecipe;
+        existing.publishedRecipe = nextPublishedRecipe;
+        await this.blueprintRepo.save(existing);
+      }
+
       return existing;
     }
 
@@ -857,11 +988,28 @@ export class CharacterBlueprintService {
         basePrompt: character.profile?.basePrompt ?? '',
         systemPrompt: character.profile?.systemPrompt ?? '',
       },
+      prompting: {
+        coreLogic:
+          character.profile?.coreLogic ??
+          character.profile?.coreDirective ??
+          '',
+        scenePrompts: {
+          ...createEmptyScenePrompts(),
+          chat:
+            character.profile?.scenePrompts?.chat ??
+            character.profile?.basePrompt ??
+            '',
+          ...(character.profile?.scenePrompts ?? {}),
+        },
+      },
       memorySeed: {
         memorySummary: character.profile?.memorySummary ?? '',
         coreMemory: character.profile?.memory?.coreMemory ?? '',
         recentSummarySeed: character.profile?.memory?.recentSummary ?? '',
         forgettingCurve: character.profile?.memory?.forgettingCurve ?? 70,
+        recentSummaryPrompt:
+          character.profile?.memory?.recentSummaryPrompt ?? '',
+        coreMemoryPrompt: character.profile?.memory?.coreMemoryPrompt ?? '',
       },
       reasoning: {
         enableCoT: character.profile?.reasoningConfig?.enableCoT ?? true,
@@ -885,6 +1033,72 @@ export class CharacterBlueprintService {
           character.activityMode === 'manual' ? 'manual' : 'auto',
         initialOnline: character.isOnline ?? false,
         initialActivity: character.currentActivity ?? null,
+      },
+    };
+  }
+
+  private hydrateRecipeFromCharacter(
+    recipe: CharacterBlueprintRecipeValue,
+    character: CharacterEntity,
+  ): CharacterBlueprintRecipeValue {
+    const normalized = cloneRecipe(recipe);
+    const currentProfile = character.profile;
+    const currentScenePrompts = currentProfile?.scenePrompts;
+
+    return {
+      ...normalized,
+      prompting: {
+        coreLogic:
+          typeof recipe.prompting?.coreLogic === 'string'
+            ? recipe.prompting.coreLogic
+            : currentProfile?.coreLogic ??
+              currentProfile?.coreDirective ??
+              '',
+        scenePrompts: {
+          chat:
+            typeof recipe.prompting?.scenePrompts?.chat === 'string'
+              ? recipe.prompting.scenePrompts.chat
+              : currentScenePrompts?.chat ?? currentProfile?.basePrompt ?? '',
+          moments_post:
+            typeof recipe.prompting?.scenePrompts?.moments_post === 'string'
+              ? recipe.prompting.scenePrompts.moments_post
+              : currentScenePrompts?.moments_post ?? '',
+          moments_comment:
+            typeof recipe.prompting?.scenePrompts?.moments_comment === 'string'
+              ? recipe.prompting.scenePrompts.moments_comment
+              : currentScenePrompts?.moments_comment ?? '',
+          feed_post:
+            typeof recipe.prompting?.scenePrompts?.feed_post === 'string'
+              ? recipe.prompting.scenePrompts.feed_post
+              : currentScenePrompts?.feed_post ?? '',
+          channel_post:
+            typeof recipe.prompting?.scenePrompts?.channel_post === 'string'
+              ? recipe.prompting.scenePrompts.channel_post
+              : currentScenePrompts?.channel_post ?? '',
+          feed_comment:
+            typeof recipe.prompting?.scenePrompts?.feed_comment === 'string'
+              ? recipe.prompting.scenePrompts.feed_comment
+              : currentScenePrompts?.feed_comment ?? '',
+          greeting:
+            typeof recipe.prompting?.scenePrompts?.greeting === 'string'
+              ? recipe.prompting.scenePrompts.greeting
+              : currentScenePrompts?.greeting ?? '',
+          proactive:
+            typeof recipe.prompting?.scenePrompts?.proactive === 'string'
+              ? recipe.prompting.scenePrompts.proactive
+              : currentScenePrompts?.proactive ?? '',
+        },
+      },
+      memorySeed: {
+        ...normalized.memorySeed,
+        recentSummaryPrompt:
+          typeof recipe.memorySeed?.recentSummaryPrompt === 'string'
+            ? recipe.memorySeed.recentSummaryPrompt
+            : currentProfile?.memory?.recentSummaryPrompt ?? '',
+        coreMemoryPrompt:
+          typeof recipe.memorySeed?.coreMemoryPrompt === 'string'
+            ? recipe.memorySeed.coreMemoryPrompt
+            : currentProfile?.memory?.coreMemoryPrompt ?? '',
       },
     };
   }
@@ -922,6 +1136,16 @@ export class CharacterBlueprintService {
       name: character.name,
       relationship: character.relationship,
       expertDomains: [...character.expertDomains],
+      coreLogic: recipe.prompting.coreLogic.trim(),
+      scenePrompts: {
+        ...createEmptyScenePrompts(),
+        ...Object.fromEntries(
+          Object.entries(recipe.prompting.scenePrompts).map(([key, value]) => [
+            key,
+            value.trim(),
+          ]),
+        ),
+      },
       coreDirective: (recipe.tone.coreDirective ?? '').trim(),
       basePrompt: recipe.tone.basePrompt.trim(),
       systemPrompt: recipe.tone.systemPrompt.trim(),
@@ -965,6 +1189,8 @@ export class CharacterBlueprintService {
           Math.max(Math.round(recipe.memorySeed.forgettingCurve), 0),
           100,
         ),
+        recentSummaryPrompt: recipe.memorySeed.recentSummaryPrompt.trim(),
+        coreMemoryPrompt: recipe.memorySeed.coreMemoryPrompt.trim(),
       },
     };
 

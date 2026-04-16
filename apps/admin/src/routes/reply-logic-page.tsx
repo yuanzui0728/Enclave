@@ -707,7 +707,7 @@ export function ReplyLogicPage() {
                   )
                 ) : (
                   <>
-                    {characterDraft.profile.systemPrompt.trim() ? (
+                    {characterDraft.profile.systemPrompt?.trim() ? (
                       <InlineNotice className="mt-4" tone="warning">
                         当前已填写 `systemPrompt`，真实回复时会直接覆盖结构化提示词拼装。你在下面改的身份、语气、边界字段，只有清空 `systemPrompt` 后才会重新体现在最终提示词里。
                       </InlineNotice>

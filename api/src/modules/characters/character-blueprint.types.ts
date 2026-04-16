@@ -62,11 +62,26 @@ export interface CharacterBlueprintRecipeValue {
     basePrompt: string;
     systemPrompt: string;
   };
+  prompting: {
+    coreLogic: string;
+    scenePrompts: {
+      chat: string;
+      moments_post: string;
+      moments_comment: string;
+      feed_post: string;
+      channel_post: string;
+      feed_comment: string;
+      greeting: string;
+      proactive: string;
+    };
+  };
   memorySeed: {
     memorySummary: string;
     coreMemory: string;
     recentSummarySeed: string;
     forgettingCurve: number;
+    recentSummaryPrompt: string;
+    coreMemoryPrompt: string;
   };
   reasoning: {
     enableCoT: boolean;

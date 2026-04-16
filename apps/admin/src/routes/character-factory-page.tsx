@@ -53,10 +53,40 @@ const FACTORY_TABS = [
   { key: "ai", label: "AI 辅助" },
   { key: "identity", label: "身份关系" },
   { key: "expertise", label: "能力边界" },
-  { key: "tone", label: "语气与提示词" },
+  { key: "tone", label: "语气与场景提示词" },
   { key: "memory", label: "记忆策略" },
   { key: "publish", label: "推理发布" },
   { key: "versions", label: "版本 Diff" },
+];
+
+const SCENE_PROMPT_SECTIONS: Array<{
+  title: string;
+  items: Array<{
+    key: keyof CharacterBlueprintRecipe["prompting"]["scenePrompts"];
+    label: string;
+  }>;
+}> = [
+  {
+    title: "底层与聊天",
+    items: [{ key: "chat", label: "聊天场景提示词" }],
+  },
+  {
+    title: "主动发布",
+    items: [
+      { key: "moments_post", label: "发朋友圈" },
+      { key: "feed_post", label: "发 Feed 贴文" },
+      { key: "channel_post", label: "发视频号内容" },
+    ],
+  },
+  {
+    title: "互动响应",
+    items: [
+      { key: "moments_comment", label: "朋友圈评论 / 回复" },
+      { key: "feed_comment", label: "Feed 评论" },
+      { key: "greeting", label: "好友请求 / 摇一摇问候" },
+      { key: "proactive", label: "主动提醒" },
+    ],
+  },
 ];
 
 export function CharacterFactoryPage() {
@@ -495,7 +525,7 @@ export function CharacterFactoryPage() {
           {/* Tab: 语气行为 */}
           {activeTab === "tone" ? (
             <Card className="bg-[color:var(--surface-console)]">
-              <SectionHeading>语气与行为</SectionHeading>
+              <SectionHeading>语气、底层逻辑与场景提示词</SectionHeading>
               <div className="mt-4 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <FieldBlock
@@ -616,31 +646,87 @@ export function CharacterFactoryPage() {
                   }
                 />
               </div>
-              <div className="mt-6 border-t border-[color:var(--border-faint)] pt-5 space-y-4">
-                <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提示词配置</div>
+              <div className="mt-6 border-t border-[color:var(--border-faint)] pt-5 space-y-6">
+                <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                  新提示词架构
+                </div>
                 <InlineNotice tone="muted">
-                  行动纲领是最高优先级准则，会在聊天、朋友圈等所有场景中强制注入。
+                  角色工厂现在优先维护 `coreLogic + scenePrompts`。这些字段会直接进入真实回复、发帖、评论和主动提醒链路。
                 </InlineNotice>
                 <TextAreaBlock
-                  label="行动纲领（底层逻辑）"
-                  value={draft.tone.coreDirective ?? ""}
+                  label="底层逻辑"
+                  value={draft.prompting.coreLogic}
                   onChange={(value) =>
                     patchDraft((current) => ({
                       ...current,
-                      tone: { ...current.tone, coreDirective: value },
+                      prompting: { ...current.prompting, coreLogic: value },
                     }))
                   }
                 />
-                <TextAreaBlock
-                  label="基础提示词"
-                  value={draft.tone.basePrompt}
-                  onChange={(value) =>
-                    patchDraft((current) => ({
-                      ...current,
-                      tone: { ...current.tone, basePrompt: value },
-                    }))
-                  }
-                />
+                {SCENE_PROMPT_SECTIONS.map((section) => (
+                  <div key={section.title} className="space-y-4">
+                    <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                      {section.title}
+                    </div>
+                    {section.items.map((item) => (
+                      <TextAreaBlock
+                        key={item.key}
+                        label={item.label}
+                        value={draft.prompting.scenePrompts[item.key]}
+                        onChange={(value) =>
+                          patchDraft((current) => ({
+                            ...current,
+                            prompting: {
+                              ...current.prompting,
+                              scenePrompts: {
+                                ...current.prompting.scenePrompts,
+                                [item.key]: value,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    ))}
+                  </div>
+                ))}
+                <div className="space-y-4 border-t border-[color:var(--border-faint)] pt-5">
+                  <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">
+                    兼容字段
+                  </div>
+                  <InlineNotice tone="muted">
+                    以下字段仅用于兼容旧角色和旧提示词链路。新角色默认以新提示词架构为主。
+                  </InlineNotice>
+                  <TextAreaBlock
+                    label="行动纲领（兼容）"
+                    value={draft.tone.coreDirective ?? ""}
+                    onChange={(value) =>
+                      patchDraft((current) => ({
+                        ...current,
+                        tone: { ...current.tone, coreDirective: value },
+                      }))
+                    }
+                  />
+                  <TextAreaBlock
+                    label="基础提示词（兼容）"
+                    value={draft.tone.basePrompt}
+                    onChange={(value) =>
+                      patchDraft((current) => ({
+                        ...current,
+                        tone: { ...current.tone, basePrompt: value },
+                      }))
+                    }
+                  />
+                  <TextAreaBlock
+                    label="系统提示词（兼容）"
+                    value={draft.tone.systemPrompt}
+                    onChange={(value) =>
+                      patchDraft((current) => ({
+                        ...current,
+                        tone: { ...current.tone, systemPrompt: value },
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </Card>
           ) : null}
@@ -677,6 +763,26 @@ export function CharacterFactoryPage() {
                     patchDraft((current) => ({
                       ...current,
                       memorySeed: { ...current.memorySeed, recentSummarySeed: value },
+                    }))
+                  }
+                />
+                <TextAreaBlock
+                  label="近期摘要提取提示词"
+                  value={draft.memorySeed.recentSummaryPrompt}
+                  onChange={(value) =>
+                    patchDraft((current) => ({
+                      ...current,
+                      memorySeed: { ...current.memorySeed, recentSummaryPrompt: value },
+                    }))
+                  }
+                />
+                <TextAreaBlock
+                  label="核心记忆提取提示词"
+                  value={draft.memorySeed.coreMemoryPrompt}
+                  onChange={(value) =>
+                    patchDraft((current) => ({
+                      ...current,
+                      memorySeed: { ...current.memorySeed, coreMemoryPrompt: value },
                     }))
                   }
                 />

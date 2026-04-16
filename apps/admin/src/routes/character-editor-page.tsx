@@ -383,6 +383,7 @@ export function CharacterEditorPage() {
         <AdminPageHero
           eyebrow={isNew ? "新建角色" : "行为管理"}
           title={isNew ? "新建角色" : draft.name || "行为管理"}
+          description="维护角色的基础资料、底层逻辑、场景提示词、记忆策略与运行节奏。"
           actions={
             <>
               <Link to="/characters">
