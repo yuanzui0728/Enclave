@@ -225,6 +225,45 @@ export interface CloudWorldRuntimeStatusSummary {
   observedAt: string;
 }
 
+export type CloudWorldAttentionSeverity = "info" | "warning" | "critical";
+
+export type CloudWorldAttentionReason =
+  | "failed_world"
+  | "provider_error"
+  | "deployment_drift"
+  | "sleep_drift"
+  | "heartbeat_stale"
+  | "recovery_queued";
+
+export interface CloudWorldAttentionItem {
+  worldId: string;
+  worldName: string;
+  phone: string;
+  severity: CloudWorldAttentionSeverity;
+  reason: CloudWorldAttentionReason;
+  worldStatus: CloudWorldLifecycleStatus;
+  desiredState?: "running" | "sleeping";
+  providerKey?: string | null;
+  observedDeploymentState?: CloudWorldDeploymentState;
+  activeJobType?: WorldLifecycleJobType | null;
+  message: string;
+  lastHeartbeatAt?: string | null;
+  updatedAt: string;
+}
+
+export interface CloudWorldDriftSummary {
+  generatedAt: string;
+  totalWorlds: number;
+  readyWorlds: number;
+  sleepingWorlds: number;
+  failedWorlds: number;
+  attentionWorlds: number;
+  heartbeatStaleWorlds: number;
+  providerDriftWorlds: number;
+  recoveryQueuedWorlds: number;
+  attentionItems: CloudWorldAttentionItem[];
+}
+
 export interface WorldLifecycleJobSummary {
   id: string;
   worldId: string;

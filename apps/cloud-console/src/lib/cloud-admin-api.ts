@@ -1,5 +1,6 @@
 import type {
   CloudComputeProviderSummary,
+  CloudWorldDriftSummary,
   CloudWorldBootstrapConfig,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
@@ -107,6 +108,8 @@ export const cloudAdminApi = {
 
   listWorlds: (status?: CloudWorldLifecycleStatus) =>
     adminFetch<CloudWorldSummary[]>(`/worlds${buildQueryString({ status })}`),
+
+  getWorldDriftSummary: () => adminFetch<CloudWorldDriftSummary>("/drift-summary"),
 
   getWorld: (id: string) => adminFetch<CloudWorldSummary>(`/worlds/${id}`),
 
