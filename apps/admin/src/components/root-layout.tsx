@@ -151,11 +151,6 @@ const NAV_ITEMS = [
     hint: "查看 AI 请求、Token 花费、预算预警和价格配置。",
   },
   {
-    to: "/reply-logic",
-    label: "回复逻辑",
-    hint: "排查真实回复链路、上下文窗口和全局规则。",
-  },
-  {
     to: "/evals",
     label: "评测分析",
     hint: "集中查看 runs、compare 和 trace。",

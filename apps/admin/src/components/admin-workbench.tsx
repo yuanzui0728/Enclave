@@ -983,3 +983,75 @@ export function AdminCodeBlock({
     </pre>
   );
 }
+
+export function AdminTabs({
+  tabs,
+  activeKey,
+  onChange,
+  className,
+}: {
+  tabs: Array<{ key: string; label: string }>;
+  activeKey: string;
+  onChange: (key: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        "flex gap-0.5 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] p-0.5",
+        className ?? "",
+      ].join(" ")}
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => onChange(tab.key)}
+          className={
+            tab.key === activeKey
+              ? "flex-1 rounded-[14px] bg-white px-4 py-2 text-center text-sm font-semibold text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] transition"
+              : "flex-1 rounded-[14px] px-4 py-2 text-center text-sm text-[color:var(--text-secondary)] transition hover:bg-white/50 hover:text-[color:var(--text-primary)]"
+          }
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function AdminSubTabs({
+  tabs,
+  activeKey,
+  onChange,
+  className,
+}: {
+  tabs: Array<{ key: string; label: string }>;
+  activeKey: string;
+  onChange: (key: string) => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={[
+        "flex flex-wrap gap-1",
+        className ?? "",
+      ].join(" ")}
+    >
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          onClick={() => onChange(tab.key)}
+          className={
+            tab.key === activeKey
+              ? "rounded-[12px] border border-[color:var(--border-brand)] bg-[color:var(--surface-card)] px-3.5 py-1.5 text-xs font-semibold text-[color:var(--text-primary)] shadow-[var(--shadow-soft)] transition"
+              : "rounded-[12px] border border-transparent px-3.5 py-1.5 text-xs text-[color:var(--text-secondary)] transition hover:border-[color:var(--border-subtle)] hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
+          }
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}

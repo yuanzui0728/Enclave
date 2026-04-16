@@ -10,8 +10,7 @@ type SidebarLink = {
     | "/characters"
     | "/chat-records"
     | "/token-usage"
-    | "/evals"
-    | "/reply-logic";
+    | "/evals";
   hint: string;
 };
 
@@ -23,8 +22,7 @@ type SidebarIssue = {
     | "/characters"
     | "/chat-records"
     | "/token-usage"
-    | "/evals"
-    | "/reply-logic";
+    | "/evals";
 };
 
 type AdminSidebarProps = {
