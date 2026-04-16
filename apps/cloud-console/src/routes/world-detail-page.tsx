@@ -677,7 +677,7 @@ export function WorldDetailPage() {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Attempt</th>
                 <th className="px-4 py-3">Updated</th>
-                <th className="px-4 py-3">Failure</th>
+                <th className="px-4 py-3">Outcome</th>
               </tr>
             </thead>
             <tbody>
@@ -693,7 +693,9 @@ export function WorldDetailPage() {
                   </td>
                   <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(job.updatedAt)}</td>
                   <td className="max-w-[18rem] px-4 py-3 text-[color:var(--text-secondary)]">
-                    {job.failureMessage ?? "None"}
+                    {typeof job.resultPayload?.action === "string"
+                      ? job.resultPayload.action
+                      : job.failureMessage ?? "None"}
                   </td>
                 </tr>
               ))}

@@ -41,7 +41,7 @@ export type CloudWorldDeploymentState =
   | "missing"
   | "error";
 
-export type WorldLifecycleJobType = "provision" | "resume" | "suspend";
+export type WorldLifecycleJobType = "provision" | "resume" | "suspend" | "reconcile";
 
 export type WorldLifecycleJobStatus =
   | "pending"
@@ -238,6 +238,8 @@ export interface WorldLifecycleJobSummary {
   updatedAt: string;
   startedAt?: string | null;
   finishedAt?: string | null;
+  payload?: Record<string, unknown> | null;
+  resultPayload?: Record<string, unknown> | null;
 }
 
 export interface WorldAccessSessionSummary {

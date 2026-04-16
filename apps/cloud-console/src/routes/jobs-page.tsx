@@ -8,7 +8,7 @@ type JobStatusFilter = WorldLifecycleJobStatus | "all";
 type JobTypeFilter = WorldLifecycleJobType | "all";
 
 const JOB_STATUS_FILTERS: JobStatusFilter[] = ["all", "pending", "running", "succeeded", "failed", "cancelled"];
-const JOB_TYPE_FILTERS: JobTypeFilter[] = ["all", "provision", "resume", "suspend"];
+const JOB_TYPE_FILTERS: JobTypeFilter[] = ["all", "provision", "resume", "suspend", "reconcile"];
 
 function formatDateTime(value?: string | null) {
   if (!value) {
@@ -37,7 +37,7 @@ export function JobsPage() {
         <div>
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">Lifecycle jobs</div>
           <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-            Inspect provisioning, resume, and suspend work across the managed world fleet.
+            Inspect provisioning, resume, suspend, and reconcile work across the managed world fleet.
           </div>
         </div>
 
@@ -84,6 +84,7 @@ export function JobsPage() {
               <th className="px-4 py-3">Attempt</th>
               <th className="px-4 py-3">Started</th>
               <th className="px-4 py-3">Finished</th>
+              <th className="px-4 py-3">Result</th>
             </tr>
           </thead>
           <tbody>
@@ -100,6 +101,11 @@ export function JobsPage() {
                 </td>
                 <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(job.startedAt)}</td>
                 <td className="px-4 py-3 text-[color:var(--text-secondary)]">{formatDateTime(job.finishedAt)}</td>
+                <td className="max-w-[20rem] px-4 py-3 text-[color:var(--text-secondary)]">
+                  {typeof job.resultPayload?.action === "string"
+                    ? job.resultPayload.action
+                    : job.failureMessage ?? "None"}
+                </td>
               </tr>
             ))}
           </tbody>

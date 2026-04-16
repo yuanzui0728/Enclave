@@ -577,6 +577,8 @@ export class CloudService {
       updatedAt: job.updatedAt.toISOString(),
       startedAt: job.startedAt?.toISOString() ?? null,
       finishedAt: job.finishedAt?.toISOString() ?? null,
+      payload: job.payload,
+      resultPayload: job.resultPayload,
     };
   }
 
@@ -742,6 +744,7 @@ export class CloudService {
 
   private toJobType(value: string): WorldLifecycleJobType {
     switch (value) {
+      case "reconcile":
       case "resume":
       case "suspend":
       case "provision":

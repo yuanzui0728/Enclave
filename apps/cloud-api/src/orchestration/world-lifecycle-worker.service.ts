@@ -455,6 +455,8 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
   }
 
   private async reconcileObservedWorld(world: CloudWorldEntity, source: string) {
+    const worldStatusBefore = world.status;
+    const healthStatusBefore = world.healthStatus;
     const activeJobCount = await this.jobRepo.count({
       where: {
         worldId: world.id,
@@ -474,6 +476,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
       observedStatus,
       this.normalizeStoredPowerState(instance?.powerState),
     );
+    const previousPowerState = instance ? this.normalizeStoredPowerState(instance.powerState) : "absent";
 
     let instanceDirty = false;
     if (instance && instance.powerState !== nextPowerState) {
@@ -483,7 +486,8 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     }
 
     let worldDirty = false;
-    let queuedJobType: WorldLifecycleJobType | null = null;
+    let queuedJobType: "provision" | "resume" | null = null;
+    let reconcileAction = "none";
 
     if (observedStatus.deploymentState === "error") {
       if (world.status !== "failed") {
@@ -506,6 +510,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
         world.failureMessage = observedStatus.providerMessage ?? "Provider reported a deployment error.";
         worldDirty = true;
       }
+      reconcileAction = "mark_failed";
     } else if (world.desiredState === "running") {
       if (observedStatus.deploymentState === "running") {
         if (world.status === "sleeping" || world.status === "stopping") {
@@ -515,6 +520,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           world.failureCode = null;
           world.failureMessage = null;
           worldDirty = true;
+          reconcileAction = "resume_waiting_heartbeat";
         } else if (
           (world.status === "bootstrapping" || world.status === "starting") &&
           this.isHeartbeatStale(world.lastHeartbeatAt)
@@ -524,6 +530,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
             world.healthStatus = "starting";
             world.healthMessage = nextHealthMessage;
             worldDirty = true;
+            reconcileAction = "running_but_waiting_heartbeat";
           }
         }
       } else if (observedStatus.deploymentState === "starting" || observedStatus.deploymentState === "package_only") {
@@ -542,6 +549,8 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           world.healthMessage = nextHealthMessage;
           worldDirty = true;
         }
+        reconcileAction =
+          observedStatus.deploymentState === "package_only" ? "package_delivered_waiting_bootstrap" : "provider_starting";
       } else if (observedStatus.deploymentState === "stopped" || observedStatus.deploymentState === "missing") {
         queuedJobType = await this.chooseRecoveryJobType(world.id);
         await this.ensureLifecycleJob(world.id, queuedJobType, {
@@ -569,6 +578,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           world.failureMessage = null;
           worldDirty = true;
         }
+        reconcileAction = queuedJobType === "resume" ? "queue_resume" : "queue_provision";
       }
     } else if (world.desiredState === "sleeping") {
       if (observedStatus.deploymentState === "running" || observedStatus.deploymentState === "starting") {
@@ -590,6 +600,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
             "Provider reconcile detected a running deployment while desired state is sleeping. Queued suspend.";
           worldDirty = true;
         }
+        reconcileAction = "queue_suspend";
       } else if (
         observedStatus.deploymentState === "stopped" ||
         observedStatus.deploymentState === "missing" ||
@@ -609,6 +620,7 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           world.failureMessage = null;
           worldDirty = true;
         }
+        reconcileAction = "normalize_sleeping";
       }
     }
 
@@ -623,6 +635,22 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
           `Queued ${queuedJobType} during reconcile for world ${world.id} after observing ${observedStatus.deploymentState}.`,
         );
       }
+    }
+
+    if (source === "admin-reconcile" || worldDirty || instanceDirty || queuedJobType) {
+      await this.recordReconcileAuditJob({
+        worldId: world.id,
+        source,
+        observedStatus,
+        reconcileAction,
+        worldStatusBefore,
+        worldStatusAfter: world.status,
+        healthStatusBefore,
+        healthStatusAfter: world.healthStatus,
+        previousPowerState,
+        nextPowerState,
+        queuedJobType,
+      });
     }
   }
 
@@ -666,7 +694,63 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     );
   }
 
-  private async chooseRecoveryJobType(worldId: string): Promise<WorldLifecycleJobType> {
+  private async recordReconcileAuditJob(params: {
+    worldId: string;
+    source: string;
+    observedStatus: InspectWorldInstanceResult;
+    reconcileAction: string;
+    worldStatusBefore: string;
+    worldStatusAfter: string;
+    healthStatusBefore: string | null;
+    healthStatusAfter: string | null;
+    previousPowerState: CloudInstancePowerState;
+    nextPowerState: CloudInstancePowerState;
+    queuedJobType: "provision" | "resume" | null;
+  }) {
+    const now = new Date();
+    await this.jobRepo.save(
+      this.jobRepo.create({
+        worldId: params.worldId,
+        jobType: "reconcile",
+        status: params.observedStatus.deploymentState === "error" ? "failed" : "succeeded",
+        priority: 140,
+        payload: {
+          source: params.source,
+          observedDeploymentState: params.observedStatus.deploymentState,
+          rawStatus: params.observedStatus.rawStatus,
+        },
+        attempt: 1,
+        maxAttempts: 1,
+        leaseOwner: null,
+        leaseExpiresAt: null,
+        availableAt: now,
+        startedAt: now,
+        finishedAt: now,
+        failureCode: params.observedStatus.deploymentState === "error" ? "provider_error" : null,
+        failureMessage: params.observedStatus.deploymentState === "error" ? params.observedStatus.providerMessage ?? null : null,
+        resultPayload: {
+          action: params.reconcileAction,
+          queuedJobType: params.queuedJobType,
+          deploymentState: params.observedStatus.deploymentState,
+          providerMessage: params.observedStatus.providerMessage,
+          deploymentMode: params.observedStatus.deploymentMode,
+          executorMode: params.observedStatus.executorMode,
+          remoteHost: params.observedStatus.remoteHost,
+          remoteDeployPath: params.observedStatus.remoteDeployPath,
+          containerName: params.observedStatus.containerName,
+          rawStatus: params.observedStatus.rawStatus,
+          worldStatusBefore: params.worldStatusBefore,
+          worldStatusAfter: params.worldStatusAfter,
+          healthStatusBefore: params.healthStatusBefore,
+          healthStatusAfter: params.healthStatusAfter,
+          powerStateBefore: params.previousPowerState,
+          powerStateAfter: params.nextPowerState,
+        },
+      }),
+    );
+  }
+
+  private async chooseRecoveryJobType(worldId: string): Promise<"resume" | "provision"> {
     const instance = await this.instanceRepo.findOne({
       where: { worldId },
     });

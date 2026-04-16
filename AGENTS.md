@@ -546,3 +546,4 @@
   - if desired state is `running` but provider reports `stopped` or `missing`, the platform queues recovery automatically
   - if desired state is `sleeping` but provider still reports `running`, the platform queues suspend automatically
   - cloud console world detail exposes a manual `Reconcile` action for on-demand drift repair
+  - each effective reconcile run now writes a `reconcile` lifecycle job with observed state, chosen action, and before/after status for audit
