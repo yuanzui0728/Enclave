@@ -22,6 +22,7 @@ export class ChatRecordsAdminController {
       includeHidden?: string;
       dateFrom?: string;
       dateTo?: string;
+      activityWindow?: string;
       sortBy?: string;
       page?: number | string;
       pageSize?: number | string;

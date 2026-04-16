@@ -95,12 +95,39 @@ const ACTIVITY_OPTIONS: Array<{ value: NonNullable<Character["currentActivity"]>
   { value: "sleeping", label: "睡觉中" },
 ];
 
+function readInitialReplyLogicFocus() {
+  if (typeof window === "undefined") {
+    return {
+      scope: "character" as InspectorScope,
+      characterId: "",
+      conversationId: "",
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const conversationId = params.get("conversationId")?.trim() || "";
+  const characterId = params.get("characterId")?.trim() || "";
+  const scopeParam = params.get("scope");
+
+  return {
+    scope:
+      scopeParam === "conversation" || conversationId
+        ? ("conversation" as InspectorScope)
+        : ("character" as InspectorScope),
+    characterId,
+    conversationId,
+  };
+}
+
 export function ReplyLogicPage() {
   const baseUrl = resolveAdminCoreApiBaseUrl();
   const queryClient = useQueryClient();
-  const [scope, setScope] = useState<InspectorScope>("character");
-  const [selectedCharacterId, setSelectedCharacterId] = useState("");
-  const [selectedConversationId, setSelectedConversationId] = useState("");
+  const initialFocus = useMemo(() => readInitialReplyLogicFocus(), []);
+  const [scope, setScope] = useState<InspectorScope>(initialFocus.scope);
+  const [selectedCharacterId, setSelectedCharacterId] = useState(initialFocus.characterId);
+  const [selectedConversationId, setSelectedConversationId] = useState(
+    initialFocus.conversationId,
+  );
   const [configuredConversationActorId, setConfiguredConversationActorId] = useState("");
   const [characterDraft, setCharacterDraft] = useState<EditableCharacter | null>(null);
   const [runtimeRulesDraft, setRuntimeRulesDraft] = useState<ReplyLogicConstantSummary | null>(null);
@@ -462,6 +489,13 @@ export function ReplyLogicPage() {
       {overviewQuery.isLoading ? <LoadingBlock label="正在读取回复逻辑总览..." /> : null}
       {overviewQuery.isError && overviewQuery.error instanceof Error ? (
         <ErrorBlock message={overviewQuery.error.message} />
+      ) : null}
+      {initialFocus.conversationId || initialFocus.characterId ? (
+        <InlineNotice>
+          当前已带入
+          {initialFocus.conversationId ? `会话 ${initialFocus.conversationId}` : `角色 ${initialFocus.characterId}`}
+          的回复逻辑上下文。
+        </InlineNotice>
       ) : null}
 
       {overview ? (
