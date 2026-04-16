@@ -702,30 +702,24 @@ export class SchedulerService {
         }
 
         memorySeededCount += 1;
-        const checkPrompt = renderTemplate(
-          runtimeRules.schedulerTextTemplates.proactiveReminderCheckPrompt,
-          {
-            characterName: char.name,
-            memoryText,
-            today: now.toLocaleDateString('zh-CN'),
-            noActionToken:
-              runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
-          },
-        );
-        const model = await this.ai['configService'].getAiModel();
-        const client = this.ai['client'];
-        const resp = await client.chat.completions.create({
-          model,
-          messages: [{ role: 'user', content: checkPrompt }],
-          max_tokens: 100,
-          temperature: 0.7,
-        });
-        const result = sanitizeAiText(
-          resp.choices[0]?.message?.content ??
-            runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken,
-        );
+        const today = now.toLocaleDateString('zh-CN');
         const noActionToken =
           runtimeRules.schedulerTextTemplates.proactiveReminderNoActionToken;
+        const replyResult = await this.ai.generateReply({
+          profile: char.profile as any,
+          conversationHistory: [],
+          userMessage: `今天是${today}，结合你的记忆，请判断是否需要主动向用户发送消息。如果不需要，只回复：${noActionToken}`,
+          usageContext: {
+            surface: 'scheduler',
+            scene: 'proactive',
+            scopeType: 'character',
+            scopeId: char.id,
+            scopeLabel: char.name,
+            characterId: char.id,
+            characterName: char.name,
+          },
+        });
+        const result = sanitizeAiText(replyResult.text ?? noActionToken);
         if (result === noActionToken || result.startsWith(noActionToken)) {
           continue;
         }
