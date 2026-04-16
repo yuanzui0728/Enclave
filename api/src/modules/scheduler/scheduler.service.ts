@@ -398,10 +398,13 @@ export class SchedulerService {
 
   private async handleCheckMomentSchedule(): Promise<TrackedJobResult> {
     const runtimeRules = await this.replyLogicRules.getRules();
-    const friendCharacterIds = new Set(
-      await this.socialService.getFriendCharacterIds(),
+    const blockedCharacterIds = new Set(
+      await this.socialService.getBlockedCharacterIds(),
     );
-    if (!friendCharacterIds.size) {
+    const chars = (await this.characterRepo.find()).filter(
+      (char) => !blockedCharacterIds.has(char.id),
+    );
+    if (!chars.length) {
       return {
         summary: renderTemplate(
           runtimeRules.schedulerTextTemplates.jobSummaryNoFriendCharactersForMoments,
@@ -409,10 +412,6 @@ export class SchedulerService {
         ),
       };
     }
-
-    const chars = (await this.characterRepo.find()).filter((char) =>
-      friendCharacterIds.has(char.id),
-    );
     const now = new Date();
     const hour = now.getHours();
     const startOfDay = new Date(now);

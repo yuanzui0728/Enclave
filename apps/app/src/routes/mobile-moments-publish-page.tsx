@@ -33,7 +33,7 @@ export function MobileMomentsPublishPage() {
         baseUrl,
       }),
     onSuccess: async () => {
-      storeMomentPublishFlash("朋友圈已发布，仅好友可见。");
+      storeMomentPublishFlash("朋友圈已发布。");
       composeDraft.reset();
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
@@ -145,7 +145,7 @@ export function MobileMomentsPublishPage() {
               这一刻
             </div>
             <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
-              只展示给好友，适合发日常照片、短视频和临时心情。
+              会同步到朋友圈时间线，适合发日常照片、短视频和临时心情。
             </div>
           </div>
 
@@ -204,7 +204,7 @@ export function MobileMomentsPublishPage() {
                 谁可以看
               </div>
               <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
-                当前固定为好友可见
+                当前发布到朋友圈
               </div>
             </div>
             <span className="rounded-full bg-[rgba(47,122,63,0.12)] px-3 py-1 text-[11px] font-medium text-[#2f7a3f]">

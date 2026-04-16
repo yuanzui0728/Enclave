@@ -113,7 +113,6 @@ export function MobileFriendMomentsPage() {
     [friendsQuery.data, resolvedCharacterId],
   );
   const character = characterQuery.data ?? friendItem?.character ?? null;
-  const isFriend = Boolean(friendItem?.friendship);
   const isBlocked = Boolean(
     (blockedQuery.data ?? []).some(
       (item) => item.characterId === resolvedCharacterId,
@@ -121,11 +120,11 @@ export function MobileFriendMomentsPage() {
   );
   const displayName = friendItem
     ? getFriendDisplayName(friendItem)
-    : character?.name || "好友朋友圈";
+    : character?.name || "角色朋友圈";
   const signature =
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||
-    (isFriend ? "这个朋友还没有个性签名。" : "加为好友后可查看这位角色的朋友圈。");
+    "这个角色还没有个性签名。";
   const blockedCharacterIds = useMemo(
     () => new Set((blockedQuery.data ?? []).map((item) => item.characterId)),
     [blockedQuery.data],
@@ -217,7 +216,7 @@ export function MobileFriendMomentsPage() {
           }
         />
         <div className="px-4 py-6">
-          <ErrorBlock message="好友资料不存在，暂时无法打开朋友圈。" />
+          <ErrorBlock message="角色资料不存在，暂时无法打开朋友圈。" />
         </div>
       </AppPage>
     );
@@ -272,18 +271,14 @@ export function MobileFriendMomentsPage() {
               <div className="font-medium text-[color:var(--text-primary)]">
                 {relationshipLoading
                   ? "正在确认可见范围..."
-                  : isFriend
-                    ? `${friendMoments.length} 条朋友圈`
-                    : "仅好友可见"}
+                  : `${friendMoments.length} 条朋友圈`}
               </div>
               <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
                 {relationshipLoading
-                  ? "稍等一下，正在同步这位好友的资料权限。"
+                  ? "稍等一下，正在同步这位角色的动态。"
                   : latestMoment
                   ? `最近更新 ${formatTimestamp(latestMoment.postedAt)}`
-                  : isFriend
-                    ? "这位好友最近还没有发布新的朋友圈。"
-                    : "先加为好友，再像微信手机版那样查看 TA 的朋友圈。"}
+                  : "这位角色最近还没有发布新的朋友圈。"}
               </div>
             </div>
             <Button
@@ -305,7 +300,7 @@ export function MobileFriendMomentsPage() {
         {!character && (characterQuery.isLoading || friendsQuery.isLoading) ? (
           <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-4 py-8">
             <LoadingBlock
-              label="正在读取好友朋友圈..."
+              label="正在读取角色朋友圈..."
               className="border-0 bg-transparent py-2 shadow-none"
             />
           </div>
@@ -316,7 +311,7 @@ export function MobileFriendMomentsPage() {
         !friendsQuery.isLoading ? (
           <section className="rounded-[24px] border border-[color:var(--border-faint)] bg-white px-4 py-5">
             <div className="text-[18px] font-semibold text-[color:var(--text-primary)]">
-              无法打开这位好友的朋友圈
+              无法打开这位角色的朋友圈
             </div>
             <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
               角色资料不存在，或者当前资料还没有同步完成。
@@ -351,7 +346,7 @@ export function MobileFriendMomentsPage() {
             {timelineLoading ? (
               <MobileFriendMomentsStateCard
                 badge="读取中"
-                title="正在刷新这位好友的朋友圈"
+                title="正在刷新这位角色的朋友圈"
                 description="稍等一下，正在同步 TA 最近发布的动态。"
               />
             ) : null}
@@ -363,7 +358,7 @@ export function MobileFriendMomentsPage() {
                 description={
                   momentsQuery.error instanceof Error
                     ? momentsQuery.error.message
-                    : "读取这位好友的朋友圈时出错了。"
+                    : "读取这位角色的朋友圈时出错了。"
                 }
                 tone="danger"
                 action={
@@ -382,47 +377,22 @@ export function MobileFriendMomentsPage() {
               />
             ) : null}
 
-            {!timelineLoading && !momentsQuery.isError && !isFriend ? (
-              <MobileFriendMomentsStateCard
-                badge="权限"
-                title="加为好友后可查看"
-                description="这位角色的朋友圈仅对好友开放，先回到资料页完成加好友。"
-                action={
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-white px-3.5 text-[11px]"
-                    onClick={() =>
-                      void navigate({
-                        to: "/character/$characterId",
-                        params: { characterId: resolvedCharacterId },
-                      })
-                    }
-                  >
-                    回到资料页
-                  </Button>
-                }
-              />
-            ) : null}
-
             {!timelineLoading &&
             !momentsQuery.isError &&
-            isFriend &&
             isBlocked ? (
               <MobileFriendMomentsStateCard
                 badge="已隐藏"
-                title="这位好友的朋友圈当前不可见"
-                description="你已经将这位好友加入黑名单，相关朋友圈内容会先隐藏。"
+                title="这位角色的朋友圈当前不可见"
+                description="你已经将这位角色加入黑名单，相关朋友圈内容会先隐藏。"
               />
             ) : null}
 
             {!timelineLoading &&
             !momentsQuery.isError &&
-            isFriend &&
             !isBlocked &&
             !friendMoments.length ? (
               <MobileFriendMomentsStateCard
-                badge="好友朋友圈"
+                badge="角色朋友圈"
                 title={`${displayName} 还没有发表朋友圈`}
                 description="先把这页留着，等 TA 下次更新时再回来看看。"
               />
@@ -430,7 +400,6 @@ export function MobileFriendMomentsPage() {
 
             {!timelineLoading &&
             !momentsQuery.isError &&
-            isFriend &&
             !isBlocked &&
             friendMoments.length ? (
               <div className="space-y-3">

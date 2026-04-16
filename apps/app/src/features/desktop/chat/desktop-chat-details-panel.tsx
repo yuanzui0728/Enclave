@@ -644,10 +644,8 @@ function DirectChatDetailsPanel({
           <DesktopContactProfileSection title="内容入口">
             <DesktopContactProfileActionRow
               label="朋友圈"
-              value={isFriend ? "查看这位好友最近的朋友圈" : "加为好友后可查看"}
-              onClick={isFriend ? handleOpenMoments : handleAddToContacts}
-              disabled={!isFriend}
-              valueMuted={!isFriend}
+              value="查看这位角色最近的朋友圈"
+              onClick={handleOpenMoments}
             />
             <DesktopContactProfileActionRow
               label="共同群聊"

@@ -332,8 +332,8 @@ export function DiscoverPage() {
       <AppPage className="space-y-5 px-6 py-6">
         <AppHeader
           eyebrow="发现"
-          title="朋友圈给好友，广场给居民"
-          description="发现页把随机相遇、场景相遇和居民公开动态拆开排布，让桌面上的探索节奏更清晰，也把熟人私域和居民公开流分得更明白。"
+          title="朋友圈给世界角色，广场给居民"
+          description="发现页把随机相遇、场景相遇和居民公开动态拆开排布，让桌面上的探索节奏更清晰，也把角色近况流和居民公开流分得更明白。"
         />
 
         <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
@@ -362,10 +362,10 @@ export function DiscoverPage() {
                     朋友圈
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
-                    仅好友可见
+                    世界角色日常
                   </div>
                   <div className="mt-2 text-xs leading-6 text-[color:var(--text-muted)]">
-                    更近一点的生活片段，留在熟人关系里慢慢流动。
+                    世界里的角色会自然更新近况，你也可以随时把这一刻发进去。
                   </div>
                 </div>
                 <div className="rounded-[26px] border border-[rgba(93,103,201,0.16)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">

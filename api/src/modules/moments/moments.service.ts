@@ -3,7 +3,6 @@ import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -83,7 +82,6 @@ export class MomentsService {
 
   async createUserMoment(input: CreateMomentInput): Promise<Moment> {
     const owner = await this.worldOwnerService.getOwnerOrThrow();
-    const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
     const normalizedInput = this.normalizeCreateMomentInput(input);
     const post = this.postRepo.create({
       authorId: owner.id,
@@ -98,22 +96,21 @@ export class MomentsService {
     await this.postRepo.save(post);
     // Schedule AI reactions to user's moment
     void this.scheduleCharacterInteractions(post);
-    return this._enrichPost(post, visibleCharacterIds);
+    return this._enrichPost(post);
   }
 
   async getFeed(): Promise<Moment[]> {
-    const friendCharacterIds = await this.getVisibleFriendCharacterIds();
-    const visibleCharacterIds = new Set(friendCharacterIds);
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     const posts = await this.postRepo.find({ order: { postedAt: 'DESC' } });
     const visiblePosts = posts.filter((post) => this.canOwnerViewPost(post, visibleCharacterIds));
-    return Promise.all(visiblePosts.map((post) => this._enrichPost(post, visibleCharacterIds)));
+    return Promise.all(visiblePosts.map((post) => this._enrichPost(post)));
   }
 
   async getPost(postId: string): Promise<Moment | null> {
-    const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post || !this.canOwnerViewPost(post, visibleCharacterIds)) return null;
-    return this._enrichPost(post, visibleCharacterIds);
+    return this._enrichPost(post);
   }
 
   async addOwnerComment(postId: string, text: string): Promise<MomentCommentEntity> {
@@ -166,8 +163,7 @@ export class MomentsService {
   }
 
   async generateMomentForCharacter(characterId: string): Promise<Moment | null> {
-    const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
-    if (!visibleCharacterIds.has(characterId)) {
+    if (!(await this.isCharacterVisibleToOwner(characterId))) {
       return null;
     }
 
@@ -205,7 +201,7 @@ export class MomentsService {
       // Schedule interactions from other characters (async, non-blocking)
       void this.scheduleCharacterInteractions(post);
 
-      return this._enrichPost(post, visibleCharacterIds);
+      return this._enrichPost(post);
     } catch (err) {
       this.logger.error(`Failed to generate moment for ${characterId}`, err);
       return null;
@@ -295,7 +291,7 @@ export class MomentsService {
   }
 
   private async scheduleCharacterInteractions(post: MomentPostEntity) {
-    const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     if (post.authorType === 'character' && !visibleCharacterIds.has(post.authorId)) {
       return;
     }
@@ -321,10 +317,13 @@ export class MomentsService {
       setTimeout(() => {
         void (async () => {
           try {
-            if (!(await this.socialService.isFriendCharacter(char.id))) {
+            if (!(await this.isCharacterVisibleToOwner(char.id))) {
               return;
             }
-            if (post.authorType === 'character' && !(await this.socialService.isFriendCharacter(post.authorId))) {
+            if (
+              post.authorType === 'character' &&
+              !(await this.isCharacterVisibleToOwner(post.authorId))
+            ) {
               return;
             }
 
@@ -335,7 +334,7 @@ export class MomentsService {
               const reply = await this.ai.generateReply({
                 profile,
                 conversationHistory: [],
-                userMessage: `你的朋友${post.authorName}发了一条朋友圈：${this.buildMomentPromptSummary(post)}。用一句话自然地评论一下，不超过20字。`,
+                userMessage: `${post.authorName}发了一条朋友圈：${this.buildMomentPromptSummary(post)}。用一句话自然地评论一下，不超过20字。`,
                 usageContext: {
                   surface: 'app',
                   scene: 'moment_comment_generate',
@@ -362,7 +361,7 @@ export class MomentsService {
   private async scheduleAiCommentReplies(postId: string, commenterName: string, commentText: string) {
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post || post.authorType !== 'character') return;
-    if (!(await this.socialService.isFriendCharacter(post.authorId))) return;
+    if (!(await this.isCharacterVisibleToOwner(post.authorId))) return;
 
     const char = await this.characters.findById(post.authorId);
     if (!char) return;
@@ -371,7 +370,7 @@ export class MomentsService {
     setTimeout(() => {
       void (async () => {
         try {
-          if (!(await this.socialService.isFriendCharacter(char.id))) {
+          if (!(await this.isCharacterVisibleToOwner(char.id))) {
             return;
           }
 
@@ -400,12 +399,22 @@ export class MomentsService {
     }, delay);
   }
 
-  private async getVisibleFriendCharacterIds(): Promise<string[]> {
-    return this.socialService.getFriendCharacterIds();
+  private async getVisibleCharacterIds(): Promise<string[]> {
+    const blockedCharacterIds = new Set(
+      await this.socialService.getBlockedCharacterIds(),
+    );
+    const characters = await this.characters.findAll();
+    return characters
+      .map((character) => character.id)
+      .filter((characterId) => !blockedCharacterIds.has(characterId));
   }
 
-  private async getVisibleFriendCharacterIdSet(): Promise<Set<string>> {
-    return new Set(await this.getVisibleFriendCharacterIds());
+  private async getVisibleCharacterIdSet(): Promise<Set<string>> {
+    return new Set(await this.getVisibleCharacterIds());
+  }
+
+  private async isCharacterVisibleToOwner(characterId: string): Promise<boolean> {
+    return (await this.getVisibleCharacterIdSet()).has(characterId);
   }
 
   private canOwnerViewPost(post: MomentPostEntity, visibleCharacterIds: Set<string>): boolean {
@@ -413,15 +422,16 @@ export class MomentsService {
   }
 
   private async assertOwnerCanInteractWithPost(postId: string): Promise<MomentPostEntity> {
-    const visibleCharacterIds = await this.getVisibleFriendCharacterIdSet();
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     const post = await this.postRepo.findOneBy({ id: postId });
     if (!post || !this.canOwnerViewPost(post, visibleCharacterIds)) {
-      throw new ForbiddenException('Moment is not visible to the current world owner');
+      throw new NotFoundException('Moment not found');
     }
     return post;
   }
 
-  private async _enrichPost(post: MomentPostEntity, visibleCharacterIds: Set<string>): Promise<Moment> {
+  private async _enrichPost(post: MomentPostEntity): Promise<Moment> {
+    const visibleCharacterIds = await this.getVisibleCharacterIdSet();
     const [likes, comments] = await Promise.all([
       this.likeRepo.find({ where: { postId: post.id }, order: { createdAt: 'ASC' } }),
       this.commentRepo.find({ where: { postId: post.id }, order: { createdAt: 'ASC' } }),

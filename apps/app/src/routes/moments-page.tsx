@@ -100,7 +100,7 @@ export function MomentsPage() {
       composeDraft.reset();
       setShowCompose(false);
       setNoticeTone("success");
-      setNotice("朋友圈已发布，仅好友可见。");
+      setNotice("朋友圈已发布。");
       await queryClient.invalidateQueries({
         queryKey: ["app-moments", baseUrl],
       });
@@ -490,7 +490,7 @@ export function MomentsPage() {
       {isDiscoverSubPage ? (
         <TabPageTopBar
           title="朋友圈"
-          subtitle="仅好友可见"
+          subtitle="世界角色动态"
           titleAlign="center"
           className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           leftActions={
@@ -523,7 +523,7 @@ export function MomentsPage() {
       ) : (
         <TabPageTopBar
           title="朋友圈"
-          subtitle="仅好友可见"
+          subtitle="世界角色动态"
           className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[rgba(247,247,247,0.94)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
           rightActions={
             <Button
@@ -545,7 +545,7 @@ export function MomentsPage() {
           <div className="px-1">
             <div className="text-[11px] text-[color:var(--text-muted)]">最近动态</div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
-              这里只展示好友之间可见的朋友圈内容。
+              这里会展示世界里的角色和你最近发布的朋友圈内容。
             </div>
           </div>
           {notice ? (
@@ -557,7 +557,7 @@ export function MomentsPage() {
             <MobileMomentsStatusCard
               badge="读取中"
               title="正在刷新朋友圈"
-              description="稍等一下，正在同步好友的最新动态。"
+              description="稍等一下，正在同步世界里的最新动态。"
               tone="loading"
             />
           ) : null}
@@ -617,7 +617,7 @@ export function MomentsPage() {
                   <>
                     {moment.authorType === "user" ? (
                       <div className="mb-2 inline-flex rounded-full bg-[rgba(47,122,63,0.12)] px-2 py-0.5 text-[10px] font-medium text-[#2f7a3f]">
-                        好友可见
+                        我的动态
                       </div>
                     ) : null}
                     {moment.text.trim() ? <div>{moment.text}</div> : null}
@@ -738,7 +738,7 @@ export function MomentsPage() {
             <MobileMomentsStatusCard
               badge="朋友圈"
               title="还很安静"
-              description="你先发一条仅好友可见的动态，或者等好友们先开口。"
+              description="你先发一条动态，或者等世界里的角色们先开口。"
               action={
                 <Button
                   variant="primary"

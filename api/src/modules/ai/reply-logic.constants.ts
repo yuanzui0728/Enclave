@@ -664,9 +664,9 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTe
     jobSummaryExpiredFriendRequests: '已过期 {{count}} 条好友请求。',
     jobSummaryUpdateAiActiveStatus:
       '检查 {{characterCount}} 个角色，在线状态变更 {{changedCount}} 次，人工锁定 {{manualLockedCount}} 个，角色关系更新 {{relationshipUpdates}} 次。',
-    jobSummaryNoFriendCharactersForMoments: '当前没有已建立好友关系的角色，跳过朋友圈调度。',
+    jobSummaryNoFriendCharactersForMoments: '当前没有可见角色，跳过朋友圈调度。',
     jobSummaryCheckMomentSchedule:
-      '检查 {{characterCount}} 个好友角色，本轮生成 {{generatedCount}} 条朋友圈内容。',
+      '检查 {{characterCount}} 个可见角色，本轮生成 {{generatedCount}} 条朋友圈内容。',
     jobSummarySceneRequestSkipped: '场景加好友命中概率门控，本轮未触发。',
     jobSummarySceneRequestNoMatch: '场景 {{scene}} 本轮没有生成新的好友请求。',
     jobSummarySceneRequestTriggered: '已在 {{scene}} 场景触发 {{characterName}} 的好友请求。',

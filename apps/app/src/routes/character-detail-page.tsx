@@ -152,7 +152,7 @@ export function CharacterDetailPage() {
   const signature =
     character?.currentStatus?.trim() ||
     character?.bio?.trim() ||
-    (isFriend ? "这个朋友还没有个性签名。" : "这个角色还没有个性签名。");
+    "这个角色还没有个性签名。";
   const expertiseSummary = character?.expertDomains?.length
     ? character.expertDomains.join("、")
     : "未设置";
@@ -1244,10 +1244,8 @@ export function CharacterDetailPage() {
               ) : null}
               <ProfileRow
                 label="朋友圈"
-                value={
-                  isFriend ? "查看这位好友最近的朋友圈" : "加为好友后可查看"
-                }
-                onClick={isFriend ? handleOpenMoments : undefined}
+                value="查看这位角色最近的朋友圈"
+                onClick={handleOpenMoments}
                 compact={!isDesktopLayout}
               />
               <ProfileRow

@@ -34,7 +34,6 @@ type DesktopFriendMomentsWorkspaceProps = {
   errors?: string[];
   imageDrafts: MomentImageDraft[];
   isBlocked?: boolean;
-  isFriend?: boolean;
   isLoading: boolean;
   likeErrorMessage?: string | null;
   likePendingMomentId: string | null;
@@ -77,7 +76,6 @@ export function DesktopFriendMomentsWorkspace({
   errors = [],
   imageDrafts,
   isBlocked = false,
-  isFriend = true,
   isLoading,
   likeErrorMessage,
   likePendingMomentId,
@@ -163,7 +161,7 @@ export function DesktopFriendMomentsWorkspace({
     if (isLoading) {
       return (
         <LoadingBlock
-          label="正在读取这位好友的朋友圈..."
+          label="正在读取这位角色的朋友圈..."
           className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       );
@@ -174,18 +172,14 @@ export function DesktopFriendMomentsWorkspace({
         <div className="mx-auto max-w-[560px] py-10">
           <EmptyState
             title={
-              isFriend
-                ? isBlocked
-                  ? "这位好友的朋友圈当前不可见"
-                  : `${displayName} 还没有发表朋友圈`
-                : "只有好友才能查看这位角色的朋友圈"
+              isBlocked
+                ? "这位角色的朋友圈当前不可见"
+                : `${displayName} 还没有发表朋友圈`
             }
             description={
-              isFriend
-                ? isBlocked
-                  ? "你已经将这位好友加入黑名单，相关朋友圈内容会先隐藏。"
-                  : "后续有新动态时，会直接显示在这个独立页面里。"
-                : "先加为好友，再像微信电脑版那样进入 TA 的朋友圈独立页。"
+              isBlocked
+                ? "你已经将这位角色加入黑名单，相关朋友圈内容会先隐藏。"
+                : "后续有新动态时，会直接显示在这个独立页面里。"
             }
             action={
               <div className="flex items-center justify-center gap-2">
@@ -249,7 +243,7 @@ export function DesktopFriendMomentsWorkspace({
                 />
                 <div className="min-w-0">
                   <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
-                    好友朋友圈
+                    角色朋友圈
                   </div>
                   <div className="mt-1 truncate text-[20px] font-semibold text-[color:var(--text-primary)]">
                     {displayName}
