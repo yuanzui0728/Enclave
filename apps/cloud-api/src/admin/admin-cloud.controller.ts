@@ -44,6 +44,11 @@ export class AdminCloudController {
     return this.cloudService.listWorlds(status);
   }
 
+  @Get("drift-summary")
+  getWorldDriftSummary() {
+    return this.cloudService.getWorldDriftSummary();
+  }
+
   @Get("worlds/:id")
   getWorld(@Param("id") id: string) {
     return this.cloudService.getWorldById(id);

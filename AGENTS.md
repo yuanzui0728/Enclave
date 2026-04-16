@@ -314,6 +314,7 @@
 - `GET /api/admin/token-usage/trend`
 - `GET /api/admin/token-usage/breakdown`
 - `GET /api/admin/token-usage/records`
+- `GET /api/admin/token-usage/downgrade-insights`
 - `GET /api/admin/token-usage/pricing`
 - `PATCH /api/admin/token-usage/pricing`
 - `GET /api/admin/token-usage/budgets`
@@ -474,6 +475,7 @@
   - `GET /admin/cloud/providers`
   - `GET /admin/cloud/jobs`
   - `GET /admin/cloud/jobs/:id`
+  - `GET /admin/cloud/drift-summary`
   - `GET /admin/cloud/worlds/:id/instance`
   - `GET /admin/cloud/worlds/:id/bootstrap-config`
   - `GET /admin/cloud/worlds/:id/runtime-status`
@@ -547,3 +549,6 @@
   - if desired state is `sleeping` but provider still reports `running`, the platform queues suspend automatically
   - cloud console world detail exposes a manual `Reconcile` action for on-demand drift repair
   - each effective reconcile run now writes a `reconcile` lifecycle job with observed state, chosen action, and before/after status for audit
+- Cloud console worlds list now includes a drift summary panel:
+  - `GET /admin/cloud/drift-summary` aggregates failed worlds, stale heartbeats, provider drift, and queued recovery counts
+  - the worlds page surfaces top attention items and per-world attention badges so operators can see why a world needs intervention before opening detail view

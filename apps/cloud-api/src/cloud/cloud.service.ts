@@ -3,7 +3,10 @@ import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
   CloudComputeProviderSummary,
+  CloudWorldAttentionItem,
   CloudWorldBootstrapConfig,
+  CloudWorldDeploymentState,
+  CloudWorldDriftSummary,
   CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
@@ -29,6 +32,8 @@ import { WorldAccessService } from "../world-access/world-access.service";
 
 @Injectable()
 export class CloudService {
+  private readonly staleHeartbeatSeconds: number;
+
   constructor(
     @InjectRepository(CloudWorldEntity)
     private readonly worldRepo: Repository<CloudWorldEntity>,
@@ -43,7 +48,11 @@ export class CloudService {
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly worldLifecycleWorker: WorldLifecycleWorkerService,
     private readonly worldAccessService: WorldAccessService,
-  ) {}
+  ) {
+    this.staleHeartbeatSeconds = this.parsePositiveInteger(
+      this.configService.get<string>("CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS"),
+    );
+  }
 
   async getWorldLookupByPhone(phone: string): Promise<CloudWorldLookupResponse> {
     const normalizedPhone = this.phoneAuthService.normalizePhone(phone);
@@ -194,6 +203,150 @@ export class CloudService {
       throw new NotFoundException("找不到该云世界。");
     }
     return this.serializeWorld(world);
+  }
+
+  async getWorldDriftSummary(): Promise<CloudWorldDriftSummary> {
+    const worlds = await this.worldRepo.find({
+      order: { updatedAt: "DESC" },
+    });
+    const worldIds = worlds.map((world) => world.id);
+    const [instances, activeJobs] = await Promise.all([
+      worldIds.length
+        ? this.instanceRepo.find({
+            where: { worldId: In(worldIds) },
+          })
+        : [],
+      worldIds.length
+        ? this.jobRepo.find({
+            where: {
+              worldId: In(worldIds),
+              status: In(["pending", "running"]),
+            },
+            order: {
+              createdAt: "DESC",
+            },
+          })
+        : [],
+    ]);
+
+    const instanceByWorldId = new Map<string, CloudInstanceEntity>(
+      instances.map((instance) => [instance.worldId, instance] as const),
+    );
+    const activeJobByWorldId = new Map<string, WorldLifecycleJobEntity>();
+    for (const job of activeJobs) {
+      if (!activeJobByWorldId.has(job.worldId)) {
+        activeJobByWorldId.set(job.worldId, job);
+      }
+    }
+
+    const observedByWorldId = new Map<
+      string,
+      {
+        deploymentState: CloudWorldDeploymentState;
+        providerMessage?: string | null;
+      }
+    >();
+
+    await Promise.all(
+      worlds.map(async (world) => {
+        const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+        try {
+          const observed = await provider.inspectInstance(instanceByWorldId.get(world.id) ?? null, world);
+          observedByWorldId.set(world.id, {
+            deploymentState: observed.deploymentState,
+            providerMessage: observed.providerMessage ?? null,
+          });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Failed to inspect provider runtime state.";
+          observedByWorldId.set(world.id, {
+            deploymentState: "error",
+            providerMessage: message,
+          });
+        }
+      }),
+    );
+
+    let readyWorlds = 0;
+    let sleepingWorlds = 0;
+    let failedWorlds = 0;
+    let heartbeatStaleWorlds = 0;
+    let providerDriftWorlds = 0;
+    let recoveryQueuedWorlds = 0;
+    const attentionItems: CloudWorldAttentionItem[] = [];
+
+    for (const world of worlds) {
+      if (world.status === "ready") {
+        readyWorlds += 1;
+      }
+      if (world.status === "sleeping") {
+        sleepingWorlds += 1;
+      }
+      if (world.status === "failed") {
+        failedWorlds += 1;
+      }
+
+      const desiredState = world.desiredState === "sleeping" ? "sleeping" : "running";
+      const observed = observedByWorldId.get(world.id);
+      const activeJob = activeJobByWorldId.get(world.id);
+      const hasRecoveryJob = activeJob?.jobType === "resume" || activeJob?.jobType === "provision";
+      const isHeartbeatStale = this.isHeartbeatStale(world.lastHeartbeatAt);
+      const providerRunning = observed?.deploymentState === "running" || observed?.deploymentState === "starting";
+      const providerMissingOrStopped = observed?.deploymentState === "missing" || observed?.deploymentState === "stopped";
+      const hasRunningDrift = desiredState === "running" && providerMissingOrStopped;
+      const hasSleepingDrift = desiredState === "sleeping" && providerRunning;
+      const shouldCountHeartbeatStale =
+        desiredState === "running" &&
+        isHeartbeatStale &&
+        (providerRunning || observed?.deploymentState === "package_only") &&
+        world.status !== "failed" &&
+        world.status !== "disabled" &&
+        world.status !== "deleting";
+
+      if (shouldCountHeartbeatStale) {
+        heartbeatStaleWorlds += 1;
+      }
+      if (hasRunningDrift || hasSleepingDrift) {
+        providerDriftWorlds += 1;
+      }
+      if (hasRecoveryJob) {
+        recoveryQueuedWorlds += 1;
+      }
+
+      const attentionItem = this.buildWorldAttentionItem({
+        world,
+        desiredState,
+        observedDeploymentState: observed?.deploymentState,
+        observedMessage: observed?.providerMessage ?? null,
+        activeJobType: activeJob ? this.toJobType(activeJob.jobType) : null,
+        isHeartbeatStale: shouldCountHeartbeatStale,
+      });
+
+      if (attentionItem) {
+        attentionItems.push(attentionItem);
+      }
+    }
+
+    attentionItems.sort((left, right) => {
+      const severityScore = this.getAttentionSeverityScore(right.severity) - this.getAttentionSeverityScore(left.severity);
+      if (severityScore !== 0) {
+        return severityScore;
+      }
+
+      return new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime();
+    });
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totalWorlds: worlds.length,
+      readyWorlds,
+      sleepingWorlds,
+      failedWorlds,
+      attentionWorlds: attentionItems.length,
+      heartbeatStaleWorlds,
+      providerDriftWorlds,
+      recoveryQueuedWorlds,
+      attentionItems: attentionItems.slice(0, 12),
+    };
   }
 
   listProviders(): CloudComputeProviderSummary[] {
@@ -833,5 +986,113 @@ export class CloudService {
   private createWorldSlug(phone: string) {
     const digits = phone.replace(/\D+/g, "");
     return `world-${digits.slice(-4)}-${digits.slice(0, 4) || "0000"}`;
+  }
+
+  private buildWorldAttentionItem(params: {
+    world: CloudWorldEntity;
+    desiredState: "running" | "sleeping";
+    observedDeploymentState?: CloudWorldDeploymentState;
+    observedMessage?: string | null;
+    activeJobType: WorldLifecycleJobType | null;
+    isHeartbeatStale: boolean;
+  }): CloudWorldAttentionItem | null {
+    const { world, desiredState, observedDeploymentState, observedMessage, activeJobType, isHeartbeatStale } = params;
+    const baseItem = {
+      worldId: world.id,
+      worldName: world.name,
+      phone: world.phone,
+      worldStatus: this.toWorldStatus(world.status),
+      desiredState,
+      providerKey: world.providerKey,
+      observedDeploymentState,
+      activeJobType,
+      lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
+      updatedAt: world.updatedAt.toISOString(),
+    } satisfies Omit<CloudWorldAttentionItem, "severity" | "reason" | "message">;
+
+    if (world.status === "failed" || world.healthStatus === "failed") {
+      return {
+        ...baseItem,
+        severity: "critical",
+        reason: "failed_world",
+        message: world.failureMessage ?? world.healthMessage ?? "World is currently marked as failed.",
+      };
+    }
+
+    if (observedDeploymentState === "error") {
+      return {
+        ...baseItem,
+        severity: "critical",
+        reason: "provider_error",
+        message: observedMessage ?? "Provider inspection reported a deployment error.",
+      };
+    }
+
+    if (desiredState === "running" && (observedDeploymentState === "missing" || observedDeploymentState === "stopped")) {
+      return {
+        ...baseItem,
+        severity: activeJobType === "resume" || activeJobType === "provision" ? "warning" : "critical",
+        reason: activeJobType === "resume" || activeJobType === "provision" ? "recovery_queued" : "deployment_drift",
+        message:
+          activeJobType === "resume" || activeJobType === "provision"
+            ? `Provider reports ${observedDeploymentState}; ${activeJobType} has already been queued.`
+            : `Provider reports ${observedDeploymentState} while the world should be running.`,
+      };
+    }
+
+    if (desiredState === "sleeping" && (observedDeploymentState === "running" || observedDeploymentState === "starting")) {
+      return {
+        ...baseItem,
+        severity: "warning",
+        reason: "sleep_drift",
+        message: "Provider reports the deployment is still active while desired state is sleeping.",
+      };
+    }
+
+    if (isHeartbeatStale) {
+      return {
+        ...baseItem,
+        severity: world.status === "ready" ? "critical" : "warning",
+        reason: "heartbeat_stale",
+        message:
+          world.status === "ready"
+            ? "Runtime heartbeat is stale even though the world still appears active."
+            : "Runtime heartbeat is stale while the world is still starting.",
+      };
+    }
+
+    return null;
+  }
+
+  private getAttentionSeverityScore(severity: CloudWorldAttentionItem["severity"]) {
+    switch (severity) {
+      case "critical":
+        return 3;
+      case "warning":
+        return 2;
+      case "info":
+      default:
+        return 1;
+    }
+  }
+
+  private isHeartbeatStale(lastHeartbeatAt: Date | null) {
+    if (this.staleHeartbeatSeconds <= 0) {
+      return false;
+    }
+    if (!lastHeartbeatAt) {
+      return true;
+    }
+
+    return Date.now() - lastHeartbeatAt.getTime() > this.staleHeartbeatSeconds * 1000;
+  }
+
+  private parsePositiveInteger(rawValue: string | undefined) {
+    const parsed = Number(rawValue ?? "0");
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 0;
+    }
+
+    return Math.floor(parsed);
   }
 }
