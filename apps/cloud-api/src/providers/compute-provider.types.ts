@@ -1,3 +1,4 @@
+import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import type { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import type { CloudWorldEntity } from "../entities/cloud-world.entity";
 
@@ -25,6 +26,7 @@ export type WorldInstancePowerTransitionResult = {
 
 export interface WorldComputeProvider {
   readonly key: string;
+  readonly summary: CloudComputeProviderSummary;
   createInstance(world: CloudWorldEntity): ProvisionWorldInstanceResult;
   startInstance(
     instance: CloudInstanceEntity,

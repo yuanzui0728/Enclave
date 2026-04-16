@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import { randomUUID } from "node:crypto";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
@@ -17,6 +18,21 @@ import {
 @Injectable()
 export class MockComputeProviderService implements WorldComputeProvider {
   readonly key = "mock";
+  readonly summary: CloudComputeProviderSummary = {
+    key: this.key,
+    label: "Mock Local Provider",
+    description: "Local in-process provider that simulates lifecycle transitions for development and orchestration testing.",
+    provisionStrategy: "mock",
+    deploymentMode: "mock",
+    defaultRegion: "mock-local",
+    defaultZone: "mock-a",
+    capabilities: {
+      managedProvisioning: true,
+      managedLifecycle: true,
+      bootstrapPackage: true,
+      snapshots: true,
+    },
+  };
 
   constructor(private readonly configService: ConfigService) {}
 

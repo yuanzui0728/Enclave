@@ -1,4 +1,5 @@
 import type {
+  CloudComputeProviderSummary,
   CloudWorldBootstrapConfig,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
@@ -107,6 +108,8 @@ export const cloudAdminApi = {
     adminFetch<CloudWorldSummary[]>(`/worlds${buildQueryString({ status })}`),
 
   getWorld: (id: string) => adminFetch<CloudWorldSummary>(`/worlds/${id}`),
+
+  listProviders: () => adminFetch<CloudComputeProviderSummary[]>("/providers"),
 
   updateWorld: (
     id: string,

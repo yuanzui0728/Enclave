@@ -466,6 +466,7 @@
   - `POST /cloud/me/world-access/resolve`
   - `GET /cloud/me/world-access/sessions/:sessionId`
 - New cloud admin routes:
+  - `GET /admin/cloud/providers`
   - `GET /admin/cloud/jobs`
   - `GET /admin/cloud/jobs/:id`
   - `GET /admin/cloud/worlds/:id/instance`
@@ -499,6 +500,10 @@
   - `CLOUD_WORLD_ADMIN_URL_TEMPLATE`
   - `CLOUD_DEFAULT_WORLD_HEARTBEAT_INTERVAL_MS`
   - `CLOUD_DEFAULT_PROVIDER_KEY`
+  - `CLOUD_MANUAL_DOCKER_IMAGE`
+  - `CLOUD_MANUAL_DOCKER_DEFAULT_REGION`
+  - `CLOUD_MANUAL_DOCKER_DEFAULT_ZONE`
+  - `CLOUD_MANUAL_DOCKER_DISK_SIZE_GB`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
 - Cloud console world detail now exposes a bootstrap package:
   - generated runtime env overlay for `api`
@@ -506,10 +511,12 @@
   - callback endpoints and callback token rotation for redeploying a world instance safely
 - Cloud platform now has a provider abstraction layer in `apps/cloud-api/src/providers/`:
   - `ComputeProviderRegistryService` selects the active compute provider by `providerKey`
-  - current built-in provider remains `mock`, but worker logic no longer depends on mock-only APIs
+  - built-in providers now include `mock` and `manual-docker` (legacy `manual` keys normalize to `manual-docker`)
+  - `manual-docker` prepares a per-world docker deployment package and waits for runtime bootstrap / heartbeat callbacks before promoting the world to `ready`
 - `CloudInstance` now also tracks provider resource metadata:
   - `providerVolumeId`
   - `providerSnapshotId`
   - `launchConfig`
   - `lastOperationAt`
-- Cloud console world detail now supports editing `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
+- Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
+- Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.

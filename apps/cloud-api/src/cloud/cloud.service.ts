@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
+  CloudComputeProviderSummary,
   CloudWorldBootstrapConfig,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
@@ -21,6 +22,7 @@ import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import { buildWorldBootstrapConfig, resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "../orchestration/world-bootstrap-config";
+import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import { WorldAccessService } from "../world-access/world-access.service";
 
 @Injectable()
@@ -36,6 +38,7 @@ export class CloudService {
     private readonly jobRepo: Repository<WorldLifecycleJobEntity>,
     private readonly configService: ConfigService,
     private readonly phoneAuthService: PhoneAuthService,
+    private readonly computeProviderRegistry: ComputeProviderRegistryService,
     private readonly worldAccessService: WorldAccessService,
   ) {}
 
@@ -190,6 +193,10 @@ export class CloudService {
     return this.serializeWorld(world);
   }
 
+  listProviders(): CloudComputeProviderSummary[] {
+    return this.computeProviderRegistry.listProviders();
+  }
+
   async updateWorld(
     id: string,
     payload: {
@@ -210,9 +217,19 @@ export class CloudService {
       throw new NotFoundException("找不到该云世界。");
     }
 
+    const hasExplicitProviderChange = payload.providerKey !== undefined;
+    const nextProvider = hasExplicitProviderChange
+      ? this.computeProviderRegistry.getProvider(payload.providerKey)
+      : this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
     const nextPhone = payload.phone ? this.phoneAuthService.normalizePhone(payload.phone) : world.phone;
     const nextStatus = payload.status ?? this.toWorldStatus(world.status);
     const nextApiBaseUrl = payload.apiBaseUrl !== undefined ? this.normalizeUrl(payload.apiBaseUrl) : world.apiBaseUrl;
+    const nextProvisionStrategy =
+      payload.provisionStrategy !== undefined
+        ? payload.provisionStrategy?.trim() || nextProvider.summary.provisionStrategy
+        : hasExplicitProviderChange
+          ? nextProvider.summary.provisionStrategy
+          : world.provisionStrategy || nextProvider.summary.provisionStrategy;
     if (nextStatus === "ready" && !nextApiBaseUrl) {
       throw new BadRequestException("世界进入 ready 状态时必须提供 apiBaseUrl。");
     }
@@ -220,12 +237,20 @@ export class CloudService {
     world.phone = nextPhone;
     world.name = payload.name?.trim() || world.name;
     world.status = nextStatus;
-    world.provisionStrategy = payload.provisionStrategy?.trim() || world.provisionStrategy;
-    world.providerKey = payload.providerKey?.trim() || world.providerKey || this.resolveDefaultProviderKey();
+    world.provisionStrategy = nextProvisionStrategy;
+    world.providerKey = nextProvider.key;
     world.providerRegion =
-      payload.providerRegion !== undefined ? payload.providerRegion?.trim() || null : world.providerRegion;
+      payload.providerRegion !== undefined
+        ? payload.providerRegion?.trim() || null
+        : hasExplicitProviderChange
+          ? nextProvider.summary.defaultRegion ?? null
+          : world.providerRegion;
     world.providerZone =
-      payload.providerZone !== undefined ? payload.providerZone?.trim() || null : world.providerZone;
+      payload.providerZone !== undefined
+        ? payload.providerZone?.trim() || null
+        : hasExplicitProviderChange
+          ? nextProvider.summary.defaultZone ?? null
+          : world.providerZone;
     world.apiBaseUrl = nextApiBaseUrl;
     world.adminUrl = payload.adminUrl !== undefined ? this.normalizeUrl(payload.adminUrl) : world.adminUrl;
     world.note = payload.note?.trim() || null;
@@ -389,16 +414,17 @@ export class CloudService {
     });
 
     if (!world) {
+      const provider = this.computeProviderRegistry.getProvider("manual-docker");
       world = this.worldRepo.create({
         phone: request.phone,
         name: request.worldName,
         status: this.mapRequestStatusToWorldStatus(this.toRequestStatus(request.status)),
         slug: this.createWorldSlug(request.phone),
         desiredState: request.status === "disabled" ? "sleeping" : "running",
-        provisionStrategy: "manual",
-        providerKey: "manual",
-        providerRegion: null,
-        providerZone: null,
+        provisionStrategy: provider.summary.provisionStrategy,
+        providerKey: provider.key,
+        providerRegion: provider.summary.defaultRegion ?? null,
+        providerZone: provider.summary.defaultZone ?? null,
         apiBaseUrl: null,
         adminUrl: null,
         runtimeVersion: null,
@@ -705,9 +731,22 @@ export class CloudService {
 
   private async ensureWorldBootstrapCredentials(world: CloudWorldEntity) {
     let dirty = false;
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
 
-    if (!world.providerKey) {
-      world.providerKey = this.resolveDefaultProviderKey();
+    if (world.providerKey !== provider.key) {
+      world.providerKey = provider.key;
+      dirty = true;
+    }
+    if (!world.provisionStrategy) {
+      world.provisionStrategy = provider.summary.provisionStrategy;
+      dirty = true;
+    }
+    if (!world.providerRegion && provider.summary.defaultRegion) {
+      world.providerRegion = provider.summary.defaultRegion;
+      dirty = true;
+    }
+    if (!world.providerZone && provider.summary.defaultZone) {
+      world.providerZone = provider.summary.defaultZone;
       dirty = true;
     }
     if (!world.slug) {
@@ -749,7 +788,7 @@ export class CloudService {
   }
 
   private resolveDefaultProviderKey() {
-    return this.configService.get<string>("CLOUD_DEFAULT_PROVIDER_KEY")?.trim() || "mock";
+    return this.computeProviderRegistry.getDefaultProviderKey();
   }
 
   private createWorldSlug(phone: string) {

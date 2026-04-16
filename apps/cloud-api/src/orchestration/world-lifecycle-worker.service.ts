@@ -220,14 +220,25 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     world.providerKey = provisioned.providerKey;
     world.providerRegion = provisioned.region;
     world.providerZone = provisioned.zone;
+    world.apiBaseUrl = provisioned.apiBaseUrl;
+    world.adminUrl = provisioned.adminUrl;
     await this.instanceRepo.save(instance);
     await this.worldRepo.save(world);
 
     world.status = "bootstrapping";
     world.healthStatus = "bootstrapping";
-    world.healthMessage = "Instance is online and bootstrap is running.";
+    world.healthMessage = provider.summary.capabilities.managedProvisioning
+      ? "Instance is online and bootstrap is running."
+      : "Bootstrap package is ready. Waiting for the world runtime to report bootstrap.";
     await this.worldRepo.save(world);
     await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+
+    if (!provider.summary.capabilities.managedProvisioning) {
+      instance.powerState = "starting";
+      instance.lastOperationAt = new Date();
+      await this.instanceRepo.save(instance);
+      return;
+    }
 
     await this.sleep(700);
 
@@ -275,6 +286,16 @@ export class WorldLifecycleWorkerService implements OnModuleInit, OnModuleDestro
     await this.instanceRepo.save(instance);
 
     await this.sleep(600);
+
+    if (!provider.summary.capabilities.managedLifecycle) {
+      world.apiBaseUrl = world.apiBaseUrl ?? resolveSuggestedWorldApiBaseUrl(world, this.configService);
+      world.adminUrl = world.adminUrl ?? resolveSuggestedWorldAdminUrl(world, this.configService);
+      world.healthStatus = "starting";
+      world.healthMessage = "Resume requested. Waiting for the world runtime heartbeat.";
+      await this.worldRepo.save(world);
+      await this.worldAccessService.refreshWaitingSessionsForWorld(world.id);
+      return;
+    }
 
     const resumeResult = provider.startInstance(instance, world);
     instance.powerState = resumeResult.powerState;

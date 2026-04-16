@@ -134,6 +134,7 @@ export class WorldRuntimeService {
       if (instance) {
         instance.powerState = "running";
         instance.lastHeartbeatAt = reportedAt;
+        instance.lastOperationAt = signal === "bootstrap" ? reportedAt : instance.lastOperationAt;
         if (signal === "bootstrap" || !instance.bootstrappedAt) {
           instance.bootstrappedAt = reportedAt;
         }
@@ -198,6 +199,8 @@ export class WorldRuntimeService {
         worldId: world.id,
         providerKey: world.providerKey ?? "runtime",
         providerInstanceId: null,
+        providerVolumeId: null,
+        providerSnapshotId: null,
         name: `${world.slug ?? world.id}-vm`,
         region: world.providerRegion,
         zone: world.providerZone,
@@ -207,8 +210,10 @@ export class WorldRuntimeService {
         imageId: null,
         flavor: null,
         diskSizeGb: 20,
+        launchConfig: null,
         bootstrappedAt: null,
         lastHeartbeatAt: null,
+        lastOperationAt: null,
       });
     }
 

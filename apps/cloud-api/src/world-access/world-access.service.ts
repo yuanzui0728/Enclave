@@ -42,7 +42,7 @@ export class WorldAccessService {
     });
 
     if (!world) {
-      const defaultProviderKey = this.resolveDefaultProviderKey();
+      const defaultProvider = this.computeProviderRegistry.getProvider(this.resolveDefaultProviderKey());
       world = await this.worldRepo.save(
         this.worldRepo.create({
           phone: normalizedPhone,
@@ -50,13 +50,13 @@ export class WorldAccessService {
           slug: this.createWorldSlug(normalizedPhone),
           status: "queued",
           desiredState: "running",
-          provisionStrategy: "mock",
-          providerKey: defaultProviderKey,
-          providerRegion: payload.preferredRegion?.trim() || "mock-local",
-          providerZone: "mock-a",
+          provisionStrategy: defaultProvider.summary.provisionStrategy,
+          providerKey: defaultProvider.key,
+          providerRegion: payload.preferredRegion?.trim() || defaultProvider.summary.defaultRegion || null,
+          providerZone: defaultProvider.summary.defaultZone ?? null,
           apiBaseUrl: null,
           adminUrl: null,
-          runtimeVersion: "mock-runtime-v1",
+          runtimeVersion: defaultProvider.key === "mock" ? "mock-runtime-v1" : null,
           callbackToken: randomUUID(),
           healthStatus: "queued",
           healthMessage: "世界已进入创建队列。",
@@ -140,6 +140,7 @@ export class WorldAccessService {
 
   private async prepareWorldForAccess(world: CloudWorldEntity, now: Date) {
     let dirty = false;
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
 
     switch (world.status) {
       case "active":
@@ -234,8 +235,20 @@ export class WorldAccessService {
       world.callbackToken = randomUUID();
       dirty = true;
     }
-    if (world.providerKey === null) {
-      world.providerKey = this.resolveDefaultProviderKey();
+    if (world.providerKey !== provider.key) {
+      world.providerKey = provider.key;
+      dirty = true;
+    }
+    if (!world.provisionStrategy) {
+      world.provisionStrategy = provider.summary.provisionStrategy;
+      dirty = true;
+    }
+    if (!world.providerRegion && provider.summary.defaultRegion) {
+      world.providerRegion = provider.summary.defaultRegion;
+      dirty = true;
+    }
+    if (!world.providerZone && provider.summary.defaultZone) {
+      world.providerZone = provider.summary.defaultZone;
       dirty = true;
     }
 

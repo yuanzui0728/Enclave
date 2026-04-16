@@ -49,6 +49,11 @@ export class AdminCloudController {
     return this.cloudService.getWorldById(id);
   }
 
+  @Get("providers")
+  listProviders() {
+    return this.cloudService.listProviders();
+  }
+
   @Patch("worlds/:id")
   updateWorld(
     @Param("id") id: string,

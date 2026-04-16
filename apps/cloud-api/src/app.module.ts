@@ -19,6 +19,7 @@ import { WorldLifecycleJobEntity } from "./entities/world-lifecycle-job.entity";
 import { MockComputeProviderService } from "./orchestration/mock-compute-provider.service";
 import { WorldLifecycleWorkerService } from "./orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "./providers/compute-provider-registry.service";
+import { ManualDockerComputeProviderService } from "./providers/manual-docker-compute-provider.service";
 import { WorldRuntimeController } from "./runtime-callbacks/world-runtime.controller";
 import { WorldRuntimeService } from "./runtime-callbacks/world-runtime.service";
 import { WorldAccessController } from "./world-access/world-access.controller";
@@ -71,6 +72,7 @@ import { WorldAccessService } from "./world-access/world-access.service";
     AdminGuard,
     WorldAccessService,
     MockComputeProviderService,
+    ManualDockerComputeProviderService,
     ComputeProviderRegistryService,
     WorldLifecycleWorkerService,
     WorldRuntimeService,

@@ -11,6 +11,7 @@ type BootstrapWorld = Pick<
 >;
 
 const DEFAULT_WORLD_API_BASE_URL_PLACEHOLDER = "https://replace-me-with-world-api.example.com";
+const DEFAULT_MANUAL_DOCKER_IMAGE = "ghcr.io/yinjie/world-api:latest";
 
 export function buildWorldBootstrapConfig(
   world: BootstrapWorld,
@@ -19,8 +20,13 @@ export function buildWorldBootstrapConfig(
   const cloudPlatformBaseUrl = resolveCloudPlatformBaseUrl(config);
   const suggestedApiBaseUrl = resolveSuggestedWorldApiBaseUrl(world, config);
   const suggestedAdminUrl = resolveSuggestedWorldAdminUrl(world, config);
+  const providerLabel = resolveProviderLabel(world.providerKey);
+  const deploymentMode = resolveDeploymentMode(world.providerKey);
   const callbackToken = world.callbackToken?.trim() ?? "";
   const callbackEndpoints = buildWorldCallbackEndpoints(world, config);
+  const image = resolveRuntimeImage(world.providerKey, config);
+  const containerName = resolveWorldContainerName(world);
+  const volumeName = resolveWorldDataVolumeName(world);
   const env = {
     PUBLIC_API_BASE_URL: suggestedApiBaseUrl ?? DEFAULT_WORLD_API_BASE_URL_PLACEHOLDER,
     CLOUD_PLATFORM_BASE_URL: cloudPlatformBaseUrl,
@@ -33,12 +39,20 @@ export function buildWorldBootstrapConfig(
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
-  const dockerComposeSnippet = [
-    "services:",
-    "  api:",
-    "    environment:",
-    ...Object.entries(env).map(([key, value]) => `      ${key}: "${escapeDoubleQuotes(value)}"`),
-  ].join("\n");
+  const dockerComposeSnippet =
+    resolveDeploymentMode(world.providerKey) === "manual-docker"
+      ? buildManualDockerComposeSnippet({
+          image,
+          containerName,
+          volumeName,
+          env,
+        })
+      : [
+          "services:",
+          "  api:",
+          "    environment:",
+          ...Object.entries(env).map(([key, value]) => `      ${key}: "${escapeDoubleQuotes(value)}"`),
+        ].join("\n");
 
   const notes: string[] = [];
   if (!suggestedApiBaseUrl) {
@@ -49,6 +63,9 @@ export function buildWorldBootstrapConfig(
   if (!callbackToken) {
     notes.push("Callback token is empty. Rotate the token before deploying this world runtime.");
   }
+  if (deploymentMode === "manual-docker") {
+    notes.push("This provider becomes ready only after the deployed runtime reports bootstrap or heartbeat back to the cloud platform.");
+  }
   notes.push("After rotating the callback token, redeploy the world instance so heartbeat and activity callbacks keep working.");
 
   return {
@@ -57,9 +74,14 @@ export function buildWorldBootstrapConfig(
     phone: world.phone,
     slug: world.slug,
     providerKey: world.providerKey,
+    providerLabel,
+    deploymentMode,
     cloudPlatformBaseUrl,
     suggestedApiBaseUrl,
     suggestedAdminUrl,
+    image,
+    containerName,
+    volumeName,
     callbackToken,
     callbackEndpoints,
     env,
@@ -67,6 +89,44 @@ export function buildWorldBootstrapConfig(
     dockerComposeSnippet,
     notes,
   };
+}
+
+export function resolveProviderLabel(providerKey?: string | null) {
+  switch (providerKey?.trim()) {
+    case "manual":
+    case "manual-docker":
+      return "Manual Docker Host";
+    case "mock":
+    default:
+      return "Mock Local Provider";
+  }
+}
+
+export function resolveDeploymentMode(providerKey?: string | null) {
+  switch (providerKey?.trim()) {
+    case "manual":
+    case "manual-docker":
+      return "manual-docker";
+    case "mock":
+    default:
+      return "mock";
+  }
+}
+
+export function resolveRuntimeImage(providerKey: string | null | undefined, config: ConfigReader) {
+  if (resolveDeploymentMode(providerKey) !== "manual-docker") {
+    return null;
+  }
+
+  return trimToNull(config.get<string>("CLOUD_MANUAL_DOCKER_IMAGE")) ?? DEFAULT_MANUAL_DOCKER_IMAGE;
+}
+
+export function resolveWorldContainerName(world: Pick<BootstrapWorld, "id" | "slug">) {
+  return `yinjie-world-${sanitizeResourceToken(world.slug ?? world.id)}`;
+}
+
+export function resolveWorldDataVolumeName(world: Pick<BootstrapWorld, "id" | "slug">) {
+  return `${resolveWorldContainerName(world)}-data`;
 }
 
 export function resolveSuggestedWorldApiBaseUrl(
@@ -135,6 +195,37 @@ function resolveDefaultHeartbeatInterval(config: ConfigReader) {
   return trimToNull(config.get<string>("CLOUD_DEFAULT_WORLD_HEARTBEAT_INTERVAL_MS")) ?? "30000";
 }
 
+function buildManualDockerComposeSnippet({
+  image,
+  containerName,
+  volumeName,
+  env,
+}: {
+  image?: string | null;
+  containerName: string;
+  volumeName: string;
+  env: Record<string, string>;
+}) {
+  const environment = {
+    DATABASE_PATH: "/app/data/database.sqlite",
+    ...env,
+  };
+
+  return [
+    "services:",
+    "  api:",
+    `    image: "${escapeDoubleQuotes(image ?? DEFAULT_MANUAL_DOCKER_IMAGE)}"`,
+    `    container_name: "${escapeDoubleQuotes(containerName)}"`,
+    "    restart: unless-stopped",
+    "    environment:",
+    ...Object.entries(environment).map(([key, value]) => `      ${key}: "${escapeDoubleQuotes(value)}"`),
+    "    volumes:",
+    `      - "${escapeDoubleQuotes(volumeName)}:/app/data"`,
+    "volumes:",
+    `  ${volumeName}: {}`,
+  ].join("\n");
+}
+
 function applyWorldTemplate(
   template: string,
   world: Pick<BootstrapWorld, "id" | "phone" | "slug" | "providerRegion" | "providerZone">,
@@ -174,6 +265,17 @@ function normalizeUrl(value?: string | null) {
 function trimToNull(value?: string | null) {
   const trimmedValue = value?.trim();
   return trimmedValue ? trimmedValue : null;
+}
+
+function sanitizeResourceToken(value: string) {
+  const normalizedValue = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return normalizedValue || "world";
 }
 
 function escapeDoubleQuotes(value: string) {

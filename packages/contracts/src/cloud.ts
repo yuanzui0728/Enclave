@@ -158,15 +158,38 @@ export interface CloudWorldCallbackEndpoints {
   fail: string;
 }
 
+export interface CloudComputeProviderCapabilities {
+  managedProvisioning: boolean;
+  managedLifecycle: boolean;
+  bootstrapPackage: boolean;
+  snapshots: boolean;
+}
+
+export interface CloudComputeProviderSummary {
+  key: string;
+  label: string;
+  description: string;
+  provisionStrategy: string;
+  deploymentMode: string;
+  defaultRegion?: string | null;
+  defaultZone?: string | null;
+  capabilities: CloudComputeProviderCapabilities;
+}
+
 export interface CloudWorldBootstrapConfig {
   worldId: string;
   worldName: string;
   phone: string;
   slug?: string | null;
   providerKey?: string | null;
+  providerLabel?: string | null;
+  deploymentMode?: string | null;
   cloudPlatformBaseUrl: string;
   suggestedApiBaseUrl?: string | null;
   suggestedAdminUrl?: string | null;
+  image?: string | null;
+  containerName?: string | null;
+  volumeName?: string | null;
   callbackToken: string;
   callbackEndpoints: CloudWorldCallbackEndpoints;
   env: Record<string, string>;

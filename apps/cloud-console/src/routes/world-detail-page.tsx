@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import type { CloudWorldLifecycleStatus } from "@yinjie/contracts";
+import type { CloudComputeProviderSummary, CloudWorldLifecycleStatus } from "@yinjie/contracts";
 import { ErrorBlock } from "@yinjie/ui";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 
@@ -30,6 +30,41 @@ function formatOptional(value?: string | null) {
   return value?.trim() || "Not set";
 }
 
+function resolveCanonicalProviderKey(value?: string | null) {
+  return value?.trim() === "manual" ? "manual-docker" : value?.trim() || "";
+}
+
+function findProviderByKey(providers: CloudComputeProviderSummary[], providerKey: string) {
+  const canonicalProviderKey = resolveCanonicalProviderKey(providerKey);
+  return providers.find((provider) => provider.key === canonicalProviderKey) ?? null;
+}
+
+function buildProviderOptions(providers: CloudComputeProviderSummary[], providerKey: string) {
+  const selectedProvider = findProviderByKey(providers, providerKey);
+  if (selectedProvider || !providerKey) {
+    return providers;
+  }
+
+  return [
+    ...providers,
+    {
+      key: providerKey,
+      label: `${providerKey} (legacy)`,
+      description: "This provider key is not in the current catalog yet.",
+      provisionStrategy: providerKey,
+      deploymentMode: "custom",
+      defaultRegion: null,
+      defaultZone: null,
+      capabilities: {
+        managedProvisioning: false,
+        managedLifecycle: false,
+        bootstrapPackage: false,
+        snapshots: false,
+      },
+    },
+  ];
+}
+
 export function WorldDetailPage() {
   const { worldId } = useParams({ from: "/worlds/$worldId" });
   const queryClient = useQueryClient();
@@ -37,6 +72,10 @@ export function WorldDetailPage() {
   const worldQuery = useQuery({
     queryKey: ["cloud-console", "world", worldId],
     queryFn: () => cloudAdminApi.getWorld(worldId),
+  });
+  const providersQuery = useQuery({
+    queryKey: ["cloud-console", "providers"],
+    queryFn: () => cloudAdminApi.listProviders(),
   });
   const instanceQuery = useQuery({
     queryKey: ["cloud-console", "world-instance", worldId],
@@ -109,7 +148,29 @@ export function WorldDetailPage() {
   const instance = instanceQuery.data;
   const bootstrapConfig = bootstrapConfigQuery.data;
   const jobs = jobsQuery.data ?? [];
+  const providers = providersQuery.data ?? [];
+  const providerOptions = buildProviderOptions(providers, providerKey);
+  const selectedProvider = findProviderByKey(providerOptions, providerKey);
   const worldError = worldQuery.error instanceof Error ? worldQuery.error.message : null;
+
+  function handleProviderKeyChange(nextProviderKey: string) {
+    const nextProvider = findProviderByKey(providers, nextProviderKey);
+    const previousProvider = findProviderByKey(providers, providerKey);
+
+    setProviderKey(nextProviderKey);
+    if (!nextProvider) {
+      return;
+    }
+
+    setProvisionStrategy(nextProvider.provisionStrategy);
+
+    if (!providerRegion || providerRegion === (previousProvider?.defaultRegion ?? "")) {
+      setProviderRegion(nextProvider.defaultRegion ?? "");
+    }
+    if (!providerZone || providerZone === (previousProvider?.defaultZone ?? "")) {
+      setProviderZone(nextProvider.defaultZone ?? "");
+    }
+  }
 
   useEffect(() => {
     if (!world) {
@@ -120,7 +181,7 @@ export function WorldDetailPage() {
     setPhone(world.phone);
     setName(world.name);
     setProvisionStrategy(world.provisionStrategy ?? "");
-    setProviderKey(world.providerKey ?? "");
+    setProviderKey(resolveCanonicalProviderKey(world.providerKey));
     setProviderRegion(world.providerRegion ?? "");
     setProviderZone(world.providerZone ?? "");
     setApiBaseUrl(world.apiBaseUrl ?? "");
@@ -247,20 +308,48 @@ export function WorldDetailPage() {
               <input
                 value={provisionStrategy}
                 onChange={(event) => setProvisionStrategy(event.target.value)}
-                placeholder="mock"
+                placeholder={selectedProvider?.provisionStrategy ?? "mock"}
                 className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
               />
             </label>
 
             <label className="grid gap-2 text-sm">
               <span>Provider key</span>
-              <input
+              <select
                 value={providerKey}
-                onChange={(event) => setProviderKey(event.target.value)}
-                placeholder="mock"
+                onChange={(event) => handleProviderKeyChange(event.target.value)}
                 className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-[color:var(--text-primary)]"
-              />
+              >
+                {!providerKey ? <option value="">Select provider</option> : null}
+                {providerOptions.map((provider) => (
+                  <option key={provider.key} value={provider.key}>
+                    {provider.label} ({provider.key})
+                  </option>
+                ))}
+              </select>
             </label>
+
+            {providersQuery.isError && providersQuery.error instanceof Error ? (
+              <ErrorBlock message={providersQuery.error.message} />
+            ) : null}
+
+            {selectedProvider ? (
+              <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">Provider profile</div>
+                <div className="mt-2 font-medium text-[color:var(--text-primary)]">{selectedProvider.label}</div>
+                <div className="mt-1 leading-6">{selectedProvider.description}</div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div>Deployment: {selectedProvider.deploymentMode}</div>
+                  <div>Default region: {formatOptional(selectedProvider.defaultRegion)}</div>
+                  <div>Default zone: {formatOptional(selectedProvider.defaultZone)}</div>
+                  <div>Managed lifecycle: {selectedProvider.capabilities.managedLifecycle ? "Yes" : "No"}</div>
+                  <div>Managed provisioning: {selectedProvider.capabilities.managedProvisioning ? "Yes" : "No"}</div>
+                  <div>Snapshots: {selectedProvider.capabilities.snapshots ? "Yes" : "No"}</div>
+                </div>
+              </div>
+            ) : providersQuery.isLoading ? (
+              <div className="text-sm text-[color:var(--text-muted)]">Loading provider catalog...</div>
+            ) : null}
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm">
@@ -443,9 +532,14 @@ export function WorldDetailPage() {
             {bootstrapConfig ? (
               <div className="mt-4 grid gap-4">
                 <div className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                  <div>Provider: {formatOptional(bootstrapConfig.providerLabel ?? bootstrapConfig.providerKey)}</div>
+                  <div>Deployment: {formatOptional(bootstrapConfig.deploymentMode)}</div>
                   <div>Cloud platform: {bootstrapConfig.cloudPlatformBaseUrl}</div>
                   <div>Suggested API: {formatOptional(bootstrapConfig.suggestedApiBaseUrl)}</div>
                   <div>Suggested admin: {formatOptional(bootstrapConfig.suggestedAdminUrl)}</div>
+                  <div>Image: {formatOptional(bootstrapConfig.image)}</div>
+                  <div>Container: {formatOptional(bootstrapConfig.containerName)}</div>
+                  <div>Volume: {formatOptional(bootstrapConfig.volumeName)}</div>
                   <div>Callback token: {bootstrapConfig.callbackToken || "Not set"}</div>
                 </div>
 
