@@ -275,9 +275,9 @@ export function CharactersPage() {
             {presetsExpanded
               ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m6 9 6 6 6-6"/></svg>
               : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-[color:var(--text-muted)]"><path d="m9 18 6-6-6-6"/></svg>}
-            <AdminEyebrow className="flex-1">待激活的世界角色</AdminEyebrow>
+            <AdminEyebrow className="flex-1">预置角色库</AdminEyebrow>
             <span className="rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-xs text-[color:var(--text-muted)]">
-              {uninstalledPresets.length} 个未激活
+              {uninstalledPresets.length} 个未安装
             </span>
             <Button
               variant="primary"
@@ -288,7 +288,7 @@ export function CharactersPage() {
               }}
               disabled={isInstallingAnyPreset}
             >
-              {installPresetBatchMutation.isPending ? "激活中..." : "全部激活"}
+              {installPresetBatchMutation.isPending ? "安装中..." : "全部安装"}
             </Button>
           </button>
 
@@ -310,7 +310,7 @@ export function CharactersPage() {
                     onClick={() => installPresetMutation.mutate(preset.presetKey)}
                     disabled={isInstallingAnyPreset}
                   >
-                    {installingPresetKey === preset.presetKey ? "激活中..." : "激活"}
+                    {installingPresetKey === preset.presetKey ? "安装中..." : "安装"}
                   </Button>
                 </div>
               ))}
