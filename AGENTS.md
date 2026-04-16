@@ -477,6 +477,7 @@
   - `GET /admin/cloud/worlds/:id/instance`
   - `GET /admin/cloud/worlds/:id/bootstrap-config`
   - `GET /admin/cloud/worlds/:id/runtime-status`
+  - `POST /admin/cloud/worlds/:id/reconcile`
   - `POST /admin/cloud/worlds/:id/resume`
   - `POST /admin/cloud/worlds/:id/suspend`
   - `POST /admin/cloud/worlds/:id/retry`
@@ -517,6 +518,7 @@
   - `CLOUD_MANUAL_DOCKER_SSH_USER`
   - `CLOUD_MANUAL_DOCKER_SSH_PRIVATE_KEY_PATH`
   - `CLOUD_MANUAL_DOCKER_SSH_STRICT_HOST_KEY_CHECKING`
+  - `CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
 - Cloud console world detail now exposes a bootstrap package:
   - generated runtime env overlay for `api`
@@ -539,3 +541,8 @@
   - providers implement a unified runtime-status inspection surface
   - `manual-docker` can inspect the remote Docker host over SSH and report `running / starting / stopped / missing / error`
   - cloud console world detail now shows provider-observed deployment state separately from runtime heartbeat state
+- World lifecycle reconcile now uses provider observation to heal drift:
+  - maintenance loop inspects active worlds with no in-flight lifecycle jobs
+  - if desired state is `running` but provider reports `stopped` or `missing`, the platform queues recovery automatically
+  - if desired state is `sleeping` but provider still reports `running`, the platform queues suspend automatically
+  - cloud console world detail exposes a manual `Reconcile` action for on-demand drift repair
