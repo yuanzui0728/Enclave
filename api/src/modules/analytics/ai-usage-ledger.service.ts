@@ -6,6 +6,8 @@ import { SystemConfigService } from '../config/config.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { GroupEntity } from '../chat/group.entity';
+import { MessageEntity } from '../chat/message.entity';
+import { AdminConversationReviewEntity } from '../admin/admin-conversation-review.entity';
 
 type PricingCurrency = 'CNY' | 'USD';
 type LedgerStatus = 'success' | 'failed';
@@ -235,6 +237,7 @@ const PRICING_CONFIG_KEY = 'token_pricing_catalog';
 const BUDGET_CONFIG_KEY = 'token_budget_config';
 const PRICING_CACHE_TTL_MS = 10_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const IMMEDIATE_CONTINUATION_WINDOW_MS = 15 * 60 * 1000;
 
 @Injectable()
 export class AiUsageLedgerService {
@@ -737,6 +740,225 @@ export class AiUsageLedgerService {
           estimatedOriginalCost: this.roundCost(item.estimatedOriginalCost),
           estimatedSavings: this.roundCost(item.estimatedSavings),
         })),
+    };
+  }
+
+  async getDowngradeQuality(query: TokenUsageQuery) {
+    const normalized = this.normalizeQuery({
+      ...query,
+      status: 'success',
+      errorCode: 'BUDGET_DOWNGRADED',
+    });
+    const records = await this.repo.find({
+      where: this.buildWhere(normalized),
+      order: { occurredAt: 'ASC' },
+    });
+    const generatedAt = new Date().toISOString();
+    const requestCount = records.length;
+    const conversationScopedRecords = records.filter((record) =>
+      Boolean(record.conversationId?.trim()),
+    );
+    const conversationScopedRequestCount = conversationScopedRecords.length;
+    const unscopedRequestCount = requestCount - conversationScopedRequestCount;
+    const conversationIds = Array.from(
+      new Set(
+        conversationScopedRecords.map((record) => record.conversationId!.trim()),
+      ),
+    );
+
+    if (!conversationIds.length) {
+      return {
+        generatedAt,
+        requestCount,
+        conversationScopedRequestCount,
+        unscopedRequestCount,
+        distinctConversationCount: 0,
+        reviewedConversationCount: 0,
+        resolvedConversationCount: 0,
+        importantConversationCount: 0,
+        immediateContinuationCount: 0,
+        continuedWithin24hCount: 0,
+        postDowngradeFailureCount: 0,
+        postDowngradeBlockedCount: 0,
+        immediateContinuationRate: null,
+        continuedWithin24hRate: null,
+        postDowngradeFailureRate: null,
+        postDowngradeBlockedRate: null,
+        reviewCoverageRate: null,
+        proxyQualityScore: null,
+      };
+    }
+
+    const earliestOccurredAt = conversationScopedRecords[0]?.occurredAt ?? new Date();
+    const latestOccurredAt =
+      conversationScopedRecords[conversationScopedRecords.length - 1]?.occurredAt ??
+      earliestOccurredAt;
+    const analysisEndAt = new Date(
+      latestOccurredAt.getTime() + DAY_MS,
+    );
+    const messageRepo = this.repo.manager.getRepository(MessageEntity);
+    const reviewRepo = this.repo.manager.getRepository(AdminConversationReviewEntity);
+    const [messages, followupLedgerRecords, reviews] = await Promise.all([
+      messageRepo.find({
+        where: {
+          conversationId: In(conversationIds),
+          createdAt: Between(earliestOccurredAt, analysisEndAt),
+        },
+        order: { createdAt: 'ASC' },
+      }),
+      this.repo.find({
+        where: {
+          conversationId: In(conversationIds),
+          occurredAt: Between(earliestOccurredAt, analysisEndAt),
+        },
+        order: { occurredAt: 'ASC' },
+      }),
+      reviewRepo.find({
+        where: {
+          conversationId: In(conversationIds),
+        },
+      }),
+    ]);
+
+    const messagesByConversation = new Map<string, MessageEntity[]>();
+    messages.forEach((message) => {
+      const items = messagesByConversation.get(message.conversationId) ?? [];
+      items.push(message);
+      messagesByConversation.set(message.conversationId, items);
+    });
+
+    const ledgerByConversation = new Map<string, AiUsageLedgerEntity[]>();
+    followupLedgerRecords.forEach((record) => {
+      const conversationId = record.conversationId?.trim();
+      if (!conversationId) {
+        return;
+      }
+      const items = ledgerByConversation.get(conversationId) ?? [];
+      items.push(record);
+      ledgerByConversation.set(conversationId, items);
+    });
+
+    const reviewMap = new Map(
+      reviews.map((review) => [review.conversationId, review]),
+    );
+
+    let immediateContinuationCount = 0;
+    let continuedWithin24hCount = 0;
+    let postDowngradeFailureCount = 0;
+    let postDowngradeBlockedCount = 0;
+
+    conversationScopedRecords.forEach((record) => {
+      const conversationId = record.conversationId!.trim();
+      const recordTime = record.occurredAt.getTime();
+      const continuationDeadline = recordTime + DAY_MS;
+      const immediateDeadline = recordTime + IMMEDIATE_CONTINUATION_WINDOW_MS;
+      const conversationMessages =
+        messagesByConversation.get(conversationId) ?? [];
+      const conversationLedger = ledgerByConversation.get(conversationId) ?? [];
+
+      const hasImmediateContinuation = conversationMessages.some((message) => {
+        const messageTime = message.createdAt.getTime();
+        return messageTime > recordTime && messageTime <= immediateDeadline;
+      });
+      const hasContinuationWithin24h = conversationMessages.some((message) => {
+        const messageTime = message.createdAt.getTime();
+        return messageTime > recordTime && messageTime <= continuationDeadline;
+      });
+      const hasPostDowngradeFailure = conversationLedger.some((followup) => {
+        if (followup.id === record.id) {
+          return false;
+        }
+        const followupTime = followup.occurredAt.getTime();
+        return (
+          followupTime > recordTime &&
+          followupTime <= continuationDeadline &&
+          followup.status === 'failed'
+        );
+      });
+      const hasPostDowngradeBlocked = conversationLedger.some((followup) => {
+        if (followup.id === record.id) {
+          return false;
+        }
+        const followupTime = followup.occurredAt.getTime();
+        return (
+          followupTime > recordTime &&
+          followupTime <= continuationDeadline &&
+          followup.errorCode === 'BUDGET_BLOCKED'
+        );
+      });
+
+      if (hasImmediateContinuation) {
+        immediateContinuationCount += 1;
+      }
+      if (hasContinuationWithin24h) {
+        continuedWithin24hCount += 1;
+      }
+      if (hasPostDowngradeFailure) {
+        postDowngradeFailureCount += 1;
+      }
+      if (hasPostDowngradeBlocked) {
+        postDowngradeBlockedCount += 1;
+      }
+    });
+
+    const reviewedConversationCount = reviews.length;
+    const resolvedConversationCount = reviews.filter(
+      (review) => review.status === 'resolved',
+    ).length;
+    const importantConversationCount = reviews.filter(
+      (review) => review.status === 'important',
+    ).length;
+    const distinctConversationCount = conversationIds.length;
+    const immediateContinuationRate =
+      requestCount > 0
+        ? this.roundRatio(immediateContinuationCount / requestCount)
+        : null;
+    const continuedWithin24hRate =
+      requestCount > 0
+        ? this.roundRatio(continuedWithin24hCount / requestCount)
+        : null;
+    const postDowngradeFailureRate =
+      requestCount > 0
+        ? this.roundRatio(postDowngradeFailureCount / requestCount)
+        : null;
+    const postDowngradeBlockedRate =
+      requestCount > 0
+        ? this.roundRatio(postDowngradeBlockedCount / requestCount)
+        : null;
+    const reviewCoverageRate =
+      distinctConversationCount > 0
+        ? this.roundRatio(reviewedConversationCount / distinctConversationCount)
+        : null;
+    const proxyQualityScore =
+      requestCount > 0
+        ? this.roundRatio(
+            ((immediateContinuationRate ?? 0) * 0.35) +
+              ((continuedWithin24hRate ?? 0) * 0.25) +
+              ((1 - (postDowngradeFailureRate ?? 0)) * 0.2) +
+              ((1 - (postDowngradeBlockedRate ?? 0)) * 0.1) +
+              ((reviewCoverageRate ?? 0) * 0.1),
+          )
+        : null;
+
+    return {
+      generatedAt,
+      requestCount,
+      conversationScopedRequestCount,
+      unscopedRequestCount,
+      distinctConversationCount,
+      reviewedConversationCount,
+      resolvedConversationCount,
+      importantConversationCount,
+      immediateContinuationCount,
+      continuedWithin24hCount,
+      postDowngradeFailureCount,
+      postDowngradeBlockedCount,
+      immediateContinuationRate,
+      continuedWithin24hRate,
+      postDowngradeFailureRate,
+      postDowngradeBlockedRate,
+      reviewCoverageRate,
+      proxyQualityScore,
     };
   }
 
