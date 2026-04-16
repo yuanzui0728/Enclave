@@ -1,53 +1,82 @@
+// 场景提示词：每个场景独立配置
+export interface ScenePrompts {
+  chat?: string;            // 聊天回复
+  moments_post?: string;    // 发朋友圈
+  moments_comment?: string; // 朋友圈评论/回复
+  feed_post?: string;       // 发 Feed 贴文
+  channel_post?: string;    // 发视频号内容
+  feed_comment?: string;    // Feed 评论反应
+  greeting?: string;        // 好友请求问候 / 摇一摇
+  proactive?: string;       // 主动提醒
+}
+
+export type SceneKey = keyof ScenePrompts;
+
 // 角色人格画像结构
 export interface PersonalityProfile {
   characterId: string;
   name: string;
   relationship: string;
   expertDomains: string[];
-  coreDirective?: string; // 行动纲领（始终注入，最高优先级行为准则）
-  basePrompt?: string; // 角色身份定义（固定，不含性格描述）
+
+  /** 底层逻辑：注入所有场景，优先于 coreDirective */
+  coreLogic?: string;
+  /** 场景提示词：每个场景独立配置，叠加在底层逻辑之上 */
+  scenePrompts?: ScenePrompts;
+
+  /** @deprecated 使用 coreLogic 替代 */
+  coreDirective?: string;
+  /** @deprecated 使用 scenePrompts.chat 替代 */
+  basePrompt?: string;
+  /** @deprecated 直接使用 coreLogic + scenePrompts */
+  systemPrompt?: string;
+
+  /** @deprecated 使用 scenePrompts 各场景字段替代 */
   traits: {
-    speechPatterns: string[]; // 说话习惯
-    catchphrases: string[]; // 口头禅
-    topicsOfInterest: string[]; // 常聊话题
-    emotionalTone: string; // 情感基调
+    speechPatterns: string[];
+    catchphrases: string[];
+    topicsOfInterest: string[];
+    emotionalTone: string;
     responseLength: 'short' | 'medium' | 'long';
     emojiUsage: 'none' | 'occasional' | 'frequent';
   };
-  memorySummary: string; // 压缩的长期记忆（旧字段，向后兼容）
-  systemPrompt?: string; // 自定义 system prompt（可选覆盖）
+  memorySummary: string;
 
-  // 深度人格模块
+  /** @deprecated */
   identity?: {
-    occupation: string; // 职业/身份
-    background: string; // 背景故事
-    motivation: string; // 核心动机/价值观
-    worldview: string; // 世界观
+    occupation: string;
+    background: string;
+    motivation: string;
+    worldview: string;
   };
+  /** @deprecated */
   behavioralPatterns?: {
-    workStyle: string; // 工作/思考方式
-    socialStyle: string; // 社交风格
-    taboos: string[]; // 语言/行为禁忌
-    quirks: string[]; // 个人癖好
+    workStyle: string;
+    socialStyle: string;
+    taboos: string[];
+    quirks: string[];
   };
+  /** @deprecated */
   cognitiveBoundaries?: {
-    expertiseDescription: string; // 专长详细描述
-    knowledgeLimits: string; // 知识边界说明
-    refusalStyle: string; // 超出边界时的拒绝风格
+    expertiseDescription: string;
+    knowledgeLimits: string;
+    refusalStyle: string;
   };
-
-  // 推理机制开关
+  /** @deprecated */
   reasoningConfig?: {
-    enableCoT: boolean; // 思维链（默认 true）
-    enableReflection: boolean; // 自我反思（默认 true）
-    enableRouting: boolean; // 跨角色路由（默认 true）
+    enableCoT: boolean;
+    enableReflection: boolean;
+    enableRouting: boolean;
   };
 
-  // 分层记忆
   memory?: {
-    coreMemory: string; // 永久核心记忆（手动设置，不会遗忘）
-    recentSummary: string; // 近期摘要（每10条自动更新）
-    forgettingCurve: number; // 0-100，越低越容易遗忘细节（默认 70）
+    coreMemory: string;
+    recentSummary: string;
+    forgettingCurve: number;
+    /** 近期摘要提取提示词，留空使用全局默认。变量：{{name}}、{{chatHistory}} */
+    recentSummaryPrompt?: string;
+    /** 核心记忆提取提示词，留空使用全局默认。变量：{{name}}、{{interactionHistory}} */
+    coreMemoryPrompt?: string;
   };
 }
 
