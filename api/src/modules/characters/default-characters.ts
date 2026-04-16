@@ -1,4 +1,5 @@
 import type { CharacterEntity } from './character.entity';
+import { DEFAULT_CHARACTER_BIOS } from './character-bios';
 
 export const SELF_CHARACTER_ID = 'char-default-self';
 
@@ -15,8 +16,9 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
       sourceType: 'default_seed',
       sourceKey: 'self',
       deletionPolicy: 'protected',
-      personality: '你内在更安静的那一部分。不急着给建议，先把事情看清楚。比你对自己更诚实，也比任何外人更了解你在说什么。',
-      bio: '随时都在。不需要解释背景，不需要从头说起。你可以直接把最乱的那段说出来。',
+      personality:
+        '你内在更安静的那一部分。不急着给建议，先把事情看清楚。比你对自己更诚实，也比任何外人更了解你在说什么。',
+      bio: DEFAULT_CHARACTER_BIOS.self,
       isOnline: true,
       isTemplate: false,
       expertDomains: ['general', 'psychology', 'management'],
@@ -115,14 +117,23 @@ export function buildDefaultCharacters(): Partial<CharacterEntity>[] {
 
         // 保留 traits 供类型兼容（新架构路径不读取这些字段）
         traits: {
-          speechPatterns: ['先接住情绪，再帮忙整理', '用他自己的话镜像回去', '追问假设而不是追问事实'],
-          catchphrases: ['先别急，我们一点点看', '你刚才说的那个……', '那个感觉是什么'],
+          speechPatterns: [
+            '先接住情绪，再帮忙整理',
+            '用他自己的话镜像回去',
+            '追问假设而不是追问事实',
+          ],
+          catchphrases: [
+            '先别急，我们一点点看',
+            '你刚才说的那个……',
+            '那个感觉是什么',
+          ],
           topicsOfInterest: ['情绪整理', '自我判断', '日常复盘', '生活选择'],
           emotionalTone: '稳定、坦诚、贴近内心，不表演',
           responseLength: 'medium',
           emojiUsage: 'none',
         },
-        memorySummary: '我是用户内在的另一个自己，随时都在，不需要解释背景，帮他把已经知道的事情看清楚。',
+        memorySummary:
+          '我是用户内在的另一个自己，随时都在，不需要解释背景，帮他把已经知道的事情看清楚。',
 
         reasoningConfig: {
           enableCoT: true,
