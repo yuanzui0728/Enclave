@@ -53,8 +53,7 @@ const FACTORY_TABS = [
   { key: "ai", label: "AI 辅助" },
   { key: "identity", label: "身份关系" },
   { key: "expertise", label: "能力边界" },
-  { key: "tone", label: "语气行为" },
-  { key: "prompts", label: "提示词" },
+  { key: "tone", label: "语气与提示词" },
   { key: "memory", label: "记忆策略" },
   { key: "publish", label: "推理发布" },
   { key: "versions", label: "版本 Diff" },
@@ -617,17 +616,11 @@ export function CharacterFactoryPage() {
                   }
                 />
               </div>
-            </Card>
-          ) : null}
-
-          {/* Tab: 提示词 */}
-          {activeTab === "prompts" ? (
-            <Card className="bg-[color:var(--surface-console)]">
-              <SectionHeading>提示词</SectionHeading>
-              <InlineNotice className="mt-4" tone="muted">
-                行动纲领是最高优先级准则，会在聊天、朋友圈等所有场景中强制注入。
-              </InlineNotice>
-              <div className="mt-4 space-y-4">
+              <div className="mt-6 border-t border-[color:var(--border-faint)] pt-5 space-y-4">
+                <div className="text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]">提示词配置</div>
+                <InlineNotice tone="muted">
+                  行动纲领是最高优先级准则，会在聊天、朋友圈等所有场景中强制注入。
+                </InlineNotice>
                 <TextAreaBlock
                   label="行动纲领（底层逻辑）"
                   value={draft.tone.coreDirective ?? ""}
