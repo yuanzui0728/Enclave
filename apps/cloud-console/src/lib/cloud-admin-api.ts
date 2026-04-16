@@ -147,6 +147,8 @@ export const cloudAdminApi = {
   getWorldRuntimeStatus: (worldId: string) =>
     adminFetch<CloudWorldRuntimeStatusSummary>(`/worlds/${worldId}/runtime-status`),
 
+  reconcileWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/reconcile`, { method: "POST" }),
+
   resumeWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/resume`, { method: "POST" }),
 
   suspendWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/suspend`, { method: "POST" }),

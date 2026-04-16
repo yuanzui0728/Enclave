@@ -144,6 +144,10 @@ export function WorldDetailPage() {
     mutationFn: () => cloudAdminApi.retryWorld(worldId),
     onSuccess: invalidateWorldQueries,
   });
+  const reconcileMutation = useMutation({
+    mutationFn: () => cloudAdminApi.reconcileWorld(worldId),
+    onSuccess: invalidateWorldQueries,
+  });
   const rotateCallbackTokenMutation = useMutation({
     mutationFn: () => cloudAdminApi.rotateWorldCallbackToken(worldId),
     onSuccess: invalidateWorldQueries,
@@ -211,6 +215,7 @@ export function WorldDetailPage() {
     resumeMutation.isPending ||
     suspendMutation.isPending ||
     retryMutation.isPending ||
+    reconcileMutation.isPending ||
     rotateCallbackTokenMutation.isPending;
 
   return (
@@ -249,6 +254,14 @@ export function WorldDetailPage() {
               >
                 {retryMutation.isPending ? "Retrying..." : "Retry"}
               </button>
+              <button
+                type="button"
+                disabled={actionPending}
+                onClick={() => reconcileMutation.mutate()}
+                className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)] disabled:opacity-60"
+              >
+                {reconcileMutation.isPending ? "Reconciling..." : "Reconcile"}
+              </button>
             </div>
           </div>
 
@@ -256,6 +269,7 @@ export function WorldDetailPage() {
             resumeMutation.error instanceof Error ||
             suspendMutation.error instanceof Error ||
             retryMutation.error instanceof Error ||
+            reconcileMutation.error instanceof Error ||
             rotateCallbackTokenMutation.error instanceof Error
           ) && (
             <div className="mt-4">
@@ -267,6 +281,8 @@ export function WorldDetailPage() {
                       ? suspendMutation.error.message
                       : retryMutation.error instanceof Error
                         ? retryMutation.error.message
+                        : reconcileMutation.error instanceof Error
+                          ? reconcileMutation.error.message
                         : rotateCallbackTokenMutation.error instanceof Error
                           ? rotateCallbackTokenMutation.error.message
                           : "Unknown action error."

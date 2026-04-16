@@ -23,6 +23,7 @@ import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import { CloudWorldRequestEntity } from "../entities/cloud-world-request.entity";
 import { WorldLifecycleJobEntity } from "../entities/world-lifecycle-job.entity";
 import { buildWorldBootstrapConfig, resolveSuggestedWorldAdminUrl, resolveSuggestedWorldApiBaseUrl } from "../orchestration/world-bootstrap-config";
+import { WorldLifecycleWorkerService } from "../orchestration/world-lifecycle-worker.service";
 import { ComputeProviderRegistryService } from "../providers/compute-provider-registry.service";
 import { WorldAccessService } from "../world-access/world-access.service";
 
@@ -40,6 +41,7 @@ export class CloudService {
     private readonly configService: ConfigService,
     private readonly phoneAuthService: PhoneAuthService,
     private readonly computeProviderRegistry: ComputeProviderRegistryService,
+    private readonly worldLifecycleWorker: WorldLifecycleWorkerService,
     private readonly worldAccessService: WorldAccessService,
   ) {}
 
@@ -345,6 +347,15 @@ export class CloudService {
       rawStatus: observedStatus.rawStatus ?? null,
       observedAt: new Date().toISOString(),
     };
+  }
+
+  async reconcileWorld(worldId: string) {
+    const reconciledWorld = await this.worldLifecycleWorker.reconcileWorldNow(worldId);
+    if (!reconciledWorld) {
+      throw new NotFoundException("鎵句笉鍒拌浜戜笘鐣屻€?");
+    }
+
+    return this.serializeWorld(reconciledWorld);
   }
 
   async rotateWorldCallbackToken(worldId: string): Promise<CloudWorldBootstrapConfig> {
