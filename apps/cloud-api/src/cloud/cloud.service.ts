@@ -4,6 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import type {
   CloudComputeProviderSummary,
   CloudWorldBootstrapConfig,
+  CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
   CloudWorldLookupResponse,
@@ -320,6 +321,30 @@ export class CloudService {
     const world = await this.requireWorld(worldId);
     const preparedWorld = await this.ensureWorldBootstrapCredentials(world);
     return buildWorldBootstrapConfig(preparedWorld, this.configService);
+  }
+
+  async getWorldRuntimeStatus(worldId: string): Promise<CloudWorldRuntimeStatusSummary> {
+    const world = await this.requireWorld(worldId);
+    const instance = await this.instanceRepo.findOne({
+      where: { worldId },
+    });
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+    const observedStatus = await provider.inspectInstance(instance, world);
+
+    return {
+      worldId: world.id,
+      providerKey: observedStatus.providerKey ?? provider.key,
+      deploymentMode: observedStatus.deploymentMode ?? provider.summary.deploymentMode,
+      executorMode: observedStatus.executorMode ?? null,
+      remoteHost: observedStatus.remoteHost ?? null,
+      remoteDeployPath: observedStatus.remoteDeployPath ?? null,
+      projectName: observedStatus.projectName ?? null,
+      containerName: observedStatus.containerName ?? null,
+      deploymentState: observedStatus.deploymentState,
+      providerMessage: observedStatus.providerMessage ?? null,
+      rawStatus: observedStatus.rawStatus ?? null,
+      observedAt: new Date().toISOString(),
+    };
   }
 
   async rotateWorldCallbackToken(worldId: string): Promise<CloudWorldBootstrapConfig> {

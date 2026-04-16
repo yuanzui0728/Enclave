@@ -1,6 +1,7 @@
 import type {
   CloudComputeProviderSummary,
   CloudWorldBootstrapConfig,
+  CloudWorldRuntimeStatusSummary,
   CloudInstanceSummary,
   CloudWorldLifecycleStatus,
   CloudWorldRequestRecord,
@@ -142,6 +143,9 @@ export const cloudAdminApi = {
 
   getWorldBootstrapConfig: (worldId: string) =>
     adminFetch<CloudWorldBootstrapConfig>(`/worlds/${worldId}/bootstrap-config`),
+
+  getWorldRuntimeStatus: (worldId: string) =>
+    adminFetch<CloudWorldRuntimeStatusSummary>(`/worlds/${worldId}/runtime-status`),
 
   resumeWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/resume`, { method: "POST" }),
 

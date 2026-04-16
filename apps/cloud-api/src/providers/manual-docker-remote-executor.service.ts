@@ -7,9 +7,12 @@ import { spawn } from "node:child_process";
 import type { CloudWorldBootstrapConfig } from "@yinjie/contracts";
 import type { CloudWorldEntity } from "../entities/cloud-world.entity";
 import {
+  resolveDeploymentMode,
   resolveWorldComposeProjectName,
+  resolveWorldContainerName,
   resolveWorldRemoteDeployPath,
 } from "../orchestration/world-bootstrap-config";
+import type { InspectWorldInstanceResult } from "./compute-provider.types";
 
 @Injectable()
 export class ManualDockerRemoteExecutorService {
@@ -73,6 +76,68 @@ export class ManualDockerRemoteExecutorService {
     await this.runComposeCommand(world, "stop");
   }
 
+  async inspectWorld(
+    world: Pick<CloudWorldEntity, "id" | "slug" | "providerKey">,
+    containerName = resolveWorldContainerName(world),
+  ): Promise<InspectWorldInstanceResult> {
+    const deploymentMode = resolveDeploymentMode(world.providerKey ?? "manual-docker", this.configService);
+    const remoteDeployPath = this.resolveRemoteDeployPath(world);
+    const projectName = this.resolveProjectName(world);
+    const remoteHost = this.resolveRemoteHost();
+
+    if (!this.isEnabled()) {
+      return {
+        providerKey: "manual-docker",
+        deploymentMode,
+        executorMode: this.resolveExecutorMode(),
+        remoteHost,
+        remoteDeployPath,
+        projectName,
+        containerName,
+        deploymentState: "package_only",
+        providerMessage: "Cloud platform generated the deployment package only. Verify container state manually on the target host.",
+        rawStatus: null,
+      };
+    }
+
+    try {
+      const inspectResult = await this.runSshCommand(
+        `docker inspect --format '{{.State.Status}}' ${escapeRemoteShellArg(containerName)} 2>/dev/null || echo __missing__`,
+      );
+      const rawStatus = inspectResult.stdout.trim() || "__missing__";
+
+      return {
+        providerKey: "manual-docker",
+        deploymentMode,
+        executorMode: this.resolveExecutorMode(),
+        remoteHost,
+        remoteDeployPath,
+        projectName,
+        containerName,
+        deploymentState: mapDockerStatusToDeploymentState(rawStatus),
+        providerMessage:
+          rawStatus === "__missing__"
+            ? "Container was not found on the Docker host."
+            : "Observed from remote Docker host over SSH.",
+        rawStatus: rawStatus === "__missing__" ? "missing" : rawStatus,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown SSH inspection error.";
+      return {
+        providerKey: "manual-docker",
+        deploymentMode,
+        executorMode: this.resolveExecutorMode(),
+        remoteHost,
+        remoteDeployPath,
+        projectName,
+        containerName,
+        deploymentState: "error",
+        providerMessage: message,
+        rawStatus: "error",
+      };
+    }
+  }
+
   private async runComposeCommand(world: Pick<CloudWorldEntity, "id" | "slug">, action: string) {
     const remoteDeployPath = this.requireRemoteDeployPath(world);
     const projectName = this.resolveProjectName(world);
@@ -105,13 +170,13 @@ export class ManualDockerRemoteExecutorService {
   private async runSshCommand(command: string) {
     const target = this.resolveTarget();
     const args = [...this.buildSshArgs(), target, command];
-    await runProcess("ssh", args);
+    return runProcess("ssh", args);
   }
 
   private async runScp(localPath: string, remotePath: string) {
     const target = this.resolveTarget();
     const args = [...this.buildScpArgs(), localPath, `${target}:${remotePath}`];
-    await runProcess("scp", args);
+    return runProcess("scp", args);
   }
 
   private buildSshArgs() {
@@ -170,7 +235,7 @@ function escapeRemoteShellArg(value: string) {
 }
 
 function runProcess(command: string, args: string[]) {
-  return new Promise<void>((resolve, reject) => {
+  return new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
@@ -188,7 +253,10 @@ function runProcess(command: string, args: string[]) {
     child.once("error", reject);
     child.once("close", (code) => {
       if (code === 0) {
-        resolve();
+        resolve({
+          stdout,
+          stderr,
+        });
         return;
       }
 
@@ -199,4 +267,23 @@ function runProcess(command: string, args: string[]) {
       );
     });
   });
+}
+
+function mapDockerStatusToDeploymentState(rawStatus: string): InspectWorldInstanceResult["deploymentState"] {
+  switch (rawStatus) {
+    case "running":
+      return "running";
+    case "created":
+    case "restarting":
+      return "starting";
+    case "paused":
+    case "exited":
+      return "stopped";
+    case "__missing__":
+      return "missing";
+    case "dead":
+      return "error";
+    default:
+      return "unknown";
+  }
 }

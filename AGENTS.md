@@ -97,7 +97,7 @@
 - `friend-moments-page.tsx`：桌面端好友朋友圈独立页，当前由 `desktop/friend-moments/$characterId` 承载，从通讯录 / 资料页 / 聊天信息等入口进入单个好友的朋友圈时间线
 - `chat-room-page` · `group-chat-page` · `character-detail-page` · `friend-requests-page` · `create-group-page`
 
-## 数据库实体（31个，物理表保持兼容）
+## 数据库实体（32个，物理表保持兼容）
 
 **核心**：User（运行时语义为单例 World Owner） · Character · Conversation · Message · SystemConfig
 
@@ -118,6 +118,8 @@
 **世界**：WorldContext · NarrativeArc
 
 **分析**：AIBehaviorLog · AIUsageLedger
+
+**后台**：AdminConversationReview
 
 ## 单用户世界约束（2026-04-08）
 
@@ -275,7 +277,7 @@
 - `character-editor-page.tsx`：角色画像编辑页，维护 prompt、traits、memory 与 reasoning
 - `character-factory-page.tsx`：角色工厂页，查看来源、草稿配方、字段来源、发布映射 diff、已发布版本与版本记录
 - `character-runtime-page.tsx`：角色运行逻辑台，查看单角色回复快照、scheduler 最近执行结果、生活状态、记忆摘要、叙事进度与生活逻辑可观测性，并直接修改运行时字段
-- `chat-records-page.tsx`：聊天记录管理页，集中查看世界主人与各角色的单聊档案、消息搜索、上下文定位与会话级 Token 成本
+- `chat-records-page.tsx`：聊天记录管理页，集中查看世界主人与各角色的单聊档案、消息搜索、上下文定位、会话级 Token 成本，以及样本标记 / 复盘备注池
 - `token-usage-page.tsx`：AI 用量中心页，查看 token / 费用总览、时间趋势、角色 / 场景 / 模型分布、预算预警、角色预算与价格配置
 - `evals-page.tsx`：生成评估、trace 与实验对比页
 - `setup-page.tsx`：运行时与 Provider 初始化配置页
@@ -303,6 +305,8 @@
 - `GET /api/admin/chat-records/conversations/:id/search`
 - `GET /api/admin/chat-records/conversations/:id/token-usage`
 - `GET /api/admin/chat-records/conversations/:id/export`
+- `PUT /api/admin/chat-records/conversations/:id/review`
+- `DELETE /api/admin/chat-records/conversations/:id/review`
 
 ## 管理后台 Token 用量路由
 
@@ -472,6 +476,7 @@
   - `GET /admin/cloud/jobs/:id`
   - `GET /admin/cloud/worlds/:id/instance`
   - `GET /admin/cloud/worlds/:id/bootstrap-config`
+  - `GET /admin/cloud/worlds/:id/runtime-status`
   - `POST /admin/cloud/worlds/:id/resume`
   - `POST /admin/cloud/worlds/:id/suspend`
   - `POST /admin/cloud/worlds/:id/retry`
@@ -530,3 +535,7 @@
 - Cloud console world detail now supports provider-catalog based editing for `provisionStrategy` / `providerKey` / `providerRegion` / `providerZone`, and displays instance resource metadata for future real VM providers.
 - Cloud bootstrap packages are now provider-aware and include `providerLabel`, `deploymentMode`, `image`, `containerName`, `volumeName`, plus a manual-docker compose snippet that can be applied on the target host.
 - Bootstrap packages for `manual-docker` now also expose `executorMode`, `projectName`, and `remoteDeployPath` so ops can see the exact remote deployment location used by the SSH executor.
+- Cloud platform now exposes provider runtime observation for ops:
+  - providers implement a unified runtime-status inspection surface
+  - `manual-docker` can inspect the remote Docker host over SSH and report `running / starting / stopped / missing / error`
+  - cloud console world detail now shows provider-observed deployment state separately from runtime heartbeat state

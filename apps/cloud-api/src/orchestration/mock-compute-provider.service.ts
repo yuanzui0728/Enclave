@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import type {
+  InspectWorldInstanceResult,
   ProvisionWorldInstanceResult,
   WorldComputeProvider,
   WorldInstancePowerTransitionResult,
@@ -79,11 +80,49 @@ export class MockComputeProviderService implements WorldComputeProvider {
     };
   }
 
+  inspectInstance(
+    instance: CloudInstanceEntity | null,
+    world: CloudWorldEntity,
+  ): InspectWorldInstanceResult {
+    const rawStatus = instance?.powerState ?? "absent";
+
+    return {
+      providerKey: this.key,
+      deploymentMode: this.summary.deploymentMode,
+      executorMode: "in-process",
+      remoteHost: "localhost",
+      remoteDeployPath: null,
+      projectName: world.slug ?? world.id,
+      containerName: instance?.providerInstanceId ?? null,
+      deploymentState: this.mapPowerStateToDeploymentState(rawStatus),
+      providerMessage: "Mock provider mirrors the persisted instance power state.",
+      rawStatus,
+    };
+  }
+
   resolveApiBaseUrl(world: CloudWorldEntity) {
     return resolveSuggestedWorldApiBaseUrl(world, this.configService) ?? "http://localhost:3000";
   }
 
   resolveAdminUrl(world: CloudWorldEntity) {
     return resolveSuggestedWorldAdminUrl(world, this.configService);
+  }
+
+  private mapPowerStateToDeploymentState(rawStatus: string): InspectWorldInstanceResult["deploymentState"] {
+    switch (rawStatus) {
+      case "running":
+        return "running";
+      case "starting":
+      case "provisioning":
+        return "starting";
+      case "stopped":
+      case "stopping":
+        return "stopped";
+      case "error":
+        return "error";
+      case "absent":
+      default:
+        return "missing";
+    }
   }
 }

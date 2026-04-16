@@ -4,6 +4,7 @@ import type { CloudComputeProviderSummary } from "@yinjie/contracts";
 import { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import { CloudWorldEntity } from "../entities/cloud-world.entity";
 import type {
+  InspectWorldInstanceResult,
   ProvisionWorldInstanceResult,
   WorldComputeProvider,
   WorldInstancePowerTransitionResult,
@@ -107,6 +108,13 @@ export class ManualDockerComputeProviderService implements WorldComputeProvider 
       powerState: "stopped",
       providerSnapshotId: instance.providerSnapshotId,
     };
+  }
+
+  inspectInstance(
+    instance: CloudInstanceEntity | null,
+    world: CloudWorldEntity,
+  ): Promise<InspectWorldInstanceResult> {
+    return this.remoteExecutor.inspectWorld(world, instance?.providerInstanceId ?? resolveWorldContainerName(world));
   }
 
   private resolveApiBaseUrl(world: CloudWorldEntity) {

@@ -85,6 +85,10 @@ export function WorldDetailPage() {
     queryKey: ["cloud-console", "world-bootstrap-config", worldId],
     queryFn: () => cloudAdminApi.getWorldBootstrapConfig(worldId),
   });
+  const runtimeStatusQuery = useQuery({
+    queryKey: ["cloud-console", "world-runtime-status", worldId],
+    queryFn: () => cloudAdminApi.getWorldRuntimeStatus(worldId),
+  });
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "jobs", "world", worldId],
     queryFn: () => cloudAdminApi.listJobs({ worldId }),
@@ -107,6 +111,7 @@ export function WorldDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "worlds"] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-instance", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-bootstrap-config", worldId] }),
+      queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-runtime-status", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "jobs"] }),
     ]);
   }
@@ -147,6 +152,7 @@ export function WorldDetailPage() {
   const world = worldQuery.data;
   const instance = instanceQuery.data;
   const bootstrapConfig = bootstrapConfigQuery.data;
+  const runtimeStatus = runtimeStatusQuery.data;
   const jobs = jobsQuery.data ?? [];
   const providers = providersQuery.data ?? [];
   const providerOptions = buildProviderOptions(providers, providerKey);
@@ -502,6 +508,49 @@ export function WorldDetailPage() {
             ) : (
               null
             )}
+          </div>
+
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">Runtime observation</div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                  Provider-side deployment status observed from the current compute adapter.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => runtimeStatusQuery.refetch()}
+                disabled={runtimeStatusQuery.isFetching}
+                className="rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-2 text-sm text-[color:var(--text-primary)] hover:bg-[color:var(--surface-tertiary)] disabled:opacity-60"
+              >
+                {runtimeStatusQuery.isFetching ? "Refreshing..." : "Refresh status"}
+              </button>
+            </div>
+
+            {runtimeStatusQuery.isError && runtimeStatusQuery.error instanceof Error ? (
+              <div className="mt-4">
+                <ErrorBlock message={runtimeStatusQuery.error.message} />
+              </div>
+            ) : null}
+
+            {runtimeStatus ? (
+              <div className="mt-4 space-y-2 text-sm text-[color:var(--text-secondary)]">
+                <div>Deployment state: {runtimeStatus.deploymentState}</div>
+                <div>Deployment mode: {formatOptional(runtimeStatus.deploymentMode)}</div>
+                <div>Executor mode: {formatOptional(runtimeStatus.executorMode)}</div>
+                <div>Remote host: {formatOptional(runtimeStatus.remoteHost)}</div>
+                <div>Remote path: {formatOptional(runtimeStatus.remoteDeployPath)}</div>
+                <div>Project: {formatOptional(runtimeStatus.projectName)}</div>
+                <div>Container: {formatOptional(runtimeStatus.containerName)}</div>
+                <div>Raw status: {formatOptional(runtimeStatus.rawStatus)}</div>
+                <div>Observed at: {formatDateTime(runtimeStatus.observedAt)}</div>
+                <div>Provider message: {formatOptional(runtimeStatus.providerMessage)}</div>
+              </div>
+            ) : runtimeStatusQuery.isLoading ? (
+              <div className="mt-4 text-sm text-[color:var(--text-muted)]">Loading runtime status...</div>
+            ) : null}
           </div>
 
           <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">

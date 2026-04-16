@@ -32,6 +32,15 @@ export type CloudInstancePowerState =
   | "stopping"
   | "error";
 
+export type CloudWorldDeploymentState =
+  | "unknown"
+  | "package_only"
+  | "running"
+  | "starting"
+  | "stopped"
+  | "missing"
+  | "error";
+
 export type WorldLifecycleJobType = "provision" | "resume" | "suspend";
 
 export type WorldLifecycleJobStatus =
@@ -199,6 +208,21 @@ export interface CloudWorldBootstrapConfig {
   envFileContent: string;
   dockerComposeSnippet: string;
   notes: string[];
+}
+
+export interface CloudWorldRuntimeStatusSummary {
+  worldId: string;
+  providerKey?: string | null;
+  deploymentMode?: string | null;
+  executorMode?: string | null;
+  remoteHost?: string | null;
+  remoteDeployPath?: string | null;
+  projectName?: string | null;
+  containerName?: string | null;
+  deploymentState: CloudWorldDeploymentState;
+  providerMessage?: string | null;
+  rawStatus?: string | null;
+  observedAt: string;
 }
 
 export interface WorldLifecycleJobSummary {

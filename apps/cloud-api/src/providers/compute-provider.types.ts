@@ -1,4 +1,4 @@
-import type { CloudComputeProviderSummary } from "@yinjie/contracts";
+import type { CloudComputeProviderSummary, CloudWorldDeploymentState } from "@yinjie/contracts";
 import type { CloudInstanceEntity } from "../entities/cloud-instance.entity";
 import type { CloudWorldEntity } from "../entities/cloud-world.entity";
 
@@ -26,6 +26,19 @@ export type WorldInstancePowerTransitionResult = {
   providerSnapshotId?: string | null;
 };
 
+export type InspectWorldInstanceResult = {
+  providerKey?: string | null;
+  deploymentMode?: string | null;
+  executorMode?: string | null;
+  remoteHost?: string | null;
+  remoteDeployPath?: string | null;
+  projectName?: string | null;
+  containerName?: string | null;
+  deploymentState: CloudWorldDeploymentState;
+  providerMessage?: string | null;
+  rawStatus?: string | null;
+};
+
 export interface WorldComputeProvider {
   readonly key: string;
   readonly summary: CloudComputeProviderSummary;
@@ -38,4 +51,8 @@ export interface WorldComputeProvider {
     instance: CloudInstanceEntity,
     world: CloudWorldEntity,
   ): Awaitable<WorldInstancePowerTransitionResult>;
+  inspectInstance(
+    instance: CloudInstanceEntity | null,
+    world: CloudWorldEntity,
+  ): Awaitable<InspectWorldInstanceResult>;
 }

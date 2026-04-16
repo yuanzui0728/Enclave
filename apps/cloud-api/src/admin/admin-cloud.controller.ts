@@ -102,6 +102,11 @@ export class AdminCloudController {
     return this.cloudService.getWorldBootstrapConfig(id);
   }
 
+  @Get("worlds/:id/runtime-status")
+  getWorldRuntimeStatus(@Param("id") id: string) {
+    return this.cloudService.getWorldRuntimeStatus(id);
+  }
+
   @Post("worlds/:id/resume")
   resumeWorld(@Param("id") id: string) {
     return this.cloudService.resumeWorld(id);
