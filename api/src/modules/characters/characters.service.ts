@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { CharacterEntity } from './character.entity';
 import { PersonalityProfile } from '../ai/ai.types';
+import { applyPersistentNaturalDialogueProfile } from '../ai/prompt-naturalness';
 import { ConversationEntity } from '../chat/conversation.entity';
 import { MessageEntity } from '../chat/message.entity';
 import { GroupEntity } from '../chat/group.entity';
@@ -152,6 +153,9 @@ export class CharactersService {
       this.repo.create({
         ...preset.character,
         id: preset.id,
+        profile: preset.character.profile
+          ? applyPersistentNaturalDialogueProfile(preset.character.profile)
+          : preset.character.profile,
         sourceType: 'preset_catalog',
         sourceKey: preset.presetKey,
         deletionPolicy: 'archive_allowed',
@@ -226,13 +230,16 @@ export class CharactersService {
       const momentLikeRepo = manager.getRepository(MomentLikeEntity);
       const feedPostRepo = manager.getRepository(FeedPostEntity);
       const feedCommentRepo = manager.getRepository(FeedCommentEntity);
-      const videoChannelFollowRepo = manager.getRepository(VideoChannelFollowEntity);
+      const videoChannelFollowRepo = manager.getRepository(
+        VideoChannelFollowEntity,
+      );
       const feedInteractionRepo = manager.getRepository(
         UserFeedInteractionEntity,
       );
       const aiBehaviorLogRepo = manager.getRepository(AIBehaviorLogEntity);
-      const moderationReportRepo =
-        manager.getRepository(ModerationReportEntity);
+      const moderationReportRepo = manager.getRepository(
+        ModerationReportEntity,
+      );
       const characterRepo = manager.getRepository(CharacterEntity);
 
       const directConversations = (await conversationRepo.find()).filter(
@@ -293,10 +300,16 @@ export class CharactersService {
 
       await friendRequestRepo.delete({ characterId: id });
       await friendshipRepo.delete({ characterId: id });
-      await videoChannelFollowRepo.delete({ authorId: id, authorType: 'character' });
+      await videoChannelFollowRepo.delete({
+        authorId: id,
+        authorType: 'character',
+      });
       await narrativeArcRepo.delete({ characterId: id });
       await aiBehaviorLogRepo.delete({ characterId: id });
-      await moderationReportRepo.delete({ targetType: 'character', targetId: id });
+      await moderationReportRepo.delete({
+        targetType: 'character',
+        targetId: id,
+      });
       await blueprintRevisionRepo.delete({ characterId: id });
       await blueprintRepo.delete({ characterId: id });
       await aiRelationshipRepo

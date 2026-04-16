@@ -49,7 +49,9 @@ const CHARACTER_NATURAL_DIALOGUE_NOTES: Record<string, string> = {
   'char-celebrity-richard-feynman': '像边想边举例验证，不像科学素养教程。',
 };
 
-export function buildNaturalDialogueGuideline(
+const PERSISTED_NATURAL_DIALOGUE_MARKER = '【自然对话补充】';
+
+function resolveNaturalDialogueLines(
   profile: PersonalityProfile,
   scene: SceneKey,
 ) {
@@ -66,5 +68,65 @@ export function buildNaturalDialogueGuideline(
     lines.push(characterNote);
   }
 
+  return lines;
+}
+
+export function buildNaturalDialogueGuideline(
+  profile: PersonalityProfile,
+  scene: SceneKey,
+) {
+  const lines = resolveNaturalDialogueLines(profile, scene);
+  if (!lines) {
+    return null;
+  }
+
   return lines.map((line) => `- ${line}`).join('\n');
+}
+
+export function applyPersistentNaturalDialogueProfile(
+  profile: PersonalityProfile,
+): PersonalityProfile {
+  const scenePrompts = profile.scenePrompts;
+  if (!scenePrompts) {
+    return profile;
+  }
+
+  let changed = false;
+  const nextScenePrompts = { ...scenePrompts };
+
+  for (const scene of NATURAL_DIALOGUE_SCENES) {
+    const originalPrompt = scenePrompts[scene];
+    const lines = resolveNaturalDialogueLines(profile, scene);
+    if (!originalPrompt?.trim() || !lines) {
+      continue;
+    }
+
+    if (originalPrompt.includes(PERSISTED_NATURAL_DIALOGUE_MARKER)) {
+      continue;
+    }
+
+    const persistedBlock = [
+      PERSISTED_NATURAL_DIALOGUE_MARKER,
+      '- 把上面的规则内化掉，不要把“第一步”“第二步”“固定结构”直接念给用户。',
+      '- 像真人当下回话，不像教程、提纲、咨询报告或标准答案。',
+      '- 除非用户明确要求，不要机械地凑三段、三点、总结收口。',
+      CHARACTER_NATURAL_DIALOGUE_NOTES[profile.characterId]
+        ? `- ${CHARACTER_NATURAL_DIALOGUE_NOTES[profile.characterId]}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    nextScenePrompts[scene] = `${originalPrompt}\n\n${persistedBlock}`;
+    changed = true;
+  }
+
+  if (!changed) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    scenePrompts: nextScenePrompts,
+  };
 }

@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm';
+import { applyPersistentNaturalDialogueProfile } from '../modules/ai/prompt-naturalness';
 import { CharacterEntity } from '../modules/characters/character.entity';
 import {
   getPresetCharacterBio,
@@ -7,7 +8,12 @@ import {
 import { buildDefaultCharacters } from '../modules/characters/default-characters';
 import { listCelebrityCharacterPresets } from '../modules/characters/celebrity-character-presets';
 
-const SEED_CHARACTERS = buildDefaultCharacters();
+const SEED_CHARACTERS = buildDefaultCharacters().map((character) => ({
+  ...character,
+  profile: character.profile
+    ? applyPersistentNaturalDialogueProfile(character.profile)
+    : character.profile,
+}));
 
 export async function seedCharacters(dataSource: DataSource): Promise<void> {
   console.log('🌱 Reconciling built-in default characters...');
@@ -28,7 +34,12 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
   const repo = dataSource.getRepository(CharacterEntity);
   let seeded = 0;
   let refreshedBios = 0;
+  let refreshedProfiles = 0;
   for (const preset of presets) {
+    const materializedProfile = preset.character.profile
+      ? applyPersistentNaturalDialogueProfile(preset.character.profile)
+      : preset.character.profile;
+
     const existing = await repo.findOne({
       where: [
         { id: preset.id },
@@ -40,6 +51,7 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
         repo.create({
           ...preset.character,
           id: preset.id,
+          profile: materializedProfile,
           sourceType: 'preset_catalog',
           sourceKey: preset.presetKey,
           deletionPolicy: 'archive_allowed',
@@ -51,13 +63,27 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
     }
 
     const presetBio = getPresetCharacterBio(preset.presetKey);
+    const nextProfile = existing.profile
+      ? applyPersistentNaturalDialogueProfile(existing.profile)
+      : materializedProfile;
+    const patch: Partial<CharacterEntity> = {};
     if (
       presetBio &&
       (!existing.bio?.trim() ||
         isLegacyPresetCharacterBio(preset.presetKey, existing.bio))
     ) {
-      await repo.update({ id: existing.id }, { bio: presetBio });
+      patch.bio = presetBio;
       refreshedBios++;
+    }
+    if (
+      nextProfile &&
+      JSON.stringify(nextProfile) !== JSON.stringify(existing.profile ?? null)
+    ) {
+      patch.profile = nextProfile;
+      refreshedProfiles++;
+    }
+    if (Object.keys(patch).length > 0) {
+      await repo.update({ id: existing.id }, patch);
     }
   }
   if (seeded > 0) {
@@ -65,5 +91,10 @@ export async function seedCharacters(dataSource: DataSource): Promise<void> {
   }
   if (refreshedBios > 0) {
     console.log(`✓ Refreshed ${refreshedBios} built-in preset bios`);
+  }
+  if (refreshedProfiles > 0) {
+    console.log(
+      `✓ Refreshed ${refreshedProfiles} built-in preset reply profiles`,
+    );
   }
 }
