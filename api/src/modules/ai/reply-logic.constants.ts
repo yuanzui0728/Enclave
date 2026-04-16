@@ -11,6 +11,7 @@ export type ReplyLogicPromptTemplates = {
   personalityExtractionPrompt: string;
   intentClassificationPrompt: string;
   memoryCompressionPrompt: string;
+  coreMemoryExtractionPrompt: string;
   groupCoordinatorPrompt: string;
 };
 
@@ -159,6 +160,8 @@ export type ReplyLogicSchedulerDescriptions = {
   check_channels_schedule: string;
   update_character_status: string;
   trigger_memory_proactive_messages: string;
+  update_recent_memory_daily: string;
+  update_core_memory_weekly: string;
 };
 
 export type ReplyLogicSchedulerTextTemplates = {
@@ -192,6 +195,9 @@ export type ReplyLogicSchedulerTextTemplates = {
   jobSummaryUpdateCharacterStatus: string;
   jobSummaryProactiveReminderSkipped: string;
   jobSummaryTriggerMemoryProactiveMessages: string;
+  jobSummaryUpdateRecentMemoryDaily: string;
+  jobSummaryUpdateCoreMemoryWeekly: string;
+  jobSummarySkippedNoInteractions: string;
   proactiveReminderCheckPrompt: string;
   proactiveReminderNoActionToken: string;
 };
@@ -206,6 +212,8 @@ export type ReplyLogicSchedulerNames = {
   check_channels_schedule: string;
   update_character_status: string;
   trigger_memory_proactive_messages: string;
+  update_recent_memory_daily: string;
+  update_core_memory_weekly: string;
 };
 
 export type ReplyLogicSchedulerNextRunHints = {
@@ -218,6 +226,8 @@ export type ReplyLogicSchedulerNextRunHints = {
   check_channels_schedule: string;
   update_character_status: string;
   trigger_memory_proactive_messages: string;
+  update_recent_memory_daily: string;
+  update_core_memory_weekly: string;
 };
 
 export type ReplyLogicRuntimeRules = {
@@ -458,6 +468,16 @@ export const DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES: ReplyLogicPromptTemplates =
 3. {{name}}对用户的印象
 
 只输出总结文字，不要加标题或格式。`,
+    coreMemoryExtractionPrompt: `以下是{{name}}与用户近期的完整互动记录：
+{{interactionHistory}}
+
+请从{{name}}的视角，用200字以内提炼对用户的核心认知：
+1. 用户的性格特质、价值观和生活方式
+2. 两人之间最重要的共同经历或情感纽带
+3. 用户的核心关切、习惯性话题和喜好
+4. {{name}}对这段关系的整体感受和定位
+
+这是长期记忆，应当简练、准确、有温度。只输出总结文字，不要加标题或格式。`,
     groupCoordinatorPrompt: `你是{{triggerCharName}}，你刚刚把{{invitedCharNames}}拉进了群聊，因为用户问了一个关于"{{topic}}"的问题，超出了你一个人的专长范围。
 
 请用自然的方式说明为什么拉群，语气要像真实朋友一样，简短自然，不超过两句话。`,
@@ -617,6 +637,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_DESCRIPTIONS: ReplyLogicSchedulerDesc
     check_channels_schedule: '按频率生成视频号内容，并补足基础内容池。',
     update_character_status: '根据时间段刷新角色当前活动状态。',
     trigger_memory_proactive_messages: '扫描角色记忆，在合适时机主动给用户发提醒。',
+    update_recent_memory_daily: '每日从近7天互动记录中自动提取并更新近期摘要。',
+    update_core_memory_weekly: '每周从近30天全量交互数据中自动提取并更新核心记忆。',
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTextTemplates =
@@ -657,6 +679,11 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_TEXT_TEMPLATES: ReplyLogicSchedulerTe
       '当前小时 {{currentHour}} 不等于主动提醒小时 {{targetHour}}，跳过本轮。',
     jobSummaryTriggerMemoryProactiveMessages:
       '检查 {{memorySeededCount}} 个有记忆种子的角色，发送 {{sentMessages}} 条主动提醒消息。',
+    jobSummaryUpdateRecentMemoryDaily:
+      '近期摘要日更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无近期消息）。',
+    jobSummaryUpdateCoreMemoryWeekly:
+      '核心记忆周更：检查 {{characterCount}} 个角色，更新 {{updatedCount}} 个，跳过 {{skippedCount}} 个（无足够交互数据）。',
+    jobSummarySkippedNoInteractions: '近期无互动记录，跳过记忆更新。',
     proactiveReminderCheckPrompt: `以下是{{characterName}}对用户的记忆：
 {{memoryText}}
 
@@ -678,6 +705,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_NAMES: ReplyLogicSchedulerNames =
     check_channels_schedule: '视频号调度',
     update_character_status: '活动状态调度',
     trigger_memory_proactive_messages: '主动提醒调度',
+    update_recent_memory_daily: '近期摘要日更',
+    update_core_memory_weekly: '核心记忆周更',
   });
 
 export const DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS: ReplyLogicSchedulerNextRunHints =
@@ -691,6 +720,8 @@ export const DEFAULT_REPLY_LOGIC_SCHEDULER_NEXT_RUN_HINTS: ReplyLogicSchedulerNe
     check_channels_schedule: '每 20 分钟',
     update_character_status: '每 2 小时',
     trigger_memory_proactive_messages: '每日 20:00',
+    update_recent_memory_daily: '每日 03:00',
+    update_core_memory_weekly: '每周一 04:00',
   });
 
 export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
@@ -764,6 +795,8 @@ export const DEFAULT_REPLY_LOGIC_RUNTIME_RULES: ReplyLogicRuntimeRules =
         DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES.intentClassificationPrompt,
       memoryCompressionPrompt:
         DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES.memoryCompressionPrompt,
+      coreMemoryExtractionPrompt:
+        DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES.coreMemoryExtractionPrompt,
       groupCoordinatorPrompt:
         DEFAULT_REPLY_LOGIC_PROMPT_TEMPLATES.groupCoordinatorPrompt,
     },
@@ -1303,6 +1336,14 @@ function normalizeSchedulerDescriptions(
       value?.trigger_memory_proactive_messages,
       defaults.trigger_memory_proactive_messages,
     ),
+    update_recent_memory_daily: sanitizeTemplate(
+      value?.update_recent_memory_daily,
+      defaults.update_recent_memory_daily,
+    ),
+    update_core_memory_weekly: sanitizeTemplate(
+      value?.update_core_memory_weekly,
+      defaults.update_core_memory_weekly,
+    ),
   };
 }
 
@@ -1431,6 +1472,18 @@ function normalizeSchedulerTextTemplates(
       value?.jobSummaryTriggerMemoryProactiveMessages,
       defaults.jobSummaryTriggerMemoryProactiveMessages,
     ),
+    jobSummaryUpdateRecentMemoryDaily: sanitizeTemplate(
+      value?.jobSummaryUpdateRecentMemoryDaily,
+      defaults.jobSummaryUpdateRecentMemoryDaily,
+    ),
+    jobSummaryUpdateCoreMemoryWeekly: sanitizeTemplate(
+      value?.jobSummaryUpdateCoreMemoryWeekly,
+      defaults.jobSummaryUpdateCoreMemoryWeekly,
+    ),
+    jobSummarySkippedNoInteractions: sanitizeTemplate(
+      value?.jobSummarySkippedNoInteractions,
+      defaults.jobSummarySkippedNoInteractions,
+    ),
     proactiveReminderCheckPrompt: sanitizeTemplate(
       value?.proactiveReminderCheckPrompt,
       defaults.proactiveReminderCheckPrompt,
@@ -1483,6 +1536,14 @@ function normalizeSchedulerNames(
       value?.trigger_memory_proactive_messages,
       defaults.trigger_memory_proactive_messages,
     ),
+    update_recent_memory_daily: sanitizeTemplate(
+      value?.update_recent_memory_daily,
+      defaults.update_recent_memory_daily,
+    ),
+    update_core_memory_weekly: sanitizeTemplate(
+      value?.update_core_memory_weekly,
+      defaults.update_core_memory_weekly,
+    ),
   };
 }
 
@@ -1526,6 +1587,14 @@ function normalizeSchedulerNextRunHints(
     trigger_memory_proactive_messages: sanitizeTemplate(
       value?.trigger_memory_proactive_messages,
       defaults.trigger_memory_proactive_messages,
+    ),
+    update_recent_memory_daily: sanitizeTemplate(
+      value?.update_recent_memory_daily,
+      defaults.update_recent_memory_daily,
+    ),
+    update_core_memory_weekly: sanitizeTemplate(
+      value?.update_core_memory_weekly,
+      defaults.update_core_memory_weekly,
     ),
   };
 }
@@ -1573,6 +1642,10 @@ function normalizePromptTemplates(
     memoryCompressionPrompt: sanitizeTemplate(
       value?.memoryCompressionPrompt,
       defaults.memoryCompressionPrompt,
+    ),
+    coreMemoryExtractionPrompt: sanitizeTemplate(
+      value?.coreMemoryExtractionPrompt,
+      defaults.coreMemoryExtractionPrompt,
     ),
     groupCoordinatorPrompt: sanitizeTemplate(
       value?.groupCoordinatorPrompt,
