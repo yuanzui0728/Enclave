@@ -2,8 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
 import type {
+  CloudWorldAlertSummary,
   CloudComputeProviderSummary,
   CloudWorldAttentionItem,
+  CloudWorldAttentionEscalationReason,
   CloudWorldBootstrapConfig,
   CloudWorldDeploymentState,
   CloudWorldDriftSummary,
@@ -33,6 +35,8 @@ import { WorldAccessService } from "../world-access/world-access.service";
 @Injectable()
 export class CloudService {
   private readonly staleHeartbeatSeconds: number;
+  private readonly alertRetryThreshold: number;
+  private readonly criticalHeartbeatStaleSeconds: number;
 
   constructor(
     @InjectRepository(CloudWorldEntity)
@@ -51,6 +55,14 @@ export class CloudService {
   ) {
     this.staleHeartbeatSeconds = this.parsePositiveInteger(
       this.configService.get<string>("CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS"),
+    );
+    this.alertRetryThreshold = this.parsePositiveInteger(
+      this.configService.get<string>("CLOUD_WORLD_ALERT_RETRY_THRESHOLD"),
+      3,
+    );
+    this.criticalHeartbeatStaleSeconds = this.parsePositiveInteger(
+      this.configService.get<string>("CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS"),
+      this.staleHeartbeatSeconds > 0 ? this.staleHeartbeatSeconds * 3 : 0,
     );
   }
 
@@ -269,6 +281,9 @@ export class CloudService {
     let readyWorlds = 0;
     let sleepingWorlds = 0;
     let failedWorlds = 0;
+    let criticalAttentionWorlds = 0;
+    let warningAttentionWorlds = 0;
+    let escalatedWorlds = 0;
     let heartbeatStaleWorlds = 0;
     let providerDriftWorlds = 0;
     let recoveryQueuedWorlds = 0;
@@ -322,6 +337,14 @@ export class CloudService {
       });
 
       if (attentionItem) {
+        if (attentionItem.severity === "critical") {
+          criticalAttentionWorlds += 1;
+        } else if (attentionItem.severity === "warning") {
+          warningAttentionWorlds += 1;
+        }
+        if (attentionItem.escalated) {
+          escalatedWorlds += 1;
+        }
         attentionItems.push(attentionItem);
       }
     }
@@ -342,10 +365,63 @@ export class CloudService {
       sleepingWorlds,
       failedWorlds,
       attentionWorlds: attentionItems.length,
+      criticalAttentionWorlds,
+      warningAttentionWorlds,
+      escalatedWorlds,
       heartbeatStaleWorlds,
       providerDriftWorlds,
       recoveryQueuedWorlds,
       attentionItems: attentionItems.slice(0, 12),
+    };
+  }
+
+  async getWorldAlertSummary(worldId: string): Promise<CloudWorldAlertSummary> {
+    const world = await this.requireWorld(worldId);
+    const instance = await this.instanceRepo.findOne({
+      where: { worldId },
+    });
+    const activeJob = await this.jobRepo.findOne({
+      where: {
+        worldId,
+        status: In(["pending", "running"]),
+      },
+      order: {
+        createdAt: "DESC",
+      },
+    });
+    const provider = this.computeProviderRegistry.getProvider(world.providerKey ?? this.resolveDefaultProviderKey());
+
+    let observedDeploymentState: CloudWorldDeploymentState | undefined;
+    let observedMessage: string | null = null;
+    try {
+      const observed = await provider.inspectInstance(instance, world);
+      observedDeploymentState = observed.deploymentState;
+      observedMessage = observed.providerMessage ?? null;
+    } catch (error) {
+      observedDeploymentState = "error";
+      observedMessage = error instanceof Error ? error.message : "Failed to inspect provider runtime state.";
+    }
+
+    return {
+      generatedAt: new Date().toISOString(),
+      thresholds: {
+        retryCount: this.alertRetryThreshold,
+        criticalHeartbeatStaleSeconds: this.criticalHeartbeatStaleSeconds,
+      },
+      item: this.buildWorldAttentionItem({
+        world,
+        desiredState: world.desiredState === "sleeping" ? "sleeping" : "running",
+        observedDeploymentState,
+        observedMessage,
+        activeJobType: activeJob ? this.toJobType(activeJob.jobType) : null,
+        isHeartbeatStale:
+          (world.desiredState === "sleeping" ? "sleeping" : "running") === "running" &&
+          this.isHeartbeatStale(world.lastHeartbeatAt) &&
+          (observedDeploymentState === "running" || observedDeploymentState === "starting" || observedDeploymentState === "package_only") &&
+          world.status !== "failed" &&
+          world.status !== "disabled" &&
+          world.status !== "deleting",
+      }),
     };
   }
 
@@ -997,15 +1073,26 @@ export class CloudService {
     isHeartbeatStale: boolean;
   }): CloudWorldAttentionItem | null {
     const { world, desiredState, observedDeploymentState, observedMessage, activeJobType, isHeartbeatStale } = params;
+    const staleHeartbeatSeconds = this.getHeartbeatAgeSeconds(world.lastHeartbeatAt);
+    const retryThresholdReached = this.alertRetryThreshold > 0 && world.retryCount >= this.alertRetryThreshold;
+    const heartbeatThresholdReached =
+      isHeartbeatStale &&
+      this.criticalHeartbeatStaleSeconds > 0 &&
+      staleHeartbeatSeconds !== null &&
+      staleHeartbeatSeconds >= this.criticalHeartbeatStaleSeconds;
     const baseItem = {
       worldId: world.id,
       worldName: world.name,
       phone: world.phone,
       worldStatus: this.toWorldStatus(world.status),
+      escalated: false,
+      escalationReason: null,
       desiredState,
       providerKey: world.providerKey,
       observedDeploymentState,
       activeJobType,
+      retryCount: world.retryCount,
+      staleHeartbeatSeconds,
       lastHeartbeatAt: world.lastHeartbeatAt?.toISOString() ?? null,
       updatedAt: world.updatedAt.toISOString(),
     } satisfies Omit<CloudWorldAttentionItem, "severity" | "reason" | "message">;
@@ -1015,6 +1102,8 @@ export class CloudService {
         ...baseItem,
         severity: "critical",
         reason: "failed_world",
+        escalated: true,
+        escalationReason: "world_failed",
         message: world.failureMessage ?? world.healthMessage ?? "World is currently marked as failed.",
       };
     }
@@ -1024,19 +1113,28 @@ export class CloudService {
         ...baseItem,
         severity: "critical",
         reason: "provider_error",
+        escalated: true,
+        escalationReason: "provider_error",
         message: observedMessage ?? "Provider inspection reported a deployment error.",
       };
     }
 
     if (desiredState === "running" && (observedDeploymentState === "missing" || observedDeploymentState === "stopped")) {
+      const escalated = retryThresholdReached;
       return {
         ...baseItem,
-        severity: activeJobType === "resume" || activeJobType === "provision" ? "warning" : "critical",
+        severity: escalated ? "critical" : activeJobType === "resume" || activeJobType === "provision" ? "warning" : "critical",
         reason: activeJobType === "resume" || activeJobType === "provision" ? "recovery_queued" : "deployment_drift",
+        escalated,
+        escalationReason: this.resolveEscalationReason(escalated, "retry_threshold"),
         message:
           activeJobType === "resume" || activeJobType === "provision"
-            ? `Provider reports ${observedDeploymentState}; ${activeJobType} has already been queued.`
-            : `Provider reports ${observedDeploymentState} while the world should be running.`,
+            ? escalated
+              ? `Provider reports ${observedDeploymentState}; ${activeJobType} is queued, but retry threshold has been exceeded.`
+              : `Provider reports ${observedDeploymentState}; ${activeJobType} has already been queued.`
+            : escalated
+              ? `Provider reports ${observedDeploymentState} while the world should be running, and retry threshold has been exceeded.`
+              : `Provider reports ${observedDeploymentState} while the world should be running.`,
       };
     }
 
@@ -1045,19 +1143,26 @@ export class CloudService {
         ...baseItem,
         severity: "warning",
         reason: "sleep_drift",
+        escalated: false,
+        escalationReason: null,
         message: "Provider reports the deployment is still active while desired state is sleeping.",
       };
     }
 
     if (isHeartbeatStale) {
+      const escalated = heartbeatThresholdReached;
       return {
         ...baseItem,
-        severity: world.status === "ready" ? "critical" : "warning",
+        severity: escalated || world.status === "ready" ? "critical" : "warning",
         reason: "heartbeat_stale",
+        escalated,
+        escalationReason: this.resolveEscalationReason(escalated, "heartbeat_duration"),
         message:
-          world.status === "ready"
-            ? "Runtime heartbeat is stale even though the world still appears active."
-            : "Runtime heartbeat is stale while the world is still starting.",
+          escalated && staleHeartbeatSeconds !== null
+            ? `Runtime heartbeat has been stale for ${staleHeartbeatSeconds}s and crossed the critical threshold.`
+            : world.status === "ready"
+              ? "Runtime heartbeat is stale even though the world still appears active."
+              : "Runtime heartbeat is stale while the world is still starting.",
       };
     }
 
@@ -1087,10 +1192,22 @@ export class CloudService {
     return Date.now() - lastHeartbeatAt.getTime() > this.staleHeartbeatSeconds * 1000;
   }
 
-  private parsePositiveInteger(rawValue: string | undefined) {
+  private getHeartbeatAgeSeconds(lastHeartbeatAt: Date | null) {
+    if (!lastHeartbeatAt) {
+      return null;
+    }
+
+    return Math.max(0, Math.floor((Date.now() - lastHeartbeatAt.getTime()) / 1000));
+  }
+
+  private resolveEscalationReason(escalated: boolean, reason: CloudWorldAttentionEscalationReason) {
+    return escalated ? reason : null;
+  }
+
+  private parsePositiveInteger(rawValue: string | undefined, fallback = 0) {
     const parsed = Number(rawValue ?? "0");
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      return 0;
+      return fallback;
     }
 
     return Math.floor(parsed);

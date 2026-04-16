@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import type { CloudComputeProviderSummary, CloudWorldLifecycleStatus } from "@yinjie/contracts";
+import type { CloudComputeProviderSummary, CloudWorldAttentionItem, CloudWorldLifecycleStatus } from "@yinjie/contracts";
 import { ErrorBlock } from "@yinjie/ui";
 import { cloudAdminApi } from "../lib/cloud-admin-api";
 
@@ -28,6 +28,33 @@ function formatDateTime(value?: string | null) {
 
 function formatOptional(value?: string | null) {
   return value?.trim() || "Not set";
+}
+
+function getAttentionTone(severity: CloudWorldAttentionItem["severity"]) {
+  switch (severity) {
+    case "critical":
+      return "border-rose-300/60 bg-rose-500/10 text-rose-200";
+    case "warning":
+      return "border-amber-300/50 bg-amber-500/10 text-amber-100";
+    case "info":
+    default:
+      return "border-sky-300/50 bg-sky-500/10 text-sky-100";
+  }
+}
+
+function getEscalationLabel(reason?: CloudWorldAttentionItem["escalationReason"] | null) {
+  switch (reason) {
+    case "world_failed":
+      return "World failed";
+    case "provider_error":
+      return "Provider error";
+    case "retry_threshold":
+      return "Retry threshold";
+    case "heartbeat_duration":
+      return "Heartbeat duration";
+    default:
+      return "Not escalated";
+  }
 }
 
 function resolveCanonicalProviderKey(value?: string | null) {
@@ -89,6 +116,10 @@ export function WorldDetailPage() {
     queryKey: ["cloud-console", "world-runtime-status", worldId],
     queryFn: () => cloudAdminApi.getWorldRuntimeStatus(worldId),
   });
+  const alertSummaryQuery = useQuery({
+    queryKey: ["cloud-console", "world-alert-summary", worldId],
+    queryFn: () => cloudAdminApi.getWorldAlertSummary(worldId),
+  });
   const jobsQuery = useQuery({
     queryKey: ["cloud-console", "jobs", "world", worldId],
     queryFn: () => cloudAdminApi.listJobs({ worldId }),
@@ -112,6 +143,8 @@ export function WorldDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-instance", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-bootstrap-config", worldId] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-runtime-status", worldId] }),
+      queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-alert-summary", worldId] }),
+      queryClient.invalidateQueries({ queryKey: ["cloud-console", "world-drift-summary"] }),
       queryClient.invalidateQueries({ queryKey: ["cloud-console", "jobs"] }),
     ]);
   }
@@ -157,6 +190,8 @@ export function WorldDetailPage() {
   const instance = instanceQuery.data;
   const bootstrapConfig = bootstrapConfigQuery.data;
   const runtimeStatus = runtimeStatusQuery.data;
+  const alertSummary = alertSummaryQuery.data;
+  const currentAlert = alertSummary?.item ?? null;
   const jobs = jobsQuery.data ?? [];
   const providers = providersQuery.data ?? [];
   const providerOptions = buildProviderOptions(providers, providerKey);
@@ -473,6 +508,56 @@ export function WorldDetailPage() {
               <div>Last heartbeat: {formatDateTime(world.lastHeartbeatAt)}</div>
               <div>Last suspended: {formatDateTime(world.lastSuspendedAt)}</div>
             </div>
+          </div>
+
+          <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-[color:var(--text-primary)]">Alert status</div>
+                <div className="mt-1 text-xs leading-6 text-[color:var(--text-muted)]">
+                  Current alert severity after applying retry and stale-heartbeat thresholds.
+                </div>
+              </div>
+
+              {currentAlert ? (
+                <div className={`rounded-full border px-3 py-2 text-[11px] uppercase tracking-[0.18em] ${getAttentionTone(currentAlert.severity)}`}>
+                  {currentAlert.severity}
+                </div>
+              ) : null}
+            </div>
+
+            {alertSummaryQuery.isError && alertSummaryQuery.error instanceof Error ? (
+              <div className="mt-4">
+                <ErrorBlock message={alertSummaryQuery.error.message} />
+              </div>
+            ) : null}
+
+            {currentAlert ? (
+              <div className="mt-4 space-y-3 text-sm text-[color:var(--text-secondary)]">
+                <div>{currentAlert.message}</div>
+                <div>Reason: {currentAlert.reason}</div>
+                <div>Escalated: {currentAlert.escalated ? "Yes" : "No"}</div>
+                <div>Escalation reason: {getEscalationLabel(currentAlert.escalationReason)}</div>
+                <div>Retry count: {currentAlert.retryCount}</div>
+                <div>
+                  Stale heartbeat seconds:{" "}
+                  {typeof currentAlert.staleHeartbeatSeconds === "number" ? currentAlert.staleHeartbeatSeconds : "Not stale"}
+                </div>
+                <div>Retry threshold: {alertSummary?.thresholds.retryCount ?? "Not set"}</div>
+                <div>
+                  Critical stale threshold:{" "}
+                  {alertSummary?.thresholds.criticalHeartbeatStaleSeconds
+                    ? `${alertSummary.thresholds.criticalHeartbeatStaleSeconds}s`
+                    : "Disabled"}
+                </div>
+              </div>
+            ) : alertSummaryQuery.isLoading ? (
+              <div className="mt-4 text-sm text-[color:var(--text-muted)]">Loading alert status...</div>
+            ) : (
+              <div className="mt-4 text-sm text-[color:var(--text-muted)]">
+                No current alert. This world is below escalation thresholds.
+              </div>
+            )}
           </div>
 
           <div className="rounded-[28px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 shadow-[var(--shadow-section)]">

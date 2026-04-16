@@ -107,6 +107,36 @@ export function WorldsPage() {
             </div>
           </div>
           <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Critical alerts</div>
+            <div className={`mt-2 text-3xl font-semibold ${getMetricTone(driftSummaryQuery.data?.criticalAttentionWorlds ?? 0)}`}>
+              {driftSummaryQuery.data?.criticalAttentionWorlds ?? 0}
+            </div>
+            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+              Worlds already in critical state, including failed and escalated alerts.
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Escalated worlds</div>
+            <div className={`mt-2 text-3xl font-semibold ${getMetricTone(driftSummaryQuery.data?.escalatedWorlds ?? 0)}`}>
+              {driftSummaryQuery.data?.escalatedWorlds ?? 0}
+            </div>
+            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+              Alerts upgraded because retry or stale-heartbeat thresholds were crossed.
+            </div>
+          </div>
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recovery queued</div>
+            <div className={`mt-2 text-3xl font-semibold ${getMetricTone(driftSummaryQuery.data?.recoveryQueuedWorlds ?? 0)}`}>
+              {driftSummaryQuery.data?.recoveryQueuedWorlds ?? 0}
+            </div>
+            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
+              Worlds that already have active `resume` or `provision` work in flight.
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Heartbeat stale</div>
             <div className={`mt-2 text-3xl font-semibold ${getMetricTone(driftSummaryQuery.data?.heartbeatStaleWorlds ?? 0)}`}>
               {driftSummaryQuery.data?.heartbeatStaleWorlds ?? 0}
@@ -122,15 +152,6 @@ export function WorldsPage() {
             </div>
             <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
               Provider reports power state that disagrees with desired world state.
-            </div>
-          </div>
-          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-soft)] p-4">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">Recovery queued</div>
-            <div className={`mt-2 text-3xl font-semibold ${getMetricTone(driftSummaryQuery.data?.recoveryQueuedWorlds ?? 0)}`}>
-              {driftSummaryQuery.data?.recoveryQueuedWorlds ?? 0}
-            </div>
-            <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
-              Worlds that already have active `resume` or `provision` work in flight.
             </div>
           </div>
         </div>
@@ -155,8 +176,17 @@ export function WorldsPage() {
                     <span className={`rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getAttentionTone(item.severity)}`}>
                       {getAttentionLabel(item)}
                     </span>
+                    {item.escalated ? (
+                      <span className="rounded-full border border-rose-300/60 bg-rose-500/10 px-2 py-1 text-[11px] uppercase tracking-[0.18em] text-rose-200">
+                        Escalated
+                      </span>
+                    ) : null}
                   </div>
                   <div className="mt-2 text-sm text-[color:var(--text-secondary)]">{item.message}</div>
+                  <div className="mt-2 text-xs text-[color:var(--text-muted)]">
+                    Retry count {item.retryCount}
+                    {typeof item.staleHeartbeatSeconds === "number" ? ` • stale ${item.staleHeartbeatSeconds}s` : ""}
+                  </div>
                 </div>
                 <div className="text-right text-xs text-[color:var(--text-muted)]">
                   <div>{item.phone}</div>
@@ -244,6 +274,9 @@ export function WorldsPage() {
                           <div className={`inline-flex rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${getAttentionTone(attention.severity)}`}>
                             {getAttentionLabel(attention)}
                           </div>
+                          {attention.escalated ? (
+                            <div className="text-[11px] uppercase tracking-[0.18em] text-rose-200">Escalated</div>
+                          ) : null}
                           <div className="max-w-[18rem] text-xs text-[color:var(--text-secondary)]">{attention.message}</div>
                         </div>
                       ) : (

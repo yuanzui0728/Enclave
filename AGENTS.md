@@ -481,6 +481,7 @@
   - `GET /admin/cloud/worlds/:id/instance`
   - `GET /admin/cloud/worlds/:id/bootstrap-config`
   - `GET /admin/cloud/worlds/:id/runtime-status`
+  - `GET /admin/cloud/worlds/:id/alert-summary`
   - `POST /admin/cloud/worlds/:id/reconcile`
   - `POST /admin/cloud/worlds/:id/resume`
   - `POST /admin/cloud/worlds/:id/suspend`
@@ -523,6 +524,8 @@
   - `CLOUD_MANUAL_DOCKER_SSH_PRIVATE_KEY_PATH`
   - `CLOUD_MANUAL_DOCKER_SSH_STRICT_HOST_KEY_CHECKING`
   - `CLOUD_WORLD_RECONCILE_STALE_HEARTBEAT_SECONDS`
+  - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD`
+  - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS`
 - Automatic idle suspend is now available behind `CLOUD_WORLD_IDLE_SUSPEND_SECONDS > 0`, and only uses runtime activity / access-session signals to decide when a world can safely sleep.
 - Cloud console world detail now exposes a bootstrap package:
   - generated runtime env overlay for `api`
@@ -554,3 +557,8 @@
 - Cloud console worlds list now includes a drift summary panel:
   - `GET /admin/cloud/drift-summary` aggregates failed worlds, stale heartbeats, provider drift, and queued recovery counts
   - the worlds page surfaces top attention items and per-world attention badges so operators can see why a world needs intervention before opening detail view
+- Cloud platform alerting now supports threshold-based escalation:
+  - `GET /admin/cloud/worlds/:id/alert-summary` returns the current alert snapshot, retry counters, stale-heartbeat age, and escalation thresholds for one world
+  - `CLOUD_WORLD_ALERT_RETRY_THRESHOLD` upgrades repeated recovery drift into a critical alert after enough failed retries
+  - `CLOUD_WORLD_ALERT_CRITICAL_HEARTBEAT_STALE_SECONDS` upgrades long-running stale heartbeat conditions into a critical alert
+  - cloud console now distinguishes warning vs critical worlds and shows whether an alert has already been escalated

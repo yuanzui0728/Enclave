@@ -112,6 +112,11 @@ export class AdminCloudController {
     return this.cloudService.getWorldRuntimeStatus(id);
   }
 
+  @Get("worlds/:id/alert-summary")
+  getWorldAlertSummary(@Param("id") id: string) {
+    return this.cloudService.getWorldAlertSummary(id);
+  }
+
   @Post("worlds/:id/reconcile")
   reconcileWorld(@Param("id") id: string) {
     return this.cloudService.reconcileWorld(id);

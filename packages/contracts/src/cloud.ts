@@ -235,20 +235,41 @@ export type CloudWorldAttentionReason =
   | "heartbeat_stale"
   | "recovery_queued";
 
+export type CloudWorldAttentionEscalationReason =
+  | "world_failed"
+  | "provider_error"
+  | "retry_threshold"
+  | "heartbeat_duration";
+
 export interface CloudWorldAttentionItem {
   worldId: string;
   worldName: string;
   phone: string;
   severity: CloudWorldAttentionSeverity;
   reason: CloudWorldAttentionReason;
+  escalated: boolean;
+  escalationReason?: CloudWorldAttentionEscalationReason | null;
   worldStatus: CloudWorldLifecycleStatus;
   desiredState?: "running" | "sleeping";
   providerKey?: string | null;
   observedDeploymentState?: CloudWorldDeploymentState;
   activeJobType?: WorldLifecycleJobType | null;
+  retryCount: number;
+  staleHeartbeatSeconds?: number | null;
   message: string;
   lastHeartbeatAt?: string | null;
   updatedAt: string;
+}
+
+export interface CloudWorldAlertThresholds {
+  retryCount: number;
+  criticalHeartbeatStaleSeconds: number;
+}
+
+export interface CloudWorldAlertSummary {
+  generatedAt: string;
+  thresholds: CloudWorldAlertThresholds;
+  item: CloudWorldAttentionItem | null;
 }
 
 export interface CloudWorldDriftSummary {
@@ -258,6 +279,9 @@ export interface CloudWorldDriftSummary {
   sleepingWorlds: number;
   failedWorlds: number;
   attentionWorlds: number;
+  criticalAttentionWorlds: number;
+  warningAttentionWorlds: number;
+  escalatedWorlds: number;
   heartbeatStaleWorlds: number;
   providerDriftWorlds: number;
   recoveryQueuedWorlds: number;

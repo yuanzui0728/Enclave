@@ -1,5 +1,6 @@
 import type {
   CloudComputeProviderSummary,
+  CloudWorldAlertSummary,
   CloudWorldDriftSummary,
   CloudWorldBootstrapConfig,
   CloudWorldRuntimeStatusSummary,
@@ -149,6 +150,9 @@ export const cloudAdminApi = {
 
   getWorldRuntimeStatus: (worldId: string) =>
     adminFetch<CloudWorldRuntimeStatusSummary>(`/worlds/${worldId}/runtime-status`),
+
+  getWorldAlertSummary: (worldId: string) =>
+    adminFetch<CloudWorldAlertSummary>(`/worlds/${worldId}/alert-summary`),
 
   reconcileWorld: (worldId: string) => adminFetch<CloudWorldSummary>(`/worlds/${worldId}/reconcile`, { method: "POST" }),
 
