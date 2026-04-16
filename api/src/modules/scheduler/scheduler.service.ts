@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThan, MoreThanOrEqual, MoreThan, Repository } from 'typeorm';
+import { Between, LessThan, MoreThanOrEqual, MoreThan, Repository } from 'typeorm';
 import { CharacterEntity } from '../characters/character.entity';
 import { FriendRequestEntity } from '../social/friend-request.entity';
 import { MomentPostEntity } from '../moments/moment-post.entity';
@@ -415,6 +415,8 @@ export class SchedulerService {
     );
     const now = new Date();
     const hour = now.getHours();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
     let generatedCount = 0;
 
     for (const char of chars) {
@@ -429,7 +431,10 @@ export class SchedulerService {
       }
 
       const todayCount = await this.momentPostRepo.count({
-        where: { authorId: char.id, postedAt: LessThan(now) },
+        where: {
+          authorId: char.id,
+          postedAt: Between(startOfDay, now),
+        },
       });
 
       if (
